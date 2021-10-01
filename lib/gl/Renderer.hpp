@@ -338,7 +338,7 @@ private:
     };
 
     using List = DisplayList<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-    using ListUpload = DisplayList<HARDWARE_BUFFER_SIZE, BUS_WIDTH / 8>;
+    using ListUpload = DisplayList<HARDWARE_BUFFER_SIZE + 16, BUS_WIDTH / 8>;
 
     struct StreamCommand
     {
@@ -383,6 +383,28 @@ private:
         static constexpr StreamCommandType TRIANGLE_FULL  = TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
+
+    struct PreStreamCommand
+    {
+        // Anathomy of a command:
+        // | 4 bit OP | 28 bit IMM |
+
+        using PreStreamCommandType = uint32_t;
+
+        // This mask will set the command
+        static constexpr PreStreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
+
+        // This mask will set the immediate value
+        static constexpr PreStreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
+
+        // This mask will set the command
+        static constexpr PreStreamCommandType NOP       = 0x0000'0000;
+        static constexpr PreStreamCommandType STORE     = 0x1000'0000;
+        static constexpr PreStreamCommandType LOAD      = 0x2000'0000;
+        static constexpr PreStreamCommandType MEMSET    = 0x3000'0000;
+        static constexpr PreStreamCommandType STREAM    = 0x4000'0000;
+    };
+    using PSCT = typename PreStreamCommand::PreStreamCommandType;
 
     class TextureStreamArg
     {
@@ -434,6 +456,8 @@ private:
 
             // Build new displaylist (which will be uploaded to the device)
             m_displayListUpload.clear();
+            PSCT *psct = m_displayListUpload.template create<PSCT>();
+            *psct = 0;
             bool leaveLoop = false;
             while (!leaveLoop && hasEnoughSpace(m_displayListUpload))
             {
@@ -484,6 +508,8 @@ private:
                         // Upload texture
                         leaveLoop = true;
 
+                        *psct = dlArg->texSize * 2;
+
                         // TODO: We could check here if the next command is also a texture upload with a different texture. If so, then we can discard
                         // that command and just upload the comming texture.
                         // We can also iterate now thru the triangles to check, if a triangle is visible in this line till the next upload command is comming
@@ -512,6 +538,7 @@ private:
                 }
             }
 
+            *psct = PreStreamCommand::STREAM | ((m_displayListUpload.getSize() + *psct) - m_displayListUpload.template sizeOf<PSCT>());
             m_busConnector.writeData(m_displayListUpload.getMemPtr(), m_displayListUpload.getSize());
 
             if (frontList.atEnd())
@@ -581,8 +608,6 @@ private:
     std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
 
     IBusConnector& m_busConnector;
-
-    uint16_t m_staticTriangleColor = 0xffff;
 
     struct __attribute__ ((__packed__)) ConfReg1
     {

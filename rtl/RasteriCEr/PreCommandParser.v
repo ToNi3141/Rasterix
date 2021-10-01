@@ -102,11 +102,6 @@ module PreCommandParser #(
     reg [ 5 : 0] state;
     reg [OP_IMM_SIZE - 1 : 0] counter;
 
-    reg         streamLast;
-    reg [ STREAM_WIDTH - 1 : 0] streamLastTData;
-    reg         streamLastTValid;
-    reg         first;
-
     always @(posedge aclk)
     begin
         if (resetn == 0)
@@ -152,7 +147,6 @@ module PreCommandParser #(
                     end
                     OP_STREAM:
                     begin
-                        first <= 1;
                         counter <= s_axis_tdata[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= STREAM;
                     end
@@ -182,24 +176,24 @@ module PreCommandParser #(
                     m_axis_tdata <= s_axis_tdata;  
                     m_axis_tlast <= counter == 1;
 
-                    // If the counter reaches 1, we don't want to fetch new data, except
-                    // we have no valid data, then we try to fetch till we have valid data.
-                    if ((counter == 1) && s_axis_tvalid)
-                    begin
-                        s_axis_tready <= 0;
-                    end
-                    else 
-                    begin
-                        // As long as the destination is ready or we have no preloaded value
-                        // tell the source that we can read data
-                        s_axis_tready <= (m_axis_tready || !s_axis_tvalid);
-                    end
-
                     // Valid data signals what we have fetched one beat and decrement the counter
                     if (s_axis_tvalid)
                     begin
                         counter <= counter - 1;
                     end
+                end
+
+                // If the counter reaches 1, we don't want to fetch new data, except
+                // we have no valid data, then we try to fetch till we have valid data.
+                if ((counter == 1) && s_axis_tvalid)
+                begin
+                    s_axis_tready <= 0;
+                end
+                else 
+                begin
+                    // As long as the destination is ready or we have no preloaded value
+                    // tell the source that we can read data
+                    s_axis_tready <= (m_axis_tready || !m_axis_tvalid);
                 end
 
                 // If the counter is zero and we have transfered the last beat, then we can 

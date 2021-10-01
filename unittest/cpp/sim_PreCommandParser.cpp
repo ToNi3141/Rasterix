@@ -191,13 +191,13 @@ TEST_CASE("Stream data interrupted from master", "[Stream]")
         REQUIRE(t.m_axis_tdata == 0xaa00ff55);
         REQUIRE(t.m_axis_tlast == 0);
 
-        // Master port is not ready, so we interrupting the stream on the slave
-        REQUIRE(t.s_axis_tready == 0);
+        // Master port is not ready, but we can fetch data
+        REQUIRE(t.s_axis_tready == 1);
 
         // Set the next 4 bytes of data
         t.s_axis_tdata = 0xff00ff00;
 
-        // Set master to ready
+        // Set master to not ready because we have no data right now
         t.m_axis_tready = 0;
 
         clk(t);
