@@ -39,10 +39,10 @@ localparam OP_RENDER_CONFIG = 2;
 localparam OP_FRAMEBUFFER = 3;
 localparam OP_TRIANGLE_STREAM = 4;
 
-localparam OP_POS = 12;
+localparam OP_POS = 28;
 localparam OP_SIZE = 4;
 localparam OP_IMM_POS = 0;
-localparam OP_IMM_SIZE = 12;
+localparam OP_IMM_SIZE = 28;
 
 ////////////////////////////
 // Operation Immediate Values

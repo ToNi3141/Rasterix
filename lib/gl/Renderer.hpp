@@ -266,7 +266,7 @@ public:
         return appendStreamCommand(StreamCommand::SET_CONF_REG2, m_confReg2);
     }
 
-    virtual std::pair<bool, uint16_t>  createTexture() override 
+    virtual std::pair<bool, uint16_t> createTexture() override
     {
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
@@ -286,7 +286,9 @@ public:
         m_textures[texId].gramAddr = pixels;
         m_textures[texId].width = texWidth;
         m_textures[texId].height = texHeight;
-        return true;
+
+        // TODO: Use a copy if the shared pointer object!
+        return appendStreamCommand<SCT>(StreamCommand::STORE | texWidth * texHeight * 2, texId);
     }
 
     virtual bool useTexture(const uint16_t texId) override 
@@ -297,25 +299,8 @@ public:
             return false;
         }
 
-        SCT op;
-        TextureStreamArg tsa;
-
-        if (tex.width == 256)
-            op = StreamCommand::TEXTURE_STREAM_256x256;
-        else if (tex.width == 128)
-            op = StreamCommand::TEXTURE_STREAM_128x128;
-        else if (tex.width == 64)
-            op = StreamCommand::TEXTURE_STREAM_64x64;
-        else if (tex.width == 32)
-            op = StreamCommand::TEXTURE_STREAM_32x32;
-        else
-            return false; // Not supported texture format
-
-        tsa.texSize = tex.width * tex.height;
-        tsa.counter = 0;
-        tsa.pixels = tex.gramAddr;
-
-        return appendStreamCommand<TextureStreamArg, true>(op, tsa);
+        // TODO: Use a copy if the shared pointer object!
+        return appendStreamCommand<SCT>(StreamCommand::LOAD | tex.width * tex.height * 2, texId);
     }
 
     virtual bool deleteTexture(const uint16_t texId) override 
@@ -343,25 +328,25 @@ private:
     struct StreamCommand
     {
         // Anathomy of a command:
-        // | 4 bit OP | 12 bit IMM |
+        // | 4 bit OP | 28 bit IMM |
 
-        using StreamCommandType = uint16_t;
+        using StreamCommandType = uint32_t;
 
         // This mask will set the command
-        static constexpr StreamCommandType STREAM_COMMAND_OP_MASK = 0xf000;
+        static constexpr StreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
 
         // This mask will set the immediate value
-        static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff;
+        static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
 
         // Calculate the triangle size with align overhead.
         static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = ListUpload::template sizeOf<Rasterizer::RasterizedTriangle>();
 
         // OPs
-        static constexpr StreamCommandType NOP              = 0x0000;
-        static constexpr StreamCommandType TEXTURE_STREAM   = 0x1000;
-        static constexpr StreamCommandType SET_REG          = 0x2000;
-        static constexpr StreamCommandType FRAMEBUFFER_OP   = 0x3000;
-        static constexpr StreamCommandType TRIANGLE_STREAM  = 0x4000;
+        static constexpr StreamCommandType NOP              = 0x0000'0000;
+        static constexpr StreamCommandType TEXTURE_STREAM   = 0x1000'0000;
+        static constexpr StreamCommandType SET_REG          = 0x2000'0000;
+        static constexpr StreamCommandType FRAMEBUFFER_OP   = 0x3000'0000;
+        static constexpr StreamCommandType TRIANGLE_STREAM  = 0x4000'0000;
 
         // Immediate values
         static constexpr StreamCommandType TEXTURE_STREAM_32x32     = TEXTURE_STREAM | 0x0011;
@@ -381,30 +366,13 @@ private:
         static constexpr StreamCommandType FRAMEBUFFER_DEPTH    = FRAMEBUFFER_OP | 0x0020;
 
         static constexpr StreamCommandType TRIANGLE_FULL  = TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
+
+        static constexpr StreamCommandType STORE     = 0x5000'0000;
+        static constexpr StreamCommandType LOAD      = 0x6000'0000;
+        static constexpr StreamCommandType MEMSET    = 0x7000'0000;
+        static constexpr StreamCommandType STREAM    = 0x8000'0000;
     };
     using SCT = typename StreamCommand::StreamCommandType;
-
-    struct PreStreamCommand
-    {
-        // Anathomy of a command:
-        // | 4 bit OP | 28 bit IMM |
-
-        using PreStreamCommandType = uint32_t;
-
-        // This mask will set the command
-        static constexpr PreStreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
-
-        // This mask will set the immediate value
-        static constexpr PreStreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
-
-        // This mask will set the command
-        static constexpr PreStreamCommandType NOP       = 0x0000'0000;
-        static constexpr PreStreamCommandType STORE     = 0x1000'0000;
-        static constexpr PreStreamCommandType LOAD      = 0x2000'0000;
-        static constexpr PreStreamCommandType MEMSET    = 0x3000'0000;
-        static constexpr PreStreamCommandType STREAM    = 0x4000'0000;
-    };
-    using PSCT = typename PreStreamCommand::PreStreamCommandType;
 
     class TextureStreamArg
     {
@@ -456,7 +424,7 @@ private:
 
             // Build new displaylist (which will be uploaded to the device)
             m_displayListUpload.clear();
-            PSCT *psct = m_displayListUpload.template create<PSCT>();
+            SCT *psct = m_displayListUpload.template create<SCT>();
             *psct = 0;
             bool leaveLoop = false;
             while (!leaveLoop && hasEnoughSpace(m_displayListUpload))
@@ -490,39 +458,53 @@ private:
                 case StreamCommand::NOP:
                     // Has no argument
                     break;
-                case StreamCommand::TEXTURE_STREAM:
+                case StreamCommand::LOAD:
+                {
+                    uint32_t *texId = frontList.template getNext<uint32_t>();
+
+                    Texture& tex = m_textures[*texId];
+
+                    SCT opt;
+
+                    if (tex.width == 256)
+                        opt = StreamCommand::TEXTURE_STREAM_256x256;
+                    else if (tex.width == 128)
+                        opt = StreamCommand::TEXTURE_STREAM_128x128;
+                    else if (tex.width == 64)
+                        opt = StreamCommand::TEXTURE_STREAM_64x64;
+                    else if (tex.width == 32)
+                        opt = StreamCommand::TEXTURE_STREAM_32x32;
+                    else
+                        return false; // Not supported texture format
+
+                    m_displayListUpload.template remove<SCT>();
+
+                    // TODO: Check if it is enough space in the display list!
+                    *(m_displayListUpload.template create<SCT>()) = opt;
+                    *(m_displayListUpload.template create<SCT>()) = *op;
+                    *(m_displayListUpload.template create<uint32_t>()) = *texId * 1024 * 32;
+
+                    *psct = m_displayListUpload.template sizeOf<SCT>() + m_displayListUpload.template sizeOf<uint32_t>();
+
+                    leaveLoop = true;
+                }
+                    break;
+                case StreamCommand::STORE:
                 {
                     // Read texture stream argument
-                    TextureStreamArg *dlArg = frontList.template getNext<TextureStreamArg>();
-                    // Check if the newly read argument has another texture than the current active one
-                    if (m_textureStreamArg.pixels == dlArg->pixels)
-                    {
-                        // If this is not the case, we can safely discard this command, because the texture is already in the buffer
-                        m_displayListUpload.template remove<SCT>();
-                    }
-                    else
-                    {
-                        // If this is not the case, set the newly read texture as the new stream texture
-                        m_textureStreamArg = *(dlArg);
+                    uint32_t *texId = frontList.template getNext<uint32_t>();
 
-                        // Upload texture
-                        leaveLoop = true;
+                    m_textureStreamArg.texSize = m_textures[*texId].width * m_textures[*texId].height;
+                    m_textureStreamArg.counter = 0;
+                    m_textureStreamArg.pixels = m_textures[*texId].gramAddr;
 
-                        *psct = dlArg->texSize * 2;
+                    // TODO: Check if it is enough space in the display list!
+                    *(m_displayListUpload.template create<uint32_t>()) = *texId * 1024 * 32;
 
-                        // TODO: We could check here if the next command is also a texture upload with a different texture. If so, then we can discard
-                        // that command and just upload the comming texture.
-                        // We can also iterate now thru the triangles to check, if a triangle is visible in this line till the next upload command is comming
-                        // if no triangle is visible, then we can also discard this command and just upload the next.
-                    }
-                    // In the last iteration, we don't require the texture anymore. Unfortunately the DisplayList is discarded as a whole,
-                    // and is not calling the destructors of the objects it contains. Therefor we have to do it here manually so the shared_ptr
-                    // knows that this pointer is not required anymore and can delete the texture (if this was the last place, where this pointer was used)
-                    if (m_uploadIndexPosition == 0)
-                    {
-                        (*dlArg).~TextureStreamArg();
-                    }
+                    *psct = m_displayListUpload.template sizeOf<SCT>() + m_displayListUpload.template sizeOf<uint32_t>();
 
+                    // Upload texture
+                    leaveLoop = true;
                 }
                     break;
                 case StreamCommand::SET_REG:
@@ -538,7 +520,7 @@ private:
                 }
             }
 
-            *psct = PreStreamCommand::STREAM | ((m_displayListUpload.getSize() + *psct) - m_displayListUpload.template sizeOf<PSCT>());
+            *psct = StreamCommand::STREAM | (m_displayListUpload.getSize() - (*psct + m_displayListUpload.template sizeOf<SCT>()));
             m_busConnector.writeData(m_displayListUpload.getMemPtr(), m_displayListUpload.getSize());
 
             if (frontList.atEnd())

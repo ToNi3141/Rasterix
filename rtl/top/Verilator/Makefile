@@ -14,7 +14,7 @@ simulation:
 	-make -C obj_dir -f Vtop.mk
 
 mem:
-	verilator -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc topMemory.v --top-module top -I../../RasteriCEr
+	verilator -Wno-lint -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc topMemory.v --top-module top -I../../RasteriCEr -I../../3rdParty
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

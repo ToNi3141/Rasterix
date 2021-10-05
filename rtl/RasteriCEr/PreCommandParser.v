@@ -88,10 +88,10 @@ module PreCommandParser #(
     localparam OP_IMM_SIZE = 28;
 
     localparam OP_NOP = 0;
-    localparam OP_STORE = 1;
-    localparam OP_LOAD = 2;
-    localparam OP_MEMSET = 3;
-    localparam OP_STREAM = 4;
+    localparam OP_STORE = 5;
+    localparam OP_LOAD = 6;
+    localparam OP_MEMSET = 7;
+    localparam OP_STREAM = 8;
 
     localparam IDLE = 0;
     localparam COMMAND = 1;
