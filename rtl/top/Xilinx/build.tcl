@@ -21,12 +21,14 @@ read_verilog ./../../RasteriCEr/RasteriCEr.v
 read_verilog ./../../RasteriCEr/FragmentPipeline.v
 read_verilog ./../../RasteriCEr/FragmentPipelineIce40Wrapper.v
 read_verilog ./../../RasteriCEr/CommandParser.v
+read_verilog ./../../RasteriCEr/PreCommandParser.v
 read_verilog ./../../RasteriCEr/Serial2AXIS.v
 read_verilog ./../../RasteriCEr/Recip.v
 read_verilog ./../../RasteriCEr/TextureBuffer.v
 read_verilog ./../../Display/DisplayControllerSpi.v
 read_verilog ./../../3rdParty/SPI_Slave.v
 read_verilog ./../../3rdParty/sfifo.v
+read_verilog ./../../3rdParty/axi_ram.v
 read_xdc ./arty.xdc
 
 #
