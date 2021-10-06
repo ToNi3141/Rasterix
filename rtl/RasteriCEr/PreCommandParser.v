@@ -51,7 +51,7 @@ module PreCommandParser #(
     input  wire                         m_mem_axi_awready,
 
     output wire [STREAM_WIDTH - 1 : 0]  m_mem_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]    m_mem_axi_wstrb,
+    output reg  [STRB_WIDTH - 1 : 0]    m_mem_axi_wstrb,
     output wire                         m_mem_axi_wlast,
     output wire                         m_mem_axi_wvalid,
     input  wire                         m_mem_axi_wready,
@@ -62,14 +62,14 @@ module PreCommandParser #(
     output reg                          m_mem_axi_bready,
 
     output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_arid,
-    output wire [ADDR_WIDTH - 1 : 0]    m_mem_axi_araddr,
+    output reg  [ADDR_WIDTH - 1 : 0]    m_mem_axi_araddr,
     output reg  [ 7 : 0]                m_mem_axi_arlen,
     output reg  [ 2 : 0]                m_mem_axi_arsize,
     output reg  [ 1 : 0]                m_mem_axi_arburst,
     output reg                          m_mem_axi_arlock,
     output reg  [ 3 : 0]                m_mem_axi_arcache,
     output reg  [ 2 : 0]                m_mem_axi_arprot,
-    output wire                         m_mem_axi_arvalid,
+    output reg                          m_mem_axi_arvalid,
     input  wire                         m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]      m_mem_axi_rid,
@@ -103,6 +103,7 @@ module PreCommandParser #(
     localparam MEMSET_ADDR = 7;
     localparam MEMSET_VAL = 8;
     localparam STREAM = 9;
+    localparam STREAM_PAUSED = 10;
 
     reg [ 5 : 0]                state;
     reg [ 5 : 0]                mux;
@@ -207,10 +208,7 @@ module PreCommandParser #(
                         : (mux == LOAD) ? m_mem_axi_rdata
                         : (mux == MEMSET) ? memsetVal
                         : 0;
-    end
 
-    always @(posedge aclk)
-    begin
         if (resetn == 0)
         begin
             m_axis_tvalid <= 0;
@@ -219,6 +217,9 @@ module PreCommandParser #(
 
             m_mem_axi_arvalid <= 0;
             m_mem_axi_awvalid <= 0;
+
+            addrLast <= 0;
+            addr <= 0;
 
             state <= IDLE;
             mux <= IDLE;
@@ -368,24 +369,32 @@ module PreCommandParser #(
                     m_axis_tdata <= s_axis_tdata;
                     m_axis_tlast <= counter == 1;
 
+                    if ((counter != 1) || !s_axis_tvalid)
+                    begin
+                        s_axis_tready <= 1;
+                    end
+                    else
+                    begin
+                        s_axis_tready <= 0;
+                        if (counter > 0)
+                        begin
+                            state <= STREAM_PAUSED;
+                        end
+                    end
+
                     // Valid data signals what we have fetched one beat and decrement the counter
                     if (s_axis_tvalid)
                     begin
                         counter <= counter - 1;
                     end
                 end
-
-                // If the counter reaches 1, we don't want to fetch new data, except
-                // we have no valid data, then we try to fetch till we have valid data.
-                if ((counter == 1) && s_axis_tvalid)
-                begin
-                    s_axis_tready <= 0;
-                end
                 else
                 begin
-                    // As long as the destination is ready or we have no preloaded value
-                    // tell the source that we can read data
-                    s_axis_tready <= (m_axis_tready || !m_axis_tvalid);
+                    s_axis_tready <= 0;
+                    if (counter > 0)
+                    begin
+                        state <= STREAM_PAUSED;
+                    end
                 end
 
                 // If the counter is zero and we have transfered the last beat, then we can 
@@ -400,6 +409,15 @@ module PreCommandParser #(
                 if ((counter == 0) && m_axis_tready && !m_mem_axi_awvalid && !m_mem_axi_arvalid)
                 begin
                     state <= IDLE;
+                end
+            end
+            STREAM_PAUSED:
+            begin
+                if (m_axis_tready)
+                begin
+                    s_axis_tready <= 1;
+                    m_axis_tvalid <= 0;
+                    state <= STREAM;
                 end
             end
             endcase 

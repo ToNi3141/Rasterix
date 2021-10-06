@@ -148,7 +148,7 @@ module top
         .ADDR_WIDTH(ADDR_WIDTH)
     ) ram (
         .rst(!resetn),
-        .clk(aclk),
+        .clk(clk),
 
         .s_axi_awid(s_axi_awid),
         .s_axi_awaddr(s_axi_awaddr),
@@ -191,7 +191,7 @@ module top
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) parser (
-        .aclk(aclk),
+        .aclk(clk),
         .resetn(resetn),
 
         .m_cmd_axis_tvalid(s_cmd_axis_tvalid),
