@@ -57,7 +57,7 @@ TEST_CASE("Stream data simple", "[Stream]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x4000'0000;
+    static constexpr uint32_t OP = 0x8000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -142,7 +142,7 @@ TEST_CASE("Stream data interrupted from master", "[Stream]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x4000'0000;
+    static constexpr uint32_t OP = 0x8000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -272,7 +272,7 @@ TEST_CASE("Stream data interrupted from slave", "[Stream]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x4000'0000;
+    static constexpr uint32_t OP = 0x8000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -397,7 +397,7 @@ TEST_CASE("Store data simple", "[Memory]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x1000'0000;
+    static constexpr uint32_t OP = 0x5000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -513,7 +513,7 @@ TEST_CASE("Memset data simple", "[Memory]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x3000'0000;
+    static constexpr uint32_t OP = 0x7000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -644,7 +644,7 @@ TEST_CASE("Load data simple", "[Memory]")
     VPreCommandParser& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x2000'0000;
+    static constexpr uint32_t OP = 0x6000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 

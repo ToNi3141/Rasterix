@@ -118,10 +118,13 @@ module PreCommandParser #(
     reg                         m_axis_tlast = 0;
     reg  [STREAM_WIDTH - 1 : 0] m_axis_tdata = 0;
 
-    reg                        s_axis_tvalid;
-    reg                        s_axis_tready;
-    reg                        s_axis_tlast;
-    reg [STREAM_WIDTH - 1 : 0] s_axis_tdata;
+    reg                         s_axis_tvalid;
+    reg                         s_axis_tready;
+    reg                         s_axis_tlast;
+    reg [STREAM_WIDTH - 1 : 0]  s_axis_tdata;
+
+    reg                         m_axis_tlast_last;
+    reg [STREAM_WIDTH - 1 : 0]  m_axis_tdata_last;
 
     initial 
     begin
@@ -376,10 +379,6 @@ module PreCommandParser #(
                     else
                     begin
                         s_axis_tready <= 0;
-                        if (counter > 0)
-                        begin
-                            state <= STREAM_PAUSED;
-                        end
                     end
 
                     // Valid data signals what we have fetched one beat and decrement the counter
@@ -391,8 +390,10 @@ module PreCommandParser #(
                 else
                 begin
                     s_axis_tready <= 0;
-                    if (counter > 0)
+                    if ((counter > 0) && !m_axis_tready && s_axis_tvalid)
                     begin
+                        m_axis_tlast_last <= counter == 1;
+                        m_axis_tdata_last <= s_axis_tdata;
                         state <= STREAM_PAUSED;
                     end
                 end
@@ -415,8 +416,16 @@ module PreCommandParser #(
             begin
                 if (m_axis_tready)
                 begin
-                    s_axis_tready <= 1;
-                    m_axis_tvalid <= 0;
+                    
+                    if (counter != 1)
+                    begin
+                        s_axis_tready <= 1;
+                    end
+                    
+                    // Skid buffer
+                    m_axis_tdata <= m_axis_tdata_last;
+                    m_axis_tlast <= m_axis_tlast_last;
+                    counter <= counter - 1;
                     state <= STREAM;
                 end
             end
