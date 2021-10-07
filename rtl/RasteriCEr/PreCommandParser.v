@@ -389,9 +389,9 @@ module PreCommandParser #(
                 end
                 else
                 begin
-                    s_axis_tready <= 0;
                     if ((counter > 0) && !m_axis_tready && s_axis_tvalid)
                     begin
+                        s_axis_tready <= 0;
                         m_axis_tlast_last <= counter == 1;
                         m_axis_tdata_last <= s_axis_tdata;
                         state <= STREAM_PAUSED;
