@@ -114,18 +114,18 @@ module PreCommandParser #(
     reg [ADDR_WIDTH - 1 : 0]    addrLast;
     reg                         enableAddressChannel;
 
-    reg                         m_axis_tvalid = 0;
-    reg                         m_axis_tready;
-    reg                         m_axis_tlast = 0;
-    reg  [STREAM_WIDTH - 1 : 0] m_axis_tdata = 0;
+    reg                         axisDestValid;
+    reg                         axisDestReady;
+    reg                         axisDestLast;
+    reg  [STREAM_WIDTH - 1 : 0] axisDestData;
 
-    reg                         s_axis_tvalid;
-    reg                         s_axis_tready;
-    reg                         s_axis_tlast;
-    reg [STREAM_WIDTH - 1 : 0]  s_axis_tdata;
+    reg                         axisSourceValid;
+    reg                         axisSourceReady;
+    reg                         axisSourceLast;
+    reg [STREAM_WIDTH - 1 : 0]  axisSourceData;
 
-    reg                         axisLastNext;
-    reg [STREAM_WIDTH - 1 : 0]  axisDataNext;
+    reg                         axisSourceLastNext;
+    reg [STREAM_WIDTH - 1 : 0]  axisSourceDataNext;
 
     initial 
     begin
@@ -151,62 +151,62 @@ module PreCommandParser #(
         m_mem_axi_bready = 1;
     end
 
-    // Master Channel Muxes
-    assign m_cmd_axis_tvalid    = (mux == STREAM) ? m_axis_tvalid
-                                : (mux == LOAD) ? m_axis_tvalid 
+    // Master Channel Muxes output ports
+    assign m_cmd_axis_tvalid    = (mux == STREAM) ? axisDestValid
+                                : (mux == LOAD) ? axisDestValid 
                                 : 0;
 
-    assign m_mem_axi_wvalid     = (mux == STORE) ? m_axis_tvalid 
-                                : (mux == MEMSET) ? m_axis_tvalid 
+    assign m_mem_axi_wvalid     = (mux == STORE) ? axisDestValid 
+                                : (mux == MEMSET) ? axisDestValid 
                                 : 0;
 
-    assign m_cmd_axis_tlast = (mux == STREAM) ? m_axis_tlast 
-                            : (mux == LOAD) ? m_axis_tlast 
+    assign m_cmd_axis_tlast = (mux == STREAM) ? axisDestLast 
+                            : (mux == LOAD) ? axisDestLast 
                             : 0;
 
     assign m_mem_axi_wlast  = 1;
                             
-    assign m_cmd_axis_tdata = (mux == STREAM) ? m_axis_tdata 
-                            : (mux == LOAD) ? m_axis_tdata 
+    assign m_cmd_axis_tdata = (mux == STREAM) ? axisDestData 
+                            : (mux == LOAD) ? axisDestData 
                             : 0;
 
-    assign m_mem_axi_wdata  = (mux == STORE) ? m_axis_tdata 
-                            : (mux == MEMSET) ? m_axis_tdata 
+    assign m_mem_axi_wdata  = (mux == STORE) ? axisDestData 
+                            : (mux == MEMSET) ? axisDestData 
                             : 0;
 
-    // Slave Channel Muxes
-    assign s_cmd_axis_tready    = (mux == STREAM) ? s_axis_tready
-                                : (mux == STORE) ? s_axis_tready
-                                : (mux == COMMAND) ? s_axis_tready
+    // Slave Channel Muxes input ports
+    assign s_cmd_axis_tready    = (mux == STREAM) ? axisSourceReady
+                                : (mux == STORE) ? axisSourceReady
+                                : (mux == COMMAND) ? axisSourceReady
                                 : 0;
 
-    assign m_mem_axi_rready     = (mux == LOAD) ? s_axis_tready
+    assign m_mem_axi_rready     = (mux == LOAD) ? axisSourceReady
                                 : 0;
 
     always @(posedge aclk)
     begin
-        // Master Channel Muxes
-        m_axis_tready   = (mux == STREAM) ? m_cmd_axis_tready
+        // Master Channel Muxes input ports
+        axisDestReady   = (mux == STREAM) ? m_cmd_axis_tready
                         : (mux == LOAD) ? m_cmd_axis_tready
                         : (mux == STORE) ? m_mem_axi_wready
                         : (mux == MEMSET) ? m_mem_axi_wready
                         : 0;
 
-        // Slave Channel Muxes
-        s_axis_tvalid   = (mux == STREAM) ? s_cmd_axis_tvalid 
+        // Slave Channel Muxes output ports
+        axisSourceValid   = (mux == STREAM) ? s_cmd_axis_tvalid 
                         : (mux == STORE) ? s_cmd_axis_tvalid
                         : (mux == COMMAND) ? s_cmd_axis_tvalid
                         : (mux == LOAD) ? m_mem_axi_rvalid
                         : (mux == MEMSET) ? 1 
                         : 0;
 
-        s_axis_tlast    = (mux == STREAM) ? s_cmd_axis_tlast 
+        axisSourceLast    = (mux == STREAM) ? s_cmd_axis_tlast 
                         : (mux == STORE) ? s_cmd_axis_tlast
                         : (mux == LOAD) ? m_mem_axi_rlast
                         : (mux == MEMSET) ? 0 
                         : 0;
 
-        s_axis_tdata    = (mux == STREAM) ? s_cmd_axis_tdata
+        axisSourceData    = (mux == STREAM) ? s_cmd_axis_tdata
                         : (mux == STORE) ? s_cmd_axis_tdata
                         : (mux == COMMAND) ? s_cmd_axis_tdata
                         : (mux == LOAD) ? m_mem_axi_rdata
@@ -215,9 +215,9 @@ module PreCommandParser #(
 
         if (resetn == 0)
         begin
-            m_axis_tvalid <= 0;
-            m_axis_tlast <= 0;
-            s_axis_tready <= 0;
+            axisDestValid <= 0;
+            axisDestLast <= 0;
+            axisSourceReady <= 0;
 
             m_mem_axi_arvalid <= 0;
             m_mem_axi_awvalid <= 0;
@@ -235,43 +235,42 @@ module PreCommandParser #(
             case (state)
             IDLE:
             begin
-                m_axis_tlast <= 0;
-                m_axis_tvalid <= 0;
+                axisDestLast <= 0;
+                axisDestValid <= 0;
 
-                s_axis_tready <= 1;
+                axisSourceReady <= 1;
 
                 mux <= COMMAND;
                 state <= COMMAND;
             end
             COMMAND:
             begin
-                if (s_axis_tvalid)
+                if (axisSourceValid)
                 begin
-                    
-                    case (s_axis_tdata[OP_POS +: OP_SIZE])
+                    case (axisSourceData[OP_POS +: OP_SIZE])
                     OP_NOP:
                     begin
-                        s_axis_tready <= 0;
+                        axisSourceReady <= 0;
                         state <= IDLE;
                     end
                     OP_STORE:
                     begin
-                        counter <= s_axis_tdata[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= STORE_ADDR;
                     end
                     OP_LOAD:
                     begin
-                        counter <= s_axis_tdata[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= LOAD_ADDR;
                     end
                     OP_MEMSET:
                     begin
-                        counter <= s_axis_tdata[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= MEMSET_ADDR;
                     end
                     OP_STREAM:
                     begin
-                        counter <= s_axis_tdata[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         mux <= STREAM;
                         state <= STREAM;
                     end
@@ -280,11 +279,11 @@ module PreCommandParser #(
             end
             STORE_ADDR:
             begin
-                if (s_axis_tvalid)
+                if (axisSourceValid)
                 begin
                     enableWriteChannel <= 1;
-                    addr <= s_axis_tdata[0 +: ADDR_WIDTH];
-                    addrLast <= s_axis_tdata[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addr <= axisSourceData[0 +: ADDR_WIDTH];
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
                     enableAddressChannel <= 1;
                     mux <= STORE;
                     state <= STREAM;
@@ -292,11 +291,11 @@ module PreCommandParser #(
             end
             LOAD_ADDR:
             begin
-                if (s_axis_tvalid)
+                if (axisSourceValid)
                 begin
                     enableWriteChannel <= 0;
-                    addr <= s_axis_tdata[0 +: ADDR_WIDTH];
-                    addrLast <= s_axis_tdata[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addr <= axisSourceData[0 +: ADDR_WIDTH];
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
                     enableAddressChannel <= 1;
                     mux <= LOAD;
                     state <= STREAM;
@@ -304,19 +303,19 @@ module PreCommandParser #(
             end
             MEMSET_ADDR:
             begin
-                if (s_axis_tvalid)
+                if (axisSourceValid)
                 begin
                     enableWriteChannel <= 1;
-                    addr <= s_axis_tdata[0 +: ADDR_WIDTH];
-                    addrLast <= s_axis_tdata[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addr <= axisSourceData[0 +: ADDR_WIDTH];
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
                     state <= MEMSET_VAL;
                 end
             end
             MEMSET_VAL:
             begin
-                if (s_axis_tvalid)
+                if (axisSourceValid)
                 begin
-                    memsetVal <= s_axis_tdata[0 +: 32];
+                    memsetVal <= axisSourceData[0 +: 32];
                     enableAddressChannel <= 1;
                     mux <= MEMSET;
                     state <= STREAM;
@@ -326,26 +325,26 @@ module PreCommandParser #(
             begin
                 // Write the next beat when the destination is ready
                 // if the destination is not ready, preload one entry till the output is valid
-                if ((m_axis_tready || !m_axis_tvalid) && (counter != 0))
+                if ((axisDestReady || !axisDestValid) && (counter != 0))
                 begin
                     // Copy data from the source to the destination
-                    m_axis_tvalid <= s_axis_tvalid;
-                    m_axis_tdata <= s_axis_tdata;
-                    m_axis_tlast <= counter == 1;
+                    axisDestValid <= axisSourceValid;
+                    axisDestData <= axisSourceData;
+                    axisDestLast <= counter == 1;
 
                     // Enable the data source as long as we have to receive data.
                     // If the counter is 1 (which means last beat) but we didn't got valid data, keep the source active.
-                    if ((counter != 1) || !s_axis_tvalid)
+                    if ((counter != 1) || !axisSourceValid)
                     begin
-                        s_axis_tready <= 1;
+                        axisSourceReady <= 1;
                     end
                     else
                     begin
-                        s_axis_tready <= 0;
+                        axisSourceReady <= 0;
                     end
 
                     // Valid data signals what we have fetched one beat and decrement the counter
-                    if (s_axis_tvalid)
+                    if (axisSourceValid)
                     begin
                         counter <= counter - 1;
                     end
@@ -354,12 +353,12 @@ module PreCommandParser #(
                 begin
                     // Wait till new data are received.
                     // If our destination was not ready, we have to save the data and to disable our data source
-                    if ((counter > 0) && !m_axis_tready && s_axis_tvalid)
+                    if ((counter > 0) && !axisDestReady && axisSourceValid)
                     begin
-                        s_axis_tready <= 0;
+                        axisSourceReady <= 0;
 
-                        axisLastNext <= counter == 1;
-                        axisDataNext <= s_axis_tdata;
+                        axisSourceLastNext <= counter == 1;
+                        axisSourceDataNext <= axisSourceData;
 
                         counter <= counter - 1;
 
@@ -370,11 +369,11 @@ module PreCommandParser #(
 
                 // If the counter is zero and we have transfered the last beat, then we can 
                 // go back to idle
-                if ((counter == 0) && m_axis_tready)
+                if ((counter == 0) && axisDestReady)
                 begin
-                    m_axis_tvalid <= 0;
-                    s_axis_tready <= 0;
-                    m_axis_tlast <= 0;
+                    axisDestValid <= 0;
+                    axisSourceReady <= 0;
+                    axisDestLast <= 0;
 
                     // Synchronize with the address channel
                     if (!enableAddressChannel)
@@ -385,17 +384,17 @@ module PreCommandParser #(
             end
             STREAM_PAUSED:
             begin
-                if (m_axis_tready)
+                if (axisDestReady)
                 begin
                     // Check if the counter is greater than zero, if so, we still have to fetch data
                     if (counter > 0)
                     begin
-                        s_axis_tready <= 1;
+                        axisSourceReady <= 1;
                     end
 
                     // Output the next data
-                    m_axis_tdata <= axisDataNext;
-                    m_axis_tlast <= axisLastNext;
+                    axisDestData <= axisSourceDataNext;
+                    axisDestLast <= axisSourceLastNext;
                     
                     // Reenable the stream
                     state <= STREAM;
