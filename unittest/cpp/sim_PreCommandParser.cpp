@@ -398,13 +398,16 @@ TEST_CASE("Store data simple", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0008; 
-    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
+    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
+    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_cmd_axis_tready = 1;
     t.m_mem_axi_awready = 1;
-    t.m_mem_axi_wready = 1;
+
+
+    t.m_mem_axi_wready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
     for (uint32_t i = 0; i < 2; i++) 
@@ -439,55 +442,116 @@ TEST_CASE("Store data simple", "[Memory]")
         // Process command
         clk(t);
 
-        // STORE /////////////////////////////
+        // First test the address channel (data and address are independent)
+        // STORE ADDR ////////////////////////
         // Outputs
         REQUIRE(t.m_mem_axi_awvalid == 0);
         REQUIRE(t.m_mem_axi_wvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 1);
 
-        // Inputs
-        // Set first 4 bytes of data
-        t.s_cmd_axis_tdata = 0xaa00ff55;
+        t.s_cmd_axis_tvalid = 0;
 
-        // Process first 4 bytes of data
         clk(t);
 
-        // STORE /////////////////////////////
+        // STORE ADDR ////////////////////////
         // Outputs
-        // Read first 4 bytes from master interface 
         REQUIRE(t.m_mem_axi_awvalid == 1);
         REQUIRE(t.m_mem_axi_awaddr == 0x100);
         
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_wdata == 0xaa00ff55);
-        REQUIRE(t.m_mem_axi_wlast == 1);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 1);
 
-        // Set the next 4 bytes of data
-        t.s_cmd_axis_tdata = 0xff00ff00;
-
         clk(t);
 
-        // STORE /////////////////////////////
-        // Read first 4 bytes from master interface 
+        // STORE ADDR ////////////////////////
+        // Outputs
         REQUIRE(t.m_mem_axi_awvalid == 1);
-        REQUIRE(t.m_mem_axi_awaddr == 0x104);
+        REQUIRE(t.m_mem_axi_awaddr == 0x180);
         
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_wdata == 0xff00ff00);
-        REQUIRE(t.m_mem_axi_wlast == 1);
-
-        REQUIRE(t.s_cmd_axis_tready == 0);
-
-        clk(t);
-
-        // IDLE /////////////////////////////
-        REQUIRE(t.m_mem_axi_awvalid == 0);
         REQUIRE(t.m_mem_axi_wvalid == 0);
 
+        REQUIRE(t.s_cmd_axis_tready == 1);
+
+        clk(t);
+
+        // STORE ADDR ////////////////////////
+        // Outputs
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+
+        REQUIRE(t.s_cmd_axis_tready == 1);
+
+
+        clk(t);
+
+        // Now check the data channel
+        // STORE DATA ////////////////////////
+        // Initial value
+        REQUIRE(t.s_cmd_axis_tready == 1);
+
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+
+        t.m_mem_axi_wready = 1;
+
+        t.s_cmd_axis_tdata = 0;
+        t.s_cmd_axis_tvalid = 1;
+
+        clk(t);
+
+        // STORE DATA ////////////////////////
+        // Output contains the data from all elemets except the last
+        for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+        {
+            REQUIRE(t.s_cmd_axis_tready == 1);
+
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_wdata == i - 1);
+            REQUIRE(t.m_mem_axi_wlast == 0);
+
+            t.s_cmd_axis_tdata = i;
+
+            clk(t);
+        }
+
+        // Second transfer
+        // STORE DATA ////////////////////////
+        // Check the last element and initialize the next transfer
+        REQUIRE(t.s_cmd_axis_tready == 1);
+
+        REQUIRE(t.m_mem_axi_wvalid == 1);
+        REQUIRE(t.m_mem_axi_wdata == 31);
+        REQUIRE(t.m_mem_axi_wlast == 1);
+
+        t.s_cmd_axis_tdata = 0;
+
+        clk(t);
+
+        // STORE DATA ////////////////////////
+        // Output contains the data from all elemets except the last
+        for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+        {
+            REQUIRE(t.s_cmd_axis_tready == 1);
+
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_wdata == i - 1);
+            REQUIRE(t.m_mem_axi_wlast == 0);
+
+            t.s_cmd_axis_tdata = i;
+
+            clk(t);
+        }
+
+        // Second transfer
+        // STORE DATA ////////////////////////
+        // Check the last element
         REQUIRE(t.s_cmd_axis_tready == 0);
+
+        REQUIRE(t.m_mem_axi_wvalid == 1);
+        REQUIRE(t.m_mem_axi_wdata == 31);
+        REQUIRE(t.m_mem_axi_wlast == 1);
 
         clk(t);
 
@@ -514,13 +578,16 @@ TEST_CASE("Memset data simple", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0x7000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0008; 
-    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
+    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
+    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_cmd_axis_tready = 1;
     t.m_mem_axi_awready = 1;
-    t.m_mem_axi_wready = 1;
+
+
+    t.m_mem_axi_wready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
     for (uint32_t i = 0; i < 2; i++) 
@@ -536,6 +603,8 @@ TEST_CASE("Memset data simple", "[Memory]")
         // Input command
         t.s_cmd_axis_tdata = COMMAND;
         t.s_cmd_axis_tvalid = 1;
+
+        t.m_mem_axi_wready = 0;
 
         // Process command
         clk(t);
@@ -564,61 +633,102 @@ TEST_CASE("Memset data simple", "[Memory]")
 
         // Inputs
         // Input command
-        t.s_cmd_axis_tdata = 0xffaa5500;
+        t.s_cmd_axis_tdata = 0xFF0055AA;
         t.s_cmd_axis_tvalid = 1;
 
         // Process command
         clk(t);
 
-        // MEMSET ////////////////////////////
+        // First test the address channel (data and address are independent)
+        // STORE ADDR ////////////////////////
         // Outputs
         REQUIRE(t.m_mem_axi_awvalid == 0);
         REQUIRE(t.m_mem_axi_wvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 
-        // Inputs
-        // Set first 4 bytes of data
-        t.s_cmd_axis_tdata = 0xffaa5500;
+        t.s_cmd_axis_tvalid = 0;
 
-        // Process first 4 bytes of data
         clk(t);
 
-        // MEMSET ////////////////////////////
+        // STORE ADDR ////////////////////////
         // Outputs
-        // Read first 4 bytes from master interface 
         REQUIRE(t.m_mem_axi_awvalid == 1);
         REQUIRE(t.m_mem_axi_awaddr == 0x100);
         
         REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_wdata == 0xffaa5500);
-        REQUIRE(t.m_mem_axi_wlast == 1);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 
-        // Set the next 4 bytes of data
-        t.s_cmd_axis_tdata = 0xffaa5500;
-
         clk(t);
 
-        // MEMSET ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // STORE ADDR ////////////////////////
+        // Outputs
         REQUIRE(t.m_mem_axi_awvalid == 1);
-        REQUIRE(t.m_mem_axi_awaddr == 0x104);
+        REQUIRE(t.m_mem_axi_awaddr == 0x180);
         
         REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_wdata == 0xffaa5500);
-        REQUIRE(t.m_mem_axi_wlast == 1);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 
         clk(t);
 
-        // IDLE /////////////////////////////
+        // STORE ADDR ////////////////////////
+        // Outputs
         REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 0);
+        
+        REQUIRE(t.m_mem_axi_wvalid == 1);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
+
+        clk(t);
+
+        // STORE DATA ////////////////////////
+        // Output contains the data from all elemets except the last
+        t.m_mem_axi_wready = 1;
+        for (uint32_t i = 0; i < BEATS_PER_TRANSFER - 1; i++)
+        {
+            REQUIRE(t.s_cmd_axis_tready == 0);
+
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_wdata == 0xFF0055AA);
+            REQUIRE(t.m_mem_axi_wlast == 0);
+
+            clk(t);
+        }
+
+        // Second transfer
+        // STORE DATA ////////////////////////
+        // Check the last element and initialize the next transfer
+        REQUIRE(t.s_cmd_axis_tready == 0);
+
+        REQUIRE(t.m_mem_axi_wvalid == 1);
+        REQUIRE(t.m_mem_axi_wdata == 0xFF0055AA);
+        REQUIRE(t.m_mem_axi_wlast == 1);
+
+        clk(t);
+
+        // STORE DATA ////////////////////////
+        // Output contains the data from all elemets except the last
+        for (uint32_t i = 0; i < BEATS_PER_TRANSFER - 1; i++)
+        {
+            REQUIRE(t.s_cmd_axis_tready == 0);
+
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_wdata == 0xFF0055AA);
+            REQUIRE(t.m_mem_axi_wlast == 0);
+
+            clk(t);
+        }
+
+        // Second transfer
+        // STORE DATA ////////////////////////
+        // Check the last element
+        REQUIRE(t.s_cmd_axis_tready == 0);
+
+        REQUIRE(t.m_mem_axi_wvalid == 1);
+        REQUIRE(t.m_mem_axi_wdata == 0xFF0055AA);
+        REQUIRE(t.m_mem_axi_wlast == 1);
 
         clk(t);
 
@@ -645,22 +755,23 @@ TEST_CASE("Load data simple", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0x6000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0008; 
-    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
+    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
+    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_cmd_axis_tready = 1;
-    t.m_mem_axi_awready = 1;
-    t.m_mem_axi_wready = 1;
     t.m_mem_axi_arready = 1;
 
+
+    t.m_mem_axi_rready = 0;
+
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 1; i++) 
     {
         // COMMAND ///////////////////////////
         // Outputs
         REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
         REQUIRE(t.m_cmd_axis_tvalid == 0);
         
         REQUIRE(t.s_cmd_axis_tready == 1);
@@ -676,7 +787,6 @@ TEST_CASE("Load data simple", "[Memory]")
         // COMMAND ADDR //////////////////////
         // Outputs
         REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
         REQUIRE(t.m_cmd_axis_tvalid == 0);
         
         REQUIRE(t.s_cmd_axis_tready == 1);
@@ -686,69 +796,95 @@ TEST_CASE("Load data simple", "[Memory]")
         t.s_cmd_axis_tdata = 0x100;
         t.s_cmd_axis_tvalid = 1;
 
-
         // Process command
         clk(t);
 
-        // LOAD //////////////////////////////
+        // First test the address channel (data and address are independent)
+        // LOAD ADDR /////////////////////////
         // Outputs
         REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 1);
         REQUIRE(t.m_cmd_axis_tvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 
-        // Inputs
-        // Set first 4 bytes of data
-        t.m_mem_axi_rvalid = 1;
-        t.m_mem_axi_rdata = 0xaa00ff55;
-        t.m_mem_axi_rlast = 1;
+        t.s_cmd_axis_tvalid = 0;
 
-        // Process first 4 bytes of data
         clk(t);
 
-        // LOAD //////////////////////////////
+        // LOAD ADDR /////////////////////////
         // Outputs
-        // Read first 4 bytes from master interface 
         REQUIRE(t.m_mem_axi_arvalid == 1);
         REQUIRE(t.m_mem_axi_araddr == 0x100);
-        REQUIRE(t.m_mem_axi_rready == 1);
-        REQUIRE(t.m_cmd_axis_tvalid == 1);
-        REQUIRE(t.m_cmd_axis_tdata == 0xaa00ff55);
+        
+        REQUIRE(t.m_cmd_axis_tvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
-
-        // Set the next 4 bytes of data
-        t.m_mem_axi_rvalid = 1;
-        t.m_mem_axi_rdata = 0xff00ff00;
-        t.m_mem_axi_rlast = 1;
 
         clk(t);
 
-        // LOAD //////////////////////////////
-        // Read first 4 bytes from master interface 
+        // LOAD ADDR /////////////////////////
+        // Outputs
         REQUIRE(t.m_mem_axi_arvalid == 1);
-        REQUIRE(t.m_mem_axi_araddr == 0x104);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_cmd_axis_tvalid == 1);
-        REQUIRE(t.m_cmd_axis_tdata == 0xff00ff00);
+        REQUIRE(t.m_mem_axi_araddr == 0x180);
+        
+        REQUIRE(t.m_cmd_axis_tvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 
-        t.m_mem_axi_rvalid = 0;
+        clk(t);
+
+        // LOAD ADDR /////////////////////////
+        // Outputs
+        REQUIRE(t.m_mem_axi_arvalid == 0);
+        
+        REQUIRE(t.m_mem_axi_rvalid == 0);
+
+        REQUIRE(t.s_cmd_axis_tready == 0);
+
+        REQUIRE(t.m_cmd_axis_tvalid == 0);
+
+        clk(t);
+
+        // Now check the data channel
+        // LOAD DATA /////////////////////////
+        // Initial value
+        REQUIRE(t.m_cmd_axis_tvalid == 0);
+
+        REQUIRE(t.m_mem_axi_rready == 1);
+
+        t.m_mem_axi_rvalid = 1;
+        t.m_mem_axi_rdata = 0;
+
+        clk(t);
+
+        // LOAD DATA /////////////////////////
+        // Output contains the data from all elemets except the last
+        for (uint32_t i = 1; i < BEATS_PER_TRANSFER * 2; i++)
+        {
+            REQUIRE(t.m_mem_axi_rready == 1);
+
+            REQUIRE(t.m_cmd_axis_tvalid == 1);
+            REQUIRE(t.m_cmd_axis_tdata == i - 1);
+            REQUIRE(t.m_cmd_axis_tlast == 0);
+
+            t.m_mem_axi_rdata = i;
+
+            clk(t);
+        }
+
+        // LOAD DATA /////////////////////////
+        // Check the last element
+        REQUIRE(t.m_mem_axi_rready == 0);
+
+        REQUIRE(t.m_cmd_axis_tvalid == 1);
+        REQUIRE(t.m_cmd_axis_tdata == 63);
+        REQUIRE(t.m_cmd_axis_tlast == 1);
 
         clk(t);
 
         // IDLE /////////////////////////////
-        REQUIRE(t.m_mem_axi_rready == 0);
         REQUIRE(t.m_mem_axi_arvalid == 0);
         REQUIRE(t.m_cmd_axis_tvalid == 0);
-        REQUIRE(t.s_cmd_axis_tready == 0);
-
-        clk(t);
-
-        // IDLE /////////////////////////////
-        REQUIRE(t.m_mem_axi_arvalid == 0);
 
         REQUIRE(t.s_cmd_axis_tready == 0);
 

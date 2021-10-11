@@ -82,6 +82,12 @@ module PreCommandParser #(
     localparam BYTES_PER_BEAT = STREAM_WIDTH / 8;
     localparam BYTES_TO_BEATS_SHIFT = $clog2(BYTES_PER_BEAT);
 
+    // Memory transfers have to be 128 bytes aligned.
+    // 128 because: The zynq has 64 bit axi3 ports, which means one beat contains 8 bytes.
+    // Max beats of an axi3 port are 16.
+    // 128 / 8 = 16. So we will be axi3 compliant.
+    localparam BEATS_PER_TRANSFER = 128 / BYTES_PER_BEAT;
+
     localparam OP_POS = 28;
     localparam OP_SIZE = 4;
     localparam OP_IMM_POS = 0;
@@ -117,6 +123,7 @@ module PreCommandParser #(
     reg                         axisDestValid;
     reg                         axisDestReady;
     reg                         axisDestLast;
+    reg                         axiDestLast;
     reg  [STREAM_WIDTH - 1 : 0] axisDestData;
 
     reg                         axisSourceValid;
@@ -125,12 +132,13 @@ module PreCommandParser #(
     reg [STREAM_WIDTH - 1 : 0]  axisSourceData;
 
     reg                         axisSourceLastNext;
+    reg                         axiSourceLastNext;
     reg [STREAM_WIDTH - 1 : 0]  axisSourceDataNext;
 
     initial 
     begin
         m_mem_axi_awid = 0;
-        m_mem_axi_awlen = 0;
+        m_mem_axi_awlen = BEATS_PER_TRANSFER - 1;
         m_mem_axi_awsize = BYTES_TO_BEATS_SHIFT[0 +: 3];
         m_mem_axi_awburst = 1;
         m_mem_axi_awlock = 0;
@@ -139,7 +147,7 @@ module PreCommandParser #(
         m_mem_axi_awvalid = 0;
 
         m_mem_axi_arid = 0;
-        m_mem_axi_arlen = 0;
+        m_mem_axi_arlen = BEATS_PER_TRANSFER - 1;
         m_mem_axi_arsize = BYTES_TO_BEATS_SHIFT[0 +: 3];
         m_mem_axi_arburst = 1;
         m_mem_axi_arlock = 0;
@@ -164,7 +172,9 @@ module PreCommandParser #(
                             : (mux == LOAD) ? axisDestLast 
                             : 0;
 
-    assign m_mem_axi_wlast  = 1;
+    assign m_mem_axi_wlast  = (mux == STORE) ? axiDestLast 
+                            : (mux == MEMSET) ? axiDestLast 
+                            : 0;
                             
     assign m_cmd_axis_tdata = (mux == STREAM) ? axisDestData 
                             : (mux == LOAD) ? axisDestData 
@@ -217,6 +227,7 @@ module PreCommandParser #(
         begin
             axisDestValid <= 0;
             axisDestLast <= 0;
+            axiDestLast <= 0;
             axisSourceReady <= 0;
 
             m_mem_axi_arvalid <= 0;
@@ -236,6 +247,7 @@ module PreCommandParser #(
             IDLE:
             begin
                 axisDestLast <= 0;
+                axiDestLast <= 0;
                 axisDestValid <= 0;
 
                 axisSourceReady <= 1;
@@ -283,7 +295,7 @@ module PreCommandParser #(
                 begin
                     enableWriteChannel <= 1;
                     addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                     enableAddressChannel <= 1;
                     mux <= STORE;
                     state <= STREAM;
@@ -295,7 +307,7 @@ module PreCommandParser #(
                 begin
                     enableWriteChannel <= 0;
                     addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                     enableAddressChannel <= 1;
                     mux <= LOAD;
                     state <= STREAM;
@@ -307,7 +319,7 @@ module PreCommandParser #(
                 begin
                     enableWriteChannel <= 1;
                     addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                     state <= MEMSET_VAL;
                 end
             end
@@ -331,6 +343,7 @@ module PreCommandParser #(
                     axisDestValid <= axisSourceValid;
                     axisDestData <= axisSourceData;
                     axisDestLast <= counter == 1;
+                    axiDestLast <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1;
 
                     // Enable the data source as long as we have to receive data.
                     // If the counter is 1 (which means last beat) but we didn't got valid data, keep the source active.
@@ -358,6 +371,7 @@ module PreCommandParser #(
                         axisSourceReady <= 0;
 
                         axisSourceLastNext <= counter == 1;
+                        axiSourceLastNext <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1;
                         axisSourceDataNext <= axisSourceData;
 
                         counter <= counter - 1;
@@ -395,6 +409,7 @@ module PreCommandParser #(
                     // Output the next data
                     axisDestData <= axisSourceDataNext;
                     axisDestLast <= axisSourceLastNext;
+                    axiDestLast <= axiSourceLastNext;
                     
                     // Reenable the stream
                     state <= STREAM;
@@ -412,8 +427,8 @@ module PreCommandParser #(
                 begin
                     if (m_mem_axi_awready && m_mem_axi_awvalid) 
                     begin
-                        addr <= addr + BYTES_PER_BEAT;
-                        m_mem_axi_awaddr <= addr + BYTES_PER_BEAT;
+                        addr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        m_mem_axi_awaddr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                     end
                     else 
                     begin
@@ -434,8 +449,8 @@ module PreCommandParser #(
                 begin
                     if (m_mem_axi_arready && m_mem_axi_arvalid) 
                     begin
-                        addr <= addr + BYTES_PER_BEAT;
-                        m_mem_axi_araddr <= addr + BYTES_PER_BEAT;
+                        addr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        m_mem_axi_araddr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                     end
                     else 
                     begin
