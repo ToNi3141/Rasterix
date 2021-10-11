@@ -112,6 +112,7 @@ module PreCommandParser #(
     reg [ADDR_WIDTH - 1 : 0]    addr;
     reg                         enableWriteChannel;
     reg [ADDR_WIDTH - 1 : 0]    addrLast;
+    reg                         enableAddressChannel;
 
     reg                         m_axis_tvalid = 0;
     reg                         m_axis_tready;
@@ -123,8 +124,8 @@ module PreCommandParser #(
     reg                         s_axis_tlast;
     reg [STREAM_WIDTH - 1 : 0]  s_axis_tdata;
 
-    reg                         m_axis_tlast_last;
-    reg [STREAM_WIDTH - 1 : 0]  m_axis_tdata_last;
+    reg                         axisLastNext;
+    reg [STREAM_WIDTH - 1 : 0]  axisDataNext;
 
     initial 
     begin
@@ -224,6 +225,8 @@ module PreCommandParser #(
             addrLast <= 0;
             addr <= 0;
 
+            enableAddressChannel <= 0;
+
             state <= IDLE;
             mux <= IDLE;
         end
@@ -282,6 +285,7 @@ module PreCommandParser #(
                     enableWriteChannel <= 1;
                     addr <= s_axis_tdata[0 +: ADDR_WIDTH];
                     addrLast <= s_axis_tdata[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    enableAddressChannel <= 1;
                     mux <= STORE;
                     state <= STREAM;
                 end
@@ -293,6 +297,7 @@ module PreCommandParser #(
                     enableWriteChannel <= 0;
                     addr <= s_axis_tdata[0 +: ADDR_WIDTH];
                     addrLast <= s_axis_tdata[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - BYTES_PER_BEAT;
+                    enableAddressChannel <= 1;
                     mux <= LOAD;
                     state <= STREAM;
                 end
@@ -312,6 +317,7 @@ module PreCommandParser #(
                 if (s_axis_tvalid)
                 begin
                     memsetVal <= s_axis_tdata[0 +: 32];
+                    enableAddressChannel <= 1;
                     mux <= MEMSET;
                     state <= STREAM;
                 end
@@ -327,6 +333,8 @@ module PreCommandParser #(
                     m_axis_tdata <= s_axis_tdata;
                     m_axis_tlast <= counter == 1;
 
+                    // Enable the data source as long as we have to receive data.
+                    // If the counter is 1 (which means last beat) but we didn't got valid data, keep the source active.
                     if ((counter != 1) || !s_axis_tvalid)
                     begin
                         s_axis_tready <= 1;
@@ -344,11 +352,18 @@ module PreCommandParser #(
                 end
                 else
                 begin
+                    // Wait till new data are received.
+                    // If our destination was not ready, we have to save the data and to disable our data source
                     if ((counter > 0) && !m_axis_tready && s_axis_tvalid)
                     begin
                         s_axis_tready <= 0;
-                        m_axis_tlast_last <= counter == 1;
-                        m_axis_tdata_last <= s_axis_tdata;
+
+                        axisLastNext <= counter == 1;
+                        axisDataNext <= s_axis_tdata;
+
+                        counter <= counter - 1;
+
+                        // Pause stream till our destination is ready
                         state <= STREAM_PAUSED;
                     end
                 end
@@ -360,27 +375,29 @@ module PreCommandParser #(
                     m_axis_tvalid <= 0;
                     s_axis_tready <= 0;
                     m_axis_tlast <= 0;
-                end
 
-                if ((counter == 0) && m_axis_tready && !m_mem_axi_awvalid && !m_mem_axi_arvalid)
-                begin
-                    state <= IDLE;
+                    // Synchronize with the address channel
+                    if (!enableAddressChannel)
+                    begin
+                        state <= IDLE;
+                    end
                 end
             end
             STREAM_PAUSED:
             begin
                 if (m_axis_tready)
                 begin
-                    
-                    if (counter != 1)
+                    // Check if the counter is greater than zero, if so, we still have to fetch data
+                    if (counter > 0)
                     begin
                         s_axis_tready <= 1;
                     end
+
+                    // Output the next data
+                    m_axis_tdata <= axisDataNext;
+                    m_axis_tlast <= axisLastNext;
                     
-                    // Skid buffer
-                    m_axis_tdata <= m_axis_tdata_last;
-                    m_axis_tlast <= m_axis_tlast_last;
-                    counter <= counter - 1;
+                    // Reenable the stream
                     state <= STREAM;
                 end
             end
@@ -388,48 +405,52 @@ module PreCommandParser #(
         end
 
         // Optional addr channel
-        if (enableWriteChannel)
+        if (enableAddressChannel)
         begin
-            if (addr != addrLast)
+            if (enableWriteChannel)
             begin
-                if (m_mem_axi_awready && m_mem_axi_awvalid) 
+                if (addr != addrLast)
                 begin
-                    addr <= addr + BYTES_PER_BEAT;
-                    m_mem_axi_awaddr <= addr + BYTES_PER_BEAT;
+                    if (m_mem_axi_awready && m_mem_axi_awvalid) 
+                    begin
+                        addr <= addr + BYTES_PER_BEAT;
+                        m_mem_axi_awaddr <= addr + BYTES_PER_BEAT;
+                    end
+                    else 
+                    begin
+                        m_mem_axi_awaddr <= addr;
+                    end
+                    m_mem_axi_awvalid <= 1;
                 end
-                else 
-                begin
-                    m_mem_axi_awaddr <= addr;
-                end
-                m_mem_axi_awvalid <= 1;
-            end
 
-            if (m_mem_axi_awready && (addr == addrLast))
-            begin
-                m_mem_axi_awvalid <= 0;
-            end
-        end
-        else 
-        begin
-            if (addr != addrLast)
-            begin
-                if (m_mem_axi_arready && m_mem_axi_arvalid) 
+                if (m_mem_axi_awready && (addr == addrLast))
                 begin
-                    addr <= addr + BYTES_PER_BEAT;
-                    m_mem_axi_araddr <= addr + BYTES_PER_BEAT;
+                    m_mem_axi_awvalid <= 0;
+                    enableAddressChannel <= 0;
                 end
-                else 
-                begin
-                    m_mem_axi_araddr <= addr;
-                end
-                m_mem_axi_arvalid <= 1;
             end
+            else 
+            begin
+                if (addr != addrLast)
+                begin
+                    if (m_mem_axi_arready && m_mem_axi_arvalid) 
+                    begin
+                        addr <= addr + BYTES_PER_BEAT;
+                        m_mem_axi_araddr <= addr + BYTES_PER_BEAT;
+                    end
+                    else 
+                    begin
+                        m_mem_axi_araddr <= addr;
+                    end
+                    m_mem_axi_arvalid <= 1;
+                end
 
-            if (m_mem_axi_arready && (addr == addrLast))
-            begin
-                m_mem_axi_arvalid <= 0;
+                if (m_mem_axi_arready && (addr == addrLast))
+                begin
+                    m_mem_axi_arvalid <= 0;
+                    enableAddressChannel <= 0;
+                end
             end
         end
     end
-
 endmodule
