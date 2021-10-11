@@ -20,12 +20,20 @@ module DisplayControllerSpi #(
     parameter PIXEL = (128*128),
     parameter CLOCK_DIV = 2 // Divides clk to slowdown sck. 0 means nohting, 1 means half the clock, 2 only one quarter and so on.
 ) (
-    input   wire        reset,
-    input   wire        clk,
+    input  wire         resetn,
+    input  wire         clk,
 
     // Serial out
-    output  reg         mosi,
-    output  wire        sck,
+    output wire         mosi,
+    output wire         sck,
+    output wire         cs,
+    output wire         dc,
+    output wire         tft_reset,
+    input  wire         tft_cs,
+    input  wire         tft_dc,
+    input  wire         tft_sck,
+    input  wire         tft_mosi,
+    input  wire         tft_bypass, // Enables the TFT bypass (tft_cs, tft_dc, tft_sck and tft_mosi signals are routed through mosi, sck, dc)
 
     // AXI Stream slave interface
     input  wire         s_axis_tvalid,
@@ -34,8 +42,7 @@ module DisplayControllerSpi #(
     input  wire [15:0]  s_axis_tdata,
 
     // External enable or disable of the serializer
-    input   wire        startTransfer,
-    output  reg         transferRunning
+    output reg          transferRunning
     );
 `ifdef UP5K
 `define RAM_MODULE SinglePortRam32k
@@ -70,6 +77,21 @@ module DisplayControllerSpi #(
     localparam WAIT_FOR_DATA = 1;
     localparam SERIALIZE_DATA = 2;
 
+    ///////////////////////////
+    // SPI Bypass
+    ///////////////////////////
+    reg display_mux_reg;
+    always @(posedge clk)
+    begin
+        display_mux_reg <= tft_bypass;
+    end
+    assign mosi = (display_mux_reg) ? tft_mosi : regMosi;
+    assign sck = (display_mux_reg) ? tft_sck : sckDiv;
+    assign cs = (display_mux_reg) ? tft_cs : 1'b0;
+    assign dc = (display_mux_reg) ? tft_dc : 1'b1;
+    assign tft_reset = resetn;
+    wire startTransfer = !display_mux_reg;
+
     reg [3:0] stateBufferReq;
     reg [3:0] stateAxis;
 
@@ -85,6 +107,8 @@ module DisplayControllerSpi #(
     reg regSck;
     reg [CLOCK_DIV - 1 : 0] serClockDiv;
     reg enableSck;
+    reg regMosi;
+    wire sckDiv;
 
     wire [15:0]             memOut;
     wire [15:0]             memIn = s_axis_tdata;
@@ -93,7 +117,7 @@ module DisplayControllerSpi #(
 
     `RAM_MODULE mem (
         .clk(clk),
-        .reset(reset),
+        .reset(!resetn),
 
         .writeData(memIn),
         .writeCs(1),
@@ -112,16 +136,16 @@ module DisplayControllerSpi #(
 
     if (CLOCK_DIV == 0)
     begin
-        assign sck = (enableSck) ? !clk : 0;
+        assign sckDiv = (enableSck) ? !clk : 0;
     end
     else
     begin
-        assign sck = regSck;
+        assign sckDiv = regSck;
     end
     
     always @(posedge clk)
     begin
-        if (reset)
+        if (resetn == 0)
         begin
             serializerCacheEmpty <= 0;
             serializerCacheWorking <= 0;
@@ -129,7 +153,7 @@ module DisplayControllerSpi #(
             stateSerializer <= WAIT_FOR_START;
             stateAxis <= AXIS_WAIT_FOR_START;
             pixelCount <= PIXEL;
-            mosi <= 0;
+            regMosi <= 0;
             enableSck <= 0;
             regSck <= 0;
             if (CLOCK_DIV != 0) 
@@ -227,7 +251,7 @@ module DisplayControllerSpi #(
                             enableSck <= 1;
                             serializerCacheWorking <= serializerCache;
                             serCount <= 1; // It is one because it is pushing now also one bit out
-                            mosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
+                            regMosi <= serializerCache[SERIALIZER_WORDWIDH - 1];
                             
                             serializerCacheEmpty <= 1; // Start the next request
                             stateSerializer <= SERIALIZE_DATA;
@@ -238,7 +262,7 @@ module DisplayControllerSpi #(
                 begin
                     if (CLOCK_DIV == 0)
                     begin
-                        mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
+                        regMosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                         serCount <= serCount + 1;
 
                         if (serCount == SERIALIZER_WORDWIDH)
@@ -252,7 +276,7 @@ module DisplayControllerSpi #(
                         if (serClockDiv == 0)
                         begin
                             regSck <= 0;
-                            mosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
+                            regMosi <= serializerCacheWorking[(SERIALIZER_WORDWIDH - 1) - serCount];
                             serCount <= serCount + 1;
                         end
                         else if (serClockDiv[CLOCK_DIV - 1])

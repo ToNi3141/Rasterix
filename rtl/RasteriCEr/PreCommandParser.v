@@ -318,51 +318,6 @@ module PreCommandParser #(
             end
             STREAM:
             begin
-                // Optional addr channel
-                if (enableWriteChannel)
-                begin
-                    if (addr != addrLast)
-                    begin
-                        if (m_mem_axi_awready && m_mem_axi_awvalid) 
-                        begin
-                            addr <= addr + BYTES_PER_BEAT;
-                            m_mem_axi_awaddr <= addr + BYTES_PER_BEAT;
-                        end
-                        else 
-                        begin
-                            m_mem_axi_awaddr <= addr;
-                        end
-                        m_mem_axi_awvalid <= 1;
-                    end
-
-                    if (m_mem_axi_awready && (addr == addrLast))
-                    begin
-                        m_mem_axi_awvalid <= 0;
-                    end
-                end
-                else 
-                begin
-                    if (addr != addrLast)
-                    begin
-                        if (m_mem_axi_arready && m_mem_axi_arvalid) 
-                        begin
-                            addr <= addr + BYTES_PER_BEAT;
-                            m_mem_axi_araddr <= addr + BYTES_PER_BEAT;
-                        end
-                        else 
-                        begin
-                            m_mem_axi_araddr <= addr;
-                        end
-                        m_mem_axi_arvalid <= 1;
-                    end
-
-                    if (m_mem_axi_arready && (addr == addrLast))
-                    begin
-                        m_mem_axi_arvalid <= 0;
-                    end
-                end
-
-
                 // Write the next beat when the destination is ready
                 // if the destination is not ready, preload one entry till the output is valid
                 if ((m_axis_tready || !m_axis_tvalid) && (counter != 0))
@@ -430,6 +385,50 @@ module PreCommandParser #(
                 end
             end
             endcase 
+        end
+
+        // Optional addr channel
+        if (enableWriteChannel)
+        begin
+            if (addr != addrLast)
+            begin
+                if (m_mem_axi_awready && m_mem_axi_awvalid) 
+                begin
+                    addr <= addr + BYTES_PER_BEAT;
+                    m_mem_axi_awaddr <= addr + BYTES_PER_BEAT;
+                end
+                else 
+                begin
+                    m_mem_axi_awaddr <= addr;
+                end
+                m_mem_axi_awvalid <= 1;
+            end
+
+            if (m_mem_axi_awready && (addr == addrLast))
+            begin
+                m_mem_axi_awvalid <= 0;
+            end
+        end
+        else 
+        begin
+            if (addr != addrLast)
+            begin
+                if (m_mem_axi_arready && m_mem_axi_arvalid) 
+                begin
+                    addr <= addr + BYTES_PER_BEAT;
+                    m_mem_axi_araddr <= addr + BYTES_PER_BEAT;
+                end
+                else 
+                begin
+                    m_mem_axi_araddr <= addr;
+                end
+                m_mem_axi_arvalid <= 1;
+            end
+
+            if (m_mem_axi_arready && (addr == addrLast))
+            begin
+                m_mem_axi_arvalid <= 0;
+            end
         end
     end
 

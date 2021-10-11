@@ -56,23 +56,7 @@ module top
 
     wire clk;
     reg resetn;
-
-    wire display_mosi_out;
-    wire display_sck_out;
-    reg display_mux_reg;
-
-    ///////////////////////////
-    // SPI Bypass
-    ///////////////////////////
-    always @(posedge clk)
-    begin
-        display_mux_reg <= serial_tft_mux;
-    end
-    assign display_mosi = (display_mux_reg) ? serial_mosi : display_mosi_out;
-    assign display_sck = (display_mux_reg) ? serial_sck : display_sck_out;
-    assign display_cs = (display_mux_reg) ? tft_cs : 1'b0;
-    assign display_dc = (display_mux_reg) ? tft_dc : 1'b1;
-    assign display_reset = resetn;
+    
 
     ///////////////////////////
     // Clock Instantiation
@@ -247,18 +231,25 @@ module top
 
 
     DisplayControllerSpi lcd(
-        .reset(!resetn),
+        .resetn(resetn),
         .clk(clk),
 
-        .mosi(display_mosi_out),
-        .sck(display_sck_out),
+        .mosi(display_mosi),
+        .sck(display_sck),
+        .cs(display_cs),
+        .dc(display_dc),
+        .tft_reset(display_reset),
+        .tft_cs(tft_cs),
+        .tft_dc(tft_dc),
+        .tft_sck(serial_sck),
+        .tft_mosi(serial_mosi),
+        .mux(serial_tft_mux),
 
         .s_axis_tvalid(m_framebuffer_axis_tvalid),
         .s_axis_tready(m_framebuffer_axis_tready),
         .s_axis_tlast(m_framebuffer_axis_tlast),
         .s_axis_tdata(m_framebuffer_axis_tdata),
 
-        .startTransfer(!display_mux_reg),
         .transferRunning(transferRunning)
     );
     defparam lcd.PIXEL = X_RESOLUTION * Y_LINE_RESOLUTION;
