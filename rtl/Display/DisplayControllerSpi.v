@@ -156,6 +156,7 @@ module DisplayControllerSpi #(
             regMosi <= 0;
             enableSck <= 0;
             regSck <= 0;
+            s_axis_tready <= 0; 
             if (CLOCK_DIV != 0) 
             begin
                 serClockDiv <= 0;    
@@ -172,7 +173,6 @@ module DisplayControllerSpi #(
             case (stateAxis)
                 AXIS_WAIT_FOR_START:
                 begin
-                    s_axis_tready <= 0; 
                     if (startTransfer && bufferClean)
                     begin
                         s_axis_tready <= 1;
@@ -190,6 +190,7 @@ module DisplayControllerSpi #(
                         begin
                             pixelCount <= 0; // Reset pixelCount to signal, that the serializer can continue with serializing
                             memWr <= 0;
+                            s_axis_tready <= 0;
                             stateAxis <= AXIS_WAIT_FOR_START;
                         end
                     end

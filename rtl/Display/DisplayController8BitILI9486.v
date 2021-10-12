@@ -18,7 +18,12 @@
 `timescale 1ns / 1ps
 module DisplayController8BitILI9486 #(
     parameter CLOCK_DIV = 0, // Divides clk to slowdown the wr cycles. 1 means wr is "clocked" with clk / 2, 2 equals clk / 3 ...
-    parameter SKIP_INIT = 0 // Skips the initialization sequence and directly starts serializting from the axi stream interface
+    parameter SKIP_INIT = 0, // Skips the initialization sequence and directly starts serializting from the axi stream interface
+    
+    // Converts an RGB(A) stream to the display format
+    // If STREAM_COLORMODE_RGBA == 1, then the expetect format is: | 4 bit R | 4 bit G | 4 bit B | 4 bit A |
+    // If STREAM_COLORMODE_RGBA == 0, then the expetect format is: | 5 bit R | 6 bit G | 5 bit B |
+    parameter STREAM_COLORMODE_RGBA = 0
 ) (
     input  wire         resetn,
     input  wire         aclk,
@@ -38,6 +43,12 @@ module DisplayController8BitILI9486 #(
     input  wire [15 : 0] s_axis_tdata
 );
     localparam INIT_MEM_SIZE = 102;
+
+    localparam COLOR_R_POS = 12;
+    localparam COLOR_G_POS = 8;
+    localparam COLOR_B_POS = 4;
+    localparam COLOR_A_POS = 0;
+    localparam COLOR_SUB_PIXEL_WIDTH = 4;
 
     assign rst = resetn;
     assign rd = 1;
@@ -191,6 +202,20 @@ module DisplayController8BitILI9486 #(
                 if (s_axis_tvalid)
                 begin
                     pixel <= s_axis_tdata;
+
+                    if (STREAM_COLORMODE_RGBA)
+                    begin
+                        pixel <= {s_axis_tdata[COLOR_R_POS +: COLOR_SUB_PIXEL_WIDTH], 1'b0, 
+                                  s_axis_tdata[COLOR_G_POS +: COLOR_SUB_PIXEL_WIDTH], 2'b00, 
+                                  s_axis_tdata[COLOR_B_POS +: COLOR_SUB_PIXEL_WIDTH], 1'b0};
+                    end
+                    else
+                    begin
+                        pixel <= {s_axis_tdata[0 +: 5], 
+                                  s_axis_tdata[5 +: 6], 
+                                  s_axis_tdata[11 +: 5]};
+                    end
+
                     pixelValid <= 1;
                 end
             end
@@ -230,7 +255,7 @@ module DisplayController8BitILI9486 #(
                         begin
                             dc <= 1;
                             wr <= 0;
-                            data <= pixel[0 +: 8];
+                            data <= pixel[8 +: 8];
                         end
                     end
                     else 
@@ -244,7 +269,7 @@ module DisplayController8BitILI9486 #(
                     if (wr)
                     begin
                         wr <= 0;
-                        data <= pixel[8 +: 8];
+                        data <= pixel[0 +: 8];
                     end
                     else 
                     begin
