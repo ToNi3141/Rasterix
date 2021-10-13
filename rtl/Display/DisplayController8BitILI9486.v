@@ -23,7 +23,9 @@ module DisplayController8BitILI9486 #(
     // Converts an RGB(A) stream to the display format
     // If STREAM_COLORMODE_RGBA == 1, then the expetect format is: | 4 bit R | 4 bit G | 4 bit B | 4 bit A |
     // If STREAM_COLORMODE_RGBA == 0, then the expetect format is: | 5 bit R | 6 bit G | 5 bit B |
-    parameter STREAM_COLORMODE_RGBA = 0
+    parameter STREAM_COLORMODE_RGBA = 0,
+
+    parameter LANDSCAPE_CONFIG = 0
 ) (
     input  wire         resetn,
     input  wire         aclk,
@@ -141,22 +143,46 @@ module DisplayController8BitILI9486 #(
         initMem[ 82] = {1'b0, 8'hF8};   
         initMem[ 83] = {1'b1, 8'h21};   
         initMem[ 84] = {1'b1, 8'h04};
-        initMem[ 85] = {1'b0, 8'h36};   
-        initMem[ 86] = {1'b1, 8'h48};   
+        if (LANDSCAPE_CONFIG)
+        begin
+            initMem[ 85] = {1'b0, 8'h36};  
+            initMem[ 86] = {1'b1, 8'hB8}; // Vertical
+        end 
+        else
+        begin
+            initMem[ 85] = {1'b0, 8'h36};  
+            initMem[ 86] = {1'b1, 8'h98}; // Horizontal
+        end
         initMem[ 87] = {1'b0, 8'h3A};   
         initMem[ 88] = {1'b1, 8'h55}; 
         initMem[ 89] = {1'b0, 8'h11}; //Exit Sleep 			
         initMem[ 90] = {1'b0, 8'h29}; //Display on 
-        initMem[ 91] = {1'b0, 8'h2a};
-        initMem[ 92] = {1'b1, 8'h00}; // 0
-        initMem[ 93] = {1'b1, 8'h00};
-        initMem[ 94] = {1'b1, 8'h01}; // 319
-        initMem[ 95] = {1'b1, 8'h3F};
-        initMem[ 96] = {1'b0, 8'h2b};
-        initMem[ 97] = {1'b1, 8'h00}; // 0
-        initMem[ 98] = {1'b1, 8'h00};
-        initMem[ 99] = {1'b1, 8'h01}; // 479
-        initMem[100] = {1'b1, 8'hDF};
+        if (LANDSCAPE_CONFIG)
+        begin
+            initMem[ 91] = {1'b0, 8'h2a};
+            initMem[ 92] = {1'b1, 8'h00}; // 0
+            initMem[ 93] = {1'b1, 8'h00};
+            initMem[ 94] = {1'b1, 8'h01}; // 479
+            initMem[ 95] = {1'b1, 8'hDF};
+            initMem[ 96] = {1'b0, 8'h2b};
+            initMem[ 97] = {1'b1, 8'h00}; // 0
+            initMem[ 98] = {1'b1, 8'h00};
+            initMem[ 99] = {1'b1, 8'h01}; // 319
+            initMem[100] = {1'b1, 8'h3F};
+
+        end
+        else
+        begin
+            initMem[ 91] = {1'b0, 8'h2a};
+            initMem[ 92] = {1'b1, 8'h00}; // 0
+            initMem[ 93] = {1'b1, 8'h00};
+            initMem[ 94] = {1'b1, 8'h01}; // 319
+            initMem[ 95] = {1'b1, 8'h3F};
+            initMem[ 96] = {1'b0, 8'h2b};
+            initMem[ 97] = {1'b1, 8'h00}; // 0
+            initMem[ 98] = {1'b1, 8'h00};
+            initMem[ 99] = {1'b1, 8'h01}; // 479
+        end
         initMem[101] = {1'b0, 8'h2c};   
     end
     reg [$clog2(INIT_MEM_SIZE) - 1 : 0] counter;
