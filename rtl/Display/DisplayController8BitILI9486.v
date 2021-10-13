@@ -17,7 +17,7 @@
 
 `timescale 1ns / 1ps
 module DisplayController8BitILI9486 #(
-    parameter CLOCK_DIV = 0, // Divides clk to slowdown the wr cycles. 1 means wr is "clocked" with clk / 2, 2 equals clk / 3 ...
+    parameter CLOCK_DIV = 0, // Divides clk to slowdown the wr cycles. 0 means wr is "clocked" with clk / 2, 1 equals clk / 4, 2 equals clk / 5 ...
     parameter SKIP_INIT = 0, // Skips the initialization sequence and directly starts serializting from the axi stream interface
     
     // Converts an RGB(A) stream to the display format
@@ -40,7 +40,7 @@ module DisplayController8BitILI9486 #(
 
     // AXI Stream slave interface
     input  wire         s_axis_tvalid,
-    output reg          s_axis_tready,
+    output wire         s_axis_tready,
     input  wire         s_axis_tlast,
     input  wire [15 : 0] s_axis_tdata
 );
@@ -54,7 +54,7 @@ module DisplayController8BitILI9486 #(
 
     assign rst = resetn;
     assign rd = 1;
-    reg [8 : 0] initMem [0 : INIT_MEM_SIZE - 1]; // dc[1], dc[8]
+    reg [8 : 0] initMem [0 : INIT_MEM_SIZE - 1]; // dc[8], data[7:0]
     initial 
     begin
         // ILI9468 initialization sequence
@@ -193,6 +193,8 @@ module DisplayController8BitILI9486 #(
 
     reg [5 : 0]     clockDiv;
 
+    assign s_axis_tready = !pixelValid;
+
     localparam INIT = 0;
     localparam STREAM0 = 1;
     localparam STREAM1 = 2;
@@ -205,7 +207,6 @@ module DisplayController8BitILI9486 #(
             wr <= 1;
             cs <= 1;
             dc <= 1;
-            s_axis_tready <= 0;
             
             if (SKIP_INIT)
             begin
@@ -224,11 +225,8 @@ module DisplayController8BitILI9486 #(
 
             if (!pixelValid)
             begin
-                s_axis_tready <= 1;
                 if (s_axis_tvalid)
                 begin
-                    pixel <= s_axis_tdata;
-
                     if (STREAM_COLORMODE_RGBA)
                     begin
                         pixel <= {s_axis_tdata[COLOR_R_POS +: COLOR_SUB_PIXEL_WIDTH], 1'b0, 
@@ -244,10 +242,6 @@ module DisplayController8BitILI9486 #(
 
                     pixelValid <= 1;
                 end
-            end
-            else 
-            begin
-                s_axis_tready <= 0;    
             end
 
             if ((clockDiv == CLOCK_DIV) || (CLOCK_DIV == 0))
