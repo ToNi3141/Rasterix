@@ -61,7 +61,6 @@ module FrameBuffer
     localparam STROBES_PER_BEAT = STREAM_WIDTH / SUB_PIXEL_WIDTH;
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
     localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAME_SIZE / PIXEL_PER_BEAT;
-    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE = FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
     localparam TILECONTROL_WAIT_FOR_COMMAND = 0;
     localparam TILECONTROL_MEMCPY = 1;
@@ -188,19 +187,15 @@ module FrameBuffer
             begin
                 if (m_axis_tready)
                 begin
-                    // Copy the data
                     counter <= counterNext;
                 
-                    // Note that we are loading always the next counter, that means, that
-                    // the counter is virtually one ahead. Because of that reason, we substracting
-                    // one from the FRAMEBUFFER_FRAME_SIZE_IN_BEATS
-                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH] + 1))
+                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH] - 1))
                     begin
                         m_axis_tlast <= 1;
                     end
 
                     // Check if we reached the end of the copy process
-                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH] + 2))
+                    if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
                     begin
                         m_axis_tvalid <= 0; 
                         m_axis_tlast <= 0;
@@ -221,7 +216,7 @@ module FrameBuffer
             end
             TILECONTROL_MEMSET:
             begin
-                if (counter == FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH])
+                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
                 begin
                     fbWr <= 0;
                     stateTileControl <= TILECONTROL_WAIT_FOR_COMMAND;
