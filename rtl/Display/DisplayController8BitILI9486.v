@@ -16,6 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 `timescale 1ns / 1ps
+
+// This module initializes and feeds an ultra cheap ILI9486 display with a resolution of 480x320x16. 
+// It uses the 8 bit 8080 interface of the display. As addition, you can configure the landscape or 
+// portait mode of the display. It has an 16 bit axi stream slave interface which is used as data 
+// source for the display.
 module DisplayController8BitILI9486 #(
     parameter CLOCK_DIV = 0, // Divides clk to slowdown the wr cycles. 0 means wr is "clocked" with clk / 2, 1 equals clk / 4, 2 equals clk / 5 ...
     parameter SKIP_INIT = 0, // Skips the initialization sequence and directly starts serializting from the axi stream interface
@@ -30,7 +35,7 @@ module DisplayController8BitILI9486 #(
     input  wire         resetn,
     input  wire         aclk,
 
-    // Serial out
+    // Data out
     output reg  [7 : 0] data,
     output wire         rd, 
     output reg          wr,
@@ -169,7 +174,6 @@ module DisplayController8BitILI9486 #(
             initMem[ 98] = {1'b1, 8'h00};
             initMem[ 99] = {1'b1, 8'h01}; // 319
             initMem[100] = {1'b1, 8'h3F};
-
         end
         else
         begin
@@ -182,6 +186,7 @@ module DisplayController8BitILI9486 #(
             initMem[ 97] = {1'b1, 8'h00}; // 0
             initMem[ 98] = {1'b1, 8'h00};
             initMem[ 99] = {1'b1, 8'h01}; // 479
+            initMem[100] = {1'b1, 8'hDF};
         end
         initMem[101] = {1'b0, 8'h2c};   
     end
@@ -222,7 +227,6 @@ module DisplayController8BitILI9486 #(
         else 
         begin
             cs <= 0;
-
             if (!pixelValid)
             begin
                 if (s_axis_tvalid)
@@ -235,11 +239,8 @@ module DisplayController8BitILI9486 #(
                     end
                     else
                     begin
-                        pixel <= {s_axis_tdata[0 +: 5], 
-                                  s_axis_tdata[5 +: 6], 
-                                  s_axis_tdata[11 +: 5]};
+                        pixel <= s_axis_tdata;
                     end
-
                     pixelValid <= 1;
                 end
             end

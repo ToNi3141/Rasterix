@@ -53,7 +53,7 @@ void reset(VDisplayController8BitILI9486& t)
     REQUIRE(t.rst == 1);
 }
 
-void initTest(VDisplayController8BitILI9486& t, const bool dc, const uint8_t data) 
+void initTest(VDisplayController8BitILI9486& t, const bool dc, const uint8_t data, bool last = false) 
 {
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -62,7 +62,7 @@ void initTest(VDisplayController8BitILI9486& t, const bool dc, const uint8_t dat
     REQUIRE(t.dc == dc);
     REQUIRE(t.data == data);
     clk(t);
-    REQUIRE(t.s_axis_tready == 0);
+    REQUIRE(t.s_axis_tready == last);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
@@ -168,7 +168,7 @@ TEST_CASE("Stream data", "[Display]")
     initTest(t, true, 0x21);   
     initTest(t, true, 0x04);
     initTest(t, false, 0x36);   
-    initTest(t, true, 0x48);   
+    initTest(t, true, 0x98);   
     initTest(t, false, 0x3A);   
     initTest(t, true, 0x55); 
     initTest(t, false, 0x11); //Exit Sleep 				
@@ -183,10 +183,10 @@ TEST_CASE("Stream data", "[Display]")
     initTest(t, true, 0x00);
     initTest(t, true, 0x01); // 479
     initTest(t, true, 0xDF);
-    initTest(t, false, 0x2c);  
+    initTest(t, false, 0x2c, true);  
 
     // stream clk 0 fetch
-    REQUIRE(t.s_axis_tready == 1);
+    REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
@@ -201,7 +201,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 0);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0xaa);
+    REQUIRE(t.data == 0xff);
     clk(t);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 0);
@@ -209,7 +209,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0xaa);
+    REQUIRE(t.data == 0xff);
     clk(t);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 0);
@@ -217,21 +217,21 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 0);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0xff);
+    REQUIRE(t.data == 0xaa);
     clk(t);
     // stream clk 0 stream
-    REQUIRE(t.s_axis_tready == 0);
+    REQUIRE(t.s_axis_tready == 1);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0xff);
+    REQUIRE(t.data == 0xaa);
     clk(t);
 
 
 
     // stream clk 1 fetch
-    REQUIRE(t.s_axis_tready == 1);
+    REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
@@ -244,7 +244,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 0);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0x0f);
+    REQUIRE(t.data == 0x55);
     clk(t);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
@@ -252,7 +252,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0x0f);
+    REQUIRE(t.data == 0x55);
     clk(t);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
@@ -260,15 +260,15 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.wr == 0);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0x55);
+    REQUIRE(t.data == 0x0f);
     clk(t);
     // stream clk 1 stream
-    REQUIRE(t.s_axis_tready == 0);
+    REQUIRE(t.s_axis_tready == 1);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
-    REQUIRE(t.data == 0x55);
+    REQUIRE(t.data == 0x0f);
     clk(t);
 
     // Final model cleanup
