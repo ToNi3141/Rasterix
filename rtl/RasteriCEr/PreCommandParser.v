@@ -111,13 +111,14 @@ module PreCommandParser #(
     localparam STREAM = 9;
     localparam STREAM_PAUSED = 10;
 
-    reg [ 5 : 0]                state;
-    reg [ 5 : 0]                mux;
-    reg [OP_IMM_SIZE - 1 : 0]   counter;
-    reg [31 : 0]                memsetVal;
-    reg [ADDR_WIDTH - 1 : 0]    addr;
+    reg  [ 5 : 0]               state;
+    reg  [ 5 : 0]               mux;
+    reg  [OP_IMM_SIZE - 1 : 0]  counter;
+    reg  [OP_IMM_SIZE - 1 : 0]  counterConverted;
+    reg  [31 : 0]               memsetVal;
+    reg  [ADDR_WIDTH - 1 : 0]   addr;
     reg                         enableWriteChannel;
-    reg [ADDR_WIDTH - 1 : 0]    addrLast;
+    reg  [ADDR_WIDTH - 1 : 0]   addrLast;
     reg                         enableAddressChannel;
 
     reg                         axisDestValid;
@@ -129,11 +130,11 @@ module PreCommandParser #(
     reg                         axisSourceValid;
     reg                         axisSourceReady;
     reg                         axisSourceLast;
-    reg [STREAM_WIDTH - 1 : 0]  axisSourceData;
+    reg  [STREAM_WIDTH - 1 : 0] axisSourceData;
 
     reg                         axisSourceLastNext;
     reg                         axiSourceLastNext;
-    reg [STREAM_WIDTH - 1 : 0]  axisSourceDataNext;
+    reg  [STREAM_WIDTH - 1 : 0] axisSourceDataNext;
 
     initial 
     begin
@@ -259,6 +260,8 @@ module PreCommandParser #(
             begin
                 if (axisSourceValid)
                 begin
+                    counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                    counter <= counterConverted;
                     case (axisSourceData[OP_POS +: OP_SIZE])
                     OP_NOP:
                     begin
@@ -267,24 +270,23 @@ module PreCommandParser #(
                     end
                     OP_STORE:
                     begin
-                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= STORE_ADDR;
                     end
                     OP_LOAD:
                     begin
-                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= LOAD_ADDR;
                     end
                     OP_MEMSET:
                     begin
-                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
                         state <= MEMSET_ADDR;
                     end
                     OP_STREAM:
                     begin
-                        counter <= axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
-                        mux <= STREAM;
-                        state <= STREAM;
+                        if (counterConverted > 0)
+                        begin
+                            mux <= STREAM;
+                            state <= STREAM;
+                        end
                     end
                     endcase
                 end
@@ -293,44 +295,76 @@ module PreCommandParser #(
             begin
                 if (axisSourceValid)
                 begin
-                    enableWriteChannel <= 1;
-                    addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                    enableAddressChannel <= 1;
-                    mux <= STORE;
-                    state <= STREAM;
+                    if (counter > 0)
+                    begin
+                        enableWriteChannel <= 1;
+                        addr <= axisSourceData[0 +: ADDR_WIDTH];
+                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        enableAddressChannel <= 1;
+                        mux <= STORE;
+                        state <= STREAM;
+                    end
+                    else 
+                    begin
+                        axisSourceReady <= 0;
+                        state <= IDLE;
+                    end
                 end
             end
             LOAD_ADDR:
             begin
                 if (axisSourceValid)
                 begin
-                    enableWriteChannel <= 0;
-                    addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                    enableAddressChannel <= 1;
-                    mux <= LOAD;
-                    state <= STREAM;
+                    if (counter > 0)
+                    begin
+                        enableWriteChannel <= 0;
+                        addr <= axisSourceData[0 +: ADDR_WIDTH];
+                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        enableAddressChannel <= 1;
+                        mux <= LOAD;
+                        state <= STREAM;
+                    end
+                    else 
+                    begin
+                        axisSourceReady <= 0;
+                        state <= IDLE;
+                    end
                 end
             end
             MEMSET_ADDR:
             begin
                 if (axisSourceValid)
                 begin
-                    enableWriteChannel <= 1;
-                    addr <= axisSourceData[0 +: ADDR_WIDTH];
-                    addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                    state <= MEMSET_VAL;
+                    if (counter > 0)
+                    begin
+                        enableWriteChannel <= 1;
+                        addr <= axisSourceData[0 +: ADDR_WIDTH];
+                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        state <= MEMSET_VAL;
+                    end
+                    else 
+                    begin
+                        axisSourceReady <= 0;
+                        state <= IDLE;
+                    end
                 end
             end
             MEMSET_VAL:
             begin
                 if (axisSourceValid)
                 begin
-                    memsetVal <= axisSourceData[0 +: 32];
-                    enableAddressChannel <= 1;
-                    mux <= MEMSET;
-                    state <= STREAM;
+                    if (counter > 0)
+                    begin
+                        memsetVal <= axisSourceData[0 +: 32];
+                        enableAddressChannel <= 1;
+                        mux <= MEMSET;
+                        state <= STREAM;
+                    end
+                    else 
+                    begin
+                        axisSourceReady <= 0;
+                        state <= IDLE;
+                    end
                 end
             end
             STREAM:
