@@ -32,17 +32,22 @@ public:
 
     // Interface for writing the display list
 
-    template <typename GET_TYPE>
-    GET_TYPE* create()
+    void* alloc(const uint32_t size)
     {
-        static constexpr uint32_t size = sizeOf<GET_TYPE>();
         if ((size + consumedMemory) <= DISPLAY_LIST_SIZE)
         {
             void* memPlace = &mem[consumedMemory];
             consumedMemory += size;
-            return static_cast<GET_TYPE*>(memPlace);
+            return memPlace;
         }
         return nullptr;
+    }
+
+    template <typename GET_TYPE>
+    GET_TYPE* create()
+    {
+        static constexpr uint32_t size = sizeOf<GET_TYPE>();
+        return reinterpret_cast<GET_TYPE*>(alloc(size));
     }
 
     template <typename GET_TYPE>
