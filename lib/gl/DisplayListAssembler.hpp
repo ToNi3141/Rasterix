@@ -36,6 +36,7 @@ public:
     {
         m_displayList.clear();
         m_streamCommand = nullptr;
+        m_wasLastCommandATextureCommand = false;
     }
 
     bool commit()
@@ -59,6 +60,7 @@ public:
     {
         if (openNewStreamSection())
         {
+            m_wasLastCommandATextureCommand = false;
             return appendStreamCommand(StreamCommand::TRIANGLE_FULL, triangle);
         }
         return false;
@@ -83,31 +85,58 @@ public:
         bool ret = false;
         if (openNewStreamSection())
         {
-            SCT *opt = m_displayList.template create<SCT>();
-            if (opt)
+            // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
+            // with the recent texture, then we can just overwrite this texture with the current one and avoiding
+            // with that mechanism unnecessary texture loads.
+            if (!m_wasLastCommandATextureCommand)
+            {
+                m_texStreamOp = m_displayList.template create<SCT>();
+                if (m_texStreamOp)
+                {
+                    closeStreamSection();
+                    m_texLoad = m_displayList.template create<SCT>();
+                    m_texLoadAddr = m_displayList.template create<uint32_t>();
+                }
+            }
+            if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
                 if (texWidth == 32)
                 {
-                    *opt = StreamCommand::TEXTURE_STREAM_32x32;
+                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_32x32;
                 }
                 else if (texWidth == 64)
                 {
-                    *opt = StreamCommand::TEXTURE_STREAM_64x64;
+                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_64x64;
                 }
                 else if (texWidth == 128)
                 {
-                    *opt = StreamCommand::TEXTURE_STREAM_128x128;
+                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_128x128;
                 }
                 else if (texWidth == 256)
                 {
-                    *opt = StreamCommand::TEXTURE_STREAM_256x256;
+                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_256x256;
                 }
-
-                closeStreamSection();
-                ret = appendStreamCommand<SCT>(StreamCommand::LOAD | texSize, texAddr);
-                if (!ret)
+                *m_texLoad = StreamCommand::LOAD | texSize;
+                *m_texLoadAddr = texAddr;
+                m_wasLastCommandATextureCommand = true;
+                ret = true;
+            }
+            else
+            {
+                if (!m_wasLastCommandATextureCommand)
                 {
-                    m_displayList.template remove<SCT>();
+                    if (m_texStreamOp)
+                    {
+                        *m_texStreamOp = StreamCommand::NOP;
+                    }
+                    if (m_texLoad)
+                    {
+                        m_displayList.template remove<SCT>();
+                    }
+                    if (m_texLoadAddr)
+                    {
+                        m_displayList.template remove<uint32_t>();
+                    }
                 }
             }
         }
@@ -278,7 +307,14 @@ private:
     }
 
     List m_displayList __attribute__ ((aligned (8)));
+
     SCT *m_streamCommand{nullptr};
+
+    // Helper variables to optimize the texture loading
+    bool m_wasLastCommandATextureCommand{false};
+    SCT *m_texStreamOp{nullptr};
+    SCT *m_texLoad{nullptr};
+    uint32_t *m_texLoadAddr{nullptr};
 };
 
 
