@@ -27,6 +27,7 @@
 #include "Rasterizer.hpp"
 #include <string.h>
 #include "DisplayListAssembler.hpp"
+#include <future>
 
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
@@ -65,9 +66,6 @@ public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
     {
-        m_displayList[0].clear();
-        m_displayList[1].clear();
-
         for (auto& entry : m_displayListAssembler)
         {
             entry.clearAssembler();
@@ -102,6 +100,11 @@ public:
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
+
+        // Initialize the render thread by running it once
+        m_renderThread = std::async([&](){
+            return true;
+        });
     }
 
     virtual bool drawTriangle(const Vec4& v0,
@@ -140,6 +143,12 @@ public:
 
     virtual void commit() override
     {
+        if (m_renderThread.get() != true)
+        {
+            // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
+            return;
+        }
+
         // Switch the display lists
         if (m_backList == 0)
         {
@@ -176,19 +185,6 @@ public:
             }
         }
 
-        // Render image
-        if (ret)
-        {
-            for (int32_t i = DISPLAY_LINES - 1; i >= 0; i--)
-            {
-                while (!m_busConnector.clearToSend())
-                    ;
-                const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                m_busConnector.writeData(list->getMemPtr(), list->getSize());
-                m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-            }
-        }
-
         // Collect garbage textures
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
@@ -199,6 +195,22 @@ public:
                 texture.inUse = false;
                 texture.gramAddr = std::shared_ptr<const uint16_t>();
             }
+        }
+
+        // Render image
+        if (ret)
+        {
+            m_renderThread = std::async([&](){
+                for (int32_t i = DISPLAY_LINES - 1; i >= 0; i--)
+                {
+                    while (!m_busConnector.clearToSend())
+                        ;
+                    const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
+                    m_busConnector.writeData(list->getMemPtr(), list->getSize());
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
+                }
+                return true;
+            });
         }
     }
 
@@ -372,8 +384,6 @@ public:
     }
 
 private:
-    static constexpr uint32_t HARDWARE_BUFFER_SIZE = 2048 * 16;
-    static constexpr uint32_t DISPLAY_BUFFERS = 2; // Note: Right now only two are supported. Other values will not work
     static constexpr uint32_t MAX_TEXTURE_SIZE = 128 * 128 * 2;
 
     struct Texture
@@ -386,18 +396,7 @@ private:
         uint16_t height;
     };
 
-    using List = DisplayList<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-    using ListUpload = DisplayList<HARDWARE_BUFFER_SIZE + 16, BUS_WIDTH / 8>;
-
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-
-    class TextureStreamArg
-    {
-    public:
-        std::shared_ptr<const uint16_t> pixels;
-        int32_t texSize;
-        int32_t counter;
-    };
 
     static uint16_t convertColor(const Vec4i color)
     {
@@ -422,13 +421,8 @@ private:
     }
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
-
-    std::array<List, DISPLAY_BUFFERS> m_displayList __attribute__ ((aligned (8)));
-    ListUpload m_displayListUpload __attribute__ ((aligned (8)));
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
-    uint32_t m_uploadIndexPosition = 0;
-    TextureStreamArg m_textureStreamArg{nullptr, 0, 0};
 
     // Texture memory allocator
     std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
@@ -458,6 +452,8 @@ private:
         bool texClampS : 1;
         bool texClampT : 1;
     } m_confReg2;
+
+    std::future<bool> m_renderThread;
 };
 
 #endif // RENDERER_HPP

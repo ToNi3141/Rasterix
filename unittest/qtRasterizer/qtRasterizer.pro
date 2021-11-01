@@ -42,7 +42,8 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/IceGL.hpp \
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
-    $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp
+    $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp \
+    ../../lib/gl/DisplayListAssembler.hpp
 
 FORMS    += mainwindow.ui
 
