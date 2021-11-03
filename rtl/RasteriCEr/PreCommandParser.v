@@ -41,12 +41,12 @@ module PreCommandParser #(
     // Memory interface
     output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_awid,
     output reg  [ADDR_WIDTH - 1 : 0]    m_mem_axi_awaddr,
-    output reg  [ 7 : 0]                m_mem_axi_awlen, // How many cycles are in this transaction
+    output reg  [ 7 : 0]                m_mem_axi_awlen, // How many beats are in this transaction
     output reg  [ 2 : 0]                m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
     output reg  [ 1 : 0]                m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
-    output reg                          m_mem_axi_awlock, //
-    output reg  [ 3 : 0]                m_mem_axi_awcache, //
-    output reg  [ 2 : 0]                m_mem_axi_awprot, //
+    output reg                          m_mem_axi_awlock,
+    output reg  [ 3 : 0]                m_mem_axi_awcache,
+    output reg  [ 2 : 0]                m_mem_axi_awprot, 
     output reg                          m_mem_axi_awvalid,
     input  wire                         m_mem_axi_awready,
 
