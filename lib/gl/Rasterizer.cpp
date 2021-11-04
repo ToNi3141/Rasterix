@@ -45,21 +45,11 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                                    const uint16_t lineStart,
                                    const uint16_t lineEnd)
 {
-    
     if ((lineStart == 0) && (triangleToIncrement.bbStartY < lineEnd))
     {
         // Handle the first case in a special manner, because this case is really fast to calculate. Just check
         // for the bounding box and if the triangle is in this bounding box, just render it without forther calculations
         memcpy(&incrementedTriangle, &triangleToIncrement, sizeof(incrementedTriangle));
-
-        // Use it with the alternative rasterizer in the Rasterizer
-        // const VecInt bbDiff = incrementedTriangle.bbEndX - incrementedTriangle.bbStartX;
-        // incrementedTriangle.wYInc[0] = incrementedTriangle.wYInc[0] - (incrementedTriangle.wXInc[0] * bbDiff);
-        // incrementedTriangle.wYInc[1] = incrementedTriangle.wYInc[1] - (incrementedTriangle.wXInc[1] * bbDiff);
-        // incrementedTriangle.wYInc[2] = incrementedTriangle.wYInc[2] - (incrementedTriangle.wXInc[2] * bbDiff);
-        // incrementedTriangle.texStYInc[0] = incrementedTriangle.texStYInc[0] - (incrementedTriangle.texStXInc[0] * bbDiff);
-        // incrementedTriangle.texStYInc[1] = incrementedTriangle.texStYInc[1] - (incrementedTriangle.texStXInc[1] * bbDiff);
-        // incrementedTriangle.depthWYInc  = incrementedTriangle.depthWYInc  - (incrementedTriangle.depthWXInc * bbDiff);
         return true;
     }
     else
@@ -116,19 +106,26 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.depthWInit = triangleToIncrement.depthWInit;
             }
 
-            // Use it with the alternative rasterizer in the Rasterizer
-            // const VecInt bbDiff = incrementedTriangle.bbEndX - incrementedTriangle.bbStartX;
-            // incrementedTriangle.wYInc[0] = incrementedTriangle.wYInc[0] - (incrementedTriangle.wXInc[0] * bbDiff);
-            // incrementedTriangle.wYInc[1] = incrementedTriangle.wYInc[1] - (incrementedTriangle.wXInc[1] * bbDiff);
-            // incrementedTriangle.wYInc[2] = incrementedTriangle.wYInc[2] - (incrementedTriangle.wXInc[2] * bbDiff);
-            // incrementedTriangle.texStYInc[0] = incrementedTriangle.texStYInc[0] - (incrementedTriangle.texStXInc[0] * bbDiff);
-            // incrementedTriangle.texStYInc[1] = incrementedTriangle.texStYInc[1] - (incrementedTriangle.texStXInc[1] * bbDiff);
-            // incrementedTriangle.depthWYInc  = incrementedTriangle.depthWYInc  - (incrementedTriangle.depthWXInc * bbDiff);
             return true;
         }
     }
     return false;
 }
+
+bool Rasterizer::checkIfTriangleIsInBounds(Rasterizer::RasterizedTriangle &triangle,
+                                           const uint16_t lineStart,
+                                           const uint16_t lineEnd)
+{
+    // Check if the triangle is in the current area by checking if the end position is below the start line
+    // and if the start of the triangle is within this area
+    if ((triangle.bbEndY >= lineStart) &&
+            (triangle.bbStartY < lineEnd))
+    {
+        return true;
+    }
+    return false;
+}
+
 
 VecInt Rasterizer::calcRecip(VecInt val)
 {

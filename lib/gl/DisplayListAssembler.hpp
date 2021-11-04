@@ -56,14 +56,14 @@ public:
         return false;
     }
 
-    bool drawTriangle(const Rasterizer::RasterizedTriangle& triangle)
+    Rasterizer::RasterizedTriangle* drawTriangle()
     {
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand = false;
-            return appendStreamCommand(StreamCommand::TRIANGLE_FULL, triangle);
+            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::TRIANGLE_FULL);
         }
-        return false;
+        return nullptr;
     }
 
     bool updateTexture(const uint32_t addr, std::shared_ptr<const uint16_t> pixels, const uint32_t texSize)
@@ -246,8 +246,8 @@ private:
     };
     using SCT = typename StreamCommand::StreamCommandType;
 
-    template <typename TArg, bool CallConstructor = false>
-    bool appendStreamCommand(const SCT op, const TArg& arg)
+    template <typename TArg> 
+    TArg* createStreamCommand(const SCT op)
     {
         SCT *opDl = m_displayList.template create<SCT>();
         TArg *argDl = m_displayList.template create<TArg>();
@@ -264,19 +264,29 @@ private:
                 m_displayList.template remove<TArg>();
             }
             // Out of memory error
-            return false;
+            return nullptr;
         }
-
-        // This is an optimization. Most of the time, a constructor call is not necessary and will just take a
-        // significant amount of CPU time. So, if it is not required, we omit it.
-        if constexpr (CallConstructor)
-        {
-            new (argDl) TArg();
-        }
-
         *opDl = op;
-        *argDl = arg;
-        return true;
+        return argDl;
+    }
+
+    template <typename TArg, bool CallConstructor = false>
+    bool appendStreamCommand(const SCT op, const TArg& arg)
+    {
+        TArg *argDl = createStreamCommand<TArg>(op);
+        if (argDl)
+        {
+            // This is an optimization. Most of the time, a constructor call is not necessary and will just take a
+            // significant amount of CPU time. So, if it is not required, we omit it.
+            if constexpr (CallConstructor)
+            {
+                new (argDl) TArg();
+            }
+
+            *argDl = arg;
+            return true;
+        }
+        return false;
     }
 
     bool openNewStreamSection()

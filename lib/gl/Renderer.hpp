@@ -52,12 +52,9 @@
 // |                                                        | |
 // |                                                        | |
 // +--------------------------------------------------------+ v
-// This renderer collects all triangles in a single display list. Later, when the display list is uploaded, this renderer
-// will create sub display lists for each display line. This approach is more memory efficient because every triangle is saved
-// only once, but because it has to reinterpret the display list during upload, it is slower then the approach in the
-// RendererBuckets. This renderer will preallocate for every display line one display list and will dispatch each incoming
-// triangle to the buckets. It should be faster but it is less memory efficient because a triangle is potentially saved
-// several times.
+// This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
+// all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
+// but requires much more memory because of lots of duplicated data.
 // The BUS_WIDTH is used to calculate the alignment in the display list.
 template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class Renderer : public IRenderer
@@ -125,24 +122,34 @@ public:
 
         triangleConf.triangleStaticColor = convertColor(color);
 
-        bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            // TODO: The copy of triangleConfDl when added to the assember is not needed. We could preallocate that from the display list
-            Rasterizer::RasterizedTriangle triangleConfDl;
             const uint16_t currentScreenPositionStart = i * LINE_RESOLUTION;
             const uint16_t currentScreenPositionEnd = (i + 1) * LINE_RESOLUTION;
-            if (Rasterizer::calcLineIncrement(triangleConfDl, triangleConf, currentScreenPositionStart,
-                                                currentScreenPositionEnd))
+            if (Rasterizer::checkIfTriangleIsInBounds(triangleConf,
+                                                      currentScreenPositionStart,
+                                                      currentScreenPositionEnd))
             {
-                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle(triangleConfDl);
+                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
+                if (triangleConfDl != nullptr)
+                {
+                    Rasterizer::calcLineIncrement(*triangleConfDl,
+                                                  triangleConf,
+                                                  currentScreenPositionStart,
+                                                  currentScreenPositionEnd);
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
-        return ret;
+        return true;
     }
 
     virtual void commit() override
     {
+        // Check if the previous rendering has finished. If not, block till it is finished.
         if (m_renderThread.get() != true)
         {
             // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
@@ -197,7 +204,7 @@ public:
             }
         }
 
-        // Render image
+        // Render image (in new thread)
         if (ret)
         {
             m_renderThread = std::async([&](){
