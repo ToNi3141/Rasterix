@@ -19,6 +19,7 @@ module DualPortRam #(
     parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
+    parameter MEMORY_PRIMITIVE = "block",
     localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8)),
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
@@ -56,7 +57,7 @@ module DualPortRam #(
                 .MEMORY_INIT_FILE("none"),
                 .MEMORY_INIT_PARAM("0"),
                 .MEMORY_OPTIMIZATION("true"),
-                .MEMORY_PRIMITIVE("block"),
+                .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE),
                 .MEMORY_SIZE((2**MEM_SIZE) * WRITE_STROBE_WIDTH),
                 .MESSAGE_CONTROL(0),
                 .READ_DATA_WIDTH_B(WRITE_STROBE_WIDTH),
@@ -69,7 +70,7 @@ module DualPortRam #(
                 .USE_MEM_INIT(0),             
                 .WAKEUP_TIME("disable_sleep"),
                 .WRITE_DATA_WIDTH_A(WRITE_STROBE_WIDTH),
-                .WRITE_MODE_B("no_change")
+                .WRITE_MODE_B("read_first")
             )
             xpm_memory_sdpram_inst (
                 .dbiterrb(),             // 1-bit output: Status signal to indicate double bit error occurrence
