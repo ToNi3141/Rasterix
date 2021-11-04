@@ -25,12 +25,65 @@
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayListAssembler {
 public:
-    using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
-    static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR = 0x0000;
-    static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH = 0x0001;
-    static constexpr uint32_t SET_CONF_REG1                = 0x0002;
-    static constexpr uint32_t SET_CONF_REG2                = 0x0003;
-    static constexpr uint32_t SET_TEX_ENV_COLOR            = 0x0004;
+        using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
+private:
+    struct StreamCommand
+    {
+        // Anathomy of a command:
+        // | 4 bit OP | 28 bit IMM |
+
+        using StreamCommandType = uint32_t;
+
+        // This mask will set the command
+        static constexpr StreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
+
+        // This mask will set the immediate value
+        static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
+
+        // Calculate the triangle size with align overhead.
+        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<Rasterizer::RasterizedTriangle>();
+
+        // OPs for the DMA Stream Engine
+        static constexpr StreamCommandType DSE_NOP       = 0x0000'0000;
+        static constexpr StreamCommandType DSE_STORE     = 0x1000'0000;
+        static constexpr StreamCommandType DSE_LOAD      = 0x2000'0000;
+        static constexpr StreamCommandType DSE_MEMSET    = 0x3000'0000;
+        static constexpr StreamCommandType DSE_STREAM    = 0x4000'0000;
+
+        // OPs for the rasterizer
+        static constexpr StreamCommandType RR_NOP              = 0x0000'0000;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM   = 0x1000'0000;
+        static constexpr StreamCommandType RR_SET_REG          = 0x2000'0000;
+        static constexpr StreamCommandType RR_FRAMEBUFFER_OP   = 0x3000'0000;
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM  = 0x4000'0000;
+
+        // Immediate values
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_32x32     = RR_TEXTURE_STREAM | 0x0011;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_64x64     = RR_TEXTURE_STREAM | 0x0022;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_128x128   = RR_TEXTURE_STREAM | 0x0044;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_256x256   = RR_TEXTURE_STREAM | 0x0088;
+
+        static constexpr StreamCommandType RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR = 0x0000;
+        static constexpr StreamCommandType RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR = 0x0001;
+        static constexpr StreamCommandType RR_CONF_REG1_ADDR                    = 0x0002;
+        static constexpr StreamCommandType RR_CONF_REG2_ADDR                    = 0x0003;
+        static constexpr StreamCommandType RR_TEX_ENV_COLOR_REG_ADDR            = 0x0004;
+
+        static constexpr StreamCommandType RR_FRAMEBUFFER_COMMIT   = RR_FRAMEBUFFER_OP | 0x0001;
+        static constexpr StreamCommandType RR_FRAMEBUFFER_MEMSET   = RR_FRAMEBUFFER_OP | 0x0002;
+        static constexpr StreamCommandType RR_FRAMEBUFFER_COLOR    = RR_FRAMEBUFFER_OP | 0x0010;
+        static constexpr StreamCommandType RR_FRAMEBUFFER_DEPTH    = RR_FRAMEBUFFER_OP | 0x0020;
+
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_FULL  = RR_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
+    };
+    using SCT = typename StreamCommand::StreamCommandType;
+
+public:
+    static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR = StreamCommand::RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR;
+    static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH = StreamCommand::RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR;
+    static constexpr uint32_t SET_CONF_REG1                = StreamCommand::RR_CONF_REG1_ADDR;
+    static constexpr uint32_t SET_CONF_REG2                = StreamCommand::RR_CONF_REG2_ADDR;
+    static constexpr uint32_t SET_TEX_ENV_COLOR            = StreamCommand::RR_TEX_ENV_COLOR_REG_ADDR;
 
     void clearAssembler()
     {
@@ -47,7 +100,7 @@ public:
             SCT *op = m_displayList.template create<SCT>();
             if (op)
             {
-                *op = StreamCommand::FRAMEBUFFER_COMMIT | StreamCommand::FRAMEBUFFER_COLOR;
+                *op = StreamCommand::RR_FRAMEBUFFER_COMMIT | StreamCommand::RR_FRAMEBUFFER_COLOR;
             }
 
             closeStreamSection();
@@ -61,7 +114,7 @@ public:
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand = false;
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::TRIANGLE_FULL);
+            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TEXTURE_STREAM_FULL);
         }
         return nullptr;
     }
@@ -69,7 +122,7 @@ public:
     bool updateTexture(const uint32_t addr, std::shared_ptr<const uint16_t> pixels, const uint32_t texSize)
     {
         closeStreamSection();
-        bool ret = appendStreamCommand<SCT>(StreamCommand::STORE | texSize, addr);
+        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSize, addr);
         void *dest = m_displayList.alloc(texSize);
         if (ret && dest)
         {
@@ -102,21 +155,21 @@ public:
             {
                 if (texWidth == 32)
                 {
-                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_32x32;
+                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_32x32;
                 }
                 else if (texWidth == 64)
                 {
-                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_64x64;
+                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_64x64;
                 }
                 else if (texWidth == 128)
                 {
-                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_128x128;
+                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_128x128;
                 }
                 else if (texWidth == 256)
                 {
-                    *m_texStreamOp = StreamCommand::TEXTURE_STREAM_256x256;
+                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_256x256;
                 }
-                *m_texLoad = StreamCommand::LOAD | texSize;
+                *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
                 m_wasLastCommandATextureCommand = true;
                 ret = true;
@@ -127,7 +180,7 @@ public:
                 {
                     if (m_texStreamOp)
                     {
-                        *m_texStreamOp = StreamCommand::NOP;
+                        *m_texStreamOp = StreamCommand::DSE_NOP;
                     }
                     if (m_texLoad)
                     {
@@ -148,8 +201,8 @@ public:
     {
         if (openNewStreamSection())
         {
-            const SCT opColorBuffer = StreamCommand::FRAMEBUFFER_MEMSET | StreamCommand::FRAMEBUFFER_COLOR;
-            const SCT opDepthBuffer = StreamCommand::FRAMEBUFFER_MEMSET | StreamCommand::FRAMEBUFFER_DEPTH;
+            const SCT opColorBuffer = StreamCommand::RR_FRAMEBUFFER_MEMSET | StreamCommand::RR_FRAMEBUFFER_COLOR;
+            const SCT opDepthBuffer = StreamCommand::RR_FRAMEBUFFER_MEMSET | StreamCommand::RR_FRAMEBUFFER_DEPTH;
 
             SCT *op = m_displayList.template create<SCT>();
             if (op)
@@ -168,7 +221,7 @@ public:
                 }
                 else
                 {
-                    *op = StreamCommand::NOP;
+                    *op = StreamCommand::RR_NOP;
                 }
             }
             return op != nullptr;
@@ -181,7 +234,7 @@ public:
     {
         if (openNewStreamSection())
         {
-            return appendStreamCommand<TArg>(StreamCommand::SET_REG | regIndex, regVal);
+            return appendStreamCommand<TArg>(StreamCommand::RR_SET_REG | regIndex, regVal);
         }
         return false;
     }
@@ -197,55 +250,6 @@ public:
     }
 
 private:
-    struct StreamCommand
-    {
-        // Anathomy of a command:
-        // | 4 bit OP | 28 bit IMM |
-
-        using StreamCommandType = uint32_t;
-
-        // This mask will set the command
-        static constexpr StreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
-
-        // This mask will set the immediate value
-        static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
-
-        // Calculate the triangle size with align overhead.
-        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<Rasterizer::RasterizedTriangle>();
-
-        // OPs
-        static constexpr StreamCommandType NOP              = 0x0000'0000;
-        static constexpr StreamCommandType TEXTURE_STREAM   = 0x1000'0000;
-        static constexpr StreamCommandType SET_REG          = 0x2000'0000;
-        static constexpr StreamCommandType FRAMEBUFFER_OP   = 0x3000'0000;
-        static constexpr StreamCommandType TRIANGLE_STREAM  = 0x4000'0000;
-
-        // Immediate values
-        static constexpr StreamCommandType TEXTURE_STREAM_32x32     = TEXTURE_STREAM | 0x0011;
-        static constexpr StreamCommandType TEXTURE_STREAM_64x64     = TEXTURE_STREAM | 0x0022;
-        static constexpr StreamCommandType TEXTURE_STREAM_128x128   = TEXTURE_STREAM | 0x0044;
-        static constexpr StreamCommandType TEXTURE_STREAM_256x256   = TEXTURE_STREAM | 0x0088;
-
-        static constexpr StreamCommandType SET_COLOR_BUFFER_CLEAR_COLOR = SET_REG | 0x0000;
-        static constexpr StreamCommandType SET_DEPTH_BUFFER_CLEAR_DEPTH = SET_REG | 0x0001;
-        static constexpr StreamCommandType SET_CONF_REG1                = SET_REG | 0x0002;
-        static constexpr StreamCommandType SET_CONF_REG2                = SET_REG | 0x0003;
-        static constexpr StreamCommandType SET_TEX_ENV_COLOR            = SET_REG | 0x0004;
-
-        static constexpr StreamCommandType FRAMEBUFFER_COMMIT   = FRAMEBUFFER_OP | 0x0001;
-        static constexpr StreamCommandType FRAMEBUFFER_MEMSET   = FRAMEBUFFER_OP | 0x0002;
-        static constexpr StreamCommandType FRAMEBUFFER_COLOR    = FRAMEBUFFER_OP | 0x0010;
-        static constexpr StreamCommandType FRAMEBUFFER_DEPTH    = FRAMEBUFFER_OP | 0x0020;
-
-        static constexpr StreamCommandType TRIANGLE_FULL  = TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
-
-        static constexpr StreamCommandType STORE     = 0x5000'0000;
-        static constexpr StreamCommandType LOAD      = 0x6000'0000;
-        static constexpr StreamCommandType MEMSET    = 0x7000'0000;
-        static constexpr StreamCommandType STREAM    = 0x8000'0000;
-    };
-    using SCT = typename StreamCommand::StreamCommandType;
-
     template <typename TArg> 
     TArg* createStreamCommand(const SCT op)
     {
@@ -309,7 +313,7 @@ private:
         // to know how big our stream section is.
         if (m_streamCommand)
         {
-            *m_streamCommand = StreamCommand::STREAM | (m_displayList.getSize() - *m_streamCommand);
+            *m_streamCommand = StreamCommand::DSE_STREAM | (m_displayList.getSize() - *m_streamCommand);
             m_streamCommand = nullptr;
             return true;
         }

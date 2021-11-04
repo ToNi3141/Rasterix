@@ -21,7 +21,7 @@ read_verilog ./../../RasteriCEr/RasteriCEr.v
 read_verilog ./../../RasteriCEr/FragmentPipeline.v
 read_verilog ./../../RasteriCEr/FragmentPipelineIce40Wrapper.v
 read_verilog ./../../RasteriCEr/CommandParser.v
-read_verilog ./../../RasteriCEr/PreCommandParser.v
+read_verilog ./../../RasteriCEr/DmaStreamEngine.v
 read_verilog ./../../RasteriCEr/Serial2AXIS.v
 read_verilog ./../../RasteriCEr/Recip.v
 read_verilog ./../../RasteriCEr/TextureBuffer.v

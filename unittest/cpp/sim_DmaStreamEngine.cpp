@@ -25,9 +25,9 @@
 #include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VPreCommandParser.h"
+#include "VDmaStreamEngine.h"
 
-void clk(VPreCommandParser& t)
+void clk(VDmaStreamEngine& t)
 {
     t.aclk = 0;
     t.eval();
@@ -35,7 +35,7 @@ void clk(VPreCommandParser& t)
     t.eval();
 }
 
-void reset(VPreCommandParser& t)
+void reset(VDmaStreamEngine& t)
 {
     t.resetn = 0;
 
@@ -53,11 +53,11 @@ void reset(VPreCommandParser& t)
 
 TEST_CASE("Stream data simple", "[Stream]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x8000'0000;
+    static constexpr uint32_t OP = 0x4000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -138,11 +138,11 @@ TEST_CASE("Stream data simple", "[Stream]")
 
 TEST_CASE("Stream data interrupted from master", "[Stream]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x8000'0000;
+    static constexpr uint32_t OP = 0x4000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -268,11 +268,11 @@ TEST_CASE("Stream data interrupted from master", "[Stream]")
 
 TEST_CASE("Stream data interrupted from slave", "[Stream]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x8000'0000;
+    static constexpr uint32_t OP = 0x4000'0000;
     static constexpr uint32_t SIZE = 0x0000'0008; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
@@ -393,11 +393,11 @@ TEST_CASE("Stream data interrupted from slave", "[Stream]")
 
 TEST_CASE("Store data simple", "[Memory]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x5000'0000;
+    static constexpr uint32_t OP = 0x1000'0000;
     static constexpr uint32_t SIZE = 0x0000'0100; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
@@ -573,11 +573,11 @@ TEST_CASE("Store data simple", "[Memory]")
 
 TEST_CASE("Memset data simple", "[Memory]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x7000'0000;
+    static constexpr uint32_t OP = 0x3000'0000;
     static constexpr uint32_t SIZE = 0x0000'0100; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
@@ -750,11 +750,11 @@ TEST_CASE("Memset data simple", "[Memory]")
 
 TEST_CASE("Load data simple", "[Memory]")
 {
-    VPreCommandParser* top = new VPreCommandParser();
-    VPreCommandParser& t = *top;
+    VDmaStreamEngine* top = new VDmaStreamEngine();
+    VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t OP = 0x6000'0000;
+    static constexpr uint32_t OP = 0x2000'0000;
     static constexpr uint32_t SIZE = 0x0000'0100; 
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;

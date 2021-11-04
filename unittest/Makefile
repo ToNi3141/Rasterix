@@ -1,14 +1,14 @@
 PROJ = Rasterizer
 
-all: simulation simulationDisplay
+all: dmaStreamEngine simulationDisplay
 
 clean:
 	rm -rf obj_dir
 
-simulation:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/PreCommandParser.v --top-module PreCommandParser cpp/sim_PreCommandParser.cpp
-	-make -C obj_dir -f VPreCommandParser.mk
-	./obj_dir/VPreCommandParser
+dmaStreamEngine:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp
+	-make -C obj_dir -f VDmaStreamEngine.mk
+	./obj_dir/VDmaStreamEngine
 
 simulationDisplay:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Display/DisplayController8BitILI9486.v --top-module DisplayController8BitILI9486 cpp/sim_DisplayController8BitILI9486.cpp

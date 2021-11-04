@@ -171,7 +171,7 @@ module top
         .s_axi_rready(s_axi_rready)
     );
 
-    PreCommandParser #(
+    DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) parser (

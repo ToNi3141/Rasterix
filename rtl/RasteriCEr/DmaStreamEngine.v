@@ -15,7 +15,71 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module PreCommandParser #(
+
+// This engine is used to store streams into memory, load streams from memory and initialize memory.
+// The engine supports five commands, NOP, LOAD, STORE, MEMSET, STREAM. 
+// Padding calculation: padding = STREAM_WIDTH - 32
+//
+// NOP
+// Beat 1:
+// +---------+------------------------------------+
+// | padding | 4'h0 | 28'h don't care             |
+// +---------+------------------------------------+
+// No operation
+//
+// STORE
+// Beat 1:
+// +---------+------------------------------------+
+// | padding | 4'h1 | 28'h stream length in bytes |
+// +---------+------------------------------------+
+// Beat 2:
+// +---------+------------------------------------+
+// | padding | 32'h address                       |
+// +---------+------------------------------------+
+// Beat 3 .. n:
+// +----------------------------------------------+
+// | STREAM_WIDTH'h payload                       |
+// +----------------------------------------------+
+// Stores n bytes from the s_cmd_axis stream to the given address in memory.
+//
+// LOAD
+// Beat 1:
+// +---------+------------------------------------+
+// | padding | 4'h2 | 28'h stream length in bytes |
+// +---------+------------------------------------+
+// Beat 2:
+// +---------+------------------------------------+
+// | padding | 32'h address                       |
+// +---------+------------------------------------+
+// Loads n bytes from the address in memory and outputs it to the m_cmd_axis interface.
+//
+// MEMSET
+// Beat 1:
+// +---------+------------------------------------+
+// | padding | 4'h3 | 28'h stream length in bytes |
+// +---------+------------------------------------+
+// Beat 2:
+// +---------+------------------------------------+
+// | padding | 32'h address                       |
+// +---------+------------------------------------+
+// Beat 3:
+// +---------+------------------------------------+
+// | padding | 32'h memset value                  |
+// +---------+------------------------------------+
+// Initializes the memory at address with the given memset value.
+//
+// STREAM
+// Beat 1:
+// +---------+------------------------------------+
+// | padding | 4'h4 | 28'h stream length in bytes |
+// +---------+------------------------------------+
+// Beat 2 .. n:
+// +----------------------------------------------+
+// | STREAM_WIDTH'h payload                       |
+// +----------------------------------------------+
+// Redirects n bytes of the stream from s_cmd_axis to the m_cmd_axis stream.
+
+module DmaStreamEngine #(
     parameter STREAM_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 16,
@@ -94,10 +158,10 @@ module PreCommandParser #(
     localparam OP_IMM_SIZE = 28;
 
     localparam OP_NOP = 0;
-    localparam OP_STORE = 5;
-    localparam OP_LOAD = 6;
-    localparam OP_MEMSET = 7;
-    localparam OP_STREAM = 8;
+    localparam OP_STORE = 1;
+    localparam OP_LOAD = 2;
+    localparam OP_MEMSET = 3;
+    localparam OP_STREAM = 4;
 
     localparam IDLE = 0;
     localparam COMMAND = 1;
