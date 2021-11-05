@@ -56,7 +56,7 @@ module top
 
     wire clk;
     reg resetn;
-    
+
 
     ///////////////////////////
     // Clock Instantiation
@@ -243,7 +243,7 @@ module top
         .tft_dc(tft_dc),
         .tft_sck(serial_sck),
         .tft_mosi(serial_mosi),
-        .mux(serial_tft_mux),
+        .tft_bypass(serial_tft_mux),
 
         .s_axis_tvalid(m_framebuffer_axis_tvalid),
         .s_axis_tready(m_framebuffer_axis_tready),

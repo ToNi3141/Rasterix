@@ -29,7 +29,7 @@ read_verilog ./../../Display/DisplayControllerSpi.v
 read_verilog ./../../3rdParty/SPI_Slave.v
 read_verilog ./../../3rdParty/sfifo.v
 read_verilog ./../../3rdParty/axi_ram.v
-read_xdc ./arty.xdc
+read_xdc ./artySpi.xdc
 
 #
 # STEP#2: run synthesis, report utilization and timing estimates, write checkpoint design
