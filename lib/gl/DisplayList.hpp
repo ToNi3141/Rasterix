@@ -23,26 +23,24 @@
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayList {
 public:
-    enum State
-    {
-        IDLE,
-        QUEUED,
-        TRANSFERRING
-    };
-
     // Interface for writing the display list
+
+    void* alloc(const uint32_t size)
+    {
+        if ((size + consumedMemory) <= DISPLAY_LIST_SIZE)
+        {
+            void* memPlace = &mem[consumedMemory];
+            consumedMemory += size;
+            return memPlace;
+        }
+        return nullptr;
+    }
 
     template <typename GET_TYPE>
     GET_TYPE* create()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + consumedMemory) <= DISPLAY_LIST_SIZE)
-        {
-            void* memPlace = &mem[consumedMemory];
-            consumedMemory += size;
-            return static_cast<GET_TYPE*>(memPlace);
-        }
-        return nullptr;
+        return reinterpret_cast<GET_TYPE*>(alloc(size));
     }
 
     template <typename GET_TYPE>
@@ -64,7 +62,6 @@ public:
 
     void clear()
     {
-        listState = State::IDLE;
         consumedMemory = 0;
     }
 
@@ -81,21 +78,6 @@ public:
     uint32_t getFreeSpace() const
     {
         return DISPLAY_LIST_SIZE - consumedMemory;
-    }
-
-    State state() const
-    {
-        return listState;
-    }
-
-    void enqueue()
-    {
-        listState = State::QUEUED;
-    }
-
-    void transfer()
-    {
-        listState = State::TRANSFERRING;
     }
 
     // Interface for reading the display list
@@ -136,7 +118,6 @@ public:
 
 private:
     uint8_t mem[DISPLAY_LIST_SIZE];
-    State listState = State::IDLE;
     uint32_t consumedMemory = 0;
     uint32_t getPos = 0;
 };

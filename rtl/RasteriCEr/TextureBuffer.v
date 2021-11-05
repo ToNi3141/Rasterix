@@ -66,7 +66,8 @@ module TextureBuffer #(
     `RAM_MODULE #(
         .MEM_SIZE_BYTES(SIZE),
         .MEM_WIDTH(STREAM_WIDTH),
-        .WRITE_STROBE_WIDTH(SUB_PIXEL_WIDTH)
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH),
+        .MEMORY_PRIMITIVE("distributed")
     ) texCache 
     (
         .clk(clk),
@@ -76,7 +77,7 @@ module TextureBuffer #(
         .writeCs(1),
         .write(s_axis_tvalid),
         .writeAddr(memWriteAddr),
-        .writeMask({(STREAM_WIDTH / SUB_PIXEL_WIDTH){1'b1}}),
+        .writeMask({(STREAM_WIDTH / PIXEL_WIDTH){1'b1}}),
 
         .readData(memReadData),
         .readCs(1),

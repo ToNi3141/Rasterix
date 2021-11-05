@@ -57,6 +57,10 @@ public:
                                   const uint16_t lineEnd);
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
+
+    static bool checkIfTriangleIsInBounds(Rasterizer::RasterizedTriangle &triangle,
+                                                 const uint16_t lineStart,
+                                                 const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
     inline static bool rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,

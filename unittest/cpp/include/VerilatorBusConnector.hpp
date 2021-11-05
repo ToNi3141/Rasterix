@@ -29,7 +29,6 @@ public:
         // Convert data to 32 bit variables to ease the access
         const uint32_t *data32 = reinterpret_cast<const uint32_t*>(data);
         const uint32_t bytes32 = bytes / 4;
-
         for (uint16_t i = 0; i < bytes32; )
         {
             if (m_top.s_cmd_axis_tready)

@@ -61,7 +61,6 @@ module FrameBuffer
     localparam STROBES_PER_BEAT = STREAM_WIDTH / SUB_PIXEL_WIDTH;
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
     localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAME_SIZE / PIXEL_PER_BEAT;
-    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE = FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
     localparam TILECONTROL_WAIT_FOR_COMMAND = 0;
     localparam TILECONTROL_MEMCPY = 1;
@@ -81,10 +80,11 @@ module FrameBuffer
     reg                             commandRunning;
     reg  [MEM_ADDR_WIDTH - 1 : 0]   counter;
     wire [MEM_ADDR_WIDTH - 1 : 0]   counterNext = counter + 1;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   commitAddr = (m_axis_tready && m_axis_tvalid) ? counterNext : counter;
     wire [MEM_ADDR_WIDTH - 1 : 0]   memsetWriteAddr = (m_axis_tready && (stateTileControl == TILECONTROL_MEMCPY)) ? counterNext : counter;
 
     reg                             fbWr;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusWrite  = (commandRunning) ? counter : fragAddrWrite;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusWrite  = (commandRunning) ? commitAddr : fragAddrWrite;
     wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusRead   = (commandRunning) ? memsetWriteAddr : fragAddrRead;
     wire [STREAM_WIDTH - 1 : 0]     fbDataInBus     = (commandRunning) ? {PIXEL_PER_BEAT{clearColor}} : fragValIn;
     wire                            fbWrBus         = (commandRunning) ? fbWr : fragWriteEnable;
@@ -187,40 +187,36 @@ module FrameBuffer
             begin
                 if (m_axis_tready)
                 begin
-                    // Copy the data
                     counter <= counterNext;
-                end
-
-                // Note that we are loading always the next counter, that means, that
-                // the counter is virtually one ahead. Because of that reason, we substracting
-                // one from the FRAMEBUFFER_FRAME_SIZE_IN_BEATS
-                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH])
-                begin
-                    m_axis_tlast <= 1;
-                end
-
-                // Check if we reached the end of the copy process
-                if (counter == FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH])
-                begin
-                    m_axis_tvalid <= 0; 
-                    m_axis_tlast <= 0;
-
-                    // Continue with memset if it is activated
-                    if (cmdMemset) 
+                
+                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH] - 1))
                     begin
-                        counter <= 0;
-                        fbWr <= 1;
-                        stateTileControl <= TILECONTROL_MEMSET;
+                        m_axis_tlast <= 1;
                     end
-                    else
+
+                    // Check if we reached the end of the copy process
+                    if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
                     begin
-                        stateTileControl <= TILECONTROL_WAIT_FOR_COMMAND;
+                        m_axis_tvalid <= 0; 
+                        m_axis_tlast <= 0;
+
+                        // Continue with memset if it is activated
+                        if (cmdMemset) 
+                        begin
+                            counter <= 0;
+                            fbWr <= 1;
+                            stateTileControl <= TILECONTROL_MEMSET;
+                        end
+                        else
+                        begin
+                            stateTileControl <= TILECONTROL_WAIT_FOR_COMMAND;
+                        end
                     end
                 end
             end
             TILECONTROL_MEMSET:
             begin
-                if (counter == FRAMEBUFFER_FRAME_SIZE_IN_BEATS_MINUS_ONE[0 +: MEM_ADDR_WIDTH])
+                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
                 begin
                     fbWr <= 0;
                     stateTileControl <= TILECONTROL_WAIT_FOR_COMMAND;

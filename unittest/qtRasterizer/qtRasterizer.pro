@@ -1,5 +1,5 @@
 # Set here the path to your local verilator installation
-VERILATOR_PATH = /usr/local/Cellar/verilator/4.100/share/verilator
+VERILATOR_PATH = /usr/local/Cellar/verilator/4.200/share/verilator
 
 ICEGL_PATH = ../../lib/gl
 VERILATOR_BUS_CONNECTOR_PATH = ../../unittest/cpp/include
@@ -42,7 +42,8 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/IceGL.hpp \
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
-    $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp
+    $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp \
+    ../../lib/gl/DisplayListAssembler.hpp
 
 FORMS    += mainwindow.ui
 

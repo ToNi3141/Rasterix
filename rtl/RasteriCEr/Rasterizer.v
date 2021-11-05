@@ -86,7 +86,7 @@ module Rasterizer
     wire isInTriangleAndInBounds = isInTriangle & (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]) & (x >= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]);
     /* verilator lint_off WIDTH */
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
-    /* verilator lint_off WIDTH */
+    /* verilator lint_on WIDTH */
 
     // Edge walker variables
     reg [5:0] edgeWalkingState;
