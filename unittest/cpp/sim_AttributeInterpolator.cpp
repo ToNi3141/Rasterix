@@ -204,6 +204,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
+    REQUIRE(top->pixelInPipeline == 0);
 
     ScreenPos sp;
     sp.val.x = 0;
@@ -226,6 +227,8 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = *(uint32_t*)&wy;
     top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
     top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = triangleColor;
+    top->s_axis_tvalid = 1;
+    top->s_axis_tlast = 0;
 
     // Check the pipeline with 100 pixel
     for (int i = 0; i < 100; i++)
@@ -235,7 +238,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         {
             REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i - CLOCK_DELAY);
             REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 123);
-            REQUIRE(top->m_axis_tvalid == (i - CLOCK_DELAY) % 8);
+            REQUIRE(top->m_axis_tvalid == 1);
             REQUIRE(top->m_axis_tlast == (i - CLOCK_DELAY) % 5);
 
             float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
@@ -252,11 +255,12 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             REQUIRE(Approx(t).epsilon(0.01) == tr);
             REQUIRE(Approx(w).epsilon(0.01) == wr);
         }
+        REQUIRE(top->pixelInPipeline == 1);
  
         sp.val.x++;
         sp.val.y--;
         top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
-        top->s_axis_tvalid = i % 8;
+        top->s_axis_tvalid = 1;
         top->s_axis_tlast = i % 5;
         top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = i;
     }
@@ -272,8 +276,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
         REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i);
         REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 123);
-        REQUIRE(top->m_axis_tvalid == i % 8);
+        REQUIRE(top->m_axis_tvalid == 1);
         REQUIRE(top->m_axis_tlast == i % 5);
+        REQUIRE(top->pixelInPipeline == 1);
 
         float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
         float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
@@ -321,6 +326,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
+    REQUIRE(top->pixelInPipeline == 0);
 
     // Destroy model
     delete top;

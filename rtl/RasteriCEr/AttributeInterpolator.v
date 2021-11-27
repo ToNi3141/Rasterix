@@ -68,6 +68,9 @@ module AttributeInterpolator #(
     wire [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0] triangle_static_color = s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS +: RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE];
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] framebuffer_index = s_axis_tdata[RASTERIZER_AXIS_PARAMETER_SIZE +: FRAMEBUFFER_INDEX_WIDTH];
 
+    // Pixel counter
+    reg [5 : 0] pixelCounter = 0;
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0 Setup delays for pass through values
     ////////////////////////////////////////////////////////////////////////////
@@ -181,4 +184,25 @@ module AttributeInterpolator #(
         {step_5_texture_t, {FLOAT_SIZE_DIFF{1'b0}}},
         {step_5_texture_s, {FLOAT_SIZE_DIFF{1'b0}}}
     };
+
+    always @(posedge clk)
+    begin
+        if ((m_axis_tvalid == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
+        begin
+            // nop
+        end
+        if ((m_axis_tvalid == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
+        begin
+            pixelCounter = pixelCounter - 1;
+        end
+        if ((m_axis_tvalid == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
+        begin
+            pixelCounter = pixelCounter + 1;
+        end
+        if ((m_axis_tvalid == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
+        begin
+            // nop
+        end
+        pixelInPipeline <= pixelCounter != 0;
+    end
 endmodule
