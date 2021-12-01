@@ -18,12 +18,14 @@
 module FragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
-    parameter FRAMEBUFFER_INDEX_WIDTH = 14
+    parameter FRAMEBUFFER_INDEX_WIDTH = 14,
+    localparam AXIS_WORD_WIDTH = 32,
+    localparam FLOAT_SIZE = 24
 )
 (
     input  wire        clk,
     input  wire        reset,
-    output wire        pixelInPipeline,
+    output reg         pixelInPipeline,
 
     // Shader configurations
     input  wire [15:0] confReg1,
@@ -34,7 +36,7 @@ module FragmentPipeline
     input  wire        s_axis_tvalid,
     output wire        s_axis_tready,
     input  wire        s_axis_tlast,
-    input  wire [FRAMEBUFFER_INDEX_WIDTH + RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
+    input  wire [(5 * AXIS_WORD_WIDTH) - 1 : 0] s_axis_tdata,
 
     // Texture access
     output reg  [31:0] texelIndex,
@@ -179,103 +181,6 @@ module FragmentPipeline
                 alphaTestPassed = 1;
         endcase
     end
-
-    // Multiplication input and results
-    reg  signed [15:0] textureSTmp; // axi (S1.14)
-    wire signed [31:0] textureSCorrected; // wValue * textureSTmp = textureSCorrected (S7.9 * S1.14 = S8.23)
-    
-    reg  signed [15:0] textureTTmp; // axi (S1.14)
-    wire signed [31:0] textureTCorrected; // wValue * textureSTmp = textureTCorrected (S7.9 * S1.14 = S8.23)
-    
-    // Recip input and result
-    // axi (S1.30 >> 15 = U1.15) (Clamp to 16 bit and remove sign, because the value is normalized between 1.0 and 0.0)
-    wire [15:0] recipIn = truncate16(s_axis_tdata[RASTERIZER_AXIS_DEPTH_W_POS +: RASTERIZER_AXIS_DEPTH_W_SIZE] >> 15); 
-    wire [15:0] recipOut; // 0xffffff / recipIn = recipOut (Un.24 / U1.15 = U7.9) (clamp to 16 bit)
-
-    reg [15:0] wValue; // recipIn (U7.9)
-
-    `ifdef UP5K
-    SB_MAC16 my_16x16_mult1 (
-        .A(wValue),
-        .B(textureSTmp),
-        .C(16'h0000),
-        .D(16'h0000),
-        .O(textureSCorrected),
-        .CLK(0),
-        .CE(1),
-        .IRSTTOP(0),
-        .IRSTBOT(0),
-        .ORSTTOP(0),
-        .ORSTBOT(0),
-        .AHOLD(1),
-        .BHOLD(1),
-        .CHOLD(0),
-        .DHOLD(0),
-        .OHOLDTOP(0),
-        .OHOLDBOT(0),
-        .OLOADTOP(0),
-        .OLOADBOT(0),
-        .ADDSUBTOP(0),
-        .ADDSUBBOT(0),
-        .CO(),
-        .CI(0),
-    // MAC cascading ports
-        .ACCUMCI(),
-        .ACCUMCO(),
-        .SIGNEXTIN(0),
-        .SIGNEXTOUT()     
-    );
-
-    defparam my_16x16_mult1.A_SIGNED = 1'b0;
-    defparam my_16x16_mult1.B_SIGNED = 1'b1;
-    defparam my_16x16_mult1.BOTOUTPUT_SELECT = 2'b11;
-    defparam my_16x16_mult1.TOPOUTPUT_SELECT = 2'b11;
-`else
-    wire signed [16:0] wValueSigned = {1'b0, wValue}; // Convert 16 bit unsigned wValue into a 17 bit signed value
-    assign textureSCorrected = wValueSigned * textureSTmp;
-`endif
-    
-`ifdef UP5K
-    SB_MAC16 my_16x16_mult2 (
-        .A(wValue),
-        .B(textureTTmp),
-        .C(16'h0000),
-        .D(16'h0000),
-        .O(textureTCorrected),
-        .CLK(0),
-        .CE(1),
-        .IRSTTOP(0),
-        .IRSTBOT(0),
-        .ORSTTOP(0),
-        .ORSTBOT(0),
-        .AHOLD(1),
-        .BHOLD(1),
-        .CHOLD(0),
-        .DHOLD(0),
-        .OHOLDTOP(0),
-        .OHOLDBOT(0),
-        .OLOADTOP(0),
-        .OLOADBOT(0),
-        .ADDSUBTOP(0),
-        .ADDSUBBOT(0),
-        .CO(),
-        .CI(0),
-    // MAC cascading ports
-        .ACCUMCI(),
-        .ACCUMCO(),
-        .SIGNEXTIN(0),
-        .SIGNEXTOUT()     
-    );
-
-    defparam my_16x16_mult2.A_SIGNED = 1'b0;
-    defparam my_16x16_mult2.B_SIGNED = 1'b1;
-    defparam my_16x16_mult2.BOTOUTPUT_SELECT = 2'b11;
-    defparam my_16x16_mult2.TOPOUTPUT_SELECT = 2'b11;
-`else
-    assign textureTCorrected = wValueSigned * textureTTmp;
-`endif
-    
-    Recip #(.NUMERATOR(32'hffffff), .NUMBER_WIDTH(16), .LOOKUP_PRECISION(11)) recip(recipIn, recipOut);
     
     localparam BLENDPIXEL_WAIT_FOR_REQUEST = 0;
     localparam BLENDPIXEL_CALCULATE_PERSPECTIVE_CORRECTION = 1;
@@ -284,8 +189,13 @@ module FragmentPipeline
     localparam BLENDPIXEL_SAVE_FB = 4;
     localparam BLENDPIXEL_EXECUTE = 5;
 
-    assign pixelInPipeline = s_axis_tvalid 
-                            | stepWaitForRequestValid 
+    
+    // Pixel counter
+    reg [5 : 0] pixelCounter = 0;
+    always @(posedge clk)
+    begin : Counter
+        reg pixelInPipeline1;
+        pixelInPipeline1 = step_convert_tvalid
                             | stepCalculatePerspectiveCorrectionValid 
                             | stepWaitForMemoryValid 
                             | stepTexEnvValid 
@@ -295,50 +205,85 @@ module FragmentPipeline
                             | stepBubbleValid
                             | stepWriteBackValid;
 
-    reg                                 stepWaitForRequestValid = 0;
-    reg                                 stepWaitForRequestWValueAvailable = 0;
-    reg                                 stepWaitForRequestTextureAvailbale = 0;
-    reg [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0]   stepWaitForRequestTriangleColor = 0;
-    always @(posedge clk)
-    begin
-        if (s_axis_tvalid)
+        if ((pixelInPipeline1 == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
         begin
-            textureSTmp <= truncate16($signed(s_axis_tdata[RASTERIZER_AXIS_TEXTURE_S_POS +: RASTERIZER_AXIS_TEXTURE_S_SIZE]) >>> 16);
-            textureTTmp <= truncate16($signed(s_axis_tdata[RASTERIZER_AXIS_TEXTURE_T_POS +: RASTERIZER_AXIS_TEXTURE_T_SIZE]) >>> 16);
-            fbIndex <= s_axis_tdata[RASTERIZER_AXIS_PARAMETER_SIZE +: FRAMEBUFFER_INDEX_WIDTH];
-            stepWaitForRequestTriangleColor <= s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS +: RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE];
-            wValue <= recipOut;
+            // nop
         end
-        stepWaitForRequestValid <= s_axis_tvalid;
+        if ((pixelInPipeline1 == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
+        begin
+            pixelCounter = pixelCounter - 1;
+        end
+        if ((pixelInPipeline1 == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
+        begin
+            pixelCounter = pixelCounter + 1;
+        end
+        if ((pixelInPipeline1 == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
+        begin
+            // nop
+        end
+        pixelInPipeline <= 0;
     end
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP Convert to int
+    ////////////////////////////////////////////////////////////////////////////
+    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_framebuffer_index;
+    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_triangle_color;
+    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_depth_w;
+    wire [23 : 0]                   step_convert_texture_s;
+    wire [23 : 0]                   step_convert_texture_t;
+    wire                            step_convert_tvalid;
+    wire [15 : 0]                   step_convert_w;
+
+    localparam INTERP_TEXTURE_S = 0;
+    localparam INTERP_TEXTURE_T = INTERP_TEXTURE_S + AXIS_WORD_WIDTH;
+    localparam INTERP_DEPTH_W = INTERP_TEXTURE_T + AXIS_WORD_WIDTH;
+    localparam INTERP_TRIANGLE_COLOR = INTERP_DEPTH_W + AXIS_WORD_WIDTH;
+    localparam INTERP_FRAMEBUFFER_INDEX = INTERP_TRIANGLE_COLOR + AXIS_WORD_WIDTH;
+
+    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
+        convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[INTERP_FRAMEBUFFER_INDEX +: AXIS_WORD_WIDTH]), .out(step_convert_framebuffer_index));
+    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
+        convert_tcolor_delay (.clk(clk), .in(s_axis_tdata[INTERP_TRIANGLE_COLOR +: AXIS_WORD_WIDTH]), .out(step_convert_triangle_color));
+    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
+        convert_depth_delay (.clk(clk), .in(s_axis_tdata[INTERP_DEPTH_W +: AXIS_WORD_WIDTH]), .out(step_convert_depth_w));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+        convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
+
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
+        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[INTERP_TEXTURE_S +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
+        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[INTERP_TEXTURE_T +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_t));   
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(16), .EXPONENT_BIAS_OFFSET(-7))
+        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[INTERP_DEPTH_W +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_w));   
 
     reg                         stepCalculatePerspectiveCorrectionValid = 0;
     reg [15:0]                  stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepCalculatePerspectiveCorrectionfbIndex = 0;
     reg [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0]   stepCalculatePerspectiveCorrectionTriangleColor = 0;
     always @(posedge clk)
-    begin
-        if (stepWaitForRequestValid)
+    begin : bla
+        // reg [31:0] z;
+        // reg [63:0] double;
+        // z = step_convert_depth_w;
+        // double = {z[31], z[30], {3{~z[30]}}, z[29:23], z[22:0], {29{1'b0}}};
+        // $display("valid %d d %f 0x%x", step_convert_tvalid, $bitstoreal(double), step_convert_depth_w);
+
+        if (step_convert_tvalid)
         begin
-            if (confReg2[REG2_PERSPECTIVE_CORRECT_TEXTURE_POS +: REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE])
-            begin
-                textureS = clampTexture(truncate24(textureSCorrected >>> 8), confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
-                textureT = clampTexture(truncate24(textureTCorrected >>> 8), confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
-            end
-            else
-            begin
-                textureS = clampTexture({8'h0, textureSTmp <<< 1}, confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
-                textureT = clampTexture({8'h0, textureTTmp <<< 1}, confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
-            end
-    
-            stepCalculatePerspectiveCorrectionDepthBufferVal <= wValue;
-            stepCalculatePerspectiveCorrectionfbIndex <= fbIndex;
-            colorIndexRead <= fbIndex;
-            depthIndexRead <= fbIndex;
+            textureS = clampTexture(step_convert_texture_s, confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
+            textureT = clampTexture(step_convert_texture_t, confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
+            // TODO: Use the float value from step_convert_depth_w[(FLOAT_SIZE - 1) - 16 +: 16];
+            // Currently this does not work. I dont know why the depth buffer does not work when using the float
+            stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_w; 
+            stepCalculatePerspectiveCorrectionfbIndex <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
+            colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
+            depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             texelIndex <= {textureT, textureS};
         end
-        stepCalculatePerspectiveCorrectionTriangleColor <= stepWaitForRequestTriangleColor;
-        stepCalculatePerspectiveCorrectionValid <= stepWaitForRequestValid;
+        stepCalculatePerspectiveCorrectionTriangleColor <= step_convert_triangle_color;
+        stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
+
     end
 
     reg                         stepWaitForMemoryValid = 0;

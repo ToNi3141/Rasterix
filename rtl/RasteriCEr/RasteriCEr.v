@@ -88,7 +88,10 @@ module RasteriCEr #(
     wire [15:0] depthIn;
     wire [15:0] depthOut;
 
-    wire pixelInPipeline;
+    wire pixelInPipelineInterpolator;
+    wire pixelInPipelineShader;
+    wire pixelInPipeline = pixelInPipelineInterpolator || pixelInPipelineShader;
+
    
     // Control
     wire        rasterizerRunning;
@@ -119,10 +122,16 @@ module RasteriCEr #(
     wire        m_fragment_axis_tvalid;
     wire        m_fragment_axis_tready;
     wire        m_fragment_axis_tlast;
-    wire [FRAMEBUFFER_INDEX_WIDTH + RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_fragment_axis_tdata;
+    wire [(5 * 32) - 1 : 0] m_fragment_axis_tdata;
     wire [15:0] confReg1;
     wire [15:0] confReg2;
     wire [15:0] confTextureEnvColor;
+
+    // Rasterizer
+    wire        m_rasterizer_axis_tvalid;
+    wire        m_rasterizer_axis_tready;
+    wire        m_rasterizer_axis_tlast;
+    wire [(12 * 32) - 1 : 0] m_rasterizer_axis_tdata;
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -259,10 +268,10 @@ module RasteriCEr #(
         .s_axis_tlast(s_rasterizer_axis_tlast),
         .s_axis_tdata(s_rasterizer_axis_tdata),
 
-        .m_axis_tvalid(m_fragment_axis_tvalid),
-        .m_axis_tready(m_fragment_axis_tready),
-        .m_axis_tlast(m_fragment_axis_tlast),
-        .m_axis_tdata(m_fragment_axis_tdata)
+        .m_axis_tvalid(m_rasterizer_axis_tvalid),
+        .m_axis_tready(m_rasterizer_axis_tready),
+        .m_axis_tlast(m_rasterizer_axis_tlast),
+        .m_axis_tdata(m_rasterizer_axis_tdata)
     );
     defparam rop.X_RESOLUTION = X_RESOLUTION;
     defparam rop.Y_RESOLUTION = Y_RESOLUTION;
@@ -270,14 +279,26 @@ module RasteriCEr #(
     defparam rop.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-`ifdef UP5K
-    FragmentPipelineIce40Wrapper fragmentPipeline (    
-`else
-    FragmentPipeline fragmentPipeline (    
-`endif
+    AttributeInterpolator attributeInterpolator (
         .clk(aclk),
         .reset(!resetn),
-        .pixelInPipeline(pixelInPipeline),
+        .pixelInPipeline(pixelInPipelineInterpolator),
+
+        .s_axis_tvalid(m_rasterizer_axis_tvalid),
+        .s_axis_tready(m_rasterizer_axis_tready),
+        .s_axis_tlast(m_rasterizer_axis_tlast),
+        .s_axis_tdata(m_rasterizer_axis_tdata),
+
+        .m_axis_tvalid(m_fragment_axis_tvalid),
+        .m_axis_tready(m_fragment_axis_tready),
+        .m_axis_tlast(m_fragment_axis_tlast),
+        .m_axis_tdata(m_fragment_axis_tdata)
+    );
+
+    FragmentPipeline fragmentPipeline (    
+        .clk(aclk),
+        .reset(!resetn),
+        .pixelInPipeline(pixelInPipelineShader),
 
         .confReg1(confReg1),
         .confReg2(confReg2),

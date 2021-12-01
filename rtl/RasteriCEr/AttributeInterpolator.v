@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module AttributeInterpolator #(
-    parameter FLOAT_SIZE = 20,
+    parameter FLOAT_SIZE = 28,
     localparam AXIS_WORD_WIDTH = 32,
     localparam FRAMEBUFFER_INDEX_WIDTH = AXIS_WORD_WIDTH,
     localparam AXIS_OUT_SIZE = (5 * AXIS_WORD_WIDTH), // Framebuffer Index, Triangle color, s, t, w
@@ -49,14 +49,17 @@ module AttributeInterpolator #(
 
     localparam INT_32_DIFF = AXIS_WORD_WIDTH - RASTERIZER_AXIS_SCREEN_POS_SIZE;
 
-    localparam FRAMEBUFFER_INDEX_DELAY = 28; // 5 steps + 8 clk (reciprocal)
+    localparam FRAMEBUFFER_INDEX_DELAY = 32; // 6 steps + 8 clk (reciprocal)
 
     // Selecting the vertex attributes from the axis
     // Convert them from a 32 bit float to a FLOAT_SIZE float. It can easily be done by cutting off bits from the mantissa as long as the exponent keeps it size.
+    wire [FLOAT_SIZE - 1 : 0] inc_texture_s   = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_POS   + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_s_x = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_s_y = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
+    wire [FLOAT_SIZE - 1 : 0] inc_texture_t   = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_POS   + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_t_x = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_t_y = s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
+    wire [FLOAT_SIZE - 1 : 0] inc_depth_w     = s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_POS     + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_depth_w_x   = s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS   + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_depth_w_y   = s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS   + FLOAT_SIZE_DIFF +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
 
@@ -97,18 +100,24 @@ module AttributeInterpolator #(
     IntToFloat #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .INT_SIZE(32))
         intToFloatScreenY (.clk(clk), .in({{INT_32_DIFF{1'b0}}, screen_pos_y}), .out(step_1_screen_pos_y_float));   
 
+    wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_s;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_s_x;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_s_y;
+    wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_t;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_t_x;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_texture_t_y;
+    wire [FLOAT_SIZE - 1 : 0] step_1_inc_depth_w;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_depth_w_x;
     wire [FLOAT_SIZE - 1 : 0] step_1_inc_depth_w_y;
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_s  (.clk(clk), .in(inc_texture_s),   .out(step_1_inc_texture_s));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_sx (.clk(clk), .in(inc_texture_s_x), .out(step_1_inc_texture_s_x));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_sy (.clk(clk), .in(inc_texture_s_y), .out(step_1_inc_texture_s_y));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_t  (.clk(clk), .in(inc_texture_t),   .out(step_1_inc_texture_t));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_tx (.clk(clk), .in(inc_texture_t_x), .out(step_1_inc_texture_t_x));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_ty (.clk(clk), .in(inc_texture_t_y), .out(step_1_inc_texture_t_y));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_dx (.clk(clk), .in(inc_depth_w_x), .out(step_1_inc_depth_w_x));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_dy (.clk(clk), .in(inc_depth_w_y), .out(step_1_inc_depth_w_y));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_d  (.clk(clk), .in(inc_depth_w),     .out(step_1_inc_depth_w));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_dx (.clk(clk), .in(inc_depth_w_x),   .out(step_1_inc_depth_w_x));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_1_delay_dy (.clk(clk), .in(inc_depth_w_y),   .out(step_1_inc_depth_w_y));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2 Multiply screen positions with the vertex attribute increments
@@ -132,47 +141,74 @@ module AttributeInterpolator #(
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
         inc_step_depth_y(.clk(clk), .facAIn(step_1_screen_pos_y_float), .facBIn(step_1_inc_depth_w_y), .prod(step_2_inc_depth_w_y));
 
+    wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_s;
+    wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_t;
+    wire [FLOAT_SIZE - 1 : 0] step_2_inc_depth_w;
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_2_delay_s  (.clk(clk), .in(step_1_inc_texture_s),   .out(step_2_inc_texture_s));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_2_delay_t  (.clk(clk), .in(step_1_inc_texture_t),   .out(step_2_inc_texture_t));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_2_delay_d  (.clk(clk), .in(step_1_inc_depth_w),     .out(step_2_inc_depth_w));
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3 Add vertex attributes to the final increment
     ////////////////////////////////////////////////////////////////////////////
-    wire [FLOAT_SIZE - 1 : 0] step_3_texture_s_inv;
-    wire [FLOAT_SIZE - 1 : 0] step_3_texture_t_inv;
-    wire [FLOAT_SIZE - 1 : 0] step_3_depth_w_inv;
+    wire [FLOAT_SIZE - 1 : 0] step_3_texture_s;
+    wire [FLOAT_SIZE - 1 : 0] step_3_texture_t;
+    wire [FLOAT_SIZE - 1 : 0] step_3_depth_w;
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_s (.clk(clk), .aIn(step_2_inc_texture_s_x), .bIn(step_2_inc_texture_s_y), .sum(step_3_texture_s_inv));
+        add_to_final_inc_s (.clk(clk), .aIn(step_2_inc_texture_s_x), .bIn(step_2_inc_texture_s_y), .sum(step_3_texture_s));
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_t (.clk(clk), .aIn(step_2_inc_texture_t_x), .bIn(step_2_inc_texture_t_y), .sum(step_3_texture_t_inv));
+        add_to_final_inc_t (.clk(clk), .aIn(step_2_inc_texture_t_x), .bIn(step_2_inc_texture_t_y), .sum(step_3_texture_t));
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_d (.clk(clk), .aIn(step_2_inc_depth_w_x), .bIn(step_2_inc_depth_w_y), .sum(step_3_depth_w_inv));
+        add_to_final_inc_d (.clk(clk), .aIn(step_2_inc_depth_w_x), .bIn(step_2_inc_depth_w_y), .sum(step_3_depth_w));
+
+    wire [FLOAT_SIZE - 1 : 0] step_3_inc_texture_s;
+    wire [FLOAT_SIZE - 1 : 0] step_3_inc_texture_t;
+    wire [FLOAT_SIZE - 1 : 0] step_3_inc_depth_w;
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_3_delay_s  (.clk(clk), .in(step_2_inc_texture_s),   .out(step_3_inc_texture_s));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_3_delay_t  (.clk(clk), .in(step_2_inc_texture_t),   .out(step_3_inc_texture_t));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_3_delay_d  (.clk(clk), .in(step_2_inc_depth_w),     .out(step_3_inc_depth_w));
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 4 Calculate w reciprocal
+    // STEP 4 Add final increment to the base
     ////////////////////////////////////////////////////////////////////////////
-    wire [FLOAT_SIZE - 1 : 0] step_4_depth_w;
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE))
-        recip_depth_w (.clk(clk), .in(step_3_depth_w_inv), .out(step_4_depth_w));
-
     wire [FLOAT_SIZE - 1 : 0] step_4_texture_s_inv;
     wire [FLOAT_SIZE - 1 : 0] step_4_texture_t_inv;
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_3_delay_s (.clk(clk), .in(step_3_texture_s_inv), .out(step_4_texture_s_inv));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_3_delay_t (.clk(clk), .in(step_3_texture_t_inv), .out(step_4_texture_t_inv));
+    wire [FLOAT_SIZE - 1 : 0] step_4_depth_w_inv;
+    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+        add_to_base_s (.clk(clk), .aIn(step_3_inc_texture_s), .bIn(step_3_texture_s), .sum(step_4_texture_s_inv));
+    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+        add_to_base_t (.clk(clk), .aIn(step_3_inc_texture_t), .bIn(step_3_texture_t), .sum(step_4_texture_t_inv));
+    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+        add_to_base_d (.clk(clk), .aIn(step_3_inc_depth_w), .bIn(step_3_depth_w), .sum(step_4_depth_w_inv));
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 5 Calculate final attribute value
+    // STEP 5 Calculate w reciprocal
     ////////////////////////////////////////////////////////////////////////////
-    wire [FLOAT_SIZE - 1 : 0] step_5_texture_s;
-    wire [FLOAT_SIZE - 1 : 0] step_5_texture_t;
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        mul_texture_s_w(.clk(clk), .facAIn(step_4_texture_s_inv), .facBIn(step_4_depth_w), .prod(step_5_texture_s));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        mul_texture_t_w(.clk(clk), .facAIn(step_4_texture_t_inv), .facBIn(step_4_depth_w), .prod(step_5_texture_t));
-
     wire [FLOAT_SIZE - 1 : 0] step_5_depth_w;
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_4_delay_w (.clk(clk), .in(step_4_depth_w), .out(step_5_depth_w));
+    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE))
+        recip_depth_w (.clk(clk), .in(step_4_depth_w_inv), .out(step_5_depth_w));
+
+    wire [FLOAT_SIZE - 1 : 0] step_5_texture_s_inv;
+    wire [FLOAT_SIZE - 1 : 0] step_5_texture_t_inv;
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_s (.clk(clk), .in(step_4_texture_s_inv), .out(step_5_texture_s_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_t (.clk(clk), .in(step_4_texture_t_inv), .out(step_5_texture_t_inv));
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 6 Calculate final attribute value
+    ////////////////////////////////////////////////////////////////////////////
+    wire [FLOAT_SIZE - 1 : 0] step_6_texture_s;
+    wire [FLOAT_SIZE - 1 : 0] step_6_texture_t;
+    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
+        mul_texture_s_w(.clk(clk), .facAIn(step_5_texture_s_inv), .facBIn(step_5_depth_w), .prod(step_6_texture_s));
+    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
+        mul_texture_t_w(.clk(clk), .facAIn(step_5_texture_t_inv), .facBIn(step_5_depth_w), .prod(step_6_texture_t));
+
+    wire [FLOAT_SIZE - 1 : 0] step_6_depth_w;
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_w (.clk(clk), .in(step_5_depth_w), .out(step_6_depth_w));
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 6 Output calculated values
+    // STEP 7 Output calculated values
     ////////////////////////////////////////////////////////////////////////////
     assign s_axis_tready = 1;
     assign m_axis_tvalid = step_0_tvalid;
@@ -180,9 +216,9 @@ module AttributeInterpolator #(
     assign m_axis_tdata = {
         step_0_framebuffer_index,
         {{(AXIS_WORD_WIDTH - RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE){1'b0}}, step_0_triangle_static_color},
-        {step_5_depth_w, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_5_texture_t, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_5_texture_s, {FLOAT_SIZE_DIFF{1'b0}}}
+        {step_6_depth_w, {FLOAT_SIZE_DIFF{1'b0}}},
+        {step_6_texture_t, {FLOAT_SIZE_DIFF{1'b0}}},
+        {step_6_texture_s, {FLOAT_SIZE_DIFF{1'b0}}}
     };
 
     always @(posedge clk)

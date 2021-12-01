@@ -36,8 +36,8 @@ bool Rasterizer::rasterize(RasterizedTriangle &rasterizedTriangle,
                            const Vec4 &v2f,
                            const Vec2& st2f)
 {
-    //   return rasterizeFloat(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
-    return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
+//        return rasterizeFloat(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
+   return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
 }
 
 bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
@@ -48,7 +48,7 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
     if ((lineStart == 0) && (triangleToIncrement.bbStartY < lineEnd))
     {
         // Handle the first case in a special manner, because this case is really fast to calculate. Just check
-        // for the bounding box and if the triangle is in this bounding box, just render it without forther calculations
+        // for the bounding box and if the triangle is in this bounding box, just render it
         memcpy(&incrementedTriangle, &triangleToIncrement, sizeof(incrementedTriangle));
         return true;
     }
@@ -80,7 +80,7 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
             // to the current area
             if (incrementedTriangle.bbStartY < lineStart)
             {
-                incrementedTriangle.depthWInit = triangleToIncrement.depthWInit;
+               incrementedTriangle.depthW = triangleToIncrement.depthW;
 
                 const int32_t bbDiff = lineStart - incrementedTriangle.bbStartY;
                 incrementedTriangle.bbStartY = 0;
@@ -90,11 +90,12 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.wInit *= bbDiff;
                 incrementedTriangle.wInit += triangleToIncrement.wInit;
 
-                incrementedTriangle.texStInit = incrementedTriangle.texStYInc;
-                incrementedTriangle.texStInit *= bbDiff;
-                incrementedTriangle.texStInit += triangleToIncrement.texStInit;
 
-                incrementedTriangle.depthWInit += incrementedTriangle.depthWYInc * bbDiff;
+                incrementedTriangle.texSt = incrementedTriangle.texStYInc;
+                incrementedTriangle.texSt *= bbDiff;
+                incrementedTriangle.texSt += triangleToIncrement.texSt;
+
+                incrementedTriangle.depthW += incrementedTriangle.depthWYInc * bbDiff;
             }
             // The triangle starts in this area. So we just have to readjust the bounding box
             else
@@ -102,8 +103,8 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.bbStartY -= lineStart;
                 incrementedTriangle.bbEndY -= lineStart;
                 incrementedTriangle.wInit = triangleToIncrement.wInit;
-                incrementedTriangle.texStInit = triangleToIncrement.texStInit;
-                incrementedTriangle.depthWInit = triangleToIncrement.depthWInit;
+                incrementedTriangle.texSt = triangleToIncrement.texSt;
+                incrementedTriangle.depthW = triangleToIncrement.depthW;
             }
 
             return true;
@@ -157,20 +158,21 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     // Use here 4 bits for the integer part. That offers the possibility to use texture coordinates which have a maximum value of 16.
     // This is required for repetitions. On the hardware, overflows are not a big deal during repeats but if we want to clamp, then an overflow
     // destroyes the clamp. Keep in mind that the end result is still a s1.30 number which is send to the hardware.
-    Vec3i stx, sty;
-    stx.fromVec<27>({st0f[0], st1f[0], st2f[0]});
-    sty.fromVec<27>({st0f[1], st1f[1], st2f[1]});
+//    Vec3i stx, sty;
+//    stx.fromVec<27>({st0f[0], st1f[0], st2f[0]});
+//    sty.fromVec<27>({st0f[1], st1f[1], st2f[1]});
 
     Vec2i v0, v1, v2;
     v0.fromVec<EDGE_FUNC_SIZE>({v0f[0], v0f[1]});
     v1.fromVec<EDGE_FUNC_SIZE>({v1f[0], v1f[1]});
     v2.fromVec<EDGE_FUNC_SIZE>({v2f[0], v2f[1]});
 
-    Vec3i vW;
-    // TODO / Note: Using now the w component for the z buffer, which converts the z buffer to a w buffer.
+    Vec3 stx = {{st0f[0], st1f[0], st2f[0]}};
+    Vec3 sty = {{st0f[1], st1f[1], st2f[1]}};
+    // TODO / Note: Using the w component for the z buffer, which converts the z buffer to a w buffer.
     // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
-    // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a better choice for more precise z buffers.
-    vW.fromVec<30>({v0f[3], v1f[3], v2f[3]});
+    // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
+    Vec3 vW = {{v0f[3], v1f[3], v2f[3]}};
     
     // Initialize Bounding box
     // Get the bounding box
@@ -237,44 +239,42 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     wIncY *= sign;
     wIncY -= wi;
 
-    // To calculate with the reciprocal of the area should be precise enough. If not, than also the hardware has to implement a more advanced
-    // algorithm to divide
-    // Note: The calculation with the inverse area is right now unprecise and will distort the interpolation of the vertex attributes. There are
-    // two ways to fix that:
-    // 1. Use a areaInv with more digits behind the point. But this can easily cause an overflow when the area is small and is then multiplied with
-    //      a w. If an overflow occurs, the interpolation of the vertex attributes is then wrong and can cause to visible errors
-    // 2. Increase the precission on the hardware when 1/z is calculated.
-    VecInt areaInv = calcRecip(area); // Sn.24
+    float areaInv = 1.0f / area;
 
-    // Normalize the w's. Let them in the Sn.24 format to increase the precission later in the dot product calculation
-    Vec3i wNorm(wi); // Sn.4
-    wNorm.mul<6>(areaInv); // Sn.22 (Sn.24 * Sn.4 = Sn.28) and shift it 6 digits left to get Sn.22
+    Vec3 wNorm;
+    wNorm.fromArray(&(wi.vec[0]), 3);
+    wNorm.mul(areaInv);
 
-    Vec3i wIncXNorm(wIncX);
-    wIncXNorm.mul<6>(areaInv);
+    Vec3 wIncXNorm;
+    wIncXNorm.fromArray(&(wIncX.vec[0]), 3);
+    wIncXNorm.mul(areaInv);
 
-    Vec3i wIncYNorm(wIncY);
-    wIncYNorm.mul<6>(areaInv);
+    Vec3 wIncYNorm;
+    wIncYNorm.fromArray(&(wIncY.vec[0]), 3);
+    wIncYNorm.mul(areaInv);
 
     // Calc perspective correction
     // For the attribute calculation, always use the w component. The w component at this point is already the reciprocal, so just multiply
 #ifndef NO_PERSP_CORRECT
-    stx.mul<30>(vW);
-    sty.mul<30>(vW);
+    stx.mul(vW);
+    sty.mul(vW);
 #endif
 
     // Interpolate texture
-    rasterizedTriangle.texStInit[0] = stx.dot<19>(wNorm); // (Sn.27 * Sn.22 = Sn.49 >> 19 = Sn.30)
-    rasterizedTriangle.texStInit[1] = sty.dot<19>(wNorm);
-    rasterizedTriangle.texStXInc[0] = stx.dot<19>(wIncXNorm);
-    rasterizedTriangle.texStXInc[1] = sty.dot<19>(wIncXNorm);
-    rasterizedTriangle.texStYInc[0] = stx.dot<19>(wIncYNorm);
-    rasterizedTriangle.texStYInc[1] = sty.dot<19>(wIncYNorm);
+    Vec2 sti;
+    sti[0] = stx.dot(wNorm);
+    sti[1] = sty.dot(wNorm);
+    Vec2 stw;
+    stw[0] = stx.dot(wIncXNorm);
+    stw[1] = sty.dot(wIncXNorm);
+    Vec2 sth;
+    sth[0] = stx.dot(wIncYNorm);
+    sth[1] = sty.dot(wIncYNorm);
 
     // Interpolate W
-    rasterizedTriangle.depthWInit = vW.dot<22>(wNorm); // (Sn.30 * Sn.22 = Sn.52 >> 22 = Sn.30)
-    rasterizedTriangle.depthWXInc = vW.dot<22>(wIncXNorm);
-    rasterizedTriangle.depthWYInc = vW.dot<22>(wIncYNorm);
+    float wDepthInit = vW.dot(wNorm);
+    float wDepthIncX = vW.dot(wIncXNorm);
+    float wDepthIncY = vW.dot(wIncYNorm);
 
 #ifdef SOFTWARE_RENDERER
     // During the H increment, only increment as much, that after the H increment, we are at the beginning of the bounding box
@@ -287,10 +287,16 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     wIncY[0] = wIncY[0] - (wIncX[0] * bbDiff);
     wIncY[1] = wIncY[1] - (wIncX[1] * bbDiff);
     wIncY[2] = wIncY[2] - (wIncX[2] * bbDiff);
-    rasterizedTriangle.texStYInc[0] = rasterizedTriangle.texStYInc[0] - (rasterizedTriangle.texStXInc[0] * bbDiff);
-    rasterizedTriangle.texStYInc[1] = rasterizedTriangle.texStYInc[1] - (rasterizedTriangle.texStXInc[1] * bbDiff);
-    rasterizedTriangle.depthWYInc  = rasterizedTriangle.depthWYInc  - (rasterizedTriangle.depthWXInc  * bbDiff);
+    sth[0] = sth[0] - (stw[0] * bbDiff);
+    sth[1] = sth[1] - (stw[1] * bbDiff);
+    wDepthIncY  = wDepthIncY  - (wDepthIncX  * bbDiff);
 #endif
+    rasterizedTriangle.texSt = sti;
+    rasterizedTriangle.texStXInc = stw;
+    rasterizedTriangle.texStYInc = sth;
+    rasterizedTriangle.depthW = wDepthInit;
+    rasterizedTriangle.depthWXInc = wDepthIncX;
+    rasterizedTriangle.depthWYInc = wDepthIncY;
     return true;
 }
 
@@ -430,15 +436,12 @@ bool Rasterizer::rasterizeFloat(RasterizedTriangle &rasterizedTriangle,
     rasterizedTriangle.wXInc.fromVec<4>({wIncX[0], wIncX[1], wIncX[2]});
     rasterizedTriangle.wYInc.fromVec<4>({wIncY[0], wIncY[1], wIncY[2]});
 
-    rasterizedTriangle.texStInit.fromVec<30>({sti[0], sti[1]});
-    rasterizedTriangle.texStXInc.fromVec<30>({stw[0], stw[1]});
-    rasterizedTriangle.texStYInc.fromVec<30>({sth[0], sth[1]});
-
-    Vec3i wx;
-    wx.fromVec<30>({wDepthInit, wDepthIncX, wDepthIncY});
-    rasterizedTriangle.depthWInit = wx[0];
-    rasterizedTriangle.depthWXInc = wx[1];
-    rasterizedTriangle.depthWYInc = wx[2];
+    rasterizedTriangle.texSt = sti;
+    rasterizedTriangle.texStXInc = stw;
+    rasterizedTriangle.texStYInc = sth;
+    rasterizedTriangle.depthW = wDepthInit;
+    rasterizedTriangle.depthWXInc = wDepthIncX;
+    rasterizedTriangle.depthWYInc = wDepthIncY;
 
     return true;
 }
