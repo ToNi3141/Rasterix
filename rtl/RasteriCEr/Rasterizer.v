@@ -26,8 +26,8 @@ module Rasterizer
 
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
-    // The bit width of the command interface. Allowed values: 16, 32, 64, 128, 256
-    parameter CMD_STREAM_WIDTH = 16
+    // The bit width of the command interface. Allowed values: 32, 64, 128, 256
+    parameter CMD_STREAM_WIDTH = 32
 )
 (
     input wire                              clk,
@@ -46,12 +46,12 @@ module Rasterizer
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
-    output reg  [(12 * 32) - 1 : 0] m_axis_tdata
+    output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata
 );
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam PARAMETER_WIDTH = 32;
+    localparam PARAMETER_WIDTH = RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE;
     localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / PARAMETER_WIDTH;
     localparam X_BIT_WIDTH = $clog2(X_RESOLUTION) + 1;
     localparam Y_BIT_WIDTH = $clog2(Y_RESOLUTION) + 1;
@@ -72,12 +72,12 @@ module Rasterizer
 
     // Triangle and Texture Data
     reg [PARAMETER_WIDTH - 1 : 0] paramMem [0 : `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH) - 1];
-    reg [5:0] rasterizerCopyCounter;
-    reg [4:0] paramIndex;
+    reg [5 : 0] rasterizerCopyCounter;
+    reg [4 : 0] paramIndex;
     reg parameterComplete;
     
     // Rasterizer variables
-    reg [5:0] rasterizerState;
+    reg [5 : 0] rasterizerState;
     reg [Y_BIT_WIDTH - 1 : 0] y;
     reg [X_BIT_WIDTH - 1 : 0] x;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndexTmp;
@@ -88,7 +88,7 @@ module Rasterizer
     /* verilator lint_on WIDTH */
 
     // Edge walker variables
-    reg [5:0] edgeWalkingState;
+    reg [5 : 0] edgeWalkingState;
     reg edgeWalkTryOtherside;
     reg edgeWalkingDirection; 
     localparam EDGE_WALKING_DIRECTION_LEFT = 1'b0;
@@ -350,10 +350,9 @@ module Rasterizer
                     end
 
                     // Arguments for the shader
-                    m_axis_tdata <= {{{(32 - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
+                    m_axis_tdata <= {{{(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
                         paramMem[TRIANGLE_CONFIGURATION],
                         {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - paramMem[BB_START][BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x}} - paramMem[BB_START][BB_X_POS +: 16],
-                        // {{(Y_LINE_RESOLUTION - 1) - {{(32 - Y_BIT_WIDTH){1'b0}}, y}}[0 +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x}},
                         paramMem[INC_DEPTH_W_Y],
                         paramMem[INC_DEPTH_W_X],
                         paramMem[INC_DEPTH_W],

@@ -16,11 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module AttributeInterpolator #(
-    parameter FLOAT_SIZE = 28,
-    localparam AXIS_WORD_WIDTH = 32,
-    localparam FRAMEBUFFER_INDEX_WIDTH = AXIS_WORD_WIDTH,
-    localparam AXIS_OUT_SIZE = (5 * AXIS_WORD_WIDTH), // Framebuffer Index, Triangle color, s, t, w
-    localparam RASTERIZER_STREAM_WIDTH = FRAMEBUFFER_INDEX_WIDTH + RASTERIZER_AXIS_PARAMETER_SIZE
+    parameter FLOAT_SIZE = 28
 )
 (
     input wire                              clk,
@@ -33,21 +29,21 @@ module AttributeInterpolator #(
     input  wire                             s_axis_tvalid,
     output wire                             s_axis_tready,
     input  wire                             s_axis_tlast,
-    input  wire [RASTERIZER_STREAM_WIDTH - 1 : 0]  s_axis_tdata,
+    input  wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0]    s_axis_tdata,
 
     // Pixel Stream Interpolated
     output wire                             m_axis_tvalid,
     input  wire                             m_axis_tready,
     output wire                             m_axis_tlast,
-    output wire [AXIS_OUT_SIZE - 1 : 0]     m_axis_tdata
+    output wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0]   m_axis_tdata
 );
 `include "RasterizerDefines.vh"
-`include "RegisterAndDescriptorDefines.vh"
+`include "AttributeInterpolatorDefines.vh"
     localparam EXPONENT_SIZE = 8; // Size of a IEEE 754 32 bit float
     localparam MANTISSA_SIZE = FLOAT_SIZE - 1 - EXPONENT_SIZE; // Calculate the mantissa size by substracting from the FLOAT_SIZE the sign and exponent
     localparam FLOAT_SIZE_DIFF = RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE;
 
-    localparam INT_32_DIFF = AXIS_WORD_WIDTH - RASTERIZER_AXIS_SCREEN_POS_SIZE;
+    localparam INT_32_DIFF = RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - RASTERIZER_AXIS_SCREEN_POS_SIZE;
 
     localparam FRAMEBUFFER_INDEX_DELAY = 32; // 6 steps + 8 clk (reciprocal)
 
@@ -68,8 +64,8 @@ module AttributeInterpolator #(
     wire [RASTERIZER_AXIS_SCREEN_POS_SIZE - 1 : 0] screen_pos_y = s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_Y_POS +: RASTERIZER_AXIS_SCREEN_POS_SIZE];
 
     // Static attributes
-    wire [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0] triangle_static_color = s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS +: RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE];
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] framebuffer_index = s_axis_tdata[RASTERIZER_AXIS_PARAMETER_SIZE +: FRAMEBUFFER_INDEX_WIDTH];
+    wire [RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0] triangle_static_color = s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE];
+    wire [RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0] framebuffer_index = s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE];
 
     // Pixel counter
     reg [5 : 0] pixelCounter = 0;
@@ -77,13 +73,13 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0 Setup delays for pass through values
     ////////////////////////////////////////////////////////////////////////////
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] step_0_framebuffer_index; 
-    wire [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0] step_0_triangle_static_color;
+    wire [RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0] step_0_framebuffer_index; 
+    wire [RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0] step_0_triangle_static_color;
     wire step_0_tvalid;
     wire step_0_tlast;
-    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_framebuffer_index (.clk(clk), .in(framebuffer_index), .out(step_0_framebuffer_index));
-    ValueDelay #(.VALUE_SIZE(RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_1_delay_triangle_color (.clk(clk), .in(triangle_static_color), .out(step_0_triangle_static_color));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_1_delay_tvalid (.clk(clk), .in(s_axis_tvalid), .out(step_0_tvalid));
@@ -215,7 +211,7 @@ module AttributeInterpolator #(
     assign m_axis_tlast = step_0_tlast;
     assign m_axis_tdata = {
         step_0_framebuffer_index,
-        {{(AXIS_WORD_WIDTH - RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE){1'b0}}, step_0_triangle_static_color},
+        step_0_triangle_static_color,
         {step_6_depth_w, {FLOAT_SIZE_DIFF{1'b0}}},
         {step_6_texture_t, {FLOAT_SIZE_DIFF{1'b0}}},
         {step_6_texture_s, {FLOAT_SIZE_DIFF{1'b0}}}

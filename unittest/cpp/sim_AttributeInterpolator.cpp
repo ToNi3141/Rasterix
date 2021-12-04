@@ -91,94 +91,6 @@ void calculateVertexAttributes(float sb,
     t *= w;
 }
 
-// TEST_CASE("Interpolate some values", "[AttributeInterpolator]")
-// {
-//     VAttributeInterpolator* top = new VAttributeInterpolator();
-
-//     ScreenPos sp;
-//     sp.val.x = 1;
-//     sp.val.y = 1;
-
-//     float sx = 1;
-//     float sy = 1;
-//     float tx = 1;
-//     float ty = 1;
-//     float wx = 1;
-//     float wy = 1;
-//     uint16_t triangleColor = 123;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS] = *(uint32_t*)&sx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS] = *(uint32_t*)&sy;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS] = *(uint32_t*)&tx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS] = *(uint32_t*)&ty;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS] = *(uint32_t*)&wx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = *(uint32_t*)&wy;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = triangleColor;
-
-//     for (int i = 0; i < 28; i++)
-//     {
-//         clk(top);
-//     }
-
-//     float s = *(float*)&(top->m_axis_tdata[0]);
-//     float t = *(float*)&(top->m_axis_tdata[1]);
-//     float w = *(float*)&(top->m_axis_tdata[2]);
-
-//     REQUIRE(Approx(s).epsilon(0.005) == 1.0f);
-//     REQUIRE(Approx(t).epsilon(0.005) == 1.0f);
-//     REQUIRE(Approx(w).epsilon(0.005) == 0.5f);
-
-//     // Destroy model
-//     delete top;
-// }
-
-// TEST_CASE("Interpolate some values 2", "[AttributeInterpolator]")
-// {
-//     VAttributeInterpolator* top = new VAttributeInterpolator();
-
-//     ScreenPos sp;
-//     sp.val.x = 2;
-//     sp.val.y = 3;
-
-//     float sx = 0.50;
-//     float sy = 0.25;
-//     float tx = 0.20;
-//     float ty = 0.10;
-//     float wx = 0.25;
-//     float wy = 0.25;
-//     uint16_t triangleColor = 123;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS] = *(uint32_t*)&sx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS] = *(uint32_t*)&sy;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS] = *(uint32_t*)&tx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS] = *(uint32_t*)&ty;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS] = *(uint32_t*)&wx;
-//     top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = *(uint32_t*)&wy;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
-
-//     top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = triangleColor;
-
-//     for (int i = 0; i < 28; i++)
-//     {
-//         clk(top);
-//     }
-
-//     float s = *(float*)&(top->m_axis_tdata[0]);
-//     float t = *(float*)&(top->m_axis_tdata[1]);
-//     float w = *(float*)&(top->m_axis_tdata[2]);
-
-//     REQUIRE(Approx(s).epsilon(0.005) == 1.4f);
-//     REQUIRE(Approx(t).epsilon(0.005) == 0.56f);
-//     REQUIRE(Approx(w).epsilon(0.005) == 0.8f);
-
-//     // Destroy model
-//     delete top;
-// }
-
 TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolator]")
 {
     static const uint32_t CLOCK_DELAY = 32;
@@ -219,10 +131,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     sp.val.x = 0;
     sp.val.y = 100;
 
-    float sb = -3.0;
+    float sb = 3.0;
     float sx = 0.50;
     float sy = 0.25;
-    float tb = -4.0;
+    float tb = 4.0;
     float tx = 0.20;
     float ty = 0.10;
     float wb = 0.06754551082849503;

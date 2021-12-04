@@ -154,14 +154,6 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     static constexpr uint32_t EDGE_FUNC_SIZE = 2;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
 
-    // Convert to a fixed point representation
-    // Use here 4 bits for the integer part. That offers the possibility to use texture coordinates which have a maximum value of 16.
-    // This is required for repetitions. On the hardware, overflows are not a big deal during repeats but if we want to clamp, then an overflow
-    // destroyes the clamp. Keep in mind that the end result is still a s1.30 number which is send to the hardware.
-//    Vec3i stx, sty;
-//    stx.fromVec<27>({st0f[0], st1f[0], st2f[0]});
-//    sty.fromVec<27>({st0f[1], st1f[1], st2f[1]});
-
     Vec2i v0, v1, v2;
     v0.fromVec<EDGE_FUNC_SIZE>({v0f[0], v0f[1]});
     v1.fromVec<EDGE_FUNC_SIZE>({v1f[0], v1f[1]});

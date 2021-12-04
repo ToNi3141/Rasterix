@@ -19,7 +19,6 @@ module FragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
-    localparam AXIS_WORD_WIDTH = 32,
     localparam FLOAT_SIZE = 24
 )
 (
@@ -36,7 +35,7 @@ module FragmentPipeline
     input  wire        s_axis_tvalid,
     output wire        s_axis_tready,
     input  wire        s_axis_tlast,
-    input  wire [(5 * AXIS_WORD_WIDTH) - 1 : 0] s_axis_tdata,
+    input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
     output reg  [31:0] texelIndex,
@@ -60,8 +59,8 @@ module FragmentPipeline
     output reg         depthWriteEnable,
     output reg  [15:0] depthOut
 );
-`include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
+`include "AttributeInterpolatorDefines.vh"
 
     function [15:0] truncate16;
         input [31:0] in;
@@ -227,40 +226,34 @@ module FragmentPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP Convert to int
     ////////////////////////////////////////////////////////////////////////////
-    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_framebuffer_index;
-    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_triangle_color;
-    wire [AXIS_WORD_WIDTH - 1 : 0]  step_convert_depth_w;
+    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
+    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_triangle_color;
+    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_depth_w;
     wire [23 : 0]                   step_convert_texture_s;
     wire [23 : 0]                   step_convert_texture_t;
     wire                            step_convert_tvalid;
     wire [15 : 0]                   step_convert_w;
 
-    localparam INTERP_TEXTURE_S = 0;
-    localparam INTERP_TEXTURE_T = INTERP_TEXTURE_S + AXIS_WORD_WIDTH;
-    localparam INTERP_DEPTH_W = INTERP_TEXTURE_T + AXIS_WORD_WIDTH;
-    localparam INTERP_TRIANGLE_COLOR = INTERP_DEPTH_W + AXIS_WORD_WIDTH;
-    localparam INTERP_FRAMEBUFFER_INDEX = INTERP_TRIANGLE_COLOR + AXIS_WORD_WIDTH;
-
-    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
-        convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[INTERP_FRAMEBUFFER_INDEX +: AXIS_WORD_WIDTH]), .out(step_convert_framebuffer_index));
-    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
-        convert_tcolor_delay (.clk(clk), .in(s_axis_tdata[INTERP_TRIANGLE_COLOR +: AXIS_WORD_WIDTH]), .out(step_convert_triangle_color));
-    ValueDelay #(.VALUE_SIZE(AXIS_WORD_WIDTH), .DELAY(4)) 
-        convert_depth_delay (.clk(clk), .in(s_axis_tdata[INTERP_DEPTH_W +: AXIS_WORD_WIDTH]), .out(step_convert_depth_w));
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
+        convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
+        convert_tcolor_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TRIANGLE_COLOR_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_triangle_color));
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
+        convert_depth_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_depth_w));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
 
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[INTERP_TEXTURE_S +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_s));
+        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_S_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_s));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[INTERP_TEXTURE_T +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_t));   
+        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_T_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_t));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(16), .EXPONENT_BIAS_OFFSET(-7))
-        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[INTERP_DEPTH_W +: AXIS_WORD_WIDTH][AXIS_WORD_WIDTH - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_w));   
+        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_w));   
 
     reg                         stepCalculatePerspectiveCorrectionValid = 0;
     reg [15:0]                  stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepCalculatePerspectiveCorrectionfbIndex = 0;
-    reg [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0]   stepCalculatePerspectiveCorrectionTriangleColor = 0;
+    reg [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   stepCalculatePerspectiveCorrectionTriangleColor = 0;
     always @(posedge clk)
     begin : bla
         // reg [31:0] z;
@@ -289,7 +282,7 @@ module FragmentPipeline
     reg                         stepWaitForMemoryValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepWaitForMemoryFbIndex = 0;
     reg [15:0]                  stepWaitForMemoryDepthValue = 0;    
-    reg [RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE - 1 : 0]   stepWaitForMemoryTriangleColor = 0;
+    reg [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   stepWaitForMemoryTriangleColor = 0;
     always @(posedge clk)
     begin
         if (stepCalculatePerspectiveCorrectionValid)

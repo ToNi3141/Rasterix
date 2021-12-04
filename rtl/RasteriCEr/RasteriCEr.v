@@ -55,6 +55,7 @@ module RasteriCEr #(
 );
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
+`include "AttributeInterpolatorDefines.vh"
 
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
     localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
@@ -118,11 +119,11 @@ module RasteriCEr #(
     wire        s_texture_axis_tlast;
     wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_axis_tdata;
 
-    // Shader
-    wire        m_fragment_axis_tvalid;
-    wire        m_fragment_axis_tready;
-    wire        m_fragment_axis_tlast;
-    wire [(5 * 32) - 1 : 0] m_fragment_axis_tdata;
+    // Attribute interpolator
+    wire        m_attr_inter_axis_tvalid;
+    wire        m_attr_inter_axis_tready;
+    wire        m_attr_inter_axis_tlast;
+    wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
     wire [15:0] confReg1;
     wire [15:0] confReg2;
     wire [15:0] confTextureEnvColor;
@@ -131,7 +132,7 @@ module RasteriCEr #(
     wire        m_rasterizer_axis_tvalid;
     wire        m_rasterizer_axis_tready;
     wire        m_rasterizer_axis_tlast;
-    wire [(12 * 32) - 1 : 0] m_rasterizer_axis_tdata;
+    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -289,10 +290,10 @@ module RasteriCEr #(
         .s_axis_tlast(m_rasterizer_axis_tlast),
         .s_axis_tdata(m_rasterizer_axis_tdata),
 
-        .m_axis_tvalid(m_fragment_axis_tvalid),
-        .m_axis_tready(m_fragment_axis_tready),
-        .m_axis_tlast(m_fragment_axis_tlast),
-        .m_axis_tdata(m_fragment_axis_tdata)
+        .m_axis_tvalid(m_attr_inter_axis_tvalid),
+        .m_axis_tready(m_attr_inter_axis_tready),
+        .m_axis_tlast(m_attr_inter_axis_tlast),
+        .m_axis_tdata(m_attr_inter_axis_tdata)
     );
 
     FragmentPipeline fragmentPipeline (    
@@ -304,10 +305,10 @@ module RasteriCEr #(
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
 
-        .s_axis_tvalid(m_fragment_axis_tvalid),
-        .s_axis_tready(m_fragment_axis_tready),
-        .s_axis_tlast(m_fragment_axis_tlast),
-        .s_axis_tdata(m_fragment_axis_tdata),
+        .s_axis_tvalid(m_attr_inter_axis_tvalid),
+        .s_axis_tready(m_attr_inter_axis_tready),
+        .s_axis_tlast(m_attr_inter_axis_tlast),
+        .s_axis_tdata(m_attr_inter_axis_tdata),
 
         .texelIndex(texelIndex),
         .texel(texel),
