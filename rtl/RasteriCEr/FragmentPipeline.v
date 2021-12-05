@@ -19,7 +19,7 @@ module FragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
-    localparam FLOAT_SIZE = 24
+    localparam FLOAT_SIZE = 32
 )
 (
     input  wire        clk,
@@ -192,35 +192,25 @@ module FragmentPipeline
     // Pixel counter
     reg [5 : 0] pixelCounter = 0;
     always @(posedge clk)
-    begin : Counter
-        reg pixelInPipeline1;
-        pixelInPipeline1 = step_convert_tvalid
-                            | stepCalculatePerspectiveCorrectionValid 
-                            | stepWaitForMemoryValid 
-                            | stepTexEnvValid 
-                            | stepTexEnvResultValid 
-                            | stepBlendValid
-                            | stepBlendResultValid
-                            | stepBubbleValid
-                            | stepWriteBackValid;
-
-        if ((pixelInPipeline1 == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
+    begin
+        if ((stepWriteBackValid == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
         begin
-            // nop
+            pixelInPipeline <= 1;
         end
-        if ((pixelInPipeline1 == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
+        if ((stepWriteBackValid == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
         begin
             pixelCounter = pixelCounter - 1;
+            pixelInPipeline <= 1;
         end
-        if ((pixelInPipeline1 == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
+        if ((stepWriteBackValid == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
         begin
             pixelCounter = pixelCounter + 1;
+            pixelInPipeline <= 1;
         end
-        if ((pixelInPipeline1 == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
+        if ((stepWriteBackValid == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
         begin
-            // nop
+            pixelInPipeline <= pixelCounter != 0;
         end
-        pixelInPipeline <= 0;
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -229,10 +219,10 @@ module FragmentPipeline
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_triangle_color;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_depth_w;
-    wire [23 : 0]                   step_convert_texture_s;
-    wire [23 : 0]                   step_convert_texture_t;
+    wire [31 : 0]                   step_convert_texture_s;
+    wire [31 : 0]                   step_convert_texture_t;
     wire                            step_convert_tvalid;
-    wire [15 : 0]                   step_convert_w;
+    wire [31 : 0]                   step_convert_w;
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
@@ -243,11 +233,11 @@ module FragmentPipeline
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
 
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
         convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
         convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture_t));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(16), .EXPONENT_BIAS_OFFSET(-7))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-7))
         convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_w));   
 
     reg                         stepCalculatePerspectiveCorrectionValid = 0;
@@ -255,7 +245,7 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepCalculatePerspectiveCorrectionfbIndex = 0;
     reg [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   stepCalculatePerspectiveCorrectionTriangleColor = 0;
     always @(posedge clk)
-    begin : bla
+    begin
         // reg [31:0] z;
         // reg [63:0] double;
         // z = step_convert_depth_w;
@@ -268,7 +258,7 @@ module FragmentPipeline
             textureT = clampTexture(step_convert_texture_t, confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
             // TODO: Use the float value from step_convert_depth_w[(FLOAT_SIZE - 1) - 16 +: 16];
             // Currently this does not work. I dont know why the depth buffer does not work when using the float
-            stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_w; 
+            stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_w[0 +: 16]; 
             stepCalculatePerspectiveCorrectionfbIndex <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
@@ -823,6 +813,7 @@ module FragmentPipeline
             depthOut <= stepBubbleDepthValue;
             colorOut <= stepBubbleColorFrag;
         end
+        stepWriteBackValid <= stepBubbleValid;
         colorWriteEnable <= stepBubbleValid & stepBubbleWriteColor;
         depthWriteEnable <= stepBubbleValid & stepBubbleWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end

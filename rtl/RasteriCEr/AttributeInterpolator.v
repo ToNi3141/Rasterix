@@ -221,20 +221,21 @@ module AttributeInterpolator #(
     begin
         if ((m_axis_tvalid == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
         begin
-            // nop
+            pixelInPipeline <= 1;
         end
         if ((m_axis_tvalid == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
         begin
             pixelCounter = pixelCounter - 1;
+            pixelInPipeline <= 1;
         end
         if ((m_axis_tvalid == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
         begin
             pixelCounter = pixelCounter + 1;
+            pixelInPipeline <= 1;
         end
         if ((m_axis_tvalid == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
         begin
-            // nop
+            pixelInPipeline <= pixelCounter != 0;
         end
-        pixelInPipeline <= pixelCounter != 0;
     end
 endmodule
