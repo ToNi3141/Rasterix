@@ -66,8 +66,8 @@ module TextureBuffer #(
     `RAM_MODULE #(
         .MEM_SIZE_BYTES(SIZE),
         .MEM_WIDTH(STREAM_WIDTH),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH),
-        .MEMORY_PRIMITIVE("distributed")
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
+        //.MEMORY_PRIMITIVE("distributed")
     ) texCache 
     (
         .clk(clk),

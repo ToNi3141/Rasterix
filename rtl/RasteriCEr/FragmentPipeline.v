@@ -244,11 +244,11 @@ module FragmentPipeline
         convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
 
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_S_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_s));
+        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture_s));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(24), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_T_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture_t));   
+        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_TEXTURE_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture_t));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(16), .EXPONENT_BIAS_OFFSET(-7))
-        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE][ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_w));   
+        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_w));   
 
     reg                         stepCalculatePerspectiveCorrectionValid = 0;
     reg [15:0]                  stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
