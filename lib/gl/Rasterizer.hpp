@@ -35,6 +35,7 @@ public:
         Vec3i wInit;
         Vec3i wXInc;
         Vec3i wYInc;
+        // TODO: Maybe rearrange the vertex attributes in the hardware to avoid copying of data in the software
         Vec2 texSt;
         Vec2 texStXInc;
         Vec2 texStYInc;
