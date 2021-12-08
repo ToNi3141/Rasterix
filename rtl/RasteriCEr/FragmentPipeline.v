@@ -254,8 +254,8 @@ module FragmentPipeline
 
         if (step_convert_tvalid)
         begin
-            textureS = clampTexture(step_convert_texture_s, confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
-            textureT = clampTexture(step_convert_texture_t, confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
+            textureS = clampTexture(step_convert_texture_s[0 +: 24], confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
+            textureT = clampTexture(step_convert_texture_t[0 +: 24], confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
             // TODO: Use the float value from step_convert_depth_w[(FLOAT_SIZE - 1) - 16 +: 16];
             // Currently this does not work. I dont know why the depth buffer does not work when using the float
             stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_w[0 +: 16]; 

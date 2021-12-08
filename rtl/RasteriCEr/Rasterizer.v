@@ -80,12 +80,9 @@ module Rasterizer
     reg [5 : 0] rasterizerState;
     reg [Y_BIT_WIDTH - 1 : 0] y;
     reg [X_BIT_WIDTH - 1 : 0] x;
-    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndexTmp;
     wire isInTriangle = !(paramMem[INC_W0][31] | paramMem[INC_W1][31] | paramMem[INC_W2][31]);
     wire isInTriangleAndInBounds = isInTriangle & (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]) & (x >= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]);
-    /* verilator lint_off WIDTH */
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
-    /* verilator lint_on WIDTH */
+    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
 
     // Edge walker variables
     reg [5 : 0] edgeWalkingState;
@@ -349,10 +346,14 @@ module Rasterizer
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
 
+                    /* verilator lint_off WIDTH */
+                    fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
+                    /* verilator lint_on WIDTH */
+                    
                     // Arguments for the shader
                     m_axis_tdata <= {{{(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
                         paramMem[TRIANGLE_CONFIGURATION],
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - paramMem[BB_START][BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x}} - paramMem[BB_START][BB_X_POS +: 16],
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - paramMem[BB_START][BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - paramMem[BB_START][BB_X_POS +: 16]},
                         paramMem[INC_DEPTH_W_Y],
                         paramMem[INC_DEPTH_W_X],
                         paramMem[INC_DEPTH_W],
