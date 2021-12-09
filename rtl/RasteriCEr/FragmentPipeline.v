@@ -30,6 +30,7 @@ module FragmentPipeline
     input  wire [15:0] confReg1,
     input  wire [15:0] confReg2,
     input  wire [15:0] confTextureEnvColor,
+    input  wire [15:0] triangleStaticColor,
 
     // Fragment Stream
     input  wire        s_axis_tvalid,
@@ -217,7 +218,6 @@ module FragmentPipeline
     // STEP Convert to int
     ////////////////////////////////////////////////////////////////////////////
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
-    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_triangle_color;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_depth_w;
     wire [31 : 0]                   step_convert_texture_s;
     wire [31 : 0]                   step_convert_texture_t;
@@ -226,8 +226,6 @@ module FragmentPipeline
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
-        convert_tcolor_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TRIANGLE_COLOR_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_triangle_color));
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_depth_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_INC_DEPTH_W_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_depth_w));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
@@ -264,7 +262,7 @@ module FragmentPipeline
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             texelIndex <= {textureT, textureS};
         end
-        stepCalculatePerspectiveCorrectionTriangleColor <= step_convert_triangle_color;
+        stepCalculatePerspectiveCorrectionTriangleColor <= {16'h0, triangleStaticColor};
         stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
 
     end

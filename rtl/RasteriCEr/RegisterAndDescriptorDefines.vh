@@ -93,7 +93,8 @@ localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 ////////////////////////////
 // OP_TRIANGLE_STREAM 
 // Triangle Descriptor, each value containts 4 bytes.
-localparam TRIANGLE_CONFIGURATION = 0;
+localparam PARAM_SIZE = 32;
+localparam TRIANGLE_COLOR = 0;
 localparam BB_START = 1; // S15.0, S15.0
 localparam BB_END = 2; // S15.0, S15.0
 localparam INC_W0 = 3; // Sn.m
