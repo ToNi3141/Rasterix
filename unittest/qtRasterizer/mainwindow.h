@@ -29,7 +29,7 @@ public slots:
 private:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
-    static const uint32_t PREVIEW_WINDOW_SCALING = 2;
+    static const uint32_t PREVIEW_WINDOW_SCALING = 1;
     GLuint loadTexture(const char *tex);
 
 #ifdef SOFTWARE_RENDERER

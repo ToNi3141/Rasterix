@@ -19,7 +19,7 @@ module DualPortRam #(
     parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
-    parameter MEMORY_PRIMITIVE = "block",
+    parameter MEMORY_PRIMITIVE = "block", // "distribute" or "block"
     localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8)),
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )

@@ -26,8 +26,8 @@ module Rasterizer
 
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
-    // The bit width of the command interface. Allowed values: 16, 32, 64, 128, 256
-    parameter CMD_STREAM_WIDTH = 16
+    // The bit width of the command interface. Allowed values: 32, 64, 128, 256
+    parameter CMD_STREAM_WIDTH = 32
 )
 (
     input wire                              clk,
@@ -46,12 +46,12 @@ module Rasterizer
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
-    output reg  [FRAMEBUFFER_INDEX_WIDTH + RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata
+    output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata
 );
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam PARAMETER_WIDTH = 32;
+    localparam PARAMETER_WIDTH = RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE;
     localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / PARAMETER_WIDTH;
     localparam X_BIT_WIDTH = $clog2(X_RESOLUTION) + 1;
     localparam Y_BIT_WIDTH = $clog2(Y_RESOLUTION) + 1;
@@ -62,7 +62,6 @@ module Rasterizer
     localparam RASTERIZER_INIT = 2;
     localparam RASTERIZER_TEST = 3;
     localparam RASTERIZER_INC_H = 5;
-    localparam RASTERIZER_COPY_16 = 6;
 
     // Rasterizer edge walker state machine
     localparam RASTERIZER_EDGEWALKER_SEARCH_EDGE = 0;
@@ -72,24 +71,21 @@ module Rasterizer
     localparam RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR = 4;
 
     // Triangle and Texture Data
-    reg signed [PARAMETER_WIDTH - 1 : 0] paramMem [0 : `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH) - 1];
-    reg [5:0] rasterizerCopyCounter;
-    reg [5:0] paramIndex;
+    reg [PARAMETER_WIDTH - 1 : 0] paramMem [0 : `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH) - 1];
+    reg [5 : 0] rasterizerCopyCounter;
+    reg [4 : 0] paramIndex;
     reg parameterComplete;
     
     // Rasterizer variables
-    reg [5:0] rasterizerState;
+    reg [5 : 0] rasterizerState;
     reg [Y_BIT_WIDTH - 1 : 0] y;
     reg [X_BIT_WIDTH - 1 : 0] x;
-    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndexTmp;
     wire isInTriangle = !(paramMem[INC_W0][31] | paramMem[INC_W1][31] | paramMem[INC_W2][31]);
     wire isInTriangleAndInBounds = isInTriangle & (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]) & (x >= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]);
-    /* verilator lint_off WIDTH */
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
-    /* verilator lint_on WIDTH */
+    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
 
     // Edge walker variables
-    reg [5:0] edgeWalkingState;
+    reg [5 : 0] edgeWalkingState;
     reg edgeWalkTryOtherside;
     reg edgeWalkingDirection; 
     localparam EDGE_WALKING_DIRECTION_LEFT = 1'b0;
@@ -101,6 +97,7 @@ module Rasterizer
         begin
             s_axis_tready <= 0;
             m_axis_tlast <= 0;
+            m_axis_tvalid <= 0;
             rasterizerRunning <= 0;
             rasterizerState <= RASTERIZER_WAITFORCOMMAND;
         end
@@ -113,48 +110,7 @@ module Rasterizer
                 paramIndex <= 0;
                 parameterComplete <= 0;
                 s_axis_tready <= 1;
-                if (CMD_STREAM_WIDTH == 16)
-                begin
-                    rasterizerState <= RASTERIZER_COPY_16;
-                end
-                else
-                begin
-                    rasterizerState <= RASTERIZER_COPY;
-                end
-            end
-            RASTERIZER_COPY_16:
-            begin : RasterizerCopy16
-                reg [PARAMETER_WIDTH - 1: 0] tmp;
-                if (s_axis_tvalid)
-                begin
-                    // Build 32 bit parameter from 16 bit axi stream
-                    if (parameterComplete)
-                    begin
-                        parameterComplete <= 0;
-                        tmp[16 +: 16] = s_axis_tdata;
-                    end
-                    else
-                    begin
-                        parameterComplete <= 1;
-                        tmp[0 +: 16] = s_axis_tdata;
-                    end 
-                end
-
-                if (parameterComplete) 
-                begin
-                    paramMem[paramIndex] <= tmp;
-                end
-
-                if (s_axis_tvalid & parameterComplete)
-                begin
-                    paramIndex <= paramIndex + 1;
-                    if (s_axis_tlast)
-                    begin
-                        s_axis_tready <= 0;
-                        rasterizerRunning <= 1;
-                        rasterizerState <= RASTERIZER_INIT;
-                    end
-                end
+                rasterizerState <= RASTERIZER_COPY;
             end
             RASTERIZER_COPY:
             begin : RasterizerCopy
@@ -163,9 +119,9 @@ module Rasterizer
                 begin
                     for (i = 0; i < PARAMETERS_PER_STREAM_BEAT; i = i + 1)
                     begin
-                        paramMem[paramIndex + i] <= s_axis_tdata[PARAMETER_WIDTH * i +: PARAMETER_WIDTH];
+                        paramMem[paramIndex + i[0 +: 5]] <= s_axis_tdata[PARAMETER_WIDTH * i +: PARAMETER_WIDTH];
                     end
-                    paramIndex <= paramIndex + PARAMETERS_PER_STREAM_BEAT;
+                    paramIndex <= paramIndex + PARAMETERS_PER_STREAM_BEAT[0 +: 5];
 
                     if (s_axis_tlast)
                     begin
@@ -231,10 +187,6 @@ module Rasterizer
                         paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_Y]);
                         paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_Y]);
                         paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_Y]);
-
-                        paramMem[INC_TEX_S] <= paramMem[INC_TEX_S] + $signed(paramMem[INC_TEX_S_Y]);
-                        paramMem[INC_TEX_T] <= paramMem[INC_TEX_T] + $signed(paramMem[INC_TEX_T_Y]);
-                        paramMem[INC_DEPTH_W] <= paramMem[INC_DEPTH_W] + $signed(paramMem[INC_DEPTH_W_Y]);
                     end
                     else 
                     begin
@@ -246,10 +198,6 @@ module Rasterizer
                             paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_X]);
                             paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_X]);
                             paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_X]);
-
-                            paramMem[INC_TEX_S] <= paramMem[INC_TEX_S] + $signed(paramMem[INC_TEX_S_X]);
-                            paramMem[INC_TEX_T] <= paramMem[INC_TEX_T] + $signed(paramMem[INC_TEX_T_X]);
-                            paramMem[INC_DEPTH_W] <= paramMem[INC_DEPTH_W] + $signed(paramMem[INC_DEPTH_W_X]);
                         end
                         else
                         begin
@@ -259,10 +207,6 @@ module Rasterizer
                             paramMem[INC_W0] <= paramMem[INC_W0] - $signed(paramMem[INC_W0_X]);
                             paramMem[INC_W1] <= paramMem[INC_W1] - $signed(paramMem[INC_W1_X]);
                             paramMem[INC_W2] <= paramMem[INC_W2] - $signed(paramMem[INC_W2_X]);
-
-                            paramMem[INC_TEX_S] <= paramMem[INC_TEX_S] - $signed(paramMem[INC_TEX_S_X]);
-                            paramMem[INC_TEX_T] <= paramMem[INC_TEX_T] - $signed(paramMem[INC_TEX_T_X]);
-                            paramMem[INC_DEPTH_W] <= paramMem[INC_DEPTH_W] - $signed(paramMem[INC_DEPTH_W_X]);
                         end
                     end
 
@@ -402,66 +346,26 @@ module Rasterizer
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
 
+                    /* verilator lint_off WIDTH */
+                    fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
+                    /* verilator lint_on WIDTH */
+                    
                     // Arguments for the shader
-                    m_axis_tdata <= {fbIndex,
-                        paramMem[TRIANGLE_CONFIGURATION][TRIANGLE_STATIC_COLOR_POS +: RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE],
+                    m_axis_tdata <= {{{(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
+                        paramMem[TRIANGLE_CONFIGURATION],
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - paramMem[BB_START][BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - paramMem[BB_START][BB_X_POS +: 16]},
+                        paramMem[INC_DEPTH_W_Y],
+                        paramMem[INC_DEPTH_W_X],
                         paramMem[INC_DEPTH_W],
+                        paramMem[INC_TEX_T_Y],
+                        paramMem[INC_TEX_T_X],
                         paramMem[INC_TEX_T],
+                        paramMem[INC_TEX_S_Y],
+                        paramMem[INC_TEX_S_X],
                         paramMem[INC_TEX_S]
                     };
                 end
             end
-            // RASTERIZER_TEST:
-            // begin
-            //     // A rasterization cycle is only executed if the shader is free. Otherwise the rasterizer will stall
-            //     if (m_axis_tready)
-            //     begin 
-            //         if (y < paramMem[BB_END][BB_Y_POS +: Y_BIT_WIDTH] && (y < Y_LINE_RESOLUTION))
-            //         begin
-            //             if (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH])
-            //             begin
-            //                 x <= x+1;
-                        
-            //                 paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_X]);
-            //                 paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_X]);
-            //                 paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_X]);
-
-            //                 paramMem[INC_TEX_S] <= paramMem[INC_TEX_S] + $signed(paramMem[INC_TEX_S_X]);
-            //                 paramMem[INC_TEX_T] <= paramMem[INC_TEX_T] + $signed(paramMem[INC_TEX_T_X]);
-            //                 paramMem[INC_DEPTH_W] <= paramMem[INC_DEPTH_W] + $signed(paramMem[INC_DEPTH_W_X]);
-            //             end
-            //             else
-            //             begin
-            //                 paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_Y]);
-            //                 paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_Y]);
-            //                 paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_Y]);
-
-            //                 paramMem[INC_TEX_S] <= paramMem[INC_TEX_S] + $signed(paramMem[INC_TEX_S_Y]);
-            //                 paramMem[INC_TEX_T] <= paramMem[INC_TEX_T] + $signed(paramMem[INC_TEX_T_Y]);
-            //                 paramMem[INC_DEPTH_W] <= paramMem[INC_DEPTH_W] + $signed(paramMem[INC_DEPTH_W_Y]);
-
-            //                 x <= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH];
-            //                 y <= y + 1;
-            //             end
-            //             //if (incW0 >= 0 && incW1 >= 0 && incW2 >= 0)
-            //             m_axis_tvalid <= isInTriangle;
-            //         end
-            //         else
-            //         begin
-            //             m_axis_tvalid <= 0;
-            //             rasterizerRunning <= 0;
-            //             rasterizerState <= RASTERIZER_WAITFORCOMMAND;
-            //         end
-
-            //         // Arguments for the shader
-            //         m_axis_tdata <= {fbIndex,
-            //             paramMem[TRIANGLE_CONFIGURATION][TRIANGLE_STATIC_COLOR_POS +: RASTERIZER_AXIS_TRIANGLE_COLOR_SIZE],
-            //             paramMem[INC_DEPTH_W],
-            //             paramMem[INC_TEX_T],
-            //             paramMem[INC_TEX_S]
-            //         };
-            //     end
-            // end
             endcase 
         end
     end

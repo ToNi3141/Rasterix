@@ -26,8 +26,8 @@ class Rasterizer
 public:  
     struct __attribute__ ((__packed__)) RasterizedTriangle
     {
-        uint16_t triangleConfiguration;
         uint16_t triangleStaticColor;
+        uint16_t triangleConfiguration;
         uint16_t bbStartX;
         uint16_t bbStartY;
         uint16_t bbEndX;
@@ -35,12 +35,13 @@ public:
         Vec3i wInit;
         Vec3i wXInc;
         Vec3i wYInc;
-        Vec2i texStInit;
-        Vec2i texStXInc;
-        Vec2i texStYInc;
-        VecInt depthWInit;
-        VecInt depthWXInc;
-        VecInt depthWYInc;
+        // TODO: Maybe rearrange the vertex attributes in the hardware to avoid copying of data in the software
+        Vec2 texSt;
+        Vec2 texStXInc;
+        Vec2 texStYInc;
+        float depthW;
+        float depthWXInc;
+        float depthWYInc;
     };
     Rasterizer();
     static bool rasterize(RasterizedTriangle &rasterizedTriangle,

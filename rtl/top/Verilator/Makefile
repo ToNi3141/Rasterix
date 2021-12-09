@@ -10,11 +10,11 @@ clean:
 	rm -rf obj_dir
 
 simulation:
-	verilator -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc top.v --top-module top -I../../RasteriCEr
+	verilator -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc top.v --top-module top -I../../RasteriCEr -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 mem:
-	verilator -Wno-lint -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc topMemory.v --top-module top -I../../RasteriCEr -I../../3rdParty
+	verilator -Wno-lint -DUNITTEST -DX_RESOLUTION=$(X_RESOLUTION) -DY_RESOLUTION=$(Y_RESOLUTION) -DY_LINE_RESOLUTION=$(Y_LINE_RESOLUTION) -CFLAGS -std=c++11 --cc topMemory.v --top-module top -I../../RasteriCEr -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:
