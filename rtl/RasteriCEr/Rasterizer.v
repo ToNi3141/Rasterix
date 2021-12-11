@@ -27,7 +27,11 @@ module Rasterizer
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256
-    parameter CMD_STREAM_WIDTH = 32
+    parameter CMD_STREAM_WIDTH = 32,
+
+    localparam ATTRIBUTE_SIZE = 32,
+
+    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 2 * ATTRIBUTE_SIZE
 )
 (
     input wire                              clk,
@@ -35,33 +39,38 @@ module Rasterizer
     
     // Rasterizer Control
     output reg                              rasterizerRunning,
-
-    // Triangle Stream
-    input  wire                             s_axis_tvalid,
-    output reg                              s_axis_tready,
-    input  wire                             s_axis_tlast,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_axis_tdata,
+    input  wire                             startRendering,
 
     // Fragment Stream
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
-    output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata
-);
-`include "RasterizerDefines.vh"
-`include "RegisterAndDescriptorDefines.vh"
+    output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
 
-    localparam PARAMETER_WIDTH = RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE;
-    localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / PARAMETER_WIDTH;
+    // Triangle Attributes
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbStart,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbEnd,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w0,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w1,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w0IncX,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w1IncX,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2IncX,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w0IncY,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w1IncY,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2IncY
+);
+    localparam BB_X_POS = 0;
+    localparam BB_Y_POS = 16;
+
+    localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / ATTRIBUTE_SIZE;
     localparam X_BIT_WIDTH = $clog2(X_RESOLUTION) + 1;
     localparam Y_BIT_WIDTH = $clog2(Y_RESOLUTION) + 1;
 
     // Rasterizer main state machine
     localparam RASTERIZER_WAITFORCOMMAND = 0;
-    localparam RASTERIZER_COPY = 1;
-    localparam RASTERIZER_INIT = 2;
-    localparam RASTERIZER_TEST = 3;
-    localparam RASTERIZER_INC_H = 5;
+    localparam RASTERIZER_INIT = 1;
+    localparam RASTERIZER_TEST = 2;
 
     // Rasterizer edge walker state machine
     localparam RASTERIZER_EDGEWALKER_SEARCH_EDGE = 0;
@@ -70,24 +79,21 @@ module Rasterizer
     localparam RASTERIZER_EDGEWALKER_INIT = 3;
     localparam RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR = 4;
 
-    // Triangle and Texture Data
-    reg [PARAMETER_WIDTH - 1 : 0] paramMem [0 : `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH) - 1];
-    reg [5 : 0] rasterizerCopyCounter;
-    reg [4 : 0] paramIndex;
-    reg parameterComplete;
-    
     // Rasterizer variables
-    reg [5 : 0] rasterizerState;
-    reg [Y_BIT_WIDTH - 1 : 0] y;
-    reg [X_BIT_WIDTH - 1 : 0] x;
-    wire isInTriangle = !(paramMem[INC_W0][31] | paramMem[INC_W1][31] | paramMem[INC_W2][31]);
-    wire isInTriangleAndInBounds = isInTriangle & (x < paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]) & (x >= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]);
-    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
+    reg  [5 : 0] rasterizerState;
+    reg  [Y_BIT_WIDTH - 1 : 0] y;
+    reg  [X_BIT_WIDTH - 1 : 0] x;
+    wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
+    wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
+    reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
+    reg  [ATTRIBUTE_SIZE - 1 : 0] regW0;
+    reg  [ATTRIBUTE_SIZE - 1 : 0] regW1;
+    reg  [ATTRIBUTE_SIZE - 1 : 0] regW2;
 
     // Edge walker variables
-    reg [5 : 0] edgeWalkingState;
-    reg edgeWalkTryOtherside;
-    reg edgeWalkingDirection; 
+    reg  [5 : 0] edgeWalkingState;
+    reg  edgeWalkTryOtherside;
+    reg  edgeWalkingDirection; 
     localparam EDGE_WALKING_DIRECTION_LEFT = 1'b0;
     localparam EDGE_WALKING_DIRECTION_RIGHT = 1'b1;
 
@@ -95,7 +101,6 @@ module Rasterizer
     begin
         if (reset)
         begin
-            s_axis_tready <= 0;
             m_axis_tlast <= 0;
             m_axis_tvalid <= 0;
             rasterizerRunning <= 0;
@@ -107,34 +112,23 @@ module Rasterizer
             RASTERIZER_WAITFORCOMMAND:
             begin
                 m_axis_tvalid <= 0;
-                paramIndex <= 0;
-                parameterComplete <= 0;
-                s_axis_tready <= 1;
-                rasterizerState <= RASTERIZER_COPY;
-            end
-            RASTERIZER_COPY:
-            begin : RasterizerCopy
-                integer i;
-                if (s_axis_tvalid)
+                if (startRendering)
                 begin
-                    for (i = 0; i < PARAMETERS_PER_STREAM_BEAT; i = i + 1)
-                    begin
-                        paramMem[paramIndex + i[0 +: 5]] <= s_axis_tdata[PARAMETER_WIDTH * i +: PARAMETER_WIDTH];
-                    end
-                    paramIndex <= paramIndex + PARAMETERS_PER_STREAM_BEAT[0 +: 5];
-
-                    if (s_axis_tlast)
-                    begin
-                        s_axis_tready <= 0;
-                        rasterizerRunning <= 1;
-                        rasterizerState <= RASTERIZER_INIT;
-                    end
+                    rasterizerRunning <= 1;
+                    rasterizerState <= RASTERIZER_INIT;
+                    // $display("start rendering");
                 end
             end
             RASTERIZER_INIT:
             begin
-                x <= paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH];
-                y <= paramMem[BB_START][BB_Y_POS +: Y_BIT_WIDTH];
+                regW0 <= w0;
+                regW1 <= w1;
+                regW2 <= w2;
+
+                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+
+                x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
+                y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
 
                 // Initialize the edge walker
                 edgeWalkingDirection <= EDGE_WALKING_DIRECTION_RIGHT;
@@ -184,9 +178,9 @@ module Rasterizer
                         // Line Increment
                         y <= y + 1;
 
-                        paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_Y]);
-                        paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_Y]);
-                        paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_Y]);
+                        regW0 <= regW0 + $signed(w0IncY);
+                        regW1 <= regW1 + $signed(w1IncY);
+                        regW2 <= regW2 + $signed(w2IncY);
                     end
                     else 
                     begin
@@ -195,22 +189,22 @@ module Rasterizer
                             // Pixel Increment
                             x <= x + 1;
 
-                            paramMem[INC_W0] <= paramMem[INC_W0] + $signed(paramMem[INC_W0_X]);
-                            paramMem[INC_W1] <= paramMem[INC_W1] + $signed(paramMem[INC_W1_X]);
-                            paramMem[INC_W2] <= paramMem[INC_W2] + $signed(paramMem[INC_W2_X]);
+                            regW0 <= regW0 + $signed(w0IncX);
+                            regW1 <= regW1 + $signed(w1IncX);
+                            regW2 <= regW2 + $signed(w2IncX);
                         end
                         else
                         begin
                             // Pixel Decrement
                             x <= x - 1;
 
-                            paramMem[INC_W0] <= paramMem[INC_W0] - $signed(paramMem[INC_W0_X]);
-                            paramMem[INC_W1] <= paramMem[INC_W1] - $signed(paramMem[INC_W1_X]);
-                            paramMem[INC_W2] <= paramMem[INC_W2] - $signed(paramMem[INC_W2_X]);
+                            regW0 <= regW0 - $signed(w0IncX);
+                            regW1 <= regW1 - $signed(w1IncX);
+                            regW2 <= regW2 - $signed(w2IncX);
                         end
                     end
 
-                    if ((y < paramMem[BB_END][BB_Y_POS +: Y_BIT_WIDTH]) && (y < Y_LINE_RESOLUTION))
+                    if ((y < bbEnd[BB_Y_POS +: Y_BIT_WIDTH]) && (y < Y_LINE_RESOLUTION))
                     begin
                         case (edgeWalkingState)
                         RASTERIZER_EDGEWALKER_INIT:
@@ -257,7 +251,7 @@ module Rasterizer
                                 m_axis_tvalid <= 1; // To prevent, that the first pixel of the triangle is skipped
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
                             end
-                            else if (x == paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH])
+                            else if (x == bbEnd[BB_X_POS +: X_BIT_WIDTH])
                             begin
                                 // The rasterizer reaches the end of the bounding box and has to handle this now. There are now to possible cases:
                                 //      Easiest case: Rasterizer was iterating from the left to the right, and there was no triangle on the way.
@@ -290,7 +284,7 @@ module Rasterizer
                                     edgeWalkingDirection <= EDGE_WALKING_DIRECTION_LEFT;
                                 end
                             end 
-                            else if (x == paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH])
+                            else if (x == bbStart[BB_X_POS +: X_BIT_WIDTH])
                             begin
                                 // This case is similar to the case above. It handles just the other direction
                                 if ((edgeWalkingDirection == EDGE_WALKING_DIRECTION_LEFT) & edgeWalkTryOtherside)
@@ -313,7 +307,7 @@ module Rasterizer
                             // Walk out of the triangle. To improve the performance: If the rasterizer could save the starting point,
                             // it could also shade pixel while walking out, and if it is out reset to this point, switch direction
                             // and shade the left pixels. But this would again occupy arround 400 luts.
-                            if (!isInTriangle | (x == paramMem[BB_START][BB_X_POS +: X_BIT_WIDTH]) | (x >= paramMem[BB_END][BB_X_POS +: X_BIT_WIDTH]))
+                            if (!isInTriangle | (x == bbStart[BB_X_POS +: X_BIT_WIDTH]) | (x >= bbEnd[BB_X_POS +: X_BIT_WIDTH]))
                             begin                             
                                 // Change the walking direction and shade
                                 edgeWalkingDirection <= !edgeWalkingDirection;
@@ -351,18 +345,9 @@ module Rasterizer
                     /* verilator lint_on WIDTH */
                     
                     // Arguments for the shader
-                    m_axis_tdata <= {{{(RASTERIZER_AXIS_VERTEX_ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
-                        paramMem[TRIANGLE_CONFIGURATION],
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - paramMem[BB_START][BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - paramMem[BB_START][BB_X_POS +: 16]},
-                        paramMem[INC_DEPTH_W_Y],
-                        paramMem[INC_DEPTH_W_X],
-                        paramMem[INC_DEPTH_W],
-                        paramMem[INC_TEX_T_Y],
-                        paramMem[INC_TEX_T_X],
-                        paramMem[INC_TEX_T],
-                        paramMem[INC_TEX_S_Y],
-                        paramMem[INC_TEX_S_X],
-                        paramMem[INC_TEX_S]
+                    m_axis_tdata <= {
+                        {{(ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - bbStart[BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: 16]}
                     };
                 end
             end

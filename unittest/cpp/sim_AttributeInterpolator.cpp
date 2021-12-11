@@ -24,38 +24,28 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAttributeInterpolator.h"
 
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_S_POS = 0;
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_S_X_POS = 1;
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS = 2;
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_T_POS = 3;
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_T_X_POS = 4;
-static constexpr uint32_t RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS = 5;
-static constexpr uint32_t RASTERIZER_AXIS_INC_DEPTH_W_POS = 6;
-static constexpr uint32_t RASTERIZER_AXIS_INC_DEPTH_W_X_POS = 7;
-static constexpr uint32_t RASTERIZER_AXIS_INC_DEPTH_W_Y_POS = 8;
-static constexpr uint32_t RASTERIZER_AXIS_SCREEN_POS_POS = 9;
-static constexpr uint32_t RASTERIZER_AXIS_TRIANGLE_COLOR_POS = 10;
-static constexpr uint32_t RASTERIZER_AXIS_FRAMEBUFFER_INDEX = 11;
+static constexpr uint32_t RASTERIZER_AXIS_SCREEN_POS_POS = 0;
+static constexpr uint32_t RASTERIZER_AXIS_FRAMEBUFFER_INDEX = 1;
 
 static constexpr uint32_t RASTERIZER_M_AXIS_S = 0;
 static constexpr uint32_t RASTERIZER_M_AXIS_T = 1;
 static constexpr uint32_t RASTERIZER_M_AXIS_W = 2;
-static constexpr uint32_t RASTERIZER_M_AXIS_TRIANGLE_COLOR = 3;
-static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 4;
+static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 3;
 
 union ScreenPos {
-    uint32_t u32;
+    uint64_t u64;
     struct {
         uint16_t x;
         uint16_t y;
+        uint32_t framebufferIndex;
     } val;
 };
 
 void clk(VAttributeInterpolator* t)
 {
-    t->clk = 0;
+    t->aclk = 0;
     t->eval();
-    t->clk = 1;
+    t->aclk = 1;
     t->eval();
 }
 
@@ -96,33 +86,37 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     static const uint32_t CLOCK_DELAY = 32;
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
+    // The output port is always ready. We don't test interrupted transfers right now.
+    top->m_axis_tready = 1;
+
+    // Reset cycle
+    top->resetn = 0;
+    clk(top);
+    top->resetn = 1;
+    clk(top);
+
     // Reset the pipeline
     for (int i = 0; i < CLOCK_DELAY; i++)
     {
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = 0;
+        top->tex_s = 0;
+        top->tex_s_inc_x = 0;
+        top->tex_s_inc_y = 0;
+        top->tex_t = 0;
+        top->tex_t_inc_x = 0;
+        top->tex_t_inc_y = 0;
+        top->depth_w = 0;
+        top->depth_w_inc_x = 0;
+        top->depth_w_inc_y = 0;
 
-        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = 0;
-
-        top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = 0;
-
-        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
+        top->s_axis_tdata = 0;
 
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
     }
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_S] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_T] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_W] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_S] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_T] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_W] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
     REQUIRE(top->pixelInPipeline == 0);
@@ -130,6 +124,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     ScreenPos sp;
     sp.val.x = 0;
     sp.val.y = 100;
+    sp.val.framebufferIndex = 0;
 
     float sb = 3.0;
     float sx = 0.50;
@@ -140,20 +135,18 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     float wb = 0.06754551082849503;
     float wx = -1.5070709196152166e-05;
     float wy = 3.105480573140085e-05;
-    uint16_t triangleColor = 123;
 
     // Set the vertex attributes
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_POS] = *(uint32_t*)&sb;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS] = *(uint32_t*)&sx;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS] = *(uint32_t*)&sy;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_POS] = *(uint32_t*)&tb;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS] = *(uint32_t*)&tx;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS] = *(uint32_t*)&ty;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_POS] = *(uint32_t*)&wb;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS] = *(uint32_t*)&wx;
-    top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = *(uint32_t*)&wy;
-    top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
-    top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = triangleColor;
+    top->tex_s = *(uint32_t*)&sb;
+    top->tex_s_inc_x = *(uint32_t*)&sx;
+    top->tex_s_inc_y = *(uint32_t*)&sy;
+    top->tex_t = *(uint32_t*)&tb;
+    top->tex_t_inc_x = *(uint32_t*)&tx;
+    top->tex_t_inc_y = *(uint32_t*)&ty;
+    top->depth_w = *(uint32_t*)&wb;
+    top->depth_w_inc_x = *(uint32_t*)&wx;
+    top->depth_w_inc_y = *(uint32_t*)&wy;
+    top->s_axis_tdata = sp.u64;
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
 
@@ -164,7 +157,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         if (i > CLOCK_DELAY)
         {
             REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i - CLOCK_DELAY);
-            REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 123);
             REQUIRE(top->m_axis_tvalid == 1);
             REQUIRE(top->m_axis_tlast == (i - CLOCK_DELAY) % 5);
 
@@ -188,10 +180,11 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
  
         sp.val.x++;
         sp.val.y--;
-        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
+        
         top->s_axis_tvalid = 1;
         top->s_axis_tlast = i % 5;
-        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = i;
+        sp.val.framebufferIndex = i;
+        top->s_axis_tdata = sp.u64;
     }
 
     // Reset counter for the rest of the pixels in the pipeline
@@ -204,7 +197,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         clk(top);
 
         REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i);
-        REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 123);
         REQUIRE(top->m_axis_tvalid == 1);
         REQUIRE(top->m_axis_tlast == i % 5);
         REQUIRE(top->pixelInPipeline == 1);
@@ -223,38 +215,28 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(Approx(t).epsilon(0.01) == tr);
         REQUIRE(Approx(w).epsilon(0.01) == wr);
 
-        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = 0;
+        top->s_axis_tdata = 0;
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_TRIANGLE_COLOR_POS] = 0;
 
         sp.val.x++;
         sp.val.y--;
 
         // Set init values
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_S_Y_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_TEXTURE_T_Y_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_X_POS] = 0;
-        top->s_axis_tdata[RASTERIZER_AXIS_INC_DEPTH_W_Y_POS] = 0;
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
+        top->s_axis_tdata = 0;
     }
 
     // Check again if the pipeline is now empty
     clk(top);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_S] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_T] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_W] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_TRIANGLE_COLOR] == 0);
-    REQUIRE(top->s_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
+
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
+
+    // This signal is one clock delayed
+    clk(top);
     REQUIRE(top->pixelInPipeline == 0);
 
     // Destroy model

@@ -36,6 +36,7 @@ module CommandParser #(
     output wire [15:0]  confTextureEnvColor,
     // Control
     input  wire         rasterizerRunning,
+    output reg          startRendering,
     input  wire         pixelInPipeline,
     output reg          m_rasterizer_axis_tvalid,
     input  wire         m_rasterizer_axis_tready,
@@ -122,6 +123,8 @@ module CommandParser #(
             
             m_rasterizer_axis_tvalid <= 0;
             m_rasterizer_axis_tlast <= 0;
+
+            startRendering <= 0;
         end
         else 
         begin
@@ -132,8 +135,11 @@ module CommandParser #(
                 m_rasterizer_axis_tvalid <= 0;
                 m_texture_axis_tvalid <= 0;
                 m_texture_axis_tlast <= 0;
-                if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline)
+                if (rasterizerRunning)
+                    startRendering <= 0;
+                if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning)
                 begin
+                    startRendering <= 0;
                     s_cmd_axis_tready <= 1;
                     state <= COMMAND_IN;
                 end
@@ -227,6 +233,7 @@ module CommandParser #(
                         begin
                             s_cmd_axis_tready <= 0;
                             m_rasterizer_axis_tlast <= 1;
+                            startRendering <= 1;
                             state <= WAIT_FOR_IDLE;
                         end
                     end
