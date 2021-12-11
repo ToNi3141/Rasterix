@@ -24,7 +24,7 @@ module FragmentPipeline
 (
     input  wire        clk,
     input  wire        reset,
-    output reg         pixelInPipeline,
+    output wire        pixelInPipeline,
 
     // Shader configurations
     input  wire [15:0] confReg1,
@@ -189,30 +189,14 @@ module FragmentPipeline
     localparam BLENDPIXEL_SAVE_FB = 4;
     localparam BLENDPIXEL_EXECUTE = 5;
 
-    
-    // Pixel counter
-    reg [5 : 0] pixelCounter = 0;
-    always @(posedge clk)
-    begin
-        if ((stepWriteBackValid == 1) && (s_axis_tvalid == 1)) // nop, 1 pixel in, 1 pixel out
-        begin
-            pixelInPipeline <= 1;
-        end
-        if ((stepWriteBackValid == 1) && (s_axis_tvalid == 0)) // dec, 1 pixel in, 0 pixel out
-        begin
-            pixelCounter = pixelCounter - 1;
-            pixelInPipeline <= 1;
-        end
-        if ((stepWriteBackValid == 0) && (s_axis_tvalid == 1)) // inc, 0 pixel in, 1 pixel out
-        begin
-            pixelCounter = pixelCounter + 1;
-            pixelInPipeline <= 1;
-        end
-        if ((stepWriteBackValid == 0) && (s_axis_tvalid == 0)) // nop, 0 pixel in, 0 pixel out
-        begin
-            pixelInPipeline <= pixelCounter != 0;
-        end
-    end
+    ValueTrack pixelTracker (
+        .aclk(clk),
+        .resetn(!reset),
+        
+        .sigIncommingValue(s_axis_tvalid & s_axis_tready),
+        .sigOutgoingValue(stepWriteBackValid),
+        .valueInPipeline(pixelInPipeline)
+    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP Convert to int

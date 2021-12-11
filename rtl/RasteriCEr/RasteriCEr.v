@@ -308,8 +308,8 @@ module RasteriCEr #(
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
     AttributeInterpolator attributeInterpolator (
-        .clk(aclk),
-        .reset(!resetn),
+        .aclk(aclk),
+        .resetn(resetn),
         .pixelInPipeline(pixelInPipelineInterpolator),
 
         .s_axis_tvalid(m_rasterizer_axis_tvalid),

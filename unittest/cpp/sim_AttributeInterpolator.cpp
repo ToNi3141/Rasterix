@@ -43,9 +43,9 @@ union ScreenPos {
 
 void clk(VAttributeInterpolator* t)
 {
-    t->clk = 0;
+    t->aclk = 0;
     t->eval();
-    t->clk = 1;
+    t->aclk = 1;
     t->eval();
 }
 
@@ -86,6 +86,15 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     static const uint32_t CLOCK_DELAY = 32;
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
+    // The output port is always ready. We don't test interrupted transfers right now.
+    top->m_axis_tready = 1;
+
+    // Reset cycle
+    top->resetn = 0;
+    clk(top);
+    top->resetn = 1;
+    clk(top);
+
     // Reset the pipeline
     for (int i = 0; i < CLOCK_DELAY; i++)
     {
@@ -110,7 +119,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
-    //REQUIRE(top->pixelInPipeline == 0);
+    REQUIRE(top->pixelInPipeline == 0);
 
     ScreenPos sp;
     sp.val.x = 0;
@@ -167,7 +176,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             REQUIRE(Approx(t).epsilon(0.01) == tr);
             REQUIRE(Approx(w).epsilon(0.01) == wr);
         }
-        //REQUIRE(top->pixelInPipeline == 1);
+        REQUIRE(top->pixelInPipeline == 1);
  
         sp.val.x++;
         sp.val.y--;
@@ -190,7 +199,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i);
         REQUIRE(top->m_axis_tvalid == 1);
         REQUIRE(top->m_axis_tlast == i % 5);
-        //REQUIRE(top->pixelInPipeline == 1);
+        REQUIRE(top->pixelInPipeline == 1);
 
         float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
         float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
@@ -214,28 +223,21 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         sp.val.y--;
 
         // Set init values
-        // top->tex_s = 0;
-        // top->tex_s_inc_x = 0;
-        // top->tex_s_inc_y = 0;
-        // top->tex_t = 0;
-        // top->tex_t_inc_x = 0;
-        // top->tex_t_inc_y = 0;
-        // top->depth_w = 0;
-        // top->depth_w_inc_x = 0;
-        // top->depth_w_inc_y = 0;
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
+        top->s_axis_tdata = 0;
     }
 
     // Check again if the pipeline is now empty
     clk(top);
-    // REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_S] == 0);
-    // REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_T] == 0);
-    // REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_W] == 0);
-    // REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
+
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == 0);
     REQUIRE(top->m_axis_tvalid == 0);
     REQUIRE(top->m_axis_tlast == 0);
-    //REQUIRE(top->pixelInPipeline == 0);
+
+    // This signal is one clock delayed
+    clk(top);
+    REQUIRE(top->pixelInPipeline == 0);
 
     // Destroy model
     delete top;
