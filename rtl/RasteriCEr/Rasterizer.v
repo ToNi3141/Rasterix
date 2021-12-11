@@ -116,7 +116,7 @@ module Rasterizer
                 begin
                     rasterizerRunning <= 1;
                     rasterizerState <= RASTERIZER_INIT;
-                    $display("start rendering");
+                    // $display("start rendering");
                 end
             end
             RASTERIZER_INIT:
@@ -125,7 +125,7 @@ module Rasterizer
                 regW1 <= w1;
                 regW2 <= w2;
 
-                $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
                 y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
