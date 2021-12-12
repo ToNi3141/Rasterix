@@ -106,7 +106,9 @@ public:
                               const Vec2& st0,
                               const Vec2& st1,
                               const Vec2& st2,
-                              const Vec4i& color) = 0;
+                              const Vec4& c0,
+                              const Vec4& c1,
+                              const Vec4& c2) = 0;
 
     /// @brief Will send a picture from working buffers, caches or whatever to the buffer which is
     ///    read from the display

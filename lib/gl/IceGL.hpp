@@ -142,10 +142,10 @@ private:
     std::vector<Vec4> m_vertexBuffer;
     std::vector<Vec2> m_textureVertexBuffer;
     std::vector<Vec3> m_normalVertexBuffer;
-    std::vector<Vec4i> m_colorVertexBuffer;
+    std::vector<Vec4> m_colorVertexBuffer;
 
     // State values
-    Vec4i m_vertexColor;
+    Vec4 m_vertexColor;
     Vec2 m_textureCoord;
     Vec3 m_normal;
     GLenum m_beginMode = GL_TRIANGLES;

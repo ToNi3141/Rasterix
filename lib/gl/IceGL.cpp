@@ -218,9 +218,9 @@ void IceGL::glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
 {
     if (zNear > 1.0f) zNear = 1.0f;
-    if (zNear < 0.0f) zNear = 0.0f;
+    if (zNear < -1.0f) zNear = -1.0f;
     if (zFar  > 1.0f) zFar  = 1.0f;
-    if (zFar  < 0.0f) zFar  = 0.0f;
+    if (zFar  < -1.0f) zFar  = -1.0f;
 
     m_tnl.setDepthRange(zNear, zFar);
     // TODO: Check in which state the renderer is and throw an GL_INVALID_OPERATION if this is called within an glBegin / glEnd
@@ -350,30 +350,24 @@ void IceGL::glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 
 void IceGL::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-    m_vertexColor = {static_cast<uint8_t>(red * 255.0f),
-                     static_cast<uint8_t>(green * 255.0f),
-                     static_cast<uint8_t>(blue * 255.0f),
-                     static_cast<uint8_t>(alpha * 255.0f)};
+    m_vertexColor = {red, green, blue, alpha};
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
-    m_vertexColor = {red, green, blue, alpha};
+    m_vertexColor = {1.0f * (static_cast<float>(red) / 255.0f), 1.0f * (static_cast<float>(green) / 255.0f), 1.0f * (static_cast<float>(blue) / 255.0f), 1.0f * (static_cast<float>(alpha) / 255.0f)};
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
 {
-    m_vertexColor = {static_cast<uint8_t>(red * 255.0f),
-                     static_cast<uint8_t>(green * 255.0f),
-                     static_cast<uint8_t>(blue * 255.0f),
-                     static_cast<uint8_t>(255.0f)};
+    m_vertexColor = {red, green, blue, 1.0f};
 }
 
 void IceGL::glColor3ub(GLubyte red, GLubyte green, GLubyte blue)
 {
-    m_vertexColor = {red, green, blue, 255};
+    glColor4ub(red, green, blue, 0);
 }
 
 void IceGL::glColor3dv(const GLdouble *v)
@@ -675,9 +669,9 @@ void IceGL::glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf a
 void IceGL::glClearDepthf(GLclampf depth)
 {
     // TODO: Right now we dont support signed depth values. For now, assert on these values
-    assert(depth >= 0.0);
+    assert(depth >= -1.0);
     assert(depth <= 1.0);
-    if (m_renderer.setClearDepth(depth * 65535))
+    if (m_renderer.setClearDepth(depth * 32767))
     {
         m_error = GL_NO_ERROR;
     }
