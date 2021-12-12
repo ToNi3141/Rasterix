@@ -330,7 +330,22 @@ module RasteriCEr #(
         .tex_t_inc_y(triangleParams[INC_TEX_T_Y * PARAM_SIZE +: PARAM_SIZE]),
         .depth_w(triangleParams[INC_DEPTH_W * PARAM_SIZE +: PARAM_SIZE]),
         .depth_w_inc_x(triangleParams[INC_DEPTH_W_X * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w_inc_y(triangleParams[INC_DEPTH_W_Y * PARAM_SIZE +: PARAM_SIZE])
+        .depth_w_inc_y(triangleParams[INC_DEPTH_W_Y * PARAM_SIZE +: PARAM_SIZE]),
+        .depth_z(triangleParams[INC_DEPTH_Z * PARAM_SIZE +: PARAM_SIZE]),
+        .depth_z_inc_x(triangleParams[INC_DEPTH_Z_X * PARAM_SIZE +: PARAM_SIZE]),
+        .depth_z_inc_y(triangleParams[INC_DEPTH_Z_Y * PARAM_SIZE +: PARAM_SIZE]),
+        .color_r(triangleParams[INC_COLOR_R * PARAM_SIZE +: PARAM_SIZE]),
+        .color_r_inc_x(triangleParams[INC_COLOR_R_X * PARAM_SIZE +: PARAM_SIZE]),
+        .color_r_inc_y(triangleParams[INC_COLOR_R_Y * PARAM_SIZE +: PARAM_SIZE]),
+        .color_g(triangleParams[INC_COLOR_G * PARAM_SIZE +: PARAM_SIZE]),
+        .color_g_inc_x(triangleParams[INC_COLOR_G_X * PARAM_SIZE +: PARAM_SIZE]),
+        .color_g_inc_y(triangleParams[INC_COLOR_G_Y * PARAM_SIZE +: PARAM_SIZE]),
+        .color_b(triangleParams[INC_COLOR_B * PARAM_SIZE +: PARAM_SIZE]),
+        .color_b_inc_x(triangleParams[INC_COLOR_B_X * PARAM_SIZE +: PARAM_SIZE]),
+        .color_b_inc_y(triangleParams[INC_COLOR_B_Y * PARAM_SIZE +: PARAM_SIZE]),
+        .color_a(triangleParams[INC_COLOR_A * PARAM_SIZE +: PARAM_SIZE]),
+        .color_a_inc_x(triangleParams[INC_COLOR_A_X * PARAM_SIZE +: PARAM_SIZE]),
+        .color_a_inc_y(triangleParams[INC_COLOR_A_Y * PARAM_SIZE +: PARAM_SIZE])
     );
 
     FragmentPipeline fragmentPipeline (    
