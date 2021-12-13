@@ -125,9 +125,9 @@ module FragmentPipeline
     reg  [15:0] depthTestFragmentVal;
     reg  [15:0] depthTestDepthBufferVal;
     reg  depthTestPassed;
-    wire depthTestLess = $signed(depthTestFragmentVal) < $signed(depthTestDepthBufferVal);
-    wire depthTestGreater = $signed(depthTestFragmentVal) > $signed(depthTestDepthBufferVal);
-    wire depthTestEqual = $signed(depthTestFragmentVal) == $signed(depthTestDepthBufferVal);
+    wire depthTestLess = depthTestFragmentVal < depthTestDepthBufferVal;
+    wire depthTestGreater = depthTestFragmentVal > depthTestDepthBufferVal;
+    wire depthTestEqual = depthTestFragmentVal == depthTestDepthBufferVal;
     always @*
     begin
         case (confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE])

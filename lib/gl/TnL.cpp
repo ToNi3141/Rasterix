@@ -737,7 +737,7 @@ void TnL::viewportTransform(Vec4 &v)
     // v[0] = (((v[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX);
     // v[1] = (((v[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY);
     //v[2] = (1.0f - ((v[2] + 1.0f) * 0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v[2] = (v[2] * 0.5f) * (m_depthRangeZFar - m_depthRangeZNear);
+    v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 
 void TnL::perspectiveDivide(Vec4 &v)
