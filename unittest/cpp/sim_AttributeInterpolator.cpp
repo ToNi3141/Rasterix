@@ -115,20 +115,19 @@ void calculateVertexAttributes(Attributes attr,
     attr.ax *= x;
     attr.ay *= y;
 
-    res.w = attr.wb + attr.wx + attr.wy;
-    res.s = attr.sb + attr.sx + attr.sy;
-    res.t = attr.tb + attr.tx + attr.ty;
-    res.z = attr.zb + attr.zx + attr.zy;
-    res.r = attr.rb + attr.rx + attr.ry;
-    res.g = attr.gb + attr.gx + attr.gy;
-    res.b = attr.bb + attr.bx + attr.by;
-    res.a = attr.ab + attr.ax + attr.ay;
+    res.w = attr.wb + (attr.wx + attr.wy);
+    res.s = attr.sb + (attr.sx + attr.sy);
+    res.t = attr.tb + (attr.tx + attr.ty);
+    res.z = attr.zb + (attr.zx + attr.zy);
+    res.r = attr.rb + (attr.rx + attr.ry);
+    res.g = attr.gb + (attr.gx + attr.gy);
+    res.b = attr.bb + (attr.bx + attr.by);
+    res.a = attr.ab + (attr.ax + attr.ay);
 
     res.w = 1.0f / res.w;
 
     res.s *= res.w;
     res.t *= res.w;
-    res.z *= res.w;
     res.r *= res.w;
     res.g *= res.w;
     res.b *= res.w;

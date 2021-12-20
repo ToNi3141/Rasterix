@@ -209,15 +209,15 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
     bbEndX = (bbEndX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
     bbEndY = (bbEndY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
 
-    // Clamp against the view port
-    // Should not be needed when the clipping is enabled
-    //     bbStartX = max(bbStartX, (int32_t)0);
-    //     bbStartY = max(bbStartY, (int32_t)0);
-    //     bbEndX = min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-    //     bbEndY = min(bbEndY + 1, 272);
-    // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
-    //    if ((bbEndX - bbStartX) == 0)
-    //        return false;
+//    // Clamp against the view port
+//    // Should not be needed when the clipping is enabled
+//         bbStartX = max(bbStartX, (int32_t)0);
+//         bbStartY = max(bbStartY, (int32_t)0);
+//         bbEndX = min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
+//         bbEndY = min(bbEndY + 1, 320);
+//     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
+//        if ((bbEndX - bbStartX) == 0)
+//            return false;
     ++bbEndX; // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
     ++bbEndY;
 
@@ -276,8 +276,6 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
 #ifndef NO_PERSP_CORRECT
     stx.mul(vW);
     sty.mul(vW);
-
-    vZ.mul(vW);
 
     cr.mul(vW);
     cg.mul(vW);

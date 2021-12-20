@@ -137,7 +137,7 @@ module CommandParser #(
                 m_texture_axis_tlast <= 0;
                 if (rasterizerRunning)
                     startRendering <= 0;
-                if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning)
+                if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning && !startRendering)
                 begin
                     startRendering <= 0;
                     s_cmd_axis_tready <= 1;

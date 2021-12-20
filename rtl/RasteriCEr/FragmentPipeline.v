@@ -125,9 +125,9 @@ module FragmentPipeline
     reg  [15:0] depthTestFragmentVal;
     reg  [15:0] depthTestDepthBufferVal;
     reg  depthTestPassed;
-    wire depthTestLess = depthTestFragmentVal < depthTestDepthBufferVal;
-    wire depthTestGreater = depthTestFragmentVal > depthTestDepthBufferVal;
-    wire depthTestEqual = depthTestFragmentVal == depthTestDepthBufferVal;
+    wire depthTestLess =    depthTestFragmentVal <  depthTestDepthBufferVal;
+    wire depthTestGreater = depthTestFragmentVal >  depthTestDepthBufferVal;
+    wire depthTestEqual =   depthTestFragmentVal == depthTestDepthBufferVal;
     always @*
     begin
         case (confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE])
@@ -226,7 +226,7 @@ module FragmentPipeline
         convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture_t));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-7))
         convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_w));  
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-31))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
         convert_floatToInt_DepthZ (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_Z_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_z));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
         convert_floatToInt_ColorR (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_R_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_r));
@@ -245,9 +245,9 @@ module FragmentPipeline
     begin : bla
         // reg [31:0] z;
         // reg [63:0] double;
-        // z = step_convert_depth_w;
+        // z = s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_Z_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE];
         // double = {z[31], z[30], {3{~z[30]}}, z[29:23], z[22:0], {29{1'b0}}};
-        // $display("valid %d d %f 0x%x", step_convert_tvalid, $bitstoreal(double), step_convert_depth_w);
+        // $display("valid %d d %f 0x%x", step_convert_tvalid, $bitstoreal(double), z);
         // reg [63:0] doubler;
         // reg [63:0] doubleg;
         // reg [63:0] doubleb;
@@ -270,22 +270,34 @@ module FragmentPipeline
         begin
             textureS = clampTexture(step_convert_texture_s[0 +: 24], confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
             textureT = clampTexture(step_convert_texture_t[0 +: 24], confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
-            stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_depth_z[16 +: 16];
-            //$display("%d z %d w %d", step_convert_tvalid, $signed(step_convert_depth_z[16 +: 16]), step_convert_w);
+
+            // Clamp z
+            if (step_convert_depth_z[31])
+            begin
+                stepCalculatePerspectiveCorrectionDepthBufferVal <= 16'h0;
+            end
+            else if (|step_convert_depth_z[16 +: 16])
+            begin
+                stepCalculatePerspectiveCorrectionDepthBufferVal <= 16'hffff;
+            end
+            else 
+            begin
+                stepCalculatePerspectiveCorrectionDepthBufferVal <= step_convert_depth_z[0 +: 16];
+            end
+
             stepCalculatePerspectiveCorrectionfbIndex <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             texelIndex <= {textureT, textureS};
-            //$display("r %x, g %x, b %x, a %x", step_convert_color_r, step_convert_color_g, step_convert_color_b, step_convert_color_a);
+
+            stepCalculatePerspectiveCorrectionTriangleColor <= {
+                // clamp colors 
+                (|step_convert_color_r[16 +: 16]) ? 4'hf : step_convert_color_r[12 +: 4],
+                (|step_convert_color_g[16 +: 16]) ? 4'hf : step_convert_color_g[12 +: 4],
+                (|step_convert_color_b[16 +: 16]) ? 4'hf : step_convert_color_b[12 +: 4],
+                (|step_convert_color_a[16 +: 16]) ? 4'hf : step_convert_color_a[12 +: 4]
+            };
         end
-        //stepCalculatePerspectiveCorrectionTriangleColor <= {16'h0, triangleStaticColor};
-        stepCalculatePerspectiveCorrectionTriangleColor <= {
-            // Saturate colors 
-            (|step_convert_color_r[16 +: 16]) ? 4'hf : step_convert_color_r[12 +: 4],
-            (|step_convert_color_g[16 +: 16]) ? 4'hf : step_convert_color_g[12 +: 4],
-            (|step_convert_color_b[16 +: 16]) ? 4'hf : step_convert_color_b[12 +: 4],
-            (|step_convert_color_a[16 +: 16]) ? 4'hf : step_convert_color_a[12 +: 4]
-        };
         stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
 
     end
@@ -827,13 +839,13 @@ module FragmentPipeline
     reg stepWriteBackValid = 0;
     always @(posedge clk)
     begin
-        if (stepBubbleValid)
-        begin
+        //if (stepBubbleValid)
+        //begin
             colorIndexWrite <= stepBubbleFbIndex;
             depthIndexWrite <= stepBubbleFbIndex;
             depthOut <= stepBubbleDepthValue;
             colorOut <= stepBubbleColorFrag;
-        end
+        //end
         stepWriteBackValid <= stepBubbleValid;
         colorWriteEnable <= stepBubbleValid & stepBubbleWriteColor;
         depthWriteEnable <= stepBubbleValid & stepBubbleWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];

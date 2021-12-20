@@ -176,37 +176,6 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
             calculateLight(color1, light, m_material, v1, n1);
             calculateLight(color2, light, m_material, v2, n2);
         }
-
-        // Clamp colors
-        color0 = {min(color0[0], 1.0f),
-                  min(color0[1], 1.0f),
-                  min(color0[2], 1.0f),
-                  min(color0[3], 1.0f)};
-
-        color1 = {min(color1[0], 1.0f),
-                  min(color1[1], 1.0f),
-                  min(color1[2], 1.0f),
-                  min(color1[3], 1.0f)};
-
-        color2 = {min(color2[0], 1.0f),
-                  min(color2[1], 1.0f),
-                  min(color2[2], 1.0f),
-                  min(color2[3], 1.0f)};
-
-        color0 = {max(color0[0], 0.0f),
-                  max(color0[1], 0.0f),
-                  max(color0[2], 0.0f),
-                  max(color0[3], 0.0f)};
-
-        color1 = {max(color1[0], 0.0f),
-                  max(color1[1], 0.0f),
-                  max(color1[2], 0.0f),
-                  max(color1[3], 0.0f)};
-
-        color2 = {max(color2[0], 0.0f),
-                  max(color2[1], 0.0f),
-                  max(color2[2], 0.0f),
-                  max(color2[3], 0.0f)};
     }
 
     ClipVertList vertList;
@@ -332,37 +301,6 @@ void TnL::calculateTexGenCoords(TnL::ClipStList &stList, const Vec4& v0, const V
         Vec3 stx{{stList[0][0], stList[1][0], stList[2][0]}};
         Vec3 sty{{stList[0][1], stList[1][1], stList[2][1]}};
 
-        float intPart;
-        if (stx[0] > 1.0f || stx[0] < -1.0f)
-        {
-            modf(stx[0], &intPart);
-            stx -= intPart;
-        }
-        if (stx[1] > 1.0f || stx[1] < -1.0f)
-        {
-            modf(stx[1], &intPart);
-            stx -= intPart;
-        }
-        if (stx[2] > 1.0f || stx[2] < -1.0f)
-        {
-            modf(stx[2], &intPart);
-            stx -= intPart;
-        }
-        if (sty[0] > 1.0f || sty[0] < -1.0f)
-        {
-            modf(sty[0], &intPart);
-            sty -= intPart;
-        }
-        if (sty[1] > 1.0f || sty[1] < -1.0f)
-        {
-            modf(sty[1], &intPart);
-            sty -= intPart;
-        }
-        if (sty[2] > 1.0f || sty[2] < -1.0f)
-        {
-            modf(sty[2], &intPart);
-            sty -= intPart;
-        }
         stList[0][0] = stx[0];
         stList[1][0] = stx[1];
         stList[2][0] = stx[2];
@@ -482,11 +420,11 @@ void TnL::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt)
     vOut[2] = ((v0[2] - v1[2]) * (1-amt)) + v1[2];
     vOut[1] = ((v0[1] - v1[1]) * (1-amt)) + v1[1];
     vOut[0] = ((v0[0] - v1[0]) * (1-amt)) + v1[0];
-    //    float a1 = 1 - amt;
-    //    vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
-    //    vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
-    //    vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    //    vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
+    // float a1 = 1.0 - amt;
+    // vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
+    // vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
+    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
+    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
 #endif
 }
 
@@ -499,8 +437,8 @@ void TnL::lerpSt(Vec2& vOut, const Vec2& v0, const Vec2& v1, const float amt)
     float a1 = 1.0 - amt;
     vOut[1] = ((v0[1] - v1[1]) * a1) + v1[1];
     vOut[0] = ((v0[0] - v1[0]) * a1) + v1[0];
-    //    vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    //    vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
+    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
+    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
 #endif
 }
 
@@ -736,7 +674,6 @@ void TnL::viewportTransform(Vec4 &v)
     // Alternative implementation which is basically doing the same but without precomputed variables
     // v[0] = (((v[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX);
     // v[1] = (((v[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY);
-    //v[2] = (1.0f - ((v[2] + 1.0f) * 0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
     v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 

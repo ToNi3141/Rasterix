@@ -230,7 +230,8 @@ void IceGL::glBegin(GLenum mode)
 {
     if ((mode == GL_TRIANGLES)
             || (mode == GL_TRIANGLE_FAN)
-            || (mode == GL_TRIANGLE_STRIP))
+            || (mode == GL_TRIANGLE_STRIP)
+            || (mode == GL_QUAD_STRIP))
     {
         m_beginMode = mode;
         m_textureVertexBuffer.clear();
@@ -323,7 +324,44 @@ void IceGL::glEnd()
                  m_colorVertexBuffer[i + 1],
                  m_colorVertexBuffer[i + 2]});
             }
-
+        }
+    }
+    if (m_beginMode == GL_QUAD_STRIP)
+    {
+        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
+        {
+            if (i & 0x2)
+            {
+                m_tnl.drawTriangle(m_renderer,
+                {m_vertexBuffer[i + 1],
+                 m_vertexBuffer[i],
+                 m_vertexBuffer[i + 2],
+                 m_textureVertexBuffer[i + 1],
+                 m_textureVertexBuffer[i],
+                 m_textureVertexBuffer[i + 2],
+                 m_normalVertexBuffer[i + 1],
+                 m_normalVertexBuffer[i],
+                 m_normalVertexBuffer[i + 2],
+                 m_colorVertexBuffer[i + 1],
+                 m_colorVertexBuffer[i],
+                 m_colorVertexBuffer[i + 2]});
+            }
+            else
+            {
+                m_tnl.drawTriangle(m_renderer,
+                {m_vertexBuffer[i],
+                 m_vertexBuffer[i + 1],
+                 m_vertexBuffer[i + 2],
+                 m_textureVertexBuffer[i],
+                 m_textureVertexBuffer[i + 1],
+                 m_textureVertexBuffer[i + 2],
+                 m_normalVertexBuffer[i],
+                 m_normalVertexBuffer[i + 1],
+                 m_normalVertexBuffer[i + 2],
+                 m_colorVertexBuffer[i],
+                 m_colorVertexBuffer[i + 1],
+                 m_colorVertexBuffer[i + 2]});
+            }
         }
     }
 }
@@ -367,7 +405,7 @@ void IceGL::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
 
 void IceGL::glColor3ub(GLubyte red, GLubyte green, GLubyte blue)
 {
-    glColor4ub(red, green, blue, 0);
+    glColor4ub(red, green, blue, 255);
 }
 
 void IceGL::glColor3dv(const GLdouble *v)
@@ -671,7 +709,7 @@ void IceGL::glClearDepthf(GLclampf depth)
     // TODO: Right now we dont support signed depth values. For now, assert on these values
     assert(depth >= -1.0);
     assert(depth <= 1.0);
-    if (m_renderer.setClearDepth(depth * 32767))
+    if (m_renderer.setClearDepth(depth * 65535))
     {
         m_error = GL_NO_ERROR;
     }
