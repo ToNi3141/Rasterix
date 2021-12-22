@@ -394,13 +394,17 @@ void IceGL::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 
 void IceGL::glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
-    m_vertexColor = {1.0f * (static_cast<float>(red) / 255.0f), 1.0f * (static_cast<float>(green) / 255.0f), 1.0f * (static_cast<float>(blue) / 255.0f), 1.0f * (static_cast<float>(alpha) / 255.0f)};
+    m_vertexColor = {(static_cast<float>(red) / 255.0f), 
+                     (static_cast<float>(green) / 255.0f), 
+                     (static_cast<float>(blue) / 255.0f), 
+                     (static_cast<float>(alpha) / 255.0f)};
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
 {
     m_vertexColor = {red, green, blue, 1.0f};
+    m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor3ub(GLubyte red, GLubyte green, GLubyte blue)
@@ -706,10 +710,19 @@ void IceGL::glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf a
 
 void IceGL::glClearDepthf(GLclampf depth)
 {
-    // TODO: Right now we dont support signed depth values. For now, assert on these values
-    assert(depth >= -1.0);
-    assert(depth <= 1.0);
-    if (m_renderer.setClearDepth(depth * 65535))
+    if (depth < -1.0f)
+    {
+        depth = -1.0f;
+    }
+        
+    if (depth > 1.0f)
+    {
+        depth = 1.0f;
+    }
+
+    // Convert from signed float (-1.0 .. 1.0) to unsigned fix (0 .. 65535)
+    const uint16_t depthx = (depth + 1.0f) * 32767;
+    if (m_renderer.setClearDepth(depthx))
     {
         m_error = GL_NO_ERROR;
     }

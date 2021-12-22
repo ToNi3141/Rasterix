@@ -839,13 +839,13 @@ module FragmentPipeline
     reg stepWriteBackValid = 0;
     always @(posedge clk)
     begin
-        //if (stepBubbleValid)
-        //begin
+        if (stepBubbleValid)
+        begin
             colorIndexWrite <= stepBubbleFbIndex;
             depthIndexWrite <= stepBubbleFbIndex;
             depthOut <= stepBubbleDepthValue;
             colorOut <= stepBubbleColorFrag;
-        //end
+        end
         stepWriteBackValid <= stepBubbleValid;
         colorWriteEnable <= stepBubbleValid & stepBubbleWriteColor;
         depthWriteEnable <= stepBubbleValid & stepBubbleWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];

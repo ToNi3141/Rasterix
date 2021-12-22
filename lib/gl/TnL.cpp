@@ -641,17 +641,17 @@ uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut,
 
 void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {
-    v0[0] = ((v0[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
-    v1[0] = ((v1[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
-    v2[0] = ((v2[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
+    v0[0] = ((v0[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
+    v1[0] = ((v1[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
+    v2[0] = ((v2[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
 
-    v0[1] = (((v0[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
-    v1[1] = (((v1[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
-    v2[1] = (((v2[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
+    v0[1] = ((v0[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
+    v1[1] = ((v1[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
+    v2[1] = ((v2[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
 
-    v0[2] = (((v0[2] + 1.0f) * 0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v1[2] = (((v1[2] + 1.0f) * 0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v2[2] = (((v2[2] + 1.0f) * 0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v0[2] = (((v0[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v1[2] = (((v1[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v2[2] = (((v2[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 
     // This is a possibility just to calculate the real z value but is not needed for the rasterizer
     //    float n = 0.1;
