@@ -39,6 +39,7 @@ typedef enum {
     GL_TRIANGLE_FAN,
     GL_TRIANGLE_STRIP,
     GL_TRIANGLES,
+    GL_QUAD_STRIP,
 
     GL_ALPHA,
     GL_RGB,

@@ -28,16 +28,19 @@ Rasterizer::Rasterizer()
 }
 
 
-bool Rasterizer::rasterize(RasterizedTriangle &rasterizedTriangle,
-                           const Vec4 &v0f,
+bool Rasterizer::rasterize(RasterizedTriangle& rasterizedTriangle,
+                           const Vec4& v0f,
                            const Vec2& st0f,
-                           const Vec4 &v1f,
+                           const Vec4& c0f,
+                           const Vec4& v1f,
                            const Vec2& st1f,
-                           const Vec4 &v2f,
-                           const Vec2& st2f)
+                           const Vec4& c1f,
+                           const Vec4& v2f,
+                           const Vec2& st2f,
+                           const Vec4& c2f)
 {
 //        return rasterizeFloat(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
-   return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
+   return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, c0f, v1f, st1f, c1f, v2f, st2f, c2f);
 }
 
 bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
@@ -73,6 +76,10 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
             incrementedTriangle.texStYInc = triangleToIncrement.texStYInc;
             incrementedTriangle.depthWXInc = triangleToIncrement.depthWXInc;
             incrementedTriangle.depthWYInc = triangleToIncrement.depthWYInc;
+            incrementedTriangle.depthZXInc = triangleToIncrement.depthZXInc;
+            incrementedTriangle.depthZYInc = triangleToIncrement.depthZYInc;
+            incrementedTriangle.colorXInc = triangleToIncrement.colorXInc;
+            incrementedTriangle.colorYInc = triangleToIncrement.colorYInc;
 
 
             // The triangle is within the current display area
@@ -81,6 +88,8 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
             if (incrementedTriangle.bbStartY < lineStart)
             {
                incrementedTriangle.depthW = triangleToIncrement.depthW;
+
+               incrementedTriangle.depthZ = triangleToIncrement.depthZ;
 
                 const int32_t bbDiff = lineStart - incrementedTriangle.bbStartY;
                 incrementedTriangle.bbStartY = 0;
@@ -96,6 +105,12 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.texSt += triangleToIncrement.texSt;
 
                 incrementedTriangle.depthW += incrementedTriangle.depthWYInc * bbDiff;
+
+                incrementedTriangle.depthZ += incrementedTriangle.depthZYInc * bbDiff;
+
+                incrementedTriangle.color = incrementedTriangle.colorYInc;
+                incrementedTriangle.color *= bbDiff;
+                incrementedTriangle.color += triangleToIncrement.color;
             }
             // The triangle starts in this area. So we just have to readjust the bounding box
             else
@@ -105,6 +120,8 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.wInit = triangleToIncrement.wInit;
                 incrementedTriangle.texSt = triangleToIncrement.texSt;
                 incrementedTriangle.depthW = triangleToIncrement.depthW;
+                incrementedTriangle.depthZ = triangleToIncrement.depthZ;
+                incrementedTriangle.color = triangleToIncrement.color;
             }
 
             return true;
@@ -143,13 +160,16 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
-                                   const Vec4 &v0f,
+bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
+                                   const Vec4& v0f,
                                    const Vec2& st0f,
-                                   const Vec4 &v1f,
+                                   const Vec4& c0f,
+                                   const Vec4& v1f,
                                    const Vec2& st1f,
-                                   const Vec4 &v2f,
-                                   const Vec2& st2f)
+                                   const Vec4& c1f,
+                                   const Vec4& v2f,
+                                   const Vec2& st2f,
+                                   const Vec4& c2f)
 {
     static constexpr uint32_t EDGE_FUNC_SIZE = 2;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
@@ -165,6 +185,12 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
     // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
     Vec3 vW = {{v0f[3], v1f[3], v2f[3]}};
+    Vec3 vZ = {{v0f[2], v1f[2], v2f[2]}};
+
+    Vec3 cr = {{c0f[0], c1f[0], c2f[0]}};
+    Vec3 cg = {{c0f[1], c1f[1], c2f[1]}};
+    Vec3 cb = {{c0f[2], c1f[2], c2f[2]}};
+    Vec3 ca = {{c0f[3], c1f[3], c2f[3]}};
     
     // Initialize Bounding box
     // Get the bounding box
@@ -183,15 +209,15 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     bbEndX = (bbEndX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
     bbEndY = (bbEndY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
 
-    // Clamp against the view port
-    // Should not be needed when the clipping is enabled
-    //     bbStartX = max(bbStartX, (int32_t)0);
-    //     bbStartY = max(bbStartY, (int32_t)0);
-    //     bbEndX = min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-    //     bbEndY = min(bbEndY + 1, 272);
-    // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
-    //    if ((bbEndX - bbStartX) == 0)
-    //        return false;
+//    // Clamp against the view port
+//    // Should not be needed when the clipping is enabled
+//         bbStartX = max(bbStartX, (int32_t)0);
+//         bbStartY = max(bbStartY, (int32_t)0);
+//         bbEndX = min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
+//         bbEndY = min(bbEndY + 1, 320);
+//     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
+//        if ((bbEndX - bbStartX) == 0)
+//            return false;
     ++bbEndX; // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
     ++bbEndY;
 
@@ -250,23 +276,48 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
 #ifndef NO_PERSP_CORRECT
     stx.mul(vW);
     sty.mul(vW);
+
+    cr.mul(vW);
+    cg.mul(vW);
+    cb.mul(vW);
+    ca.mul(vW);
 #endif
 
     // Interpolate texture
-    Vec2 sti;
-    sti[0] = stx.dot(wNorm);
-    sti[1] = sty.dot(wNorm);
-    Vec2 stw;
-    stw[0] = stx.dot(wIncXNorm);
-    stw[1] = sty.dot(wIncXNorm);
-    Vec2 sth;
-    sth[0] = stx.dot(wIncYNorm);
-    sth[1] = sty.dot(wIncYNorm);
+    rasterizedTriangle.texSt[0] = stx.dot(wNorm);
+    rasterizedTriangle.texSt[1] = sty.dot(wNorm);
+
+    rasterizedTriangle.texStXInc [0] = stx.dot(wIncXNorm);
+    rasterizedTriangle.texStXInc [1] = sty.dot(wIncXNorm);
+
+    rasterizedTriangle.texStYInc[0] = stx.dot(wIncYNorm);
+    rasterizedTriangle.texStYInc[1] = sty.dot(wIncYNorm);
 
     // Interpolate W
-    float wDepthInit = vW.dot(wNorm);
-    float wDepthIncX = vW.dot(wIncXNorm);
-    float wDepthIncY = vW.dot(wIncYNorm);
+    rasterizedTriangle.depthW = vW.dot(wNorm);
+    rasterizedTriangle.depthWXInc = vW.dot(wIncXNorm);
+    rasterizedTriangle.depthWYInc = vW.dot(wIncYNorm);
+
+    // Interpolate Z
+    rasterizedTriangle.depthZ = vZ.dot(wNorm);
+    rasterizedTriangle.depthZXInc = vZ.dot(wIncXNorm);
+    rasterizedTriangle.depthZYInc = vZ.dot(wIncYNorm);
+
+    // Interpolate color
+    rasterizedTriangle.color[0] = cr.dot(wNorm);
+    rasterizedTriangle.color[1] = cg.dot(wNorm);
+    rasterizedTriangle.color[2] = cb.dot(wNorm);
+    rasterizedTriangle.color[3] = ca.dot(wNorm);
+
+    rasterizedTriangle.colorXInc[0] = cr.dot(wIncXNorm);
+    rasterizedTriangle.colorXInc[1] = cg.dot(wIncXNorm);
+    rasterizedTriangle.colorXInc[2] = cb.dot(wIncXNorm);
+    rasterizedTriangle.colorXInc[3] = ca.dot(wIncXNorm);
+
+    rasterizedTriangle.colorYInc[0] = cr.dot(wIncYNorm);
+    rasterizedTriangle.colorYInc[1] = cg.dot(wIncYNorm);
+    rasterizedTriangle.colorYInc[2] = cb.dot(wIncYNorm);
+    rasterizedTriangle.colorYInc[3] = ca.dot(wIncYNorm);
 
 #ifdef SOFTWARE_RENDERER
     // During the H increment, only increment as much, that after the H increment, we are at the beginning of the bounding box
@@ -283,12 +334,6 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle &rasterizedTriangle,
     sth[1] = sth[1] - (stw[1] * bbDiff);
     wDepthIncY  = wDepthIncY  - (wDepthIncX  * bbDiff);
 #endif
-    rasterizedTriangle.texSt = sti;
-    rasterizedTriangle.texStXInc = stw;
-    rasterizedTriangle.texStYInc = sth;
-    rasterizedTriangle.depthW = wDepthInit;
-    rasterizedTriangle.depthWXInc = wDepthIncX;
-    rasterizedTriangle.depthWYInc = wDepthIncY;
     return true;
 }
 

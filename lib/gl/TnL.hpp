@@ -62,7 +62,7 @@ public:
 
         DrawMode drawMode;
         uint32_t count;
-        Vec4i vertexColor;
+        Vec4 vertexColor;
 
         bool vertexArrayEnabled;
         uint8_t vertexSize;
@@ -193,9 +193,9 @@ public:
         Vec3 n0;
         Vec3 n1;
         Vec3 n2;
-        Vec4i color0;
-        Vec4i color1;
-        Vec4i color2;
+        Vec4 color0;
+        Vec4 color1;
+        Vec4 color2;
     };
 
     TnL();
@@ -239,6 +239,7 @@ private:
     // Each clipping plane can potentally introduce one more vertex, so, we have 3 vertexes, plus 6 possible planes, results in 9 vertexes
     using ClipVertList = std::array<Vec4, 9>;
     using ClipStList = std::array<Vec2, 9>;
+    using ClipColorList = std::array<Vec4, 9>;
 
     enum OutCode
     {
@@ -328,15 +329,19 @@ private:
     void lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt);
     void lerpSt(Vec2& vOut, const Vec2& v0, const Vec2& v1, const float amt);
     OutCode outCode(const Vec4 &v);
-    std::tuple<const uint32_t, ClipVertList&, ClipStList&> clip(ClipVertList& vertList,
-                                                                ClipVertList& vertListBuffer,
-                                                                ClipStList& stList,
-                                                                ClipStList& stListBuffer);
+    std::tuple<const uint32_t, ClipVertList &, ClipStList &, ClipColorList &> clip(ClipVertList& vertList,
+                                                                                   ClipVertList& vertListBuffer,
+                                                                                   ClipStList& stList,
+                                                                                   ClipStList& stListBuffer,
+                                                                                   ClipColorList& colorList,
+                                                                                   ClipColorList& colorListBuffer);
     uint32_t clipAgainstPlane(ClipVertList& vertListOut,
                               ClipStList& stListOut,
+                              ClipColorList &colorListOut,
                               const OutCode clipPlane,
                               const ClipVertList& vertListIn,
                               const ClipStList& stListIn,
+                              const ClipColorList &colorListIn,
                               const uint32_t listInSize);
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);

@@ -116,17 +116,9 @@ bool TnL::drawObj(IRenderer &renderer, const TnL::RenderObj &obj)
 
         if (obj.colorArrayEnabled)
         {
-            Vec4 color0;
-            Vec4 color1;
-            Vec4 color2;
-
-            obj.getColor(color0, index0);
-            obj.getColor(color1, index1);
-            obj.getColor(color2, index2);
-
-            triangle.color0.fromVec<8>(color0.vec);
-            triangle.color1.fromVec<8>(color1.vec);
-            triangle.color2.fromVec<8>(color2.vec);
+            obj.getColor(triangle.color0, index0);
+            obj.getColor(triangle.color1, index1);
+            obj.getColor(triangle.color2, index2);
         }
         else
         {
@@ -153,37 +145,45 @@ bool TnL::drawObj(IRenderer &renderer, const TnL::RenderObj &obj)
 
 bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
 {
-    Vec4i color = triangle.color2;
+    Vec4 color0 = triangle.color0;
+    Vec4 color1 = triangle.color1;
+    Vec4 color2 = triangle.color2;
     if (m_enableLighting)
     {
-        Vec4 v2;
-        Vec3 n2;
+        Vec4 v0, v1, v2;
+        Vec3 n0, n1, n2;
 
+        m_n.transform(n0, triangle.n0);
+        m_n.transform(n1, triangle.n1);
         m_n.transform(n2, triangle.n2);
-        n2.normalize(); // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
+
+        // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
         // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
+        n0.normalize();
+        n1.normalize();
+        n2.normalize();
+
+        m_m.transform(v0, triangle.v0);
+        m_m.transform(v1, triangle.v1);
         m_m.transform(v2, triangle.v2);
 
-        Vec4 colorLight{m_material.preCalcSceneLight};
+        color0 = m_material.preCalcSceneLight;
+        color1 = m_material.preCalcSceneLight;
+        color2 = m_material.preCalcSceneLight;
         for (auto& light : m_lights)
         {
-            calculateLight(colorLight, light, m_material, v2, n2);
+            calculateLight(color0, light, m_material, v0, n0);
+            calculateLight(color1, light, m_material, v1, n1);
+            calculateLight(color2, light, m_material, v2, n2);
         }
-
-
-        color.fromVec<8>(colorLight.vec);
-        // Clamp colors.
-        static constexpr int32_t MAX_VAL = 255;
-        color = {min(color[0], MAX_VAL),
-                 min(color[1], MAX_VAL),
-                 min(color[2], MAX_VAL),
-                 min(color[3], MAX_VAL)};
     }
 
     ClipVertList vertList;
     ClipStList stList;
+    ClipColorList colorList;
     ClipVertList vertListBuffer;
     ClipStList stListBuffer;
+    ClipColorList colorListBuffer;
 
     m_t.transform(vertList[0], triangle.v0);
     m_t.transform(vertList[1], triangle.v1);
@@ -193,10 +193,14 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     stList[1] = triangle.st1;
     stList[2] = triangle.st2;
 
+    colorList[0] = color0;
+    colorList[1] = color1;
+    colorList[2] = color2;
+
     calculateTexGenCoords(stList, triangle.v0, triangle.v1, triangle.v2);
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
-    auto [vertListSize, vertListClipped, stListClipped] = clip(vertList, vertListBuffer, stList, stListBuffer);
+    auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     for (uint8_t i = 0; i < vertListSize; i++)
@@ -220,12 +224,14 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan
         const bool success = renderer.drawTriangle(vertListClipped[0],
-                vertListClipped[i-2],
-                vertListClipped[i-1],
+                vertListClipped[i - 2],
+                vertListClipped[i - 1],
                 stListClipped[0],
-                stListClipped[i-2],
-                stListClipped[i-1],
-                color);
+                stListClipped[i - 2],
+                stListClipped[i - 1],
+                colorListClipped[0],
+                colorListClipped[i - 2],
+                colorListClipped[i - 1]);
         if (!success)
         {
             return false;
@@ -295,37 +301,6 @@ void TnL::calculateTexGenCoords(TnL::ClipStList &stList, const Vec4& v0, const V
         Vec3 stx{{stList[0][0], stList[1][0], stList[2][0]}};
         Vec3 sty{{stList[0][1], stList[1][1], stList[2][1]}};
 
-        float intPart;
-        if (stx[0] > 1.0f || stx[0] < -1.0f)
-        {
-            modf(stx[0], &intPart);
-            stx -= intPart;
-        }
-        if (stx[1] > 1.0f || stx[1] < -1.0f)
-        {
-            modf(stx[1], &intPart);
-            stx -= intPart;
-        }
-        if (stx[2] > 1.0f || stx[2] < -1.0f)
-        {
-            modf(stx[2], &intPart);
-            stx -= intPart;
-        }
-        if (sty[0] > 1.0f || sty[0] < -1.0f)
-        {
-            modf(sty[0], &intPart);
-            sty -= intPart;
-        }
-        if (sty[1] > 1.0f || sty[1] < -1.0f)
-        {
-            modf(sty[1], &intPart);
-            sty -= intPart;
-        }
-        if (sty[2] > 1.0f || sty[2] < -1.0f)
-        {
-            modf(sty[2], &intPart);
-            sty -= intPart;
-        }
         stList[0][0] = stx[0];
         stList[1][0] = stx[1];
         stList[2][0] = stx[2];
@@ -445,11 +420,11 @@ void TnL::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt)
     vOut[2] = ((v0[2] - v1[2]) * (1-amt)) + v1[2];
     vOut[1] = ((v0[1] - v1[1]) * (1-amt)) + v1[1];
     vOut[0] = ((v0[0] - v1[0]) * (1-amt)) + v1[0];
-    //    float a1 = 1 - amt;
-    //    vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
-    //    vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
-    //    vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    //    vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
+    // float a1 = 1.0 - amt;
+    // vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
+    // vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
+    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
+    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
 #endif
 }
 
@@ -462,8 +437,8 @@ void TnL::lerpSt(Vec2& vOut, const Vec2& v0, const Vec2& v1, const float amt)
     float a1 = 1.0 - amt;
     vOut[1] = ((v0[1] - v1[1]) * a1) + v1[1];
     vOut[0] = ((v0[0] - v1[0]) * a1) + v1[0];
-    //    vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    //    vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
+    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
+    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
 #endif
 }
 
@@ -542,10 +517,12 @@ float TnL::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 #endif
 }
 
-std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&> TnL::clip(ClipVertList& vertList,
-                                                                           ClipVertList& vertListBuffer,
-                                                                           ClipStList& stList,
-                                                                           ClipStList& stListBuffer)
+std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&, TnL::ClipColorList&> TnL::clip(ClipVertList& vertList,
+                                                                                                ClipVertList& vertListBuffer,
+                                                                                                ClipStList& stList,
+                                                                                                ClipStList& stListBuffer,
+                                                                                                ClipColorList& colorList,
+                                                                                                ClipColorList& colorListBuffer)
 {
     // Check if the triangle is completely outside by checking if all vertices have the same outcode
     OutCode oc0 = outCode(vertList[0]);
@@ -553,19 +530,21 @@ std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&> TnL::clip(ClipV
     OutCode oc2 = outCode(vertList[2]);
     if (oc0 & oc1 & oc2)
     {
-        return {0u, vertList, stList};
+        return {0u, vertList, stList, colorList};
     }
 
     // Checking if the triangle is completely inside by checking, if no vertex has an outcode
     if ((oc0 | oc1 | oc2) == OutCode::NONE)
     {
-        return {3u, vertList, stList};
+        return {3u, vertList, stList, colorList};
     }
 
     ClipVertList* currentVertListBufferIn = &vertList;
     ClipVertList* currentVertListBufferOut = &vertListBuffer;
     ClipStList* currentStListBufferIn = &stList;
     ClipStList* currentStListBufferOut = &stListBuffer;
+    ClipColorList* currentColorListBufferIn = &colorList;
+    ClipColorList* currentColorListBufferOut = &colorListBuffer;
 
     int8_t numberOfVerts = 3; // Initial the list contains 3 vertecies
     int8_t numberOfVertsCurrentPlane = 0;
@@ -577,9 +556,11 @@ std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&> TnL::clip(ClipV
         // Then we can skip the unneeded copying of data.
         numberOfVertsCurrentPlane = clipAgainstPlane(*currentVertListBufferOut,
                                                      *currentStListBufferOut,
+                                                     *currentColorListBufferOut,
                                                      oc,
                                                      *currentVertListBufferIn,
                                                      *currentStListBufferIn,
+                                                     *currentColorListBufferIn,
                                                      numberOfVerts);
         if (numberOfVertsCurrentPlane > 0)
         {
@@ -592,6 +573,10 @@ std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&> TnL::clip(ClipV
             currentStListBufferIn = currentStListBufferOut;
             currentStListBufferOut = tmpStIn;
 
+            ClipColorList* tmpColorIn = currentColorListBufferIn;
+            currentColorListBufferIn = currentColorListBufferOut;
+            currentColorListBufferOut = tmpColorIn;
+
             // Safe the new number of planes
             numberOfVerts = numberOfVertsCurrentPlane;
         }
@@ -600,16 +585,18 @@ std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&> TnL::clip(ClipV
     // Assume in this trivial case, that we have clipped a triangle, which was already
     // complete outside. So this triangle shouldn't result in a bigger triangle
     if (outCode((*currentVertListBufferIn)[0]) & outCode((*currentVertListBufferIn)[1]) & outCode((*currentVertListBufferIn)[2]))
-        return {0u, vertList, stList};
+        return {0u, vertList, stList, colorList};
 
-    return {numberOfVerts, *currentVertListBufferIn, *currentStListBufferIn};
+    return {numberOfVerts, *currentVertListBufferIn, *currentStListBufferIn, *currentColorListBufferIn};
 }
 
 uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut, 
                                ClipStList& stListOut,
+                               ClipColorList& colorListOut,
                                const OutCode clipPlane,
                                const ClipVertList& vertListIn,
                                const ClipStList& stListIn,
+                               const ClipColorList& colorListIn,
                                const uint32_t listInSize)
 {
     // Start Clipping
@@ -625,6 +612,7 @@ uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut,
             {
                 float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
                 lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
+                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
                 lerpSt(stListOut[i], stListIn[vert], stListIn[vertMod], lerpw);
                 i++;
             }
@@ -634,6 +622,7 @@ uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut,
             {
                 float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
                 lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
+                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
                 lerpSt(stListOut[i], stListIn[vert], stListIn[vertMod], lerpw);
                 i++;
             }
@@ -641,6 +630,7 @@ uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut,
         else
         {
             vertListOut[i] = vertListIn[vert];
+            colorListOut[i] = colorListIn[vert];
             stListOut[i] = stListIn[vert];
             i++;
         }
@@ -651,17 +641,17 @@ uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut,
 
 void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {
-    v0[0] = ((v0[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
-    v1[0] = ((v1[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
-    v2[0] = ((v2[0]+1.0f)*m_viewportWidth*0.5f) + m_viewportX;
+    v0[0] = ((v0[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
+    v1[0] = ((v1[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
+    v2[0] = ((v2[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
 
-    v0[1] = (((v0[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
-    v1[1] = (((v1[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
-    v2[1] = (((v2[1]+1.0f)*m_viewportHeight*0.5f) + m_viewportY) * -1;
+    v0[1] = ((v0[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
+    v1[1] = ((v1[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
+    v2[1] = ((v2[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
 
-    v0[2] = (1.0f - ((v0[2]+1.0f)*0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v1[2] = (1.0f - ((v1[2]+1.0f)*0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v2[2] = (1.0f - ((v2[2]+1.0f)*0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v0[2] = (((v0[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v1[2] = (((v1[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v2[2] = (((v2[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 
     // This is a possibility just to calculate the real z value but is not needed for the rasterizer
     //    float n = 0.1;
@@ -684,8 +674,7 @@ void TnL::viewportTransform(Vec4 &v)
     // Alternative implementation which is basically doing the same but without precomputed variables
     // v[0] = (((v[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX);
     // v[1] = (((v[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY);
-    // Disabeling z because since we using a w buffer, this computation just wastes cpu cycles
-    //v[2] = (1.0f - ((v[2]+1.0f)*0.5f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 
 void TnL::perspectiveDivide(Vec4 &v)
@@ -693,8 +682,7 @@ void TnL::perspectiveDivide(Vec4 &v)
     v[3] = 1.0f / v[3];
     v[0] = v[0] * v[3];
     v[1] = v[1] * v[3];
-    // Disabeling z because since we using a w buffer, this computation just wastes cpu cycles
-    //v[2] = v[2] * v[3];
+    v[2] = v[2] * v[3];
 }
 
 void TnL::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)

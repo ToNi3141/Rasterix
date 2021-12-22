@@ -110,17 +110,19 @@ public:
                               const Vec2& st0,
                               const Vec2& st1,
                               const Vec2& st2,
-                              const Vec4i& color) override
+                              const Vec4& c0,
+                              const Vec4& c1,
+                              const Vec4& c2) override
     {
         Rasterizer::RasterizedTriangle triangleConf;
 
-        if (!Rasterizer::rasterize(triangleConf, v0, st0, v1, st1, v2, st2))
+        if (!Rasterizer::rasterize(triangleConf, v0, st0, c0, v1, st1, c1, v2, st2, c2))
         {
             // Triangle is not visible
             return true;
         }
 
-        triangleConf.triangleStaticColor = convertColor(color);
+        //triangleConf.triangleStaticColor = convertColor(color);
 
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
