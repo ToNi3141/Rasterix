@@ -129,7 +129,7 @@ public:
 
     }
 
-    float dist(const Vec<VecSize>& val)
+    float dist(const Vec<VecSize>& val) const
     {
         float tmp = 0;
         for (uint32_t i = 0; i < VecSize; i++)

@@ -80,6 +80,7 @@ public:
 
     void glMaterialf(GLenum face, GLenum pname, GLfloat param);
     void glMaterialfv(GLenum face, GLenum pname, const GLfloat* params);
+    void glColorMaterial(GLenum face, GLenum pname);
     void glLightf(GLenum light, GLenum pname, GLfloat param);
     void glLightfv(GLenum light, GLenum pname, const GLfloat* params);
     void glLightModelf(GLenum pname, GLfloat param);
@@ -181,6 +182,11 @@ private:
     // Cull mode
     bool m_enableCulling = false;
     GLenum m_cullMode = GL_BACK;
+
+    // Color material
+    bool m_enableColorMaterial = false;
+    GLenum m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
+    GLenum m_colorMaterialFace = GL_FRONT_AND_BACK;
 
     // Errors
     GLint m_error = GL_NO_ERROR;

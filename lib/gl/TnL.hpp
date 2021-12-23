@@ -55,7 +55,9 @@ public:
         enum Type
         {
             BYTE,
+            UNSIGNED_BYTE,
             SHORT,
+            UNSIGNED_SHORT,
             FLOAT,
             UNSIGNED_INT
         };
@@ -106,8 +108,14 @@ public:
                     case Type::BYTE:
                         vec.fromArray(a + (indexWithStride * 1), size);
                         break;
+                    case Type::UNSIGNED_BYTE:
+                        vec.fromArray(reinterpret_cast<const uint8_t*>(a + (indexWithStride * 1)), size);
+                        break;
                     case Type::SHORT:
                         vec.fromArray(reinterpret_cast<const int16_t*>(a + (indexWithStride * 2)), size);
+                        break;
+                    case Type::UNSIGNED_SHORT:
+                        vec.fromArray(reinterpret_cast<const uint16_t*>(a + (indexWithStride * 2)), size);
                         break;
                     case Type::UNSIGNED_INT:
                         vec.fromArray(reinterpret_cast<const int32_t*>(a + (indexWithStride * 4)), size);
@@ -124,8 +132,14 @@ public:
                     case Type::BYTE:
                         vec.fromArray(a + indexWithStride, size);
                         break;
+                    case Type::UNSIGNED_BYTE:
+                        vec.fromArray(reinterpret_cast<const uint8_t*>(a + indexWithStride), size);
+                        break;
                     case Type::SHORT:
                         vec.fromArray(reinterpret_cast<const int16_t*>(a + indexWithStride), size);
+                        break;
+                    case Type::UNSIGNED_SHORT:
+                        vec.fromArray(reinterpret_cast<const uint16_t*>(a + indexWithStride), size);
                         break;
                     case Type::UNSIGNED_INT:
                         vec.fromArray(reinterpret_cast<const int32_t*>(a + indexWithStride), size);
@@ -154,7 +168,27 @@ public:
 
         bool getColor(Vec4& vec, const uint32_t index) const
         {
-            return getFromArray(vec, colorType, colorPointer, colorStride, colorSize, index);
+            bool retVal = getFromArray(vec, colorType, colorPointer, colorStride, colorSize, index);
+            if (retVal)
+            {
+                switch (colorType) {
+                case Type::UNSIGNED_BYTE:
+                case Type::UNSIGNED_SHORT:
+                case Type::UNSIGNED_INT:
+                    // Map unsigned values to 0.0 .. 1.0
+                    vec *= 1.0f / 255.0f;
+                    break;
+                case Type::BYTE:
+                case Type::SHORT:
+                    // Map signed values to -1.0 .. 1.0
+                    vec *= 1.0f / 127.0f;
+                    break;
+                default:
+                    // Other types like floats can be used as they are
+                    break;
+                }
+            }
+            return retVal;
         }
 
         bool getNormal(Vec3& vec, const uint32_t index) const
@@ -169,8 +203,10 @@ public:
                 switch (indicesType)
                 {
                 case Type::BYTE:
+                case Type::UNSIGNED_BYTE:
                     return static_cast<const uint8_t*>(indicesPointer)[index];
                 case Type::SHORT:
+                case Type::UNSIGNED_SHORT:
                     return static_cast<const uint16_t*>(indicesPointer)[index];
                 case Type::UNSIGNED_INT:
                     return static_cast<const uint32_t*>(indicesPointer)[index];
@@ -223,6 +259,7 @@ public:
     void setConstantAttenuationLight(const uint8_t light, const float val);
     void setLinearAttenuationLight(const uint8_t light, const float val);
     void setQuadraticAttenuationLight(const uint8_t light, const float val);
+    void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
@@ -260,16 +297,6 @@ private:
         Vec4 diffuseColor{{0.8f, 0.8f, 0.8f, 1.0}};
         Vec4 specularColor{{0.0f, 0.0f, 0.0f, 1.0}};
         float specularExponent{0.0f};
-
-        Vec4 preCalcSceneLight;
-
-        void preCalcColors()
-        {
-            // Emission color of material
-            preCalcSceneLight = emissiveColor;
-            // Ambient Color Material and ambient scene color
-            preCalcSceneLight += ambientColor * ambientColorScene;
-        }
     };
 
     struct LightConfig
@@ -288,29 +315,8 @@ private:
 
         bool localViewer{false}; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
-        Vec4 preCalcAmbientColor;
-        Vec4 preCalcDiffuseColor;
-        Vec4 preCalcSpecularColor;
         Vec4 preCalcDirectionalLightDir;
         Vec4 preCalcHalfWayVectorInfinite;
-
-        void preCalcAmbient(const Vec4& colorMat)
-        {
-            // Static ambient color
-            preCalcAmbientColor = ambientColor * colorMat;
-        }
-
-        void preCalcDiffuse(const Vec4& colorMat)
-        {
-            // Static Diffuse Color
-            preCalcDiffuseColor = diffuseColor * colorMat;
-        }
-
-        void preCalcSpecular(const Vec4& colorMat)
-        {
-            // Static Specular Color
-            preCalcSpecularColor = specularColor * colorMat;
-        }
 
         void preCalcVectors()
         {
@@ -348,7 +354,16 @@ private:
     inline void viewportTransform(Vec4 &v);
     inline void perspectiveDivide(Vec4& v);
 
-    void calculateLight(Vec4 &color, const LightConfig& lightConfig, const MaterialConfig& materialConfig, Vec4 v0, Vec3 n0) const;
+
+    void calculateSceneLight(Vec4& sceneLight, const Vec4 &emissiveColor, const Vec4 &ambientColor, const Vec4 &ambientColorScene) const;
+    void calculateLight(Vec4 &color,
+                        const LightConfig& lightConfig,
+                        const float materialSpecularExponent,
+                        const Vec4& materialAmbientColor,
+                        const Vec4& materialDiffuseColor,
+                        const Vec4& materialSpecularColor,
+                        const Vec4& v0,
+                        const Vec3& n0) const;
     void calculateTexGenCoords(ClipStList& stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
 
     Mat44 m_t; // ModelViewProjection
@@ -369,6 +384,10 @@ private:
     std::array<LightConfig, MAX_LIGHTS> m_lights;
     MaterialConfig m_material{};
     bool m_enableLighting{false};
+    bool m_enableColorMaterialEmission{false};
+    bool m_enableColorMaterialAmbient{false};
+    bool m_enableColorMaterialDiffuse{false};
+    bool m_enableColorMaterialSpecular{false};
 
     bool m_texGenEnableS{false};
     bool m_texGenEnableT{false};

@@ -145,9 +145,9 @@ bool TnL::drawObj(IRenderer &renderer, const TnL::RenderObj &obj)
 
 bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
 {
-    Vec4 color0 = triangle.color0;
-    Vec4 color1 = triangle.color1;
-    Vec4 color2 = triangle.color2;
+    Vec4 color0;
+    Vec4 color1;
+    Vec4 color2;
     if (m_enableLighting)
     {
         Vec4 v0, v1, v2;
@@ -167,15 +167,58 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
         m_m.transform(v1, triangle.v1);
         m_m.transform(v2, triangle.v2);
 
-        color0 = m_material.preCalcSceneLight;
-        color1 = m_material.preCalcSceneLight;
-        color2 = m_material.preCalcSceneLight;
+        calculateSceneLight(color0,
+                            (m_enableColorMaterialEmission) ? triangle.color0 : m_material.emissiveColor,
+                            (m_enableColorMaterialAmbient) ? triangle.color0 : m_material.ambientColor,
+                            m_material.ambientColorScene);
+        calculateSceneLight(color1,
+                            (m_enableColorMaterialEmission) ? triangle.color1 : m_material.emissiveColor,
+                            (m_enableColorMaterialAmbient) ? triangle.color1 : m_material.ambientColor,
+                            m_material.ambientColorScene);
+        calculateSceneLight(color2,
+                            (m_enableColorMaterialEmission) ? triangle.color2 : m_material.emissiveColor,
+                            (m_enableColorMaterialAmbient) ? triangle.color2 : m_material.ambientColor,
+                            m_material.ambientColorScene);
+
         for (auto& light : m_lights)
         {
-            calculateLight(color0, light, m_material, v0, n0);
-            calculateLight(color1, light, m_material, v1, n1);
-            calculateLight(color2, light, m_material, v2, n2);
+            if (!light.enable)
+                continue;
+            calculateLight(color0,
+                           light,
+                           m_material.specularExponent,
+                           (m_enableColorMaterialAmbient) ? triangle.color0 : m_material.ambientColor,
+                           (m_enableColorMaterialDiffuse) ? triangle.color0 : m_material.diffuseColor,
+                           (m_enableColorMaterialSpecular) ? triangle.color0 : m_material.specularColor,
+                           v0,
+                           n0);
+            calculateLight(color1,
+                           light,
+                           m_material.specularExponent,
+                           (m_enableColorMaterialAmbient) ? triangle.color1 : m_material.ambientColor,
+                           (m_enableColorMaterialDiffuse) ? triangle.color1 : m_material.diffuseColor,
+                           (m_enableColorMaterialSpecular) ? triangle.color1 : m_material.specularColor,
+                           v1,
+                           n1);
+            calculateLight(color2,
+                           light,
+                           m_material.specularExponent,
+                           (m_enableColorMaterialAmbient) ? triangle.color2 : m_material.ambientColor,
+                           (m_enableColorMaterialDiffuse) ? triangle.color2 : m_material.diffuseColor,
+                           (m_enableColorMaterialSpecular) ? triangle.color2 : m_material.specularColor,
+                           v2,
+                           n2);
         }
+
+        color0[3] = triangle.color0[3];
+        color1[3] = triangle.color1[3];
+        color2[3] = triangle.color2[3];
+    }
+    else
+    {
+        color0 = triangle.color0;
+        color1 = triangle.color1;
+        color2 = triangle.color2;
     }
 
     ClipVertList vertList;
@@ -250,7 +293,7 @@ void TnL::calculateTexGenCoords(TnL::ClipStList &stList, const Vec4& v0, const V
         if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))
         {
             // TODO: We are transforming the vertexes twice, one time for the light and again here for the texture generation.
-            // It would be convenient if we would do this only one.
+            // It would be convenient if we would do this only once.
             m_m.transform(v0Transformed, v0);
             m_m.transform(v1Transformed, v1);
             m_m.transform(v2Transformed, v2);
@@ -295,22 +338,17 @@ void TnL::calculateTexGenCoords(TnL::ClipStList &stList, const Vec4& v0, const V
                 break;
             }
         }
-
-        // Clamp generated texture coordinates so that they are
-        // between -1.0 .. 1.0
-        Vec3 stx{{stList[0][0], stList[1][0], stList[2][0]}};
-        Vec3 sty{{stList[0][1], stList[1][1], stList[2][1]}};
-
-        stList[0][0] = stx[0];
-        stList[1][0] = stx[1];
-        stList[2][0] = stx[2];
-        stList[0][1] = sty[0];
-        stList[1][1] = sty[1];
-        stList[2][1] = sty[2];
     }
 }
 
-void TnL::calculateLight(Vec4 &color, const LightConfig& lightConfig, const MaterialConfig& materialConfig, Vec4 v0, Vec3 n0) const
+void TnL::calculateLight(Vec4 &color,
+                         const LightConfig& lightConfig,
+                         const float materialSpecularExponent,
+                         const Vec4& materialAmbientColor,
+                         const Vec4& materialDiffuseColor,
+                         const Vec4& materialSpecularColor,
+                         const Vec4& v0,
+                         const Vec3& n0) const
 {
     Vec4 n{{n0[0], n0[1], n0[2], 0}};
 
@@ -379,19 +417,23 @@ void TnL::calculateLight(Vec4 &color, const LightConfig& lightConfig, const Mate
         float dotDirSpecular = n.dot(dir);
 
         // Optimization: pows are expensive
-        if (materialConfig.specularExponent == 0.0f) // x^0 == 1.0
+        if (materialSpecularExponent == 0.0f) // x^0 == 1.0
         {
             dotDirSpecular = 1.0f;
         }
-        else if (materialConfig.specularExponent != 1.0f) // x^1 == x
+        else if (materialSpecularExponent != 1.0f) // x^1 == x
         {
-            dotDirSpecular = powf(dotDirSpecular, materialConfig.specularExponent);
+            dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
         }
 
-        Vec4 colorLight = lightConfig.preCalcDiffuseColor;
+        Vec4 ambientColor = lightConfig.ambientColor;
+        ambientColor *= materialAmbientColor;
+        Vec4 colorLight = lightConfig.diffuseColor;
+        colorLight *= materialDiffuseColor;
         colorLight *= dotDirDiffuse;
-        colorLight += lightConfig.preCalcAmbientColor;
-        Vec4 colorLightSpecular = lightConfig.preCalcSpecularColor;
+        colorLight += ambientColor;
+        Vec4 colorLightSpecular = lightConfig.specularColor;
+        colorLightSpecular *= materialSpecularColor;
         colorLightSpecular *= (f * dotDirSpecular);
         colorLight += colorLightSpecular;
 
@@ -685,6 +727,14 @@ void TnL::perspectiveDivide(Vec4 &v)
     v[2] = v[2] * v[3];
 }
 
+void TnL::calculateSceneLight(Vec4 &sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
+{
+    // Emission color of material
+    sceneLight = emissiveColor;
+    // Ambient Color Material and ambient scene color
+    sceneLight += ambientColor * ambientColorScene;
+}
+
 void TnL::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {
     // Note: The screen resolution is width and height. But during view port transformation we are clamping between
@@ -743,19 +793,16 @@ void TnL::enableLight(const uint8_t light, const bool enable)
 void TnL::setAmbientColorLight(const uint8_t light, const Vec4 &color)
 {
     m_lights[light].ambientColor = color;
-    m_lights[light].preCalcAmbient(m_material.ambientColor);
 }
 
 void TnL::setDiffuseColorLight(const uint8_t light, const Vec4 &color)
 {
     m_lights[light].diffuseColor = color;
-    m_lights[light].preCalcDiffuse(m_material.diffuseColor);
 }
 
 void TnL::setSpecularColorLight(const uint8_t light, const Vec4 &color)
 {
     m_lights[light].specularColor = color;
-    m_lights[light].preCalcSpecular(m_material.specularColor);
 }
 
 void TnL::setPosLight(const uint8_t light, const Vec4 &pos)
@@ -779,44 +826,37 @@ void TnL::setQuadraticAttenuationLight(const uint8_t light, const float val)
     m_lights[light].quadraticAttenuation = val;
 }
 
+void TnL::enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular)
+{
+    m_enableColorMaterialEmission = emission;
+    m_enableColorMaterialAmbient = ambient;
+    m_enableColorMaterialDiffuse = diffuse;
+    m_enableColorMaterialSpecular = specular;
+}
+
 void TnL::setEmissiveColorMaterial(const Vec4 &color)
 {
     m_material.emissiveColor = color;
-    m_material.preCalcColors();
 }
 
 void TnL::setAmbientColorMaterial(const Vec4 &color)
 {
     m_material.ambientColor = color;
-    m_material.preCalcColors();
-    for (auto& light : m_lights)
-    {
-        light.preCalcAmbient(color);
-    }
 }
 
 void TnL::setAmbientColorScene(const Vec4 &color)
 {
     m_material.ambientColorScene = color;
-    m_material.preCalcColors();
 }
 
 void TnL::setDiffuseColorMaterial(const Vec4 &color)
 {
     m_material.diffuseColor = color;
-    for (auto& light : m_lights)
-    {
-        light.preCalcDiffuse(color);
-    }
 }
 
 void TnL::setSpecularColorMaterial(const Vec4 &color)
 {
     m_material.specularColor = color;
-    for (auto& light : m_lights)
-    {
-        light.preCalcSpecular(color);
-    }
 }
 
 void TnL::setSpecularExponentMaterial(const float val)

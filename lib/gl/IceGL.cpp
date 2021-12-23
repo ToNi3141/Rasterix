@@ -788,6 +788,10 @@ void IceGL::glEnable(GLenum cap)
     case GL_CULL_FACE:
         m_tnl.enableCulling(true);
         break;
+    case GL_COLOR_MATERIAL:
+        m_enableColorMaterial = true;
+        glColorMaterial(m_colorMaterialFace, m_colorMaterialTracking);
+        break;
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -853,6 +857,9 @@ void IceGL::glDisable(GLenum cap)
     case GL_CULL_FACE:
         m_tnl.enableCulling(false);
         break;
+    case GL_COLOR_MATERIAL:
+        m_enableColorMaterial = false;
+        m_tnl.enableColorMaterial(false, false, false, false);
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -1239,6 +1246,45 @@ void IceGL::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
     }
 }
 
+void IceGL::glColorMaterial(GLenum face, GLenum pname)
+{
+    m_error = GL_INVALID_ENUM;
+    if (face == GL_FRONT_AND_BACK)
+    {
+        m_error = GL_NO_ERROR;
+        m_colorMaterialFace = face;
+        m_colorMaterialTracking = pname;
+        switch (pname) {
+        case GL_AMBIENT:
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(false, true, false, false);
+            break;
+        case GL_DIFFUSE:
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(false, false, true, false);
+            break;
+        case GL_AMBIENT_AND_DIFFUSE:
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(false, true, true, false);
+            break;
+        case GL_SPECULAR:
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(false, false, false, true);
+            break;
+        case GL_EMISSION:
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(true, false, false, false);
+            break;
+        default:
+            m_error = GL_INVALID_ENUM;
+            m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
+            if (m_enableColorMaterial)
+                m_tnl.enableColorMaterial(false, true, true, false);
+            break;
+        }
+    }
+}
+
 void IceGL::glLightf(GLenum light, GLenum pname, GLfloat param)
 {
     m_error = GL_INVALID_ENUM;
@@ -1441,8 +1487,12 @@ TnL::RenderObj::Type IceGL::convertType(GLenum type)
     switch (type) {
     case GL_BYTE:
         return TnL::RenderObj::Type::BYTE;
+    case GL_UNSIGNED_BYTE:
+        return TnL::RenderObj::Type::UNSIGNED_BYTE;
     case GL_SHORT:
         return TnL::RenderObj::Type::SHORT;
+    case GL_UNSIGNED_SHORT:
+        return TnL::RenderObj::Type::UNSIGNED_SHORT;
     case GL_FLOAT:
         return TnL::RenderObj::Type::FLOAT;
     case GL_UNSIGNED_INT:
