@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationDisplay attributeInterpolator
+all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator
 
 clean:
 	rm -rf obj_dir
@@ -19,6 +19,11 @@ attributeInterpolator:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/AttributeInterpolator.v --top-module AttributeInterpolator cpp/sim_AttributeInterpolator.cpp -I../rtl/float/rtl/float/ -I../rtl/RasteriCEr/
 	-make -C obj_dir -f VAttributeInterpolator.mk
 	./obj_dir/VAttributeInterpolator
+
+functionInterpolator:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/FunctionInterpolator.v --top-module FunctionInterpolator cpp/sim_FunctionInterpolator.cpp -I../rtl/RasteriCEr/
+	-make -C obj_dir -f VFunctionInterpolator.mk
+	./obj_dir/VFunctionInterpolator
 
 .SECONDARY:
 .PHONY: all clean
