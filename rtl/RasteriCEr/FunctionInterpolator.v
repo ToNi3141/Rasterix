@@ -15,11 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// The function interpolater will interpolate a mathematical function based on a LUT
+// The used interpolation equation is: f(x) = m*x + b
+// where:
+// x: User input, mantissa is of this value is used as multiplicant for m
+// m: slope stored in the LUT and is accessed via the x's exponent - 127
+// b: offset stored in the LUT and is accessed via the x's exponent - 127
+// Since the LUT is accessed via the exponent of x, the entries in the LUT have a exponential
+// distribution. Means entry 0 is for the float value 1.0, entry 1 for 2.0, entry 2 for 4.0, entry 3 for 8.0 ...
+// There is a limitation with values below 1.0. The limitation comes from the LUT access based 
+// on the exponent. The function interpolator substracts 127 from the exponent. This means that
+// 1.0 is the smallest number. This is not really necessary, but in the usual use case,
+// this function interpolator is used for values over one. To also cover values below one,
+// we would require 128 additional LUT entries which I want to save. As work around for values
+// smaller one, one can set the lower bound to 1.0. For values lower 1.0 the function 
+// interpolator will output fx = 1.0.
+// The function interpolator has 32 entries to cover input values from 1.0 to 4294967296.0
 // Dataformat
 // Beat 0 are the LUT bounds
-// lower bound = tdata[0 : 32]
-// upper bound = tdata[32 : 32]
-// Beat 1 data
+// lower bound = tdata[0 : 32] as float. If x is lower, fx will be 1.0
+// upper bound = tdata[32 : 32] as float. If x is higher, fx will be 0.0
+// Beat 1 .. 33 
+// m = tdata[0  +: 32] as S1.30
+// b = tdata[32  +: 32] as S1.30
+// In case STREAM_WIDTH is bigger than 64 bit, bits [n : 64] are ignored
 module FunctionInterpolator #(
     // Width of the write port
     parameter STREAM_WIDTH = 64,
@@ -39,10 +58,9 @@ module FunctionInterpolator #(
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
 );
+    localparam LUT_ENTRIES = 32;
+
     localparam LUT_ENTRY_WIDTH = 64;
-    localparam LUT_SIZE_BYTES = (2**8) * (LUT_ENTRY_WIDTH / 8);
-    localparam LUT_SIZE_ADDR_DIFF = $clog2(STREAM_WIDTH) - $clog2(LUT_ENTRY_WIDTH);
-    
 
     localparam FLOAT_EXP_SIZE = 8;
     localparam FLOAT_EXP_POS = 23;
@@ -52,20 +70,18 @@ module FunctionInterpolator #(
     // LUT bounds
     reg  [31 : 0]                                       lutLowerBound = 0;
     reg  [31 : 0]                                       lutUpperBound = 0;
+    reg  [LUT_ENTRY_WIDTH - 1 : 0]                      lut[0 : LUT_ENTRIES - 1];
+
+    // LUT memory access
     reg                                                 writeLutBounds = 1;
+    reg  [$clog2(LUT_ENTRIES) - 1 : 0]                  memWriteAddr = 0;
 
     // Float unpacking
     wire [FLOAT_EXP_SIZE - 1 : 0]                       floatExp = x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE] - 127; // Todo: Check how we can handle this bias and reduce the lut memory (more than the half of the lut entries are not required)
     wire [FLOAT_MANTISSA_SIZE - 1 : 0]                  floatMantissa = x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
 
     // Memory access
-    reg  [FLOAT_EXP_SIZE - LUT_SIZE_ADDR_DIFF - 1 : 0]  memWriteAddr = 0;
-    wire [STREAM_WIDTH - 1 : 0]                         memReadData;
-    wire [FLOAT_EXP_SIZE - LUT_SIZE_ADDR_DIFF - 1 : 0]  memReadAddr = floatExp[LUT_SIZE_ADDR_DIFF +: FLOAT_EXP_SIZE - LUT_SIZE_ADDR_DIFF];
-    wire [LUT_ENTRY_WIDTH - 1 : 0]                      lutEntry = (LUT_SIZE_ADDR_DIFF > 0)
-                                                                 ? memReadData[LUT_ENTRY_WIDTH * floatExp[0 +: (LUT_SIZE_ADDR_DIFF == 0) ? 1 // Resolves compile errors...
-                                                                                                                                         : LUT_SIZE_ADDR_DIFF] +: LUT_ENTRY_WIDTH]
-                                                                 : memReadData[0 +: LUT_ENTRY_WIDTH];
+    wire [LUT_ENTRY_WIDTH - 1 : 0]                      lutEntry = lut[floatExp[0 +: $clog2(LUT_ENTRIES)]];
 
     // Interpolation
     wire signed [31 : 0]                                m = lutEntry[0  +: 32];
@@ -79,29 +95,6 @@ module FunctionInterpolator #(
     assign fx = (x <= lutLowerBound) ? {1'b0, 1'b1, {(INT_WIDTH - 2){1'b0}}}  
                                      : (x >= lutUpperBound) ? 0
                                                             : mxb24[24 - INT_WIDTH +: INT_WIDTH];
-    
-
-    DualPortRam #(
-        .MEM_SIZE_BYTES($clog2(LUT_SIZE_BYTES)),
-        .MEM_WIDTH(STREAM_WIDTH),
-        .WRITE_STROBE_WIDTH(STREAM_WIDTH),
-        .MEMORY_PRIMITIVE("distributed")
-    ) lut 
-    (
-        .clk(aclk),
-        .reset(reset),
-
-        .writeData(s_axis_tdata),
-        .writeCs(1),
-        .write(s_axis_tvalid && !writeLutBounds),
-        .writeAddr(memWriteAddr),
-        .writeMask(1'b1),
-
-        .readData(memReadData),
-        .readCs(1),
-        .readAddr(memReadAddr)
-    );
-
 
     always @(posedge aclk)
     begin
@@ -130,6 +123,7 @@ module FunctionInterpolator #(
                     end
                     else 
                     begin
+                        lut[memWriteAddr] <= s_axis_tdata[0 +: LUT_ENTRY_WIDTH];
                         memWriteAddr <= memWriteAddr + 1;
                     end
                 end
