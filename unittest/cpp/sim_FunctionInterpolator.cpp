@@ -57,9 +57,9 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
     // The verilog code is not able to handle float values smaller than 1.0f.
     // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
     // the set x to 1. 
-    float startInc = start < 1.0f ? 1.0f : start;
-    uint32_t lutLowerBound = *((uint32_t*)&startInc);
-    uint32_t lutUpperBound = *((uint32_t*)&end);
+    const float startInc = start < 1.0f ? 1.0f : start;
+    const float lutLowerBound = startInc;
+    const float lutUpperBound = end;
     
     union Value {
         uint64_t axiVal;
@@ -68,19 +68,19 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
             int32_t b;
         } numbers;
         struct {
-            int32_t a;
-            int32_t b;
+            float a;
+            float b;
         } floats;
     };
 
     Value bounds;
-    bounds.floats.a = lutLowerBound; // TODO: Should be a uint32_t
-    bounds.floats.b = lutUpperBound; // TODO: Should be a uint32_t
+    bounds.floats.a = lutLowerBound;
+    bounds.floats.b = lutUpperBound;
     t->s_axis_tvalid = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = bounds.axiVal;
     clk(t);
-    printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
+    // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
     for (int i = 0; i < (int)LUT_SIZE; i++)
     {
         float z = powf(2, i);
@@ -95,7 +95,7 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
         lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
         lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
 
-        printf("%d z: %f f: %f fn: %f step: %f axi: 0x%llX\r\n", i, z, f, fn, step, lutEntry.axiVal);
+        // printf("%d z: %f f: %f fn: %f step: %f axi: 0x%llX\r\n", i, z, f, fn, step, lutEntry.axiVal);
 
         t->s_axis_tlast = (i + 1 < (int)LUT_SIZE) ? 0 : 1;
         t->s_axis_tdata = lutEntry.axiVal;
