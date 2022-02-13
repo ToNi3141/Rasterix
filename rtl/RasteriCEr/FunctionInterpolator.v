@@ -39,6 +39,8 @@
 // m = tdata[0  +: 32] as S1.30
 // b = tdata[32  +: 32] as S1.30
 // In case STREAM_WIDTH is bigger than 64 bit, bits [n : 64] are ignored
+//
+// This module is pipelined. It requires 4 clock cycles until it outputs the calculated value.
 module FunctionInterpolator #(
     // Width of the write port
     parameter STREAM_WIDTH = 64,
@@ -47,10 +49,10 @@ module FunctionInterpolator #(
 )
 (
     input  wire                         aclk,
-    input  wire                         reset,
+    input  wire                         resetn,
 
     input  wire [FLOAT_WIDTH - 1 : 0]   x, // IEEE 754 32bit float
-    output wire signed [INT_WIDTH - 1 : 0] fx, // 24bit signed fixpoint S1.22 number
+    output reg  signed [INT_WIDTH - 1 : 0] fx, // 24bit signed fixpoint S1.22 number
 
     // LUT data
     input  wire                         s_axis_tvalid,
@@ -58,47 +60,30 @@ module FunctionInterpolator #(
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
 );
+    localparam LUT_INTERPOLATION_STEPS = 8; // Defines the steps between two LUT enties. The range between x and x + 1 will be divided by pow(2, LUT_INTERPOLATION_STEPS) 
     localparam LUT_ENTRIES = 32;
-
-    localparam LUT_ENTRY_WIDTH = 64;
-
+    localparam LUT_ENTRY_FIELD_WIDTH = 32;
+    localparam LUT_ENTRY_WIDTH = LUT_ENTRY_FIELD_WIDTH * 2;
+    
     localparam FLOAT_EXP_SIZE = 8;
     localparam FLOAT_EXP_POS = 23;
     localparam FLOAT_MANTISSA_SIZE = 23;
     localparam FLOAT_MANTISSA_POS = 0;
+    localparam FLOAT_EXP_BIAS = 127;
 
     // LUT bounds
-    reg  [31 : 0]                                       lutLowerBound = 0;
-    reg  [31 : 0]                                       lutUpperBound = 0;
-    reg  [LUT_ENTRY_WIDTH - 1 : 0]                      lut[0 : LUT_ENTRIES - 1];
+    reg  [FLOAT_WIDTH - 1 : 0]      lutLowerBound = 0;
+    reg  [FLOAT_WIDTH - 1 : 0]      lutUpperBound = 0;
+    reg  [LUT_ENTRY_WIDTH - 1 : 0]  lut[0 : LUT_ENTRIES - 1];
 
-    // LUT memory access
-    reg                                                 writeLutBounds = 1;
-    reg  [$clog2(LUT_ENTRIES) - 1 : 0]                  memWriteAddr = 0;
-
-    // Float unpacking
-    wire [FLOAT_EXP_SIZE - 1 : 0]                       floatExp = x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE] - 127; // Todo: Check how we can handle this bias and reduce the lut memory (more than the half of the lut entries are not required)
-    wire [FLOAT_MANTISSA_SIZE - 1 : 0]                  floatMantissa = x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
-
-    // Memory access
-    wire [LUT_ENTRY_WIDTH - 1 : 0]                      lutEntry = lut[floatExp[0 +: $clog2(LUT_ENTRIES)]];
-
-    // Interpolation
-    wire signed [31 : 0]                                m = lutEntry[0  +: 32];
-    wire signed [31 : 0]                                b = lutEntry[32 +: 32];
-    wire signed [23 : 0]                                m24 = m[8 +: 24];
-    wire signed [23 : 0]                                b24 = b[8 +: 24];
-    wire [23 : 0]                                       x24 = {floatMantissa, 1'b0};
-    wire [ 7 : 0]                                       x8 = x24[16 +: 8];
-    wire signed [(24 + 8) - 1 : 0]                      mx32 = m24 * x8;
-    wire signed [23 : 0]                                mxb24 = mx32[0 +: 24] + b24;
-    assign fx = (x <= lutLowerBound) ? {1'b0, 1'b1, {(INT_WIDTH - 2){1'b0}}}  
-                                     : (x >= lutUpperBound) ? 0
-                                                            : mxb24[24 - INT_WIDTH +: INT_WIDTH];
-
+    // LUT writer
     always @(posedge aclk)
     begin
-        if (reset)
+        // LUT memory access
+        reg                                 writeLutBounds;
+        reg  [$clog2(LUT_ENTRIES) - 1 : 0]  memWriteAddr;
+
+        if (!resetn)
         begin
             memWriteAddr <= 0;
             writeLutBounds <= 1;
@@ -117,8 +102,8 @@ module FunctionInterpolator #(
                 begin
                     if (writeLutBounds)
                     begin
-                        lutLowerBound <= s_axis_tdata[0 +: 32];
-                        lutUpperBound <= s_axis_tdata[32 +: 32];
+                        lutLowerBound <= s_axis_tdata[0 +: FLOAT_WIDTH];
+                        lutUpperBound <= s_axis_tdata[FLOAT_WIDTH +: FLOAT_WIDTH];
                         writeLutBounds <= 0;
                     end
                     else 
@@ -128,6 +113,71 @@ module FunctionInterpolator #(
                     end
                 end
             end
+        end
+    end
+
+    // Interpolation
+    always @(posedge aclk)
+    begin : Interpolation
+        // x
+        reg [FLOAT_WIDTH - 1 : 0]   xVal[0 : 3];
+
+        // Float unpacking
+        reg  [FLOAT_EXP_SIZE - 1 : 0]       floatExp;
+        reg  [FLOAT_MANTISSA_SIZE - 1 : 0]  floatMantissa[0 : 3];
+
+        // Memory access
+        reg  [LUT_ENTRY_WIDTH - 1 : 0]  lutEntry;
+
+        // Interpolation
+        reg  signed [LUT_ENTRY_FIELD_WIDTH - 1 : 0]                 m;
+        reg  signed [LUT_ENTRY_FIELD_WIDTH - 1 : 0]                 b;
+        reg  signed [INT_WIDTH - 1 : 0]                             mi;
+        reg  signed [INT_WIDTH - 1 : 0]                             bi;
+        reg  [INT_WIDTH - 1 : 0]                                    xi;
+        reg  [LUT_INTERPOLATION_STEPS - 1 : 0]                      xs;
+        reg  signed [(INT_WIDTH + LUT_INTERPOLATION_STEPS) - 1 : 0] mx;
+        reg  signed [INT_WIDTH - 1 : 0]                             mxb;
+
+        // Float unpacking and rebias
+        // Rebiasing is done, because we care usually about the integer part. Half of the values from a float lies between 0..1.
+        // so we are cutting this of
+        floatExp <= x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE] - FLOAT_EXP_BIAS;
+        floatMantissa[0] <= x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
+
+        xVal[0] <= x;
+
+        // LUT access
+        lutEntry <= lut[floatExp[0 +: $clog2(LUT_ENTRIES)]];
+
+        xVal[1] <= xVal[0];
+        floatMantissa[1] <= floatMantissa[0];
+
+        // Calculate (interpolation)
+        m = lutEntry[0 +: LUT_ENTRY_FIELD_WIDTH];
+        b = lutEntry[LUT_ENTRY_FIELD_WIDTH +: LUT_ENTRY_FIELD_WIDTH];
+        mi = m[LUT_ENTRY_FIELD_WIDTH - INT_WIDTH +: INT_WIDTH];
+        bi = b[LUT_ENTRY_FIELD_WIDTH - INT_WIDTH +: INT_WIDTH];
+        xi = {floatMantissa[1][FLOAT_MANTISSA_SIZE - (INT_WIDTH - 1) +: INT_WIDTH - 1], 1'b0};
+        xs = xi[INT_WIDTH - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
+        mx = mi * xs;
+        mxb <= mx[0 +: INT_WIDTH] + bi;
+
+        xVal[2] <= xVal[1];
+        floatMantissa[2] <= floatMantissa[1];
+
+        // Clamp to bounds
+        if (xVal[2] <= lutLowerBound) 
+        begin
+            fx <= {1'b0, 1'b1, {(INT_WIDTH - 2){1'b0}}};
+        end
+        else if (xVal[2] >= lutUpperBound)
+        begin
+            fx <= 0;
+        end
+        else
+        begin
+            fx <= mxb;
         end
     end
 endmodule

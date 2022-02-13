@@ -35,6 +35,14 @@ void clk(VFunctionInterpolator* t)
     t->eval();
 }
 
+void reset(VFunctionInterpolator* t)
+{
+    t->resetn = 0;
+    clk(t);
+    t->resetn = 1;
+    clk(t);
+}
+
 float clamp(float v, float lo, float hi)
 {
     if (v < lo)
@@ -108,19 +116,28 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
     const float start = 0;
     const float end = 100000;
     VFunctionInterpolator* top = new VFunctionInterpolator();
+    reset(top);
     generateLinearTable(top, start, end);
 
-    for (float i = start; i < (end + 200); i += 0.1)
+    uint32_t pipelineSteps = 0;
+    static constexpr float STEPS = 0.1;
+    static constexpr float PIPELINE_STEPS = 4;
+    for (float i = start; i < (end + 200); i += STEPS)
     {
         top->x = *((uint32_t*)&i);
         clk(top);
-        const float ref = clamp(calculateLinearValue(start, end, i), 0.0f, 1.0f);
-        const float actual = (float)(top->fx) / powf(2, 22);
-        //printf("i: %f, ref %f, actual: %f\r\n", i, ref, actual);
-        REQUIRE(ref == Approx(actual).margin(0.005));
-        
-        REQUIRE(actual <= 1.0f);
-        REQUIRE(actual >= 0.0f);
+
+        pipelineSteps++;
+        if (pipelineSteps >= PIPELINE_STEPS)
+        {
+            const float ref = clamp(calculateLinearValue(start, end, i - (PIPELINE_STEPS * STEPS)), 0.0f, 1.0f);
+            const float actual = (float)(top->fx) / powf(2, 22);
+            //printf("i: %f, ref %f, actual: %f\r\n", i, ref, actual);
+            REQUIRE(ref == Approx(actual).margin(0.005));
+            
+            REQUIRE(actual <= 1.0f);
+            REQUIRE(actual >= 0.0f);
+        }
     }
 
     // Destroy model
