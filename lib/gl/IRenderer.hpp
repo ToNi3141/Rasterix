@@ -95,6 +95,10 @@ public:
         REPEAT,
         CLAMP_TO_EDGE
     };
+    enum FogFunction {
+        NONE,
+        LINEAR
+    };
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// TODO: Document ranges, the vectors should be in screen coordinates, textures should be in the range of 0..1.0
@@ -217,6 +221,16 @@ public:
     /// @param mode The new wrap mode
     /// @return true if succeeded
     virtual bool setTextureWrapModeT(const TextureWrapMode mode) = 0;
+
+    /// @brief Set the fog color
+    /// @param color the color in ABGR
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setFogColor(const Vec4i& color) = 0;
+
+    /// @brief Sets a fog function
+    /// @param fogFunction which is used to calculate the fog
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setFogFunction(const FogFunction fogFunction) = 0;
 
 };
 

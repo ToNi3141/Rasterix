@@ -17,6 +17,8 @@
 
 module FragmentPipeline
 #(
+    parameter CMD_STREAM_WIDTH = 64,
+
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
     localparam FLOAT_SIZE = 32
@@ -26,11 +28,18 @@ module FragmentPipeline
     input  wire        reset,
     output wire        pixelInPipeline,
 
+    // Fog function LUT stream
+    input  wire        s_fog_lut_axis_tvalid,
+    output wire        s_fog_lut_axis_tready,
+    input  wire        s_fog_lut_axis_tlast,
+    input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
+
     // Shader configurations
     input  wire [15:0] confReg1,
     input  wire [15:0] confReg2,
     input  wire [15:0] confTextureEnvColor,
     input  wire [15:0] triangleStaticColor,
+    input  wire [15:0] confFogColor,
 
     // Fragment Stream
     input  wire        s_axis_tvalid,
@@ -212,6 +221,7 @@ module FragmentPipeline
     wire [31 : 0]                   step_convert_color_a;
     wire                            step_convert_tvalid;
     wire [31 : 0]                   step_convert_w;
+    wire [23 : 0]                   step_convert_fog_intensity;
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
@@ -237,10 +247,15 @@ module FragmentPipeline
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
         convert_floatToInt_ColorA (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_A_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_a));   
 
+    FunctionInterpolator #(.STREAM_WIDTH(CMD_STREAM_WIDTH))
+        convert_fog_intensity (.aclk(clk), .resetn(!reset), .x(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .fx(step_convert_fog_intensity),
+            .s_axis_tvalid(s_fog_lut_axis_tvalid), .s_axis_tready(s_fog_lut_axis_tready), .s_axis_tlast(s_fog_lut_axis_tlast), .s_axis_tdata(s_fog_lut_axis_tdata));
+
     reg                         stepCalculatePerspectiveCorrectionValid = 0;
     reg [15:0]                  stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepCalculatePerspectiveCorrectionfbIndex = 0;
-    reg [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   stepCalculatePerspectiveCorrectionTriangleColor = 0;
+    reg [15 : 0]                stepCalculatePerspectiveCorrectionTriangleColor = 0;
+    reg [ 3 : 0]                stepCalculatePerspectiveCorrectionFogIntensity;
     always @(posedge clk)
     begin : bla
         // reg [31:0] z;
@@ -297,15 +312,17 @@ module FragmentPipeline
                 (|step_convert_color_b[16 +: 16]) ? 4'hf : step_convert_color_b[12 +: 4],
                 (|step_convert_color_a[16 +: 16]) ? 4'hf : step_convert_color_a[12 +: 4]
             };
+
+            stepCalculatePerspectiveCorrectionFogIntensity <= (step_convert_fog_intensity[22]) ? 4'hf : step_convert_fog_intensity[18 +: 4];
         end
         stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
-
     end
 
     reg                         stepWaitForMemoryValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepWaitForMemoryFbIndex = 0;
     reg [15:0]                  stepWaitForMemoryDepthValue = 0;    
-    reg [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   stepWaitForMemoryTriangleColor = 0;
+    reg [15 : 0]                stepWaitForMemoryTriangleColor = 0;
+    reg [ 3 : 0]                stepWaitForMemoryFogIntensity = 0;
     always @(posedge clk)
     begin
         if (stepCalculatePerspectiveCorrectionValid)
@@ -313,6 +330,9 @@ module FragmentPipeline
             stepWaitForMemoryFbIndex <= stepCalculatePerspectiveCorrectionfbIndex;
             stepWaitForMemoryDepthValue <= stepCalculatePerspectiveCorrectionDepthBufferVal;
         end
+        
+        stepWaitForMemoryFogIntensity <= stepCalculatePerspectiveCorrectionFogIntensity;
+
         stepWaitForMemoryTriangleColor <= stepCalculatePerspectiveCorrectionTriangleColor;
         stepWaitForMemoryValid <= stepCalculatePerspectiveCorrectionValid;
     end
@@ -330,6 +350,7 @@ module FragmentPipeline
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepTexEnvV11;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepTexEnvV12;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepTexEnvV13;
+    reg [ 3 : 0]                        stepTexEnvFogIntensity;
     always @(posedge clk)
     begin : TexEnvCalc
         reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
@@ -549,6 +570,7 @@ module FragmentPipeline
         stepTexEnvV12 <= v22 * v32;
         stepTexEnvV13 <= v23 * v33;
 
+        stepTexEnvFogIntensity <= stepWaitForMemoryFogIntensity;
         stepTexEnvValid <= stepWaitForMemoryValid;
         stepTexEnvFbIndex <= stepWaitForMemoryFbIndex;
         stepTexEnvDepthValue <= stepWaitForMemoryDepthValue;
@@ -567,6 +589,7 @@ module FragmentPipeline
     reg [15:0]                  stepTexEnvResultColorTex = 0;
     reg [15:0]                  stepTexEnvResultDepthValue = 0;
     reg                         stepTexEnvResultWriteColor = 0;
+    reg [ 3 : 0]                stepTexEnvResultFogIntensity = 0;
     always @(posedge clk)
     begin : TexEnvResultCalc
         reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
@@ -591,6 +614,7 @@ module FragmentPipeline
         stepTexEnvResultColorFrag <= stepTexEnvColorFrag;
         stepTexEnvResultFbIndex <= stepTexEnvFbIndex;
         stepTexEnvResultValid <= stepTexEnvValid;
+        stepTexEnvResultFogIntensity <= stepTexEnvFogIntensity;
         // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
         stepTexEnvResultWriteColor <= depthTestPassed || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
         alphaTestFragmentVal <= (a[8]) ? 4'hf : a[7:4];
@@ -601,6 +625,7 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepBlendFbIndex = 0;
     reg [15:0]                  stepBlendDepthValue = 0;
     reg                         stepBlendWriteColor = 0;
+    reg [ 3 : 0]                stepBlendFogIntensity = 0;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV00;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV01;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV02;
@@ -785,6 +810,7 @@ module FragmentPipeline
         stepBlendDepthValue <= stepTexEnvResultDepthValue;
         stepBlendFbIndex <= stepTexEnvResultFbIndex;
         stepBlendValid <= stepTexEnvResultValid;
+        stepBlendFogIntensity <= stepTexEnvResultFogIntensity;
         stepBlendWriteColor <= stepTexEnvResultWriteColor & alphaTestPassed;
     end
 
@@ -794,6 +820,7 @@ module FragmentPipeline
     reg [15:0]                  stepBlendResultColorFrag = 0;
     reg [15:0]                  stepBlendResultDepthValue = 0;
     reg                         stepBlendResultWriteColor = 0;
+    reg [ 3 : 0]                stepBlendResultFogIntensity = 0;
     always @(posedge clk)
     begin : BlendResultCalc
         reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
@@ -818,6 +845,7 @@ module FragmentPipeline
         stepBlendResultFbIndex <= stepBlendFbIndex;
         stepBlendResultValid <= stepBlendValid;
         stepBlendResultWriteColor <= stepBlendWriteColor;
+        stepBlendResultFogIntensity <= stepBlendFogIntensity;
     end
 
     // Bubble (introduces a bubble cycle (see FragmentPipelineIce40Wrapper))
@@ -826,8 +854,48 @@ module FragmentPipeline
     reg [15:0]                  stepBubbleColorFrag = 0;
     reg [15:0]                  stepBubbleDepthValue = 0;
     reg                         stepBubbleWriteColor = 0;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV00;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV01;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV02;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV03;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV10;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV11;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV12;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV13;
     always @(posedge clk)
-    begin
+    begin : BlendFog
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] af;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] intensity;
+
+        intensity = stepBlendResultFogIntensity;
+
+        rf = confFogColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gf = confFogColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bf = confFogColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        af = confFogColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
+        ru = stepBlendResultColorFrag[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gu = stepBlendResultColorFrag[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bu = stepBlendResultColorFrag[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        au = stepBlendResultColorFrag[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
+        stepBubbleV00 <= (intensity * ru);
+        stepBubbleV01 <= (intensity * gu);
+        stepBubbleV02 <= (intensity * bu);
+        stepBubbleV03 <= (intensity * au);
+
+        stepBubbleV10 <= ((4'hf - intensity) * rf);
+        stepBubbleV11 <= ((4'hf - intensity) * gf);
+        stepBubbleV12 <= ((4'hf - intensity) * bf);
+        stepBubbleV13 <= ((4'hf - intensity) * af);
+
         stepBubbleDepthValue <= stepBlendResultDepthValue;
         stepBubbleColorFrag <= stepBlendResultColorFrag;
         stepBubbleFbIndex <= stepBlendResultFbIndex;
@@ -838,13 +906,32 @@ module FragmentPipeline
     // Write back
     reg stepWriteBackValid = 0;
     always @(posedge clk)
-    begin
+    begin : WriteBack
         if (stepBubbleValid)
         begin
+            reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
+            reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
+            reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
+            reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
+
             colorIndexWrite <= stepBubbleFbIndex;
             depthIndexWrite <= stepBubbleFbIndex;
             depthOut <= stepBubbleDepthValue;
-            colorOut <= stepBubbleColorFrag;
+
+            r = (stepBubbleV00 + stepBubbleV10) + 8'hf;
+            g = (stepBubbleV01 + stepBubbleV11) + 8'hf;
+            b = (stepBubbleV02 + stepBubbleV12) + 8'hf;
+            a = (stepBubbleV03 + stepBubbleV13) + 8'hf;
+
+            colorOut <= {
+                // Saturate colors 
+                (r[8]) ? 4'hf : r[7:4], 
+                (g[8]) ? 4'hf : g[7:4], 
+                (b[8]) ? 4'hf : b[7:4],
+                (a[8]) ? 4'hf : a[7:4]
+            };
+
+            //colorOut <= stepBubbleColorFrag;
         end
         stepWriteBackValid <= stepBubbleValid;
         colorWriteEnable <= stepBubbleValid & stepBubbleWriteColor;

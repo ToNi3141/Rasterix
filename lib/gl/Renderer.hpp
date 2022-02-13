@@ -97,6 +97,8 @@ public:
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
+        setFogColor({{1, 1, 1, 1}});
+        setFogFunction(FogFunction::LINEAR);
 
         // Initialize the render thread by running it once
         m_renderThread = std::async([&](){
@@ -313,6 +315,39 @@ public:
     {
         m_confReg2.texClampT = mode == TextureWrapMode::CLAMP_TO_EDGE;
         return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
+    }
+
+    virtual bool setFogColor(const Vec4i& color) override
+    {
+        return writeToReg(ListAssembler::SET_FOG_COLOR, convertColor(color));
+    }
+
+    virtual bool setFogFunction(const FogFunction fogFunction) override
+    {
+        bool ret = true;
+        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        {
+            std::array<uint64_t, 33> arr;
+            union Value {
+                uint64_t axiVal;
+                struct {
+                    int32_t a;
+                    int32_t b;
+                } numbers;
+                struct {
+                    float a;
+                    float b;
+                } floats;
+            };
+
+            Value bounds;
+            bounds.floats.a = 10.0f;
+            bounds.floats.b = 12.0f;
+            arr[0] = bounds.axiVal;
+
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
+        }
+        return ret;
     }
 
     virtual std::pair<bool, uint16_t> createTexture() override

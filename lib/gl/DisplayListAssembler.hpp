@@ -19,6 +19,7 @@
 #define DISPLAYLISTASSEMBLER_HPP
 
 #include <stdint.h>
+#include <array>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 
@@ -56,6 +57,7 @@ private:
         static constexpr StreamCommandType RR_SET_REG          = 0x2000'0000;
         static constexpr StreamCommandType RR_FRAMEBUFFER_OP   = 0x3000'0000;
         static constexpr StreamCommandType RR_TRIANGLE_STREAM  = 0x4000'0000;
+        static constexpr StreamCommandType RR_FOG_LUT_STREAM   = 0x5000'0000;
 
         // Immediate values
         static constexpr StreamCommandType RR_TEXTURE_STREAM_32x32     = RR_TEXTURE_STREAM | 0x0011;
@@ -68,6 +70,7 @@ private:
         static constexpr StreamCommandType RR_CONF_REG1_ADDR                    = 0x0002;
         static constexpr StreamCommandType RR_CONF_REG2_ADDR                    = 0x0003;
         static constexpr StreamCommandType RR_TEX_ENV_COLOR_REG_ADDR            = 0x0004;
+        static constexpr StreamCommandType RR_FOG_COLOR_ADDR                    = 0x0005;
 
         static constexpr StreamCommandType RR_FRAMEBUFFER_COMMIT   = RR_FRAMEBUFFER_OP | 0x0001;
         static constexpr StreamCommandType RR_FRAMEBUFFER_MEMSET   = RR_FRAMEBUFFER_OP | 0x0002;
@@ -84,6 +87,8 @@ public:
     static constexpr uint32_t SET_CONF_REG1                = StreamCommand::RR_CONF_REG1_ADDR;
     static constexpr uint32_t SET_CONF_REG2                = StreamCommand::RR_CONF_REG2_ADDR;
     static constexpr uint32_t SET_TEX_ENV_COLOR            = StreamCommand::RR_TEX_ENV_COLOR_REG_ADDR;
+    static constexpr uint32_t SET_FOG_COLOR                = StreamCommand::RR_FOG_COLOR_ADDR;
+    static constexpr uint32_t SET_FOG_LUT                  = StreamCommand::RR_FOG_LUT_STREAM;
 
     void clearAssembler()
     {
@@ -235,6 +240,43 @@ public:
         if (openNewStreamSection())
         {
             return appendStreamCommand<TArg>(StreamCommand::RR_SET_REG | regIndex, regVal);
+        }
+        return false;
+    }
+
+    template <typename TArg, std::size_t TSize>
+    bool writeArray(uint32_t command, const std::array<TArg, TSize>& arr)
+    {
+        if (openNewStreamSection())
+        {
+            // Write command
+            SCT *opDl = m_displayList.template create<SCT>();
+            if (!opDl)
+            {
+                if (opDl)
+                {
+                    m_displayList.template remove<SCT>();
+                }
+                // Out of memory error
+                return false;
+            }
+            *opDl = command;
+
+            // Copy array elements
+            for (auto a : arr)
+            {
+                TArg *argDl = m_displayList.template create<TArg>();
+                if (argDl)
+                {
+                    *argDl = a;
+                }
+                else
+                {
+                    // TODO: Current elements have to be removed
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }
