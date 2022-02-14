@@ -97,7 +97,7 @@ public:
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
-        setFogColor({{1, 1, 1, 1}});
+        setFogColor({{255, 255, 255, 255}});
         setFogFunction(FogFunction::LINEAR);
 
         // Initialize the render thread by running it once
@@ -324,10 +324,20 @@ public:
 
     virtual bool setFogFunction(const FogFunction fogFunction) override
     {
+        float start = 10.0f;
+        float end = 14.0f;
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
             std::array<uint64_t, 33> arr;
+
+            // The verilog code is not able to handle float values smaller than 1.0f.
+            // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
+            // the set x to 1.
+            const float startInc = start < 1.0f ? 1.0f : start;
+            const float lutLowerBound = startInc;
+            const float lutUpperBound = end;
+
             union Value {
                 uint64_t axiVal;
                 struct {
@@ -341,9 +351,25 @@ public:
             };
 
             Value bounds;
-            bounds.floats.a = 10.0f;
-            bounds.floats.b = 12.0f;
+            bounds.floats.a = lutLowerBound;
+            bounds.floats.b = lutUpperBound;
             arr[0] = bounds.axiVal;
+
+            // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
+            for (int i = 0; i < arr.size() - 1; i++)
+            {
+                float f = calculateLinearFogValue(start, end, powf(2, i));
+                float fn = calculateLinearFogValue(start, end, powf(2, i + 1));
+
+                float diff = fn - f;
+                float step = diff / 256.0f;
+
+                Value lutEntry;
+                lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
+                lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
+
+                arr[i + 1] = lutEntry.axiVal;
+            }
 
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
         }
@@ -441,6 +467,12 @@ private:
     };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
+
+    float calculateLinearFogValue(const float start, const float end, const float z)
+    {
+        float f = (end - z) / (end - start);
+        return f;
+    }
 
     static uint16_t convertColor(const Vec4i color)
     {
