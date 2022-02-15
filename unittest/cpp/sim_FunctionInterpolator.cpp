@@ -109,6 +109,8 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
         t->s_axis_tdata = lutEntry.axiVal;
         clk(t);
     }
+    t->s_axis_tlast = 0;
+    t->s_axis_tvalid = 0;
 }
 
 TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")

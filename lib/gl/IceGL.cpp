@@ -1201,7 +1201,113 @@ void IceGL::glLogicOp(GLenum opcode)
     }
 }
 
+void IceGL::glFogf(GLenum pname, GLfloat param)
+{
+    m_error = GL_NO_ERROR;
+    switch (pname) {
+    case GL_FOG_MODE:
+        glFogi(pname, static_cast<GLint>(param));
+        break;
+    case GL_FOG_DENSITY:
+        m_fogDensity = param;
+        break;
+    case GL_FOG_START:
+        m_fogStart = param;
+        break;
+    case GL_FOG_END:
+        m_fogEnd = param;
+        break;
+    default:
+        m_error = GL_INVALID_ENUM;
+        break;
+    }
+}
 
+void IceGL::glFogfv(GLenum pname, const GLfloat *params)
+{
+    m_error = GL_NO_ERROR;
+    switch (pname) {
+    case GL_FOG_MODE:
+        glFogi(pname, static_cast<GLint>(*params));
+        break;
+    case GL_FOG_DENSITY:
+        m_fogDensity = *params;
+        break;
+    case GL_FOG_START:
+        m_fogStart = *params;
+        break;
+    case GL_FOG_END:
+        m_fogEnd = *params;
+        break;
+    case GL_FOG_COLOR:
+    {
+        m_fogColor.fromArray(params, 4);
+        Vec4i color;
+        color.fromVec(m_fogColor.vec);
+        color.mul<0>(255);
+        m_renderer.setFogColor({{color.vec[0], color.vec[1], color.vec[2], color.vec[3]}});
+    }
+        break;
+    default:
+        m_error = GL_INVALID_ENUM;
+        break;
+    }
+}
+
+void IceGL::glFogi(GLenum pname, GLint param)
+{
+    std::array<float, 33> lut;
+    m_error = GL_NO_ERROR;
+    switch (pname) {
+    case GL_FOG_MODE:
+        m_fogMode = static_cast<GLenum>(param);
+        calcLFogLut(lut, m_fogStart, m_fogEnd, m_fogDensity, [](float start, float end, float z){
+            float f = (end - z) / (end - start);
+            return f;
+        });
+        m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
+        break;
+    case GL_FOG_DENSITY:
+        m_fogDensity = static_cast<GLfloat>(param);
+        break;
+    case GL_FOG_START:
+        m_fogStart = static_cast<GLfloat>(param);
+        break;
+    case GL_FOG_END:
+        m_fogEnd = static_cast<GLfloat>(param);
+        break;
+    default:
+        m_error = GL_INVALID_ENUM;
+        break;
+    }
+}
+
+void IceGL::glFogiv(GLenum pname, const GLint *params)
+{
+    m_error = GL_NO_ERROR;
+    switch (pname) {
+    case GL_FOG_MODE:
+        glFogi(pname, *params);
+        break;
+    case GL_FOG_DENSITY:
+        m_fogDensity = static_cast<GLfloat>(*params);
+        break;
+    case GL_FOG_START:
+        m_fogStart = static_cast<GLfloat>(*params);
+        break;
+    case GL_FOG_END:
+        m_fogEnd = static_cast<GLfloat>(*params);
+        break;
+    case GL_FOG_COLOR:
+        m_fogColor.fromArray(params, 4);
+        m_fogColor.div(255);
+        m_renderer.setFogColor({{params[0], params[1], params[2], params[3]}});
+        break;
+    default:
+        m_error = GL_INVALID_ENUM;
+        break;
+    }
+}
 
 void IceGL::glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
@@ -1683,6 +1789,19 @@ Vec4 IceGL::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane)
     Vec4 newPlane;
     inv.transform(newPlane, plane);
     return newPlane;
+}
+
+void IceGL::calcLFogLut(std::array<float, 33> &lut,
+                        float start,
+                        float end,
+                        float density,
+                        std::function<float (float, float, float)> fogFunc)
+{
+    for (std::size_t i = 0; i < lut.size(); i++)
+    {
+        float f = fogFunc(start, end, powf(2, i)) * density;
+        lut[i] = f;
+    }
 }
 
 void IceGL::glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far)

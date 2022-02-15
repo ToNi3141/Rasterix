@@ -93,22 +93,23 @@ module FunctionInterpolator #(
         begin
             if (s_axis_tvalid)
             begin
-                if (s_axis_tlast)
+                if (writeLutBounds)
                 begin
-                    memWriteAddr <= 0;
-                    writeLutBounds <= 1;
+                    lutLowerBound <= s_axis_tdata[0 +: FLOAT_WIDTH];
+                    lutUpperBound <= s_axis_tdata[FLOAT_WIDTH +: FLOAT_WIDTH];
+                    writeLutBounds <= 0;
                 end
-                else
+                else 
                 begin
-                    if (writeLutBounds)
+                    lut[memWriteAddr] <= s_axis_tdata[0 +: LUT_ENTRY_WIDTH];
+                    
+                    if (s_axis_tlast)
                     begin
-                        lutLowerBound <= s_axis_tdata[0 +: FLOAT_WIDTH];
-                        lutUpperBound <= s_axis_tdata[FLOAT_WIDTH +: FLOAT_WIDTH];
-                        writeLutBounds <= 0;
+                        memWriteAddr <= 0;
+                        writeLutBounds <= 1;
                     end
-                    else 
+                    else
                     begin
-                        lut[memWriteAddr] <= s_axis_tdata[0 +: LUT_ENTRY_WIDTH];
                         memWriteAddr <= memWriteAddr + 1;
                     end
                 end

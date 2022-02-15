@@ -102,12 +102,12 @@ void glGetIntegerv(GLenum pname, GLint* param);
 void glGetFloatv(GLenum pname, GLfloat* param);
 void glGetBooleanv(GLenum pname, GLboolean* param);
 void glCullFace(GLenum mode);
+void glFogf(GLenum pname, GLfloat param);
+void glFogfv(GLenum pname, const GLfloat* params);
+void glFogi(GLenum pname, GLint param);
+void glFogiv(GLenum pname, const GLint *params);
 
 // Mock
-void glFogf(GLenum pname, GLfloat param);
-void glFogfv(GLenum pname, GLfloat* params);
-void glFogi(GLenum pname, GLint param);
-void glFogiv(GLenum pname, GLint* params);
 void glHint(GLenum target, GLenum hint);
 void glShadeModel(GLenum name);
 

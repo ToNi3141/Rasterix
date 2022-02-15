@@ -98,7 +98,8 @@ public:
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
         setFogColor({{255, 255, 255, 255}});
-        setFogFunction(FogFunction::LINEAR);
+        std::array<float, 33> fogLut{0};
+        setFogLut(fogLut, 0.0f, 1.0f);
 
         // Initialize the render thread by running it once
         m_renderThread = std::async([&](){
@@ -322,55 +323,56 @@ public:
         return writeToReg(ListAssembler::SET_FOG_COLOR, convertColor(color));
     }
 
-    virtual bool setFogFunction(const FogFunction fogFunction) override
+    virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
     {
-        float start = 10.0f;
-        float end = 14.0f;
+        union Value {
+            uint64_t val;
+            struct {
+                int32_t a;
+                int32_t b;
+            } numbers;
+            struct {
+                float a;
+                float b;
+            } floats;
+        };
+
         bool ret = true;
+
+        std::array<uint64_t, 33> arr;
+
+        // The verilog code is not able to handle float values smaller than 1.0f.
+        // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
+        // the set x to 1.
+        const float startInc = start < 1.0f ? 1.0f : start;
+        const float lutLowerBound = startInc;
+        const float lutUpperBound = end;
+
+        // Add bounds to the lut value
+        Value bounds;
+        bounds.floats.a = lutLowerBound;
+        bounds.floats.b = lutUpperBound;
+        arr[0] = bounds.val;
+
+        // Calculate the lut entries
+        for (std::size_t i = 0; i < arr.size() - 1; i++)
+        {
+            float f = fogLut[i];
+            float fn = fogLut[i + 1];
+
+            const float diff = fn - f;
+            const float step = diff / 256.0f;
+
+            Value lutEntry;
+            lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
+            lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
+
+            arr[i + 1] = lutEntry.val;
+        }
+
+        // Upload data to the display lists
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            std::array<uint64_t, 33> arr;
-
-            // The verilog code is not able to handle float values smaller than 1.0f.
-            // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
-            // the set x to 1.
-            const float startInc = start < 1.0f ? 1.0f : start;
-            const float lutLowerBound = startInc;
-            const float lutUpperBound = end;
-
-            union Value {
-                uint64_t axiVal;
-                struct {
-                    int32_t a;
-                    int32_t b;
-                } numbers;
-                struct {
-                    float a;
-                    float b;
-                } floats;
-            };
-
-            Value bounds;
-            bounds.floats.a = lutLowerBound;
-            bounds.floats.b = lutUpperBound;
-            arr[0] = bounds.axiVal;
-
-            // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
-            for (int i = 0; i < arr.size() - 1; i++)
-            {
-                float f = calculateLinearFogValue(start, end, powf(2, i));
-                float fn = calculateLinearFogValue(start, end, powf(2, i + 1));
-
-                float diff = fn - f;
-                float step = diff / 256.0f;
-
-                Value lutEntry;
-                lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
-                lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
-
-                arr[i + 1] = lutEntry.axiVal;
-            }
-
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
         }
         return ret;
@@ -467,12 +469,6 @@ private:
     };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-
-    float calculateLinearFogValue(const float start, const float end, const float z)
-    {
-        float f = (end - z) / (end - start);
-        return f;
-    }
 
     static uint16_t convertColor(const Vec4i color)
     {
