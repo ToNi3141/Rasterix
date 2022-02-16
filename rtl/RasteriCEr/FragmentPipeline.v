@@ -889,12 +889,12 @@ module FragmentPipeline
         stepBubbleV00 <= (intensity * ru);
         stepBubbleV01 <= (intensity * gu);
         stepBubbleV02 <= (intensity * bu);
-        stepBubbleV03 <= (intensity * au);
+        stepBubbleV03 <= au;
 
         stepBubbleV10 <= ((4'hf - intensity) * rf);
         stepBubbleV11 <= ((4'hf - intensity) * gf);
         stepBubbleV12 <= ((4'hf - intensity) * bf);
-        stepBubbleV13 <= ((4'hf - intensity) * af);
+        stepBubbleV13 <= 0;
 
         stepBubbleDepthValue <= stepBlendResultDepthValue;
         stepBubbleColorFrag <= stepBlendResultColorFrag;
@@ -921,14 +921,14 @@ module FragmentPipeline
             r = (stepBubbleV00 + stepBubbleV10) + 8'hf;
             g = (stepBubbleV01 + stepBubbleV11) + 8'hf;
             b = (stepBubbleV02 + stepBubbleV12) + 8'hf;
-            a = (stepBubbleV03 + stepBubbleV13) + 8'hf;
+            a = stepBubbleV03; // Alpha value is not affected by fog.
 
             colorOut <= {
                 // Saturate colors 
                 (r[8]) ? 4'hf : r[7:4], 
                 (g[8]) ? 4'hf : g[7:4], 
                 (b[8]) ? 4'hf : b[7:4],
-                (a[8]) ? 4'hf : a[7:4]
+                a[3:0]
             };
 
             //colorOut <= stepBubbleColorFrag;

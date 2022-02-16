@@ -140,11 +140,7 @@ private:
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
     void recalculateAndSetTnLMatrices();
     static Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane);
-    static void calcLFogLut(std::array<float, 33>& lut,
-                            float start,
-                            float end,
-                            float density,
-                            std::function<float(float start, float end, float z)> fogFunc);
+    GLenum setFogLut(GLenum mode, float start, float end, float density);
 
 
     IRenderer& m_renderer;

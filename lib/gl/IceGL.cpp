@@ -36,6 +36,7 @@ IceGL::IceGL(IRenderer &renderer)
     glDisable(GL_BLEND);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_FOG);
     glClearDepthf(1.0f);
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -45,6 +46,9 @@ IceGL::IceGL(IRenderer &renderer)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    float fogColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+    glFogfv(GL_FOG_COLOR, fogColor);
 }
 
 void IceGL::commit()
@@ -792,6 +796,9 @@ void IceGL::glEnable(GLenum cap)
         m_enableColorMaterial = true;
         glColorMaterial(m_colorMaterialFace, m_colorMaterialTracking);
         break;
+    case GL_FOG:
+        m_enableFog = true;
+        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -860,6 +867,9 @@ void IceGL::glDisable(GLenum cap)
     case GL_COLOR_MATERIAL:
         m_enableColorMaterial = false;
         m_tnl.enableColorMaterial(false, false, false, false);
+    case GL_FOG:
+        m_enableFog = false;
+        m_error = setFogLut(GL_ZERO, 0, std::numeric_limits<float>::max(), m_fogDensity);
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -1206,10 +1216,13 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        glFogi(pname, static_cast<GLint>(param));
+        m_fogMode = static_cast<GLenum>(param);
         break;
     case GL_FOG_DENSITY:
-        m_fogDensity = param;
+        if (param >= 0.0f)
+            m_fogDensity = param;
+        else
+            m_error = GL_INVALID_VALUE;
         break;
     case GL_FOG_START:
         m_fogStart = param;
@@ -1221,6 +1234,11 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
         m_error = GL_INVALID_ENUM;
         break;
     }
+
+    if (m_enableFog && (m_error == GL_NO_ERROR))
+    {
+        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+    }
 }
 
 void IceGL::glFogfv(GLenum pname, const GLfloat *params)
@@ -1228,10 +1246,13 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        glFogi(pname, static_cast<GLint>(*params));
+        m_fogMode = static_cast<GLenum>(*params);
         break;
     case GL_FOG_DENSITY:
-        m_fogDensity = *params;
+        if (*params >= 0.0f)
+            m_fogDensity = *params;
+        else
+            m_error = GL_INVALID_VALUE;
         break;
     case GL_FOG_START:
         m_fogStart = *params;
@@ -1252,23 +1273,25 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
         m_error = GL_INVALID_ENUM;
         break;
     }
+
+    if (m_enableFog && (m_error == GL_NO_ERROR) && (pname != GL_FOG_COLOR))
+    {
+        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+    }
 }
 
 void IceGL::glFogi(GLenum pname, GLint param)
 {
-    std::array<float, 33> lut;
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
         m_fogMode = static_cast<GLenum>(param);
-        calcLFogLut(lut, m_fogStart, m_fogEnd, m_fogDensity, [](float start, float end, float z){
-            float f = (end - z) / (end - start);
-            return f;
-        });
-        m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
         break;
     case GL_FOG_DENSITY:
-        m_fogDensity = static_cast<GLfloat>(param);
+        if (param >= 0)
+            m_fogDensity = static_cast<GLfloat>(param);
+        else
+            m_error = GL_INVALID_VALUE;
         break;
     case GL_FOG_START:
         m_fogStart = static_cast<GLfloat>(param);
@@ -1280,6 +1303,11 @@ void IceGL::glFogi(GLenum pname, GLint param)
         m_error = GL_INVALID_ENUM;
         break;
     }
+
+    if (m_enableFog && (m_error == GL_NO_ERROR))
+    {
+        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+    }
 }
 
 void IceGL::glFogiv(GLenum pname, const GLint *params)
@@ -1287,10 +1315,13 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        glFogi(pname, *params);
+        m_fogMode = static_cast<GLenum>(*params);
         break;
     case GL_FOG_DENSITY:
-        m_fogDensity = static_cast<GLfloat>(*params);
+        if (*params >= 0)
+            m_fogDensity = static_cast<GLfloat>(*params);
+        else
+            m_error = GL_INVALID_VALUE;
         break;
     case GL_FOG_START:
         m_fogStart = static_cast<GLfloat>(*params);
@@ -1306,6 +1337,11 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
     default:
         m_error = GL_INVALID_ENUM;
         break;
+    }
+
+    if (m_enableFog && (m_error == GL_NO_ERROR) && (pname != GL_FOG_COLOR))
+    {
+        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     }
 }
 
@@ -1791,17 +1827,51 @@ Vec4 IceGL::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane)
     return newPlane;
 }
 
-void IceGL::calcLFogLut(std::array<float, 33> &lut,
-                        float start,
-                        float end,
-                        float density,
-                        std::function<float (float, float, float)> fogFunc)
+GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)
 {
+    std::function <float(float)> fogFunction;
+
+    // Set fog function
+    switch (mode) {
+    case GL_LINEAR:
+        fogFunction = [&](float z) {
+            float f = (end - z) / (end - start);
+            return f;
+        };
+        break;
+    case GL_EXP:
+        fogFunction = [&](float z) {
+            float f = expf(-(density - z));
+            return f;
+        };
+        break;
+    case GL_EXP2:
+        fogFunction = [&](float z) {
+            float f = expf(powf(-(density - z), 2));
+            return f;
+        };
+        break;
+    default:
+        fogFunction = [](float) {
+            return 1.0f;
+        };
+        break;
+    }
+
+    // Calculate fog LUT
+    std::array<float, 33> lut;
     for (std::size_t i = 0; i < lut.size(); i++)
     {
-        float f = fogFunc(start, end, powf(2, i)) * density;
+        float f = fogFunction(powf(2, i));
         lut[i] = f;
     }
+
+    // Set fog LUT
+    if (m_renderer.setFogLut(lut, start, end))
+    {
+        return GL_NO_ERROR;
+    }
+    return GL_OUT_OF_MEMORY;
 }
 
 void IceGL::glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far)

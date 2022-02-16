@@ -133,6 +133,9 @@ module CommandParser #(
             m_rasterizer_axis_tvalid <= 0;
             m_rasterizer_axis_tlast <= 0;
 
+            m_fog_lut_axis_tvalid <= 0;
+            m_fog_lut_axis_tlast <= 0;
+
             startRendering <= 0;
         end
         else 

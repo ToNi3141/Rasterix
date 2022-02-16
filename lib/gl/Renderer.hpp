@@ -28,6 +28,7 @@
 #include <string.h>
 #include "DisplayListAssembler.hpp"
 #include <future>
+#include <algorithm>
 
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
@@ -98,8 +99,9 @@ public:
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
         setFogColor({{255, 255, 255, 255}});
-        std::array<float, 33> fogLut{0};
-        setFogLut(fogLut, 0.0f, 1.0f);
+        std::array<float, 33> fogLut{};
+        std::fill(fogLut.begin(), fogLut.end(), 1.0f);
+        setFogLut(fogLut, 0.0f, std::numeric_limits<float>::max());
 
         // Initialize the render thread by running it once
         m_renderThread = std::async([&](){
@@ -344,8 +346,7 @@ public:
         // The verilog code is not able to handle float values smaller than 1.0f.
         // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
         // the set x to 1.
-        const float startInc = start < 1.0f ? 1.0f : start;
-        const float lutLowerBound = startInc;
+        const float lutLowerBound = start < 1.0f ? 1.0f : start;;
         const float lutUpperBound = end;
 
         // Add bounds to the lut value
