@@ -799,6 +799,7 @@ void IceGL::glEnable(GLenum cap)
     case GL_FOG:
         m_enableFog = true;
         m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+        break;
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -867,9 +868,11 @@ void IceGL::glDisable(GLenum cap)
     case GL_COLOR_MATERIAL:
         m_enableColorMaterial = false;
         m_tnl.enableColorMaterial(false, false, false, false);
+        break;
     case GL_FOG:
         m_enableFog = false;
         m_error = setFogLut(GL_ZERO, 0, std::numeric_limits<float>::max(), m_fogDensity);
+        break;
     default:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -1829,6 +1832,8 @@ Vec4 IceGL::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane)
 
 GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)
 {
+    // TODO: Check if the required fog values have changed before calculating a new fog table.
+    // For instance, is mode is set to same value, dont calculate fog. If density is set on GL_LINEAR, dont calculate fog
     std::function <float(float)> fogFunction;
 
     // Set fog function
@@ -1841,13 +1846,13 @@ GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)
         break;
     case GL_EXP:
         fogFunction = [&](float z) {
-            float f = expf(-(density - z));
+            float f = expf(-(density * z));
             return f;
         };
         break;
     case GL_EXP2:
         fogFunction = [&](float z) {
-            float f = expf(powf(-(density - z), 2));
+            float f = expf(powf(-(density * z), 2));
             return f;
         };
         break;
