@@ -617,7 +617,98 @@ module FragmentPipeline
         stepTexEnvResultFogIntensity <= stepTexEnvFogIntensity;
         // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
         stepTexEnvResultWriteColor <= depthTestPassed || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
-        alphaTestFragmentVal <= (a[8]) ? 4'hf : a[7:4];
+    end
+
+    // Calculate Fog
+    reg                         stepFogValid = 0;
+    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepFogFbIndex = 0;
+    reg [15:0]                  stepFogColorFrag = 0;
+    reg [15:0]                  stepFogDepthValue = 0;
+    reg                         stepFogWriteColor = 0;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV00;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV01;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV02;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV03;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV10;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV11;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV12;
+    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepFogV13;
+    always @(posedge clk)
+    begin : BlendFog
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bf;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] af;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] intensity;
+
+        intensity = stepTexEnvResultFogIntensity;
+
+        rf = confFogColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gf = confFogColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bf = confFogColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        af = confFogColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
+        ru = stepTexEnvResultColorTex[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gu = stepTexEnvResultColorTex[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bu = stepTexEnvResultColorTex[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        au = stepTexEnvResultColorTex[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
+        stepFogV00 <= (intensity * ru);
+        stepFogV01 <= (intensity * gu);
+        stepFogV02 <= (intensity * bu);
+        stepFogV03 <= au;
+
+        stepFogV10 <= ((4'hf - intensity) * rf);
+        stepFogV11 <= ((4'hf - intensity) * gf);
+        stepFogV12 <= ((4'hf - intensity) * bf);
+        stepFogV13 <= 0;
+
+        stepFogDepthValue <= stepTexEnvResultDepthValue;
+        stepFogColorFrag <= stepTexEnvResultColorFrag;
+        stepFogFbIndex <= stepTexEnvResultFbIndex;
+        stepFogValid <= stepTexEnvResultValid;
+        stepFogWriteColor <= stepTexEnvResultWriteColor;
+    end
+
+    // Fog Result
+    reg                         stepFogResultValid = 0;
+    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepFogResultFbIndex = 0;
+    reg [15:0]                  stepFogResultDepthValue = 0;
+    reg [15:0]                  stepFogResultColorFrag = 0;
+    reg [15:0]                  stepFogResultColor = 0;
+    reg                         stepFogResultWriteColor = 0;
+    reg [ 3 : 0]                stepFogResultFogIntensity = 0;
+    always @(posedge clk)
+    begin : FogResult
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
+
+        r = (stepFogV00 + stepFogV10) + 8'hf;
+        g = (stepFogV01 + stepFogV11) + 8'hf;
+        b = (stepFogV02 + stepFogV12) + 8'hf;
+        a = stepFogV03; // Alpha value is not affected by fog.
+
+        stepFogResultColor <= {
+            // Saturate colors 
+            (r[8]) ? 4'hf : r[7:4], 
+            (g[8]) ? 4'hf : g[7:4], 
+            (b[8]) ? 4'hf : b[7:4],
+            a[3:0]
+        };
+
+        alphaTestFragmentVal <= a[3:0];
+        
+        stepFogResultDepthValue <= stepFogDepthValue;
+        stepFogResultColorFrag <= stepFogColorFrag;
+        stepFogResultFbIndex <= stepFogFbIndex;
+        stepFogResultValid <= stepFogValid;
+        stepFogResultWriteColor <= stepFogWriteColor;
     end
 
     // Blend color
@@ -625,7 +716,6 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepBlendFbIndex = 0;
     reg [15:0]                  stepBlendDepthValue = 0;
     reg                         stepBlendWriteColor = 0;
-    reg [ 3 : 0]                stepBlendFogIntensity = 0;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV00;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV01;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBlendV02;
@@ -654,15 +744,15 @@ module FragmentPipeline
         reg [SUB_PIXEL_WIDTH - 1 : 0] v12;
         reg [SUB_PIXEL_WIDTH - 1 : 0] v13;
 
-        rs = stepTexEnvResultColorTex[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gs = stepTexEnvResultColorTex[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bs = stepTexEnvResultColorTex[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        as = stepTexEnvResultColorTex[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rs = stepFogResultColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gs = stepFogResultColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bs = stepFogResultColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        as = stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        rd = stepTexEnvResultColorFrag[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gd = stepTexEnvResultColorFrag[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bd = stepTexEnvResultColorFrag[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ad = stepTexEnvResultColorFrag[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rd = stepFogResultColorFrag[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gd = stepFogResultColorFrag[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bd = stepFogResultColorFrag[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ad = stepFogResultColorFrag[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
         case (confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE])
             ZERO:
@@ -807,11 +897,10 @@ module FragmentPipeline
         stepBlendV12 <= v12 * bd;
         stepBlendV13 <= v13 * ad;
         
-        stepBlendDepthValue <= stepTexEnvResultDepthValue;
-        stepBlendFbIndex <= stepTexEnvResultFbIndex;
-        stepBlendValid <= stepTexEnvResultValid;
-        stepBlendFogIntensity <= stepTexEnvResultFogIntensity;
-        stepBlendWriteColor <= stepTexEnvResultWriteColor & alphaTestPassed;
+        stepBlendDepthValue <= stepFogResultDepthValue;
+        stepBlendFbIndex <= stepFogResultFbIndex;
+        stepBlendValid <= stepFogResultValid;
+        stepBlendWriteColor <= stepFogResultWriteColor & alphaTestPassed;
     end
 
     // Blend Result
@@ -820,7 +909,6 @@ module FragmentPipeline
     reg [15:0]                  stepBlendResultColorFrag = 0;
     reg [15:0]                  stepBlendResultDepthValue = 0;
     reg                         stepBlendResultWriteColor = 0;
-    reg [ 3 : 0]                stepBlendResultFogIntensity = 0;
     always @(posedge clk)
     begin : BlendResultCalc
         reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
@@ -845,96 +933,21 @@ module FragmentPipeline
         stepBlendResultFbIndex <= stepBlendFbIndex;
         stepBlendResultValid <= stepBlendValid;
         stepBlendResultWriteColor <= stepBlendWriteColor;
-        stepBlendResultFogIntensity <= stepBlendFogIntensity;
-    end
-
-    // Bubble (introduces a bubble cycle (see FragmentPipelineIce40Wrapper))
-    reg                         stepBubbleValid = 0;
-    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepBubbleFbIndex = 0;
-    reg [15:0]                  stepBubbleColorFrag = 0;
-    reg [15:0]                  stepBubbleDepthValue = 0;
-    reg                         stepBubbleWriteColor = 0;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV00;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV01;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV02;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV03;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV10;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV11;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV12;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] stepBubbleV13;
-    always @(posedge clk)
-    begin : BlendFog
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] af;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ru;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gu;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bu;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] au;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] intensity;
-
-        intensity = stepBlendResultFogIntensity;
-
-        rf = confFogColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gf = confFogColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bf = confFogColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        af = confFogColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        ru = stepBlendResultColorFrag[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gu = stepBlendResultColorFrag[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bu = stepBlendResultColorFrag[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        au = stepBlendResultColorFrag[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        stepBubbleV00 <= (intensity * ru);
-        stepBubbleV01 <= (intensity * gu);
-        stepBubbleV02 <= (intensity * bu);
-        stepBubbleV03 <= au;
-
-        stepBubbleV10 <= ((4'hf - intensity) * rf);
-        stepBubbleV11 <= ((4'hf - intensity) * gf);
-        stepBubbleV12 <= ((4'hf - intensity) * bf);
-        stepBubbleV13 <= 0;
-
-        stepBubbleDepthValue <= stepBlendResultDepthValue;
-        stepBubbleColorFrag <= stepBlendResultColorFrag;
-        stepBubbleFbIndex <= stepBlendResultFbIndex;
-        stepBubbleValid <= stepBlendResultValid;
-        stepBubbleWriteColor <= stepBlendResultWriteColor;
     end
 
     // Write back
     reg stepWriteBackValid = 0;
     always @(posedge clk)
     begin : WriteBack
-        if (stepBubbleValid)
+        if (stepBlendResultValid)
         begin
-            reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
-            reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
-            reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
-            reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
-
-            colorIndexWrite <= stepBubbleFbIndex;
-            depthIndexWrite <= stepBubbleFbIndex;
-            depthOut <= stepBubbleDepthValue;
-
-            r = (stepBubbleV00 + stepBubbleV10) + 8'hf;
-            g = (stepBubbleV01 + stepBubbleV11) + 8'hf;
-            b = (stepBubbleV02 + stepBubbleV12) + 8'hf;
-            a = stepBubbleV03; // Alpha value is not affected by fog.
-
-            colorOut <= {
-                // Saturate colors 
-                (r[8]) ? 4'hf : r[7:4], 
-                (g[8]) ? 4'hf : g[7:4], 
-                (b[8]) ? 4'hf : b[7:4],
-                a[3:0]
-            };
-
-            //colorOut <= stepBubbleColorFrag;
+            colorIndexWrite <= stepBlendResultFbIndex;
+            depthIndexWrite <= stepBlendResultFbIndex;
+            depthOut <= stepBlendResultDepthValue;
+            colorOut <= stepBlendResultColorFrag;
         end
-        stepWriteBackValid <= stepBubbleValid;
-        colorWriteEnable <= stepBubbleValid & stepBubbleWriteColor;
-        depthWriteEnable <= stepBubbleValid & stepBubbleWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
+        stepWriteBackValid <= stepBlendResultValid;
+        colorWriteEnable <= stepBlendResultValid & stepBlendResultWriteColor;
+        depthWriteEnable <= stepBlendResultValid & stepBlendResultWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
 endmodule
