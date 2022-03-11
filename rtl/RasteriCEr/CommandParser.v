@@ -29,10 +29,10 @@ module CommandParser #(
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
         // Fog function LUT stream
-    output wire        m_fog_lut_axis_tvalid,
+    output reg         m_fog_lut_axis_tvalid,
     input  wire        m_fog_lut_axis_tready,
-    output wire        m_fog_lut_axis_tlast,
-    output wire [CMD_STREAM_WIDTH - 1 : 0] m_fog_lut_axis_tdata,
+    output reg         m_fog_lut_axis_tlast,
+    output reg  [CMD_STREAM_WIDTH - 1 : 0] m_fog_lut_axis_tdata,
 
     // Rasterizer
     // Configs

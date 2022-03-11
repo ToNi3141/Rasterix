@@ -78,7 +78,7 @@ module FunctionInterpolator #(
 
     // LUT writer
     always @(posedge aclk)
-    begin
+    begin : LutWriter
         // LUT memory access
         reg                                 writeLutBounds;
         reg  [$clog2(LUT_ENTRIES) - 1 : 0]  memWriteAddr;
