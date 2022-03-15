@@ -249,6 +249,13 @@ public:
     {
         if (openNewStreamSection())
         {
+            // Check if the display list contains enough space
+            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<TArg>() * TSize);
+            if (expectedSize >= m_displayList.getFreeSpace())
+            {
+                return false;
+            }
+
             // Write command
             SCT *opDl = m_displayList.template create<SCT>();
             if (!opDl)
@@ -345,7 +352,7 @@ private:
                 *m_streamCommand = m_displayList.getSize();
             }
         }
-        return m_streamCommand != nullptr;;
+        return m_streamCommand != nullptr;
     }
 
     bool closeStreamSection()
