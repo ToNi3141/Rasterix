@@ -1216,21 +1216,30 @@ void IceGL::glLogicOp(GLenum opcode)
 
 void IceGL::glFogf(GLenum pname, GLfloat param)
 {
+    bool valueChanged = false;
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
+        valueChanged = m_fogMode != static_cast<GLenum>(param);
         m_fogMode = static_cast<GLenum>(param);
         break;
     case GL_FOG_DENSITY:
         if (param >= 0.0f)
+        {
+            valueChanged = m_fogDensity != param;
             m_fogDensity = param;
+        }
         else
+        {
             m_error = GL_INVALID_VALUE;
+        }
         break;
     case GL_FOG_START:
+        valueChanged = m_fogStart != param;
         m_fogStart = param;
         break;
     case GL_FOG_END:
+        valueChanged = m_fogEnd != param;
         m_fogEnd = param;
         break;
     default:
@@ -1238,7 +1247,7 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
         break;
     }
 
-    if (m_enableFog && (m_error == GL_NO_ERROR))
+    if (valueChanged && m_enableFog && (m_error == GL_NO_ERROR))
     {
         m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     }
@@ -1249,19 +1258,10 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        m_fogMode = static_cast<GLenum>(*params);
-        break;
     case GL_FOG_DENSITY:
-        if (*params >= 0.0f)
-            m_fogDensity = *params;
-        else
-            m_error = GL_INVALID_VALUE;
-        break;
     case GL_FOG_START:
-        m_fogStart = *params;
-        break;
     case GL_FOG_END:
-        m_fogEnd = *params;
+        glFogf(pname, *params);
         break;
     case GL_FOG_COLOR:
     {
@@ -1276,41 +1276,11 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
         m_error = GL_INVALID_ENUM;
         break;
     }
-
-    if (m_enableFog && (m_error == GL_NO_ERROR) && (pname != GL_FOG_COLOR))
-    {
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
-    }
 }
 
 void IceGL::glFogi(GLenum pname, GLint param)
 {
-    m_error = GL_NO_ERROR;
-    switch (pname) {
-    case GL_FOG_MODE:
-        m_fogMode = static_cast<GLenum>(param);
-        break;
-    case GL_FOG_DENSITY:
-        if (param >= 0)
-            m_fogDensity = static_cast<GLfloat>(param);
-        else
-            m_error = GL_INVALID_VALUE;
-        break;
-    case GL_FOG_START:
-        m_fogStart = static_cast<GLfloat>(param);
-        break;
-    case GL_FOG_END:
-        m_fogEnd = static_cast<GLfloat>(param);
-        break;
-    default:
-        m_error = GL_INVALID_ENUM;
-        break;
-    }
-
-    if (m_enableFog && (m_error == GL_NO_ERROR))
-    {
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
-    }
+    glFogf(pname, static_cast<float>(param));
 }
 
 void IceGL::glFogiv(GLenum pname, const GLint *params)
@@ -1318,19 +1288,10 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        m_fogMode = static_cast<GLenum>(*params);
-        break;
     case GL_FOG_DENSITY:
-        if (*params >= 0)
-            m_fogDensity = static_cast<GLfloat>(*params);
-        else
-            m_error = GL_INVALID_VALUE;
-        break;
     case GL_FOG_START:
-        m_fogStart = static_cast<GLfloat>(*params);
-        break;
     case GL_FOG_END:
-        m_fogEnd = static_cast<GLfloat>(*params);
+        glFogi(pname, *params);
         break;
     case GL_FOG_COLOR:
         m_fogColor.fromArray(params, 4);
@@ -1340,11 +1301,6 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
     default:
         m_error = GL_INVALID_ENUM;
         break;
-    }
-
-    if (m_enableFog && (m_error == GL_NO_ERROR) && (pname != GL_FOG_COLOR))
-    {
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     }
 }
 
