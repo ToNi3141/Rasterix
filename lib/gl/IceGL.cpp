@@ -1788,8 +1788,6 @@ Vec4 IceGL::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane)
 
 GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)
 {
-    // TODO: Check if the required fog values have changed before calculating a new fog table.
-    // For instance, is mode is set to same value, dont calculate fog. If density is set on GL_LINEAR, dont calculate fog
     std::function <float(float)> fogFunction;
 
     // Set fog function
