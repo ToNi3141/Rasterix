@@ -38,6 +38,7 @@ localparam OP_TEXTURE_STREAM = 1;
 localparam OP_RENDER_CONFIG = 2;
 localparam OP_FRAMEBUFFER = 3;
 localparam OP_TRIANGLE_STREAM = 4;
+localparam OP_FOG_LUT_STREAM = 5;
 
 localparam OP_POS = 28;
 localparam OP_SIZE = 4;
@@ -75,6 +76,7 @@ localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
 localparam OP_RENDER_CONFIG_REG1 = 2;
 localparam OP_RENDER_CONFIG_REG2 = 3;
 localparam OP_RENDER_CONFIG_TEX_ENV_COLOR = 4;
+localparam OP_RENDER_CONFIG_FOG_COLOR = 5;
 
 // OP_FRAMEBUFFER
 //  +----------------------------------------------------------------------------------------------------------------------------------+

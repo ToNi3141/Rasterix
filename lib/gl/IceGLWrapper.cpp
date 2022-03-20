@@ -100,11 +100,12 @@ void glGetFloatv(GLenum pname, GLfloat *param) {iceGlCWrap->glGetFloatv(pname, p
 void glGetBooleanv(GLenum pname, GLboolean *param) {iceGlCWrap->glGetBooleanv(pname, param);}
 void glCullFace(GLenum mode){iceGlCWrap->glCullFace(mode);}
 
+void glFogf(GLenum pname, GLfloat param) {iceGlCWrap->glFogf(pname, param);}
+void glFogfv(GLenum pname, const GLfloat *params) {iceGlCWrap->glFogfv(pname, params);}
+void glFogi(GLenum pname, GLint param) {iceGlCWrap->glFogi(pname, param);}
+void glFogiv(GLenum pname, const GLint *params) {iceGlCWrap->glFogiv(pname, params);}
+
 void glShadeModel(GLenum name) { (void)name; }
-void glFogf(GLenum pname, GLfloat param) { (void)pname; (void)param; }
-void glFogfv(GLenum pname, GLfloat *params) { (void)pname; (void)params; }
-void glFogi(GLenum pname, GLint param) { (void)pname; (void)param; }
-void glFogiv(GLenum pname, GLint *params) { (void)pname; (void)params; }
 void glHint(GLenum target, GLenum hint) { (void)target; (void)hint;}
 
 

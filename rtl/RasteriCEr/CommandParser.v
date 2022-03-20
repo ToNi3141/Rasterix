@@ -28,12 +28,19 @@ module CommandParser #(
     input  wire         s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
+        // Fog function LUT stream
+    output reg         m_fog_lut_axis_tvalid,
+    input  wire        m_fog_lut_axis_tready,
+    output reg         m_fog_lut_axis_tlast,
+    output reg  [CMD_STREAM_WIDTH - 1 : 0] m_fog_lut_axis_tdata,
+
     // Rasterizer
     // Configs
     output reg  [ 3:0]  confTextureMode,
     output wire [15:0]  confReg1,
     output wire [15:0]  confReg2,
     output wire [15:0]  confTextureEnvColor,
+    output wire [15:0]  confFogColor,
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -75,6 +82,7 @@ module CommandParser #(
     localparam EXEC_TEXTURE_STREAM = 5'd3;
     localparam EXEC_RENDER_CONFIG = 5'd4;
     localparam EXEC_TEXTURE_STREAM_16 = 5'd5;
+    localparam EXEC_FOG_LUT_STREAM = 5'd6;
 
     // Wait For Rasterizer Statemachine
     localparam RASTERIZER_CONTROL_WAITFORCOMMAND = 0;
@@ -85,7 +93,7 @@ module CommandParser #(
     localparam FB_CONTROL_WAITFOREND = 1;
 
     // Command Unit Variables
-    reg  [15 : 0]   configReg[0 : 4];
+    reg  [15 : 0]   configReg[0 : 5];
     reg             apply;
     wire            applied;
     reg  [13 : 0]   streamCounter;
@@ -103,6 +111,7 @@ module CommandParser #(
     assign confReg1 = configReg[OP_RENDER_CONFIG_REG1];
     assign confReg2 = configReg[OP_RENDER_CONFIG_REG2];
     assign confTextureEnvColor = configReg[OP_RENDER_CONFIG_TEX_ENV_COLOR];
+    assign confFogColor = configReg[OP_RENDER_CONFIG_FOG_COLOR];
 
     assign dbgStreamState = state[3:0];
 
@@ -124,6 +133,9 @@ module CommandParser #(
             m_rasterizer_axis_tvalid <= 0;
             m_rasterizer_axis_tlast <= 0;
 
+            m_fog_lut_axis_tvalid <= 0;
+            m_fog_lut_axis_tlast <= 0;
+
             startRendering <= 0;
         end
         else 
@@ -135,6 +147,8 @@ module CommandParser #(
                 m_rasterizer_axis_tvalid <= 0;
                 m_texture_axis_tvalid <= 0;
                 m_texture_axis_tlast <= 0;
+                m_fog_lut_axis_tvalid <= 0;
+                m_fog_lut_axis_tlast <= 0;
                 if (rasterizerRunning)
                     startRendering <= 0;
                 if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning && !startRendering)
@@ -190,6 +204,11 @@ module CommandParser #(
                             s_cmd_axis_tready <= 0;
                             state <= WAIT_FOR_IDLE;    
                         end
+                    end
+                    OP_FOG_LUT_STREAM:
+                    begin
+                        streamCounter <= 33;
+                        state <= EXEC_FOG_LUT_STREAM;
                     end
                     OP_RENDER_CONFIG:
                     begin
@@ -286,6 +305,25 @@ module CommandParser #(
                         begin
                             s_cmd_axis_tready <= 0;
                             m_texture_axis_tlast <= 1;
+                            state <= WAIT_FOR_IDLE;
+                        end
+                    end
+                end
+            end
+            EXEC_FOG_LUT_STREAM:
+            begin
+                s_cmd_axis_tready <= m_fog_lut_axis_tready;
+                if (m_fog_lut_axis_tready)
+                begin
+                    m_fog_lut_axis_tvalid <= s_cmd_axis_tvalid;
+                    m_fog_lut_axis_tdata <= s_cmd_axis_tdata;
+                    if (s_cmd_axis_tvalid)
+                    begin
+                        streamCounter <= streamCounter - 1;
+                        if (streamCounter == 1)
+                        begin
+                            s_cmd_axis_tready <= 0;
+                            m_fog_lut_axis_tlast <= 1;
                             state <= WAIT_FOR_IDLE;
                         end
                     end

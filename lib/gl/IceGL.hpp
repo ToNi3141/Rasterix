@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <array>
+#include <functional>
 #include "IRenderer.hpp"
 #include "TnL.hpp"
 #include "Vec.hpp"
@@ -99,6 +100,11 @@ public:
     void glBlendFunc(GLenum sfactor, GLenum dfactor);
     void glLogicOp(GLenum opcode);
 
+    void glFogf(GLenum pname, GLfloat param);
+    void glFogfv(GLenum pname, const GLfloat* params);
+    void glFogi(GLenum pname, GLint param);
+    void glFogiv(GLenum pname, const GLint* params);
+
     void glPushMatrix();
     void glPopMatrix();
 
@@ -134,6 +140,8 @@ private:
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
     void recalculateAndSetTnLMatrices();
     static Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane);
+    GLenum setFogLut(GLenum mode, float start, float end, float density);
+
 
     IRenderer& m_renderer;
     TnL m_tnl;
@@ -187,6 +195,14 @@ private:
     bool m_enableColorMaterial = false;
     GLenum m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
     GLenum m_colorMaterialFace = GL_FRONT_AND_BACK;
+
+    // Fog
+    bool m_enableFog = false;
+    GLenum m_fogMode = GL_EXP;
+    GLfloat m_fogStart = 0.0f;
+    GLfloat m_fogEnd = 1.0f;
+    GLfloat m_fogDensity = 1.0f;
+    Vec4 m_fogColor {{0.0f, 0.0f, 0.0f, 0.0f}};
 
     // Errors
     GLint m_error = GL_NO_ERROR;

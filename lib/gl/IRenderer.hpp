@@ -95,6 +95,10 @@ public:
         REPEAT,
         CLAMP_TO_EDGE
     };
+    enum FogFunction {
+        NONE,
+        LINEAR
+    };
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// TODO: Document ranges, the vectors should be in screen coordinates, textures should be in the range of 0..1.0
@@ -218,6 +222,19 @@ public:
     /// @return true if succeeded
     virtual bool setTextureWrapModeT(const TextureWrapMode mode) = 0;
 
+    /// @brief Set the fog color
+    /// @param color the color in ABGR
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setFogColor(const Vec4i& color) = 0;
+
+    /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
+    /// and not z (clamped value of 0.0..1.0)
+    /// @param fogLut the fog lookup table
+    /// The fog LUT uses a exponential distribution of w, means fogLut[0] = f(1), fogLut[1] = f(2), fogLut[2] = f(4), fogLut[3] = f(8).
+    /// The fog values between start and end must not exceed 1.0f
+    /// @param start the start value of the fog
+    /// @param end the end value of the fog
+    virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) = 0;
 };
 
 #endif // IRENDERER_HPP

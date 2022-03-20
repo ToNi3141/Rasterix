@@ -183,6 +183,7 @@ typedef enum {
     GL_NORMALIZE,
     GL_STENCIL_TEST,
     GL_SMOOTH,
+
     GL_FOG,
     GL_FOG_MODE,
     GL_FOG_DENSITY,

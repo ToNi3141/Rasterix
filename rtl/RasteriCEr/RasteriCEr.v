@@ -128,12 +128,19 @@ module RasteriCEr #(
     wire [15:0] confReg1;
     wire [15:0] confReg2;
     wire [15:0] confTextureEnvColor;
+    wire [15 : 0] confFogColor;
 
     // Rasterizer
     wire        m_rasterizer_axis_tvalid;
     wire        m_rasterizer_axis_tready;
     wire        m_rasterizer_axis_tlast;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
+
+    // Fog LUT
+    wire        s_fog_lut_axis_tvalid;
+    wire        s_fog_lut_axis_tready;
+    wire        s_fog_lut_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata;
 
     // Register bank
     wire [(PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
@@ -150,12 +157,19 @@ module RasteriCEr #(
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
+        // Fog LUT
+        .m_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
+        .m_fog_lut_axis_tready(s_fog_lut_axis_tready),
+        .m_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
+        .m_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+
         // Rasterizer
         // Configs
         .confTextureMode(textureMode),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
+        .confFogColor(confFogColor),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -353,10 +367,16 @@ module RasteriCEr #(
         .reset(!resetn),
         .pixelInPipeline(pixelInPipelineShader),
 
+        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
+        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
+        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
+        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
         .triangleStaticColor(triangleParams[TRIANGLE_COLOR * PARAM_SIZE +: 16]),
+        .confFogColor(confFogColor),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),
@@ -379,5 +399,6 @@ module RasteriCEr #(
         .depthOut(depthOut)
     );
     defparam fragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
+    defparam fragmentPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
 endmodule

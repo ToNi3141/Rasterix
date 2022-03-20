@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module top #(
-    parameter CMD_STREAM_WIDTH = 32,
+    parameter CMD_STREAM_WIDTH = 64,
     parameter FRAMEBUFFER_STREAM_WIDTH = 64
 )
 (

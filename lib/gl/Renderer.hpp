@@ -28,6 +28,7 @@
 #include <string.h>
 #include "DisplayListAssembler.hpp"
 #include <future>
+#include <algorithm>
 
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
@@ -97,6 +98,10 @@ public:
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
+        setFogColor({{255, 255, 255, 255}});
+        std::array<float, 33> fogLut{};
+        std::fill(fogLut.begin(), fogLut.end(), 1.0f);
+        setFogLut(fogLut, 0.0f, std::numeric_limits<float>::max());
 
         // Initialize the render thread by running it once
         m_renderThread = std::async([&](){
@@ -313,6 +318,65 @@ public:
     {
         m_confReg2.texClampT = mode == TextureWrapMode::CLAMP_TO_EDGE;
         return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
+    }
+
+    virtual bool setFogColor(const Vec4i& color) override
+    {
+        return writeToReg(ListAssembler::SET_FOG_COLOR, convertColor(color));
+    }
+
+    virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
+    {
+        union Value {
+            uint64_t val;
+            struct {
+                int32_t a;
+                int32_t b;
+            } numbers;
+            struct {
+                float a;
+                float b;
+            } floats;
+        };
+
+        bool ret = true;
+
+        std::array<uint64_t, 33> arr;
+
+        // The verilog code is not able to handle float values smaller than 1.0f.
+        // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
+        // the set x to 1.
+        const float lutLowerBound = start < 1.0f ? 1.0f : start;;
+        const float lutUpperBound = end;
+
+        // Add bounds to the lut value
+        Value bounds;
+        bounds.floats.a = lutLowerBound;
+        bounds.floats.b = lutUpperBound;
+        arr[0] = bounds.val;
+
+        // Calculate the lut entries
+        for (std::size_t i = 0; i < arr.size() - 1; i++)
+        {
+            float f = fogLut[i];
+            float fn = fogLut[i + 1];
+
+            const float diff = fn - f;
+            const float step = diff / 256.0f;
+
+            Value lutEntry;
+            lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
+            lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
+
+            arr[i + 1] = lutEntry.val;
+        }
+
+        // Upload data to the display lists
+        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        {
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
+        }
+        return ret;
     }
 
     virtual std::pair<bool, uint16_t> createTexture() override
