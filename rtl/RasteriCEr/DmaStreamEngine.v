@@ -86,7 +86,20 @@ module DmaStreamEngine #(
     // Width of wstrb (width of data bus in words)
     parameter STRB_WIDTH = (STREAM_WIDTH / 8),
     // Width of ID signal
-    parameter ID_WIDTH = 8
+    parameter ID_WIDTH = 8,
+
+
+    // Auto load command. If this is a NOP (0), no autoload is active
+    parameter AUTO_OP = 0,
+
+    // The adress used for the auto load
+    parameter AUTO_ADDRESS = 32'h0,
+
+    // How many bytes are loaded
+    parameter AUTO_DATA_SIZE = 0,
+
+    // Memset value
+    parameter AUTO_MEMSET_VAL = 0
 ) (
     input  wire                         aclk,
     input  wire                         resetn,
@@ -175,10 +188,11 @@ module DmaStreamEngine #(
     localparam STREAM = 9;
     localparam STREAM_PAUSED = 10;
 
+    localparam AUTO_LOAD = AUTO_OP != OP_NOP;
+
     reg  [ 5 : 0]               state;
     reg  [ 5 : 0]               mux;
     reg  [OP_IMM_SIZE - 1 : 0]  counter;
-    reg  [OP_IMM_SIZE - 1 : 0]  counterConverted;
     reg  [31 : 0]               memsetVal;
     reg  [ADDR_WIDTH - 1 : 0]   addr;
     reg                         enableWriteChannel;
@@ -321,12 +335,24 @@ module DmaStreamEngine #(
                 state <= COMMAND;
             end
             COMMAND:
-            begin
-                if (axisSourceValid)
+            begin : CommandParsing
+                reg  [OP_IMM_SIZE - 1 : 0]  counterConverted;
+                reg  [OP_SIZE - 1 : 0]      op;
+                if (axisSourceValid || AUTO_LOAD)
                 begin
-                    counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                    if (AUTO_LOAD)
+                    begin
+                        counterConverted = AUTO_DATA_SIZE >> BYTES_TO_BEATS_SHIFT;
+                        op = AUTO_OP[0 +: OP_SIZE];
+                    end 
+                    else
+                    begin
+                        counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        op = axisSourceData[OP_POS +: OP_SIZE]; 
+                    end
                     counter <= counterConverted;
-                    case (axisSourceData[OP_POS +: OP_SIZE])
+                    
+                    case (op)
                     OP_NOP:
                     begin
                         axisSourceReady <= 0;
@@ -356,14 +382,23 @@ module DmaStreamEngine #(
                 end
             end
             STORE_ADDR:
-            begin
-                if (axisSourceValid)
+            begin : StoreAddr
+                if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
                     begin
+                        reg  [ADDR_WIDTH - 1 : 0] addrTmp;
+                        if (AUTO_LOAD)
+                        begin
+                            addrTmp = AUTO_ADDRESS[0 +: ADDR_WIDTH];
+                        end
+                        else
+                        begin
+                            addrTmp = axisSourceData[0 +: ADDR_WIDTH];
+                        end
                         enableWriteChannel <= 1;
-                        addr <= axisSourceData[0 +: ADDR_WIDTH];
-                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        addr <= addrTmp;
+                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                         enableAddressChannel <= 1;
                         mux <= STORE;
                         state <= STREAM;
@@ -376,14 +411,24 @@ module DmaStreamEngine #(
                 end
             end
             LOAD_ADDR:
-            begin
-                if (axisSourceValid)
+            begin : LoadAddr
+                if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
                     begin
+                        reg  [ADDR_WIDTH - 1 : 0] addrTmp;
+                        if (AUTO_LOAD)
+                        begin
+                            addrTmp = AUTO_ADDRESS[0 +: ADDR_WIDTH];
+                        end
+                        else
+                        begin
+                            addrTmp = axisSourceData[0 +: ADDR_WIDTH];
+                        end
+
                         enableWriteChannel <= 0;
-                        addr <= axisSourceData[0 +: ADDR_WIDTH];
-                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        addr <= addrTmp;
+                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                         enableAddressChannel <= 1;
                         mux <= LOAD;
                         state <= STREAM;
@@ -396,14 +441,24 @@ module DmaStreamEngine #(
                 end
             end
             MEMSET_ADDR:
-            begin
-                if (axisSourceValid)
+            begin : MemsetAddr
+                if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
                     begin
+                        reg  [ADDR_WIDTH - 1 : 0] addrTmp;
+                        if (AUTO_LOAD)
+                        begin
+                            addrTmp = AUTO_ADDRESS[0 +: ADDR_WIDTH];
+                        end
+                        else
+                        begin
+                            addrTmp = axisSourceData[0 +: ADDR_WIDTH];
+                        end
+                        
                         enableWriteChannel <= 1;
-                        addr <= axisSourceData[0 +: ADDR_WIDTH];
-                        addrLast <= axisSourceData[0 +: ADDR_WIDTH] + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        addr <= addrTmp;
+                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                         state <= MEMSET_VAL;
                     end
                     else 
@@ -415,11 +470,18 @@ module DmaStreamEngine #(
             end
             MEMSET_VAL:
             begin
-                if (axisSourceValid)
+                if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
                     begin
-                        memsetVal <= axisSourceData[0 +: 32];
+                        if (AUTO_LOAD)
+                        begin
+                            memsetVal <= AUTO_MEMSET_VAL;
+                        end
+                        else
+                        begin
+                            memsetVal <= axisSourceData[0 +: 32];
+                        end
                         enableAddressChannel <= 1;
                         mux <= MEMSET;
                         state <= STREAM;
