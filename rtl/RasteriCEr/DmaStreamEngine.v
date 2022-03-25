@@ -80,6 +80,7 @@
 // Redirects n bytes of the stream from s_cmd_axis to the m_cmd_axis stream.
 
 module DmaStreamEngine #(
+    // Width of the axi interfaces
     parameter STREAM_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 16,
@@ -89,17 +90,18 @@ module DmaStreamEngine #(
     parameter ID_WIDTH = 8,
 
 
-    // Auto load command. If this is a NOP (0), no autoload is active
-    parameter AUTO_OP = 0,
-
-    // The adress used for the auto load
-    parameter AUTO_ADDRESS = 32'h0,
+    // Auto load command. If this is a NOP (0), no autoload is active and the s_cmd_axis is used for commands
+    // For more specific documentation, refere the documentation of the s_cmd_axis.
+    parameter AUTO_OP = 0, // beat 1
 
     // How many bytes are loaded
-    parameter AUTO_DATA_SIZE = 0,
+    parameter AUTO_DATA_SIZE = 0, // beat 1
+
+    // The adress used for the auto load
+    parameter AUTO_ADDRESS = 32'h0, // beat 2
 
     // Memset value
-    parameter AUTO_MEMSET_VAL = 0
+    parameter AUTO_MEMSET_VAL = 0 // beat 3
 ) (
     input  wire                         aclk,
     input  wire                         resetn,
@@ -175,6 +177,7 @@ module DmaStreamEngine #(
     localparam OP_LOAD = 2;
     localparam OP_MEMSET = 3;
     localparam OP_STREAM = 4;
+    localparam OP_COMMAND = 5;
 
     localparam IDLE = 0;
     localparam COMMAND = 1;
@@ -239,67 +242,67 @@ module DmaStreamEngine #(
     end
 
     // Master Channel Muxes output ports
-    assign m_cmd_axis_tvalid    = (mux == STREAM) ? axisDestValid
-                                : (mux == LOAD) ? axisDestValid 
+    assign m_cmd_axis_tvalid    = (mux == OP_STREAM) ? axisDestValid
+                                : (mux == OP_LOAD) ? axisDestValid 
                                 : 0;
 
-    assign m_mem_axi_wvalid     = (mux == STORE) ? axisDestValid 
-                                : (mux == MEMSET) ? axisDestValid 
+    assign m_mem_axi_wvalid     = (mux == OP_STORE) ? axisDestValid 
+                                : (mux == OP_MEMSET) ? axisDestValid 
                                 : 0;
 
-    assign m_cmd_axis_tlast = (mux == STREAM) ? axisDestLast 
-                            : (mux == LOAD) ? axisDestLast 
+    assign m_cmd_axis_tlast = (mux == OP_STREAM) ? axisDestLast 
+                            : (mux == OP_LOAD) ? axisDestLast 
                             : 0;
 
-    assign m_mem_axi_wlast  = (mux == STORE) ? axiDestLast 
-                            : (mux == MEMSET) ? axiDestLast 
+    assign m_mem_axi_wlast  = (mux == OP_STORE) ? axiDestLast 
+                            : (mux == OP_MEMSET) ? axiDestLast 
                             : 0;
                             
-    assign m_cmd_axis_tdata = (mux == STREAM) ? axisDestData 
-                            : (mux == LOAD) ? axisDestData 
+    assign m_cmd_axis_tdata = (mux == OP_STREAM) ? axisDestData 
+                            : (mux == OP_LOAD) ? axisDestData 
                             : 0;
 
-    assign m_mem_axi_wdata  = (mux == STORE) ? axisDestData 
-                            : (mux == MEMSET) ? axisDestData 
+    assign m_mem_axi_wdata  = (mux == OP_STORE) ? axisDestData 
+                            : (mux == OP_MEMSET) ? axisDestData 
                             : 0;
 
     // Slave Channel Muxes input ports
-    assign s_cmd_axis_tready    = (mux == STREAM) ? axisSourceReady
-                                : (mux == STORE) ? axisSourceReady
-                                : (mux == COMMAND) ? axisSourceReady
+    assign s_cmd_axis_tready    = (mux == OP_STREAM) ? axisSourceReady
+                                : (mux == OP_STORE) ? axisSourceReady
+                                : (mux == OP_COMMAND) ? axisSourceReady
                                 : 0;
 
-    assign m_mem_axi_rready     = (mux == LOAD) ? axisSourceReady
+    assign m_mem_axi_rready     = (mux == OP_LOAD) ? axisSourceReady
                                 : 0;
 
     always @(posedge aclk)
     begin
         // Master Channel Muxes input ports
-        axisDestReady   = (mux == STREAM) ? m_cmd_axis_tready
-                        : (mux == LOAD) ? m_cmd_axis_tready
-                        : (mux == STORE) ? m_mem_axi_wready
-                        : (mux == MEMSET) ? m_mem_axi_wready
+        axisDestReady   = (mux == OP_STREAM) ? m_cmd_axis_tready
+                        : (mux == OP_LOAD) ? m_cmd_axis_tready
+                        : (mux == OP_STORE) ? m_mem_axi_wready
+                        : (mux == OP_MEMSET) ? m_mem_axi_wready
                         : 0;
 
         // Slave Channel Muxes output ports
-        axisSourceValid   = (mux == STREAM) ? s_cmd_axis_tvalid 
-                        : (mux == STORE) ? s_cmd_axis_tvalid
-                        : (mux == COMMAND) ? s_cmd_axis_tvalid
-                        : (mux == LOAD) ? m_mem_axi_rvalid
-                        : (mux == MEMSET) ? 1 
+        axisSourceValid   = (mux == OP_STREAM) ? s_cmd_axis_tvalid 
+                        : (mux == OP_STORE) ? s_cmd_axis_tvalid
+                        : (mux == OP_COMMAND) ? s_cmd_axis_tvalid
+                        : (mux == OP_LOAD) ? m_mem_axi_rvalid
+                        : (mux == OP_MEMSET) ? 1 
                         : 0;
 
-        axisSourceLast    = (mux == STREAM) ? s_cmd_axis_tlast 
-                        : (mux == STORE) ? s_cmd_axis_tlast
-                        : (mux == LOAD) ? m_mem_axi_rlast
-                        : (mux == MEMSET) ? 0 
+        axisSourceLast    = (mux == OP_STREAM) ? s_cmd_axis_tlast 
+                        : (mux == OP_STORE) ? s_cmd_axis_tlast
+                        : (mux == OP_LOAD) ? m_mem_axi_rlast
+                        : (mux == OP_MEMSET) ? 0 
                         : 0;
 
-        axisSourceData    = (mux == STREAM) ? s_cmd_axis_tdata
-                        : (mux == STORE) ? s_cmd_axis_tdata
-                        : (mux == COMMAND) ? s_cmd_axis_tdata
-                        : (mux == LOAD) ? m_mem_axi_rdata
-                        : (mux == MEMSET) ? memsetVal
+        axisSourceData    = (mux == OP_STREAM) ? s_cmd_axis_tdata
+                        : (mux == OP_STORE) ? s_cmd_axis_tdata
+                        : (mux == OP_COMMAND) ? s_cmd_axis_tdata
+                        : (mux == OP_LOAD) ? m_mem_axi_rdata
+                        : (mux == OP_MEMSET) ? memsetVal
                         : 0;
 
         if (resetn == 0)
@@ -318,7 +321,7 @@ module DmaStreamEngine #(
             enableAddressChannel <= 0;
 
             state <= IDLE;
-            mux <= IDLE;
+            mux <= AUTO_OP;
         end
         else 
         begin
@@ -331,7 +334,8 @@ module DmaStreamEngine #(
 
                 axisSourceReady <= 1;
 
-                mux <= COMMAND;
+                if (!AUTO_LOAD)
+                    mux <= OP_COMMAND;
                 state <= COMMAND;
             end
             COMMAND:
@@ -374,7 +378,8 @@ module DmaStreamEngine #(
                     begin
                         if (counterConverted > 0)
                         begin
-                            mux <= STREAM;
+                            if (!AUTO_LOAD)
+                                mux <= OP_STREAM;
                             state <= STREAM;
                         end
                     end
@@ -382,11 +387,11 @@ module DmaStreamEngine #(
                 end
             end
             STORE_ADDR:
-            begin : StoreAddr
+            begin
                 if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
-                    begin
+                    begin : StoreAddr
                         reg  [ADDR_WIDTH - 1 : 0] addrTmp;
                         if (AUTO_LOAD)
                         begin
@@ -400,7 +405,8 @@ module DmaStreamEngine #(
                         addr <= addrTmp;
                         addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                         enableAddressChannel <= 1;
-                        mux <= STORE;
+                        if (!AUTO_LOAD)
+                            mux <= OP_STORE;
                         state <= STREAM;
                     end
                     else 
@@ -411,11 +417,11 @@ module DmaStreamEngine #(
                 end
             end
             LOAD_ADDR:
-            begin : LoadAddr
+            begin
                 if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
-                    begin
+                    begin : LoadAddr
                         reg  [ADDR_WIDTH - 1 : 0] addrTmp;
                         if (AUTO_LOAD)
                         begin
@@ -430,7 +436,8 @@ module DmaStreamEngine #(
                         addr <= addrTmp;
                         addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
                         enableAddressChannel <= 1;
-                        mux <= LOAD;
+                        if (!AUTO_LOAD)
+                            mux <= OP_LOAD;
                         state <= STREAM;
                     end
                     else 
@@ -441,11 +448,11 @@ module DmaStreamEngine #(
                 end
             end
             MEMSET_ADDR:
-            begin : MemsetAddr
+            begin
                 if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
-                    begin
+                    begin : MemsetAddr
                         reg  [ADDR_WIDTH - 1 : 0] addrTmp;
                         if (AUTO_LOAD)
                         begin
@@ -483,7 +490,8 @@ module DmaStreamEngine #(
                             memsetVal <= axisSourceData[0 +: 32];
                         end
                         enableAddressChannel <= 1;
-                        mux <= MEMSET;
+                        if (!AUTO_LOAD)
+                            mux <= OP_MEMSET;
                         state <= STREAM;
                     end
                     else 
