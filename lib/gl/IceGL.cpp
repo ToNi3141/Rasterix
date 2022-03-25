@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // https://github.com/ToNi3141/Rasterix
 // Copyright (c) 2022 ToNi3141
 
@@ -1873,7 +1873,7 @@ const GLubyte *IceGL::glGetString(GLenum name)
     case GL_VENDOR:
         return reinterpret_cast<const GLubyte*>("ToNi3141");
     case GL_RENDERER:
-        return reinterpret_cast<const GLubyte*>("RasteriCEr");
+        return reinterpret_cast<const GLubyte*>("Rasterix");
     case GL_VERSION:
         return reinterpret_cast<const GLubyte*>("0.1");
     case GL_EXTENSIONS:

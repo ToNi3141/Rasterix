@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // https://github.com/ToNi3141/Rasterix
 // Copyright (c) 2022 ToNi3141
 

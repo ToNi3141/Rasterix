@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // https://github.com/ToNi3141/Rasterix
 // Copyright (c) 2022 ToNi3141
 
@@ -40,7 +40,7 @@ module top #(
     parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
     parameter TEXTURE_BUFFER_SIZE = 15;
 
-    RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),
+    Rasterix #(.X_RESOLUTION(X_RESOLUTION),
                  .Y_RESOLUTION(Y_RESOLUTION),
                  .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
                  .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
@@ -337,7 +337,7 @@ public:
 
 // Instantiate the BusConnector
 BusConnector busConnector;
-// Instantiate the renderer, this is basically the driver for the RasteriCEr.
+// Instantiate the renderer, this is basically the driver for the Rasterix.
 // Set display list size (one trinagle requires around 84 bytes in the display list), screen resolution and bus width (used internally for alignments depending on the FPGA configuration)
 Renderer<32768, RENDER_LINES, RESOLUTION_H / RENDER_LINES, 32> renderer{busConnector};
 // Instantiate the IceGL library

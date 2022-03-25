@@ -1,5 +1,5 @@
 
-- [RasteriCEr](#rastericer)
+- [Rasterix](#rasterix)
 - [Working games](#working-games)
 - [How to build for the iCE40UP5K](#how-to-build-for-the-ice40up5k)
   - [iCE40UP5K build details](#ice40up5k-build-details)
@@ -14,7 +14,7 @@
   - [FPGA](#fpga)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
-  - [Port the RasteriCEr](#port-the-rastericer)
+  - [Port the Rasterix](#port-the-rasterix)
 - [Missing features](#missing-features)
 - [Technical limitations](#technical-limitations)
   - [Near/far plane and depth buffer](#nearfar-plane-and-depth-buffer)
@@ -22,8 +22,8 @@
     - [Bug](#bug)
   - [No depth buffer for glOrtho()](#no-depth-buffer-for-glortho)
 - [Possible performance improvements in the software part](#possible-performance-improvements-in-the-software-part)
-# RasteriCEr
-The RasteriCEr is a rasterizer implementation mainly for an iCE40 FPGA. It can be used with micro controllers and offers an API similar to OpenGL. The main goal is/was to implement the whole fixed function pipeline of OpenGL 1.5 / OpenGL ES1.1 and that it is faster than a software implementation. I am confident that at least the second goal is achieved, but for the first one, a bigger FPGA is required. Currently some features like stencil buffer, fog, second texture unit, texture filtering and so on are missing.
+# Rasterix
+The Rasterix is a rasterizer implementation mainly for an iCE40 FPGA. It can be used with micro controllers and offers an API similar to OpenGL. The main goal is/was to implement the whole fixed function pipeline of OpenGL 1.5 / OpenGL ES1.1 and that it is faster than a software implementation. I am confident that at least the second goal is achieved, but for the first one, a bigger FPGA is required. Currently some features like stencil buffer, fog, second texture unit, texture filtering and so on are missing.
 Currently it has more the nature of a prototype and maybe a prove of concept. Hopefully this software is somehow useful for someone or is at least good enough for education or inspiration.
 
 # Working games
@@ -39,7 +39,7 @@ First you have to install the following tools:
 Now execute the following steps
 ```
 git clone https://github.com/ToNi3141/Rasterix.git
-cd RasteriCEr/rtl/top/iCE40up5k
+cd Rasterix/rtl/top/iCE40up5k
 make 
 make flash
 ```
@@ -57,7 +57,7 @@ Y_LINE_RESOLUTION
 make X_RESOLUTION=240 Y_RESOLUTION=320 Y_LINE_RESOLUTION=64
 ```
 
-Please not that a ```glClear()``` will behave now differently when it is omitted. Normally, when you omit this, you would see the last frame. The RasteriCEr will show you an echo of the previous line.
+Please not that a ```glClear()``` will behave now differently when it is omitted. Normally, when you omit this, you would see the last frame. The Rasterix will show you an echo of the previous line.
 ## iCE40UP5K build details
 Other iCE40 FPGAs are not working because they lack internal memory.
 - 32kB Texture buffer, supported resolutions: 128x128, 64x64, 32x32.
@@ -142,16 +142,16 @@ It is likely, that your verialtor installation has another path as it is configu
 You can find under arduino/rasterizer an example how to use the driver. Before you can use the driver, you have to copy all files in the lib/gl directory into the arduino library directory (if you are using the Arduino IDE). If you use another IDE add this files to your build system.
 ```
 mkdir /<pathToArduinoLibDir>/Arduino/libraries/IceGL
-cp -R /<pathToLib>/RasteriCEr/lib/gl/* /<pathToArduinoLibDir>/Arduino/libraries/IceGL
+cp -R /<pathToLib>/Rasterix/lib/gl/* /<pathToArduinoLibDir>/Arduino/libraries/IceGL
 ```
 or you can create a symbolic link
 ```
-ln -s /<pathToLib>/RasteriCEr/lib/gl/ /<pathToArduinoLibDir>/Arduino/libraries/IceGL
+ln -s /<pathToLib>/Rasterix/lib/gl/ /<pathToArduinoLibDir>/Arduino/libraries/IceGL
 ```
 # Design
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
 ![flow diagram](pictures/flow.png)
-For the s_cmd_axis command specification, please refer ```rtl/RasteriCEr/RegisterAndDescriptorDefines.vh```
+For the s_cmd_axis command specification, please refer ```rtl/Rasterix/RegisterAndDescriptorDefines.vh```
 ## Driver
 The driver is build with the following components:
 - ```IceGLWrapper```: Wraps the IceGL API to a C API.
@@ -159,15 +159,15 @@ The driver is build with the following components:
 - ```TnL```: Implements the geometry transformation, clipping and lighting.
 - ```Rasterizer```: This basically is the rasterizer. It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
 - ```IRenderer```: Defines an interface from ```IceGL``` to an renderer. You can use this interface to implement a software renderer or a better version of the Renderer. 
-- ```Renderer```: Implements the IRenderer interface, executes the rasterization, compiles display lists and sends them via the ```IBusConnecter``` to the RasteriCEr.
-- ```DisplayList```: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the RasteriCEr.
-- ```IBusConnector```: This is an interface from the driver to to the RasteriCEr. Implement here your SPI driver. Alternatively, if you implement the RasteriCEr in you own FPGA system, implement here how to stream data from and to the RasteriCErs AXIS ports.
+- ```Renderer```: Implements the IRenderer interface, executes the rasterization, compiles display lists and sends them via the ```IBusConnecter``` to the Rasterix.
+- ```DisplayList```: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the Rasterix.
+- ```IBusConnector```: This is an interface from the driver to to the Rasterix. Implement here your SPI driver. Alternatively, if you implement the Rasterix in you own FPGA system, implement here how to stream data from and to the RasteriCErs AXIS ports.
 ## FPGA
-Note hat the blue boxes are specific for the iCE40 build. If you want to integrate it in your own system, only the parts in the RasteriCEr are relevant for you.
+Note hat the blue boxes are specific for the iCE40 build. If you want to integrate it in your own system, only the parts in the Rasterix are relevant for you.
 - ```SPI_Slave``` (3rd party): Implements a SPI slave to deserialize the data from the SPI bus.
 - ```Serial2AXIS```: Converts the deserialized data from the SPI_Slave into an AXIS data stream.
-- ```RasteriCEr```: Basically implements the RasteriCEr. It has an CMD_AXIS port where it receives the commands to render triangles, set render modes, upload textures and so on. It also has an FRAMEBUFFER_AXIS port where it streams out the data from the color buffer. Alternatively both AXIS ports can also be connected to other devices like DMAs, if you want to integrate the RasteriCEr in your own project.
-- ```CommandParser```: Reads the data from the CMD_AXIS port, decodes the commands and controls the RasteriCEr.
+- ```Rasterix```: Basically implements the Rasterix. It has an CMD_AXIS port where it receives the commands to render triangles, set render modes, upload textures and so on. It also has an FRAMEBUFFER_AXIS port where it streams out the data from the color buffer. Alternatively both AXIS ports can also be connected to other devices like DMAs, if you want to integrate the Rasterix in your own project.
+- ```CommandParser```: Reads the data from the CMD_AXIS port, decodes the commands and controls the Rasterix.
 - ```Rasterizer```: Takes the triangle parameters from the Rasterizer class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
 - ```FragmentPipeline```: Consumes the fragments from the Rasterizer, does perspective correction, depth test, blend and texenv calculations, texture clamping and so on.
 - ```TextureBuffer```: Buffers the texture.
@@ -185,11 +185,11 @@ To port the driver to a new MCU only a few steps are required.
 Now you are done with your port.
 
 Note: A FPU can improve the performance drastically (around 5 times more triangles are possible). 
-## Port the RasteriCEr
+## Port the Rasterix
 1. Connect the command AXIS channel (```s_cmd_axis```) to an device, which streams the data from the ```IBusConnector```. 
 2. Connect the AXIS channel from the color buffer (```m_framebuffer_axis```) to an device, which can handle the color buffer.
 3. Connect ```nreset``` to your reset line and ```aclk``` to your clock domain.
-4. Add everything in ```rtl/RasteriCEr``` to your build system.
+4. Add everything in ```rtl/Rasterix``` to your build system.
 5. Synthesize.
 # Missing features
 The following features are currently missing compared to a real OpenGL implementation

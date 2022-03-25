@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify

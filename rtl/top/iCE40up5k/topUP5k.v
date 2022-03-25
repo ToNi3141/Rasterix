@@ -1,4 +1,4 @@
-// RasteriCEr
+// Rasterix
 // https://github.com/ToNi3141/Rasterix
 // Copyright (c) 2022 ToNi3141
 
@@ -114,7 +114,7 @@ module top
                                 // A CLOCK_DIV of 0 means, that we increase the clock to 24MHz.
     defparam lcd.PIXEL = X_RESOLUTION * Y_LINE_RESOLUTION;
 
-    RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),
+    Rasterix #(.X_RESOLUTION(X_RESOLUTION),
                  .Y_RESOLUTION(Y_RESOLUTION),
                  .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
                  .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
