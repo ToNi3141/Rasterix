@@ -1,6 +1,6 @@
 // RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

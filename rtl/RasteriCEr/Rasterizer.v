@@ -1,6 +1,6 @@
 // RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -317,17 +317,17 @@ module Rasterizer
                         RASTERIZER_EDGEWALKER_WALK:
                         begin
                             // Render pixels
-                                if (isInTriangleAndInBounds)
-                                begin
-                                    m_axis_tvalid <= 1;
-                                end
-                                else
-                                begin
-                                    // Now we are outside on the left side of the triangle.
-                                    // The edge walker will now search again the left edge
-                                    m_axis_tvalid <= 0;
-                                    edgeWalkingState <= RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR;
-                                end
+                            if (isInTriangleAndInBounds)
+                            begin
+                                m_axis_tvalid <= 1;
+                            end
+                            else
+                            begin
+                                // Now we are outside on the left side of the triangle.
+                                // The edge walker will now search again the left edge
+                                m_axis_tvalid <= 0;
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR;
+                            end
                         end
                         endcase
                     end

@@ -38,7 +38,7 @@ First you have to install the following tools:
 
 Now execute the following steps
 ```
-git clone https://github.com/ToNi3141/RasteriCEr.git
+git clone https://github.com/ToNi3141/Rasterix.git
 cd RasteriCEr/rtl/top/iCE40up5k
 make 
 make flash
