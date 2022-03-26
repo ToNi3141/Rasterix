@@ -1,6 +1,6 @@
-// RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -256,7 +256,7 @@ module top
     defparam lcd.CLOCK_DIV = 2; // Caution, normally the SPI displays work with a maximum frequency of 15.5 MHz. 
                                 // A CLOCK_DIV of 2 means that the 90MHz clock is divided by four which results in a frequency of 22.5 MHz.
 
-    RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),
+    Rasterix #(.X_RESOLUTION(X_RESOLUTION),
                  .Y_RESOLUTION(Y_RESOLUTION),
                  .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
                  .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

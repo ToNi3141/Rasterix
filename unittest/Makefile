@@ -6,7 +6,7 @@ clean:
 	rm -rf obj_dir
 
 dmaStreamEngine:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp
 	-make -C obj_dir -f VDmaStreamEngine.mk
 	./obj_dir/VDmaStreamEngine
 
@@ -16,12 +16,12 @@ simulationDisplay:
 	./obj_dir/VDisplayController8BitILI9486
 
 attributeInterpolator:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/AttributeInterpolator.v --top-module AttributeInterpolator cpp/sim_AttributeInterpolator.cpp -I../rtl/float/rtl/float/ -I../rtl/RasteriCEr/
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/AttributeInterpolator.v --top-module AttributeInterpolator cpp/sim_AttributeInterpolator.cpp -I../rtl/float/rtl/float/ -I../rtl/Rasterix/
 	-make -C obj_dir -f VAttributeInterpolator.mk
 	./obj_dir/VAttributeInterpolator
 
 functionInterpolator:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/RasteriCEr/FunctionInterpolator.v --top-module FunctionInterpolator cpp/sim_FunctionInterpolator.cpp -I../rtl/RasteriCEr/
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/FunctionInterpolator.v --top-module FunctionInterpolator cpp/sim_FunctionInterpolator.cpp -I../rtl/Rasterix/
 	-make -C obj_dir -f VFunctionInterpolator.mk
 	./obj_dir/VFunctionInterpolator
 

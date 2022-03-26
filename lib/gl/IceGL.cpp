@@ -1,6 +1,6 @@
-// RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1873,7 +1873,7 @@ const GLubyte *IceGL::glGetString(GLenum name)
     case GL_VENDOR:
         return reinterpret_cast<const GLubyte*>("ToNi3141");
     case GL_RENDERER:
-        return reinterpret_cast<const GLubyte*>("RasteriCEr");
+        return reinterpret_cast<const GLubyte*>("Rasterix");
     case GL_VERSION:
         return reinterpret_cast<const GLubyte*>("0.1");
     case GL_EXTENSIONS:

@@ -1,6 +1,6 @@
-// RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@ module top #(
         .m_mem_axi_rready(s_axi_rready)
     );
 
-    RasteriCEr #(.X_RESOLUTION(X_RESOLUTION),
+    Rasterix #(.X_RESOLUTION(X_RESOLUTION),
                  .Y_RESOLUTION(Y_RESOLUTION),
                  .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
                  .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

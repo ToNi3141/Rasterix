@@ -1,6 +1,6 @@
-// RasteriCEr
-// https://github.com/ToNi3141/RasteriCEr
-// Copyright (c) 2021 ToNi3141
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module RasteriCEr #(
+module Rasterix #(
     // The resolution of the whole screen
     parameter X_RESOLUTION = 128,
     parameter Y_RESOLUTION = 128,

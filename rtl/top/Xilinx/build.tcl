@@ -14,17 +14,17 @@ get_files -all -of_objects [get_files *clk_wiz_0.xci]
 # STEP#1: setup design sources and constraints
 #
 read_verilog ./top.v
-read_verilog ./../../RasteriCEr/DualPortRam.v
-read_verilog ./../../RasteriCEr/FrameBuffer.v
-read_verilog ./../../RasteriCEr/Rasterizer.v
-read_verilog ./../../RasteriCEr/RasteriCEr.v
-read_verilog ./../../RasteriCEr/FragmentPipeline.v
-read_verilog ./../../RasteriCEr/FragmentPipelineIce40Wrapper.v
-read_verilog ./../../RasteriCEr/CommandParser.v
-read_verilog ./../../RasteriCEr/DmaStreamEngine.v
-read_verilog ./../../RasteriCEr/Serial2AXIS.v
-read_verilog ./../../RasteriCEr/Recip.v
-read_verilog ./../../RasteriCEr/TextureBuffer.v
+read_verilog ./../../Rasterix/DualPortRam.v
+read_verilog ./../../Rasterix/FrameBuffer.v
+read_verilog ./../../Rasterix/Rasterizer.v
+read_verilog ./../../Rasterix/Rasterix.v
+read_verilog ./../../Rasterix/FragmentPipeline.v
+read_verilog ./../../Rasterix/FragmentPipelineIce40Wrapper.v
+read_verilog ./../../Rasterix/CommandParser.v
+read_verilog ./../../Rasterix/DmaStreamEngine.v
+read_verilog ./../../Rasterix/Serial2AXIS.v
+read_verilog ./../../Rasterix/Recip.v
+read_verilog ./../../Rasterix/TextureBuffer.v
 read_verilog ./../../Display/DisplayControllerSpi.v
 read_verilog ./../../3rdParty/SPI_Slave.v
 read_verilog ./../../3rdParty/sfifo.v
