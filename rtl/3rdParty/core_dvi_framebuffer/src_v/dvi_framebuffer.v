@@ -51,60 +51,60 @@ module dvi_framebuffer
 //-----------------------------------------------------------------
 (
     // Inputs
-     input          clk
-    ,input          rst
-    ,input          clk_x5
-    ,input          s_axi_awvalid
-    ,input  [31:0]  s_axi_awaddr
-    ,input          s_axi_wvalid
-    ,input  [31:0]  s_axi_wdata
-    ,input  [3:0]   s_axi_wstrb
-    ,input          s_axi_bready
-    ,input          s_axi_arvalid
-    ,input  [31:0]  s_axi_araddr
-    ,input          s_axi_rready
-    ,input          m_axi_awready
-    ,input          m_axi_wready
-    ,input          m_axi_bvalid
-    ,input  [1:0]   m_axi_bresp
-    ,input  [3:0]   m_axi_bid
-    ,input          m_axi_arready
-    ,input          m_axi_rvalid
-    ,input  [31:0]  m_axi_rdata
-    ,input  [1:0]   m_axi_rresp
-    ,input  [3:0]   m_axi_rid
-    ,input          m_axi_rlast
+     input          clk_i
+    ,input          rst_i
+    ,input          clk_x5_i
+    ,input          cfg_awvalid_i
+    ,input  [31:0]  cfg_awaddr_i
+    ,input          cfg_wvalid_i
+    ,input  [31:0]  cfg_wdata_i
+    ,input  [3:0]   cfg_wstrb_i
+    ,input          cfg_bready_i
+    ,input          cfg_arvalid_i
+    ,input  [31:0]  cfg_araddr_i
+    ,input          cfg_rready_i
+    ,input          outport_awready_i
+    ,input          outport_wready_i
+    ,input          outport_bvalid_i
+    ,input  [1:0]   outport_bresp_i
+    ,input  [3:0]   outport_bid_i
+    ,input          outport_arready_i
+    ,input          outport_rvalid_i
+    ,input  [31:0]  outport_rdata_i
+    ,input  [1:0]   outport_rresp_i
+    ,input  [3:0]   outport_rid_i
+    ,input          outport_rlast_i
 
     // Outputs
-    ,output         s_axi_awready
-    ,output         s_axi_wready
-    ,output         s_axi_bvalid
-    ,output [1:0]   s_axi_bresp
-    ,output         s_axi_arready
-    ,output         s_axi_rvalid
-    ,output [31:0]  s_axi_rdata
-    ,output [1:0]   s_axi_rresp
-    ,output         intr
-    ,output         m_axi_awvalid
-    ,output [31:0]  m_axi_awaddr
-    ,output [3:0]   m_axi_awid
-    ,output [7:0]   m_axi_awlen
-    ,output [1:0]   m_axi_awburst
-    ,output         m_axi_wvalid
-    ,output [31:0]  m_axi_wdata
-    ,output [3:0]   m_axi_wstrb
-    ,output         m_axi_wlast
-    ,output         m_axi_bready
-    ,output         m_axi_arvalid
-    ,output [31:0]  m_axi_araddr
-    ,output [3:0]   m_axi_arid
-    ,output [7:0]   m_axi_arlen
-    ,output [1:0]   m_axi_arburst
-    ,output         m_axi_rready
-    ,output         dvi_red
-    ,output         dvi_green
-    ,output         dvi_blue
-    ,output         dvi_clock
+    ,output         cfg_awready_o
+    ,output         cfg_wready_o
+    ,output         cfg_bvalid_o
+    ,output [1:0]   cfg_bresp_o
+    ,output         cfg_arready_o
+    ,output         cfg_rvalid_o
+    ,output [31:0]  cfg_rdata_o
+    ,output [1:0]   cfg_rresp_o
+    ,output         intr_o
+    ,output         outport_awvalid_o
+    ,output [31:0]  outport_awaddr_o
+    ,output [3:0]   outport_awid_o
+    ,output [7:0]   outport_awlen_o
+    ,output [1:0]   outport_awburst_o
+    ,output         outport_wvalid_o
+    ,output [31:0]  outport_wdata_o
+    ,output [3:0]   outport_wstrb_o
+    ,output         outport_wlast_o
+    ,output         outport_bready_o
+    ,output         outport_arvalid_o
+    ,output [31:0]  outport_araddr_o
+    ,output [3:0]   outport_arid_o
+    ,output [7:0]   outport_arlen_o
+    ,output [1:0]   outport_arburst_o
+    ,output         outport_rready_o
+    ,output         dvi_red_o
+    ,output         dvi_green_o
+    ,output         dvi_blue_o
+    ,output         dvi_clock_o
 );
 
 //-----------------------------------------------------------------
@@ -116,21 +116,21 @@ reg awvalid_q;
 // Data but no data ready
 reg wvalid_q;
 
-wire wr_cmd_accepted_w  = (s_axi_awvalid && s_axi_awready) || awvalid_q;
-wire wr_data_accepted_w = (s_axi_wvalid  && s_axi_wready)  || wvalid_q;
+wire wr_cmd_accepted_w  = (cfg_awvalid_i && cfg_awready_o) || awvalid_q;
+wire wr_data_accepted_w = (cfg_wvalid_i  && cfg_wready_o)  || wvalid_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     awvalid_q <= 1'b0;
-else if (s_axi_awvalid && s_axi_awready && !wr_data_accepted_w)
+else if (cfg_awvalid_i && cfg_awready_o && !wr_data_accepted_w)
     awvalid_q <= 1'b1;
 else if (wr_data_accepted_w)
     awvalid_q <= 1'b0;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     wvalid_q <= 1'b0;
-else if (s_axi_wvalid && s_axi_wready && !wr_cmd_accepted_w)
+else if (cfg_wvalid_i && cfg_wready_o && !wr_cmd_accepted_w)
     wvalid_q <= 1'b1;
 else if (wr_cmd_accepted_w)
     wvalid_q <= 1'b0;
@@ -140,37 +140,37 @@ else if (wr_cmd_accepted_w)
 //-----------------------------------------------------------------
 reg [7:0] wr_addr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     wr_addr_q <= 8'b0;
-else if (s_axi_awvalid && s_axi_awready)
-    wr_addr_q <= s_axi_awaddr[7:0];
+else if (cfg_awvalid_i && cfg_awready_o)
+    wr_addr_q <= cfg_awaddr_i[7:0];
 
-wire [7:0] wr_addr_w = awvalid_q ? wr_addr_q : s_axi_awaddr[7:0];
+wire [7:0] wr_addr_w = awvalid_q ? wr_addr_q : cfg_awaddr_i[7:0];
 
 //-----------------------------------------------------------------
 // Retime write data
 //-----------------------------------------------------------------
 reg [31:0] wr_data_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     wr_data_q <= 32'b0;
-else if (s_axi_wvalid && s_axi_wready)
-    wr_data_q <= s_axi_wdata;
+else if (cfg_wvalid_i && cfg_wready_o)
+    wr_data_q <= cfg_wdata_i;
 
 //-----------------------------------------------------------------
 // Request Logic
 //-----------------------------------------------------------------
-wire read_en_w  = s_axi_arvalid & s_axi_arready;
+wire read_en_w  = cfg_arvalid_i & cfg_arready_o;
 wire write_en_w = wr_cmd_accepted_w && wr_data_accepted_w;
 
 //-----------------------------------------------------------------
 // Accept Logic
 //-----------------------------------------------------------------
-assign s_axi_arready = ~s_axi_rvalid;
-assign s_axi_awready = ~s_axi_bvalid && ~s_axi_arvalid && ~awvalid_q;
-assign s_axi_wready  = ~s_axi_bvalid && ~s_axi_arvalid && ~wvalid_q;
+assign cfg_arready_o = ~cfg_rvalid_o;
+assign cfg_awready_o = ~cfg_bvalid_o && ~cfg_arvalid_i && ~awvalid_q;
+assign cfg_wready_o  = ~cfg_bvalid_o && ~cfg_arvalid_i && ~wvalid_q;
 
 
 //-----------------------------------------------------------------
@@ -178,8 +178,8 @@ assign s_axi_wready  = ~s_axi_bvalid && ~s_axi_arvalid && ~wvalid_q;
 //-----------------------------------------------------------------
 reg config_wr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     config_wr_q <= 1'b0;
 else if (write_en_w && (wr_addr_w[7:0] == `CONFIG))
     config_wr_q <= 1'b1;
@@ -189,11 +189,11 @@ else
 // config_x2_mode [internal]
 reg        config_x2_mode_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     config_x2_mode_q <= VIDEO_X2_MODE;
 else if (write_en_w && (wr_addr_w[7:0] == `CONFIG))
-    config_x2_mode_q <= s_axi_wdata[`CONFIG_X2_MODE_R];
+    config_x2_mode_q <= cfg_wdata_i[`CONFIG_X2_MODE_R];
 
 wire        config_x2_mode_out_w = config_x2_mode_q;
 
@@ -201,11 +201,11 @@ wire        config_x2_mode_out_w = config_x2_mode_q;
 // config_int_en_sof [internal]
 reg        config_int_en_sof_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     config_int_en_sof_q <= 1'd`CONFIG_INT_EN_SOF_DEFAULT;
 else if (write_en_w && (wr_addr_w[7:0] == `CONFIG))
-    config_int_en_sof_q <= s_axi_wdata[`CONFIG_INT_EN_SOF_R];
+    config_int_en_sof_q <= cfg_wdata_i[`CONFIG_INT_EN_SOF_R];
 
 wire        config_int_en_sof_out_w = config_int_en_sof_q;
 
@@ -213,11 +213,11 @@ wire        config_int_en_sof_out_w = config_int_en_sof_q;
 // config_enable [internal]
 reg        config_enable_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     config_enable_q <= VIDEO_ENABLE;
 else if (write_en_w && (wr_addr_w[7:0] == `CONFIG))
-    config_enable_q <= s_axi_wdata[`CONFIG_ENABLE_R];
+    config_enable_q <= cfg_wdata_i[`CONFIG_ENABLE_R];
 
 wire        config_enable_out_w = config_enable_q;
 
@@ -226,8 +226,8 @@ wire        config_enable_out_w = config_enable_q;
 //-----------------------------------------------------------------
 reg status_wr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     status_wr_q <= 1'b0;
 else if (write_en_w && (wr_addr_w[7:0] == `STATUS))
     status_wr_q <= 1'b1;
@@ -247,8 +247,8 @@ wire [15:0]  status_h_pos_out_w = wr_data_q[`STATUS_H_POS_R];
 //-----------------------------------------------------------------
 reg frame_buffer_wr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     frame_buffer_wr_q <= 1'b0;
 else if (write_en_w && (wr_addr_w[7:0] == `FRAME_BUFFER))
     frame_buffer_wr_q <= 1'b1;
@@ -258,11 +258,11 @@ else
 // frame_buffer_addr [internal]
 reg [23:0]  frame_buffer_addr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     frame_buffer_addr_q <= (VIDEO_FB_RAM / 256);
 else if (write_en_w && (wr_addr_w[7:0] == `FRAME_BUFFER))
-    frame_buffer_addr_q <= s_axi_wdata[`FRAME_BUFFER_ADDR_R];
+    frame_buffer_addr_q <= cfg_wdata_i[`FRAME_BUFFER_ADDR_R];
 
 wire [23:0]  frame_buffer_addr_out_w = frame_buffer_addr_q;
 
@@ -280,7 +280,7 @@ always @ *
 begin
     data_r = 32'b0;
 
-    case (s_axi_araddr[7:0])
+    case (cfg_araddr_i[7:0])
 
     `CONFIG:
     begin
@@ -307,45 +307,45 @@ end
 //-----------------------------------------------------------------
 reg rvalid_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     rvalid_q <= 1'b0;
 else if (read_en_w)
     rvalid_q <= 1'b1;
-else if (s_axi_rready)
+else if (cfg_rready_i)
     rvalid_q <= 1'b0;
 
-assign s_axi_rvalid = rvalid_q;
+assign cfg_rvalid_o = rvalid_q;
 
 //-----------------------------------------------------------------
 // Retime read response
 //-----------------------------------------------------------------
 reg [31:0] rd_data_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     rd_data_q <= 32'b0;
-else if (!s_axi_rvalid || s_axi_rready)
+else if (!cfg_rvalid_o || cfg_rready_i)
     rd_data_q <= data_r;
 
-assign s_axi_rdata = rd_data_q;
-assign s_axi_rresp = 2'b0;
+assign cfg_rdata_o = rd_data_q;
+assign cfg_rresp_o = 2'b0;
 
 //-----------------------------------------------------------------
 // BVALID
 //-----------------------------------------------------------------
 reg bvalid_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     bvalid_q <= 1'b0;
 else if (write_en_w)
     bvalid_q <= 1'b1;
-else if (s_axi_bready)
+else if (cfg_bready_i)
     bvalid_q <= 1'b0;
 
-assign s_axi_bvalid = bvalid_q;
-assign s_axi_bresp  = 2'b0;
+assign cfg_bvalid_o = bvalid_q;
+assign cfg_bresp_o  = 2'b0;
 
 
 wire status_wr_req_w = status_wr_q;
@@ -418,16 +418,16 @@ reg        h_sync_q;
 reg        v_sync_q;
 reg        active_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     h_pos_q  <= 12'b0;
 else if (h_pos_q == H_MAX)
     h_pos_q  <= 12'b0;
 else
     h_pos_q  <= h_pos_q + 12'd1;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     v_pos_q  <= 12'b0;
 else if (h_pos_q == H_MAX)
 begin
@@ -437,16 +437,16 @@ begin
         v_pos_q  <= v_pos_q + 12'd1;
 end
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     h_sync_q  <= 1'b0;
 else if (h_pos_q >= H_SYNC_START && h_pos_q < H_SYNC_END)
     h_sync_q  <= 1'b1;
 else
     h_sync_q  <= 1'b0;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     v_sync_q  <= 1'b0;
 else if (v_pos_q >= V_SYNC_START && v_pos_q < V_SYNC_END)
     v_sync_q  <= 1'b1;
@@ -469,11 +469,11 @@ wire        pixel_pop_w    = pixel_accept_w || ~active_q;
 dvi_framebuffer_fifo
 u_fifo
 (
-     .clk_i(clk)
-    ,.rst_i(rst)
+     .clk_i(clk_i)
+    ,.rst_i(rst_i)
 
-    ,.push_i(m_axi_rvalid)
-    ,.data_in_i(m_axi_rdata)
+    ,.push_i(outport_rvalid_i)
+    ,.data_in_i(outport_rdata_i)
     ,.accept_o()
 
     ,.valid_o(pixel_valid_w)
@@ -484,8 +484,8 @@ u_fifo
 //-----------------------------------------------------------------
 // Enable
 //-----------------------------------------------------------------
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     active_q  <= 1'b0;
 else if (pixel_accept_w && !pixel_valid_w)
     active_q  <= 1'b0; // Underrun - abort until next frame
@@ -499,15 +499,15 @@ else if (!config_enable_out_w)
 //-----------------------------------------------------------------
 reg [15:0] allocated_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     allocated_q  <= 16'b0;
-else if (m_axi_arvalid && m_axi_arready)
+else if (outport_arvalid_o && outport_arready_i)
 begin
     if (pixel_valid_w && pixel_pop_w)
-        allocated_q  <= allocated_q + {6'b0, m_axi_arlen, 2'b0};
+        allocated_q  <= allocated_q + {6'b0, outport_arlen_o, 2'b0};
     else
-        allocated_q  <= allocated_q + {6'b0, (m_axi_arlen + 8'd1), 2'b0};
+        allocated_q  <= allocated_q + {6'b0, (outport_arlen_o + 8'd1), 2'b0};
 end
 else if (pixel_valid_w && pixel_pop_w)
     allocated_q  <= allocated_q - 16'd4;
@@ -521,18 +521,18 @@ wire [31:0] frame_addr_w = {frame_buffer_addr_out_w, 8'b0};
 reg        arvalid_q;
 reg [31:0] araddr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     arvalid_q <= 1'b0;
-else if (m_axi_arvalid && m_axi_arready)
+else if (outport_arvalid_o && outport_arready_i)
     arvalid_q <= 1'b0;
-else if (!m_axi_arvalid && fifo_space_w && active_q)
+else if (!outport_arvalid_o && fifo_space_w && active_q)
     arvalid_q <= 1'b1;
 
-assign m_axi_arvalid = arvalid_q;
+assign outport_arvalid_o = arvalid_q;
 
 // Calculate number of bytes being fetch (burst length x interface width)
-wire [31:0] fetch_bytes_w = {22'b0, (m_axi_arlen + 8'd1), 2'b0};
+wire [31:0] fetch_bytes_w = {22'b0, (outport_arlen_o + 8'd1), 2'b0};
 
 reg [11:0] fetch_h_pos_q;
 reg [11:0] fetch_v_pos_q;
@@ -546,10 +546,10 @@ localparam H_FETCHES_LINE_X2   = ((H_REZ * 2) / BURST_LEN) / 2;
 wire last_fetch_w = config_x2_mode_out_w ? ((fetch_h_pos_q == (H_FETCHES_LINE_X2 - 1)) && (fetch_v_pos_q == (V_REZ - 1))) :
                                            ((fetch_h_pos_q == (H_FETCHES_LINE - 1))    && (fetch_v_pos_q == (V_REZ - 1)));
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     fetch_h_pos_q    <= 12'b0;
-else if (m_axi_arvalid && m_axi_arready)
+else if (outport_arvalid_o && outport_arready_i)
 begin
     if (config_x2_mode_out_w && fetch_h_pos_q == (H_FETCHES_LINE_X2 - 1))
         fetch_h_pos_q    <= 12'b0;
@@ -561,10 +561,10 @@ end
 else if (!active_q)
     fetch_h_pos_q    <= 12'b0;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     fetch_v_pos_q    <= 12'b0;
-else if (m_axi_arvalid && m_axi_arready)
+else if (outport_arvalid_o && outport_arready_i)
 begin
     if ((config_x2_mode_out_w && fetch_h_pos_q == (H_FETCHES_LINE_X2 - 1)) ||
        (!config_x2_mode_out_w && fetch_h_pos_q == (H_FETCHES_LINE - 1)))
@@ -579,10 +579,10 @@ else if (!active_q)
     fetch_v_pos_q    <= 12'b0;
 
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     araddr_q <= 32'b0;
-else if (m_axi_arvalid && m_axi_arready)
+else if (outport_arvalid_o && outport_arready_i)
 begin
     if (last_fetch_w)
         araddr_q  <= frame_addr_w;
@@ -594,47 +594,57 @@ end
 else if (!active_q)
     araddr_q <= frame_addr_w;
 
-assign m_axi_araddr  = araddr_q;
-assign m_axi_arburst = 2'b01;
-assign m_axi_arid    = 4'd0;
-assign m_axi_arlen   = (BURST_LEN / 4) - 1;
+assign outport_araddr_o  = araddr_q;
+assign outport_arburst_o = 2'b01;
+assign outport_arid_o    = 4'd0;
+assign outport_arlen_o   = (BURST_LEN / 4) - 1;
 
-assign m_axi_rready  = 1'b1;
+assign outport_rready_o  = 1'b1;
 
 // Unused
-assign m_axi_awvalid = 1'b0;
-assign m_axi_awaddr  = 32'b0;
-assign m_axi_awid    = 4'b0;
-assign m_axi_awlen   = 8'b0;
-assign m_axi_awburst = 2'b0;
-assign m_axi_wvalid  = 1'b0;
-assign m_axi_wdata   = 32'b0;
-assign m_axi_wstrb   = 4'b0;
-assign m_axi_wlast   = 1'b0;
-assign m_axi_bready  = 1'b0;
+assign outport_awvalid_o = 1'b0;
+assign outport_awaddr_o  = 32'b0;
+assign outport_awid_o    = 4'b0;
+assign outport_awlen_o   = 8'b0;
+assign outport_awburst_o = 2'b0;
+assign outport_wvalid_o  = 1'b0;
+assign outport_wdata_o   = 32'b0;
+assign outport_wstrb_o   = 4'b0;
+assign outport_wlast_o   = 1'b0;
+assign outport_bready_o  = 1'b0;
 
 //-----------------------------------------------------------------
 // RGB expansion
 //-----------------------------------------------------------------
 reg word_sel_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     word_sel_q  <= 1'b0;
 else if (!blanking_w && (h_pos_q[0] || !config_x2_mode_out_w))
     word_sel_q  <= ~word_sel_q;
 else if (!active_q)
     word_sel_q  <= 1'b0;
 
+// wire [7:0] blue_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
+//                        word_sel_q                   ? {pixel_data_w[4+16:0+16],   3'b0} : 
+//                                                       {pixel_data_w[4:0],         3'b0};
+// wire [7:0] green_w  = (config_enable_out_w == 1'b0) ? 8'b0 : 
+//                        word_sel_q                   ? {pixel_data_w[10+16:5+16],  2'b0} : 
+//                                                       {pixel_data_w[10:5],        2'b0};
+// wire [7:0] red_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
+//                        word_sel_q                   ? {pixel_data_w[15+16:11+16], 3'b0} : 
+//                                                       {pixel_data_w[15:11],       3'b0};
+
 wire [7:0] blue_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[4+16:0+16],   3'b0} : 
-                                                      {pixel_data_w[4:0],         3'b0};
+                       word_sel_q                   ? {pixel_data_w[4 + 16 +: 4],   4'b0} : 
+                                                      {pixel_data_w[4 +: 4],         4'b0};
 wire [7:0] green_w  = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[10+16:5+16],  2'b0} : 
-                                                      {pixel_data_w[10:5],        2'b0};
+                       word_sel_q                   ? {pixel_data_w[8 + 16 +: 4],  4'b0} : 
+                                                      {pixel_data_w[8 +: 4],        4'b0};
 wire [7:0] red_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[15+16:11+16], 3'b0} : 
-                                                      {pixel_data_w[15:11],       3'b0};
+                       word_sel_q                   ? {pixel_data_w[12 + 16 +: 4], 4'b0} : 
+                                                      {pixel_data_w[12 +: 4],       4'b0};
 
 assign pixel_accept_w = ~blanking_w & word_sel_q & (h_pos_q[0] || !config_x2_mode_out_w) & active_q;
 
@@ -643,19 +653,19 @@ assign pixel_accept_w = ~blanking_w & word_sel_q & (h_pos_q[0] || !config_x2_mod
 //-----------------------------------------------------------------
 dvi u_dvi
 (
-    .clk_i(clk),
-    .rst_i(rst),
-    .clk_x5_i(clk_x5),
+    .clk_i(clk_i),
+    .rst_i(rst_i),
+    .clk_x5_i(clk_x5_i),
     .vga_red_i(red_w),
     .vga_green_i(green_w),
     .vga_blue_i(blue_w),
     .vga_blank_i(blanking_w),
     .vga_hsync_i(h_sync_q),
     .vga_vsync_i(v_sync_q),
-    .dvi_red_o(dvi_red),
-    .dvi_green_o(dvi_green),
-    .dvi_blue_o(dvi_blue),
-    .dvi_clock_o(dvi_clock)
+    .dvi_red_o(dvi_red_o),
+    .dvi_green_o(dvi_green_o),
+    .dvi_blue_o(dvi_blue_o),
+    .dvi_clock_o(dvi_clock_o)
 );
 
 //-----------------------------------------------------------------
@@ -663,15 +673,15 @@ dvi u_dvi
 //-----------------------------------------------------------------
 reg intr_q;
 
-always @ (posedge clk or posedge rst)
-if (rst)
+always @ (posedge clk_i or posedge rst_i)
+if (rst_i)
     intr_q <= 1'b0;
 else if (config_int_en_sof_out_w && fetch_h_pos_q == 12'b0 && fetch_v_pos_q == 12'b0)
     intr_q <= 1'b1;
 else
     intr_q <= 1'b0;
 
-assign intr = intr_q;
+assign intr_o = intr_q;
 
 
 endmodule
