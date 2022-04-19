@@ -60,10 +60,9 @@ private:
         static constexpr StreamCommandType RR_FOG_LUT_STREAM   = 0x5000'0000;
 
         // Immediate values
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_32x32     = RR_TEXTURE_STREAM | 0x0011;
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_64x64     = RR_TEXTURE_STREAM | 0x0022;
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_128x128   = RR_TEXTURE_STREAM | 0x0044;
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_256x256   = RR_TEXTURE_STREAM | 0x0088;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_X_POS     = 0;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_Y_POS     = 8;
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS  = 16;
 
         static constexpr StreamCommandType RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR = 0x0000;
         static constexpr StreamCommandType RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR = 0x0001;
@@ -139,7 +138,6 @@ public:
 
     bool useTexture(const uint32_t texAddr, const uint32_t texSize, const uint32_t texWidth, const uint32_t texHeight)
     {
-        (void)texHeight;
         bool ret = false;
         if (openNewStreamSection())
         {
@@ -158,22 +156,15 @@ public:
             }
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
-                if (texWidth == 32)
-                {
-                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_32x32;
-                }
-                else if (texWidth == 64)
-                {
-                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_64x64;
-                }
-                else if (texWidth == 128)
-                {
-                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_128x128;
-                }
-                else if (texWidth == 256)
-                {
-                    *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM_256x256;
-                }
+                const uint32_t texWidthOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texWidth))) - 1) << StreamCommand::RR_TEXTURE_STREAM_X_POS;
+                const uint32_t texHeightOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texHeight))) - 1) << StreamCommand::RR_TEXTURE_STREAM_Y_POS;
+                const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
+
+                *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM 
+                    | texWidthOneHot
+                    | texHeightOneHot
+                    | texSizeLog2;
+
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
                 m_wasLastCommandATextureCommand = true;

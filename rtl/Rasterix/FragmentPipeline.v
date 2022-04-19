@@ -48,7 +48,8 @@ module FragmentPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output reg  [31:0] texelIndex,
+    output reg [15:0] texelX,
+    output reg [15:0] texelY,
     input  wire [15:0] texel,
 
     // Frame buffer access
@@ -283,9 +284,6 @@ module FragmentPipeline
 
         if (step_convert_tvalid)
         begin
-            textureS = clampTexture(step_convert_texture_s[0 +: 24], confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
-            textureT = clampTexture(step_convert_texture_t[0 +: 24], confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
-
             // Clamp z
             if (step_convert_depth_z[31])
             begin
@@ -303,7 +301,9 @@ module FragmentPipeline
             stepCalculatePerspectiveCorrectionfbIndex <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
-            texelIndex <= {textureT, textureS};
+
+            texelX <= clampTexture(step_convert_texture_s[0 +: 24], confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
+            texelY <= clampTexture(step_convert_texture_t[0 +: 24], confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
 
             stepCalculatePerspectiveCorrectionTriangleColor <= {
                 // clamp colors 

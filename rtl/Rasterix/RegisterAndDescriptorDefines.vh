@@ -31,7 +31,7 @@
 ////////////////////////////
 // An operation contains an OP and an immediate value. The prototype of an operation looks like the following
 //  +---------------------------------------+
-//  | 4 OP | 12 bit immediate value         |
+//  | 4 OP | 28 bit immediate value         |
 //  +---------------------------------------+
 localparam OP_NOP_STREAM = 0;
 localparam OP_TEXTURE_STREAM = 1;
@@ -51,25 +51,26 @@ localparam OP_IMM_SIZE = 28;
 // OP_TRIANGLE_STREAM
 // Immediate value contains size of triangle in bytes (inclusive the additional bytes which are required for CMD_AXIS bus alignment).
 //  +--------------------------------+
-//  | 4 bit OP | 12 bit size in bytes|
+//  | 4 bit OP | 28 bit size in bytes|
 //  +--------------------------------+
 
 // OP_TEXTURE_STREAM
-//  +-----------------------------------------------------+
-//  | 4 bit OP | 4 bit reserved | 4 bit mode | 4 bit size |
-//  +-----------------------------------------------------+
-// The size uses also the OP_TEXTURE_STREAM_MODE defines.
-localparam TEXTURE_STREAM_SIZE_POS = 0;
-localparam TEXTURE_STREAM_MODE_POS = 4;
-localparam TEXTURE_STREAM_IMM_SIZE = 4;
-`define OP_TEXTURE_STREAM_MODE_32x32   4'b0001 // When used for size: expects after the command 32x32x2 bytes of texture data
-`define OP_TEXTURE_STREAM_MODE_64x64   4'b0010 // When used for size: expects after the command 64x64x2 bytes of texture data
-`define OP_TEXTURE_STREAM_MODE_128x128 4'b0100 // When used for size: expects after the command 128x128x2 bytes of texture data
-`define OP_TEXTURE_STREAM_MODE_256x256 4'b1000 // When used for size: expects after the command 256x256x2 bytes of texture data
+//  +---------------------------------------------------------------------+
+//  | 4 bit OP | 4 bit reserved | 8 bit size | 8 bit height | 8 bit width |
+//  +---------------------------------------------------------------------+
+// Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
+// Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB, ...
+localparam TEXTURE_STREAM_WIDTH_POS = 0;
+localparam TEXTURE_STREAM_WIDTH_SIZE = 8;
+localparam TEXTURE_STREAM_HEIGHT_POS = 8;
+localparam TEXTURE_STREAM_HEIGHT_SIZE = 8;
+localparam TEXTURE_STREAM_SIZE_POS = 16;
+localparam TEXTURE_STREAM_SIZE_SIZE = 8;
+
 
 // OP_RENDER_CONFIG
 //  +-----------------------------+
-//  | 4 bit OP | 12 register addr |
+//  | 4 bit OP | 28 register addr |
 //  +-----------------------------+
 localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
 localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
@@ -80,7 +81,7 @@ localparam OP_RENDER_CONFIG_FOG_COLOR = 5;
 
 // OP_FRAMEBUFFER
 //  +----------------------------------------------------------------------------------------------------------------------------------+
-//  | 4 bit OP | 6 bit reserved | 1 bit depth buffer select | 1 bit color buffer select | 2 bit reserved | 1 bit memset | 1 bit commit |
+//  | 4 bit OP | 22 bit reserved | 1 bit depth buffer select | 1 bit color buffer select | 2 bit reserved | 1 bit memset | 1 bit commit |
 //  +----------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 localparam OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer (color buffer) content via the framebuffer_axis 

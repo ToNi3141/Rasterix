@@ -17,7 +17,7 @@
 
 module TextureBuffer #(
     // Width of the write port
-    parameter STREAM_WIDTH = 16,
+    parameter STREAM_WIDTH = 32,
 
     // Size in bytes in power of two
     parameter SIZE = 14,
@@ -32,16 +32,14 @@ module TextureBuffer #(
     input  wire                         clk,
     input  wire                         reset,
 
-    // Texture mode
-    // 4'b0001 32x32
-    // 4'b0010 64x64
-    // 4'b0100 128x128
-    // 4'b1000 256x256 (right now not supported)
-    input  wire [ 3 : 0]                mode,
+    // Texture size
+    input  wire [ 7 : 0]                textureSizeX,
+    input  wire [ 7 : 0]                textureSizeY,
 
     // Texture Read
     output wire [PIXEL_WIDTH - 1 : 0]   texel,
-    input  wire [31 : 0]                texelIndex,
+    input  wire [15 : 0]                texelX,
+    input  wire [15 : 0]                texelY,
 
     // Texture Write
     input  wire                         s_axis_tvalid,
@@ -49,11 +47,6 @@ module TextureBuffer #(
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
 );
-`ifdef UP5K
-`define RAM_MODULE SinglePortRam32k
-`else
-`define RAM_MODULE DualPortRam
-`endif
 `include "RegisterAndDescriptorDefines.vh"
 
     reg  [ADDR_WIDTH - 1 : 0]       memWriteAddr = 0;
@@ -62,8 +55,7 @@ module TextureBuffer #(
     reg  [SIZE_IN_WORDS - 1 : 0]    texelIndexConf;
     reg  [SIZE_IN_WORDS - 1 : 0]    texelIndexConfDelay;
 
-
-    `RAM_MODULE #(
+    DualPortRam #(
         .MEM_SIZE_BYTES(SIZE),
         .MEM_WIDTH(STREAM_WIDTH),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
@@ -84,35 +76,54 @@ module TextureBuffer #(
         .readAddr(memReadAddr)
     );
 
-    generate
-        if (STREAM_WIDTH == 16)
-        begin
-            assign memReadAddr = texelIndexConf;
-            assign texel = memReadData;
-        end
-        else
-        begin
-            assign memReadAddr = texelIndexConf[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddr = texelIndexConf[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
 
-            // Note: The memReadData is one clock cycle delayed, therefore we have to use the delayed texel index
-            assign texel = memReadData[texelIndexConfDelay[0 +: ADDR_WIDTH_DIFF] * PIXEL_WIDTH +: PIXEL_WIDTH];
-        end
-    endgenerate
-
+    // Note: The memReadData is one clock cycle delayed, therefore we have to use the delayed texel index
+    assign texel = memReadData[texelIndexConfDelay[0 +: ADDR_WIDTH_DIFF] * PIXEL_WIDTH +: PIXEL_WIDTH];
 
     always @*
-    begin
-        case (mode)
-            `OP_TEXTURE_STREAM_MODE_32x32: // 32x32px texture
-                texelIndexConf = {4'b0, texelIndex[26 +: 5], texelIndex[10 +: 5]};
-            `OP_TEXTURE_STREAM_MODE_64x64: // 64x64px texture
-                texelIndexConf = {2'b0, texelIndex[25 +: 6], texelIndex[9 +: 6]};
-            `OP_TEXTURE_STREAM_MODE_128x128: // 128x128px texture
-                texelIndexConf = {texelIndex[24 +: 7], texelIndex[8 +: 7]}; 
-            // `OP_TEXTURE_STREAM_MODE_256x256: // 256x256px texture (right now not supported)
-            //     texelIndexConf = {texelIndex[23 +: 8], texelIndex[7 +: 8]}; 
+    begin : TexAddrCalc
+        reg [7 : 0] addrY;
+        casez (textureSizeY)
+            8'b???????1:
+                addrY = {7'h0, texelY[14 +: 1]};
+            8'b??????1?:
+                addrY = {6'h0, texelY[13 +: 2]};
+            8'b?????1??:
+                addrY = {5'h0, texelY[12 +: 3]};
+            8'b????1???:
+                addrY = {4'h0, texelY[11 +: 4]};
+            8'b???1????:
+                addrY = {3'h0, texelY[10 +: 5]};
+            8'b??1?????:
+                addrY = {2'h0, texelY[ 9 +: 6]};
+            8'b?1??????:
+                addrY = {1'h0, texelY[ 8 +: 7]};
+            8'b1???????:
+                addrY = {      texelY[ 7 +: 8]};
             default:
-                texelIndexConf = 0;
+                addrY = 0;
+        endcase
+
+        casez (textureSizeX)
+            8'b???????1:
+                texelIndexConf = {7'h0, addrY, texelX[14 +: 1]};
+            8'b??????1?:
+                texelIndexConf = {6'h0, addrY, texelX[13 +: 2]};
+            8'b?????1??:
+                texelIndexConf = {5'h0, addrY, texelX[12 +: 3]};
+            8'b????1???:
+                texelIndexConf = {4'h0, addrY, texelX[11 +: 4]};
+            8'b???1????:
+                texelIndexConf = {3'h0, addrY, texelX[10 +: 5]};
+            8'b??1?????:
+                texelIndexConf = {2'h0, addrY, texelX[ 9 +: 6]};
+            8'b?1??????:
+                texelIndexConf = {1'h0, addrY, texelX[ 8 +: 7]};
+            8'b1???????:
+                texelIndexConf = {      addrY, texelX[ 7 +: 8]};
+            default:
+                texelIndexConf = {8'h0, addrY};
         endcase
     end
 

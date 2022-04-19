@@ -393,9 +393,6 @@ public:
 
     virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) override
     {
-        if (texWidth != texHeight)
-            return false;
-
         const uint32_t textureSlot = m_textureLut[texId];
 
         // If the current ID has already a bound texture slot, then we have to mark it for deletion.
