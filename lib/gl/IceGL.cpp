@@ -470,8 +470,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
     if (level != 0
             || format == GL_ALPHA
             || format == GL_LUMINANCE
-            || format == GL_LUMINANCE_ALPHA
-            || height != width) // Only square textures are supported
+            || format == GL_LUMINANCE_ALPHA)
     {
         m_error = GL_SPEC_DEVIATION;
         return;

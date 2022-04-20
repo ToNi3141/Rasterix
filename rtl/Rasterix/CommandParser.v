@@ -36,7 +36,8 @@ module CommandParser #(
 
     // Rasterizer
     // Configs
-    output reg  [ 3:0]  confTextureMode,
+    output reg  [ 7:0]  confTextureSizeX,
+    output reg  [ 7:0]  confTextureSizeY,
     output wire [15:0]  confReg1,
     output wire [15:0]  confReg2,
     output wire [15:0]  confTextureEnvColor,
@@ -173,31 +174,13 @@ module CommandParser #(
                     end
                     OP_TEXTURE_STREAM:
                     begin
-                        confTextureMode <= s_cmd_axis_tdata[TEXTURE_STREAM_MODE_POS +: TEXTURE_STREAM_IMM_SIZE];
-                        case (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_IMM_SIZE])
-                            `OP_TEXTURE_STREAM_MODE_32x32: 
-                                streamCounter <= (32 * 32 * 2) / DATABUS_SCALE_FACTOR;
-                            `OP_TEXTURE_STREAM_MODE_64x64: 
-                                streamCounter <= (64 * 64 * 2) / DATABUS_SCALE_FACTOR;
-                            `OP_TEXTURE_STREAM_MODE_128x128:
-                                streamCounter <= (128 * 128 * 2) / DATABUS_SCALE_FACTOR;
-                            `OP_TEXTURE_STREAM_MODE_256x256:
-                                streamCounter <= (256 * 256 * 2) / DATABUS_SCALE_FACTOR; 
-                            default:
-                            begin
-                            end
-                        endcase
+                        confTextureSizeX <= s_cmd_axis_tdata[TEXTURE_STREAM_WIDTH_POS +: TEXTURE_STREAM_WIDTH_SIZE];
+                        confTextureSizeY <= s_cmd_axis_tdata[TEXTURE_STREAM_HEIGHT_POS +: TEXTURE_STREAM_HEIGHT_SIZE];
+                        streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
 
-                        if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_IMM_SIZE])
+                        if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin
-                            if (TEXTURE_STREAM_WIDTH == 16)
-                            begin
-                                state <= EXEC_TEXTURE_STREAM_16;
-                            end
-                            else 
-                            begin
-                                state <= EXEC_TEXTURE_STREAM;
-                            end
+                            state <= EXEC_TEXTURE_STREAM;
                         end
                         else
                         begin
