@@ -33,6 +33,7 @@ void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 void glScalef(GLfloat x, GLfloat y, GLfloat z);
 void glLoadIdentity();
 void glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far);
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far);
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void glDepthRange(GLclampd zNear, GLclampd zFar);
 void glBegin(GLenum mode);

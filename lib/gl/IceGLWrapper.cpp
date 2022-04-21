@@ -30,6 +30,7 @@ void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z) {iceGlCWrap->glRo
 void glScalef(GLfloat x, GLfloat y, GLfloat z) {iceGlCWrap->glScalef(x, y, z);}
 void glLoadIdentity() {iceGlCWrap->glLoadIdentity();}
 void glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far) {iceGlCWrap->glOrthof(left, right, bottom, top, near, far);}
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far) {iceGlCWrap->glOrthof(left, right, bottom, top, near, far);}
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {iceGlCWrap->glViewport(x, y, width, height);}
 void glDepthRange(GLclampd zNear, GLclampd zFar) {iceGlCWrap->glDepthRange(zNear, zFar);}
 void glBegin(GLenum mode) {iceGlCWrap->glBegin(mode);}

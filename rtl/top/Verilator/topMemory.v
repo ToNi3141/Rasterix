@@ -46,7 +46,7 @@ module top #(
     wire [CMD_STREAM_WIDTH - 1 : 0] m_cmd_axis_tdata;
 
     localparam ID_WIDTH = 8;
-    localparam ADDR_WIDTH = 20;
+    localparam ADDR_WIDTH = 24;
     localparam DATA_WIDTH = CMD_STREAM_WIDTH;
     localparam STRB_WIDTH = CMD_STREAM_WIDTH / 8;
     wire [ID_WIDTH-1:0]    s_axi_awid;
