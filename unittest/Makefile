@@ -25,5 +25,10 @@ functionInterpolator:
 	-make -C obj_dir -f VFunctionInterpolator.mk
 	./obj_dir/VFunctionInterpolator
 
+textureBuffer:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/TextureBuffer.v --top-module TextureBuffer cpp/sim_TextureBuffer.cpp -I../rtl/Rasterix/
+	-make -C obj_dir -f VTextureBuffer.mk
+	./obj_dir/VTextureBuffer
+
 .SECONDARY:
 .PHONY: all clean

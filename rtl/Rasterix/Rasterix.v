@@ -224,8 +224,8 @@ module Rasterix #(
     defparam regBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
     TextureBuffer texCache (
-        .clk(aclk),
-        .reset(!resetn),
+        .aclk(aclk),
+        .resetn(resetn),
         .textureSizeX(textureSizeX),
         .textureSizeY(textureSizeY),
 
@@ -234,9 +234,12 @@ module Rasterix #(
         .s_axis_tlast(s_texture_axis_tlast),
         .s_axis_tdata(s_texture_axis_tdata),
 
-        .texel(texel),
         .texelX(texelX),
-        .texelY(texelY)
+        .texelY(texelY),
+        .texel00(texel),
+        .texel01(),
+        .texel10(),
+        .texel11()
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
