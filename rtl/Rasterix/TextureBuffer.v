@@ -167,10 +167,13 @@ module TextureBuffer #(
         reg [7 : 0] addrY0;
         reg [7 : 0] addrY1;
 
-        reg [15 : 0] texelY0 = texelY;
+        reg [15 : 0] texelY0;
         reg [15 : 0] texelY1;
-        reg [15 : 0] texelX0 = texelX;
+        reg [15 : 0] texelX0;
         reg [15 : 0] texelX1;
+        
+        texelY0 = texelY;
+        texelX0 = texelX;
 
         // Select Y coordinate
         case (textureSizeY)

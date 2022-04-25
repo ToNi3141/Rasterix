@@ -84,15 +84,15 @@ module TrueDualPortRam #(
                                                     // on the data output of port A.
 
                 .douta(writeDataOut[((i + 1) * WRITE_STROBE_WIDTH) - 1 : i * WRITE_STROBE_WIDTH]),                   // READ_DATA_WIDTH_A-bit output: Data output for port A read operations.
-                .doutb(readDAta[((i + 1) * WRITE_STROBE_WIDTH) - 1 : i * WRITE_STROBE_WIDTH]),                   // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
+                .doutb(readData[((i + 1) * WRITE_STROBE_WIDTH) - 1 : i * WRITE_STROBE_WIDTH]),                   // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
                 .sbiterra(),             // 1-bit output: Status signal to indicate single bit error occurrence
                                                     // on the data output of port A.
 
                 .sbiterrb(),             // 1-bit output: Status signal to indicate single bit error occurrence
                                                     // on the data output of port B.
 
-                .addra(addra),                   // ADDR_WIDTH_A-bit input: Address for port A write and read operations.
-                .addrb(addrb),                   // ADDR_WIDTH_B-bit input: Address for port B write and read operations.
+                .addra(writeAddr),                   // ADDR_WIDTH_A-bit input: Address for port A write and read operations.
+                .addrb(readAddr),                   // ADDR_WIDTH_B-bit input: Address for port B write and read operations.
                 .clka(clk),                     // 1-bit input: Clock signal for port A. Also clocks port B when
                                                     // parameter CLOCKING_MODE is "common_clock".
 
