@@ -337,6 +337,8 @@ module FragmentPipeline
         stepWaitForMemoryValid <= stepCalculatePerspectiveCorrectionValid;
     end
 
+    // The texture filtering requires 4 clock cycles + one clock cycle texture access (like the framebuffers)
+    // This is cycle one of the filtering
     reg                         stepReceiveFragColorValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepReceiveFragColorFbIndex = 0;
     reg [15 : 0]                stepReceiveFragColorDepthValue = 0;    
@@ -344,12 +346,10 @@ module FragmentPipeline
     reg [ 3 : 0]                stepReceiveFragColorFogIntensity = 0;
     reg [15 : 0]                stepReceiveFragColorDepthBufferVal = 0;
     reg [15 : 0]                stepReceiveFragColorColorFrag = 0;
-    reg [15 : 0]                stepReceiveFragColorTexel = 0;
     always @(posedge clk)
     begin
         stepReceiveFragColorFbIndex <= stepWaitForMemoryFbIndex;
         stepReceiveFragColorDepthValue <= stepWaitForMemoryDepthValue;
-        stepReceiveFragColorTexel <= texel;
         stepReceiveFragColorColorFrag <= colorIn;
         stepReceiveFragColorDepthBufferVal <= depthIn;
         stepReceiveFragColorFogIntensity <= stepWaitForMemoryFogIntensity;
@@ -357,6 +357,7 @@ module FragmentPipeline
         stepReceiveFragColorValid <= stepWaitForMemoryValid;
     end
 
+    // This are the last three cycles of the filtering
     wire                         stepWaitForTexValid;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepWaitForTexFbIndex;
     wire [15 : 0]                stepWaitForTexDepthValue;    
@@ -364,7 +365,6 @@ module FragmentPipeline
     wire [ 3 : 0]                stepWaitForTexFogIntensity;
     wire [15 : 0]                stepWaitForTexDepthBufferVal;
     wire [15 : 0]                stepWaitForTexColorFrag;
-    wire [15 : 0]                stepWaitForTexTexel;
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(3)) 
         wait_for_tex1 (.clk(clk), .in(stepReceiveFragColorValid), .out(stepWaitForTexValid));
@@ -386,9 +386,6 @@ module FragmentPipeline
 
     ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
         wait_for_tex7 (.clk(clk), .in(stepReceiveFragColorColorFrag), .out(stepWaitForTexColorFrag));
-
-    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
-        wait_for_tex8 (.clk(clk), .in(stepReceiveFragColorTexel), .out(stepWaitForTexTexel));
 
     // TexEnv
     reg                         stepTexEnvValid = 0;
@@ -437,10 +434,10 @@ module FragmentPipeline
         reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
 
         // Texture source color (Cs)
-        rs = stepWaitForTexTexel[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gs = stepWaitForTexTexel[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bs = stepWaitForTexTexel[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        as = stepWaitForTexTexel[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rs = texel[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gs = texel[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bs = texel[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        as = texel[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
         // Input of texture unit n (or in case of texture unit 0 it is the primary color of the triangle (Cf))
         // Currently we only have one texture unit, so Cp is Cf

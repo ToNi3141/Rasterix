@@ -1,5 +1,5 @@
 # Set here the path to your local verilator installation
-VERILATOR_PATH = /usr/local/Cellar/verilator/4.200/share/verilator
+VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
 
 ICEGL_PATH = ../../lib/gl
 VERILATOR_BUS_CONNECTOR_PATH = ../../unittest/cpp/include

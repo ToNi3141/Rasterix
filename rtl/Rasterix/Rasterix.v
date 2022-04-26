@@ -76,6 +76,12 @@ module Rasterix #(
     wire [ 7:0] textureSizeY;
     wire [15:0] texelX;
     wire [15:0] texelY;
+    wire [15:0] texel00;
+    wire [15:0] texel01;
+    wire [15:0] texel10;
+    wire [15:0] texel11;
+    wire [15:0] texelSubCoordX;
+    wire [15:0] texelSubCoordY;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -236,13 +242,29 @@ module Rasterix #(
 
         .texelX(texelX),
         .texelY(texelY),
-        .texel00(texel),
-        .texel01(),
-        .texel10(),
-        .texel11()
+        .texel00(texel00),
+        .texel01(texel01),
+        .texel10(texel10),
+        .texel11(texel11),
+        .texelSubCoordX(texelSubCoordX),
+        .texelSubCoordY(texelSubCoordY)
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
+
+    TextureFilter texFilter (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .texel00(texel00),
+        .texel01(texel01),
+        .texel10(texel10),
+        .texel11(texel11),
+        .texelSubCoordX(texelSubCoordX),
+        .texelSubCoordY(texelSubCoordY),
+
+        .texel(texel)
+    );
 
     FrameBuffer depthBuffer (  
         .clk(aclk),

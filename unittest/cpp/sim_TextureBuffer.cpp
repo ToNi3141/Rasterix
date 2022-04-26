@@ -132,8 +132,90 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
 
-
     // Destroy model
     delete top;
 }
 
+TEST_CASE("Check intensity attribute", "[TextureBuffer]")
+{
+    VTextureBuffer* top = new VTextureBuffer();
+    reset(top);
+
+
+    // 2x2 texture
+    // | 0xf000 | 0x0f00 |
+    // | 0x00f0 | 0x000f |
+    top->textureSizeX = 0x1;
+    top->textureSizeY = 0x1;
+
+    top->s_axis_tvalid = 1;
+    top->s_axis_tlast = 0;
+    top->s_axis_tdata = 0x0f00'f000;
+    clk(top);
+
+    top->s_axis_tvalid = 1;
+    top->s_axis_tlast = 1;
+    top->s_axis_tdata = 0x000f'00f0;
+    clk(top);
+
+    top->s_axis_tvalid = 0;
+    top->s_axis_tlast = 0;
+
+    // texel (0.0, 0.0)
+    top->texelX = 0x0000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+    // sub texel (0.0, 0.0)
+    REQUIRE(top->texelSubCoordX == 0x0); 
+    REQUIRE(top->texelSubCoordY == 0x0);
+
+
+    // To get the sub coordinate of (0.25, 0.0), we have to imagine the following things:
+    // In a 2x2 texture, the coordinate (0.0, 0.0) accesses texel (0, 0). The coordinate (0.5, 0.0) accesses (1, 0).
+    // Means, the distance between two texels is 0.5. If we want now the sub texel coordinate (0.25, 0.0) we have
+    // now to multiply the vector with the texel distance of 0.5 which results in (0.125, 0.0). If we want to convert this
+    // to access the texel (1, 0), we would have to add 0.5 to the x value which results in (0.625, 0.0).
+
+    // texel (0.125, 0.125) 
+    top->texelX = 0x1000;
+    top->texelY = 0x1000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+    // sub texel (0.25, 0.25)
+    REQUIRE(top->texelSubCoordX == 0x4000); 
+    REQUIRE(top->texelSubCoordY == 0x4000); 
+
+    // texel (0.125, 0.375) 
+    top->texelX = 0x1000;
+    top->texelY = 0x3000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+    // sub texel (0.25, 0.75)
+    REQUIRE(top->texelSubCoordX == 0x4000); 
+    REQUIRE(top->texelSubCoordY == 0xc000);
+
+    // texel (0.375, 0.125) 
+    top->texelX = 0x3000;
+    top->texelY = 0x1000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+    // sub texel (0.75, 0.25)
+    REQUIRE(top->texelSubCoordX == 0xc000);
+    REQUIRE(top->texelSubCoordY == 0x4000);
+
+    // Destroy model
+    delete top;
+}
