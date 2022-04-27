@@ -27,6 +27,8 @@ module TextureBuffer #(
     // Size in bytes in power of two
     parameter SIZE = 14,
     
+    localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
+
     localparam SUB_PIXEL_WIDTH = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4,
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
@@ -44,10 +46,10 @@ module TextureBuffer #(
     // Texture Read
     input  wire [15 : 0]                texelX,
     input  wire [15 : 0]                texelY,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel00,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel01,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel10,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel11,
+    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (x, y). X and Y are switched since the address is constructed like {texelY, texelX}
+    output wire [PIXEL_WIDTH - 1 : 0]   texel01, // (1, 0)
+    output wire [PIXEL_WIDTH - 1 : 0]   texel10, // (0, 1)
+    output wire [PIXEL_WIDTH - 1 : 0]   texel11, // (1, 1)
 
     // This is basically the faction of the pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
@@ -80,20 +82,20 @@ module TextureBuffer #(
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrEven1;
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrOdd1;
 
-    wire [(STREAM_WIDTH / 2) - 1 : 0] memReadDataEven0;
-    wire [(STREAM_WIDTH / 2) - 1 : 0] memReadDataOdd0;
-    wire [(STREAM_WIDTH / 2) - 1 : 0] memReadDataEven1;
-    wire [(STREAM_WIDTH / 2) - 1 : 0] memReadDataOdd1;
+    wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataEven0;
+    wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataOdd0;
+    wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataEven1;
+    wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataOdd1;
 
-    wire [(STREAM_WIDTH / 2) - 1 : 0] tdataEvenX;
-    wire [(STREAM_WIDTH / 2) - 1 : 0] tdataOddX;
+    wire [STREAM_WIDTH_HALF - 1 : 0] tdataEvenX;
+    wire [STREAM_WIDTH_HALF - 1 : 0] tdataOddX;
 
     reg  [15 : 0]                   texelSubCoordXReg;
     reg  [15 : 0]                   texelSubCoordYReg;
 
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
-        .MEM_WIDTH(STREAM_WIDTH / 2),
+        .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
     ) texCacheEvenX
@@ -104,7 +106,7 @@ module TextureBuffer #(
         .writeData(tdataEvenX),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrEven1),
-        .writeMask({(STREAM_WIDTH / 2 / PIXEL_WIDTH){1'b1}}),
+        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
         .writeDataOut(memReadDataEven1),
 
         .readData(memReadDataEven0),
@@ -113,7 +115,7 @@ module TextureBuffer #(
 
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
-        .MEM_WIDTH(STREAM_WIDTH / 2),
+        .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
     ) texCacheOddX
@@ -124,7 +126,7 @@ module TextureBuffer #(
         .writeData(tdataOddX),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrOdd1),
-        .writeMask({(STREAM_WIDTH / 2 / PIXEL_WIDTH){1'b1}}),
+        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
         .writeDataOut(memReadDataOdd1),
 
         .readData(memReadDataOdd0),
@@ -382,7 +384,7 @@ module TextureBuffer #(
         genvar i;
 
         // Stride for the even RAM
-        for (i = 0; i < STREAM_WIDTH / 2 / PIXEL_WIDTH; i = i + 1)
+        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH; i = i + 1)
         begin
             localparam ii = i * (PIXEL_WIDTH * 2);
             localparam jj = i * PIXEL_WIDTH;
@@ -390,7 +392,7 @@ module TextureBuffer #(
         end
 
         // Stride for the uneven RAM
-        for (i = 0; i < STREAM_WIDTH / 2 / PIXEL_WIDTH; i = i + 1)
+        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH; i = i + 1)
         begin
             localparam ii = (i * (PIXEL_WIDTH * 2)) + PIXEL_WIDTH;
             localparam jj = i * PIXEL_WIDTH;

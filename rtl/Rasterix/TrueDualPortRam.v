@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// This is a true dual port ram. The main difference to the DualPortRam wrapper
+// is the data out port on the write channel.
+// Pipelined: n/a
+// Depth: 1 cylce
 module TrueDualPortRam #(
     parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
@@ -27,7 +31,7 @@ module TrueDualPortRam #(
     input  wire                             clk,
     input  wire                             reset,
 
-    // Read/Write interface
+    // Write interface. When write is 0, writeDataOut can be used to read from this channel.
     input  wire [MEM_WIDTH - 1 : 0]         writeData,
     input  wire                             write,
     input  wire [MEM_SIZE - 1 : 0]          writeAddr,
