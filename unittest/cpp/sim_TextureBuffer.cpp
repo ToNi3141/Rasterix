@@ -43,12 +43,8 @@ void reset(VTextureBuffer* t)
     clk(t);
 }
 
-TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
+void uploadTexture(VTextureBuffer* top) 
 {
-    VTextureBuffer* top = new VTextureBuffer();
-    reset(top);
-
-
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
     // | 0x00f0 | 0x000f |
@@ -67,6 +63,17 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
+
+    top->clampToBorderX = 0;
+    top->clampToBorderY = 0;
+}
+
+TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
+{
+    VTextureBuffer* top = new VTextureBuffer();
+    reset(top);
+
+    uploadTexture(top);
 
     // (0, 0)
     top->texelX = 0;
@@ -141,25 +148,7 @@ TEST_CASE("Check intensity attribute", "[TextureBuffer]")
     VTextureBuffer* top = new VTextureBuffer();
     reset(top);
 
-
-    // 2x2 texture
-    // | 0xf000 | 0x0f00 |
-    // | 0x00f0 | 0x000f |
-    top->textureSizeX = 0x1;
-    top->textureSizeY = 0x1;
-
-    top->s_axis_tvalid = 1;
-    top->s_axis_tlast = 0;
-    top->s_axis_tdata = 0x0f00'f000;
-    clk(top);
-
-    top->s_axis_tvalid = 1;
-    top->s_axis_tlast = 1;
-    top->s_axis_tdata = 0x000f'00f0;
-    clk(top);
-
-    top->s_axis_tvalid = 0;
-    top->s_axis_tlast = 0;
+    uploadTexture(top);
 
     // texel (0.0, 0.0)
     top->texelX = 0x0000;

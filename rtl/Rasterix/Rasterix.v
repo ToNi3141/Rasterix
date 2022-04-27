@@ -242,6 +242,9 @@ module Rasterix #(
 
         .texelX(texelX),
         .texelY(texelY),
+        .clampToBorderX(1),
+        .clampToBorderY(1),
+
         .texel00(texel00),
         .texel01(texel01),
         .texel10(texel10),
