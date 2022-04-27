@@ -193,12 +193,12 @@ module TextureBuffer #(
 
     // Clamp texel quad
     assign texel00 = texelSelect00;
-    assign texel01 = (texelClampX)  ? texel00 
+    assign texel01 = (texelClampX)  ? texelSelect00 
                                     : texelSelect01;
-    assign texel10 = (texelClampY)  ? texel00 
+    assign texel10 = (texelClampY)  ? texelSelect00 
                                     : texelSelect10;
-    assign texel11 = (texelClampX)  ? texel01
-                                    : (texelClampY) ? texel10 
+    assign texel11 = (texelClampX)  ? texel10
+                                    : (texelClampY) ? texelSelect01 
                                                     : texelSelect11;
     
     always @*

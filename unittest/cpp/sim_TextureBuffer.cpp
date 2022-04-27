@@ -208,3 +208,135 @@ TEST_CASE("Check intensity attribute", "[TextureBuffer]")
     // Destroy model
     delete top;
 }
+
+TEST_CASE("clamp to border with x", "[TextureBuffer]")
+{
+    VTextureBuffer* top = new VTextureBuffer();
+    reset(top);
+
+    uploadTexture(top);
+
+    top->clampToBorderX = 1;
+    top->clampToBorderY = 0;
+
+    // texel (0.0, 0.0)
+    top->texelX = 0x0000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.5, 0.0)
+    top->texelX = 0x4000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.5, 0.5)
+    top->texelX = 0x4000;
+    top->texelY = 0x4000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x0f00);
+    REQUIRE(top->texel11 == 0x0f00);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("clamp to border with y", "[TextureBuffer]")
+{
+    VTextureBuffer* top = new VTextureBuffer();
+    reset(top);
+
+    uploadTexture(top);
+
+    top->clampToBorderX = 0;
+    top->clampToBorderY = 1;
+
+    // texel (0.0, 0.0)
+    top->texelX = 0x0000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.0, 0.5)
+    top->texelX = 0x0000;
+    top->texelY = 0x4000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.5, 0.5)
+    top->texelX = 0x4000;
+    top->texelY = 0x4000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x00f0);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x00f0);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
+{
+    VTextureBuffer* top = new VTextureBuffer();
+    reset(top);
+
+    uploadTexture(top);
+
+    top->clampToBorderX = 1;
+    top->clampToBorderY = 1;
+
+    // texel (0.0, 0.0)
+    top->texelX = 0x0000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.5, 0.0)
+    top->texelX = 0x4000;
+    top->texelY = 0x0000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.0, 0.5)
+    top->texelX = 0x0000;
+    top->texelY = 0x4000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // texel (0.5, 0.5)
+    top->texelX = 0x4000;
+    top->texelY = 0x4000;
+    clk(top);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
+
+    // Destroy model
+    delete top;
+}
