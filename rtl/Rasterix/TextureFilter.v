@@ -31,59 +31,59 @@ module TextureFilter #(
     input  wire [PIXEL_WIDTH - 1 : 0]   texel01,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel10,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel11,
-    input  wire [15 : 0]                texelSubCoordX,
-    input  wire [15 : 0]                texelSubCoordY,
+    input  wire [15 : 0]                texelSubCoordS,
+    input  wire [15 : 0]                texelSubCoordT,
 
     output wire [PIXEL_WIDTH - 1 : 0]   texel
 );
-    wire [15 : 0]               intensityDelayedY;
-    wire [PIXEL_WIDTH - 1 : 0]  mixedColorX0;
-    wire [PIXEL_WIDTH - 1 : 0]  mixedColorX1;
-    wire [15 : 0]               intensityX;
-    wire [15 : 0]               intensityY;
+    wire [15 : 0]               intensityDelayedT;
+    wire [PIXEL_WIDTH - 1 : 0]  mixedColorS0;
+    wire [PIXEL_WIDTH - 1 : 0]  mixedColorS1;
+    wire [15 : 0]               intensityS;
+    wire [15 : 0]               intensityT;
 
-    assign intensityX = 16'hffff - texelSubCoordX;
-    assign intensityY = 16'hffff - texelSubCoordY;
+    assign intensityS = 16'hffff - texelSubCoordS;
+    assign intensityT = 16'hffff - texelSubCoordT;
 
-    ColorInterpolator interpolatorX0 (
+    ColorInterpolator interpolatorS0 (
         .aclk(aclk),
         .resetn(resetn),
 
-        .intensity(intensityX),
+        .intensity(intensityS),
         .colorA(texel00),
         .colorB(texel01),
-        .mixedColor(mixedColorX0)
+        .mixedColor(mixedColorS0)
     );
 
-    ColorInterpolator interpolatorX1 (
+    ColorInterpolator interpolatorS1 (
         .aclk(aclk),
         .resetn(resetn),
 
-        .intensity(intensityX),
+        .intensity(intensityS),
         .colorA(texel10),
         .colorB(texel11),
-        .mixedColor(mixedColorX1)
+        .mixedColor(mixedColorS1)
     );
 
-    ColorInterpolator interpolatorY (
+    ColorInterpolator interpolatorT (
         .aclk(aclk),
         .resetn(resetn),
 
-        .intensity(intensityDelayedY),
-        .colorA(mixedColorX0),
-        .colorB(mixedColorX1),
+        .intensity(intensityDelayedT),
+        .colorA(mixedColorS0),
+        .colorB(mixedColorS1),
         .mixedColor(texel)
     );
 
-    // Delay intensityY by 2 clocks (to calculate the X interpolations)
+    // Delay intensityT by 2 clocks (to calculate the S interpolations)
     ValueDelay #(
         .VALUE_SIZE(16), 
         .DELAY(2)
     ) 
-    intensityYDelay (
+    intensityTDelay (
         .clk(aclk), 
-        .in(intensityY), 
-        .out(intensityDelayedY)
+        .in(intensityT), 
+        .out(intensityDelayedT)
     );
 
     // ValueDelay #(

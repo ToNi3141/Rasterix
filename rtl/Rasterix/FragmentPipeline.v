@@ -37,8 +37,8 @@ module FragmentPipeline
     // Shader configurations
     input  wire [15:0] confReg1,
     input  wire [15:0] confReg2,
-    input  wire        confTextureClampToBorderS,
-    input  wire        confTextureClampToBorderT,
+    input  wire        confTextureClampS,
+    input  wire        confTextureClampT,
     input  wire [15:0] confTextureEnvColor,
     input  wire [15:0] triangleStaticColor,
     input  wire [15:0] confFogColor,
@@ -50,8 +50,8 @@ module FragmentPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output reg  [15:0] texelX,
-    output reg  [15:0] texelY,
+    output reg  [15:0] texelS,
+    output reg  [15:0] texelT,
     input  wire [15:0] texel,
 
     // Frame buffer access
@@ -304,8 +304,8 @@ module FragmentPipeline
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
 
-            texelX <= clampTexture(step_convert_texture_s[0 +: 24], confTextureClampToBorderS);
-            texelY <= clampTexture(step_convert_texture_t[0 +: 24], confTextureClampToBorderT);
+            texelS <= clampTexture(step_convert_texture_s[0 +: 24], confTextureClampS);
+            texelT <= clampTexture(step_convert_texture_t[0 +: 24], confTextureClampT);
 
             stepCalculatePerspectiveCorrectionTriangleColor <= {
                 // clamp colors 

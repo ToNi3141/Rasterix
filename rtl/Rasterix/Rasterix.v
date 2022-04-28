@@ -72,18 +72,18 @@ module Rasterix #(
     ///////////////////////////
     // Texture access
     wire [15:0] texel;
-    wire [ 7:0] textureSizeX;
-    wire [ 7:0] textureSizeY;
-    wire        textureClampToBorderS;
-    wire        textureClampToBorderT;
-    wire [15:0] texelX;
-    wire [15:0] texelY;
+    wire [ 7:0] textureSizeS;
+    wire [ 7:0] textureSizeT;
+    wire        textureClampS;
+    wire        textureClampT;
+    wire [15:0] texelS;
+    wire [15:0] texelT;
     wire [15:0] texel00;
     wire [15:0] texel01;
     wire [15:0] texel10;
     wire [15:0] texel11;
-    wire [15:0] texelSubCoordX;
-    wire [15:0] texelSubCoordY;
+    wire [15:0] texelSubCoordS;
+    wire [15:0] texelSubCoordT;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -175,10 +175,10 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confTextureSizeX(textureSizeX),
-        .confTextureSizeY(textureSizeY),
-        .confTextureClampToBorderS(textureClampToBorderS),
-        .confTextureClampToBorderT(textureClampToBorderT),
+        .confTextureSizeS(textureSizeS),
+        .confTextureSizeT(textureSizeT),
+        .confTextureClampS(textureClampS),
+        .confTextureClampT(textureClampT),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
@@ -236,25 +236,25 @@ module Rasterix #(
     TextureBuffer texCache (
         .aclk(aclk),
         .resetn(resetn),
-        .textureSizeX(textureSizeX),
-        .textureSizeY(textureSizeY),
+        .textureSizeS(textureSizeS),
+        .textureSizeT(textureSizeT),
 
         .s_axis_tvalid(s_texture_axis_tvalid),
         .s_axis_tready(s_texture_axis_tready),
         .s_axis_tlast(s_texture_axis_tlast),
         .s_axis_tdata(s_texture_axis_tdata),
 
-        .texelX(texelX),
-        .texelY(texelY),
-        .clampToBorderX(textureClampToBorderS),
-        .clampToBorderY(textureClampToBorderT),
+        .texelS(texelS),
+        .texelT(texelT),
+        .clampS(textureClampS),
+        .clampT(textureClampT),
 
         .texel00(texel00),
         .texel01(texel01),
         .texel10(texel10),
         .texel11(texel11),
-        .texelSubCoordX(texelSubCoordX),
-        .texelSubCoordY(texelSubCoordY)
+        .texelSubCoordS(texelSubCoordS),
+        .texelSubCoordT(texelSubCoordT)
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
@@ -267,8 +267,8 @@ module Rasterix #(
         .texel01(texel01),
         .texel10(texel10),
         .texel11(texel11),
-        .texelSubCoordX(texelSubCoordX),
-        .texelSubCoordY(texelSubCoordY),
+        .texelSubCoordS(texelSubCoordS),
+        .texelSubCoordT(texelSubCoordT),
 
         .texel(texel)
     );
@@ -411,8 +411,8 @@ module Rasterix #(
 
         .confReg1(confReg1),
         .confReg2(confReg2),
-        .confTextureClampToBorderS(textureClampToBorderS),
-        .confTextureClampToBorderT(textureClampToBorderT),
+        .confTextureClampS(textureClampS),
+        .confTextureClampT(textureClampT),
         .confTextureEnvColor(confTextureEnvColor),
         .triangleStaticColor(triangleParams[TRIANGLE_COLOR * PARAM_SIZE +: 16]),
         .confFogColor(confFogColor),
@@ -423,8 +423,8 @@ module Rasterix #(
         .s_axis_tdata(m_attr_inter_axis_tdata),
 
         .texel(texel),
-        .texelX(texelX),
-        .texelY(texelY),
+        .texelS(texelS),
+        .texelT(texelT),
 
         .colorIndexRead(colorIndexRead),
         .colorIn(colorIn),

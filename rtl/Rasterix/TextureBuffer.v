@@ -41,15 +41,15 @@ module TextureBuffer #(
 
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
-    input  wire [ 7 : 0]                textureSizeX, 
-    input  wire [ 7 : 0]                textureSizeY,
+    input  wire [ 7 : 0]                textureSizeS, 
+    input  wire [ 7 : 0]                textureSizeT,
 
     // Texture Read
-    input  wire [15 : 0]                texelX, // Q1.15
-    input  wire [15 : 0]                texelY, // Q1.15
-    input  wire                         clampToBorderX,
-    input  wire                         clampToBorderY,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (x, y). X and Y are switched since the address is constructed like {texelY, texelX}
+    input  wire [15 : 0]                texelS, // Q1.15
+    input  wire [15 : 0]                texelT, // Q1.15
+    input  wire                         clampS,
+    input  wire                         clampT,
+    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
     output wire [PIXEL_WIDTH - 1 : 0]   texel01, // (1, 0)
     output wire [PIXEL_WIDTH - 1 : 0]   texel10, // (0, 1)
     output wire [PIXEL_WIDTH - 1 : 0]   texel11, // (1, 1)
@@ -58,8 +58,8 @@ module TextureBuffer #(
     // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
     // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
     // are outside of our quad which never happens.
-    output reg  [15 : 0]                texelSubCoordX, // Q0.16
-    output reg  [15 : 0]                texelSubCoordY, // Q0.16
+    output reg  [15 : 0]                texelSubCoordS, // Q0.16
+    output reg  [15 : 0]                texelSubCoordT, // Q0.16
 
     // Texture Write
     input  wire                         s_axis_tvalid,
@@ -80,10 +80,10 @@ module TextureBuffer #(
     reg  [15 : 0]                   texelAddr10;
     reg  [15 : 0]                   texelAddr11;
 
-    reg  [15 : 0]                   texelY0;
-    reg  [15 : 0]                   texelY1;
-    reg  [15 : 0]                   texelX0;
-    reg  [15 : 0]                   texelX1;
+    reg  [15 : 0]                   texelT0;
+    reg  [15 : 0]                   texelT1;
+    reg  [15 : 0]                   texelS0;
+    reg  [15 : 0]                   texelS1;
 
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrEven0;
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrOdd0;
@@ -95,14 +95,14 @@ module TextureBuffer #(
     wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataEven1;
     wire [STREAM_WIDTH_HALF - 1 : 0] memReadDataOdd1;
 
-    wire [STREAM_WIDTH_HALF - 1 : 0] tdataEvenX;
-    wire [STREAM_WIDTH_HALF - 1 : 0] tdataOddX;
+    wire [STREAM_WIDTH_HALF - 1 : 0] tdataEvenS;
+    wire [STREAM_WIDTH_HALF - 1 : 0] tdataOddS;
 
-    reg  [15 : 0]                   texelSubCoordXReg;
-    reg  [15 : 0]                   texelSubCoordYReg;
+    reg  [15 : 0]                   texelSubCoordSReg;
+    reg  [15 : 0]                   texelSubCoordTReg;
 
-    reg                             texelClampX;
-    reg                             texelClampY;
+    reg                             texelClampS;
+    reg                             texelClampT;
 
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect00;
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect01;
@@ -114,12 +114,12 @@ module TextureBuffer #(
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
-    ) texCacheEvenX
+    ) texCacheEvenS
     (
         .clk(aclk),
         .reset(!resetn),
 
-        .writeData(tdataEvenX),
+        .writeData(tdataEvenS),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrEven1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
@@ -134,12 +134,12 @@ module TextureBuffer #(
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
-    ) texCacheOddX
+    ) texCacheOddS
     (
         .clk(aclk),
         .reset(!resetn),
 
-        .writeData(tdataOddX),
+        .writeData(tdataOddS),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrOdd1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
@@ -193,171 +193,171 @@ module TextureBuffer #(
 
     // Clamp texel quad
     assign texel00 = texelSelect00;
-    assign texel01 = (texelClampX)  ? texelSelect00 
+    assign texel01 = (texelClampS)  ? texelSelect00 
                                     : texelSelect01;
-    assign texel10 = (texelClampY)  ? texelSelect00 
+    assign texel10 = (texelClampT)  ? texelSelect00 
                                     : texelSelect10;
-    assign texel11 = (texelClampX)  ? texel10
-                                    : (texelClampY) ? texelSelect01 
+    assign texel11 = (texelClampS)  ? texel10
+                                    : (texelClampT) ? texelSelect01 
                                                     : texelSelect11;
     
     always @*
     begin : TexAddrCalc
-        reg [7 : 0] addrY0;
-        reg [7 : 0] addrY1;
+        reg [7 : 0] addrT0;
+        reg [7 : 0] addrT1;
 
-        texelY0 = texelY;
-        texelX0 = texelX;
+        texelT0 = texelT;
+        texelS0 = texelS;
 
         // Select Y coordinate
-        case (textureSizeY)
+        case (textureSizeT)
             8'b00000001: // 2px
             begin
-                texelY1 = texelY + (1 << 14);
-                addrY0 = {7'h0, texelY0[14 +: 1]};
-                addrY1 = {7'h0, texelY1[14 +: 1]};
-                texelSubCoordYReg = {texelY0[0 +: 14], 2'h0};
+                texelT1 = texelT + (1 << 14);
+                addrT0 = {7'h0, texelT0[14 +: 1]};
+                addrT1 = {7'h0, texelT1[14 +: 1]};
+                texelSubCoordTReg = {texelT0[0 +: 14], 2'h0};
             end
             8'b00000010: // 4px
             begin
-                texelY1 = texelY + (1 << 13);
-                addrY0 = {6'h0, texelY0[13 +: 2]};
-                addrY1 = {6'h0, texelY1[13 +: 2]};
-                texelSubCoordYReg = {texelY0[0 +: 13], 3'h0};
+                texelT1 = texelT + (1 << 13);
+                addrT0 = {6'h0, texelT0[13 +: 2]};
+                addrT1 = {6'h0, texelT1[13 +: 2]};
+                texelSubCoordTReg = {texelT0[0 +: 13], 3'h0};
             end
             8'b00000100: // 8px
             begin
-                texelY1 = texelY + (1 << 12);
-                addrY0 = {5'h0, texelY0[12 +: 3]};
-                addrY1 = {5'h0, texelY1[12 +: 3]};
-                texelSubCoordYReg = {texelY0[0 +: 12], 4'h0};
+                texelT1 = texelT + (1 << 12);
+                addrT0 = {5'h0, texelT0[12 +: 3]};
+                addrT1 = {5'h0, texelT1[12 +: 3]};
+                texelSubCoordTReg = {texelT0[0 +: 12], 4'h0};
             end
             8'b00001000: // 16px
             begin
-                texelY1 = texelY + (1 << 11);
-                addrY0 = {4'h0, texelY0[11 +: 4]};
-                addrY1 = {4'h0, texelY1[11 +: 4]};
-                texelSubCoordYReg = {texelY0[0 +: 11], 5'h0};
+                texelT1 = texelT + (1 << 11);
+                addrT0 = {4'h0, texelT0[11 +: 4]};
+                addrT1 = {4'h0, texelT1[11 +: 4]};
+                texelSubCoordTReg = {texelT0[0 +: 11], 5'h0};
             end
             8'b00010000: // 32px
             begin   
-                texelY1 = texelY + (1 << 10);
-                addrY0 = {3'h0, texelY0[10 +: 5]};
-                addrY1 = {3'h0, texelY1[10 +: 5]};
-                texelSubCoordYReg = {texelY0[0 +: 10], 6'h0};
+                texelT1 = texelT + (1 << 10);
+                addrT0 = {3'h0, texelT0[10 +: 5]};
+                addrT1 = {3'h0, texelT1[10 +: 5]};
+                texelSubCoordTReg = {texelT0[0 +: 10], 6'h0};
             end
             8'b00100000: // 64px
             begin   
-                texelY1 = texelY + (1 << 9);
-                addrY0 = {2'h0, texelY0[9 +: 6]};
-                addrY1 = {2'h0, texelY1[9 +: 6]};
-                texelSubCoordYReg = {texelY0[0 +:  9], 7'h0};
+                texelT1 = texelT + (1 << 9);
+                addrT0 = {2'h0, texelT0[9 +: 6]};
+                addrT1 = {2'h0, texelT1[9 +: 6]};
+                texelSubCoordTReg = {texelT0[0 +:  9], 7'h0};
             end
             8'b01000000: // 128px
             begin 
-                texelY1 = texelY + (1 << 8);
-                addrY0 = {1'h0, texelY0[ 8 +: 7]};
-                addrY1 = {1'h0, texelY1[ 8 +: 7]};
-                texelSubCoordYReg = {texelY0[0 +:  8], 8'h0};
+                texelT1 = texelT + (1 << 8);
+                addrT0 = {1'h0, texelT0[ 8 +: 7]};
+                addrT1 = {1'h0, texelT1[ 8 +: 7]};
+                texelSubCoordTReg = {texelT0[0 +:  8], 8'h0};
             end
             8'b10000000: // 256px
             begin
-                texelY1 = texelY + (1 << 7);
-                addrY0 = {      texelY0[ 7 +: 8]};
-                addrY1 = {      texelY1[ 7 +: 8]};
-                texelSubCoordYReg = {texelY0[0 +:  7], 9'h0};
+                texelT1 = texelT + (1 << 7);
+                addrT0 = {      texelT0[ 7 +: 8]};
+                addrT1 = {      texelT1[ 7 +: 8]};
+                texelSubCoordTReg = {texelT0[0 +:  7], 9'h0};
             end
             default: // 1px
             begin   
-                texelY1 = texelY;
-                addrY0 = 0;
-                addrY1 = 0;
-                texelSubCoordYReg = 16'h0;
+                texelT1 = texelT;
+                addrT0 = 0;
+                addrT1 = 0;
+                texelSubCoordTReg = 16'h0;
             end
         endcase
 
         // Select X coordinate
-        case (textureSizeX)
+        case (textureSizeS)
             8'b00000001: // 2px
             begin
-                texelX1 = texelX + (1 << 14);
-                texelAddr00 = {7'h0, addrY0, texelX0[14 +: 1]};
-                texelAddr01 = {7'h0, addrY0, texelX1[14 +: 1]};
-                texelAddr10 = {7'h0, addrY1, texelX0[14 +: 1]};
-                texelAddr11 = {7'h0, addrY1, texelX1[14 +: 1]};
-                texelSubCoordXReg = {texelX0[0 +: 14], 2'h0};
+                texelS1 = texelS + (1 << 14);
+                texelAddr00 = {7'h0, addrT0, texelS0[14 +: 1]};
+                texelAddr01 = {7'h0, addrT0, texelS1[14 +: 1]};
+                texelAddr10 = {7'h0, addrT1, texelS0[14 +: 1]};
+                texelAddr11 = {7'h0, addrT1, texelS1[14 +: 1]};
+                texelSubCoordSReg = {texelS0[0 +: 14], 2'h0};
             end
             8'b00000010: // 4px
             begin
-                texelX1 = texelX + (1 << 13);
-                texelAddr00 = {6'h0, addrY0, texelX0[13 +: 2]};
-                texelAddr01 = {6'h0, addrY0, texelX1[13 +: 2]};
-                texelAddr10 = {6'h0, addrY1, texelX0[13 +: 2]};
-                texelAddr11 = {6'h0, addrY1, texelX1[13 +: 2]};
-                texelSubCoordXReg = {texelX0[0 +: 13], 3'h0};
+                texelS1 = texelS + (1 << 13);
+                texelAddr00 = {6'h0, addrT0, texelS0[13 +: 2]};
+                texelAddr01 = {6'h0, addrT0, texelS1[13 +: 2]};
+                texelAddr10 = {6'h0, addrT1, texelS0[13 +: 2]};
+                texelAddr11 = {6'h0, addrT1, texelS1[13 +: 2]};
+                texelSubCoordSReg = {texelS0[0 +: 13], 3'h0};
             end
             8'b00000100: // 8px
             begin
-                texelX1 = texelX + (1 << 12);
-                texelAddr00 = {5'h0, addrY0, texelX0[12 +: 3]};
-                texelAddr01 = {5'h0, addrY0, texelX1[12 +: 3]};
-                texelAddr10 = {5'h0, addrY1, texelX0[12 +: 3]};
-                texelAddr11 = {5'h0, addrY1, texelX1[12 +: 3]};
-                texelSubCoordXReg = {texelX0[0 +: 12], 4'h0};
+                texelS1 = texelS + (1 << 12);
+                texelAddr00 = {5'h0, addrT0, texelS0[12 +: 3]};
+                texelAddr01 = {5'h0, addrT0, texelS1[12 +: 3]};
+                texelAddr10 = {5'h0, addrT1, texelS0[12 +: 3]};
+                texelAddr11 = {5'h0, addrT1, texelS1[12 +: 3]};
+                texelSubCoordSReg = {texelS0[0 +: 12], 4'h0};
             end
             8'b00001000: // 16px
             begin
-                texelX1 = texelX + (1 << 11);
-                texelAddr00 = {4'h0, addrY0, texelX0[11 +: 4]};
-                texelAddr01 = {4'h0, addrY0, texelX1[11 +: 4]};
-                texelAddr10 = {4'h0, addrY1, texelX0[11 +: 4]};
-                texelAddr11 = {4'h0, addrY1, texelX1[11 +: 4]};
-                texelSubCoordXReg = {texelX0[0 +: 11], 5'h0};
+                texelS1 = texelS + (1 << 11);
+                texelAddr00 = {4'h0, addrT0, texelS0[11 +: 4]};
+                texelAddr01 = {4'h0, addrT0, texelS1[11 +: 4]};
+                texelAddr10 = {4'h0, addrT1, texelS0[11 +: 4]};
+                texelAddr11 = {4'h0, addrT1, texelS1[11 +: 4]};
+                texelSubCoordSReg = {texelS0[0 +: 11], 5'h0};
             end
             8'b00010000: // 32px
             begin
-                texelX1 = texelX + (1 << 10);
-                texelAddr00 = {3'h0, addrY0, texelX0[10 +: 5]};
-                texelAddr01 = {3'h0, addrY0, texelX1[10 +: 5]};
-                texelAddr10 = {3'h0, addrY1, texelX0[10 +: 5]};
-                texelAddr11 = {3'h0, addrY1, texelX1[10 +: 5]};
-                texelSubCoordXReg = {texelX0[0 +: 10], 6'h0};
+                texelS1 = texelS + (1 << 10);
+                texelAddr00 = {3'h0, addrT0, texelS0[10 +: 5]};
+                texelAddr01 = {3'h0, addrT0, texelS1[10 +: 5]};
+                texelAddr10 = {3'h0, addrT1, texelS0[10 +: 5]};
+                texelAddr11 = {3'h0, addrT1, texelS1[10 +: 5]};
+                texelSubCoordSReg = {texelS0[0 +: 10], 6'h0};
             end
             8'b00100000: // 64px
             begin
-                texelX1 = texelX + (1 << 9);
-                texelAddr00 = {2'h0, addrY0, texelX0[ 9 +: 6]};
-                texelAddr01 = {2'h0, addrY0, texelX1[ 9 +: 6]};
-                texelAddr10 = {2'h0, addrY1, texelX0[ 9 +: 6]};
-                texelAddr11 = {2'h0, addrY1, texelX1[ 9 +: 6]};
-                texelSubCoordXReg = {texelX0[0 +:  9], 7'h0};
+                texelS1 = texelS + (1 << 9);
+                texelAddr00 = {2'h0, addrT0, texelS0[ 9 +: 6]};
+                texelAddr01 = {2'h0, addrT0, texelS1[ 9 +: 6]};
+                texelAddr10 = {2'h0, addrT1, texelS0[ 9 +: 6]};
+                texelAddr11 = {2'h0, addrT1, texelS1[ 9 +: 6]};
+                texelSubCoordSReg = {texelS0[0 +:  9], 7'h0};
             end
             8'b01000000: // 128px
             begin
-                texelX1 = texelX + (1 << 8);
-                texelAddr00 = {1'h0, addrY0, texelX0[ 8 +: 7]};
-                texelAddr01 = {1'h0, addrY0, texelX1[ 8 +: 7]};
-                texelAddr10 = {1'h0, addrY1, texelX0[ 8 +: 7]};
-                texelAddr11 = {1'h0, addrY1, texelX1[ 8 +: 7]};
-                texelSubCoordXReg = {texelX0[0 +:  8], 8'h0};
+                texelS1 = texelS + (1 << 8);
+                texelAddr00 = {1'h0, addrT0, texelS0[ 8 +: 7]};
+                texelAddr01 = {1'h0, addrT0, texelS1[ 8 +: 7]};
+                texelAddr10 = {1'h0, addrT1, texelS0[ 8 +: 7]};
+                texelAddr11 = {1'h0, addrT1, texelS1[ 8 +: 7]};
+                texelSubCoordSReg = {texelS0[0 +:  8], 8'h0};
             end
             8'b10000000: // 256px
             begin
-                texelX1 = texelX + (1 << 7);
-                texelAddr00 = {      addrY0, texelX0[ 7 +: 8]};
-                texelAddr01 = {      addrY0, texelX1[ 7 +: 8]};
-                texelAddr10 = {      addrY1, texelX0[ 7 +: 8]};
-                texelAddr11 = {      addrY1, texelX1[ 7 +: 8]};
-                texelSubCoordXReg = {texelX0[0 +:  7], 9'h0};
+                texelS1 = texelS + (1 << 7);
+                texelAddr00 = {      addrT0, texelS0[ 7 +: 8]};
+                texelAddr01 = {      addrT0, texelS1[ 7 +: 8]};
+                texelAddr10 = {      addrT1, texelS0[ 7 +: 8]};
+                texelAddr11 = {      addrT1, texelS1[ 7 +: 8]};
+                texelSubCoordSReg = {texelS0[0 +:  7], 9'h0};
             end
             default: // 1px
             begin
-                texelX1 = texelX;
-                texelAddr00 = {8'h0, addrY0};
-                texelAddr01 = {8'h0, addrY0};
-                texelAddr10 = {8'h0, addrY1};
-                texelAddr11 = {8'h0, addrY1};
-                texelSubCoordXReg = 16'h0;
+                texelS1 = texelS;
+                texelAddr00 = {8'h0, addrT0};
+                texelAddr01 = {8'h0, addrT0};
+                texelAddr10 = {8'h0, addrT1};
+                texelAddr11 = {8'h0, addrT1};
+                texelSubCoordSReg = 16'h0;
             end
         endcase
     end
@@ -371,12 +371,12 @@ module TextureBuffer #(
         texelAddrForDecoding11 <= texelAddr11;
 
         // Check if we have to clamp
-        texelClampX <= clampToBorderX && ((texelX0 > texelX1) || (!texelX0[15] && texelX1[15]));
-        texelClampY <= clampToBorderY && ((texelY0 > texelY1) || (!texelY0[15] && texelY1[15]));
+        texelClampS <= clampS && ((texelS0 > texelS1) || (!texelS0[15] && texelS1[15]));
+        texelClampT <= clampT && ((texelT0 > texelT1) || (!texelT0[15] && texelT1[15]));
 
         // Output the pixel intensity
-        texelSubCoordX <= texelSubCoordXReg;
-        texelSubCoordY <= texelSubCoordYReg;
+        texelSubCoordS <= texelSubCoordSReg;
+        texelSubCoordT <= texelSubCoordTReg;
     end
 
     // Memory interface to write data from the AXIS to the buffer
@@ -414,7 +414,7 @@ module TextureBuffer #(
         begin
             localparam ii = i * (PIXEL_WIDTH * 2);
             localparam jj = i * PIXEL_WIDTH;
-            assign tdataEvenX[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
+            assign tdataEvenS[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
         end
 
         // Stride for the uneven RAM
@@ -422,7 +422,7 @@ module TextureBuffer #(
         begin
             localparam ii = (i * (PIXEL_WIDTH * 2)) + PIXEL_WIDTH;
             localparam jj = i * PIXEL_WIDTH;
-            assign tdataOddX[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
+            assign tdataOddS[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
         end
     end
     endgenerate
