@@ -74,6 +74,8 @@ module Rasterix #(
     wire [15:0] texel;
     wire [ 7:0] textureSizeX;
     wire [ 7:0] textureSizeY;
+    wire        textureClampToBorderS;
+    wire        textureClampToBorderT;
     wire [15:0] texelX;
     wire [15:0] texelY;
     wire [15:0] texel00;
@@ -175,6 +177,8 @@ module Rasterix #(
         // Configs
         .confTextureSizeX(textureSizeX),
         .confTextureSizeY(textureSizeY),
+        .confTextureClampToBorderS(textureClampToBorderS),
+        .confTextureClampToBorderT(textureClampToBorderT),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
@@ -242,8 +246,8 @@ module Rasterix #(
 
         .texelX(texelX),
         .texelY(texelY),
-        .clampToBorderX(1),
-        .clampToBorderY(1),
+        .clampToBorderX(textureClampToBorderS),
+        .clampToBorderY(textureClampToBorderT),
 
         .texel00(texel00),
         .texel01(texel01),
@@ -407,6 +411,8 @@ module Rasterix #(
 
         .confReg1(confReg1),
         .confReg2(confReg2),
+        .confTextureClampToBorderS(textureClampToBorderS),
+        .confTextureClampToBorderT(textureClampToBorderT),
         .confTextureEnvColor(confTextureEnvColor),
         .triangleStaticColor(triangleParams[TRIANGLE_COLOR * PARAM_SIZE +: 16]),
         .confFogColor(confFogColor),

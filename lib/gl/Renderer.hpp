@@ -308,18 +308,6 @@ public:
         return writeToReg(ListAssembler::SET_TEX_ENV_COLOR, convertColor(color));
     }
 
-    virtual bool setTextureWrapModeS(const TextureWrapMode mode)  override
-    {
-        m_confReg2.texClampS = mode == TextureWrapMode::CLAMP_TO_EDGE;
-        return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
-    }
-
-    virtual bool setTextureWrapModeT(const TextureWrapMode mode) override
-    {
-        m_confReg2.texClampT = mode == TextureWrapMode::CLAMP_TO_EDGE;
-        return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
-    }
-
     virtual bool setFogColor(const Vec4i& color) override
     {
         return writeToReg(ListAssembler::SET_FOG_COLOR, convertColor(color));
@@ -391,7 +379,12 @@ public:
         return {false, 0};
     }
 
-    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) override
+    virtual bool updateTexture(const uint16_t texId, 
+                               std::shared_ptr<const uint16_t> pixels, 
+                               const uint16_t texWidth,
+                               const uint16_t texHeight,
+                               const TextureWrapMode wrapModeS,
+                               const TextureWrapMode wrapModeT) override
     {
         const uint32_t textureSlot = m_textureLut[texId];
 
@@ -421,6 +414,8 @@ public:
             m_textures[newTextureSlot].height = texHeight;
             m_textures[newTextureSlot].inUse = true;
             m_textures[newTextureSlot].requiresUpload = true;
+            m_textures[newTextureSlot].wrapModeS = wrapModeS;
+            m_textures[newTextureSlot].wrapModeT = wrapModeT;
             return true;
         }
         return false;
@@ -440,7 +435,9 @@ public:
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId],
                                                                                              tex.width * tex.height * 2,
                                                                                              tex.width,
-                                                                                             tex.height);
+                                                                                             tex.height,
+                                                                                             (tex.wrapModeS == TextureWrapMode::CLAMP_TO_EDGE) ? true : false,
+                                                                                             (tex.wrapModeT == TextureWrapMode::CLAMP_TO_EDGE) ? true : false);
         }
         return ret;
     }
@@ -464,6 +461,8 @@ private:
         std::shared_ptr<const uint16_t> gramAddr;
         uint16_t width;
         uint16_t height;
+        TextureWrapMode wrapModeS;
+        TextureWrapMode wrapModeT;
     };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
@@ -519,8 +518,6 @@ private:
         IRenderer::TexEnvParam texEnvFunc : 3;
         IRenderer::BlendFunc blendFuncSFactor : 4;
         IRenderer::BlendFunc blendFuncDFactor : 4;
-        bool texClampS : 1;
-        bool texClampT : 1;
     } m_confReg2;
 
     std::future<bool> m_renderThread;

@@ -536,7 +536,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             }
         }
 
-        if (!m_renderer.updateTexture(m_boundTexture, texMemShared, width, height))
+        if (!m_renderer.updateTexture(m_boundTexture, texMemShared, width, height, m_texWrapModeS, m_texWrapModeT))
         {
             m_error = GL_INVALID_VALUE;
             return;
@@ -660,10 +660,10 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
         {
             switch (pname) {
             case GL_TEXTURE_WRAP_S:
-                m_renderer.setTextureWrapModeS(mode);
+                m_texWrapModeS = mode;
                 break;
             case GL_TEXTURE_WRAP_T:
-                m_renderer.setTextureWrapModeT(mode);
+                m_texWrapModeT = mode;
                 break;
             default:
                 m_error = GL_INVALID_ENUM;

@@ -176,6 +176,8 @@ private:
     GLuint m_boundTexture = 0;
     bool m_enableTextureMapping = true;
     GLint m_texEnvParam = GL_REPLACE;
+    IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
+    IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
 
     // Test functions
     bool m_enableAlphaTest = true;

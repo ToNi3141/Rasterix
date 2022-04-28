@@ -55,9 +55,9 @@ localparam OP_IMM_SIZE = 28;
 //  +--------------------------------+
 
 // OP_TEXTURE_STREAM
-//  +---------------------------------------------------------------------+
-//  | 4 bit OP | 4 bit reserved | 8 bit size | 8 bit height | 8 bit width |
-//  +---------------------------------------------------------------------+
+//  +-----------------------------------------------------------------------------------------------------+
+//  | 4 bit OP | 2 bit reserved | 1 bit clamp t | 1 bit clamp s | 8 bit size | 8 bit height | 8 bit width |
+//  +-----------------------------------------------------------------------------------------------------+
 // Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB, ...
 localparam TEXTURE_STREAM_WIDTH_POS = 0;
@@ -66,6 +66,10 @@ localparam TEXTURE_STREAM_HEIGHT_POS = 8;
 localparam TEXTURE_STREAM_HEIGHT_SIZE = 8;
 localparam TEXTURE_STREAM_SIZE_POS = 16;
 localparam TEXTURE_STREAM_SIZE_SIZE = 8;
+localparam TEXTURE_STREAM_CLAMP_S_POS = 24;
+localparam TEXTURE_STREAM_CLAMP_S_SIZE = 1;
+localparam TEXTURE_STREAM_CLAMP_T_POS = 25;
+localparam TEXTURE_STREAM_CLAMP_T_SIZE = 1;
 
 
 // OP_RENDER_CONFIG
@@ -191,9 +195,9 @@ localparam REG1_COLOR_MASK_R_POS = REG1_COLOR_MASK_G_POS + REG1_COLOR_MASK_G_SIZ
 localparam REG1_COLOR_MASK_R_SIZE = 1;
 
 // OP_RENDER_CONFIG_REG2
-//  +------------------------------------------------------------------------------------------------------------------------------------+
-//  | 2 bit reserved | 1 bit tex clamp t | 1 bit tex clamp s | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
-//  +------------------------------------------------------------------------------------------------------------------------------------+
+//  +--------------------------------------------------------------------------------------------+
+//  | 4 bit reserved | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
+//  +--------------------------------------------------------------------------------------------+
 localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_POS = 0;
 localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE = 1;
 localparam REG2_TEX_ENV_FUNC_POS = REG2_PERSPECTIVE_CORRECT_TEXTURE_POS + REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE;
@@ -202,10 +206,6 @@ localparam REG2_BLEND_FUNC_SFACTOR_POS = REG2_TEX_ENV_FUNC_POS + REG2_TEX_ENV_FU
 localparam REG2_BLEND_FUNC_SFACTOR_SIZE = 4;
 localparam REG2_BLEND_FUNC_DFACTOR_POS = REG2_BLEND_FUNC_SFACTOR_POS + REG2_BLEND_FUNC_SFACTOR_SIZE;
 localparam REG2_BLEND_FUNC_DFACTOR_SIZE = 4;
-localparam REG2_TEX_CLAMP_S_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
-localparam REG2_TEX_CLAMP_S_SIZE = 1;
-localparam REG2_TEX_CLAMP_T_POS = REG2_TEX_CLAMP_S_POS + REG2_TEX_CLAMP_S_SIZE;
-localparam REG2_TEX_CLAMP_T_SIZE = 1;
 // localparam REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
 // localparam REG2_LOGIC_OP_SIZE = 4;
 
