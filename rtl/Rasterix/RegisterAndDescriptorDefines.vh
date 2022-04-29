@@ -55,9 +55,9 @@ localparam OP_IMM_SIZE = 28;
 //  +--------------------------------+
 
 // OP_TEXTURE_STREAM
-//  +-----------------------------------------------------------------------------------------------------+
-//  | 4 bit OP | 2 bit reserved | 1 bit clamp t | 1 bit clamp s | 8 bit size | 8 bit height | 8 bit width |
-//  +-----------------------------------------------------------------------------------------------------+
+//  +------------------------------------------------------------------------------------------------------------------------+
+//  | 4 bit OP | 1 bit reserved | 1 bit mag filter | 1 bit clamp t | 1 bit clamp s | 8 bit size | 8 bit height | 8 bit width |
+//  +------------------------------------------------------------------------------------------------------------------------+
 // Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB, ...
 localparam TEXTURE_STREAM_WIDTH_POS = 0;
@@ -70,6 +70,8 @@ localparam TEXTURE_STREAM_CLAMP_S_POS = 24;
 localparam TEXTURE_STREAM_CLAMP_S_SIZE = 1;
 localparam TEXTURE_STREAM_CLAMP_T_POS = 25;
 localparam TEXTURE_STREAM_CLAMP_T_SIZE = 1;
+localparam TEXTURE_STREAM_MAG_FILTER_POS = 26;
+localparam TEXTURE_STREAM_MAG_FILTER_SIZE = 1;
 
 
 // OP_RENDER_CONFIG

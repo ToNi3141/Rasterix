@@ -65,6 +65,7 @@ private:
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS   = 16; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_CLAMP_S           = 0x100'0000;
         static constexpr StreamCommandType RR_TEXTURE_CLAMP_T           = 0x200'0000;
+        static constexpr StreamCommandType RR_TEXTURE_MAG_FILTER        = 0x400'0000; // Enables the magnification filter (GL_LINEAR)
 
         static constexpr StreamCommandType RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR = 0x0000;
         static constexpr StreamCommandType RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR = 0x0001;
@@ -143,7 +144,8 @@ public:
                     const uint32_t texWidth, 
                     const uint32_t texHeight, 
                     const bool clampS, 
-                    const bool clampT)
+                    const bool clampT,
+                    const bool enableMagFilter)
     {
         bool ret = false;
         if (openNewStreamSection())
@@ -172,7 +174,8 @@ public:
                     | texHeightOneHot
                     | texSizeLog2
                     | ((clampS) ? StreamCommand::RR_TEXTURE_CLAMP_S : 0)
-                    | ((clampT) ? StreamCommand::RR_TEXTURE_CLAMP_T : 0);
+                    | ((clampT) ? StreamCommand::RR_TEXTURE_CLAMP_T : 0)
+                    | ((enableMagFilter) ? StreamCommand::RR_TEXTURE_MAG_FILTER : 0);
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;

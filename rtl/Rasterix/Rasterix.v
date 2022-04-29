@@ -76,6 +76,7 @@ module Rasterix #(
     wire [ 7:0] textureSizeHeight;
     wire        textureClampS;
     wire        textureClampT;
+    wire        textureMagFilter;
     wire [15:0] texelS;
     wire [15:0] texelT;
     wire [15:0] texel00;
@@ -179,6 +180,7 @@ module Rasterix #(
         .confTextureSizeHeight(textureSizeHeight),
         .confTextureClampS(textureClampS),
         .confTextureClampT(textureClampT),
+        .confTextureMagFilter(textureMagFilter),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
@@ -262,6 +264,8 @@ module Rasterix #(
     TextureFilter texFilter (
         .aclk(aclk),
         .resetn(resetn),
+
+        .enable(textureMagFilter),
 
         .texel00(texel00),
         .texel01(texel01),

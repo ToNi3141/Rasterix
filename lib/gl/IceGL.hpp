@@ -75,6 +75,7 @@ public:
     void glDeleteTextures(GLsizei n, const GLuint * textures);
     void glBindTexture(GLenum target, GLuint texture);
     void glTexParameteri(GLenum target, GLenum pname, GLint param);
+    void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
     void glTexEnvi(GLenum target, GLenum pname, GLint param);
     void glTexEnvf(GLenum target, GLenum pname, GLfloat param);
     void glTexEnvfv(GLenum target, GLenum pname, const GLfloat* param);
@@ -178,6 +179,7 @@ private:
     GLint m_texEnvParam = GL_REPLACE;
     IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
+    bool m_texEnableMagFilter = true;
 
     // Test functions
     bool m_enableAlphaTest = true;

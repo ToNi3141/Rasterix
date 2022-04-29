@@ -40,6 +40,7 @@ module CommandParser #(
     output reg  [ 7:0]  confTextureSizeHeight,
     output reg          confTextureClampS,
     output reg          confTextureClampT,
+    output reg          confTextureMagFilter,
     output wire [15:0]  confReg1,
     output wire [15:0]  confReg2,
     output wire [15:0]  confTextureEnvColor,
@@ -181,6 +182,7 @@ module CommandParser #(
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
                         confTextureClampS <= s_cmd_axis_tdata[TEXTURE_STREAM_CLAMP_S_POS +: TEXTURE_STREAM_CLAMP_S_SIZE];        
                         confTextureClampT <= s_cmd_axis_tdata[TEXTURE_STREAM_CLAMP_T_POS +: TEXTURE_STREAM_CLAMP_T_SIZE];
+                        confTextureMagFilter <= s_cmd_axis_tdata[TEXTURE_STREAM_MAG_FILTER_POS +: TEXTURE_STREAM_MAG_FILTER_SIZE];
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin

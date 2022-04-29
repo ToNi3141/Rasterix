@@ -384,7 +384,8 @@ public:
                                const uint16_t texWidth,
                                const uint16_t texHeight,
                                const TextureWrapMode wrapModeS,
-                               const TextureWrapMode wrapModeT) override
+                               const TextureWrapMode wrapModeT,
+                               const bool enableMagFilter) override
     {
         const uint32_t textureSlot = m_textureLut[texId];
 
@@ -416,6 +417,7 @@ public:
             m_textures[newTextureSlot].requiresUpload = true;
             m_textures[newTextureSlot].wrapModeS = wrapModeS;
             m_textures[newTextureSlot].wrapModeT = wrapModeT;
+            m_textures[newTextureSlot].enableMagFilter = enableMagFilter;
             return true;
         }
         return false;
@@ -437,7 +439,8 @@ public:
                                                                                              tex.width,
                                                                                              tex.height,
                                                                                              (tex.wrapModeS == TextureWrapMode::CLAMP_TO_EDGE) ? true : false,
-                                                                                             (tex.wrapModeT == TextureWrapMode::CLAMP_TO_EDGE) ? true : false);
+                                                                                             (tex.wrapModeT == TextureWrapMode::CLAMP_TO_EDGE) ? true : false,
+                                                                                             tex.enableMagFilter);
         }
         return ret;
     }
@@ -463,6 +466,7 @@ private:
         uint16_t height;
         TextureWrapMode wrapModeS;
         TextureWrapMode wrapModeT;
+        bool enableMagFilter;
     };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;

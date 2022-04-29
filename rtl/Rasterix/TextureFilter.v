@@ -27,6 +27,8 @@ module TextureFilter #(
     input  wire                         aclk,
     input  wire                         resetn,
 
+    input  wire                         enable,
+
     input  wire [PIXEL_WIDTH - 1 : 0]   texel00,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel01,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel10,
@@ -41,6 +43,8 @@ module TextureFilter #(
     wire [PIXEL_WIDTH - 1 : 0]  mixedColorS1;
     wire [15 : 0]               intensityS;
     wire [15 : 0]               intensityT;
+    wire [PIXEL_WIDTH - 1 : 0]  filteredTexel;
+    wire [PIXEL_WIDTH - 1 : 0]  unfilteredTexel;
 
     assign intensityS = 16'hffff - texelSubCoordS;
     assign intensityT = 16'hffff - texelSubCoordT;
@@ -72,7 +76,7 @@ module TextureFilter #(
         .intensity(intensityDelayedT),
         .colorA(mixedColorS0),
         .colorB(mixedColorS1),
-        .mixedColor(texel)
+        .mixedColor(filteredTexel)
     );
 
     // Delay intensityT by 2 clocks (to calculate the S interpolations)
@@ -86,14 +90,17 @@ module TextureFilter #(
         .out(intensityDelayedT)
     );
 
-    // ValueDelay #(
-    //     .VALUE_SIZE(PIXEL_WIDTH), 
-    //     .DELAY(4)
-    // ) 
-    // texelDelay (
-    //     .clk(aclk), 
-    //     .in(texel00), 
-    //     .out(texel)
-    // );
+    // To delay the texel00 to use it as an unfiltered texel
+    ValueDelay #(
+        .VALUE_SIZE(PIXEL_WIDTH), 
+        .DELAY(4)
+    ) 
+    texelDelay (
+        .clk(aclk), 
+        .in(texel00), 
+        .out(unfilteredTexel)
+    );
+
+    assign texel = (enable) ? filteredTexel : unfilteredTexel;
 
 endmodule
