@@ -48,8 +48,8 @@ void uploadTexture(VTextureBuffer* top)
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
     // | 0x00f0 | 0x000f |
-    top->textureSizeX = 0x1;
-    top->textureSizeY = 0x1;
+    top->textureSizeS = 0x1;
+    top->textureSizeT = 0x1;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
@@ -64,8 +64,8 @@ void uploadTexture(VTextureBuffer* top)
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
 
-    top->clampToBorderX = 0;
-    top->clampToBorderY = 0;
+    top->clampS = 0;
+    top->clampT = 0;
 }
 
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
@@ -76,8 +76,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     uploadTexture(top);
 
     // (0, 0)
-    top->texelX = 0;
-    top->texelY = 0;
+    top->texelS = 0;
+    top->texelT = 0;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -85,8 +85,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // (0.99.., 0.0)
-    top->texelX = 0x7fff;
-    top->texelY = 0;
+    top->texelS = 0x7fff;
+    top->texelT = 0;
     clk(top);
     REQUIRE(top->texel00 == 0x0f00);
     REQUIRE(top->texel01 == 0xf000);
@@ -94,8 +94,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x00f0);
 
     // (0.0, 0.99..)
-    top->texelX = 0;
-    top->texelY = 0x7fff;
+    top->texelS = 0;
+    top->texelT = 0x7fff;
     clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
@@ -103,8 +103,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x0f00);
 
     // (0.99.., 0.99..)
-    top->texelX = 0x7fff;
-    top->texelY = 0x7fff;
+    top->texelS = 0x7fff;
+    top->texelT = 0x7fff;
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
     REQUIRE(top->texel01 == 0x00f0);
@@ -113,8 +113,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 
 
     // (1.0, 0.0)
-    top->texelX = 0x8000;
-    top->texelY = 0;
+    top->texelS = 0x8000;
+    top->texelT = 0;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -122,8 +122,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // (0.0, 1.0)
-    top->texelX = 0;
-    top->texelY = 0x8000;
+    top->texelS = 0;
+    top->texelT = 0x8000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -131,8 +131,8 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // (1.0, 1.0)
-    top->texelX = 0x8000;
-    top->texelY = 0x8000;
+    top->texelS = 0x8000;
+    top->texelT = 0x8000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -151,16 +151,16 @@ TEST_CASE("Check intensity attribute", "[TextureBuffer]")
     uploadTexture(top);
 
     // texel (0.0, 0.0)
-    top->texelX = 0x0000;
-    top->texelY = 0x0000;
+    top->texelS = 0x0000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.0, 0.0)
-    REQUIRE(top->texelSubCoordX == 0x0); 
-    REQUIRE(top->texelSubCoordY == 0x0);
+    REQUIRE(top->texelSubCoordS == 0x0); 
+    REQUIRE(top->texelSubCoordT == 0x0);
 
 
     // To get the sub coordinate of (0.25, 0.0), we have to imagine the following things:
@@ -170,40 +170,40 @@ TEST_CASE("Check intensity attribute", "[TextureBuffer]")
     // to access the texel (1, 0), we would have to add 0.5 to the x value which results in (0.625, 0.0).
 
     // texel (0.125, 0.125) 
-    top->texelX = 0x1000;
-    top->texelY = 0x1000;
+    top->texelS = 0x1000;
+    top->texelT = 0x1000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.25, 0.25)
-    REQUIRE(top->texelSubCoordX == 0x4000); 
-    REQUIRE(top->texelSubCoordY == 0x4000); 
+    REQUIRE(top->texelSubCoordS == 0x4000); 
+    REQUIRE(top->texelSubCoordT == 0x4000); 
 
     // texel (0.125, 0.375) 
-    top->texelX = 0x1000;
-    top->texelY = 0x3000;
+    top->texelS = 0x1000;
+    top->texelT = 0x3000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.25, 0.75)
-    REQUIRE(top->texelSubCoordX == 0x4000); 
-    REQUIRE(top->texelSubCoordY == 0xc000);
+    REQUIRE(top->texelSubCoordS == 0x4000); 
+    REQUIRE(top->texelSubCoordT == 0xc000);
 
     // texel (0.375, 0.125) 
-    top->texelX = 0x3000;
-    top->texelY = 0x1000;
+    top->texelS = 0x3000;
+    top->texelT = 0x1000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.75, 0.25)
-    REQUIRE(top->texelSubCoordX == 0xc000);
-    REQUIRE(top->texelSubCoordY == 0x4000);
+    REQUIRE(top->texelSubCoordS == 0xc000);
+    REQUIRE(top->texelSubCoordT == 0x4000);
 
     // Destroy model
     delete top;
@@ -216,12 +216,12 @@ TEST_CASE("clamp to border with x", "[TextureBuffer]")
 
     uploadTexture(top);
 
-    top->clampToBorderX = 1;
-    top->clampToBorderY = 0;
+    top->clampS = 1;
+    top->clampT = 0;
 
     // texel (0.0, 0.0)
-    top->texelX = 0x0000;
-    top->texelY = 0x0000;
+    top->texelS = 0x0000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -229,8 +229,8 @@ TEST_CASE("clamp to border with x", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.0)
-    top->texelX = 0x4000;
-    top->texelY = 0x0000;
+    top->texelS = 0x4000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0x0f00);
     REQUIRE(top->texel01 == 0x0f00);
@@ -238,8 +238,8 @@ TEST_CASE("clamp to border with x", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
-    top->texelX = 0x4000;
-    top->texelY = 0x4000;
+    top->texelS = 0x4000;
+    top->texelT = 0x4000;
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
     REQUIRE(top->texel01 == 0x000f);
@@ -257,12 +257,12 @@ TEST_CASE("clamp to border with y", "[TextureBuffer]")
 
     uploadTexture(top);
 
-    top->clampToBorderX = 0;
-    top->clampToBorderY = 1;
+    top->clampS = 0;
+    top->clampT = 1;
 
     // texel (0.0, 0.0)
-    top->texelX = 0x0000;
-    top->texelY = 0x0000;
+    top->texelS = 0x0000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -270,8 +270,8 @@ TEST_CASE("clamp to border with y", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.0, 0.5)
-    top->texelX = 0x0000;
-    top->texelY = 0x4000;
+    top->texelS = 0x0000;
+    top->texelT = 0x4000;
     clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
@@ -279,8 +279,8 @@ TEST_CASE("clamp to border with y", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
-    top->texelX = 0x4000;
-    top->texelY = 0x4000;
+    top->texelS = 0x4000;
+    top->texelT = 0x4000;
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
     REQUIRE(top->texel01 == 0x00f0);
@@ -298,12 +298,12 @@ TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
 
     uploadTexture(top);
 
-    top->clampToBorderX = 1;
-    top->clampToBorderY = 1;
+    top->clampS = 1;
+    top->clampT = 1;
 
     // texel (0.0, 0.0)
-    top->texelX = 0x0000;
-    top->texelY = 0x0000;
+    top->texelS = 0x0000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
@@ -311,8 +311,8 @@ TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.0)
-    top->texelX = 0x4000;
-    top->texelY = 0x0000;
+    top->texelS = 0x4000;
+    top->texelT = 0x0000;
     clk(top);
     REQUIRE(top->texel00 == 0x0f00);
     REQUIRE(top->texel01 == 0x0f00);
@@ -320,8 +320,8 @@ TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.0, 0.5)
-    top->texelX = 0x0000;
-    top->texelY = 0x4000;
+    top->texelS = 0x0000;
+    top->texelT = 0x4000;
     clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
@@ -329,8 +329,8 @@ TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
     REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
-    top->texelX = 0x4000;
-    top->texelY = 0x4000;
+    top->texelS = 0x4000;
+    top->texelT = 0x4000;
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
     REQUIRE(top->texel01 == 0x000f);
