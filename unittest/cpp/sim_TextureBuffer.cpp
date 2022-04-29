@@ -48,8 +48,8 @@ void uploadTexture(VTextureBuffer* top)
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
     // | 0x00f0 | 0x000f |
-    top->textureSizeS = 0x1;
-    top->textureSizeT = 0x1;
+    top->textureSizeWidth = 0x1;
+    top->textureSizeHeight = 0x1;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;

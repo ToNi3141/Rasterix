@@ -41,8 +41,8 @@ module TextureBuffer #(
 
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
-    input  wire [ 7 : 0]                textureSizeS, 
-    input  wire [ 7 : 0]                textureSizeT,
+    input  wire [ 7 : 0]                textureSizeWidth, 
+    input  wire [ 7 : 0]                textureSizeHeight,
 
     // Texture Read
     input  wire [15 : 0]                texelS, // Q1.15
@@ -149,13 +149,14 @@ module TextureBuffer #(
         .readAddr(memReadAddrOdd0)
     );
 
-    // Check if the pixel (0, 0) from our pixel quad is on a even or uneven address. 
-    // Depending in the out come we have to query the even or uneven RAM.
+    // Muxing of the RAM access to query the texels from the even and odd RAMs.
+    // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s
     assign memReadAddrEven0 = (texelAddr00[0]) ? texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
     assign memReadAddrOdd0  = (texelAddr00[0]) ? texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
     assign memReadAddrEven1 = (texelAddr10[0]) ? texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
     assign memReadAddrOdd1  = (texelAddr10[0]) ? texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
 
+    // Demux the RAM access and access the texels in the read vector
     generate
         if (STREAM_WIDTH == 32)
         begin
@@ -188,7 +189,6 @@ module TextureBuffer #(
             assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
                                                                 : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
-
     endgenerate
 
     // Clamp texel quad
@@ -201,6 +201,8 @@ module TextureBuffer #(
                                     : (texelClampT) ? texelSelect01 
                                                     : texelSelect11;
     
+    // Build the RAM adress of the given (s, t) coordinate and also generate the address of 
+    // the texel quad
     always @*
     begin : TexAddrCalc
         reg [7 : 0] addrT0;
@@ -210,7 +212,7 @@ module TextureBuffer #(
         texelS0 = texelS;
 
         // Select Y coordinate
-        case (textureSizeT)
+        case (textureSizeHeight)
             8'b00000001: // 2px
             begin
                 texelT1 = texelT + (1 << 14);
@@ -277,7 +279,7 @@ module TextureBuffer #(
         endcase
 
         // Select X coordinate
-        case (textureSizeS)
+        case (textureSizeWidth)
             8'b00000001: // 2px
             begin
                 texelS1 = texelS + (1 << 14);

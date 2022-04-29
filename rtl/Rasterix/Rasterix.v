@@ -72,8 +72,8 @@ module Rasterix #(
     ///////////////////////////
     // Texture access
     wire [15:0] texel;
-    wire [ 7:0] textureSizeS;
-    wire [ 7:0] textureSizeT;
+    wire [ 7:0] textureSizeWidth;
+    wire [ 7:0] textureSizeHeight;
     wire        textureClampS;
     wire        textureClampT;
     wire [15:0] texelS;
@@ -175,8 +175,8 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confTextureSizeS(textureSizeS),
-        .confTextureSizeT(textureSizeT),
+        .confTextureSizeWidth(textureSizeWidth),
+        .confTextureSizeHeight(textureSizeHeight),
         .confTextureClampS(textureClampS),
         .confTextureClampT(textureClampT),
         .confReg1(confReg1),
@@ -236,8 +236,8 @@ module Rasterix #(
     TextureBuffer texCache (
         .aclk(aclk),
         .resetn(resetn),
-        .textureSizeS(textureSizeS),
-        .textureSizeT(textureSizeT),
+        .textureSizeWidth(textureSizeWidth),
+        .textureSizeHeight(textureSizeHeight),
 
         .s_axis_tvalid(s_texture_axis_tvalid),
         .s_axis_tready(s_texture_axis_tready),

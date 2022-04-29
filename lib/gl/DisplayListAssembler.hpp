@@ -60,8 +60,8 @@ private:
         static constexpr StreamCommandType RR_FOG_LUT_STREAM   = 0x5000'0000;
 
         // Immediate values
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_X_POS      = 0; // size: 8 bit
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_Y_POS      = 8; // size: 8 bit
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_WIDTH_POS  = 0; // size: 8 bit
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_HEIGHT_POS = 8; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS   = 16; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_CLAMP_S           = 0x100'0000;
         static constexpr StreamCommandType RR_TEXTURE_CLAMP_T           = 0x200'0000;
@@ -163,8 +163,8 @@ public:
             }
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
-                const uint32_t texWidthOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texWidth))) - 1) << StreamCommand::RR_TEXTURE_STREAM_X_POS;
-                const uint32_t texHeightOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texHeight))) - 1) << StreamCommand::RR_TEXTURE_STREAM_Y_POS;
+                const uint32_t texWidthOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texWidth))) - 1) << StreamCommand::RR_TEXTURE_STREAM_WIDTH_POS;
+                const uint32_t texHeightOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(texHeight))) - 1) << StreamCommand::RR_TEXTURE_STREAM_HEIGHT_POS;
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
 
                 *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM 
