@@ -80,10 +80,10 @@ module TextureBuffer #(
     reg  [15 : 0]                   texelAddr10;
     reg  [15 : 0]                   texelAddr11;
 
-    reg  [15 : 0]                   texelT0;
-    reg  [15 : 0]                   texelT1;
-    reg  [15 : 0]                   texelS0;
-    reg  [15 : 0]                   texelS1;
+    reg  [15 : 0]                   texelT0; // Q1.15
+    reg  [15 : 0]                   texelT1; // Q1.15
+    reg  [15 : 0]                   texelS0; // Q1.15
+    reg  [15 : 0]                   texelS1; // Q1.15
 
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrEven0;
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrOdd0;
@@ -98,8 +98,8 @@ module TextureBuffer #(
     wire [STREAM_WIDTH_HALF - 1 : 0] tdataEvenS;
     wire [STREAM_WIDTH_HALF - 1 : 0] tdataOddS;
 
-    reg  [15 : 0]                   texelSubCoordSReg;
-    reg  [15 : 0]                   texelSubCoordTReg;
+    reg  [15 : 0]                   texelSubCoordSReg; // Q0.16
+    reg  [15 : 0]                   texelSubCoordTReg; // Q0.16
 
     reg                             texelClampS;
     reg                             texelClampT;
@@ -373,6 +373,10 @@ module TextureBuffer #(
         texelAddrForDecoding11 <= texelAddr11;
 
         // Check if we have to clamp
+        // Check if the texel coordinate is smaller than texel+1. If so, we have an overflow and we have to clamp.
+        // OR, since the texel coordinate is a Q1.15 number, we need a dedicated check for the integer part. Could be, 
+        // that just the fraction part overflows but not the whole variable. Therefor also check for it by checking the
+        // most significant bit.
         texelClampS <= clampS && ((texelS0 > texelS1) || (!texelS0[15] && texelS1[15]));
         texelClampT <= clampT && ((texelT0 > texelT1) || (!texelT0[15] && texelT1[15]));
 

@@ -143,7 +143,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     delete top;
 }
 
-TEST_CASE("Check intensity attribute", "[TextureBuffer]")
+TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
     VTextureBuffer* top = new VTextureBuffer();
     reset(top);
@@ -209,7 +209,7 @@ TEST_CASE("Check intensity attribute", "[TextureBuffer]")
     delete top;
 }
 
-TEST_CASE("clamp to border with x", "[TextureBuffer]")
+TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
     VTextureBuffer* top = new VTextureBuffer();
     reset(top);
@@ -250,7 +250,7 @@ TEST_CASE("clamp to border with x", "[TextureBuffer]")
     delete top;
 }
 
-TEST_CASE("clamp to border with y", "[TextureBuffer]")
+TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
     VTextureBuffer* top = new VTextureBuffer();
     reset(top);
@@ -291,7 +291,7 @@ TEST_CASE("clamp to border with y", "[TextureBuffer]")
     delete top;
 }
 
-TEST_CASE("clamp to border with x and y", "[TextureBuffer]")
+TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
     VTextureBuffer* top = new VTextureBuffer();
     reset(top);
