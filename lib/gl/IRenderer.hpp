@@ -127,8 +127,17 @@ public:
     /// @param pixels The texture as RGBA4444
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
+    /// @param texWrapModeS The wrapping mode of the texture in s direction
+    /// @param texWrapModeT The wrapping mode of the texture in t direction
+    /// @param enableMagFilter Enables magnification filter of the texture (GL_LINEAR)
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool updateTexture(const uint16_t texId, std::shared_ptr<const uint16_t> pixels, const uint16_t texWidth, const uint16_t texHeight) = 0;
+    virtual bool updateTexture(const uint16_t texId, 
+                               std::shared_ptr<const uint16_t> pixels, 
+                               const uint16_t texWidth,
+                               const uint16_t texHeight,
+                               const TextureWrapMode texWrapModeS,
+                               const TextureWrapMode texWrapModeT,
+                               const bool enableMagFilter) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param texId The id of the texture to use
@@ -211,16 +220,6 @@ public:
     /// @param opcode The used opcode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setLogicOp(const LogicOp opcode) = 0;
-
-    /// @brief Configures the wrapping mode of the texture parameter S
-    /// @param mode The new wrap mode
-    /// @return true if succeeded
-    virtual bool setTextureWrapModeS(const TextureWrapMode mode) = 0;
-
-    /// @brief Configures the wrapping mode of the texture parameter T
-    /// @param mode The new wrap mode
-    /// @return true if succeeded
-    virtual bool setTextureWrapModeT(const TextureWrapMode mode) = 0;
 
     /// @brief Set the fog color
     /// @param color the color in ABGR

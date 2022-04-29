@@ -29,14 +29,12 @@ module SinglePortRam32k #(
 
     // Write interface
     input  wire [MEM_WIDTH - 1 : 0]     writeData,
-    input  wire                         writeCs,
     input  wire                         write,
     input  wire [MEM_SIZE - 1 : 0]      writeAddr,
     input  wire [ 3 : 0]                writeMask,
 
     // Read interface
     output wire [MEM_WIDTH - 1 : 0]     readData,
-    input  wire                         readCs,
     input  wire [MEM_SIZE - 1 : 0]      readAddr
 );
 `ifdef UP5K
@@ -46,7 +44,7 @@ module SinglePortRam32k #(
         .DATAIN(writeData[15:0]),
         .MASKWREN(writeMask),
         .WREN(write),
-        .CHIPSELECT(writeCs | readCs),
+        .CHIPSELECT(1'b1),
         .CLOCK(clk),
         .STANDBY(1'b0),
         .SLEEP(1'b0),
@@ -60,8 +58,6 @@ module SinglePortRam32k #(
     genvar i;
     always @(posedge clk)
     begin
-    if (writeCs | readCs)
-    begin
         if (write)
         begin
             for (i = 0; i < 4; i = i + 1)
@@ -73,7 +69,6 @@ module SinglePortRam32k #(
             end 
         end
         memOut <= mem[(write) ? writeAddr[13:0] : readAddr[13:0]];
-    end
     end
 `endif
 endmodule

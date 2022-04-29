@@ -123,13 +123,11 @@ module FrameBuffer
         .reset(reset),
 
         .writeData(fbDataInBus),
-        .writeCs(1),
         .write(fbWrBus),
         .writeAddr(fbAddrBusWrite),
         .writeMask(fbWrMaskBus),
 
         .readData(fragValOut),
-        .readCs(1),
         .readAddr(fbAddrBusRead)
     );
     defparam ramTile.MEM_SIZE_BYTES = SIZE;

@@ -46,6 +46,7 @@ IceGL::IceGL(IRenderer &renderer)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     float fogColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
     glFogfv(GL_FOG_COLOR, fogColor);
@@ -536,7 +537,13 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             }
         }
 
-        if (!m_renderer.updateTexture(m_boundTexture, texMemShared, width, height))
+        if (!m_renderer.updateTexture(m_boundTexture, 
+                                      texMemShared, 
+                                      width, 
+                                      height,
+                                      m_texWrapModeS,
+                                      m_texWrapModeT,
+                                      m_texEnableMagFilter))
         {
             m_error = GL_INVALID_VALUE;
             return;
@@ -655,31 +662,51 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
     m_error = GL_NO_ERROR;
     if (target == GL_TEXTURE_2D)
     {
-        auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
-        if (m_error == GL_NO_ERROR)
+        switch (pname) {
+        case GL_TEXTURE_WRAP_S:
         {
-            switch (pname) {
-            case GL_TEXTURE_WRAP_S:
-                m_renderer.setTextureWrapModeS(mode);
-                break;
-            case GL_TEXTURE_WRAP_T:
-                m_renderer.setTextureWrapModeT(mode);
-                break;
-            default:
-                m_error = GL_INVALID_ENUM;
-                break;
+            auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
+            if (m_error == GL_NO_ERROR)
+            {
+                m_texWrapModeS = mode;
             }
+            break;
         }
-        else
+        case GL_TEXTURE_WRAP_T:
         {
+            auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
+            if (m_error == GL_NO_ERROR)
+            {
+                m_texWrapModeT = mode;
+            }
+            break;
+        }
+            break;
+        case GL_TEXTURE_MAG_FILTER:
+            if ((param == GL_LINEAR) || (param == GL_NEAREST))
+            {
+                m_texEnableMagFilter = (param == GL_LINEAR);
+            }
+            else
+            {
+                m_error = GL_INVALID_ENUM;
+            }
+            break;
+        default:
             m_error = GL_INVALID_ENUM;
+            break;
         }
     }
     else
     {
-        // TODO: Implement other modes like GL_TEXTURE_MAG_FILTER and so on, but they require hardware support (which is right now not implemented).
+        // TODO: Implement other modes like GL_TEXTURE_MIN_FILTER and so on, but they require hardware support (which is not implemented).
         m_error = GL_INVALID_ENUM;
     }
+}
+
+void IceGL::glTexParameterf(GLenum target, GLenum pname, GLfloat param) 
+{
+    glTexParameteri(target, pname, static_cast<GLint>(param));
 }
 
 void IceGL::glClear(GLbitfield mask)

@@ -72,10 +72,19 @@ module Rasterix #(
     ///////////////////////////
     // Texture access
     wire [15:0] texel;
-    wire [ 7:0] textureSizeX;
-    wire [ 7:0] textureSizeY;
-    wire [15:0] texelX;
-    wire [15:0] texelY;
+    wire [ 7:0] textureSizeWidth;
+    wire [ 7:0] textureSizeHeight;
+    wire        textureClampS;
+    wire        textureClampT;
+    wire        textureMagFilter;
+    wire [15:0] texelS;
+    wire [15:0] texelT;
+    wire [15:0] texel00;
+    wire [15:0] texel01;
+    wire [15:0] texel10;
+    wire [15:0] texel11;
+    wire [15:0] texelSubCoordS;
+    wire [15:0] texelSubCoordT;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -167,8 +176,11 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confTextureSizeX(textureSizeX),
-        .confTextureSizeY(textureSizeY),
+        .confTextureSizeWidth(textureSizeWidth),
+        .confTextureSizeHeight(textureSizeHeight),
+        .confTextureClampS(textureClampS),
+        .confTextureClampT(textureClampT),
+        .confTextureMagFilter(textureMagFilter),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
@@ -224,22 +236,46 @@ module Rasterix #(
     defparam regBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
     TextureBuffer texCache (
-        .clk(aclk),
-        .reset(!resetn),
-        .textureSizeX(textureSizeX),
-        .textureSizeY(textureSizeY),
+        .aclk(aclk),
+        .resetn(resetn),
+        .textureSizeWidth(textureSizeWidth),
+        .textureSizeHeight(textureSizeHeight),
 
         .s_axis_tvalid(s_texture_axis_tvalid),
         .s_axis_tready(s_texture_axis_tready),
         .s_axis_tlast(s_texture_axis_tlast),
         .s_axis_tdata(s_texture_axis_tdata),
 
-        .texel(texel),
-        .texelX(texelX),
-        .texelY(texelY)
+        .texelS(texelS),
+        .texelT(texelT),
+        .clampS(textureClampS),
+        .clampT(textureClampT),
+
+        .texel00(texel00),
+        .texel01(texel01),
+        .texel10(texel10),
+        .texel11(texel11),
+        .texelSubCoordS(texelSubCoordS),
+        .texelSubCoordT(texelSubCoordT)
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
+
+    TextureFilter texFilter (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .enable(textureMagFilter),
+
+        .texel00(texel00),
+        .texel01(texel01),
+        .texel10(texel10),
+        .texel11(texel11),
+        .texelSubCoordS(texelSubCoordS),
+        .texelSubCoordT(texelSubCoordT),
+
+        .texel(texel)
+    );
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -379,6 +415,8 @@ module Rasterix #(
 
         .confReg1(confReg1),
         .confReg2(confReg2),
+        .confTextureClampS(textureClampS),
+        .confTextureClampT(textureClampT),
         .confTextureEnvColor(confTextureEnvColor),
         .triangleStaticColor(triangleParams[TRIANGLE_COLOR * PARAM_SIZE +: 16]),
         .confFogColor(confFogColor),
@@ -389,8 +427,8 @@ module Rasterix #(
         .s_axis_tdata(m_attr_inter_axis_tdata),
 
         .texel(texel),
-        .texelX(texelX),
-        .texelY(texelY),
+        .texelS(texelS),
+        .texelT(texelT),
 
         .colorIndexRead(colorIndexRead),
         .colorIn(colorIn),

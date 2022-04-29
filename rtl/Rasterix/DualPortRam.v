@@ -29,14 +29,12 @@ module DualPortRam #(
 
     // Write interface
     input  wire [MEM_WIDTH - 1 : 0]         writeData,
-    input  wire                             writeCs,
     input  wire                             write,
     input  wire [MEM_SIZE - 1 : 0]          writeAddr,
     input  wire [WRITE_MASK_SIZE - 1 : 0]   writeMask, 
 
     // Read interface
     output wire [MEM_WIDTH - 1 : 0]         readData,
-    input  wire                             readCs,
     input  wire [MEM_SIZE - 1 : 0]          readAddr
 );
     
@@ -129,21 +127,15 @@ module DualPortRam #(
 
     always @(posedge clk)
     begin
-        if (writeCs)
+        for (i = 0; i < WRITE_MASK_SIZE; i = i + 1)
         begin
-            for (i = 0; i < WRITE_MASK_SIZE; i = i + 1)
+            if (write)
             begin
-                if (write)
-                begin
-                    if (writeMask[i])
-                        mem[writeAddr][(i * WRITE_STROBE_WIDTH) +: WRITE_STROBE_WIDTH] <= writeData[(i * WRITE_STROBE_WIDTH) +: WRITE_STROBE_WIDTH];
-                end
+                if (writeMask[i])
+                    mem[writeAddr][(i * WRITE_STROBE_WIDTH) +: WRITE_STROBE_WIDTH] <= writeData[(i * WRITE_STROBE_WIDTH) +: WRITE_STROBE_WIDTH];
             end
         end
-        if (readCs)
-        begin
-            memOut <= mem[readAddr];
-        end
+        memOut <= mem[readAddr];
     end
 `endif
 endmodule

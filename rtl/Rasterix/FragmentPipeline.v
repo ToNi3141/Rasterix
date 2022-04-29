@@ -37,6 +37,8 @@ module FragmentPipeline
     // Shader configurations
     input  wire [15:0] confReg1,
     input  wire [15:0] confReg2,
+    input  wire        confTextureClampS,
+    input  wire        confTextureClampT,
     input  wire [15:0] confTextureEnvColor,
     input  wire [15:0] triangleStaticColor,
     input  wire [15:0] confFogColor,
@@ -48,8 +50,8 @@ module FragmentPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output reg [15:0] texelX,
-    output reg [15:0] texelY,
+    output reg  [15:0] texelS,
+    output reg  [15:0] texelT,
     input  wire [15:0] texel,
 
     // Frame buffer access
@@ -302,8 +304,8 @@ module FragmentPipeline
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
 
-            texelX <= clampTexture(step_convert_texture_s[0 +: 24], confReg2[REG2_TEX_CLAMP_S_POS +: REG2_TEX_CLAMP_S_SIZE]);
-            texelY <= clampTexture(step_convert_texture_t[0 +: 24], confReg2[REG2_TEX_CLAMP_T_POS +: REG2_TEX_CLAMP_T_SIZE]);
+            texelS <= clampTexture(step_convert_texture_s[0 +: 24], confTextureClampS);
+            texelT <= clampTexture(step_convert_texture_t[0 +: 24], confTextureClampT);
 
             stepCalculatePerspectiveCorrectionTriangleColor <= {
                 // clamp colors 
@@ -320,7 +322,7 @@ module FragmentPipeline
 
     reg                         stepWaitForMemoryValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepWaitForMemoryFbIndex = 0;
-    reg [15:0]                  stepWaitForMemoryDepthValue = 0;    
+    reg [15 : 0]                stepWaitForMemoryDepthValue = 0;    
     reg [15 : 0]                stepWaitForMemoryTriangleColor = 0;
     reg [ 3 : 0]                stepWaitForMemoryFogIntensity = 0;
     always @(posedge clk)
@@ -336,6 +338,56 @@ module FragmentPipeline
         stepWaitForMemoryTriangleColor <= stepCalculatePerspectiveCorrectionTriangleColor;
         stepWaitForMemoryValid <= stepCalculatePerspectiveCorrectionValid;
     end
+
+    // The texture filtering requires 4 clock cycles + one clock cycle texture access (like the framebuffers)
+    // This is cycle one of the filtering
+    reg                         stepReceiveFragColorValid = 0;
+    reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepReceiveFragColorFbIndex = 0;
+    reg [15 : 0]                stepReceiveFragColorDepthValue = 0;    
+    reg [15 : 0]                stepReceiveFragColorTriangleColor = 0;
+    reg [ 3 : 0]                stepReceiveFragColorFogIntensity = 0;
+    reg [15 : 0]                stepReceiveFragColorDepthBufferVal = 0;
+    reg [15 : 0]                stepReceiveFragColorColorFrag = 0;
+    always @(posedge clk)
+    begin
+        stepReceiveFragColorFbIndex <= stepWaitForMemoryFbIndex;
+        stepReceiveFragColorDepthValue <= stepWaitForMemoryDepthValue;
+        stepReceiveFragColorColorFrag <= colorIn;
+        stepReceiveFragColorDepthBufferVal <= depthIn;
+        stepReceiveFragColorFogIntensity <= stepWaitForMemoryFogIntensity;
+        stepReceiveFragColorTriangleColor <= stepWaitForMemoryTriangleColor;
+        stepReceiveFragColorValid <= stepWaitForMemoryValid;
+    end
+
+    // This are the last three cycles of the filtering
+    wire                         stepWaitForTexValid;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] stepWaitForTexFbIndex;
+    wire [15 : 0]                stepWaitForTexDepthValue;    
+    wire [15 : 0]                stepWaitForTexTriangleColor;
+    wire [ 3 : 0]                stepWaitForTexFogIntensity;
+    wire [15 : 0]                stepWaitForTexDepthBufferVal;
+    wire [15 : 0]                stepWaitForTexColorFrag;
+
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(3)) 
+        wait_for_tex1 (.clk(clk), .in(stepReceiveFragColorValid), .out(stepWaitForTexValid));
+
+    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(3)) 
+        wait_for_tex2 (.clk(clk), .in(stepReceiveFragColorFbIndex), .out(stepWaitForTexFbIndex));
+
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+        wait_for_tex3 (.clk(clk), .in(stepReceiveFragColorDepthValue), .out(stepWaitForTexDepthValue));
+
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+        wait_for_tex4 (.clk(clk), .in(stepReceiveFragColorTriangleColor), .out(stepWaitForTexTriangleColor));
+
+    ValueDelay #(.VALUE_SIZE(4), .DELAY(3)) 
+        wait_for_tex5 (.clk(clk), .in(stepReceiveFragColorFogIntensity), .out(stepWaitForTexFogIntensity));
+
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+        wait_for_tex6 (.clk(clk), .in(stepReceiveFragColorDepthBufferVal), .out(stepWaitForTexDepthBufferVal));
+
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+        wait_for_tex7 (.clk(clk), .in(stepReceiveFragColorColorFrag), .out(stepWaitForTexColorFrag));
 
     // TexEnv
     reg                         stepTexEnvValid = 0;
@@ -391,10 +443,10 @@ module FragmentPipeline
 
         // Input of texture unit n (or in case of texture unit 0 it is the primary color of the triangle (Cf))
         // Currently we only have one texture unit, so Cp is Cf
-        rp = stepWaitForMemoryTriangleColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gp = stepWaitForMemoryTriangleColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bp = stepWaitForMemoryTriangleColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ap = stepWaitForMemoryTriangleColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rp = stepWaitForTexTriangleColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gp = stepWaitForTexTriangleColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bp = stepWaitForTexTriangleColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ap = stepWaitForTexTriangleColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
         // Texture environment color (Cc)
         rc = confTextureEnvColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
@@ -570,16 +622,16 @@ module FragmentPipeline
         stepTexEnvV12 <= v22 * v32;
         stepTexEnvV13 <= v23 * v33;
 
-        stepTexEnvFogIntensity <= stepWaitForMemoryFogIntensity;
-        stepTexEnvValid <= stepWaitForMemoryValid;
-        stepTexEnvFbIndex <= stepWaitForMemoryFbIndex;
-        stepTexEnvDepthValue <= stepWaitForMemoryDepthValue;
-        stepTexEnvColorFrag <= colorIn;
+        stepTexEnvFogIntensity <= stepWaitForTexFogIntensity;
+        stepTexEnvValid <= stepWaitForTexValid;
+        stepTexEnvFbIndex <= stepWaitForTexFbIndex;
+        stepTexEnvDepthValue <= stepWaitForTexDepthValue;
+        stepTexEnvColorFrag <= stepWaitForTexColorFrag;
 
         // Execute early z test. Advantage: We then just have to remember the bit of the result if the z test instead of 
         // the depth value from the depth buffer.
-        depthTestDepthBufferVal <= depthIn;
-        depthTestFragmentVal <= stepWaitForMemoryDepthValue;
+        depthTestDepthBufferVal <= stepWaitForTexDepthBufferVal;
+        depthTestFragmentVal <= stepWaitForTexDepthValue;
     end
 
     // Tex Env Result

@@ -120,13 +120,11 @@ module DisplayControllerSpi #(
         .reset(!resetn),
 
         .writeData(memIn),
-        .writeCs(1),
         .write(memWr), 
         .writeAddr(memAddr),
         .writeMask(4'hf),
 
         .readData(memOut),
-        .readCs(1),
         .readAddr(memAddr)
     );
     defparam mem.MEM_SIZE_BYTES = $clog2(PIXEL * 2); // Round size to the next bigger number of two size

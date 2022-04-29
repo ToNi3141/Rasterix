@@ -68,6 +68,7 @@ void glGenTextures(GLsizei n, GLuint *textures) {iceGlCWrap->glGenTextures(n, te
 void glDeleteTextures(GLsizei n, const GLuint * textures) {iceGlCWrap->glDeleteTextures(n, textures);}
 void glBindTexture(GLenum target, GLuint texture) {iceGlCWrap->glBindTexture(target, texture);}
 void glTexParameteri(GLenum target, GLenum pname, GLint param) {iceGlCWrap->glTexParameteri(target, pname, param);}
+void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {iceGlCWrap->glTexParameterf(target, pname, param);}
 void glTexEnvi(GLenum target, GLenum pname, GLint param) {iceGlCWrap->glTexEnvi(target, pname, param);}
 void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {iceGlCWrap->glTexEnvf(target, pname, param);}
 void glTexEnvfv(GLenum target, GLenum pname, const GLfloat* param) {iceGlCWrap->glTexEnvfv(target, pname, param);}
