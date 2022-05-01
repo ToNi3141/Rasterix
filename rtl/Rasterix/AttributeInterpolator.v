@@ -79,7 +79,8 @@ module AttributeInterpolator #(
 
     localparam INT_32_DIFF = ATTRIBUTE_SIZE - AXIS_SCREEN_POS_SIZE;
 
-    localparam FRAMEBUFFER_INDEX_DELAY = 32; // 6 steps + 8 clk (reciprocal)
+    localparam RECIP_DELAY = 24;
+    localparam FRAMEBUFFER_INDEX_DELAY = 20 + RECIP_DELAY; // 6 steps
 
     // Selecting the vertex attributes from the axis
     // Convert them from a 32 bit float to a FLOAT_SIZE float. It can easily be done by cutting off bits from the mantissa as long as the exponent keeps it size.
@@ -279,7 +280,8 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     wire [FLOAT_SIZE - 1 : 0] step_5_depth_w;
 
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE))
+
+    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
         recip_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w));
 
     wire [FLOAT_SIZE - 1 : 0] step_5_texture_s_inv;
@@ -292,15 +294,15 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] step_5_color_b_inv;
     wire [FLOAT_SIZE - 1 : 0] step_5_color_a_inv;
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_s (.clk(aclk), .in(step_4_texture_s_inv), .out(step_5_texture_s_inv));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_t (.clk(aclk), .in(step_4_texture_t_inv), .out(step_5_texture_t_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_s (.clk(aclk), .in(step_4_texture_s_inv), .out(step_5_texture_s_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_t (.clk(aclk), .in(step_4_texture_t_inv), .out(step_5_texture_t_inv));
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_d_z (.clk(aclk), .in(step_4_depth_z_inv), .out(step_5_depth_z_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_d_z (.clk(aclk), .in(step_4_depth_z_inv), .out(step_5_depth_z_inv));
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_color_r (.clk(aclk), .in(step_4_color_r_inv), .out(step_5_color_r_inv));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_color_g (.clk(aclk), .in(step_4_color_g_inv), .out(step_5_color_g_inv));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_color_b (.clk(aclk), .in(step_4_color_b_inv), .out(step_5_color_b_inv));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) step_5_delay_color_a (.clk(aclk), .in(step_4_color_a_inv), .out(step_5_color_a_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_color_r (.clk(aclk), .in(step_4_color_r_inv), .out(step_5_color_r_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_color_g (.clk(aclk), .in(step_4_color_g_inv), .out(step_5_color_g_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_color_b (.clk(aclk), .in(step_4_color_b_inv), .out(step_5_color_b_inv));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY)) step_5_delay_color_a (.clk(aclk), .in(step_4_color_a_inv), .out(step_5_color_a_inv));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 6 Calculate final attribute value
