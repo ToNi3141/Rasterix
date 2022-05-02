@@ -280,7 +280,6 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     wire [FLOAT_SIZE - 1 : 0] step_5_depth_w;
 
-
     FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
         recip_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w));
 
@@ -335,7 +334,6 @@ module AttributeInterpolator #(
 
     wire [FLOAT_SIZE - 1 : 0] step_6_depth_w;
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_w (.clk(aclk), .in(step_5_depth_w), .out(step_6_depth_w));
-
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7 Output calculated values
