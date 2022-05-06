@@ -41,10 +41,10 @@ module CommandParser #(
     output reg          confTextureClampS,
     output reg          confTextureClampT,
     output reg          confTextureMagFilter,
-    output wire [15:0]  confReg1,
-    output wire [15:0]  confReg2,
-    output wire [15:0]  confTextureEnvColor,
-    output wire [15:0]  confFogColor,
+    output wire [31:0]  confReg1,
+    output wire [31:0]  confReg2,
+    output wire [31:0]  confTextureEnvColor,
+    output wire [31:0]  confFogColor,
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -59,7 +59,7 @@ module CommandParser #(
     input  wire         colorBufferApplied,
     output reg          colorBufferCmdCommit,
     output reg          colorBufferCmdMemset,
-    output wire [15:0]  confColorBufferClearColor,
+    output wire [31:0]  confColorBufferClearColor,
     output reg          depthBufferApply,
     input  wire         depthBufferApplied,
     output reg          depthBufferCmdCommit,
@@ -97,7 +97,7 @@ module CommandParser #(
     localparam FB_CONTROL_WAITFOREND = 1;
 
     // Command Unit Variables
-    reg  [15 : 0]   configReg[0 : 5];
+    reg  [31 : 0]   configReg[0 : 5];
     reg             apply;
     wire            applied;
     reg  [13 : 0]   streamCounter;
@@ -111,7 +111,7 @@ module CommandParser #(
 
     assign applied = colorBufferApplied & depthBufferApplied;
     assign confColorBufferClearColor = configReg[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR];
-    assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH];
+    assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
     assign confReg1 = configReg[OP_RENDER_CONFIG_REG1];
     assign confReg2 = configReg[OP_RENDER_CONFIG_REG2];
     assign confTextureEnvColor = configReg[OP_RENDER_CONFIG_TEX_ENV_COLOR];
@@ -322,7 +322,7 @@ module CommandParser #(
             begin
                 if (s_cmd_axis_tvalid)
                 begin
-                    configReg[streamCounter[0 +: 3]] <= s_cmd_axis_tdata[0 +: 16];
+                    configReg[streamCounter[0 +: 3]] <= s_cmd_axis_tdata[0 +: 32];
                     s_cmd_axis_tready <= 0;
                     state <= WAIT_FOR_IDLE;
                 end

@@ -20,7 +20,7 @@
 // Pipelined: yes
 // Depth: 2 cycles
 module ColorInterpolator #(
-    localparam SUB_PIXEL_WIDTH = 4,
+    localparam SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4
 )
 (
@@ -55,7 +55,7 @@ module ColorInterpolator #(
         reg [SUB_PIXEL_WIDTH - 1 : 0] ab;
         reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] in;
 
-        in = { 4'h0, intensity[PIXEL_WIDTH - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] };
+        in = { 8'h0, intensity[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] };
 
         ra = colorA[COLOR_R_POS +: SUB_PIXEL_WIDTH];
         ga = colorA[COLOR_G_POS +: SUB_PIXEL_WIDTH];
@@ -72,10 +72,10 @@ module ColorInterpolator #(
         V02 <= (in * ba);
         V03 <= (in * aa);
 
-        V10 <= ((8'hf - in) * rb);
-        V11 <= ((8'hf - in) * gb);
-        V12 <= ((8'hf - in) * bb);
-        V13 <= ((8'hf - in) * ab);
+        V10 <= ((8'hff - in) * rb);
+        V11 <= ((8'hff - in) * gb);
+        V12 <= ((8'hff - in) * bb);
+        V13 <= ((8'hff - in) * ab);
     end
 
     always @(posedge aclk)
@@ -85,17 +85,17 @@ module ColorInterpolator #(
         reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
         reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
 
-        r = (V00 + V10) + 8'hf;
-        g = (V01 + V11) + 8'hf;
-        b = (V02 + V12) + 8'hf;
-        a = (V03 + V13) + 8'hf;
+        r = (V00 + V10) + 8'hff;
+        g = (V01 + V11) + 8'hff;
+        b = (V02 + V12) + 8'hff;
+        a = (V03 + V13) + 8'hff;
 
         mixedColor <= {
             // Saturate colors 
-            (r[8]) ? 4'hf : r[7:4], 
-            (g[8]) ? 4'hf : g[7:4], 
-            (b[8]) ? 4'hf : b[7:4],
-            (a[8]) ? 4'hf : a[7:4]
+            (r[16]) ? 8'hff : r[15 : 8], 
+            (g[16]) ? 8'hff : g[15 : 8], 
+            (b[16]) ? 8'hff : b[15 : 8],
+            (a[16]) ? 8'hff : a[15 : 8]
         };
     end
 endmodule

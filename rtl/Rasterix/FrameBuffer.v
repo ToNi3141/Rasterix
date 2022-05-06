@@ -20,42 +20,40 @@ module FrameBuffer
     parameter FRAME_SIZE = 128 * 128, // 128px * 128px. Used for abort the memset and commit phase when all pixels are transferred without processing the padding pixel
     parameter STREAM_WIDTH = 16,
     localparam SIZE = $clog2(FRAME_SIZE * 2), // The size of the frame buffer as bytes in power of two
-    localparam ADDR_WIDTH = SIZE - 1 // Convert SIZE from 8 bit bytes to 16 bit pixels
+    localparam ADDR_WIDTH = SIZE - 1, // Convert SIZE from 8 bit bytes to 16 bit pixels
+    parameter NUMBER_OF_SUB_PIXELS = 4,
+    parameter EXPANDED_SUB_PIXEL_WIDTH = 4,
+    parameter SUB_PIXEL_WIDTH = 4,
+    localparam EXPANDED_PIXEL_WIDTH = EXPANDED_SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS
 )
 (
-    input   wire        clk,
-    input   wire        reset,
+    input   wire                        clk,
+    input   wire                        reset,
 
     // Framebuffer Interface
-    input  wire [ADDR_WIDTH - 1 : 0] fragIndexRead,
-    output wire [15:0]  fragOut,
-    input  wire [ADDR_WIDTH - 1 : 0] fragIndexWrite,
-    input  wire [15:0]  fragIn,
-    input  wire         fragWriteEnable,
-    input  wire [ 3:0]  fragMask,
+    input  wire [ADDR_WIDTH - 1 : 0]    fragIndexRead,
+    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  fragOut,
+    input  wire [ADDR_WIDTH - 1 : 0]    fragIndexWrite,
+    input  wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  fragIn,
+    input  wire                         fragWriteEnable,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  fragMask,
     
     // Control
-    input   wire        apply, // This will apply and clear the cache
-    output  reg         applied,
-    input   wire        cmdCommit,
-    input   wire        cmdMemset,
+    input   wire                        apply, // This will apply and clear the cache
+    output  reg                         applied,
+    input   wire                        cmdCommit,
+    input   wire                        cmdMemset,
 
     // AXI Stream master interface
-    output reg          m_axis_tvalid,
-    input  wire         m_axis_tready,
-    output reg          m_axis_tlast,
-    output wire [STREAM_WIDTH - 1 : 0] m_axis_tdata,
+    output reg                          m_axis_tvalid,
+    input  wire                         m_axis_tready,
+    output reg                          m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
 
     // Clear color
-    input  wire [15:0]  clearColor
+    input  wire [EXPANDED_PIXEL_WIDTH - 1 : 0]   clearColor
 );
-`ifdef UP5K
-`define RAM_MODULE SinglePortRam32k
-`else
-`define RAM_MODULE DualPortRam
-`endif
-    localparam NUMBER_OF_SUB_PIXELS = 4;
-    localparam SUB_PIXEL_WIDTH = 4;
+
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH;
     localparam PIXEL_PER_BEAT = STREAM_WIDTH / PIXEL_WIDTH;
     localparam STROBES_PER_BEAT = STREAM_WIDTH / SUB_PIXEL_WIDTH;
@@ -66,6 +64,12 @@ module FrameBuffer
     localparam TILECONTROL_MEMCPY = 1;
     localparam TILECONTROL_MEMSET = 2;
     localparam TILECONTROL_MEMCPY_INIT = 3;
+
+    localparam DIFF_SUB_PIXEL_WIDTH = EXPANDED_SUB_PIXEL_WIDTH - SUB_PIXEL_WIDTH;
+
+    wire [PIXEL_WIDTH - 1 : 0] clearColorReduced;
+    wire [PIXEL_WIDTH - 1 : 0] fragInReduced;
+    wire [PIXEL_WIDTH - 1 : 0] fragOutReduced;
 
     // Tile Control
     reg [5:0] stateTileControl;
@@ -86,39 +90,63 @@ module FrameBuffer
     reg                             fbWr;
     wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusWrite  = (commandRunning) ? commitAddr : fragAddrWrite;
     wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusRead   = (commandRunning) ? memsetWriteAddr : fragAddrRead;
-    wire [STREAM_WIDTH - 1 : 0]     fbDataInBus     = (commandRunning) ? {PIXEL_PER_BEAT{clearColor}} : fragValIn;
+    wire [STREAM_WIDTH - 1 : 0]     fbDataInBus     = (commandRunning) ? {PIXEL_PER_BEAT{clearColorReduced}} : fragValIn;
     wire                            fbWrBus         = (commandRunning) ? fbWr : fragWriteEnable;
     wire [STROBES_PER_BEAT - 1 : 0] fbWrMaskBus     = (commandRunning) ? {PIXEL_PER_BEAT{fragMask}} : writeStrobe;
-
-    genvar i;
+    
     generate
+        genvar i, j;
         if (PIXEL_PER_BEAT == 1)
         begin
             assign fragAddrWrite = fragIndexWrite;
-            assign fragValIn = fragIn;
+            assign fragValIn = fragInReduced;
             assign writeStrobe = fragMask;
             assign fragAddrRead = fragIndexRead;
-            assign fragOut = fragValOut;
+            assign fragOutReduced = fragValOut;
         end
         else
         begin
             for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
             begin
-                assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + 0] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[0];
-                assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + 1] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[1];
-                assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + 2] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[2];
-                assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + 3] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[3];
+                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
+                begin
+                    assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[j];
+                end
             end
             assign fragAddrWrite = fragIndexWrite[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign fragValIn = {PIXEL_PER_BEAT{fragIn}};
+            assign fragValIn = {PIXEL_PER_BEAT{fragInReduced}};
             assign fragAddrRead = fragIndexRead[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
-            assign fragOut = fragValOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
+            assign fragOutReduced = fragValOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
+        end
+
+        if (EXPANDED_PIXEL_WIDTH == PIXEL_WIDTH) 
+        begin
+            assign fragOut = fragOutReduced;
+            assign fragInReduced = fragIn;
+            assign clearColorReduced = clearColor;
+        end
+        else
+        begin
+            // Expand and reduce colors (convert from 32 to 16 and 16 to 32 bit)
+            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
+            begin
+                assign fragOut[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
+                    fragOutReduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    fragOutReduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH]
+                };
+                assign fragInReduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] = { 
+                    fragIn[(EXPANDED_SUB_PIXEL_WIDTH * i) + DIFF_SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] 
+                };
+                assign clearColorReduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] = { 
+                    clearColor[(EXPANDED_SUB_PIXEL_WIDTH * i) + DIFF_SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] 
+                };
+            end
         end
     endgenerate
     assign m_axis_tdata = fragValOut;
 
-    `RAM_MODULE ramTile (
+    DualPortRam ramTile (
         .clk(clk),
         .reset(reset),
 

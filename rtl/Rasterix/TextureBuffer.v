@@ -29,45 +29,50 @@ module TextureBuffer #(
     
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
 
-    localparam SUB_PIXEL_WIDTH = 4,
-    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4,
+    localparam NUMBER_OF_SUB_PIXELS = 4,
+    parameter EXPANDED_SUB_PIXEL_WIDTH = 8,
+
+    parameter SUB_PIXEL_WIDTH = 4,
+    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS,
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH),
-    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH
+    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH,
+    localparam EXPANDED_PIXEL_WIDTH = EXPANDED_SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS
 )
 (
-    input  wire                         aclk,
-    input  wire                         resetn,
+    input  wire                                 aclk,
+    input  wire                                 resetn,
 
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
-    input  wire [ 7 : 0]                textureSizeWidth, 
-    input  wire [ 7 : 0]                textureSizeHeight,
+    input  wire [ 7 : 0]                        textureSizeWidth, 
+    input  wire [ 7 : 0]                        textureSizeHeight,
 
     // Texture Read
-    input  wire [15 : 0]                texelS, // Q1.15
-    input  wire [15 : 0]                texelT, // Q1.15
-    input  wire                         clampS,
-    input  wire                         clampT,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [PIXEL_WIDTH - 1 : 0]   texel01, // (1, 0)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel10, // (0, 1)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel11, // (1, 1)
+    input  wire [15 : 0]                        texelS, // Q1.15
+    input  wire [15 : 0]                        texelT, // Q1.15
+    input  wire                                 clampS,
+    input  wire                                 clampT,
+    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
+    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel01, // (1, 0)
+    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel10, // (0, 1)
+    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel11, // (1, 1)
 
     // This is basically the faction of the pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
     // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
     // are outside of our quad which never happens.
-    output reg  [15 : 0]                texelSubCoordS, // Q0.16
-    output reg  [15 : 0]                texelSubCoordT, // Q0.16
+    output reg  [15 : 0]                        texelSubCoordS, // Q0.16
+    output reg  [15 : 0]                        texelSubCoordT, // Q0.16
 
     // Texture Write
-    input  wire                         s_axis_tvalid,
-    output reg                          s_axis_tready,
-    input  wire                         s_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
+    input  wire                                 s_axis_tvalid,
+    output reg                                  s_axis_tready,
+    input  wire                                 s_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]          s_axis_tdata
 );
 `include "RegisterAndDescriptorDefines.vh"
+    localparam DIFF_SUB_PIXEL_WIDTH = EXPANDED_SUB_PIXEL_WIDTH - SUB_PIXEL_WIDTH;
 
     reg  [ADDR_WIDTH - 1 : 0]       memWriteAddr = 0;
     reg  [15 : 0]                   texelAddrForDecoding00;
@@ -108,6 +113,11 @@ module TextureBuffer #(
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect01;
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect10;
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect11;
+
+    wire [PIXEL_WIDTH - 1 : 0]      texel00Reduced;
+    wire [PIXEL_WIDTH - 1 : 0]      texel01Reduced; 
+    wire [PIXEL_WIDTH - 1 : 0]      texel10Reduced; 
+    wire [PIXEL_WIDTH - 1 : 0]      texel11Reduced; 
     
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
@@ -192,14 +202,52 @@ module TextureBuffer #(
     endgenerate
 
     // Clamp texel quad
-    assign texel00 = texelSelect00;
-    assign texel01 = (texelClampS)  ? texelSelect00 
-                                    : texelSelect01;
-    assign texel10 = (texelClampT)  ? texelSelect00 
-                                    : texelSelect10;
-    assign texel11 = (texelClampS)  ? texel10
-                                    : (texelClampT) ? texelSelect01 
-                                                    : texelSelect11;
+    assign texel00Reduced = texelSelect00;
+    assign texel01Reduced = (texelClampS)   ? texelSelect00 
+                                            : texelSelect01;
+    assign texel10Reduced = (texelClampT)   ? texelSelect00 
+                                            : texelSelect10;
+    assign texel11Reduced = (texelClampS)   ? texel10Reduced
+                                            : (texelClampT) ? texelSelect01 
+                                                            : texelSelect11;
+
+    // Expanding the pixels
+    generate 
+        genvar i;
+        if (EXPANDED_PIXEL_WIDTH == PIXEL_WIDTH) 
+        begin
+            assign texel00 = texel00Reduced;
+            assign texel01 = texel01Reduced;
+            assign texel10 = texel10Reduced;
+            assign texel11 = texel11Reduced;
+        end
+        else
+        begin
+            // Expand the colors from the small width (SUB_PIXEL_WIDTH) to the big width (EXPANDED_SUB_PIXEL_WIDTH)
+            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
+            begin
+                assign texel00[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
+                    texel00Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    // Mirror the subpixel in the reminder.
+                    // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit
+                    // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] }
+                    texel00Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                assign texel01[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
+                    texel01Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel01Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                assign texel10[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
+                    texel10Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel10Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                assign texel11[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
+                    texel11Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel11Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+            end
+        end
+    endgenerate
     
     // Build the RAM adress of the given (s, t) coordinate and also generate the address of 
     // the texel quad

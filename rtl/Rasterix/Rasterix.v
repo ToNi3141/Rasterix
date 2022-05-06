@@ -71,7 +71,7 @@ module Rasterix #(
     // Regs and wires
     ///////////////////////////
     // Texture access
-    wire [15:0] texel;
+    wire [31:0] texel;
     wire [ 7:0] textureSizeWidth;
     wire [ 7:0] textureSizeHeight;
     wire        textureClampS;
@@ -79,10 +79,10 @@ module Rasterix #(
     wire        textureMagFilter;
     wire [15:0] texelS;
     wire [15:0] texelT;
-    wire [15:0] texel00;
-    wire [15:0] texel01;
-    wire [15:0] texel10;
-    wire [15:0] texel11;
+    wire [31:0] texel00;
+    wire [31:0] texel01;
+    wire [31:0] texel10;
+    wire [31:0] texel11;
     wire [15:0] texelSubCoordS;
     wire [15:0] texelSubCoordT;
 
@@ -90,8 +90,8 @@ module Rasterix #(
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
     wire        colorWriteEnable;
-    wire [15:0] colorIn;
-    wire [15:0] colorOut;
+    wire [31:0] colorIn;
+    wire [31:0] colorOut;
 
     // Depth buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead;
@@ -118,7 +118,7 @@ module Rasterix #(
     wire        colorBufferApplied;
     wire        colorBufferCmdCommit;
     wire        colorBufferCmdMemset;
-    wire [15:0] confColorBufferClearColor;
+    wire [31:0] confColorBufferClearColor;
     wire        depthBufferApply;
     wire        depthBufferApplied;
     wire        depthBufferCmdCommit;
@@ -136,10 +136,10 @@ module Rasterix #(
     wire        m_attr_inter_axis_tready;
     wire        m_attr_inter_axis_tlast;
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
-    wire [15:0] confReg1;
-    wire [15:0] confReg2;
-    wire [15:0] confTextureEnvColor;
-    wire [15 : 0] confFogColor;
+    wire [31:0] confReg1;
+    wire [31:0] confReg2;
+    wire [31:0] confTextureEnvColor;
+    wire [31:0] confFogColor;
 
     // Rasterizer
     wire        m_rasterizer_axis_tvalid;
@@ -260,6 +260,8 @@ module Rasterix #(
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam texCache.SUB_PIXEL_WIDTH = 4;
+    defparam texCache.EXPANDED_SUB_PIXEL_WIDTH = 8;
 
     TextureFilter texFilter (
         .aclk(aclk),
@@ -286,7 +288,7 @@ module Rasterix #(
         .fragIndexWrite(depthIndexWrite),
         .fragIn(depthOut),
         .fragWriteEnable(depthWriteEnable),
-        .fragMask({4{confReg1[REG1_DEPTH_MASK_POS +: REG1_DEPTH_MASK_SIZE]}}),
+        .fragMask(confReg1[REG1_DEPTH_MASK_POS +: REG1_DEPTH_MASK_SIZE]),
         
         .apply(depthBufferApply),
         .applied(depthBufferApplied),
@@ -302,6 +304,9 @@ module Rasterix #(
     );
     defparam depthBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
+    defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
+    defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
+    defparam depthBuffer.EXPANDED_SUB_PIXEL_WIDTH = 16;
 
     FrameBuffer colorBuffer (  
         .clk(aclk),
@@ -331,6 +336,9 @@ module Rasterix #(
     );
     defparam colorBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
+    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = 4;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = 4;
+    defparam colorBuffer.EXPANDED_SUB_PIXEL_WIDTH = 8;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -418,7 +426,6 @@ module Rasterix #(
         .confTextureClampS(textureClampS),
         .confTextureClampT(textureClampT),
         .confTextureEnvColor(confTextureEnvColor),
-        .triangleStaticColor(triangleParams[TRIANGLE_COLOR * PARAM_SIZE +: 16]),
         .confFogColor(confFogColor),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
@@ -444,5 +451,6 @@ module Rasterix #(
     );
     defparam fragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam fragmentPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    // defparam fragmentPipeline.SUB_PIXEL_WIDTH = 4;
 
 endmodule

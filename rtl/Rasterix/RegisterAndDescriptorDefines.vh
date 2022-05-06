@@ -165,7 +165,7 @@ localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 // OP_RENDER_CONFIG
 // OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
 //  +---------------------------------------+
-//  | 4 bit R | 4 bit G | 4 bit B | 4 bit A |
+//  | 8 bit R | 8 bit G | 8 bit B | 8 bit A |
 //  +---------------------------------------+
 
 // OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH
@@ -174,9 +174,9 @@ localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 //  +---------------------------------------+
 
 // OP_RENDER_CONFIG_REG1
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 1 bit color mask R | 1 bit color mask G | 1 bit color mask B | 1 bit color mask A | 1 bit depth mask | 4 bit A ref | 3 bit A func | 3 bit depth func | 1 bit enable depth test |
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 12 bit reserved | 1 bit color mask R | 1 bit color mask G | 1 bit color mask B | 1 bit color mask A | 1 bit depth mask | 8 bit A ref | 3 bit A func | 3 bit depth func | 1 bit enable depth test |
+//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 localparam REG1_ENABLE_DEPTH_TEST_POS = 0;
 localparam REG1_ENABLE_DEPTH_TEST_SIZE = 1;
 localparam REG1_DEPTH_TEST_FUNC_POS = REG1_ENABLE_DEPTH_TEST_POS + REG1_ENABLE_DEPTH_TEST_SIZE;
@@ -184,7 +184,7 @@ localparam REG1_DEPTH_TEST_FUNC_SIZE = 3;
 localparam REG1_ALPHA_TEST_FUNC_POS = REG1_DEPTH_TEST_FUNC_POS + REG1_DEPTH_TEST_FUNC_SIZE;
 localparam REG1_ALPHA_TEST_FUNC_SIZE = 3;
 localparam REG1_ALPHA_TEST_REF_VALUE_POS = REG1_ALPHA_TEST_FUNC_POS + REG1_ALPHA_TEST_FUNC_SIZE;
-localparam REG1_ALPHA_TEST_REF_VALUE_SIZE = 4;
+localparam REG1_ALPHA_TEST_REF_VALUE_SIZE = 8;
 localparam REG1_DEPTH_MASK_POS = REG1_ALPHA_TEST_REF_VALUE_POS + REG1_ALPHA_TEST_REF_VALUE_SIZE;
 localparam REG1_DEPTH_MASK_SIZE = 1;
 localparam REG1_COLOR_MASK_A_POS = REG1_DEPTH_MASK_POS + REG1_DEPTH_MASK_SIZE;
@@ -198,7 +198,7 @@ localparam REG1_COLOR_MASK_R_SIZE = 1;
 
 // OP_RENDER_CONFIG_REG2
 //  +--------------------------------------------------------------------------------------------+
-//  | 4 bit reserved | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
+//  | 20 bit reserved | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
 //  +--------------------------------------------------------------------------------------------+
 localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_POS = 0;
 localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE = 1;
@@ -266,15 +266,15 @@ localparam CLAMP_TO_EDGE = 1;
 
 // OP_RENDER_CONFIG_TEX_ENV_COLOR
 //  +---------------------------------------+
-//  | 4 bit R | 4 bit G | 4 bit B | 4 bit A |
+//  | 8 bit R | 8 bit G | 8 bit B | 8 bit A |
 //  +---------------------------------------+
 
 // Color defines
-localparam COLOR_R_POS = 12;
-localparam COLOR_G_POS = 8;
-localparam COLOR_B_POS = 4;
+localparam COLOR_R_POS = 24;
+localparam COLOR_G_POS = 16;
+localparam COLOR_B_POS = 8;
 localparam COLOR_A_POS = 0;
-localparam COLOR_SUB_PIXEL_WIDTH = 4;
+localparam COLOR_SUB_PIXEL_WIDTH = 8;
 
 // OP_FRAMEBUFFER
 // Does not contain any arguments, just starts the framebuffer commit and clear processes
