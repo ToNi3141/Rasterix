@@ -18,8 +18,8 @@
 // Texture buffer which stores a whole texture. When reading a texel, the texture buffer
 // reads a texel quad with the neigbored texels. Additionally it returns the sub pixel 
 // coordinates which later can be used for texture filtering
-// Pipelined: n/a
-// Depth: 1 cycle
+// Pipelined: yes
+// Depth: 2 cycle
 module TextureBuffer #(
     // Width of the write port
     parameter STREAM_WIDTH = 32,
@@ -53,10 +53,10 @@ module TextureBuffer #(
     input  wire [15 : 0]                        texelT, // Q1.15
     input  wire                                 clampS,
     input  wire                                 clampT,
-    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel01, // (1, 0)
-    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel10, // (0, 1)
-    output wire [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel11, // (1, 1)
+    output reg  [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
+    output reg  [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel01, // (1, 0)
+    output reg  [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel10, // (0, 1)
+    output reg  [EXPANDED_PIXEL_WIDTH - 1 : 0]  texel11, // (1, 1)
 
     // This is basically the faction of the pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
@@ -105,6 +105,9 @@ module TextureBuffer #(
 
     reg  [15 : 0]                   texelSubCoordSReg; // Q0.16
     reg  [15 : 0]                   texelSubCoordTReg; // Q0.16
+
+    reg  [15 : 0]                   texelSubCoordSRegOut; // Q0.16
+    reg  [15 : 0]                   texelSubCoordTRegOut; // Q0.16
 
     reg                             texelClampS;
     reg                             texelClampT;
@@ -158,97 +161,11 @@ module TextureBuffer #(
         .readData(memReadDataOdd0),
         .readAddr(memReadAddrOdd0)
     );
-
-    // Muxing of the RAM access to query the texels from the even and odd RAMs.
-    // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s
-    assign memReadAddrEven0 = (texelAddr00[0]) ? texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrOdd0  = (texelAddr00[0]) ? texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrEven1 = (texelAddr10[0]) ? texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrOdd1  = (texelAddr10[0]) ? texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-
-    // Demux the RAM access and access the texels in the read vector
-    generate
-        if (STREAM_WIDTH == 32)
-        begin
-            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0
-                                                                : memReadDataEven0;
-
-            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0
-                                                                : memReadDataEven0;
-
-            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1
-                                                                : memReadDataEven1;
-
-            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1
-                                                                : memReadDataEven1;
-        end
-        else 
-        begin
-            // Bit zero is used to check, if we have to select the RAM with the even or unevent pixel adresses (see also the multiplexing of the memReadAddr*)
-            // Since bit zero is already used from the ADDR_WIDTH_DIFF to select the even or uneven ram, we can use the rest of the
-            // bits to select the pixel from the vector. Therefor we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
-            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
-                                                                : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
-
-            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
-                                                                : memReadDataEven0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
-
-            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
-                                                                : memReadDataEven1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
-
-            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
-                                                                : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
-        end
-    endgenerate
-
-    // Clamp texel quad
-    assign texel00Reduced = texelSelect00;
-    assign texel01Reduced = (texelClampS)   ? texelSelect00 
-                                            : texelSelect01;
-    assign texel10Reduced = (texelClampT)   ? texelSelect00 
-                                            : texelSelect10;
-    assign texel11Reduced = (texelClampS)   ? texel10Reduced
-                                            : (texelClampT) ? texelSelect01 
-                                                            : texelSelect11;
-
-    // Expanding the pixels
-    generate 
-        genvar i;
-        if (EXPANDED_PIXEL_WIDTH == PIXEL_WIDTH) 
-        begin
-            assign texel00 = texel00Reduced;
-            assign texel01 = texel01Reduced;
-            assign texel10 = texel10Reduced;
-            assign texel11 = texel11Reduced;
-        end
-        else
-        begin
-            // Expand the colors from the small width (SUB_PIXEL_WIDTH) to the big width (EXPANDED_SUB_PIXEL_WIDTH)
-            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
-            begin
-                assign texel00[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
-                    texel00Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
-                    // Mirror the subpixel in the reminder.
-                    // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit
-                    // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] }
-                    texel00Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
-                };
-                assign texel01[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
-                    texel01Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
-                    texel01Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
-                };
-                assign texel10[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
-                    texel10Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
-                    texel10Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
-                };
-                assign texel11[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] = { 
-                    texel11Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
-                    texel11Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
-                };
-            end
-        end
-    endgenerate
     
+    //////////////////////////////////////////////
+    // CLK 0 Build RAM adresses
+    //////////////////////////////////////////////
+
     // Build the RAM adress of the given (s, t) coordinate and also generate the address of 
     // the texel quad
     always @*
@@ -429,9 +346,113 @@ module TextureBuffer #(
         texelClampT <= clampT && ((texelT0 > texelT1) || (!texelT0[15] && texelT1[15]));
 
         // Output the pixel intensity
-        texelSubCoordS <= texelSubCoordSReg;
-        texelSubCoordT <= texelSubCoordTReg;
+        texelSubCoordSRegOut <= texelSubCoordSReg;
+        texelSubCoordTRegOut <= texelSubCoordTReg;
     end
+
+    // Muxing of the RAM access to query the texels from the even and odd RAMs.
+    // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s
+    assign memReadAddrEven0 = (texelAddr00[0]) ? texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrOdd0  = (texelAddr00[0]) ? texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrEven1 = (texelAddr10[0]) ? texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrOdd1  = (texelAddr10[0]) ? texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+
+    //////////////////////////////////////////////
+    // CLK 1 Demux RAM adress and expand pixels
+    //////////////////////////////////////////////
+
+    // Demux the RAM access and access the texels in the read vector
+    generate
+        if (STREAM_WIDTH == 32)
+        begin
+            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0
+                                                                : memReadDataEven0;
+
+            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0
+                                                                : memReadDataEven0;
+
+            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1
+                                                                : memReadDataEven1;
+
+            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1
+                                                                : memReadDataEven1;
+        end
+        else 
+        begin
+            // Bit zero is used to check, if we have to select the RAM with the even or unevent pixel adresses (see also the multiplexing of the memReadAddr*)
+            // Since bit zero is already used from the ADDR_WIDTH_DIFF to select the even or uneven ram, we can use the rest of the
+            // bits to select the pixel from the vector. Therefor we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
+            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
+
+            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
+
+            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
+
+            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
+        end
+    endgenerate
+
+    // Clamp texel quad
+    assign texel00Reduced = texelSelect00;
+    assign texel01Reduced = (texelClampS)   ? texelSelect00 
+                                            : texelSelect01;
+    assign texel10Reduced = (texelClampT)   ? texelSelect00 
+                                            : texelSelect10;
+    assign texel11Reduced = (texelClampS)   ? texel10Reduced
+                                            : (texelClampT) ? texelSelect01 
+                                                            : texelSelect11;
+
+    always @(posedge aclk)
+    begin
+        integer i;
+
+        // Expanding the pixels
+        if (EXPANDED_PIXEL_WIDTH == PIXEL_WIDTH) 
+        begin
+            texel00 <= texel00Reduced;
+            texel01 <= texel01Reduced;
+            texel10 <= texel10Reduced;
+            texel11 <= texel11Reduced;
+        end
+        else
+        begin
+            // Expand the colors from the small width (SUB_PIXEL_WIDTH) to the big width (EXPANDED_SUB_PIXEL_WIDTH)
+            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
+            begin
+                texel00[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] <= { 
+                    texel00Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    // Mirror the subpixel in the reminder.
+                    // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit
+                    // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] }
+                    texel00Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                texel01[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] <= { 
+                    texel01Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel01Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                texel10[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] <= { 
+                    texel10Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel10Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+                texel11[i * EXPANDED_SUB_PIXEL_WIDTH +: EXPANDED_SUB_PIXEL_WIDTH] <= { 
+                    texel11Reduced[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
+                    texel11Reduced[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] 
+                };
+            end
+        end
+
+        // Output the sub coords
+        texelSubCoordS <= texelSubCoordSRegOut;
+        texelSubCoordT <= texelSubCoordTRegOut;
+    end
+
+    //////////////////////////////////////////////
+    // AXIS Interface
+    //////////////////////////////////////////////
 
     // Memory interface to write data from the AXIS to the buffer
     always @(posedge aclk)

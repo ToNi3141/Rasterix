@@ -355,25 +355,25 @@ module FragmentPipeline
     wire [15 : 0]                stepWaitForTexDepthBufferVal;
     wire [31 : 0]                stepWaitForTexColorFrag;
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         wait_for_tex1 (.clk(clk), .in(stepReceiveFragColorValid), .out(stepWaitForTexValid));
 
-    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(4)) 
         wait_for_tex2 (.clk(clk), .in(stepReceiveFragColorFbIndex), .out(stepWaitForTexFbIndex));
 
-    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(4)) 
         wait_for_tex3 (.clk(clk), .in(stepReceiveFragColorDepthValue), .out(stepWaitForTexDepthValue));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(4)) 
         wait_for_tex4 (.clk(clk), .in(stepReceiveFragColorTriangleColor), .out(stepWaitForTexTriangleColor));
 
-    ValueDelay #(.VALUE_SIZE(8), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(8), .DELAY(4)) 
         wait_for_tex5 (.clk(clk), .in(stepReceiveFragColorFogIntensity), .out(stepWaitForTexFogIntensity));
 
-    ValueDelay #(.VALUE_SIZE(16), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(4)) 
         wait_for_tex6 (.clk(clk), .in(stepReceiveFragColorDepthBufferVal), .out(stepWaitForTexDepthBufferVal));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(4)) 
         wait_for_tex7 (.clk(clk), .in(stepReceiveFragColorColorFrag), .out(stepWaitForTexColorFrag));
 
     // TexEnv
