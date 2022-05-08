@@ -17,10 +17,46 @@
 
 module util#(
     parameter int W = 10)();
+`include "RegisterAndDescriptorDefines.vh"
 
     function [W - 1 : 0] clampSubpixel;
         input [W * 2 : 0] subpixel;
         clampSubpixel = (subpixel[W * 2]) ? {W{1'b1}} : subpixel[(W * 2) - 1 : W];
+    endfunction
+
+    function [W - 1 : 0] testFunc;
+        input reg  [ 2 : 0]     conf;
+        input reg  [W - 1 : 0]  refVal;
+        input reg  [W - 1 : 0]  currentVal;
+        reg                     less;
+        reg                     greater;
+        reg                     equal;
+
+        assign less =    currentVal <  refVal;
+        assign greater = currentVal >  refVal;
+        assign equal =   currentVal == refVal;
+
+        case (conf)
+            ALWAYS:
+                testFunc = 1;
+            NEVER:
+                testFunc = 0;
+            LESS:
+                testFunc = less;
+            EQUAL:
+                testFunc = equal;
+            LEQUAL:
+                testFunc = less | equal;
+            GREATER:
+                testFunc = greater;
+            NOTEQUAL:
+                testFunc = !equal;
+            GEQUAL:
+                testFunc = greater | equal;
+            default: 
+                testFunc = 1;
+        endcase
+        
     endfunction
 
 endmodule
@@ -112,6 +148,7 @@ module FragmentPipeline
     endfunction
 
     util#(SUB_PIXEL_WIDTH) u1(); // inst util module with a parameter
+    util#(DEPTH_WIDTH) udepth(); // inst util module with a parameter
 
     assign s_axis_tready = 1;
 
@@ -121,66 +158,6 @@ module FragmentPipeline
     reg signed [15:0]  textureS; // textureSCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
     reg signed [15:0]  textureT; // textureTCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
-
-    reg  [DEPTH_WIDTH - 1 : 0]  depthTestFragmentVal;
-    reg  [DEPTH_WIDTH - 1 : 0]  depthTestDepthBufferVal;
-    reg                         depthTestPassed;
-    wire                        depthTestLess =    depthTestFragmentVal <  depthTestDepthBufferVal;
-    wire                        depthTestGreater = depthTestFragmentVal >  depthTestDepthBufferVal;
-    wire                        depthTestEqual =   depthTestFragmentVal == depthTestDepthBufferVal;
-    always @*
-    begin
-        case (confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE])
-            ALWAYS:
-                depthTestPassed = 1;
-            NEVER:
-                depthTestPassed = 0;
-            LESS:
-                depthTestPassed = depthTestLess;
-            EQUAL:
-                depthTestPassed = depthTestEqual;
-            LEQUAL:
-                depthTestPassed = depthTestLess | depthTestEqual;
-            GREATER:
-                depthTestPassed = depthTestGreater;
-            NOTEQUAL:
-                depthTestPassed = !depthTestEqual;
-            GEQUAL:
-                depthTestPassed = depthTestGreater | depthTestEqual;
-            default: 
-                depthTestPassed = 1;
-        endcase
-    end
-
-    reg  [SUB_PIXEL_WIDTH - 1 : 0]  alphaTestFragmentVal;
-    reg                             alphaTestPassed;
-    wire [SUB_PIXEL_WIDTH - 1 : 0]  alphaTestRefVal = confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE];
-    wire                            alphaTestLess = alphaTestFragmentVal < alphaTestRefVal;
-    wire                            alphaTestGreater = alphaTestFragmentVal > alphaTestRefVal;
-    wire                            alphaTestEqual = alphaTestFragmentVal == alphaTestRefVal;
-    always @*
-    begin
-        case (confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE])
-            ALWAYS:
-                alphaTestPassed = 1;
-            NEVER:
-                alphaTestPassed = 0;
-            LESS:
-                alphaTestPassed = alphaTestLess;
-            EQUAL:
-                alphaTestPassed = alphaTestEqual;
-            LEQUAL:
-                alphaTestPassed = alphaTestLess | alphaTestEqual;
-            GREATER:
-                alphaTestPassed = alphaTestGreater;
-            NOTEQUAL:
-                alphaTestPassed = !alphaTestEqual;
-            GEQUAL:
-                alphaTestPassed = alphaTestGreater | alphaTestEqual;
-            default: 
-                alphaTestPassed = 1;
-        endcase
-    end
 
     ValueTrack pixelTracker (
         .aclk(clk),
@@ -384,6 +361,7 @@ module FragmentPipeline
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV12;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV13;
     reg [SUB_PIXEL_WIDTH - 1 : 0]           stepTexEnvFogIntensity;
+    reg                                     stepTexEnvWriteColor = 0;
     always @(posedge clk)
     begin : TexEnvCalc
         reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
@@ -609,10 +587,9 @@ module FragmentPipeline
         stepTexEnvDepthValue <= stepWaitForTexDepthValue;
         stepTexEnvColorFrag <= stepWaitForTexColorFrag;
 
-        // Execute early z test. Advantage: We then just have to remember the bit of the result if the z test instead of 
-        // the depth value from the depth buffer.
-        depthTestDepthBufferVal <= stepWaitForTexDepthBufferVal;
-        depthTestFragmentVal <= stepWaitForTexDepthValue;
+        // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
+        stepTexEnvWriteColor <= udepth.testFunc(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
+            || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
 
     // Tex Env Result
@@ -647,8 +624,7 @@ module FragmentPipeline
         stepTexEnvResultFbIndex <= stepTexEnvFbIndex;
         stepTexEnvResultValid <= stepTexEnvValid;
         stepTexEnvResultFogIntensity <= stepTexEnvFogIntensity;
-        // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
-        stepTexEnvResultWriteColor <= depthTestPassed || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
+        stepTexEnvResultWriteColor <= stepTexEnvWriteColor;
     end
 
     // Calculate Fog
@@ -713,6 +689,7 @@ module FragmentPipeline
     reg [PIXEL_WIDTH - 1 : 0]               stepFogResultColorFrag = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepFogResultColor = 0;
     reg                                     stepFogResultWriteColor = 0;
+    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepFogResultAlphaVal = 0;
     always @(posedge clk)
     begin : FogResult
         reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
@@ -729,10 +706,10 @@ module FragmentPipeline
             u1.clampSubpixel(r),
             u1.clampSubpixel(g),
             u1.clampSubpixel(b),
-            u1.clampSubpixel({1'h0, a, 8'h0})
+            u1.clampSubpixel({1'h0, a[0 +: SUB_PIXEL_WIDTH], {SUB_PIXEL_WIDTH{1'b0}}})
         };
 
-        alphaTestFragmentVal <= a[7 : 0];
+        stepFogResultAlphaVal <= a[0 +: SUB_PIXEL_WIDTH];
         
         stepFogResultDepthValue <= stepFogDepthValue;
         stepFogResultColorFrag <= stepFogColorFrag;
@@ -930,7 +907,9 @@ module FragmentPipeline
         stepBlendDepthValue <= stepFogResultDepthValue;
         stepBlendFbIndex <= stepFogResultFbIndex;
         stepBlendValid <= stepFogResultValid;
-        stepBlendWriteColor <= stepFogResultWriteColor & alphaTestPassed;
+        stepBlendWriteColor <= stepFogResultWriteColor & u1.testFunc(   confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
+                                                                        confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
+                                                                        stepFogResultAlphaVal);
     end
 
     // Blend Result
