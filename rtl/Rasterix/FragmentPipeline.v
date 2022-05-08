@@ -15,51 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module util#(
-    parameter int W = 10)();
-`include "RegisterAndDescriptorDefines.vh"
-
-    function [W - 1 : 0] clampSubpixel;
-        input [W * 2 : 0] subpixel;
-        clampSubpixel = (subpixel[W * 2]) ? {W{1'b1}} : subpixel[(W * 2) - 1 : W];
-    endfunction
-
-    function [W - 1 : 0] testFunc;
-        input reg  [ 2 : 0]     conf;
-        input reg  [W - 1 : 0]  refVal;
-        input reg  [W - 1 : 0]  currentVal;
-        reg                     less;
-        reg                     greater;
-        reg                     equal;
-
-        assign less =    currentVal <  refVal;
-        assign greater = currentVal >  refVal;
-        assign equal =   currentVal == refVal;
-
-        case (conf)
-            ALWAYS:
-                testFunc = 1;
-            NEVER:
-                testFunc = 0;
-            LESS:
-                testFunc = less;
-            EQUAL:
-                testFunc = equal;
-            LEQUAL:
-                testFunc = less | equal;
-            GREATER:
-                testFunc = greater;
-            NOTEQUAL:
-                testFunc = !equal;
-            GEQUAL:
-                testFunc = greater | equal;
-            default: 
-                testFunc = 1;
-        endcase
-        
-    endfunction
-
-endmodule
+`include "PixelUtil.vh"
 
 module FragmentPipeline
 #(
@@ -70,7 +26,7 @@ module FragmentPipeline
 
     localparam DEPTH_WIDTH = 16,
 
-    localparam SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32
@@ -126,11 +82,12 @@ module FragmentPipeline
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
 
-    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = {SUB_PIXEL_WIDTH{1'h1}};
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
+    localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
 
-    function [15:0] clampTexture;
-        input [23:0] texCoord;
-        input [ 0:0] mode; 
+    function [15 : 0] clampTexture;
+        input [23 : 0] texCoord;
+        input [ 0 : 0] mode; 
         begin
             clampTexture = texCoord[0 +: 16];
             if (mode == CLAMP_TO_EDGE)
@@ -147,16 +104,17 @@ module FragmentPipeline
         end
     endfunction
 
-    util#(SUB_PIXEL_WIDTH) u1(); // inst util module with a parameter
-    util#(DEPTH_WIDTH) udepth(); // inst util module with a parameter
+    FragmentPipelineUtil#(SUB_PIXEL_WIDTH) utilFragColor();
+    FragmentPipelineUtil#(DEPTH_WIDTH) utilFragDepth();
+    PixelUtil#(SUB_PIXEL_WIDTH) pxUtilColor();
 
     assign s_axis_tready = 1;
 
     // Note st is a normalized number between 0.0 and 1.0. That means, every number befor the point is always
     // zero and can be cut off. Only the numbers after the point are from interest. So, we shift the n.23 number by 
     // 8 digits and reinterpet the 15 bits behind the point as normal integers do address the texel
-    reg signed [15:0]  textureS; // textureSCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
-    reg signed [15:0]  textureT; // textureTCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
+    reg signed [15 : 0]  textureS; // textureSCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
+    reg signed [15 : 0]  textureT; // textureTCorrected >> 8 (S7.23 >> 8 = S7.15 -> S0.15) (reinterpret as normal integer with the range 0..32767)
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
 
     ValueTrack pixelTracker (
@@ -588,7 +546,7 @@ module FragmentPipeline
         stepTexEnvColorFrag <= stepWaitForTexColorFrag;
 
         // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
-        stepTexEnvWriteColor <= udepth.testFunc(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
+        stepTexEnvWriteColor <= utilFragDepth.TestFunc(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
             || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
 
@@ -607,16 +565,16 @@ module FragmentPipeline
         reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
         reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
 
-        r = (stepTexEnvV00 + stepTexEnvV10) + ONE_POINT_ZERO;
-        g = (stepTexEnvV01 + stepTexEnvV11) + ONE_POINT_ZERO;
-        b = (stepTexEnvV02 + stepTexEnvV12) + ONE_POINT_ZERO;
-        a = (stepTexEnvV03 + stepTexEnvV13) + ONE_POINT_ZERO;
+        r = (stepTexEnvV00 + stepTexEnvV10) + ONE_POINT_ZERO_BIG;
+        g = (stepTexEnvV01 + stepTexEnvV11) + ONE_POINT_ZERO_BIG;
+        b = (stepTexEnvV02 + stepTexEnvV12) + ONE_POINT_ZERO_BIG;
+        a = (stepTexEnvV03 + stepTexEnvV13) + ONE_POINT_ZERO_BIG;
 
         stepTexEnvResultColorTex <= {
-            u1.clampSubpixel(r),
-            u1.clampSubpixel(g),
-            u1.clampSubpixel(b),
-            u1.clampSubpixel(a)
+            pxUtilColor.ClampSubPixel(r),
+            pxUtilColor.ClampSubPixel(g),
+            pxUtilColor.ClampSubPixel(b),
+            pxUtilColor.ClampSubPixel(a)
         };
 
         stepTexEnvResultDepthValue <= stepTexEnvDepthValue;
@@ -668,11 +626,11 @@ module FragmentPipeline
         stepFogV00 <= (intensity * ru);
         stepFogV01 <= (intensity * gu);
         stepFogV02 <= (intensity * bu);
-        stepFogV03 <= au;
+        stepFogV03 <= { au, {SUB_PIXEL_WIDTH{1'b0 }} };
 
-        stepFogV10 <= ((ONE_POINT_ZERO - intensity) * rf);
-        stepFogV11 <= ((ONE_POINT_ZERO - intensity) * gf);
-        stepFogV12 <= ((ONE_POINT_ZERO - intensity) * bf);
+        stepFogV10 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * rf);
+        stepFogV11 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * gf);
+        stepFogV12 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * bf);
         stepFogV13 <= 0;
 
         stepFogDepthValue <= stepTexEnvResultDepthValue;
@@ -697,19 +655,19 @@ module FragmentPipeline
         reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
         reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
 
-        r = (stepFogV00 + stepFogV10) + ONE_POINT_ZERO;
-        g = (stepFogV01 + stepFogV11) + ONE_POINT_ZERO;
-        b = (stepFogV02 + stepFogV12) + ONE_POINT_ZERO;
-        a = stepFogV03; // Alpha value is not affected by fog.
+        r = (stepFogV00 + stepFogV10) + ONE_POINT_ZERO_BIG;
+        g = (stepFogV01 + stepFogV11) + ONE_POINT_ZERO_BIG;
+        b = (stepFogV02 + stepFogV12) + ONE_POINT_ZERO_BIG;
+        a = { 1'b0, stepFogV03 }; // Alpha value is not affected by fog.
 
         stepFogResultColor <= {
-            u1.clampSubpixel(r),
-            u1.clampSubpixel(g),
-            u1.clampSubpixel(b),
-            u1.clampSubpixel({1'h0, a[0 +: SUB_PIXEL_WIDTH], {SUB_PIXEL_WIDTH{1'b0}}})
+            pxUtilColor.ClampSubPixel(r),
+            pxUtilColor.ClampSubPixel(g),
+            pxUtilColor.ClampSubPixel(b),
+            pxUtilColor.ClampSubPixel(a)
         };
 
-        stepFogResultAlphaVal <= a[0 +: SUB_PIXEL_WIDTH];
+        stepFogResultAlphaVal <= pxUtilColor.ClampSubPixel(a);
         
         stepFogResultDepthValue <= stepFogDepthValue;
         stepFogResultColorFrag <= stepFogColorFrag;
@@ -764,10 +722,10 @@ module FragmentPipeline
         case (confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE])
             ZERO:
             begin
-                v00 = 8'h0;
-                v01 = 8'h0;
-                v02 = 8'h0;
-                v03 = 8'h0;
+                v00 = 0;
+                v01 = 0;
+                v02 = 0;
+                v03 = 0;
             end
             ONE:
             begin
@@ -834,10 +792,10 @@ module FragmentPipeline
         case (confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE])
             ZERO:
             begin
-                v10 = 8'h0;
-                v11 = 8'h0;
-                v12 = 8'h0;
-                v13 = 8'h0;
+                v10 = 0;
+                v11 = 0;
+                v12 = 0;
+                v13 = 0;
             end
             ONE:
             begin
@@ -907,9 +865,9 @@ module FragmentPipeline
         stepBlendDepthValue <= stepFogResultDepthValue;
         stepBlendFbIndex <= stepFogResultFbIndex;
         stepBlendValid <= stepFogResultValid;
-        stepBlendWriteColor <= stepFogResultWriteColor & u1.testFunc(   confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
-                                                                        confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
-                                                                        stepFogResultAlphaVal);
+        stepBlendWriteColor <= stepFogResultWriteColor & utilFragColor.TestFunc(confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
+                                                                                confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
+                                                                                stepFogResultAlphaVal);
     end
 
     // Blend Result
@@ -925,16 +883,16 @@ module FragmentPipeline
         reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
         reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
 
-        r = (stepBlendV00 + stepBlendV10) + ONE_POINT_ZERO;
-        g = (stepBlendV01 + stepBlendV11) + ONE_POINT_ZERO;
-        b = (stepBlendV02 + stepBlendV12) + ONE_POINT_ZERO;
-        a = (stepBlendV03 + stepBlendV13) + ONE_POINT_ZERO;
+        r = (stepBlendV00 + stepBlendV10) + ONE_POINT_ZERO_BIG;
+        g = (stepBlendV01 + stepBlendV11) + ONE_POINT_ZERO_BIG;
+        b = (stepBlendV02 + stepBlendV12) + ONE_POINT_ZERO_BIG;
+        a = (stepBlendV03 + stepBlendV13) + ONE_POINT_ZERO_BIG;
 
         stepBlendResultColorFrag <= {
-            u1.clampSubpixel(r),
-            u1.clampSubpixel(g),
-            u1.clampSubpixel(b),
-            u1.clampSubpixel(a)
+            pxUtilColor.ClampSubPixel(r),
+            pxUtilColor.ClampSubPixel(g),
+            pxUtilColor.ClampSubPixel(b),
+            pxUtilColor.ClampSubPixel(a)
         };
 
         stepBlendResultDepthValue <= stepBlendDepthValue;
@@ -958,4 +916,43 @@ module FragmentPipeline
         colorWriteEnable <= stepBlendResultValid & stepBlendResultWriteColor;
         depthWriteEnable <= stepBlendResultValid & stepBlendResultWriteColor & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
+endmodule
+
+module FragmentPipelineUtil #(
+    parameter int W = 10
+)();
+`include "RegisterAndDescriptorDefines.vh"
+    function TestFunc;
+        input reg  [ 2 : 0]     conf;
+        input reg  [W - 1 : 0]  refVal;
+        input reg  [W - 1 : 0]  currentVal;
+        reg                     less;
+        reg                     greater;
+        reg                     equal;
+
+        assign less =    currentVal <  refVal;
+        assign greater = currentVal >  refVal;
+        assign equal =   currentVal == refVal;
+
+        case (conf)
+            ALWAYS:
+                TestFunc = 1;
+            NEVER:
+                TestFunc = 0;
+            LESS:
+                TestFunc = less;
+            EQUAL:
+                TestFunc = equal;
+            LEQUAL:
+                TestFunc = less | equal;
+            GREATER:
+                TestFunc = greater;
+            NOTEQUAL:
+                TestFunc = !equal;
+            GEQUAL:
+                TestFunc = greater | equal;
+            default: 
+                TestFunc = 1;
+        endcase
+    endfunction
 endmodule

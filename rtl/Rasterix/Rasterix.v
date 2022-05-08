@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 module Rasterix #(
     // The resolution of the whole screen
     parameter X_RESOLUTION = 128,
@@ -67,6 +69,8 @@ module Rasterix #(
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
 `endif
 
+    PixelUtil #(.SUB_PIXEL_WIDTH(4), .CONV_SUB_PIXEL_WIDTH(8), .NUMBER_OF_SUB_PIXELS(4)) pxUtil();
+
     ///////////////////////////
     // Regs and wires
     ///////////////////////////
@@ -90,7 +94,7 @@ module Rasterix #(
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
     wire        colorWriteEnable;
-    wire [31:0] colorIn;
+    wire [15:0] colorIn;
     wire [31:0] colorOut;
 
     // Depth buffer access
@@ -260,8 +264,7 @@ module Rasterix #(
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam texCache.SUB_PIXEL_WIDTH = 4;
-    defparam texCache.EXPANDED_SUB_PIXEL_WIDTH = 8;
+    defparam texCache.SUB_PIXEL_WIDTH = 8;
 
     TextureFilter texFilter (
         .aclk(aclk),
@@ -306,7 +309,6 @@ module Rasterix #(
     defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
-    defparam depthBuffer.EXPANDED_SUB_PIXEL_WIDTH = 16;
 
     FrameBuffer colorBuffer (  
         .clk(aclk),
@@ -315,7 +317,7 @@ module Rasterix #(
         .fragIndexRead(colorIndexRead),
         .fragOut(colorIn),
         .fragIndexWrite(colorIndexWrite),
-        .fragIn(colorOut),
+        .fragIn(pxUtil.Reduce(colorOut)),
         .fragWriteEnable(colorWriteEnable),
         .fragMask({ confReg1[REG1_COLOR_MASK_R_POS +: REG1_COLOR_MASK_R_SIZE], 
                     confReg1[REG1_COLOR_MASK_G_POS +: REG1_COLOR_MASK_G_SIZE], 
@@ -326,19 +328,17 @@ module Rasterix #(
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
+        .clearColor(pxUtil.Reduce(confColorBufferClearColor)),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
         .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(m_framebuffer_axis_tdata),
-
-        .clearColor(confColorBufferClearColor)
+        .m_axis_tdata(m_framebuffer_axis_tdata)
     );
     defparam colorBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = 4;
     defparam colorBuffer.SUB_PIXEL_WIDTH = 4;
-    defparam colorBuffer.EXPANDED_SUB_PIXEL_WIDTH = 8;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -438,7 +438,7 @@ module Rasterix #(
         .texelT(texelT),
 
         .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
+        .colorIn(pxUtil.Expand(colorIn)),
         .colorIndexWrite(colorIndexWrite),
         .colorWriteEnable(colorWriteEnable),
         .colorOut(colorOut),
@@ -451,6 +451,6 @@ module Rasterix #(
     );
     defparam fragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam fragmentPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    // defparam fragmentPipeline.SUB_PIXEL_WIDTH = 4;
+    defparam fragmentPipeline.SUB_PIXEL_WIDTH = 8;
 
 endmodule

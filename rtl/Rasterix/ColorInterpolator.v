@@ -35,6 +35,13 @@ module ColorInterpolator #(
 );
 `include "RegisterAndDescriptorDefines.vh"
 
+    parameter [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_DOT_ZERO = { { SUB_PIXEL_WIDTH{1'b0}}, { SUB_PIXEL_WIDTH{1'b1} } };
+    PixelUtil #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH), 
+        .CONV_SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH), 
+        .NUMBER_OF_SUB_PIXELS(4)
+    ) pxUtil ();
+
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V00;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V01;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V02;
@@ -72,10 +79,10 @@ module ColorInterpolator #(
         V02 <= (in * ba);
         V03 <= (in * aa);
 
-        V10 <= ((8'hff - in) * rb);
-        V11 <= ((8'hff - in) * gb);
-        V12 <= ((8'hff - in) * bb);
-        V13 <= ((8'hff - in) * ab);
+        V10 <= ((ONE_DOT_ZERO - in) * rb);
+        V11 <= ((ONE_DOT_ZERO - in) * gb);
+        V12 <= ((ONE_DOT_ZERO - in) * bb);
+        V13 <= ((ONE_DOT_ZERO - in) * ab);
     end
 
     always @(posedge aclk)
@@ -85,17 +92,16 @@ module ColorInterpolator #(
         reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
         reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
 
-        r = (V00 + V10) + 8'hff;
-        g = (V01 + V11) + 8'hff;
-        b = (V02 + V12) + 8'hff;
-        a = (V03 + V13) + 8'hff;
+        r = (V00 + V10) + ONE_DOT_ZERO;
+        g = (V01 + V11) + ONE_DOT_ZERO;
+        b = (V02 + V12) + ONE_DOT_ZERO;
+        a = (V03 + V13) + ONE_DOT_ZERO;
 
         mixedColor <= {
-            // Saturate colors 
-            (r[16]) ? 8'hff : r[15 : 8], 
-            (g[16]) ? 8'hff : g[15 : 8], 
-            (b[16]) ? 8'hff : b[15 : 8],
-            (a[16]) ? 8'hff : a[15 : 8]
+            pxUtil.ClampSubPixel(r),
+            pxUtil.ClampSubPixel(g),
+            pxUtil.ClampSubPixel(b),
+            pxUtil.ClampSubPixel(a)
         };
     end
 endmodule
