@@ -36,9 +36,9 @@ module PixelUtil #(
     function [CONV_PIXEL_WIDTH - 1 : 0] Expand;
         input [PIXEL_WIDTH - 1 : 0] pixel;
         integer i;
-        if (DIFF_SUB_PIXEL_WIDTH == 0)
+        if (PIXEL_WIDTH == CONV_PIXEL_WIDTH)
         begin
-            assign Expand = pixel; 
+            assign Expand[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH]; 
         end
         else
         begin
@@ -58,9 +58,9 @@ module PixelUtil #(
     function [PIXEL_WIDTH - 1 : 0] Reduce;
         input [CONV_PIXEL_WIDTH - 1 : 0] pixel;
         integer i;
-        if (DIFF_SUB_PIXEL_WIDTH == 0)
+        if (PIXEL_WIDTH == CONV_PIXEL_WIDTH)
         begin
-            assign Reduce = pixel; 
+            assign Reduce[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH]; 
         end
         else
         begin

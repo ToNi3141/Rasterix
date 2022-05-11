@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // Texture buffer which stores a whole texture. When reading a texel, the texture buffer
 // reads a texel quad with the neigbored texels. Additionally it returns the sub pixel 
 // coordinates which later can be used for texture filtering
@@ -27,19 +29,22 @@ module TextureBuffer #(
     // Size in bytes in power of two
     parameter SIZE = 14,
 
+    // Size of the subpixel
+    parameter SUB_PIXEL_WIDTH = 8,
+
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
     localparam NUMBER_OF_SUB_PIXELS = 4,
-
-    parameter SUB_PIXEL_WIDTH = 8,
+    
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     
+    // For internal use. Will probably removed when using other color formats like 
+    // RGB565, RGBA5551, ... instead of only RGBA4444/RGBA8888
     localparam SUB_PIXEL_WIDTH_INT = 4,
     localparam PIXEL_WIDTH_INT = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH_INT,
 
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH_INT / 8),
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
     localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH
-    
 )
 (
     input  wire                         aclk,

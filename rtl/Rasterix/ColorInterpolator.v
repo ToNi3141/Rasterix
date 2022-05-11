@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // Interpolates a color with 4 sub color elements together like RGBA4444
 // The used caluclation: mixedColor = (intensity * colorA) + ((1.0 - intensity) * colorB)
 // Pipelined: yes

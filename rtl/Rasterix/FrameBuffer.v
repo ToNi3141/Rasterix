@@ -81,7 +81,7 @@ module FrameBuffer
     localparam PIXEL_PER_BEAT = STREAM_WIDTH / PIXEL_WIDTH;
     localparam STROBES_PER_BEAT = STREAM_WIDTH / SUB_PIXEL_WIDTH;
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
-    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAME_SIZE / PIXEL_PER_BEAT;
+    localparam [MEM_ADDR_WIDTH - 1 : 0] FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAME_SIZE / PIXEL_PER_BEAT;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
 
     // Stream states
@@ -218,13 +218,13 @@ module FrameBuffer
                 begin
                     counter <= counterNext;
                 
-                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH] - 1))
+                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1))
                     begin
                         m_axis_tlast <= 1;
                     end
 
                     // Check if we reached the end of the copy process
-                    if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
+                    if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
                     begin
                         m_axis_tvalid <= 0; 
                         m_axis_tlast <= 0;
@@ -245,7 +245,7 @@ module FrameBuffer
             end
             COMMAND_MEMSET:
             begin
-                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS[0 +: MEM_ADDR_WIDTH])
+                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
                 begin
                     fbWr <= 0;
                     commandState <= COMMAND_WAIT_FOR_COMMAND;
