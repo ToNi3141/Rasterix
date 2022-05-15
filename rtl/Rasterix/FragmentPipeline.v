@@ -25,29 +25,31 @@
         reg                         less; \
         reg                         greater; \
         reg                         equal; \
-        assign less =    currentVal <  refVal; \
-        assign greater = currentVal >  refVal; \
-        assign equal =   currentVal == refVal; \
-        case (conf) \
-            ALWAYS: \
-                FuncName = 1; \
-            NEVER: \
-                FuncName = 0; \
-            LESS: \
-                FuncName = less; \
-            EQUAL: \
-                FuncName = equal; \
-            LEQUAL: \
-                FuncName = less | equal; \
-            GREATER: \
-                FuncName = greater; \
-            NOTEQUAL: \
-                FuncName = !equal; \
-            GEQUAL: \
-                FuncName = greater | equal; \
-            default:  \
-                FuncName = 1; \
-        endcase \
+        begin \
+            less =    currentVal <  refVal; \
+            greater = currentVal >  refVal; \
+            equal =   currentVal == refVal; \
+            case (conf) \
+                ALWAYS: \
+                    FuncName = 1; \
+                NEVER: \
+                    FuncName = 0; \
+                LESS: \
+                    FuncName = less; \
+                EQUAL: \
+                    FuncName = equal; \
+                LEQUAL: \
+                    FuncName = less | equal; \
+                GREATER: \
+                    FuncName = greater; \
+                NOTEQUAL: \
+                    FuncName = !equal; \
+                GEQUAL: \
+                    FuncName = greater | equal; \
+                default:  \
+                    FuncName = 1; \
+            endcase \
+        end \
     endfunction
 
 module FragmentPipeline
