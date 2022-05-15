@@ -128,11 +128,7 @@ module TextureBuffer #(
     wire [PIXEL_WIDTH_INT - 1 : 0]  texel10Out; 
     wire [PIXEL_WIDTH_INT - 1 : 0]  texel11Out; 
     
-    PixelUtil #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH_INT), 
-        .CONV_SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH), 
-        .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS)
-    ) pxUtil();
+    `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
 
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
@@ -421,10 +417,10 @@ module TextureBuffer #(
     always @(posedge aclk)
     begin
         // Output the texel
-        texel00 <= pxUtil.Expand(texel00Out);
-        texel01 <= pxUtil.Expand(texel01Out);
-        texel10 <= pxUtil.Expand(texel10Out);
-        texel11 <= pxUtil.Expand(texel11Out);
+        texel00 <= Expand(texel00Out);
+        texel01 <= Expand(texel01Out);
+        texel10 <= Expand(texel10Out);
+        texel11 <= Expand(texel11Out);
 
 
         // Output the sub coords

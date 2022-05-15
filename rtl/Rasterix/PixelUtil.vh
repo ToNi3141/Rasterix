@@ -18,61 +18,57 @@
 `ifndef PIXEL_UTIL_VH
 `define PIXEL_UTIL_VH
 
-module PixelUtil #(
-    parameter SUB_PIXEL_WIDTH = 4,
-    parameter CONV_SUB_PIXEL_WIDTH = 8,
-    parameter NUMBER_OF_SUB_PIXELS = 4
-) ();
-    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS;
-    localparam CONV_PIXEL_WIDTH = CONV_SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS;
-    localparam DIFF_SUB_PIXEL_WIDTH = CONV_SUB_PIXEL_WIDTH - SUB_PIXEL_WIDTH;
-
-    function [SUB_PIXEL_WIDTH - 1 : 0] ClampSubPixel;
-        input [SUB_PIXEL_WIDTH * 2 : 0] subpixel;
-        ClampSubPixel = (subpixel[SUB_PIXEL_WIDTH * 2]) ? {SUB_PIXEL_WIDTH{1'b1}} 
-                                                        : subpixel[(SUB_PIXEL_WIDTH * 2) - 1 : SUB_PIXEL_WIDTH];
+`define Saturate(FuncName, SubPixelWidth) \
+    function [SubPixelWidth - 1 : 0] FuncName; \
+        input [SubPixelWidth * 2 : 0] subpixel; \
+        FuncName = (subpixel[SubPixelWidth * 2])    ? {SubPixelWidth{1'b1}} \
+                                                    : subpixel[(SubPixelWidth * 2) - 1 : SubPixelWidth]; \
     endfunction
 
-    function [CONV_PIXEL_WIDTH - 1 : 0] Expand;
-        input [PIXEL_WIDTH - 1 : 0] pixel;
-        integer i;
-        if (PIXEL_WIDTH == CONV_PIXEL_WIDTH)
-        begin
-            assign Expand[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH]; 
-        end
-        else
-        begin
-            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
-            begin
-                assign Expand[i * CONV_SUB_PIXEL_WIDTH +: CONV_SUB_PIXEL_WIDTH] = { 
-                    pixel[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH], 
-                    // Mirror the subpixel in the reminder.
-                    // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit
-                    // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] }
-                    pixel[(i * SUB_PIXEL_WIDTH) + (SUB_PIXEL_WIDTH - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH]
-                };
-            end
-        end
+`define Expand(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
+    function [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] Expand; \
+        input [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
+        localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
+        localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \
+        integer i; \
+        if (SubPixelWidth == ConvSubPixelWidth) \
+        begin \
+            FuncName[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH];  \
+        end \
+        else \
+        begin \
+            for (i = 0; i < NumberOfSubPixels; i = i + 1) \
+            begin \
+                FuncName[i * ConvSubPixelWidth +: ConvSubPixelWidth] = {  \
+                    pixel[i * SubPixelWidth +: SubPixelWidth],  \
+                    // Mirror the subpixel in the reminder. \
+                    // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit \
+                    // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] } \
+                    pixel[(i * SubPixelWidth) + (SubPixelWidth - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] \
+                }; \
+            end \
+        end \
     endfunction
 
-    function [PIXEL_WIDTH - 1 : 0] Reduce;
-        input [CONV_PIXEL_WIDTH - 1 : 0] pixel;
-        integer i;
-        if (PIXEL_WIDTH == CONV_PIXEL_WIDTH)
-        begin
-            assign Reduce[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH]; 
-        end
-        else
-        begin
-            for (i = 0; i < NUMBER_OF_SUB_PIXELS; i = i + 1)
-            begin
-                assign Reduce[i * SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] = { 
-                    pixel[(CONV_SUB_PIXEL_WIDTH * i) + DIFF_SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] 
-                };
-            end
-        end
+`define Reduce(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
+    function [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] Reduce; \
+        input [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
+        localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
+        localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \
+        integer i; \
+        if (SubPixelWidth == ConvSubPixelWidth) \
+        begin \
+            FuncName[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH];  \
+        end \
+        else \
+        begin \
+            for (i = 0; i < NumberOfSubPixels; i = i + 1) \
+            begin \
+                FuncName[i * SubPixelWidth +: SubPixelWidth] = {  \
+                    pixel[(ConvSubPixelWidth * i) + DIFF_SUB_PIXEL_WIDTH +: SubPixelWidth]  \
+                }; \
+            end \
+        end \
     endfunction
-
-endmodule 
 
 `endif // PIXEL_UTIL_VH

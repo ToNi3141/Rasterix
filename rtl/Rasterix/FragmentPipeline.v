@@ -17,6 +17,39 @@
 
 `include "PixelUtil.vh"
 
+`define TestFunc(FuncName, Width) \
+    function FuncName; \
+        input reg  [ 2 : 0]         conf; \
+        input reg  [Width - 1 : 0]  refVal; \
+        input reg  [Width - 1 : 0]  currentVal; \
+        reg                         less; \
+        reg                         greater; \
+        reg                         equal; \
+        assign less =    currentVal <  refVal; \
+        assign greater = currentVal >  refVal; \
+        assign equal =   currentVal == refVal; \
+        case (conf) \
+            ALWAYS: \
+                FuncName = 1; \
+            NEVER: \
+                FuncName = 0; \
+            LESS: \
+                FuncName = less; \
+            EQUAL: \
+                FuncName = equal; \
+            LEQUAL: \
+                FuncName = less | equal; \
+            GREATER: \
+                FuncName = greater; \
+            NOTEQUAL: \
+                FuncName = !equal; \
+            GEQUAL: \
+                FuncName = greater | equal; \
+            default:  \
+                FuncName = 1; \
+        endcase \
+    endfunction
+
 module FragmentPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -104,9 +137,9 @@ module FragmentPipeline
         end
     endfunction
 
-    FragmentPipelineUtil#(SUB_PIXEL_WIDTH) utilFragColor();
-    FragmentPipelineUtil#(DEPTH_WIDTH) utilFragDepth();
-    PixelUtil#(SUB_PIXEL_WIDTH) pxUtilColor();
+    `TestFunc(TestFuncAlpha, SUB_PIXEL_WIDTH);
+    `TestFunc(TestFuncDepth, DEPTH_WIDTH);
+    `Saturate(Saturate, SUB_PIXEL_WIDTH);
 
     assign s_axis_tready = 1;
 
@@ -546,7 +579,7 @@ module FragmentPipeline
         stepTexEnvColorFrag <= stepWaitForTexColorFrag;
 
         // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
-        stepTexEnvWriteColor <= utilFragDepth.TestFunc(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
+        stepTexEnvWriteColor <= TestFuncDepth(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
             || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
 
@@ -571,10 +604,10 @@ module FragmentPipeline
         a = (stepTexEnvV03 + stepTexEnvV13) + ONE_POINT_ZERO_BIG;
 
         stepTexEnvResultColorTex <= {
-            pxUtilColor.ClampSubPixel(r),
-            pxUtilColor.ClampSubPixel(g),
-            pxUtilColor.ClampSubPixel(b),
-            pxUtilColor.ClampSubPixel(a)
+            Saturate(r),
+            Saturate(g),
+            Saturate(b),
+            Saturate(a)
         };
 
         stepTexEnvResultDepthValue <= stepTexEnvDepthValue;
@@ -661,13 +694,13 @@ module FragmentPipeline
         a = { 1'b0, stepFogV03 }; // Alpha value is not affected by fog.
 
         stepFogResultColor <= {
-            pxUtilColor.ClampSubPixel(r),
-            pxUtilColor.ClampSubPixel(g),
-            pxUtilColor.ClampSubPixel(b),
-            pxUtilColor.ClampSubPixel(a)
+            Saturate(r),
+            Saturate(g),
+            Saturate(b),
+            Saturate(a)
         };
 
-        stepFogResultAlphaVal <= pxUtilColor.ClampSubPixel(a);
+        stepFogResultAlphaVal <= Saturate(a);
         
         stepFogResultDepthValue <= stepFogDepthValue;
         stepFogResultColorFrag <= stepFogColorFrag;
@@ -865,9 +898,9 @@ module FragmentPipeline
         stepBlendDepthValue <= stepFogResultDepthValue;
         stepBlendFbIndex <= stepFogResultFbIndex;
         stepBlendValid <= stepFogResultValid;
-        stepBlendWriteColor <= stepFogResultWriteColor & utilFragColor.TestFunc(confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
-                                                                                confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
-                                                                                stepFogResultAlphaVal);
+        stepBlendWriteColor <= stepFogResultWriteColor & TestFuncAlpha( confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
+                                                                        confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
+                                                                        stepFogResultAlphaVal);
     end
 
     // Blend Result
@@ -889,10 +922,10 @@ module FragmentPipeline
         a = (stepBlendV03 + stepBlendV13) + ONE_POINT_ZERO_BIG;
 
         stepBlendResultColorFrag <= {
-            pxUtilColor.ClampSubPixel(r),
-            pxUtilColor.ClampSubPixel(g),
-            pxUtilColor.ClampSubPixel(b),
-            pxUtilColor.ClampSubPixel(a)
+            Saturate(r),
+            Saturate(g),
+            Saturate(b),
+            Saturate(a)
         };
 
         stepBlendResultDepthValue <= stepBlendDepthValue;
@@ -918,41 +951,5 @@ module FragmentPipeline
     end
 endmodule
 
-module FragmentPipelineUtil #(
-    parameter int W = 10
-)();
-`include "RegisterAndDescriptorDefines.vh"
-    function TestFunc;
-        input reg  [ 2 : 0]     conf;
-        input reg  [W - 1 : 0]  refVal;
-        input reg  [W - 1 : 0]  currentVal;
-        reg                     less;
-        reg                     greater;
-        reg                     equal;
 
-        assign less =    currentVal <  refVal;
-        assign greater = currentVal >  refVal;
-        assign equal =   currentVal == refVal;
-
-        case (conf)
-            ALWAYS:
-                TestFunc = 1;
-            NEVER:
-                TestFunc = 0;
-            LESS:
-                TestFunc = less;
-            EQUAL:
-                TestFunc = equal;
-            LEQUAL:
-                TestFunc = less | equal;
-            GREATER:
-                TestFunc = greater;
-            NOTEQUAL:
-                TestFunc = !equal;
-            GEQUAL:
-                TestFunc = greater | equal;
-            default: 
-                TestFunc = 1;
-        endcase
-    endfunction
-endmodule
+ 

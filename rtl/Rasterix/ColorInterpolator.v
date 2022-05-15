@@ -38,11 +38,7 @@ module ColorInterpolator #(
 `include "RegisterAndDescriptorDefines.vh"
 
     parameter [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_DOT_ZERO = { { SUB_PIXEL_WIDTH{1'b0}}, { SUB_PIXEL_WIDTH{1'b1} } };
-    PixelUtil #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH), 
-        .CONV_SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH), 
-        .NUMBER_OF_SUB_PIXELS(4)
-    ) pxUtil ();
+    `Saturate(Saturate, SUB_PIXEL_WIDTH);
 
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V00;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V01;
@@ -100,10 +96,10 @@ module ColorInterpolator #(
         a = (V03 + V13) + ONE_DOT_ZERO;
 
         mixedColor <= {
-            pxUtil.ClampSubPixel(r),
-            pxUtil.ClampSubPixel(g),
-            pxUtil.ClampSubPixel(b),
-            pxUtil.ClampSubPixel(a)
+            Saturate(r),
+            Saturate(g),
+            Saturate(b),
+            Saturate(a)
         };
     end
 endmodule
