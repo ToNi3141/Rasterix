@@ -88,10 +88,10 @@ module Rasterix #(
     wire        textureMagFilter;
     wire [15:0] texelS;
     wire [15:0] texelT;
-    wire [31:0] texel00;
-    wire [31:0] texel01;
-    wire [31:0] texel10;
-    wire [31:0] texel11;
+    wire [15:0] texel00;
+    wire [15:0] texel01;
+    wire [15:0] texel10;
+    wire [15:0] texel11;
     wire [15:0] texelSubCoordS;
     wire [15:0] texelSubCoordT;
 
@@ -269,7 +269,6 @@ module Rasterix #(
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam texCache.SUB_PIXEL_WIDTH = INT_SUB_PIXEL_WIDTH;
 
     TextureFilter texFilter (
         .aclk(aclk),
@@ -277,10 +276,10 @@ module Rasterix #(
 
         .enable(textureMagFilter),
 
-        .texel00(texel00),
-        .texel01(texel01),
-        .texel10(texel10),
-        .texel11(texel11),
+        .texel00(Expand(texel00)),
+        .texel01(Expand(texel01)),
+        .texel10(Expand(texel10)),
+        .texel11(Expand(texel11)),
         .texelSubCoordS(texelSubCoordS),
         .texelSubCoordT(texelSubCoordT),
 

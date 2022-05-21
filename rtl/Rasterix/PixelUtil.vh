@@ -26,7 +26,7 @@
     endfunction
 
 `define Expand(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
-    function [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] Expand; \
+    function [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] FuncName; \
         input [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
         localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
         localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \
@@ -51,7 +51,7 @@
     endfunction
 
 `define Reduce(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
-    function [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] Reduce; \
+    function [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] FuncName; \
         input [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
         localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
         localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \

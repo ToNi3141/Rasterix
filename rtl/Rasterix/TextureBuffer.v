@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
 // Texture buffer which stores a whole texture. When reading a texel, the texture buffer
 // reads a texel quad with the neigbored texels. Additionally it returns the sub pixel 
 // coordinates which later can be used for texture filtering
@@ -30,20 +28,15 @@ module TextureBuffer #(
     parameter SIZE = 14,
 
     // Size of the subpixel
-    parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_WIDTH = 4,
+
+    localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
     localparam NUMBER_OF_SUB_PIXELS = 4,
-    
-    localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
-    
-    // For internal use. Will probably removed when using other color formats like 
-    // RGB565, RGBA5551, ... instead of only RGBA4444/RGBA8888
-    localparam SUB_PIXEL_WIDTH_INT = 4,
-    localparam PIXEL_WIDTH_INT = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH_INT,
 
-    localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH_INT / 8),
-    localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
+    localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
+    localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH),
     localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH
 )
 (
@@ -118,22 +111,20 @@ module TextureBuffer #(
     reg                             texelClampS;
     reg                             texelClampT;
 
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texelSelect00;
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texelSelect01;
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texelSelect10;
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texelSelect11;
+    wire [PIXEL_WIDTH - 1 : 0]      texelSelect00;
+    wire [PIXEL_WIDTH - 1 : 0]      texelSelect01;
+    wire [PIXEL_WIDTH - 1 : 0]      texelSelect10;
+    wire [PIXEL_WIDTH - 1 : 0]      texelSelect11;
 
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texel00Out;
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texel01Out; 
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texel10Out; 
-    wire [PIXEL_WIDTH_INT - 1 : 0]  texel11Out; 
-    
-    `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
+    wire [PIXEL_WIDTH - 1 : 0]      texel00Out;
+    wire [PIXEL_WIDTH - 1 : 0]      texel01Out; 
+    wire [PIXEL_WIDTH - 1 : 0]      texel10Out; 
+    wire [PIXEL_WIDTH - 1 : 0]      texel11Out; 
 
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
     ) texCacheEvenS
     (
@@ -143,7 +134,7 @@ module TextureBuffer #(
         .writeData(tdataEvenS),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrEven1),
-        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
+        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
         .writeDataOut(memReadDataEven1),
 
         .readData(memReadDataEven0),
@@ -153,7 +144,7 @@ module TextureBuffer #(
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
     ) texCacheOddS
     (
@@ -163,7 +154,7 @@ module TextureBuffer #(
         .writeData(tdataOddS),
         .write(s_axis_tvalid),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrOdd1),
-        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
+        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH){1'b1}}),
         .writeDataOut(memReadDataOdd1),
 
         .readData(memReadDataOdd0),
@@ -390,17 +381,17 @@ module TextureBuffer #(
             // Bit zero is used to check, if we have to select the RAM with the even or unevent pixel adresses (see also the multiplexing of the memReadAddr*)
             // Since bit zero is already used from the ADDR_WIDTH_DIFF to select the even or uneven ram, we can use the rest of the
             // bits to select the pixel from the vector. Therefor we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
-            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT]
-                                                                : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT];
+            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
 
-            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT]
-                                                                : memReadDataEven0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT];
+            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
 
-            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT]
-                                                                : memReadDataEven1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT];
+            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
 
-            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT]
-                                                                : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT];
+            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH]
+                                                                : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
     endgenerate
 
@@ -417,10 +408,10 @@ module TextureBuffer #(
     always @(posedge aclk)
     begin
         // Output the texel
-        texel00 <= Expand(texel00Out);
-        texel01 <= Expand(texel01Out);
-        texel10 <= Expand(texel10Out);
-        texel11 <= Expand(texel11Out);
+        texel00 <= texel00Out;
+        texel01 <= texel01Out;
+        texel10 <= texel10Out;
+        texel11 <= texel11Out;
 
 
         // Output the sub coords
@@ -463,19 +454,19 @@ module TextureBuffer #(
         genvar i;
 
         // Stride for the even RAM
-        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
+        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH; i = i + 1)
         begin
-            localparam ii = i * (PIXEL_WIDTH_INT * 2);
-            localparam jj = i * PIXEL_WIDTH_INT;
-            assign tdataEvenS[jj +: PIXEL_WIDTH_INT] = s_axis_tdata[ii +: PIXEL_WIDTH_INT];
+            localparam ii = i * (PIXEL_WIDTH * 2);
+            localparam jj = i * PIXEL_WIDTH;
+            assign tdataEvenS[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
         end
 
         // Stride for the uneven RAM
-        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
+        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH; i = i + 1)
         begin
-            localparam ii = (i * (PIXEL_WIDTH_INT * 2)) + PIXEL_WIDTH_INT;
-            localparam jj = i * PIXEL_WIDTH_INT;
-            assign tdataOddS[jj +: PIXEL_WIDTH_INT] = s_axis_tdata[ii +: PIXEL_WIDTH_INT];
+            localparam ii = (i * (PIXEL_WIDTH * 2)) + PIXEL_WIDTH;
+            localparam jj = i * PIXEL_WIDTH;
+            assign tdataOddS[jj +: PIXEL_WIDTH] = s_axis_tdata[ii +: PIXEL_WIDTH];
         end
     end
     endgenerate

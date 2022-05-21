@@ -80,40 +80,40 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // (0.99.., 0.0)
     top->texelS = 0x7fff;
     top->texelT = 0;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0xff000000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x0000ff00);
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0xf000);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x00f0);
 
     // (0.0, 0.99..)
     top->texelS = 0;
     top->texelT = 0x7fff;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0xff000000);
-    REQUIRE(top->texel11 == 0x00ff0000);
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0xf000);
+    REQUIRE(top->texel11 == 0x0f00);
 
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x0000ff00);
-    REQUIRE(top->texel10 == 0x00ff0000);
-    REQUIRE(top->texel11 == 0xff000000);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x00f0);
+    REQUIRE(top->texel10 == 0x0f00);
+    REQUIRE(top->texel11 == 0xf000);
 
 
     // (1.0, 0.0)
@@ -121,30 +121,30 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // (0.0, 1.0)
     top->texelS = 0;
     top->texelT = 0x8000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // (1.0, 1.0)
     top->texelS = 0x8000;
     top->texelT = 0x8000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // Destroy model
     delete top;
@@ -168,10 +168,10 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     clk(top);
 
     // Result (0, 0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // (0.0, 1.0)
     top->texelS = 0;
@@ -179,10 +179,10 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     clk(top);
 
     // Result (1.0, 0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // (1.0, 1.0)
     top->texelS = 0x8000;
@@ -190,18 +190,18 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     clk(top);
 
     // Result (0.0, 1.0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     clk(top);
 
     // Result (1.0, 1.0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // Destroy model
     delete top;
@@ -219,10 +219,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.0, 0.0)
     REQUIRE(top->texelSubCoordS == 0x0); 
     REQUIRE(top->texelSubCoordT == 0x0);
@@ -239,10 +239,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x1000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.25, 0.25)
     REQUIRE(top->texelSubCoordS == 0x4000); 
     REQUIRE(top->texelSubCoordT == 0x4000); 
@@ -252,10 +252,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x3000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.25, 0.75)
     REQUIRE(top->texelSubCoordS == 0x4000); 
     REQUIRE(top->texelSubCoordT == 0xc000);
@@ -265,10 +265,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x1000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
     // sub texel (0.75, 0.25)
     REQUIRE(top->texelSubCoordS == 0xc000);
     REQUIRE(top->texelSubCoordT == 0x4000);
@@ -292,30 +292,30 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x00ff0000);
-    REQUIRE(top->texel11 == 0x00ff0000);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x0f00);
+    REQUIRE(top->texel11 == 0x0f00);
 
     // Destroy model
     delete top;
@@ -336,30 +336,30 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.0, 0.5)
     top->texelS = 0x0000;
     top->texelT = 0x4000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x0000ff00);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x0000ff00);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x00f0);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x00f0);
 
     // Destroy model
     delete top;
@@ -380,40 +380,40 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0xf000);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0x0f00);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.0, 0.5)
     top->texelS = 0x0000;
     top->texelT = 0x4000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x00f0);
+    REQUIRE(top->texel11 == 0x000f);
 
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
     clk(top);
     clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x000f);
 
     // Destroy model
     delete top;
