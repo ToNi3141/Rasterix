@@ -79,7 +79,7 @@ module AttributeInterpolator #(
 
     localparam INT_32_DIFF = ATTRIBUTE_SIZE - AXIS_SCREEN_POS_SIZE;
 
-    localparam RECIP_DELAY = 24;
+    localparam RECIP_DELAY = 25;
     localparam FRAMEBUFFER_INDEX_DELAY = 20 + RECIP_DELAY; // 6 steps
 
     // Selecting the vertex attributes from the axis
