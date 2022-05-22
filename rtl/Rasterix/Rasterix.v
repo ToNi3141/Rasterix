@@ -59,9 +59,7 @@ module Rasterix #(
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
 
-    localparam SUB_PIXEL_WIDTH = 4;
-    localparam INT_SUB_PIXEL_WIDTH = 8;
-    localparam NUMBER_OF_SUB_PIXELS = 4;
+    localparam MEMORY_SUB_PIXEL_WIDTH = 4;
 
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
     localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
@@ -73,8 +71,8 @@ module Rasterix #(
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
 `endif
 
-    `Expand(Expand, SUB_PIXEL_WIDTH, INT_SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
-    `Reduce(Reduce, SUB_PIXEL_WIDTH, INT_SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
+    `Expand(Expand, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
+    `Reduce(Reduce, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
 
     ///////////////////////////
     // Regs and wires
@@ -341,8 +339,8 @@ module Rasterix #(
     );
     defparam colorBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
-    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = NUMBER_OF_SUB_PIXELS;
-    defparam colorBuffer.SUB_PIXEL_WIDTH = SUB_PIXEL_WIDTH;
+    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = MEMORY_SUB_PIXEL_WIDTH;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -455,6 +453,5 @@ module Rasterix #(
     );
     defparam fragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam fragmentPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam fragmentPipeline.SUB_PIXEL_WIDTH = INT_SUB_PIXEL_WIDTH;
 
 endmodule

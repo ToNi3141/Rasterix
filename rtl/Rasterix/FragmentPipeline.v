@@ -61,7 +61,7 @@ module FragmentPipeline
 
     localparam DEPTH_WIDTH = 16,
 
-    parameter SUB_PIXEL_WIDTH = 8,
+    localparam SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32

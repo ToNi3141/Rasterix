@@ -155,8 +155,7 @@ localparam ENABLE_W_INTERPOLATION_POS = 0;
 localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 
 // OP_TEXTURE_STREAM
-// Texture data, size is dependet on the immediate value, for instance,
-// OP_TEXTURE_STREAM_MODE_32x32 = 32px * 32px * 2 = 2048 bytes
+// Texture data, size is dependet on the immediate value, see TEXTURE_STREAM_SIZE_POS
 // Each texel is build like the following:
 //  +---------------------------------------+
 //  | 4 bit R | 4 bit G | 4 bit B | 4 bit A |
@@ -270,11 +269,13 @@ localparam CLAMP_TO_EDGE = 1;
 //  +---------------------------------------+
 
 // Color defines
-localparam COLOR_R_POS = 24;
-localparam COLOR_G_POS = 16;
-localparam COLOR_B_POS = 8;
-localparam COLOR_A_POS = 0;
 localparam COLOR_SUB_PIXEL_WIDTH = 8;
+localparam COLOR_NUMBER_OF_SUB_PIXEL = 4;
+localparam COLOR_R_POS = COLOR_SUB_PIXEL_WIDTH * 3;
+localparam COLOR_G_POS = COLOR_SUB_PIXEL_WIDTH * 2;
+localparam COLOR_B_POS = COLOR_SUB_PIXEL_WIDTH * 1;
+localparam COLOR_A_POS = COLOR_SUB_PIXEL_WIDTH * 0;
+
 
 // OP_FRAMEBUFFER
 // Does not contain any arguments, just starts the framebuffer commit and clear processes

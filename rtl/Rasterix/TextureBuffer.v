@@ -27,13 +27,9 @@ module TextureBuffer #(
     // Size in bytes in power of two
     parameter SIZE = 14,
 
-    // Size of the subpixel
-    parameter SUB_PIXEL_WIDTH = 4,
-
-    localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
+    localparam PIXEL_WIDTH = 16,
 
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
-    localparam NUMBER_OF_SUB_PIXELS = 4,
 
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH),

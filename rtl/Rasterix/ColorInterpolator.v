@@ -35,7 +35,10 @@ module ColorInterpolator #(
 
     output reg  [PIXEL_WIDTH - 1 : 0]   mixedColor
 );
-`include "RegisterAndDescriptorDefines.vh"
+    localparam SUB_PIXEL_0_POS = SUB_PIXEL_WIDTH * 0;
+    localparam SUB_PIXEL_1_POS = SUB_PIXEL_WIDTH * 1;
+    localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
+    localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
     parameter [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_DOT_ZERO = { { SUB_PIXEL_WIDTH{1'b0}}, { SUB_PIXEL_WIDTH{1'b1} } };
     `Saturate(Saturate, SUB_PIXEL_WIDTH);
@@ -50,56 +53,56 @@ module ColorInterpolator #(
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V13;
     always @(posedge aclk)
     begin : Blending
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ra;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ga;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ba;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] aa;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rb;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gb;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bb;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ab;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ca0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ca1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ca2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ca3;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] cb0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] cb1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] cb2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] cb3;
         reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] in;
 
         in = { 8'h0, intensity[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH] };
 
-        ra = colorA[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        ga = colorA[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        ba = colorA[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        aa = colorA[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        ca0 = colorA[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
+        ca1 = colorA[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
+        ca2 = colorA[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
+        ca3 = colorA[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
 
-        rb = colorB[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gb = colorB[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bb = colorB[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ab = colorB[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        cb0 = colorB[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
+        cb1 = colorB[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
+        cb2 = colorB[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
+        cb3 = colorB[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
 
-        V00 <= (in * ra);
-        V01 <= (in * ga);
-        V02 <= (in * ba);
-        V03 <= (in * aa);
+        V00 <= (in * ca0);
+        V01 <= (in * ca1);
+        V02 <= (in * ca2);
+        V03 <= (in * ca3);
 
-        V10 <= ((ONE_DOT_ZERO - in) * rb);
-        V11 <= ((ONE_DOT_ZERO - in) * gb);
-        V12 <= ((ONE_DOT_ZERO - in) * bb);
-        V13 <= ((ONE_DOT_ZERO - in) * ab);
+        V10 <= ((ONE_DOT_ZERO - in) * cb0);
+        V11 <= ((ONE_DOT_ZERO - in) * cb1);
+        V12 <= ((ONE_DOT_ZERO - in) * cb2);
+        V13 <= ((ONE_DOT_ZERO - in) * cb3);
     end
 
     always @(posedge aclk)
     begin : Result
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] c0;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] c1;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] c2;
+        reg [(SUB_PIXEL_WIDTH * 2) : 0] c3;
 
-        r = (V00 + V10) + ONE_DOT_ZERO;
-        g = (V01 + V11) + ONE_DOT_ZERO;
-        b = (V02 + V12) + ONE_DOT_ZERO;
-        a = (V03 + V13) + ONE_DOT_ZERO;
+        c0 = (V00 + V10) + ONE_DOT_ZERO;
+        c1 = (V01 + V11) + ONE_DOT_ZERO;
+        c2 = (V02 + V12) + ONE_DOT_ZERO;
+        c3 = (V03 + V13) + ONE_DOT_ZERO;
 
         mixedColor <= {
-            Saturate(r),
-            Saturate(g),
-            Saturate(b),
-            Saturate(a)
+            Saturate(c3),
+            Saturate(c2),
+            Saturate(c1),
+            Saturate(c0)
         };
     end
 endmodule
