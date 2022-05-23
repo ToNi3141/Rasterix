@@ -1023,7 +1023,7 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
         if (m_enableAlphaTest)
         {
             // Convert reference value from float to fix point
-            const uint8_t refFix = ref * (1 << 4);
+            const uint8_t refFix = ref * (1 << 8);
             if (m_renderer.setAlphaFunc(testFunc, refFix))
             {
                 m_error = GL_NO_ERROR;

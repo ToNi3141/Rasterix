@@ -48,18 +48,18 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
     VColorInterpolator* top = new VColorInterpolator();
     reset(top);
 
-    const uint16_t colorA = 0xffff;
-    const uint16_t colorB = 0x0000;
+    const uint32_t colorA = 0xffffffff;
+    const uint32_t colorB = 0x00000000;
 
-    for (uint32_t i = 0; i < 16; i++)
+    for (uint32_t i = 0; i < 256; i++)
     {
-        top->intensity = (15 - i) << 12;
+        top->intensity = (255 - i) << 8;
         top->colorA = colorA;
         top->colorB = colorB;
         clk(top);
         clk(top);
 
-        const uint16_t mixedColor = colorA - (0x1111 * i);
+        const uint32_t mixedColor = colorA - (0x01010101 * i);
 
         REQUIRE(top->mixedColor == mixedColor);
     }
@@ -73,8 +73,8 @@ TEST_CASE("Check pipelining", "[ColorInterpolator]")
     VColorInterpolator* top = new VColorInterpolator();
     reset(top);
 
-    top->colorA = 0xffff;
-    top->colorB = 0x0000;
+    top->colorA = 0xffffffff;
+    top->colorB = 0x00000000;
 
     top->intensity = 0x0;
     clk(top);
@@ -85,10 +85,10 @@ TEST_CASE("Check pipelining", "[ColorInterpolator]")
 
     top->intensity = 0xffff;
     clk(top);
-    REQUIRE(top->mixedColor == 0x7777);
+    REQUIRE(top->mixedColor == 0x7f7f7f7f);
 
     clk(top);
-    REQUIRE(top->mixedColor == 0xffff);
+    REQUIRE(top->mixedColor == 0xffffffff);
     
     // Destroy model
     delete top;
@@ -101,29 +101,29 @@ TEST_CASE("Check channels", "[ColorInterpolator]")
 
     top->intensity = 0x7fff;
 
-    top->colorA = 0xf000;
-    top->colorB = 0x7000;
+    top->colorA = 0xff000000;
+    top->colorB = 0x7f000000;
     clk(top);
     clk(top);
-    REQUIRE(top->mixedColor == 0xb000);
+    REQUIRE(top->mixedColor == 0xbf000000);
 
-    top->colorA = 0x0f00;
-    top->colorB = 0x0700;
+    top->colorA = 0x00ff0000;
+    top->colorB = 0x007f0000;
     clk(top);
     clk(top);
-    REQUIRE(top->mixedColor == 0x0b00);
+    REQUIRE(top->mixedColor == 0x00bf0000);
 
-    top->colorA = 0x00f0;
-    top->colorB = 0x0070;
+    top->colorA = 0x0000ff00;
+    top->colorB = 0x00007f00;
     clk(top);
     clk(top);
-    REQUIRE(top->mixedColor == 0x00b0);
+    REQUIRE(top->mixedColor == 0x0000bf00);
 
-    top->colorA = 0x000f;
-    top->colorB = 0x0007;
+    top->colorA = 0x000000ff;
+    top->colorB = 0x0000007f;
     clk(top);
     clk(top);
-    REQUIRE(top->mixedColor == 0x000b);
+    REQUIRE(top->mixedColor == 0x000000bf);
     
     // Destroy model
     delete top;

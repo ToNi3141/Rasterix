@@ -20,7 +20,7 @@
 // Pipelined: yes
 // Depth: 4 cylces
 module TextureFilter #(
-    localparam SUB_PIXEL_WIDTH = 4,
+    localparam SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4
 ) 
 (

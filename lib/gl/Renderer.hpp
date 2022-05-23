@@ -127,8 +127,6 @@ public:
             return true;
         }
 
-        //triangleConf.triangleStaticColor = convertColor(color);
-
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
             const uint16_t currentScreenPositionStart = i * LINE_RESOLUTION;
@@ -471,14 +469,12 @@ private:
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
 
-    static uint16_t convertColor(const Vec4i color)
+    static uint32_t convertColor(const Vec4i color)
     {
-        Vec4i colorShift{color};
-        colorShift >>= 4;
-        uint16_t colorInt =   (static_cast<uint16_t>(colorShift[3]) << 0)
-                | (static_cast<uint16_t>(colorShift[2]) << 4)
-                | (static_cast<uint16_t>(colorShift[1]) << 8)
-                | (static_cast<uint16_t>(colorShift[0]) << 12);
+        uint32_t colorInt =   (static_cast<uint32_t>(0xff & color[3]) << 0)
+                | (static_cast<uint32_t>(0xff & color[2]) << 8)
+                | (static_cast<uint32_t>(0xff & color[1]) << 16)
+                | (static_cast<uint32_t>(0xff & color[0]) << 24);
         return colorInt;
     }
 
@@ -508,7 +504,7 @@ private:
         bool enableDepthTest : 1;
         IRenderer::TestFunc depthFunc : 3;
         IRenderer::TestFunc alphaFunc : 3;
-        uint8_t referenceAlphaValue : 4;
+        uint8_t referenceAlphaValue : 8;
         bool depthMask : 1;
         bool colorMaskA : 1;
         bool colorMaskB : 1;

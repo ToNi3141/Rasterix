@@ -171,7 +171,7 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
                                    const Vec2& st2f,
                                    const Vec4& c2f)
 {
-    static constexpr uint32_t EDGE_FUNC_SIZE = 2;
+    static constexpr uint32_t EDGE_FUNC_SIZE = 4;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
 
     Vec2i v0, v1, v2;
