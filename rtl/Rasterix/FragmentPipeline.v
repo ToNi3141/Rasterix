@@ -341,6 +341,8 @@ module FragmentPipeline
         wait_for_tex7 (.clk(clk), .in(stepReceiveFragColorColorFrag), .out(stepWaitForTexColorFrag));
 
     // TexEnv
+    wire [PIXEL_WIDTH - 1 : 0]              stepTexEnvResultColorTex;
+
     reg                                     stepTexEnvValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepTexEnvFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvColorFrag = 0;
@@ -355,225 +357,24 @@ module FragmentPipeline
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV13;
     reg [SUB_PIXEL_WIDTH - 1 : 0]           stepTexEnvFogIntensity;
     reg                                     stepTexEnvWriteColor = 0;
+
+    TexEnv #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    ) texEnv (
+        .aclk(clk),
+        .resetn(!reset),
+
+        .func(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
+
+        .texSrcColor(texel),
+        .primaryColor(stepWaitForTexTriangleColor),
+        .envColor(confTextureEnvColor),
+
+        .color(stepTexEnvResultColorTex)
+    );
+
     always @(posedge clk)
     begin : TexEnvCalc
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] as;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ap;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ac;
-
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v02;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v03;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v10;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v11;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v12;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v13;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v20;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v21;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v22;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v23;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v30;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v31;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v32;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
-
-        // Texture source color (Cs)
-        rs = texel[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gs = texel[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bs = texel[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        as = texel[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        // Input of texture unit n (or in case of texture unit 0 it is the primary color of the triangle (Cf))
-        // Currently we only have one texture unit, so Cp is Cf
-        rp = stepWaitForTexTriangleColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gp = stepWaitForTexTriangleColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bp = stepWaitForTexTriangleColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ap = stepWaitForTexTriangleColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        // Texture environment color (Cc)
-        rc = confTextureEnvColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gc = confTextureEnvColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bc = confTextureEnvColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ac = confTextureEnvColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        case (confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE])
-            DISABLE:
-            begin
-                // Disables the tex env, so just use the triangle color instread of the texture
-                // (The opposite of the GL_REPLACE)
-
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = ONE_POINT_ZERO;
-                v11 = ONE_POINT_ZERO;
-                v12 = ONE_POINT_ZERO;
-                v13 = ONE_POINT_ZERO;
-
-                v20 = 0;
-                v21 = 0;
-                v22 = 0;
-                v23 = 0;
-
-                v30 = 0;
-                v31 = 0;
-                v32 = 0;
-                v33 = 0;
-            end
-            REPLACE:
-            begin
-                // (s * 1.0) + (0.0 * 0.0)
-                // (as * 1.0) + (0.0 * 0.0)
-
-                v00 = rs;
-                v01 = gs;
-                v02 = bs;
-                v03 = as;
-
-                v10 = ONE_POINT_ZERO;
-                v11 = ONE_POINT_ZERO;
-                v12 = ONE_POINT_ZERO;
-                v13 = ONE_POINT_ZERO;
-
-                v20 = 0;
-                v21 = 0;
-                v22 = 0;
-                v23 = 0;
-
-                v30 = 0;
-                v31 = 0;
-                v32 = 0;
-                v33 = 0;
-            end
-            BLEND:
-            begin
-                // (p * (1.0 - s) + (c * s)
-                // (ap * as) + (0.0 * 0.0)      
-                
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = ONE_POINT_ZERO - rs;
-                v11 = ONE_POINT_ZERO - gs;
-                v12 = ONE_POINT_ZERO - bs;
-                v13 = as;
-
-                v20 = rc;
-                v21 = gc;
-                v22 = bc;
-                v23 = 0;
-
-                v30 = rs;
-                v31 = gs;
-                v32 = bs;
-                v33 = 0; 
-            end 
-            DECAL:
-            begin
-                // (p * (1.0 - as)) + (s * as)
-                // (ap * 1.0) + (0.0 * 0.0)
-
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = (ONE_POINT_ZERO - as);
-                v11 = (ONE_POINT_ZERO - as);
-                v12 = (ONE_POINT_ZERO - as);
-                v13 = ONE_POINT_ZERO;
-                
-                v20 = rs;
-                v21 = gs;
-                v22 = bs;
-                v23 = 0;
-
-                v30 = as;
-                v31 = as;
-                v32 = as;
-                v33 = 0;
-                
-            end
-            MODULATE:
-            begin
-                // (p * s) + (0 * 0)
-                // (ap * as) + (0.0 * 0.0)
-
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = rs;
-                v11 = gs;
-                v12 = bs;
-                v13 = as;
-
-                v20 = 0;
-                v21 = 0;
-                v22 = 0;
-                v23 = 0;
-
-                v30 = 0;
-                v31 = 0;
-                v32 = 0;
-                v33 = 0;
-            end
-            ADD:
-            begin 
-                // (p * 1.0) + (s * 1.0)
-                // (ap * as) + (0.0 * 0.0)
-
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = ONE_POINT_ZERO;
-                v11 = ONE_POINT_ZERO;
-                v12 = ONE_POINT_ZERO;
-                v13 = as;
-
-                v20 = rs;
-                v21 = gs;
-                v22 = bs;
-                v23 = 0;
-
-                v30 = ONE_POINT_ZERO;
-                v31 = ONE_POINT_ZERO;
-                v32 = ONE_POINT_ZERO;
-                v33 = 0;
-            end
-            default:
-            begin
-                
-            end 
-        endcase
-
-        stepTexEnvV00 <= v00 * v10;
-        stepTexEnvV01 <= v01 * v11;
-        stepTexEnvV02 <= v02 * v12;
-        stepTexEnvV03 <= v03 * v13;
-
-        stepTexEnvV10 <= v20 * v30;
-        stepTexEnvV11 <= v21 * v31;
-        stepTexEnvV12 <= v22 * v32;
-        stepTexEnvV13 <= v23 * v33;
-
         stepTexEnvFogIntensity <= stepWaitForTexFogIntensity;
         stepTexEnvValid <= stepWaitForTexValid;
         stepTexEnvFbIndex <= stepWaitForTexFbIndex;
@@ -589,29 +390,12 @@ module FragmentPipeline
     reg                                     stepTexEnvResultValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepTexEnvResultFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorFrag = 0;
-    reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorTex = 0;
+    // reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorTex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvResultDepthValue = 0;
     reg                                     stepTexEnvResultWriteColor = 0;
     reg [SUB_PIXEL_WIDTH - 1 : 0]           stepTexEnvResultFogIntensity = 0;
     always @(posedge clk)
     begin : TexEnvResultCalc
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
-
-        r = (stepTexEnvV00 + stepTexEnvV10) + ONE_POINT_ZERO_BIG;
-        g = (stepTexEnvV01 + stepTexEnvV11) + ONE_POINT_ZERO_BIG;
-        b = (stepTexEnvV02 + stepTexEnvV12) + ONE_POINT_ZERO_BIG;
-        a = (stepTexEnvV03 + stepTexEnvV13) + ONE_POINT_ZERO_BIG;
-
-        stepTexEnvResultColorTex <= {
-            Saturate(r),
-            Saturate(g),
-            Saturate(b),
-            Saturate(a)
-        };
-
         stepTexEnvResultDepthValue <= stepTexEnvDepthValue;
         stepTexEnvResultColorFrag <= stepTexEnvColorFrag;
         stepTexEnvResultFbIndex <= stepTexEnvFbIndex;
