@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
 `define TestFunc(FuncName, Width) \
     function FuncName; \
         input reg  [ 2 : 0]         conf; \
@@ -141,7 +139,6 @@ module FragmentPipeline
 
     `TestFunc(TestFuncAlpha, SUB_PIXEL_WIDTH);
     `TestFunc(TestFuncDepth, DEPTH_WIDTH);
-    `Saturate(Saturate, SUB_PIXEL_WIDTH);
 
     assign s_axis_tready = 1;
 
