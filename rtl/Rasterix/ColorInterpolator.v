@@ -22,7 +22,7 @@
 // Pipelined: yes
 // Depth: 2 cycles
 module ColorInterpolator #(
-    localparam SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_WIDTH = 8,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
 )
@@ -30,7 +30,7 @@ module ColorInterpolator #(
     input  wire                         aclk,
     input  wire                         resetn,
 
-    input  wire [15 : 0]                intensity, // Intensity of color a or 1.0 - intensity of color b. 1.0 == 0xffff, 0.0 == 0x0
+    input  wire [15 : 0]                intensity,
     input  wire [PIXEL_WIDTH - 1 : 0]   colorA,
     input  wire [PIXEL_WIDTH - 1 : 0]   colorB,
 

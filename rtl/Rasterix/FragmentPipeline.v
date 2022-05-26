@@ -209,7 +209,7 @@ module FragmentPipeline
     reg [DEPTH_WIDTH - 1 : 0]               stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepCalculatePerspectiveCorrectionfbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepCalculatePerspectiveCorrectionTriangleColor = 0;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepCalculatePerspectiveCorrectionFogIntensity;
+    reg [15 : 0]                            stepCalculatePerspectiveCorrectionFogIntensity;
     always @(posedge clk)
     begin : bla
         // reg [31:0] z;
@@ -266,7 +266,7 @@ module FragmentPipeline
                 (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
             };
 
-            stepCalculatePerspectiveCorrectionFogIntensity <= (step_convert_fog_intensity[22]) ? ONE_POINT_ZERO : step_convert_fog_intensity[22 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH];
+            stepCalculatePerspectiveCorrectionFogIntensity <= (step_convert_fog_intensity[22]) ? 16'hffff : step_convert_fog_intensity[22 - 16 +: 16];
         end
         stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
     end
@@ -275,7 +275,7 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepWaitForMemoryFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepWaitForMemoryDepthValue = 0;    
     reg [PIXEL_WIDTH - 1 : 0]               stepWaitForMemoryTriangleColor = 0;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepWaitForMemoryFogIntensity = 0;
+    reg [15 : 0]                            stepWaitForMemoryFogIntensity = 0;
     always @(posedge clk)
     begin
         if (stepCalculatePerspectiveCorrectionValid)
@@ -296,7 +296,7 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepReceiveFragColorFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepReceiveFragColorDepthValue = 0;    
     reg [PIXEL_WIDTH - 1 : 0]               stepReceiveFragColorTriangleColor = 0;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepReceiveFragColorFogIntensity = 0;
+    reg [15 : 0]                            stepReceiveFragColorFogIntensity = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepReceiveFragColorDepthBufferVal = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepReceiveFragColorColorFrag = 0;
     always @(posedge clk)
@@ -315,7 +315,7 @@ module FragmentPipeline
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  stepWaitForTexFbIndex;
     wire [DEPTH_WIDTH - 1 : 0]              stepWaitForTexDepthValue;    
     wire [PIXEL_WIDTH - 1 : 0]              stepWaitForTexTriangleColor;
-    wire [SUB_PIXEL_WIDTH - 1 : 0]          stepWaitForTexFogIntensity;
+    wire [15 : 0]                           stepWaitForTexFogIntensity;
     wire [DEPTH_WIDTH - 1 : 0]              stepWaitForTexDepthBufferVal;
     wire [PIXEL_WIDTH - 1 : 0]              stepWaitForTexColorFrag;
 
@@ -331,7 +331,7 @@ module FragmentPipeline
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(4)) 
         wait_for_tex4 (.clk(clk), .in(stepReceiveFragColorTriangleColor), .out(stepWaitForTexTriangleColor));
 
-    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(16), .DELAY(4)) 
         wait_for_tex5 (.clk(clk), .in(stepReceiveFragColorFogIntensity), .out(stepWaitForTexFogIntensity));
 
     ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(4)) 
@@ -355,7 +355,7 @@ module FragmentPipeline
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV11;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV12;
     reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV13;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepTexEnvFogIntensity;
+    reg [15 : 0]                            stepTexEnvFogIntensity;
     reg                                     stepTexEnvWriteColor = 0;
 
     TexEnv #(
@@ -390,10 +390,9 @@ module FragmentPipeline
     reg                                     stepTexEnvResultValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepTexEnvResultFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorFrag = 0;
-    // reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorTex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvResultDepthValue = 0;
     reg                                     stepTexEnvResultWriteColor = 0;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepTexEnvResultFogIntensity = 0;
+    reg [15 : 0]                            stepTexEnvResultFogIntensity = 0;
     always @(posedge clk)
     begin : TexEnvResultCalc
         stepTexEnvResultDepthValue <= stepTexEnvDepthValue;
@@ -405,52 +404,40 @@ module FragmentPipeline
     end
 
     // Calculate Fog
+    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepFogColorTexAlpha = 0;
+    wire [PIXEL_WIDTH - 1 : 0]               stepFogResultColorTmp;
+    wire [PIXEL_WIDTH - 1 : 0]               stepFogResultColor;
+
+    ColorInterpolator #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    )
+    fogInterpolator (
+        .aclk(clk),
+        .resetn(!reset),
+
+        .intensity(stepTexEnvResultFogIntensity),
+        .colorA(stepTexEnvResultColorTex),
+        .colorB(confFogColor),
+
+        .mixedColor(stepFogResultColorTmp)
+    );
+
+    assign stepFogResultColor = {
+        stepFogResultColorTmp[COLOR_R_POS +: SUB_PIXEL_WIDTH],
+        stepFogResultColorTmp[COLOR_G_POS +: SUB_PIXEL_WIDTH],
+        stepFogResultColorTmp[COLOR_B_POS +: SUB_PIXEL_WIDTH],
+        stepFogResultAlphaVal // Replace alpha, because it is specified that fog does not change the alpha value of a texel
+    };
+
     reg                                     stepFogValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepFogColorFrag = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepFogDepthValue = 0;
     reg                                     stepFogWriteColor = 0;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV00;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV01;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV02;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV03;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV10;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV11;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV12;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepFogV13;
+    
     always @(posedge clk)
     begin : BlendFog
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bf;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] af;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ru;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gu;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bu;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] au;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] intensity;
-
-        intensity = stepTexEnvResultFogIntensity;
-
-        rf = confFogColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gf = confFogColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bf = confFogColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        af = confFogColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        ru = stepTexEnvResultColorTex[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gu = stepTexEnvResultColorTex[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bu = stepTexEnvResultColorTex[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        au = stepTexEnvResultColorTex[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        stepFogV00 <= (intensity * ru);
-        stepFogV01 <= (intensity * gu);
-        stepFogV02 <= (intensity * bu);
-        stepFogV03 <= { au, {SUB_PIXEL_WIDTH{1'b0 }} };
-
-        stepFogV10 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * rf);
-        stepFogV11 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * gf);
-        stepFogV12 <= ((ONE_POINT_ZERO_BIG - { {SUB_PIXEL_WIDTH{1'b0}},  intensity }) * bf);
-        stepFogV13 <= 0;
+        stepFogColorTexAlpha <= stepTexEnvResultColorTex[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
         stepFogDepthValue <= stepTexEnvResultDepthValue;
         stepFogColorFrag <= stepTexEnvResultColorFrag;
@@ -469,25 +456,7 @@ module FragmentPipeline
     reg [SUB_PIXEL_WIDTH - 1 : 0]           stepFogResultAlphaVal = 0;
     always @(posedge clk)
     begin : FogResult
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
-
-        r = (stepFogV00 + stepFogV10) + ONE_POINT_ZERO_BIG;
-        g = (stepFogV01 + stepFogV11) + ONE_POINT_ZERO_BIG;
-        b = (stepFogV02 + stepFogV12) + ONE_POINT_ZERO_BIG;
-        a = { 1'b0, stepFogV03 }; // Alpha value is not affected by fog.
-
-        stepFogResultColor <= {
-            Saturate(r),
-            Saturate(g),
-            Saturate(b),
-            Saturate(a)
-        };
-
-        stepFogResultAlphaVal <= Saturate(a);
-        
+        stepFogResultAlphaVal <= stepFogColorTexAlpha;
         stepFogResultDepthValue <= stepFogDepthValue;
         stepFogResultColorFrag <= stepFogColorFrag;
         stepFogResultFbIndex <= stepFogFbIndex;
