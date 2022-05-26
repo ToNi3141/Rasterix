@@ -18,8 +18,8 @@
 module Fog 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
-    localparam NUMBER_OF_SUB_PIXELS = 4,
-    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXELS
+    localparam NUMBER_OF_SUB_PIXEL = 4,
+    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
 )
 (
     input  wire                         aclk,

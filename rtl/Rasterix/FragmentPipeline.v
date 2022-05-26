@@ -450,191 +450,28 @@ module FragmentPipeline
     end
 
     // Blend color
+
+    wire [PIXEL_WIDTH - 1 : 0]               stepBlendResultColorFrag;
+    ColorBlender #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    ) colorBlender (
+        .aclk(clk),
+        .resetn(!reset),
+
+        .funcSFactor(confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE]),
+        .funcDFactor(confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE]),
+        .sourceColor(stepFogResultColor),
+        .destColor(stepFogResultColorFrag),
+
+        .color(stepBlendResultColorFrag)
+    );
+
     reg                                     stepBlendValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepBlendFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepBlendDepthValue = 0;
     reg                                     stepBlendWriteColor = 0;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV00;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV01;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV02;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV03;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV10;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV11;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV12;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepBlendV13;
     always @(posedge clk)
-    begin : BlendCalc
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] as;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rd;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gd;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bd;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ad;
-
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v02;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v03;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v10;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v11;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v12;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] v13;
-
-        rs = stepFogResultColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gs = stepFogResultColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bs = stepFogResultColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        as = stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        rd = stepFogResultColorFrag[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gd = stepFogResultColorFrag[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bd = stepFogResultColorFrag[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ad = stepFogResultColorFrag[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
-        case (confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE])
-            ZERO:
-            begin
-                v00 = 0;
-                v01 = 0;
-                v02 = 0;
-                v03 = 0;
-            end
-            ONE:
-            begin
-                v00 = ONE_POINT_ZERO;
-                v01 = ONE_POINT_ZERO;
-                v02 = ONE_POINT_ZERO;
-                v03 = ONE_POINT_ZERO;
-            end 
-            DST_COLOR:
-            begin
-                v00 = rd;
-                v01 = gd;
-                v02 = bd;
-                v03 = ad;
-            end 
-            ONE_MINUS_DST_COLOR:
-            begin
-                v00 = ONE_POINT_ZERO - rd;
-                v01 = ONE_POINT_ZERO - gd;
-                v02 = ONE_POINT_ZERO - bd;
-                v03 = ONE_POINT_ZERO - ad;
-            end 
-            SRC_ALPHA:
-            begin
-                v00 = as;
-                v01 = as;
-                v02 = as;
-                v03 = as;
-            end 
-            ONE_MINUS_SRC_ALPHA:
-            begin
-                v00 = ONE_POINT_ZERO - as;
-                v01 = ONE_POINT_ZERO - as;
-                v02 = ONE_POINT_ZERO - as;
-                v03 = ONE_POINT_ZERO - as;
-            end 
-            DST_ALPHA:
-            begin
-                v00 = ad;
-                v01 = ad;
-                v02 = ad;
-                v03 = ad;
-            end 
-            ONE_MINUS_DST_ALPHA:
-            begin
-                v00 = ONE_POINT_ZERO - ad;
-                v01 = ONE_POINT_ZERO - ad;
-                v02 = ONE_POINT_ZERO - ad;
-                v03 = ONE_POINT_ZERO - ad;
-            end 
-            SRC_ALPHA_SATURATE:
-            begin
-                v00 = (as < (ONE_POINT_ZERO - ad)) ? as : (ONE_POINT_ZERO - ad);
-                v01 = (as < (ONE_POINT_ZERO - ad)) ? as : (ONE_POINT_ZERO - ad);
-                v02 = (as < (ONE_POINT_ZERO - ad)) ? as : (ONE_POINT_ZERO - ad);
-                v03 = ONE_POINT_ZERO;
-            end 
-            default:
-            begin
-                
-            end 
-        endcase
-
-        case (confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE])
-            ZERO:
-            begin
-                v10 = 0;
-                v11 = 0;
-                v12 = 0;
-                v13 = 0;
-            end
-            ONE:
-            begin
-                v10 = ONE_POINT_ZERO;
-                v11 = ONE_POINT_ZERO;
-                v12 = ONE_POINT_ZERO;
-                v13 = ONE_POINT_ZERO;
-            end 
-            SRC_COLOR:
-            begin
-                v10 = rs;
-                v11 = gs;
-                v12 = bs;
-                v13 = as;
-            end 
-            ONE_MINUS_SRC_COLOR:
-            begin
-                v10 = ONE_POINT_ZERO - rs;
-                v11 = ONE_POINT_ZERO - gs;
-                v12 = ONE_POINT_ZERO - bs;
-                v13 = ONE_POINT_ZERO - as;
-            end 
-            SRC_ALPHA:
-            begin
-                v10 = as;
-                v11 = as;
-                v12 = as;
-                v13 = as;
-            end 
-            ONE_MINUS_SRC_ALPHA:
-            begin
-                v10 = ONE_POINT_ZERO - as;
-                v11 = ONE_POINT_ZERO - as;
-                v12 = ONE_POINT_ZERO - as;
-                v13 = ONE_POINT_ZERO - as;
-            end 
-            DST_ALPHA:
-            begin
-                v10 = ad;
-                v11 = ad;
-                v12 = ad;
-                v13 = ad;
-            end 
-            ONE_MINUS_DST_ALPHA:
-            begin
-                v10 = ONE_POINT_ZERO - ad;
-                v11 = ONE_POINT_ZERO - ad;
-                v12 = ONE_POINT_ZERO - ad;
-                v13 = ONE_POINT_ZERO - ad;
-            end 
-            default:
-            begin
-                
-            end 
-        endcase
-
-        stepBlendV00 <= v00 * rs;
-        stepBlendV01 <= v01 * gs;
-        stepBlendV02 <= v02 * bs;
-        stepBlendV03 <= v03 * as;
-    
-        stepBlendV10 <= v10 * rd;
-        stepBlendV11 <= v11 * gd;
-        stepBlendV12 <= v12 * bd;
-        stepBlendV13 <= v13 * ad;
-        
+    begin : BlendCalc 
         stepBlendDepthValue <= stepFogResultDepthValue;
         stepBlendFbIndex <= stepFogResultFbIndex;
         stepBlendValid <= stepFogResultValid;
@@ -646,28 +483,10 @@ module FragmentPipeline
     // Blend Result
     reg                                     stepBlendResultValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepBlendResultFbIndex = 0;
-    reg [PIXEL_WIDTH - 1 : 0]               stepBlendResultColorFrag = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepBlendResultDepthValue = 0;
     reg                                     stepBlendResultWriteColor = 0;
     always @(posedge clk)
     begin : BlendResultCalc
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] r;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] g;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] b;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] a;
-
-        r = (stepBlendV00 + stepBlendV10) + ONE_POINT_ZERO_BIG;
-        g = (stepBlendV01 + stepBlendV11) + ONE_POINT_ZERO_BIG;
-        b = (stepBlendV02 + stepBlendV12) + ONE_POINT_ZERO_BIG;
-        a = (stepBlendV03 + stepBlendV13) + ONE_POINT_ZERO_BIG;
-
-        stepBlendResultColorFrag <= {
-            Saturate(r),
-            Saturate(g),
-            Saturate(b),
-            Saturate(a)
-        };
-
         stepBlendResultDepthValue <= stepBlendDepthValue;
         stepBlendResultFbIndex <= stepBlendFbIndex;
         stepBlendResultValid <= stepBlendValid;
