@@ -404,30 +404,20 @@ module FragmentPipeline
     end
 
     // Calculate Fog
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepFogColorTexAlpha = 0;
-    wire [PIXEL_WIDTH - 1 : 0]               stepFogResultColorTmp;
     wire [PIXEL_WIDTH - 1 : 0]               stepFogResultColor;
 
-    ColorInterpolator #(
+    Fog #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    )
-    fogInterpolator (
+    ) fog (
         .aclk(clk),
         .resetn(!reset),
 
         .intensity(stepTexEnvResultFogIntensity),
-        .colorA(stepTexEnvResultColorTex),
-        .colorB(confFogColor),
+        .texelColor(stepTexEnvResultColorTex),
+        .fogColor(confFogColor),
 
-        .mixedColor(stepFogResultColorTmp)
+        .color(stepFogResultColor)
     );
-
-    assign stepFogResultColor = {
-        stepFogResultColorTmp[COLOR_R_POS +: SUB_PIXEL_WIDTH],
-        stepFogResultColorTmp[COLOR_G_POS +: SUB_PIXEL_WIDTH],
-        stepFogResultColorTmp[COLOR_B_POS +: SUB_PIXEL_WIDTH],
-        stepFogResultAlphaVal // Replace alpha, because it is specified that fog does not change the alpha value of a texel
-    };
 
     reg                                     stepFogValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogFbIndex = 0;
@@ -437,8 +427,6 @@ module FragmentPipeline
     
     always @(posedge clk)
     begin : BlendFog
-        stepFogColorTexAlpha <= stepTexEnvResultColorTex[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-
         stepFogDepthValue <= stepTexEnvResultDepthValue;
         stepFogColorFrag <= stepTexEnvResultColorFrag;
         stepFogFbIndex <= stepTexEnvResultFbIndex;
@@ -451,12 +439,9 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogResultFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepFogResultDepthValue = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepFogResultColorFrag = 0;
-    reg [PIXEL_WIDTH - 1 : 0]               stepFogResultColor = 0;
     reg                                     stepFogResultWriteColor = 0;
-    reg [SUB_PIXEL_WIDTH - 1 : 0]           stepFogResultAlphaVal = 0;
     always @(posedge clk)
     begin : FogResult
-        stepFogResultAlphaVal <= stepFogColorTexAlpha;
         stepFogResultDepthValue <= stepFogDepthValue;
         stepFogResultColorFrag <= stepFogColorFrag;
         stepFogResultFbIndex <= stepFogFbIndex;
@@ -655,7 +640,7 @@ module FragmentPipeline
         stepBlendValid <= stepFogResultValid;
         stepBlendWriteColor <= stepFogResultWriteColor & TestFuncAlpha( confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
                                                                         confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
-                                                                        stepFogResultAlphaVal);
+                                                                        stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]);
     end
 
     // Blend Result
