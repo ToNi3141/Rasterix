@@ -56,8 +56,8 @@ module PixelPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output reg  [15 : 0]                texelS,
-    output reg  [15 : 0]                texelT,
+    output wire [15 : 0]                texelS,
+    output wire [15 : 0]                texelT,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel,
 
     // Frame buffer access
@@ -125,7 +125,7 @@ module PixelPipeline
     // STEP Convert to int
     ////////////////////////////////////////////////////////////////////////////
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
-    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_depth_w;
+    wire [FLOAT_SIZE - 1 : 0]  step_convert_depth_w_float;
     wire [31 : 0]                   step_convert_texture_s;
     wire [31 : 0]                   step_convert_texture_t;
     wire [31 : 0]                   step_convert_depth_z;
@@ -139,8 +139,8 @@ module PixelPipeline
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
-        convert_depth_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_depth_w));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
+        convert_depth_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
 
@@ -160,10 +160,6 @@ module PixelPipeline
         convert_floatToInt_ColorB (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_B_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_b));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
         convert_floatToInt_ColorA (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_A_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_a));   
-
-    FunctionInterpolator #(.STREAM_WIDTH(CMD_STREAM_WIDTH))
-        convert_fog_intensity (.aclk(clk), .resetn(!reset), .x(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .fx(step_convert_fog_intensity),
-            .s_axis_tvalid(s_fog_lut_axis_tvalid), .s_axis_tready(s_fog_lut_axis_tready), .s_axis_tlast(s_fog_lut_axis_tlast), .s_axis_tdata(s_fog_lut_axis_tdata));
 
     reg                                     stepCalculatePerspectiveCorrectionValid = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepCalculatePerspectiveCorrectionDepthBufferVal = 0;
@@ -215,21 +211,47 @@ module PixelPipeline
             colorIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
             depthIndexRead <= step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH];
 
-            texelS <= clampTexture(step_convert_texture_s[0 +: 24], confTextureClampS);
-            texelT <= clampTexture(step_convert_texture_t[0 +: 24], confTextureClampT);
-
-            stepCalculatePerspectiveCorrectionTriangleColor <= {
-                // clamp colors 
-                (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-                (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-                (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-                (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
-            };
-
             stepCalculatePerspectiveCorrectionFogIntensity <= (step_convert_fog_intensity[22]) ? 16'hffff : step_convert_fog_intensity[22 - 16 +: 16];
         end
         stepCalculatePerspectiveCorrectionValid <= step_convert_tvalid;
     end
+
+    wire [PIXEL_WIDTH - 1 : 0]  fragmentColor;
+    FragmentPipeline #(
+        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    ) fragmentPipeline (
+        .aclk(clk),
+        .resetn(!reset),
+
+        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
+        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
+        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
+        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+
+        .confReg1(confReg1),
+        .confReg2(confReg2),
+        .confTextureClampS(confTextureClampS),
+        .confTextureClampT(confTextureClampT),
+        .confTextureEnvColor(confTextureEnvColor),
+        .confFogColor(confFogColor),
+
+        .texelS(texelS),
+        .texelT(texelT),
+        .texel(texel),
+
+        .triangleColor({
+            // clamp colors 
+            (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
+        }),
+        .depth(step_convert_depth_w_float),
+        .textureS(step_convert_texture_s[0 +: 24]),
+        .textureT(step_convert_texture_t[0 +: 24]),
+        .fragmentColor(fragmentColor)
+    );
 
     reg                                     stepWaitForMemoryValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepWaitForMemoryFbIndex = 0;
@@ -310,20 +332,20 @@ module PixelPipeline
     reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvDepthValueFramebuffer = 0;
     reg [15 : 0]                            stepTexEnvFogIntensity;
 
-    TexEnv #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) texEnv (
-        .aclk(clk),
-        .resetn(!reset),
+    // TexEnv #(
+    //     .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    // ) texEnv (
+    //     .aclk(clk),
+    //     .resetn(!reset),
 
-        .func(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
+    //     .func(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
 
-        .texSrcColor(texel),
-        .primaryColor(stepWaitForTexTriangleColor),
-        .envColor(confTextureEnvColor),
+    //     .texSrcColor(texel),
+    //     .primaryColor(stepWaitForTexTriangleColor),
+    //     .envColor(confTextureEnvColor),
 
-        .color(stepTexEnvResultColorTex)
-    );
+    //     .color(stepTexEnvResultColorTex)
+    // );
 
     always @(posedge clk)
     begin : TexEnvCalc
@@ -355,18 +377,18 @@ module PixelPipeline
     // Calculate Fog
     wire [PIXEL_WIDTH - 1 : 0]               stepFogResultColor;
 
-    Fog #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) fog (
-        .aclk(clk),
-        .resetn(!reset),
+    // Fog #(
+    //     .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    // ) fog (
+    //     .aclk(clk),
+    //     .resetn(!reset),
 
-        .intensity(stepTexEnvResultFogIntensity),
-        .texelColor(stepTexEnvResultColorTex),
-        .fogColor(confFogColor),
+    //     .intensity(stepTexEnvResultFogIntensity),
+    //     .texelColor(stepTexEnvResultColorTex),
+    //     .fogColor(confFogColor),
 
-        .color(stepFogResultColor)
-    );
+    //     .color(stepFogResultColor)
+    // );
 
     reg                                     stepFogValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogFbIndex = 0;
@@ -409,7 +431,7 @@ module PixelPipeline
 
         .funcSFactor(confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE]),
         .funcDFactor(confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE]),
-        .sourceColor(stepFogResultColor),
+        .sourceColor(fragmentColor),
         .destColor(stepFogResultColorFrag),
 
         .color(stepBlendResultColorFrag)
@@ -423,7 +445,7 @@ module PixelPipeline
         .resetn(!reset),
         .func(confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE]),
         .refVal(confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE]),
-        .val(stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
+        .val(fragmentColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
         .success(alphaTestResult)
     );
 
