@@ -15,40 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`define TestFunc(FuncName, Width) \
-    function FuncName; \
-        input reg  [ 2 : 0]         conf; \
-        input reg  [Width - 1 : 0]  refVal; \
-        input reg  [Width - 1 : 0]  currentVal; \
-        reg                         less; \
-        reg                         greater; \
-        reg                         equal; \
-        begin \
-            less =    currentVal <  refVal; \
-            greater = currentVal >  refVal; \
-            equal =   currentVal == refVal; \
-            case (conf) \
-                ALWAYS: \
-                    FuncName = 1; \
-                NEVER: \
-                    FuncName = 0; \
-                LESS: \
-                    FuncName = less; \
-                EQUAL: \
-                    FuncName = equal; \
-                LEQUAL: \
-                    FuncName = less | equal; \
-                GREATER: \
-                    FuncName = greater; \
-                NOTEQUAL: \
-                    FuncName = !equal; \
-                GEQUAL: \
-                    FuncName = greater | equal; \
-                default:  \
-                    FuncName = 1; \
-            endcase \
-        end \
-    endfunction
 
 module FragmentPipeline
 #(
@@ -136,9 +102,6 @@ module FragmentPipeline
             end
         end
     endfunction
-
-    `TestFunc(TestFuncAlpha, SUB_PIXEL_WIDTH);
-    `TestFunc(TestFuncDepth, DEPTH_WIDTH);
 
     assign s_axis_tready = 1;
 
@@ -344,16 +307,8 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepTexEnvFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvColorFrag = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvDepthValue = 0;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV00;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV01;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV02;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV03;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV10;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV11;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV12;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0]     stepTexEnvV13;
+    reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvDepthValueFramebuffer = 0;
     reg [15 : 0]                            stepTexEnvFogIntensity;
-    reg                                     stepTexEnvWriteColor = 0;
 
     TexEnv #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
@@ -376,11 +331,8 @@ module FragmentPipeline
         stepTexEnvValid <= stepWaitForTexValid;
         stepTexEnvFbIndex <= stepWaitForTexFbIndex;
         stepTexEnvDepthValue <= stepWaitForTexDepthValue;
+        stepTexEnvDepthValueFramebuffer <= stepWaitForTexDepthBufferVal;
         stepTexEnvColorFrag <= stepWaitForTexColorFrag;
-
-        // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
-        stepTexEnvWriteColor <= TestFuncDepth(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE], stepWaitForTexDepthBufferVal, stepWaitForTexDepthValue) 
-            || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
     end
 
     // Tex Env Result
@@ -388,16 +340,16 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepTexEnvResultFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepTexEnvResultColorFrag = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvResultDepthValue = 0;
-    reg                                     stepTexEnvResultWriteColor = 0;
+    reg [DEPTH_WIDTH - 1 : 0]               stepTexEnvResultDepthValueFramebuffer = 0;
     reg [15 : 0]                            stepTexEnvResultFogIntensity = 0;
     always @(posedge clk)
     begin : TexEnvResultCalc
         stepTexEnvResultDepthValue <= stepTexEnvDepthValue;
+        stepTexEnvResultDepthValueFramebuffer <= stepTexEnvDepthValueFramebuffer;
         stepTexEnvResultColorFrag <= stepTexEnvColorFrag;
         stepTexEnvResultFbIndex <= stepTexEnvFbIndex;
         stepTexEnvResultValid <= stepTexEnvValid;
         stepTexEnvResultFogIntensity <= stepTexEnvFogIntensity;
-        stepTexEnvResultWriteColor <= stepTexEnvWriteColor;
     end
 
     // Calculate Fog
@@ -420,30 +372,30 @@ module FragmentPipeline
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogFbIndex = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepFogColorFrag = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepFogDepthValue = 0;
-    reg                                     stepFogWriteColor = 0;
+    reg [DEPTH_WIDTH - 1 : 0]               stepFogDepthValueFramebuffer = 0;
     
     always @(posedge clk)
     begin : BlendFog
         stepFogDepthValue <= stepTexEnvResultDepthValue;
+        stepFogDepthValueFramebuffer <= stepTexEnvResultDepthValueFramebuffer;
         stepFogColorFrag <= stepTexEnvResultColorFrag;
         stepFogFbIndex <= stepTexEnvResultFbIndex;
         stepFogValid <= stepTexEnvResultValid;
-        stepFogWriteColor <= stepTexEnvResultWriteColor;
     end
 
     // Fog Result
     reg                                     stepFogResultValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepFogResultFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepFogResultDepthValue = 0;
+    reg [DEPTH_WIDTH - 1 : 0]               stepFogResultDepthValueFramebuffer = 0;
     reg [PIXEL_WIDTH - 1 : 0]               stepFogResultColorFrag = 0;
-    reg                                     stepFogResultWriteColor = 0;
     always @(posedge clk)
     begin : FogResult
         stepFogResultDepthValue <= stepFogDepthValue;
+        stepFogResultDepthValueFramebuffer <= stepFogDepthValueFramebuffer;
         stepFogResultColorFrag <= stepFogColorFrag;
         stepFogResultFbIndex <= stepFogFbIndex;
         stepFogResultValid <= stepFogValid;
-        stepFogResultWriteColor <= stepFogWriteColor;
     end
 
     // Blend color
@@ -463,18 +415,38 @@ module FragmentPipeline
         .color(stepBlendResultColorFrag)
     );
 
+    wire alphaTestResult;
+    TestFunc #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    ) alphaTest (
+        .aclk(clk),
+        .resetn(!reset),
+        .func(confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE]),
+        .refVal(confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE]),
+        .val(stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
+        .success(alphaTestResult)
+    );
+
+    wire depthTestResult;
+    TestFunc #(
+        .SUB_PIXEL_WIDTH(DEPTH_WIDTH)
+    ) depthTest (
+        .aclk(clk),
+        .resetn(!reset),
+        .func(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE]),
+        .refVal(stepFogResultDepthValueFramebuffer),
+        .val(stepFogResultDepthValue),
+        .success(depthTestResult)
+    );
+
     reg                                     stepBlendValid = 0;
     reg [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stepBlendFbIndex = 0;
     reg [DEPTH_WIDTH - 1 : 0]               stepBlendDepthValue = 0;
-    reg                                     stepBlendWriteColor = 0;
     always @(posedge clk)
     begin : BlendCalc 
         stepBlendDepthValue <= stepFogResultDepthValue;
         stepBlendFbIndex <= stepFogResultFbIndex;
         stepBlendValid <= stepFogResultValid;
-        stepBlendWriteColor <= stepFogResultWriteColor & TestFuncAlpha( confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE], 
-                                                                        confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE],
-                                                                        stepFogResultColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]);
     end
 
     // Blend Result
@@ -487,7 +459,11 @@ module FragmentPipeline
         stepBlendResultDepthValue <= stepBlendDepthValue;
         stepBlendResultFbIndex <= stepBlendFbIndex;
         stepBlendResultValid <= stepBlendValid;
-        stepBlendResultWriteColor <= stepBlendWriteColor;
+        stepBlendResultWriteColor <= (
+                // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
+                depthTestResult || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE]
+                // Check if the alpha test passes
+            ) & alphaTestResult;
     end
 
     // Write back
