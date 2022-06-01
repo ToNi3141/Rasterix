@@ -56,10 +56,8 @@ module FragmentPipeline
     
     // Fragment output
     output wire [PIXEL_WIDTH - 1 : 0]   fragmentColor
-
 );
 `include "RegisterAndDescriptorDefines.vh"
-`include "AttributeInterpolatorDefines.vh"
 
     function [15 : 0] clampTexture;
         input [23 : 0] texCoord;
