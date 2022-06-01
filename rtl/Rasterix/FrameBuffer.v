@@ -52,7 +52,7 @@ module FrameBuffer
 
     // Framebuffer Interface
     input  wire [ADDR_WIDTH - 1 : 0]    fragIndexRead,
-    output wire [PIXEL_WIDTH - 1 : 0]   fragOut,
+    output reg  [PIXEL_WIDTH - 1 : 0]   fragOut,
     input  wire [ADDR_WIDTH - 1 : 0]    fragIndexWrite,
     input  wire [PIXEL_WIDTH - 1 : 0]   fragIn,
     input  wire                         fragWriteEnable,
@@ -114,6 +114,8 @@ module FrameBuffer
     reg                             cmdMemsetPending = 0;
     reg  [PIXEL_WIDTH - 1 : 0]      clearColorPending = 0;
 
+    wire [PIXEL_WIDTH - 1 : 0]   fragOutTmp;
+
     generate
         genvar i, j;
         if (PIXEL_PER_BEAT == 1)
@@ -122,7 +124,7 @@ module FrameBuffer
             assign fragValIn = fragIn;
             assign writeStrobe = fragMask;
             assign fragAddrRead = fragIndexRead;
-            assign fragOut = fragValOut;
+            assign fragOutTmp = fragValOut;
         end
         else
         begin
@@ -137,9 +139,14 @@ module FrameBuffer
             assign fragValIn = {PIXEL_PER_BEAT{fragIn}};
             assign fragAddrRead = fragIndexRead[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
-            assign fragOut = fragValOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
+            assign fragOutTmp = fragValOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
     endgenerate
+
+    always @(posedge clk)
+    begin
+        fragOut <= fragOutTmp;
+    end
 
     assign m_axis_tdata = fragValOut;
 

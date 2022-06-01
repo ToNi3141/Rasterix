@@ -55,7 +55,7 @@ module ColorBlender
     reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
 
     always @*
-    begin
+    begin : Select
         reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gs;
         reg [SUB_PIXEL_WIDTH - 1 : 0] bs;

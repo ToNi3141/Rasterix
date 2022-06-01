@@ -93,18 +93,17 @@ module FramebufferPipeline
     wire [DEPTH_WIDTH - 1 : 0]              step0_depth;
     wire [PIXEL_WIDTH - 1 : 0]              step0_fragmentColor;
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(1)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(2)) 
         step0_validDelay (.clk(aclk), .in(valid), .out(step0_valid));
-    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(1)) 
+    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(2)) 
         step0_indexDelay (.clk(aclk), .in(index), .out(step0_index));
-    ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(1)) 
+    ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(2)) 
         step0_depthDelay (.clk(aclk), .in(clampDepth(depth)), .out(step0_depth));
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(2)) 
         step0_fragmentColorDelay (.clk(aclk), .in(fragmentColor), .out(step0_fragmentColor));
 
     assign colorIndexRead = index;
     assign depthIndexRead = index;
-
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
