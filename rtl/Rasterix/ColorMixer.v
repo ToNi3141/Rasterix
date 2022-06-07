@@ -15,9 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Mixes four colors together with the following formular 
+//  mixedColor = (colorA * colorB) + (colorC * colorD)
+// Each color is a vector of four sub colors.
+// The mixedColor will be saturated.
+// Pipelined: yes
+// Depth: 2 cycles
 module ColorMixer #(
     parameter SUB_PIXEL_WIDTH = 8,
-    parameter NUMBER_OF_SUB_PIXEL = 4,
+    localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
 ) (
     input wire                          aclk,

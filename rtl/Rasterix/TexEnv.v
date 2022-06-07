@@ -15,6 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// This module calculates the texture environment 
+// func:
+//  DISABLE = 0
+//  REPLACE = 1
+//  MODULATE = 2
+//  DECAL = 3
+//  BLEND = 4
+//  ADD = 5
+// Pipelined: yes
+// Depth: 2 cycles
 module TexEnv 
 #(
     parameter SUB_PIXEL_WIDTH = 8,

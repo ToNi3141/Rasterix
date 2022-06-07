@@ -15,7 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// This module is used to calculate a whole pixel, starting from the
+// meta data from the rasterizer till it is written into the frame buffer,
+// including, blending, fogging, texenv, testing and so on.
+// It prepares the meta data (basically converts the floats from the)
+// interpolator into fixed point numbers, which can be used from the 
+// fragment and framebuffer pipeline.
+// Pipelined: yes
+// Depth: 20 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -195,7 +202,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // Access framebuffer, blend, test and save pixel in framebuffer
-    // Clocks: 4
+    // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
     FramebufferPipeline #(
         .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),

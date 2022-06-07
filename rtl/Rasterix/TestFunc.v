@@ -15,6 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// This module implements various test functions, used for the alpha and depth test.
+// func:
+//  ALWAYS = 0
+//  NEVER = 1
+//  LESS = 2
+//  EQUAL = 3
+//  LEQUAL = 4
+//  GREATER = 5
+//  NOTEQUAL = 6
+//  GEQUAL = 7
+// Pipelined: n/a
+// Depth: 1 cycle
 module TestFunc 
 #(
     parameter SUB_PIXEL_WIDTH = 8

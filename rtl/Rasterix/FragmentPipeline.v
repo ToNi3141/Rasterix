@@ -15,7 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// This module calculates the fragment color.
+// It reads the texel from the texture memory and clamps it, calculates 
+// the fog intensity based on the z value and fog equation (LUT), 
+// calculates the equation for the texture environment and applies the
+// fog color.
+// Pipelined: yes
+// Depth: 11 cycles
 module FragmentPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -104,18 +110,18 @@ module FragmentPipeline
     // This step requires 4 clocks, add after that a ValueDelay to append two additional clocks.
     wire [23 : 0]                   step1_fogIntensityTmp;
     FunctionInterpolator #(
-            .STREAM_WIDTH(CMD_STREAM_WIDTH)
-        )
-        convert_fog_intensity (
-            .aclk(aclk), 
-            .resetn(resetn), 
-            .x(step0_depth),
-            .fx(step1_fogIntensityTmp),
-            .s_axis_tvalid(s_fog_lut_axis_tvalid), 
-            .s_axis_tready(s_fog_lut_axis_tready), 
-            .s_axis_tlast(s_fog_lut_axis_tlast), 
-            .s_axis_tdata(s_fog_lut_axis_tdata)
-        );
+        .STREAM_WIDTH(CMD_STREAM_WIDTH)
+    )
+    convert_fog_intensity (
+        .aclk(aclk), 
+        .resetn(resetn), 
+        .x(step0_depth),
+        .fx(step1_fogIntensityTmp),
+        .s_axis_tvalid(s_fog_lut_axis_tvalid), 
+        .s_axis_tready(s_fog_lut_axis_tready), 
+        .s_axis_tlast(s_fog_lut_axis_tlast), 
+        .s_axis_tdata(s_fog_lut_axis_tdata)
+    );
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(6)) 
         step1_triangleColorDelay (.clk(aclk), .in(step0_triangleColor), .out(step1_triangleColor));

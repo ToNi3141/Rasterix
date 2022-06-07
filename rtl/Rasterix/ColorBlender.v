@@ -15,6 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Blends two colors together. The following functions are supported:
+// SFactor:
+//  ZERO = 0
+//  ONE = 1
+//  DST_COLOR = 2
+//  ONE_MINUS_DST_COLOR = 4
+//  SRC_ALPHA = 6
+//  ONE_MINUS_SRC_ALPHA = 7
+//  DST_ALPHA = 8
+//  ONE_MINUS_DST_ALPHA = 9
+//  SRC_ALPHA_SATURATE = 10
+// DFactor
+//  ZERO = 0
+//  ONE = 1
+//  SRC_COLOR = 3
+//  ONE_MINUS_SRC_COLOR = 5
+//  SRC_ALPHA = 6
+//  ONE_MINUS_SRC_ALPHA = 7
+//  DST_ALPHA = 8
+//  ONE_MINUS_DST_ALPHA = 9
+// Source and dest color are in the RGBA format, See RegisterAndDescriptorDefines.vh
+// Pipelined: yes
+// Depth: 2 cycles
 module ColorBlender 
 #(
     parameter SUB_PIXEL_WIDTH = 8,

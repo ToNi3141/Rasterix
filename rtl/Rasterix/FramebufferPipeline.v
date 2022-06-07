@@ -15,7 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// This pipeline is part of the pixel pipeline and handles the fragment buffer part of the pipeline
+// It gets a fully calculated texel from the previous step, reads from the color and depth buffer,
+// executes alpha and depth tests, and blends the texel into the current fragment
+// Pipelined: yes
+// Depth: 5 cycles
 module FramebufferPipeline
 #(
     // The minimum bit width which is required to contain the resolution
@@ -86,7 +90,7 @@ module FramebufferPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
     // Read from framebuffer
-    // Clocks: 1 (delay of the framebuffer read)
+    // Clocks: 2 (delay of the framebuffer read)
     ////////////////////////////////////////////////////////////////////////////
     wire                                    step0_valid;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step0_index;

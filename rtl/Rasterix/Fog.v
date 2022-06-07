@@ -15,6 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Calculates the fog with a given fog intensity.
+// As greater the intensity, as stronger the fog color will be.
+// Note that this is only one part of the fog calculation. The 
+// intensity is basically the result of the fog equation and is 
+// calculated outside of this module.
+// Pipelined: yes
+// Depth: 2 cycles
 module Fog 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
