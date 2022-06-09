@@ -69,7 +69,7 @@ module FramebufferPipeline
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    function [15 : 0] clampDepth;
+    function [DEPTH_WIDTH - 1 : 0] clampDepth;
         input [31 : 0] depth;
         begin
             if (depth[31]) // If z is negative

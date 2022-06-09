@@ -32,14 +32,14 @@ module PixelPipeline
 
     localparam DEPTH_WIDTH = 16,
 
-    localparam SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32
 )
 (
-    input  wire                         clk,
-    input  wire                         reset,
+    input  wire                         aclk,
+    input  wire                         resetn,
     output wire                         pixelInPipeline,
 
     // Fog function LUT stream
@@ -95,8 +95,8 @@ module PixelPipeline
 
     wire fragmentProcessed;
     ValueTrack pixelTracker (
-        .aclk(clk),
-        .resetn(!reset),
+        .aclk(aclk),
+        .resetn(resetn),
         
         .sigIncommingValue(s_axis_tvalid & s_axis_tready),
         .sigOutgoingValue(fragmentProcessed),
@@ -109,41 +109,40 @@ module PixelPipeline
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
-    wire [FLOAT_SIZE - 1 : 0]  step_convert_depth_w_float;
-    wire [31 : 0]                   step_convert_texture_s;
-    wire [31 : 0]                   step_convert_texture_t;
-    wire [31 : 0]                   step_convert_depth_z;
-    wire [31 : 0]                   step_convert_color_r;
-    wire [31 : 0]                   step_convert_color_g;
-    wire [31 : 0]                   step_convert_color_b;
-    wire [31 : 0]                   step_convert_color_a;
-    wire                            step_convert_tvalid;
-    wire [31 : 0]                   step_convert_w;
-    wire [23 : 0]                   step_convert_fog_intensity;
+    wire [FLOAT_SIZE - 1 : 0]   step_convert_depth_w_float;
+    wire [31 : 0]               step_convert_texture_s;
+    wire [31 : 0]               step_convert_texture_t;
+    wire [31 : 0]               step_convert_depth_z;
+    wire [31 : 0]               step_convert_color_r;
+    wire [31 : 0]               step_convert_color_g;
+    wire [31 : 0]               step_convert_color_b;
+    wire [31 : 0]               step_convert_color_a;
+    wire                        step_convert_tvalid;
+    wire [31 : 0]               step_convert_w;
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
-        convert_framebuffer_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
+        convert_framebuffer_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
-        convert_depth_delay (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
+        convert_depth_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
-        convert_valid_delay (.clk(clk), .in(s_axis_tvalid), .out(step_convert_tvalid));
+        convert_valid_delay (.clk(aclk), .in(s_axis_tvalid), .out(step_convert_tvalid));
 
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureS (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture_s));
+        convert_floatToInt_TextureS (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture_s));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_TextureT (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture_t));   
+        convert_floatToInt_TextureT (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture_t));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-7))
-        convert_floatToInt_DepthW (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_w));  
+        convert_floatToInt_DepthW (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_w));  
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-DEPTH_WIDTH))
-        convert_floatToInt_DepthZ (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_Z_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_z));   
+        convert_floatToInt_DepthZ (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_Z_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_z));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
-        convert_floatToInt_ColorR (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_R_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_r));
+        convert_floatToInt_ColorR (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_R_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_r));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
-        convert_floatToInt_ColorG (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_G_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_g));   
+        convert_floatToInt_ColorG (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_G_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_g));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
-        convert_floatToInt_ColorB (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_B_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_b));   
+        convert_floatToInt_ColorB (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_B_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_b));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
-        convert_floatToInt_ColorA (.clk(clk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_A_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_a));   
+        convert_floatToInt_ColorA (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_A_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_a));   
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -157,18 +156,18 @@ module PixelPipeline
     wire                                                    step1_valid;
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(11)) 
-        step1_indexDelay (.clk(clk), .in(step_convert_framebuffer_index), .out(step1_index));
+        step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
-        step1_depthDelay (.clk(clk), .in(step_convert_depth_z), .out(step1_depth));
+        step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
-        step1_validDelay (.clk(clk), .in(step_convert_tvalid), .out(step1_valid));
+        step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
     FragmentPipeline #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) fragmentPipeline (
-        .aclk(clk),
-        .resetn(!reset),
+        .aclk(aclk),
+        .resetn(resetn),
 
         .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
         .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
@@ -209,8 +208,8 @@ module PixelPipeline
         .DEPTH_WIDTH(DEPTH_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) framebufferPipeline (
-        .aclk(clk),
-        .resetn(!reset),
+        .aclk(aclk),
+        .resetn(resetn),
 
         .confReg1(confReg1),
         .confReg2(confReg2),

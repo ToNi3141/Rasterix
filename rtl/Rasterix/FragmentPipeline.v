@@ -102,13 +102,14 @@ module FragmentPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate the fog intensity
-    // Clocks: 6
+    // Clocks: 6 (the calculation takes only 4 clocks, but we also wait two 
+    //              additional clocks for the texture)
     ////////////////////////////////////////////////////////////////////////////
-    wire [15 : 0]                   step1_fogIntensity;
-    wire [PIXEL_WIDTH - 1 : 0]      step1_triangleColor;
+    wire [15 : 0]               step1_fogIntensity;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_triangleColor;
 
     // This step requires 4 clocks, add after that a ValueDelay to append two additional clocks.
-    wire [23 : 0]                   step1_fogIntensityTmp;
+    wire [23 : 0]               step1_fogIntensityTmp;
     FunctionInterpolator #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH)
     )
@@ -140,8 +141,8 @@ module FragmentPipeline
     // Calculate texture environment
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]      step2_texel;
-    wire [15 : 0]                   step2_fogIntensity;
+    wire [PIXEL_WIDTH - 1 : 0]  step2_texel;
+    wire [15 : 0]               step2_fogIntensity;
 
     TexEnv #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
@@ -166,7 +167,7 @@ module FragmentPipeline
     // Calculate fog
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]               step3_texel;
+    wire [PIXEL_WIDTH - 1 : 0]  step3_texel;
 
     Fog #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)

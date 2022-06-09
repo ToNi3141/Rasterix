@@ -243,8 +243,7 @@ module ColorBlender
     end
 
     ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .NUMBER_OF_SUB_PIXEL(NUMBER_OF_SUB_PIXEL)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),

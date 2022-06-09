@@ -44,8 +44,7 @@ module ColorInterpolator #(
     parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
 
     ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .NUMBER_OF_SUB_PIXEL(NUMBER_OF_SUB_PIXEL)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
