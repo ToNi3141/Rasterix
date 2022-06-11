@@ -15,9 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// This module deserializes an AXIS parameter stream into dedicated registers.
+// It is not possible in the stream to set a specific register. The stream 
+// must always contain the data of the whole register set.
+// For instance, we assume BANK_REG_SIZE is 32 bit and CMD_STREAM_WIDTH is 32 bit.
+// Beat 0 will set register 0, beat 1 register 1, beat n register n.
 module RegisterBank
 #(
-    // Bank size in multiple of 32 bit
+    // Bank size in multiple of BANK_REG_SIZE bit
     parameter BANK_SIZE = 8,
 
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256

@@ -413,9 +413,9 @@ module Rasterix #(
         .color_a_inc_y(triangleParams[INC_COLOR_A_Y * PARAM_SIZE +: PARAM_SIZE])
     );
 
-    FragmentPipeline fragmentPipeline (    
-        .clk(aclk),
-        .reset(!resetn),
+    PixelPipeline pixelPipeline (    
+        .aclk(aclk),
+        .resetn(resetn),
         .pixelInPipeline(pixelInPipelineShader),
 
         .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
@@ -451,7 +451,8 @@ module Rasterix #(
         .depthWriteEnable(depthWriteEnable),
         .depthOut(depthOut)
     );
-    defparam fragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
-    defparam fragmentPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
+    defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
 
 endmodule
