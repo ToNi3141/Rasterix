@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 20 cycles
+// Depth: 24 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -148,18 +148,18 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate fragment color
-    // Clocks: 11
+    // Clocks: 15
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]                              step1_fragmentColor;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step1_index;
     wire [31 : 0]                                           step1_depth;
     wire                                                    step1_valid;
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(15)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(15)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(15)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
     FragmentPipeline #(
