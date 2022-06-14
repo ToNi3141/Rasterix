@@ -20,7 +20,7 @@
 // executes alpha and depth tests, and blends the texel into the current fragment
 // Pipelined: yes
 // Depth: 5 cycles
-module FramebufferPipeline
+module PerFragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,

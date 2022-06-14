@@ -22,7 +22,7 @@
 // fog color.
 // Pipelined: yes
 // Depth: 9 cycles
-module FragmentPipeline
+module TextureMappingUnit
 #(
     parameter CMD_STREAM_WIDTH = 64,
 
@@ -35,23 +35,23 @@ module FragmentPipeline
     input  wire                         aclk,
     input  wire                         resetn,
 
-    // Shader configurations
-    input  wire [31 : 0]                confReg1,
-    input  wire [31 : 0]                confReg2,
+    // TMU configurations
+    input  wire [ 2 : 0]                confFunc, // See TexEnv for more documentation
     input  wire                         confTextureClampS,
     input  wire                         confTextureClampT,
-    input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor,
-    input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
+    input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
 
     // Texture access
     output reg  [15 : 0]                texelS,
     output reg  [15 : 0]                texelT,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texel, // TEXTURE
 
     // Fragment input
-    input  wire [PIXEL_WIDTH - 1 : 0]   triangleColor,
+    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // PRIMARY_COLOR
     input  wire [31 : 0]                textureS,
     input  wire [31 : 0]                textureT,
+    
+    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // PREVIOUS (currently unused, must be connected to TMUn-1)
     
     // Fragment output
     output wire [PIXEL_WIDTH - 1 : 0]   fragmentColor
@@ -82,12 +82,12 @@ module FragmentPipeline
     // Request texel from texture buffer
     // Clocks: 1 (only the request, the response requires 6 clocks, see STEP 2)
     ////////////////////////////////////////////////////////////////////////////
-    reg [PIXEL_WIDTH - 1 : 0]   step0_triangleColor;
+    reg [PIXEL_WIDTH - 1 : 0]   step0_primaryColor;
     always @(posedge aclk)
     begin
         texelS <= clampTexture(textureS[0 +: 24], confTextureClampS);
         texelT <= clampTexture(textureT[0 +: 24], confTextureClampT);
-        step0_triangleColor <= triangleColor;
+        step0_primaryColor <= primaryColor;
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -95,10 +95,10 @@ module FragmentPipeline
     // Wait for texel
     // Clocks: 6
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]  step1_triangleColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(6)) 
-        step1_triangleColorDelay (.clk(aclk), .in(step0_triangleColor), .out(step1_triangleColor));
+        step1_primaryColorDelay (.clk(aclk), .in(step0_primaryColor), .out(step1_primaryColor));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
@@ -113,10 +113,10 @@ module FragmentPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .func(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
+        .func(confFunc),
 
         .texSrcColor(texel),
-        .primaryColor(step1_triangleColor),
+        .primaryColor(step1_primaryColor),
         .envColor(confTextureEnvColor),
 
         .color(step2_texel)

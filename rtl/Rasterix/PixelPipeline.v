@@ -165,25 +165,23 @@ module PixelPipeline
     ValueDelay #(.VALUE_SIZE(1), .DELAY(9)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
-    FragmentPipeline #(
+    TextureMappingUnit #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) fragmentPipeline (
+    ) textureMappingUnitPipeline (
         .aclk(aclk),
         .resetn(resetn),
 
-        .confReg1(confReg1),
-        .confReg2(confReg2),
+        .confFunc(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
         .confTextureClampS(confTextureClampS),
         .confTextureClampT(confTextureClampT),
         .confTextureEnvColor(confTextureEnvColor),
-        .confFogColor(confFogColor),
 
         .texelS(texelS),
         .texelT(texelT),
         .texel(texel),
 
-        .triangleColor({
+        .primaryColor({
             // clamp colors 
             (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
             (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
@@ -192,6 +190,14 @@ module PixelPipeline
         }),
         .textureS(step_convert_texture_s[0 +: 24]),
         .textureT(step_convert_texture_t[0 +: 24]),
+
+        .previousColor({ // For TMU0 it is the primary color
+            // clamp colors 
+            (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
+        }),
 
         .fragmentColor(step1_fragmentColor)
     );
@@ -238,11 +244,11 @@ module PixelPipeline
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
-    FramebufferPipeline #(
+    PerFragmentPipeline #(
         .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
         .DEPTH_WIDTH(DEPTH_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) framebufferPipeline (
+    ) perFragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
 
