@@ -148,18 +148,21 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate fragment color
-    // Clocks: 15
+    // Clocks: 9
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]                              step1_fragmentColor;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step1_index;
     wire [31 : 0]                                           step1_depth;
+    wire [31 : 0]                                           step1_depthWFloat;
     wire                                                    step1_valid;
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(15)) 
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(9)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(15)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(15)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
+        step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(9)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
     FragmentPipeline #(
@@ -168,11 +171,6 @@ module PixelPipeline
     ) fragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
-
-        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
-        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
-        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
-        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
         .confReg1(confReg1),
         .confReg2(confReg2),
@@ -192,14 +190,51 @@ module PixelPipeline
             (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
             (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
         }),
-        .depth(step_convert_depth_w_float),
         .textureS(step_convert_texture_s[0 +: 24]),
         .textureT(step_convert_texture_t[0 +: 24]),
+
         .fragmentColor(step1_fragmentColor)
     );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
+    // Calculate Fog
+    // Clocks: 6
+    ////////////////////////////////////////////////////////////////////////////
+    wire [PIXEL_WIDTH - 1 : 0]                              step2_fragmentColor;
+    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step2_index;
+    wire [31 : 0]                                           step2_depth;
+    wire                                                    step2_valid;
+
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(6)) 
+        step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(6)) 
+        step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
+        step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
+
+    Fog #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH)
+    ) fog (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
+        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
+        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
+        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+
+        .confFogColor(confFogColor),
+
+        .depth(step1_depthWFloat),
+        .texelColor(step1_fragmentColor),
+
+        .color(step2_fragmentColor)
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 3
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
@@ -214,10 +249,10 @@ module PixelPipeline
         .confReg1(confReg1),
         .confReg2(confReg2),
 
-        .valid(step1_valid),
-        .fragmentColor(step1_fragmentColor),
-        .depth(step1_depth),
-        .index(step1_index[0 +: FRAMEBUFFER_INDEX_WIDTH]),
+        .valid(step2_valid),
+        .fragmentColor(step2_fragmentColor),
+        .depth(step2_depth),
+        .index(step2_index[0 +: FRAMEBUFFER_INDEX_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 

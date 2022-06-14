@@ -21,7 +21,7 @@
 // calculates the equation for the texture environment and applies the
 // fog color.
 // Pipelined: yes
-// Depth: 15 cycles
+// Depth: 9 cycles
 module FragmentPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -34,12 +34,6 @@ module FragmentPipeline
 (
     input  wire                         aclk,
     input  wire                         resetn,
-
-    // Fog function LUT stream
-    input  wire                         s_fog_lut_axis_tvalid,
-    output wire                         s_fog_lut_axis_tready,
-    input  wire                         s_fog_lut_axis_tlast,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
 
     // Shader configurations
     input  wire [31 : 0]                confReg1,
@@ -56,7 +50,6 @@ module FragmentPipeline
 
     // Fragment input
     input  wire [PIXEL_WIDTH - 1 : 0]   triangleColor,
-    input  wire [FLOAT_SIZE - 1 : 0]    depth,
     input  wire [31 : 0]                textureS,
     input  wire [31 : 0]                textureT,
     
@@ -90,13 +83,11 @@ module FragmentPipeline
     // Clocks: 1 (only the request, the response requires 6 clocks, see STEP 2)
     ////////////////////////////////////////////////////////////////////////////
     reg [PIXEL_WIDTH - 1 : 0]   step0_triangleColor;
-    reg [FLOAT_SIZE - 1 : 0]    step0_depth;
     always @(posedge aclk)
     begin
         texelS <= clampTexture(textureS[0 +: 24], confTextureClampS);
         texelT <= clampTexture(textureT[0 +: 24], confTextureClampT);
         step0_triangleColor <= triangleColor;
-        step0_depth <= depth;
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -104,14 +95,10 @@ module FragmentPipeline
     // Wait for texel
     // Clocks: 6
     ////////////////////////////////////////////////////////////////////////////
-    // wire [15 : 0]               step1_fogIntensity;
     wire [PIXEL_WIDTH - 1 : 0]  step1_triangleColor;
-    wire [FLOAT_SIZE - 1 : 0]   step1_depth;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(6)) 
         step1_triangleColorDelay (.clk(aclk), .in(step0_triangleColor), .out(step1_triangleColor));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(6)) 
-        step1_depthDelay (.clk(aclk), .in(step0_depth), .out(step1_depth));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
@@ -119,7 +106,6 @@ module FragmentPipeline
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step2_texel;
-    wire [FLOAT_SIZE - 1 : 0]   step2_depth;
 
     TexEnv #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
@@ -136,41 +122,12 @@ module FragmentPipeline
         .color(step2_texel)
     );
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(2)) 
-        step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
-
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
-    // Calculate fog
-    // Clocks: 6
-    ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]  step3_texel;
-
-    Fog #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) fog (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
-        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
-        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
-        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
-
-        .confFogColor(confFogColor),
-
-        .depth(step2_depth),
-        .texelColor(step2_texel),
-
-        .color(step3_texel)
-    );
-
-    ////////////////////////////////////////////////////////////////////////////
-    // STEP 4
     // Output final texel color
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign fragmentColor = step3_texel;
+    assign fragmentColor = step2_texel;
 
 endmodule
 
