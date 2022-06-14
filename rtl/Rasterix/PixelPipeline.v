@@ -155,6 +155,13 @@ module PixelPipeline
     wire [31 : 0]                                           step1_depth;
     wire [31 : 0]                                           step1_depthWFloat;
     wire                                                    step1_valid;
+    wire [PIXEL_WIDTH - 1 : 0]                              step1_primaryColor = {
+        // clamp colors 
+        (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
+    };
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(9)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
@@ -181,23 +188,11 @@ module PixelPipeline
         .texelT(texelT),
         .texel(texel),
 
-        .primaryColor({
-            // clamp colors 
-            (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
-        }),
+        .primaryColor(step1_primaryColor),
         .textureS(step_convert_texture_s[0 +: 24]),
         .textureT(step_convert_texture_t[0 +: 24]),
 
-        .previousColor({ // For TMU0 it is the primary color
-            // clamp colors 
-            (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
-        }),
+        .previousColor(step1_primaryColor), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
 
         .fragmentColor(step1_fragmentColor)
     );
