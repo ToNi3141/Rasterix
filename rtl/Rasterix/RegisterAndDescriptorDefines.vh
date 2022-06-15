@@ -173,9 +173,9 @@ localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 //  +---------------------------------------+
 
 // OP_RENDER_CONFIG_REG1
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 12 bit reserved | 1 bit color mask R | 1 bit color mask G | 1 bit color mask B | 1 bit color mask A | 1 bit depth mask | 8 bit A ref | 3 bit A func | 3 bit depth func | 1 bit enable depth test |
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 4 bit reserved | 4 bit blend d | 4 bit blend s | 1 bit color mask R | 1 bit color mask G | 1 bit color mask B | 1 bit color mask A | 1 bit depth mask | 8 bit A ref | 3 bit A func | 3 bit depth func | 1 bit enable depth test |
+//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 localparam REG1_ENABLE_DEPTH_TEST_POS = 0;
 localparam REG1_ENABLE_DEPTH_TEST_SIZE = 1;
 localparam REG1_DEPTH_TEST_FUNC_POS = REG1_ENABLE_DEPTH_TEST_POS + REG1_ENABLE_DEPTH_TEST_SIZE;
@@ -194,19 +194,17 @@ localparam REG1_COLOR_MASK_G_POS = REG1_COLOR_MASK_B_POS + REG1_COLOR_MASK_B_SIZ
 localparam REG1_COLOR_MASK_G_SIZE = 1;
 localparam REG1_COLOR_MASK_R_POS = REG1_COLOR_MASK_G_POS + REG1_COLOR_MASK_G_SIZE;
 localparam REG1_COLOR_MASK_R_SIZE = 1;
+localparam REG1_BLEND_FUNC_SFACTOR_POS = REG1_COLOR_MASK_R_POS + REG1_COLOR_MASK_R_SIZE;
+localparam REG1_BLEND_FUNC_SFACTOR_SIZE = 4;
+localparam REG1_BLEND_FUNC_DFACTOR_POS = REG1_BLEND_FUNC_SFACTOR_POS + REG1_BLEND_FUNC_SFACTOR_SIZE;
+localparam REG1_BLEND_FUNC_DFACTOR_SIZE = 4;
 
 // OP_RENDER_CONFIG_REG2
-//  +--------------------------------------------------------------------------------------------+
-//  | 20 bit reserved | 4 bit blend d | 4 bit blend s | 3 bit tex env | 1 bit en persp correction |
-//  +--------------------------------------------------------------------------------------------+
-localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_POS = 0;
-localparam REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE = 1;
-localparam REG2_TEX_ENV_FUNC_POS = REG2_PERSPECTIVE_CORRECT_TEXTURE_POS + REG2_PERSPECTIVE_CORRECT_TEXTURE_SIZE;
+//  +---------------------------------+
+//  | 28 bit reserved | 3 bit tex env |
+//  +---------------------------------+
+localparam REG2_TEX_ENV_FUNC_POS = 0;
 localparam REG2_TEX_ENV_FUNC_SIZE = 3;
-localparam REG2_BLEND_FUNC_SFACTOR_POS = REG2_TEX_ENV_FUNC_POS + REG2_TEX_ENV_FUNC_SIZE;
-localparam REG2_BLEND_FUNC_SFACTOR_SIZE = 4;
-localparam REG2_BLEND_FUNC_DFACTOR_POS = REG2_BLEND_FUNC_SFACTOR_POS + REG2_BLEND_FUNC_SFACTOR_SIZE;
-localparam REG2_BLEND_FUNC_DFACTOR_SIZE = 4;
 // localparam REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
 // localparam REG2_LOGIC_OP_SIZE = 4;
 

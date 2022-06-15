@@ -81,13 +81,6 @@ public:
             t = 0;
         }
 
-        // Unfortunately the Arduino compiler is too old and does not support C++20 default member initializers in bit fields
-#ifndef NO_PERSP_CORRECT
-        m_confReg2.perspectiveCorrectedTextures = true;
-#else
-        m_confReg2.perspectiveCorrectedTextures = false;
-#endif
-
         setDepthFunc(TestFunc::LESS);
         setDepthMask(false);
         setColorMask(true, true, true, true);
@@ -290,9 +283,9 @@ public:
 
     virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
     {
-        m_confReg2.blendFuncSFactor = sfactor;
-        m_confReg2.blendFuncDFactor = dfactor;
-        return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
+        m_confReg1.blendFuncSFactor = sfactor;
+        m_confReg1.blendFuncDFactor = dfactor;
+        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
     }
 
     virtual bool setLogicOp(const LogicOp opcode) override
@@ -510,14 +503,13 @@ private:
         bool colorMaskB : 1;
         bool colorMaskG : 1;
         bool colorMaskR : 1;
+        IRenderer::BlendFunc blendFuncSFactor : 4;
+        IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg1;
 
     struct __attribute__ ((__packed__)) ConfReg2
     {
-        bool perspectiveCorrectedTextures : 1;
         IRenderer::TexEnvParam texEnvFunc : 3;
-        IRenderer::BlendFunc blendFuncSFactor : 4;
-        IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg2;
 
     std::future<bool> m_renderThread;

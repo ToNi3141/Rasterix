@@ -133,8 +133,8 @@ module PerFragmentPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .funcSFactor(confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE]),
-        .funcDFactor(confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE]),
+        .funcSFactor(confReg1[REG1_BLEND_FUNC_SFACTOR_POS +: REG1_BLEND_FUNC_SFACTOR_SIZE]),
+        .funcDFactor(confReg1[REG1_BLEND_FUNC_DFACTOR_POS +: REG1_BLEND_FUNC_DFACTOR_SIZE]),
         .sourceColor(step0_fragmentColor),
         .destColor(colorIn),
 
