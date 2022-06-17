@@ -42,8 +42,8 @@ module TextureMappingUnit
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
 
     // Texture access
-    output reg  [15 : 0]                texelS,
-    output reg  [15 : 0]                texelT,
+    output wire [15 : 0]                texelS,
+    output wire [15 : 0]                texelT,
     input  wire [PIXEL_WIDTH - 1 : 0]   texel, // TEXTURE
 
     // Fragment input
@@ -78,27 +78,17 @@ module TextureMappingUnit
     endfunction
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 0
-    // Request texel from texture buffer
-    // Clocks: 1 (only the request, the response requires 6 clocks, see STEP 2)
-    ////////////////////////////////////////////////////////////////////////////
-    reg [PIXEL_WIDTH - 1 : 0]   step0_primaryColor;
-    always @(posedge aclk)
-    begin
-        texelS <= clampTexture(textureS[0 +: 24], confTextureClampS);
-        texelT <= clampTexture(textureT[0 +: 24], confTextureClampT);
-        step0_primaryColor <= primaryColor;
-    end
-
-    ////////////////////////////////////////////////////////////////////////////
     // STEP 1
-    // Wait for texel
-    // Clocks: 6
+    // Request texel from texture buffer
+    // Clocks: 7
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(6)) 
-        step1_primaryColorDelay (.clk(aclk), .in(step0_primaryColor), .out(step1_primaryColor));
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
+        step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
+
+    assign texelS = clampTexture(textureS[0 +: 24], confTextureClampS);
+    assign texelT = clampTexture(textureT[0 +: 24], confTextureClampT);
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
