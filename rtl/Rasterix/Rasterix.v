@@ -75,11 +75,6 @@ module Rasterix #(
     // Regs and wires
     ///////////////////////////
     // Texture access
-    wire [ 7:0]                     confTextureSizeWidth;
-    wire [ 7:0]                     confTextureSizeHeight;
-    wire                            confTextureClampS;
-    wire                            confTextureClampT;
-    wire                            confTextureMagFilter;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr00;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
@@ -139,8 +134,11 @@ module Rasterix #(
     wire        m_attr_inter_axis_tready;
     wire        m_attr_inter_axis_tlast;
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
+
+    // Configs
     wire [31:0] confReg1;
     wire [31:0] confReg2;
+    wire [31:0] confReg3;
     wire [31:0] confTextureEnvColor;
     wire [31:0] confFogColor;
 
@@ -179,13 +177,9 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confTextureSizeWidth(confTextureSizeWidth),
-        .confTextureSizeHeight(confTextureSizeHeight),
-        .confTextureClampS(confTextureClampS),
-        .confTextureClampT(confTextureClampT),
-        .confTextureMagFilter(confTextureMagFilter),
         .confReg1(confReg1),
         .confReg2(confReg2),
+        .confReg3(confReg3),
         .confTextureEnvColor(confTextureEnvColor),
         .confFogColor(confFogColor),
         // Control
@@ -401,13 +395,9 @@ module Rasterix #(
 
         .confReg1(confReg1),
         .confReg2(confReg2),
-        .confTextureClampS(confTextureClampS),
-        .confTextureClampT(confTextureClampT),
+        .confReg3(confReg3),
         .confTextureEnvColor(confTextureEnvColor),
         .confFogColor(confFogColor),
-        .confTextureSizeWidth(confTextureSizeWidth),
-        .confTextureSizeHeight(confTextureSizeHeight),
-        .confTextureMagFilter(confTextureMagFilter),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),

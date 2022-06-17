@@ -55,35 +55,27 @@ localparam OP_IMM_SIZE = 28;
 //  +--------------------------------+
 
 // OP_TEXTURE_STREAM
-//  +------------------------------------------------------------------------------------------------------------------------+
-//  | 4 bit OP | 1 bit reserved | 1 bit mag filter | 1 bit clamp t | 1 bit clamp s | 8 bit size | 8 bit height | 8 bit width |
-//  +------------------------------------------------------------------------------------------------------------------------+
-// Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
+//  +---------------------------------------------------------------------------+
+//  | 4 bit OP | 12 bit reserved | 8 bit TMU nr (currently unused) | 8 bit size |
+//  +---------------------------------------------------------------------------+
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB, ...
-localparam TEXTURE_STREAM_WIDTH_POS = 0;
-localparam TEXTURE_STREAM_WIDTH_SIZE = 8;
-localparam TEXTURE_STREAM_HEIGHT_POS = 8;
-localparam TEXTURE_STREAM_HEIGHT_SIZE = 8;
-localparam TEXTURE_STREAM_SIZE_POS = 16;
+localparam TEXTURE_STREAM_SIZE_POS = 0;
 localparam TEXTURE_STREAM_SIZE_SIZE = 8;
-localparam TEXTURE_STREAM_CLAMP_S_POS = 24;
-localparam TEXTURE_STREAM_CLAMP_S_SIZE = 1;
-localparam TEXTURE_STREAM_CLAMP_T_POS = 25;
-localparam TEXTURE_STREAM_CLAMP_T_SIZE = 1;
-localparam TEXTURE_STREAM_MAG_FILTER_POS = 26;
-localparam TEXTURE_STREAM_MAG_FILTER_SIZE = 1;
-
+localparam TEXTURE_STREAM_TMU_NR_POS = 8;
+localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 
 // OP_RENDER_CONFIG
 //  +-----------------------------+
 //  | 4 bit OP | 28 register addr |
 //  +-----------------------------+
 localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
-localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
-localparam OP_RENDER_CONFIG_REG1 = 2;
-localparam OP_RENDER_CONFIG_REG2 = 3;
-localparam OP_RENDER_CONFIG_TEX_ENV_COLOR = 4;
-localparam OP_RENDER_CONFIG_FOG_COLOR = 5;
+localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR + 1;
+localparam OP_RENDER_CONFIG_FOG_COLOR = OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH + 1;
+localparam OP_RENDER_CONFIG_REG1 = OP_RENDER_CONFIG_FOG_COLOR + 1;
+localparam OP_RENDER_CONFIG_REG2 = OP_RENDER_CONFIG_REG1 + 1;
+localparam OP_RENDER_CONFIG_REG3 = OP_RENDER_CONFIG_REG2 + 1;
+localparam OP_RENDER_CONFIG_TEX_ENV_COLOR = OP_RENDER_CONFIG_REG3 + 1;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = OP_RENDER_CONFIG_TEX_ENV_COLOR;
 
 // OP_FRAMEBUFFER
 //  +----------------------------------------------------------------------------------------------------------------------------------+
@@ -207,6 +199,22 @@ localparam REG2_TEX_ENV_FUNC_POS = 0;
 localparam REG2_TEX_ENV_FUNC_SIZE = 3;
 // localparam REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
 // localparam REG2_LOGIC_OP_SIZE = 4;
+
+// OP_RENDER_CONFIG_REG3
+//  +-------------------------------------------------------------------------------------------------+
+//  | 13 bit reserved | 1 bit mag filter | 1 bit clamp t | 1 bit clamp s | 8 bit height | 8 bit width |
+//  +-------------------------------------------------------------------------------------------------+
+// Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
+localparam REG3_TMU_WIDTH_POS = 0;
+localparam REG3_TMU_WIDTH_SIZE = 8;
+localparam REG3_TMU_HEIGHT_POS = REG3_TMU_WIDTH_POS + REG3_TMU_WIDTH_SIZE;
+localparam REG3_TMU_HEIGHT_SIZE = 8;
+localparam REG3_TMU_CLAMP_S_POS = REG3_TMU_HEIGHT_POS + REG3_TMU_HEIGHT_SIZE;
+localparam REG3_TMU_CLAMP_S_SIZE = 1;
+localparam REG3_TMU_CLAMP_T_POS = REG3_TMU_CLAMP_S_POS + REG3_TMU_CLAMP_S_SIZE;
+localparam REG3_TMU_CLAMP_T_SIZE = 1;
+localparam REG3_TMU_MAG_FILTER_POS = REG3_TMU_CLAMP_T_POS + REG3_TMU_CLAMP_T_SIZE;
+localparam REG3_TMU_MAG_FILTER_SIZE = 1;
 
 // Depth and Alpha func defines
 localparam ALWAYS = 0;

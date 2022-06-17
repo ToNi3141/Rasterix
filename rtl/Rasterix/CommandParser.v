@@ -36,13 +36,9 @@ module CommandParser #(
 
     // Rasterizer
     // Configs
-    output reg  [ 7:0]  confTextureSizeWidth,
-    output reg  [ 7:0]  confTextureSizeHeight,
-    output reg          confTextureClampS,
-    output reg          confTextureClampT,
-    output reg          confTextureMagFilter,
     output wire [31:0]  confReg1,
     output wire [31:0]  confReg2,
+    output wire [31:0]  confReg3,
     output wire [31:0]  confTextureEnvColor,
     output wire [31:0]  confFogColor,
     // Control
@@ -97,7 +93,7 @@ module CommandParser #(
     localparam FB_CONTROL_WAITFOREND = 1;
 
     // Command Unit Variables
-    reg  [31 : 0]   configReg[0 : 5];
+    reg  [31 : 0]   configReg[0 : OP_RENDER_CONFIG_NUMBER_OR_REGS - 1];
     reg             apply;
     wire            applied;
     reg  [13 : 0]   streamCounter;
@@ -114,6 +110,7 @@ module CommandParser #(
     assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
     assign confReg1 = configReg[OP_RENDER_CONFIG_REG1];
     assign confReg2 = configReg[OP_RENDER_CONFIG_REG2];
+    assign confReg3 = configReg[OP_RENDER_CONFIG_REG3];
     assign confTextureEnvColor = configReg[OP_RENDER_CONFIG_TEX_ENV_COLOR];
     assign confFogColor = configReg[OP_RENDER_CONFIG_FOG_COLOR];
 
@@ -177,12 +174,7 @@ module CommandParser #(
                     end
                     OP_TEXTURE_STREAM:
                     begin
-                        confTextureSizeWidth <= s_cmd_axis_tdata[TEXTURE_STREAM_WIDTH_POS +: TEXTURE_STREAM_WIDTH_SIZE];
-                        confTextureSizeHeight <= s_cmd_axis_tdata[TEXTURE_STREAM_HEIGHT_POS +: TEXTURE_STREAM_HEIGHT_SIZE];
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
-                        confTextureClampS <= s_cmd_axis_tdata[TEXTURE_STREAM_CLAMP_S_POS +: TEXTURE_STREAM_CLAMP_S_SIZE];        
-                        confTextureClampT <= s_cmd_axis_tdata[TEXTURE_STREAM_CLAMP_T_POS +: TEXTURE_STREAM_CLAMP_T_SIZE];
-                        confTextureMagFilter <= s_cmd_axis_tdata[TEXTURE_STREAM_MAG_FILTER_POS +: TEXTURE_STREAM_MAG_FILTER_SIZE];
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin

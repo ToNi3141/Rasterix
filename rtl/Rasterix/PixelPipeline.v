@@ -53,13 +53,9 @@ module PixelPipeline
     // Shader configurations
     input  wire [31 : 0]                confReg1,
     input  wire [31 : 0]                confReg2,
-    input  wire                         confTextureClampS,
-    input  wire                         confTextureClampT,
+    input  wire [31 : 0]                confReg3,
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
-    input  wire [ 7 : 0]                confTextureSizeWidth, 
-    input  wire [ 7 : 0]                confTextureSizeHeight,
-    input  wire                         confTextureMagFilter,
 
     // Fragment Stream
     input  wire                         s_axis_tvalid,
@@ -191,12 +187,12 @@ module PixelPipeline
         .resetn(resetn),
 
         .confFunc(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
-        .confTextureClampS(confTextureClampS),
-        .confTextureClampT(confTextureClampT),
+        .confTextureClampS(confReg3[REG3_TMU_CLAMP_S_POS +: REG3_TMU_CLAMP_S_SIZE]),
+        .confTextureClampT(confReg3[REG3_TMU_CLAMP_T_POS +: REG3_TMU_CLAMP_T_SIZE]),
         .confTextureEnvColor(confTextureEnvColor),
-        .confTextureSizeWidth(confTextureSizeWidth),
-        .confTextureSizeHeight(confTextureSizeHeight),
-        .confTextureMagFilter(confTextureMagFilter),
+        .confTextureSizeWidth(confReg3[REG3_TMU_WIDTH_POS +: REG3_TMU_WIDTH_SIZE]),
+        .confTextureSizeHeight(confReg3[REG3_TMU_HEIGHT_POS +: REG3_TMU_HEIGHT_SIZE]),
+        .confTextureMagFilter(confReg3[REG3_TMU_MAG_FILTER_POS +: REG3_TMU_MAG_FILTER_SIZE]),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
