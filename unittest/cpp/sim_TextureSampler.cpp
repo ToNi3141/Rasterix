@@ -25,9 +25,9 @@
 #include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VTextureBuffer.h"
+#include "VTextureSamplerTestModule.h"
 
-void clk(VTextureBuffer* t)
+void clk(VTextureSamplerTestModule* t)
 {
     t->aclk = 0;
     t->eval();
@@ -35,7 +35,7 @@ void clk(VTextureBuffer* t)
     t->eval();
 }
 
-void reset(VTextureBuffer* t)
+void reset(VTextureSamplerTestModule* t)
 {
     t->resetn = 0;
     clk(t);
@@ -43,7 +43,7 @@ void reset(VTextureBuffer* t)
     clk(t);
 }
 
-void uploadTexture(VTextureBuffer* top) 
+void uploadTexture(VTextureSamplerTestModule* top) 
 {
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
@@ -70,7 +70,7 @@ void uploadTexture(VTextureBuffer* top)
 
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -159,7 +159,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 
 TEST_CASE("Get various values from the texture buffer with pipeline test", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -219,7 +219,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
 
 TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -293,7 +293,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -340,7 +340,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -387,7 +387,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);

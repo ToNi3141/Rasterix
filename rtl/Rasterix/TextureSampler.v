@@ -21,8 +21,8 @@
 // Delay: 3 clocks
 module TextureSampler #(
     parameter MEMORY_DELAY = 1,
-    localparam ADDR_WIDTH = 16, // Based on the maximum texture size, which is 256x256 (8 bit x 8 bit) in PIXEL_WIDTH word addresses
-    localparam PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 32,
+    localparam ADDR_WIDTH = 16 // Based on the maximum texture size, which is 256x256 (8 bit x 8 bit) in PIXEL_WIDTH word addresses
 )
 (
     input  wire                         aclk,

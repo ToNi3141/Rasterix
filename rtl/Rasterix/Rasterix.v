@@ -60,16 +60,13 @@ module Rasterix #(
 `include "AttributeInterpolatorDefines.vh"
 
     localparam MEMORY_SUB_PIXEL_WIDTH = 4;
+    localparam TEX_ADDR_WIDTH = 16;
 
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
     localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
 
     // The bit width of the texture stream
-`ifdef UP5K
-    localparam TEXTURE_STREAM_WIDTH = 16;
-`else 
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
-`endif
 
     `Expand(Expand, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
     `Reduce(Reduce, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
@@ -78,20 +75,19 @@ module Rasterix #(
     // Regs and wires
     ///////////////////////////
     // Texture access
-    wire [31:0] texel;
-    wire [ 7:0] textureSizeWidth;
-    wire [ 7:0] textureSizeHeight;
-    wire        textureClampS;
-    wire        textureClampT;
-    wire        textureMagFilter;
-    wire [15:0] texelS;
-    wire [15:0] texelT;
-    wire [15:0] texel00;
-    wire [15:0] texel01;
-    wire [15:0] texel10;
-    wire [15:0] texel11;
-    wire [15:0] texelSubCoordS;
-    wire [15:0] texelSubCoordT;
+    wire [ 7:0]                     confTextureSizeWidth;
+    wire [ 7:0]                     confTextureSizeHeight;
+    wire                            confTextureClampS;
+    wire                            confTextureClampT;
+    wire                            confTextureMagFilter;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr11;
+    wire [15 : 0]                   texelInput00;
+    wire [15 : 0]                   texelInput01;
+    wire [15 : 0]                   texelInput10;
+    wire [15 : 0]                   texelInput11;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -183,11 +179,11 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confTextureSizeWidth(textureSizeWidth),
-        .confTextureSizeHeight(textureSizeHeight),
-        .confTextureClampS(textureClampS),
-        .confTextureClampT(textureClampT),
-        .confTextureMagFilter(textureMagFilter),
+        .confTextureSizeWidth(confTextureSizeWidth),
+        .confTextureSizeHeight(confTextureSizeHeight),
+        .confTextureClampS(confTextureClampS),
+        .confTextureClampT(confTextureClampT),
+        .confTextureMagFilter(confTextureMagFilter),
         .confReg1(confReg1),
         .confReg2(confReg2),
         .confTextureEnvColor(confTextureEnvColor),
@@ -245,44 +241,24 @@ module Rasterix #(
     TextureBuffer texCache (
         .aclk(aclk),
         .resetn(resetn),
-        .textureSizeWidth(textureSizeWidth),
-        .textureSizeHeight(textureSizeHeight),
+
+        .texelAddr00(texelAddr00),
+        .texelAddr01(texelAddr01),
+        .texelAddr10(texelAddr10),
+        .texelAddr11(texelAddr11),
+
+        .texelOutput00(texelInput00),
+        .texelOutput01(texelInput01),
+        .texelOutput10(texelInput10),
+        .texelOutput11(texelInput11),
 
         .s_axis_tvalid(s_texture_axis_tvalid),
         .s_axis_tready(s_texture_axis_tready),
         .s_axis_tlast(s_texture_axis_tlast),
-        .s_axis_tdata(s_texture_axis_tdata),
-
-        .texelS(texelS),
-        .texelT(texelT),
-        .clampS(textureClampS),
-        .clampT(textureClampT),
-
-        .texel00(texel00),
-        .texel01(texel01),
-        .texel10(texel10),
-        .texel11(texel11),
-        .texelSubCoordS(texelSubCoordS),
-        .texelSubCoordT(texelSubCoordT)
+        .s_axis_tdata(s_texture_axis_tdata)
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
-
-    TextureFilter texFilter (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .enable(textureMagFilter),
-
-        .texel00(Expand(texel00)),
-        .texel01(Expand(texel01)),
-        .texel10(Expand(texel10)),
-        .texel11(Expand(texel11)),
-        .texelSubCoordS(texelSubCoordS),
-        .texelSubCoordT(texelSubCoordT),
-
-        .texel(texel)
-    );
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -425,19 +401,28 @@ module Rasterix #(
 
         .confReg1(confReg1),
         .confReg2(confReg2),
-        .confTextureClampS(textureClampS),
-        .confTextureClampT(textureClampT),
+        .confTextureClampS(confTextureClampS),
+        .confTextureClampT(confTextureClampT),
         .confTextureEnvColor(confTextureEnvColor),
         .confFogColor(confFogColor),
+        .confTextureSizeWidth(confTextureSizeWidth),
+        .confTextureSizeHeight(confTextureSizeHeight),
+        .confTextureMagFilter(confTextureMagFilter),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),
         .s_axis_tlast(m_attr_inter_axis_tlast),
         .s_axis_tdata(m_attr_inter_axis_tdata),
 
-        .texel(texel),
-        .texelS(texelS),
-        .texelT(texelT),
+        .texelAddr00(texelAddr00),
+        .texelAddr01(texelAddr01),
+        .texelAddr10(texelAddr10),
+        .texelAddr11(texelAddr11),
+
+        .texelInput00(Expand(texelInput00)),
+        .texelInput01(Expand(texelInput01)),
+        .texelInput10(Expand(texelInput10)),
+        .texelInput11(Expand(texelInput11)),
 
         .colorIndexRead(colorIndexRead),
         .colorIn(Expand(colorIn)),

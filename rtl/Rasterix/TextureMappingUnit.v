@@ -29,7 +29,8 @@ module TextureMappingUnit
     parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
-    localparam FLOAT_SIZE = 32
+    localparam FLOAT_SIZE = 32,
+    localparam ADDR_WIDTH = 16 // Based on the maximum texture size, which is 256x256 (8 bit x 8 bit) in PIXEL_WIDTH word addresses
 )
 (
     input  wire                         aclk,
@@ -40,11 +41,19 @@ module TextureMappingUnit
     input  wire                         confTextureClampS,
     input  wire                         confTextureClampT,
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
+    input  wire [ 7 : 0]                confTextureSizeWidth, 
+    input  wire [ 7 : 0]                confTextureSizeHeight,
+    input  wire                         confTextureMagFilter,
 
-    // Texture access
-    output wire [15 : 0]                texelS,
-    output wire [15 : 0]                texelT,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel, // TEXTURE
+    // Texture memory access of a texel quad
+    output wire [ADDR_WIDTH - 1 : 0]    texelAddr00,
+    output wire [ADDR_WIDTH - 1 : 0]    texelAddr01,
+    output wire [ADDR_WIDTH - 1 : 0]    texelAddr10,
+    output wire [ADDR_WIDTH - 1 : 0]    texelAddr11,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput00,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput01,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput10,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Fragment input
     input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // PRIMARY_COLOR
@@ -79,16 +88,67 @@ module TextureMappingUnit
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
-    // Request texel from texture buffer
+    // Request texel from texture buffer and filter it
     // Clocks: 7
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
         step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
 
-    assign texelS = clampTexture(textureS[0 +: 24], confTextureClampS);
-    assign texelT = clampTexture(textureT[0 +: 24], confTextureClampT);
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texel10Tmp;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texel11Tmp;
+    wire [15:0]                 step1_texelSubCoordSTmp;
+    wire [15:0]                 step1_texelSubCoordTTmp;
+    TextureSampler #(
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) textureSampler (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .textureSizeWidth(confTextureSizeWidth),
+        .textureSizeHeight(confTextureSizeHeight),
+
+        .texelAddr00(texelAddr00),
+        .texelAddr01(texelAddr01),
+        .texelAddr10(texelAddr10),
+        .texelAddr11(texelAddr11),
+        .texelInput00(texelInput00),
+        .texelInput01(texelInput01),
+        .texelInput10(texelInput10),
+        .texelInput11(texelInput11),
+
+        .texelS(clampTexture(textureS[0 +: 24], confTextureClampS)),
+        .texelT(clampTexture(textureT[0 +: 24], confTextureClampT)),
+        .clampS(confTextureClampS),
+        .clampT(confTextureClampT),
+        .texel00(step1_texel00Tmp),
+        .texel01(step1_texel01Tmp),
+        .texel10(step1_texel10Tmp),
+        .texel11(step1_texel11Tmp),
+
+        .texelSubCoordS(step1_texelSubCoordSTmp),
+        .texelSubCoordT(step1_texelSubCoordTTmp)
+    );
+
+    TextureFilter texFilter (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .enable(confTextureMagFilter),
+
+        .texel00(step1_texel00Tmp),
+        .texel01(step1_texel01Tmp),
+        .texel10(step1_texel10Tmp),
+        .texel11(step1_texel11Tmp),
+        .texelSubCoordS(step1_texelSubCoordSTmp),
+        .texelSubCoordT(step1_texelSubCoordTTmp),
+
+        .texel(step1_texel)
+    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
@@ -105,7 +165,7 @@ module TextureMappingUnit
 
         .func(confFunc),
 
-        .texSrcColor(texel),
+        .texSrcColor(step1_texel),
         .primaryColor(step1_primaryColor),
         .envColor(confTextureEnvColor),
 

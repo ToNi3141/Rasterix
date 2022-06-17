@@ -33,33 +33,23 @@ module TextureBuffer #(
 
     localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH / 8),
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH),
-    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH
+    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH,
+
+    localparam TEX_ADDR_WIDTH = 16
 )
 (
     input  wire                         aclk,
     input  wire                         resetn,
 
-    // Texture size
-    // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
-    input  wire [ 7 : 0]                textureSizeWidth, 
-    input  wire [ 7 : 0]                textureSizeHeight,
-
     // Texture Read
-    input  wire [15 : 0]                texelS, // Q1.15
-    input  wire [15 : 0]                texelT, // Q1.15
-    input  wire                         clampS,
-    input  wire                         clampT,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [PIXEL_WIDTH - 1 : 0]   texel01, // (1, 0)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel10, // (0, 1)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel11, // (1, 1)
-
-    // This is basically the faction of the pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
-    // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
-    // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
-    // are outside of our quad which never happens.
-    output wire [15 : 0]                texelSubCoordS, // Q0.16
-    output wire [15 : 0]                texelSubCoordT, // Q0.16
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+    output wire [PIXEL_WIDTH - 1 : 0]   texelOutput00,
+    output wire [PIXEL_WIDTH - 1 : 0]   texelOutput01,
+    output wire [PIXEL_WIDTH - 1 : 0]   texelOutput10,
+    output wire [PIXEL_WIDTH - 1 : 0]   texelOutput11,
 
     // Texture Write
     input  wire                         s_axis_tvalid,
@@ -74,11 +64,6 @@ module TextureBuffer #(
     reg  [15 : 0]                   texelAddrForDecoding01;
     reg  [15 : 0]                   texelAddrForDecoding10;
     reg  [15 : 0]                   texelAddrForDecoding11;
-
-    wire [15 : 0]                   texelAddr00;
-    wire [15 : 0]                   texelAddr01;
-    wire [15 : 0]                   texelAddr10;
-    wire [15 : 0]                   texelAddr11;
 
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrEven0;
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrOdd0;
@@ -97,35 +82,6 @@ module TextureBuffer #(
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect01;
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect10;
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect11;
-
-    TextureSampler textureSampler (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .textureSizeWidth(textureSizeWidth),
-        .textureSizeHeight(textureSizeHeight),
-
-        .texelAddr00(texelAddr00),
-        .texelAddr01(texelAddr01),
-        .texelAddr10(texelAddr10),
-        .texelAddr11(texelAddr11),
-        .texelInput00(texelSelect00),
-        .texelInput01(texelSelect01),
-        .texelInput10(texelSelect10),
-        .texelInput11(texelSelect11),
-
-        .texelS(texelS),
-        .texelT(texelT),
-        .clampS(clampS),
-        .clampT(clampT),
-        .texel00(texel00),
-        .texel01(texel01),
-        .texel10(texel10),
-        .texel11(texel11),
-
-        .texelSubCoordS(texelSubCoordS),
-        .texelSubCoordT(texelSubCoordT)
-    );
 
     TrueDualPortRam #(
         .MEM_SIZE_BYTES(SIZE - 1),
@@ -224,6 +180,11 @@ module TextureBuffer #(
                                                                 : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
     endgenerate
+
+    assign texelOutput00 = texelSelect00;
+    assign texelOutput01 = texelSelect01;
+    assign texelOutput10 = texelSelect10;
+    assign texelOutput11 = texelSelect11;
 
     //////////////////////////////////////////////
     // AXIS Interface

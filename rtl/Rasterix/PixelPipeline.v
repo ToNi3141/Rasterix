@@ -35,7 +35,9 @@ module PixelPipeline
     parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
-    localparam FLOAT_SIZE = 32
+    localparam FLOAT_SIZE = 32,
+
+    localparam TEX_ADDR_WIDTH = 16 
 )
 (
     input  wire                         aclk,
@@ -55,6 +57,9 @@ module PixelPipeline
     input  wire                         confTextureClampT,
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
+    input  wire [ 7 : 0]                confTextureSizeWidth, 
+    input  wire [ 7 : 0]                confTextureSizeHeight,
+    input  wire                         confTextureMagFilter,
 
     // Fragment Stream
     input  wire                         s_axis_tvalid,
@@ -63,9 +68,15 @@ module PixelPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output wire [15 : 0]                texelS,
-    output wire [15 : 0]                texelT,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel,
+    // Texture memory access of a texel quad
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput00,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput01,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput10,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Frame buffer access
     // Read
@@ -183,10 +194,19 @@ module PixelPipeline
         .confTextureClampS(confTextureClampS),
         .confTextureClampT(confTextureClampT),
         .confTextureEnvColor(confTextureEnvColor),
+        .confTextureSizeWidth(confTextureSizeWidth),
+        .confTextureSizeHeight(confTextureSizeHeight),
+        .confTextureMagFilter(confTextureMagFilter),
 
-        .texelS(texelS),
-        .texelT(texelT),
-        .texel(texel),
+        .texelAddr00(texelAddr00),
+        .texelAddr01(texelAddr01),
+        .texelAddr10(texelAddr10),
+        .texelAddr11(texelAddr11),
+
+        .texelInput00(texelInput00),
+        .texelInput01(texelInput01),
+        .texelInput10(texelInput10),
+        .texelInput11(texelInput11),
 
         .primaryColor(step1_primaryColor),
         .textureS(step_convert_texture_s[0 +: 24]),
