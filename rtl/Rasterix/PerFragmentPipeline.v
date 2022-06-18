@@ -38,7 +38,6 @@ module PerFragmentPipeline
 
     // Shader configurations
     input  wire [31 : 0]                confReg1,
-    input  wire [31 : 0]                confReg2,
 
     // Fragment input
     input  wire                         valid,

@@ -84,12 +84,6 @@ module TextureSamplerTestModule #(
         .s_axis_tdata(s_axis_tdata)
     );
 
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel10Tmp;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel11Tmp;
-    wire [15:0]                 step1_texelSubCoordSTmp;
-    wire [15:0]                 step1_texelSubCoordTTmp;
     TextureSampler #(
         .PIXEL_WIDTH(PIXEL_WIDTH)
     ) textureSampler (

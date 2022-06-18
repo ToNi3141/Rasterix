@@ -264,7 +264,6 @@ module PixelPipeline
         .resetn(resetn),
 
         .confReg1(confReg1),
-        .confReg2(confReg2),
 
         .valid(step2_valid),
         .fragmentColor(step2_fragmentColor),

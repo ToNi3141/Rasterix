@@ -60,10 +60,10 @@ module TextureBuffer #(
 `include "RegisterAndDescriptorDefines.vh"
 
     reg  [ADDR_WIDTH - 1 : 0]       memWriteAddr = 0;
-    reg  [15 : 0]                   texelAddrForDecoding00;
-    reg  [15 : 0]                   texelAddrForDecoding01;
-    reg  [15 : 0]                   texelAddrForDecoding10;
-    reg  [15 : 0]                   texelAddrForDecoding11;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   texelAddrForDecoding00;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   texelAddrForDecoding01;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   texelAddrForDecoding10;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   texelAddrForDecoding11;
 
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrEven0;
     wire [ADDR_WIDTH - 1 : 0]       memReadAddrOdd0;

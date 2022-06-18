@@ -16,10 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module calculates the fragment color.
-// It reads the texel from the texture memory and clamps it, calculates 
-// the fog intensity based on the z value and fog equation (LUT), 
-// calculates the equation for the texture environment and applies the
-// fog color.
+// It samples a texel from the texture memory, filters it and 
+// executes the texture environment.
 // Pipelined: yes
 // Depth: 9 cycles
 module TextureMappingUnit
