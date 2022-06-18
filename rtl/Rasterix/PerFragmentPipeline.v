@@ -20,7 +20,7 @@
 // executes alpha and depth tests, and blends the texel into the current fragment
 // Pipelined: yes
 // Depth: 5 cycles
-module FramebufferPipeline
+module PerFragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
@@ -38,7 +38,6 @@ module FramebufferPipeline
 
     // Shader configurations
     input  wire [31 : 0]                confReg1,
-    input  wire [31 : 0]                confReg2,
 
     // Fragment input
     input  wire                         valid,
@@ -133,8 +132,8 @@ module FramebufferPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .funcSFactor(confReg2[REG2_BLEND_FUNC_SFACTOR_POS +: REG2_BLEND_FUNC_SFACTOR_SIZE]),
-        .funcDFactor(confReg2[REG2_BLEND_FUNC_DFACTOR_POS +: REG2_BLEND_FUNC_DFACTOR_SIZE]),
+        .funcSFactor(confReg1[REG1_BLEND_FUNC_SFACTOR_POS +: REG1_BLEND_FUNC_SFACTOR_SIZE]),
+        .funcDFactor(confReg1[REG1_BLEND_FUNC_DFACTOR_POS +: REG1_BLEND_FUNC_DFACTOR_SIZE]),
         .sourceColor(step0_fragmentColor),
         .destColor(colorIn),
 

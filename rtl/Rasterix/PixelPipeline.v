@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 20 cycles
+// Depth: 24 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -35,7 +35,9 @@ module PixelPipeline
     parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
-    localparam FLOAT_SIZE = 32
+    localparam FLOAT_SIZE = 32,
+
+    localparam TEX_ADDR_WIDTH = 16 
 )
 (
     input  wire                         aclk,
@@ -51,8 +53,7 @@ module PixelPipeline
     // Shader configurations
     input  wire [31 : 0]                confReg1,
     input  wire [31 : 0]                confReg2,
-    input  wire                         confTextureClampS,
-    input  wire                         confTextureClampT,
+    input  wire [31 : 0]                confReg3,
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
 
@@ -63,9 +64,15 @@ module PixelPipeline
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
-    output wire [15 : 0]                texelS,
-    output wire [15 : 0]                texelT,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel,
+    // Texture memory access of a texel quad
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput00,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput01,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput10,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Frame buffer access
     // Read
@@ -148,24 +155,85 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate fragment color
-    // Clocks: 11
+    // Clocks: 9
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]                              step1_fragmentColor;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step1_index;
     wire [31 : 0]                                           step1_depth;
+    wire [31 : 0]                                           step1_depthWFloat;
     wire                                                    step1_valid;
+    wire [PIXEL_WIDTH - 1 : 0]                              step1_primaryColor = {
+        // clamp colors 
+        (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+        (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
+    };
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(9)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
+        step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(9)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
-    FragmentPipeline #(
+    TextureMappingUnit #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) fragmentPipeline (
+    ) textureMappingUnitPipeline (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .confFunc(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
+        .confTextureClampS(confReg3[REG3_TMU_CLAMP_S_POS +: REG3_TMU_CLAMP_S_SIZE]),
+        .confTextureClampT(confReg3[REG3_TMU_CLAMP_T_POS +: REG3_TMU_CLAMP_T_SIZE]),
+        .confTextureEnvColor(confTextureEnvColor),
+        .confTextureSizeWidth(confReg3[REG3_TMU_WIDTH_POS +: REG3_TMU_WIDTH_SIZE]),
+        .confTextureSizeHeight(confReg3[REG3_TMU_HEIGHT_POS +: REG3_TMU_HEIGHT_SIZE]),
+        .confTextureMagFilter(confReg3[REG3_TMU_MAG_FILTER_POS +: REG3_TMU_MAG_FILTER_SIZE]),
+
+        .texelAddr00(texelAddr00),
+        .texelAddr01(texelAddr01),
+        .texelAddr10(texelAddr10),
+        .texelAddr11(texelAddr11),
+
+        .texelInput00(texelInput00),
+        .texelInput01(texelInput01),
+        .texelInput10(texelInput10),
+        .texelInput11(texelInput11),
+
+        .primaryColor(step1_primaryColor),
+        .textureS(step_convert_texture_s[0 +: 24]),
+        .textureT(step_convert_texture_t[0 +: 24]),
+
+        .previousColor(step1_primaryColor), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
+
+        .fragmentColor(step1_fragmentColor)
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Calculate Fog
+    // Clocks: 6
+    ////////////////////////////////////////////////////////////////////////////
+    wire [PIXEL_WIDTH - 1 : 0]                              step2_fragmentColor;
+    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step2_index;
+    wire [31 : 0]                                           step2_depth;
+    wire                                                    step2_valid;
+
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(6)) 
+        step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(6)) 
+        step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
+        step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
+
+    Fog #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH)
+    ) fog (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -174,50 +242,33 @@ module PixelPipeline
         .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
-        .confReg1(confReg1),
-        .confReg2(confReg2),
-        .confTextureClampS(confTextureClampS),
-        .confTextureClampT(confTextureClampT),
-        .confTextureEnvColor(confTextureEnvColor),
         .confFogColor(confFogColor),
 
-        .texelS(texelS),
-        .texelT(texelT),
-        .texel(texel),
+        .depth(step1_depthWFloat),
+        .texelColor(step1_fragmentColor),
 
-        .triangleColor({
-            // clamp colors 
-            (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-            (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
-        }),
-        .depth(step_convert_depth_w_float),
-        .textureS(step_convert_texture_s[0 +: 24]),
-        .textureT(step_convert_texture_t[0 +: 24]),
-        .fragmentColor(step1_fragmentColor)
+        .color(step2_fragmentColor)
     );
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 2
+    // STEP 3
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
-    FramebufferPipeline #(
+    PerFragmentPipeline #(
         .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
         .DEPTH_WIDTH(DEPTH_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) framebufferPipeline (
+    ) perFragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
 
         .confReg1(confReg1),
-        .confReg2(confReg2),
 
-        .valid(step1_valid),
-        .fragmentColor(step1_fragmentColor),
-        .depth(step1_depth),
-        .index(step1_index[0 +: FRAMEBUFFER_INDEX_WIDTH]),
+        .valid(step2_valid),
+        .fragmentColor(step2_fragmentColor),
+        .depth(step2_depth),
+        .index(step2_index[0 +: FRAMEBUFFER_INDEX_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 

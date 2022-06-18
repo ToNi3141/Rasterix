@@ -81,13 +81,6 @@ public:
             t = 0;
         }
 
-        // Unfortunately the Arduino compiler is too old and does not support C++20 default member initializers in bit fields
-#ifndef NO_PERSP_CORRECT
-        m_confReg2.perspectiveCorrectedTextures = true;
-#else
-        m_confReg2.perspectiveCorrectedTextures = false;
-#endif
-
         setDepthFunc(TestFunc::LESS);
         setDepthMask(false);
         setColorMask(true, true, true, true);
@@ -290,9 +283,9 @@ public:
 
     virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
     {
-        m_confReg2.blendFuncSFactor = sfactor;
-        m_confReg2.blendFuncDFactor = dfactor;
-        return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
+        m_confReg1.blendFuncSFactor = sfactor;
+        m_confReg1.blendFuncDFactor = dfactor;
+        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
     }
 
     virtual bool setLogicOp(const LogicOp opcode) override
@@ -433,12 +426,17 @@ public:
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId],
-                                                                                             tex.width * tex.height * 2,
-                                                                                             tex.width,
-                                                                                             tex.height,
-                                                                                             (tex.wrapModeS == TextureWrapMode::CLAMP_TO_EDGE) ? true : false,
-                                                                                             (tex.wrapModeT == TextureWrapMode::CLAMP_TO_EDGE) ? true : false,
-                                                                                             tex.enableMagFilter);
+                                                                                             tex.width * tex.height * 2);
+
+            const uint32_t texWidthOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(tex.width))) - 1);
+            const uint32_t texHeightOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(tex.height))) - 1);
+                
+            m_confReg3.texWidth = texWidthOneHot;
+            m_confReg3.texHeight = texHeightOneHot;
+            m_confReg3.wrapModeS = tex.wrapModeS;
+            m_confReg3.wrapModeT = tex.wrapModeT;
+            m_confReg3.enableMagFilter = tex.enableMagFilter;
+            ret = ret && writeToReg(ListAssembler::SET_CONF_REG3, m_confReg3);
         }
         return ret;
     }
@@ -510,15 +508,23 @@ private:
         bool colorMaskB : 1;
         bool colorMaskG : 1;
         bool colorMaskR : 1;
+        IRenderer::BlendFunc blendFuncSFactor : 4;
+        IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg1;
 
     struct __attribute__ ((__packed__)) ConfReg2
     {
-        bool perspectiveCorrectedTextures : 1;
         IRenderer::TexEnvParam texEnvFunc : 3;
-        IRenderer::BlendFunc blendFuncSFactor : 4;
-        IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg2;
+
+    struct __attribute__ ((__packed__)) ConfReg3
+    {
+        uint8_t texWidth : 8;
+        uint8_t texHeight : 8;
+        TextureWrapMode wrapModeS : 1;
+        TextureWrapMode wrapModeT : 1;
+        bool enableMagFilter : 1;
+    } m_confReg3;
 
     std::future<bool> m_renderThread;
 };

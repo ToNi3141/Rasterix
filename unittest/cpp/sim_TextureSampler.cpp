@@ -25,9 +25,9 @@
 #include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VTextureBuffer.h"
+#include "VTextureSamplerTestModule.h"
 
-void clk(VTextureBuffer* t)
+void clk(VTextureSamplerTestModule* t)
 {
     t->aclk = 0;
     t->eval();
@@ -35,7 +35,7 @@ void clk(VTextureBuffer* t)
     t->eval();
 }
 
-void reset(VTextureBuffer* t)
+void reset(VTextureSamplerTestModule* t)
 {
     t->resetn = 0;
     clk(t);
@@ -43,7 +43,7 @@ void reset(VTextureBuffer* t)
     clk(t);
 }
 
-void uploadTexture(VTextureBuffer* top) 
+void uploadTexture(VTextureSamplerTestModule* top) 
 {
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
@@ -70,7 +70,7 @@ void uploadTexture(VTextureBuffer* top)
 
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -78,6 +78,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0, 0)
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
@@ -90,6 +91,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x0f00);
     REQUIRE(top->texel01 == 0xf000);
     REQUIRE(top->texel10 == 0x000f);
@@ -100,6 +102,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0x7fff;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
     REQUIRE(top->texel10 == 0xf000);
@@ -108,6 +111,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
@@ -121,6 +125,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -131,6 +136,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     top->texelT = 0x8000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -139,6 +145,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (1.0, 1.0)
     top->texelS = 0x8000;
     top->texelT = 0x8000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
@@ -152,7 +159,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 
 TEST_CASE("Get various values from the texture buffer with pipeline test", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -162,46 +169,49 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     top->texelT = 0;
     clk(top);
 
-    // (1.0, 0.0)
-    top->texelS = 0x8000;
+    // (0.99.., 0.0)
+    top->texelS = 0x7fff;
     top->texelT = 0;
     clk(top);
 
-    // Result (0, 0)
-    REQUIRE(top->texel00 == 0xf000);
-    REQUIRE(top->texel01 == 0x0f00);
-    REQUIRE(top->texel10 == 0x00f0);
-    REQUIRE(top->texel11 == 0x000f);
-
-    // (0.0, 1.0)
+    // (0.0, 0.99..)
     top->texelS = 0;
-    top->texelT = 0x8000;
+    top->texelT = 0x7fff;
     clk(top);
 
-    // Result (1.0, 0)
+    // Result of (0, 0)
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
     REQUIRE(top->texel11 == 0x000f);
 
-    // (1.0, 1.0)
-    top->texelS = 0x8000;
-    top->texelT = 0x8000;
+    // (0.99.., 0.99..)
+    top->texelS = 0x7fff;
+    top->texelT = 0x7fff;
     clk(top);
 
-    // Result (0.0, 1.0)
-    REQUIRE(top->texel00 == 0xf000);
-    REQUIRE(top->texel01 == 0x0f00);
-    REQUIRE(top->texel10 == 0x00f0);
-    REQUIRE(top->texel11 == 0x000f);
+    // Result of (0, 0)
+    REQUIRE(top->texel00 == 0x0f00);
+    REQUIRE(top->texel01 == 0xf000);
+    REQUIRE(top->texel10 == 0x000f);
+    REQUIRE(top->texel11 == 0x00f0);
 
     clk(top);
 
-    // Result (1.0, 1.0)
-    REQUIRE(top->texel00 == 0xf000);
-    REQUIRE(top->texel01 == 0x0f00);
-    REQUIRE(top->texel10 == 0x00f0);
-    REQUIRE(top->texel11 == 0x000f);
+    // Result of (0.0, 0.99..)
+    REQUIRE(top->texel00 == 0x00f0);
+    REQUIRE(top->texel01 == 0x000f);
+    REQUIRE(top->texel10 == 0xf000);
+    REQUIRE(top->texel11 == 0x0f00);
+
+    clk(top);
+
+    // Result of (0.99.., 0.99..)
+    REQUIRE(top->texel00 == 0x000f);
+    REQUIRE(top->texel01 == 0x00f0);
+    REQUIRE(top->texel10 == 0x0f00);
+    REQUIRE(top->texel11 == 0xf000);
+
 
     // Destroy model
     delete top;
@@ -209,7 +219,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
 
 TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -217,6 +227,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.0, 0.0)
     top->texelS = 0x0000;
     top->texelT = 0x0000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
@@ -239,6 +250,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x1000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -252,6 +264,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     top->texelT = 0x3000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -263,6 +276,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.375, 0.125) 
     top->texelS = 0x3000;
     top->texelT = 0x1000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0xf000);
@@ -279,7 +293,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -292,6 +306,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -302,6 +317,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x0f00);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x000f);
@@ -310,6 +326,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
@@ -323,7 +340,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -336,6 +353,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -346,6 +364,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     top->texelT = 0x4000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
     REQUIRE(top->texel10 == 0x00f0);
@@ -354,6 +373,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0x000f);
@@ -367,7 +387,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
-    VTextureBuffer* top = new VTextureBuffer();
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     reset(top);
 
     uploadTexture(top);
@@ -380,6 +400,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     top->texelT = 0x0000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xf000);
     REQUIRE(top->texel01 == 0x0f00);
     REQUIRE(top->texel10 == 0x00f0);
@@ -388,6 +409,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0x0f00);
@@ -400,6 +422,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     top->texelT = 0x4000;
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x00f0);
     REQUIRE(top->texel01 == 0x000f);
     REQUIRE(top->texel10 == 0x00f0);
@@ -408,6 +431,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     REQUIRE(top->texel00 == 0x000f);

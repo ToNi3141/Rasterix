@@ -39,7 +39,7 @@ module TexEnv
     input  wire [ 2 : 0]                func,
 
     input  wire [PIXEL_WIDTH - 1 : 0]   texSrcColor, // Cs 
-    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf or Cp 
+    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
     input  wire [PIXEL_WIDTH - 1 : 0]   envColor, // Cc
 
     output wire [PIXEL_WIDTH - 1 : 0]   color

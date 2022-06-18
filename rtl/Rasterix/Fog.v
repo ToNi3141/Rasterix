@@ -15,41 +15,89 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Calculates the fog with a given fog intensity.
-// As greater the intensity, as stronger the fog color will be.
-// Note that this is only one part of the fog calculation. The 
-// intensity is basically the result of the fog equation and is 
-// calculated outside of this module.
+// Fogs a texel based on a given depth value.
+// It uses a fog look up table to calculate the intensity of the fog color based on the depth.
+// To see how the LUT is build, @see FunctionInterpolator
 // Pipelined: yes
-// Depth: 2 cycles
+// Depth: 6 cycles
 module Fog 
 #(
+    parameter CMD_STREAM_WIDTH = 64,
+
     parameter SUB_PIXEL_WIDTH = 8,
     localparam NUMBER_OF_SUB_PIXEL = 4,
-    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
+    localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL,
+
+    localparam FLOAT_SIZE = 32
 )
 (
     input  wire                         aclk,
     input  wire                         resetn,
 
-    input  wire [15 : 0]                intensity,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelColor,
-    input  wire [PIXEL_WIDTH - 1 : 0]   fogColor,
+    // Fog function LUT stream
+    input  wire                         s_fog_lut_axis_tvalid,
+    output wire                         s_fog_lut_axis_tready,
+    input  wire                         s_fog_lut_axis_tlast,
+    input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
 
+    // Fog Color
+    input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
+
+    // Fog calculation
+    input  wire [FLOAT_SIZE - 1 : 0]    depth,
+    input  wire [PIXEL_WIDTH - 1 : 0]   texelColor,
+    
+    // Fogged texel
     output wire [PIXEL_WIDTH - 1 : 0]   color 
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    wire [PIXEL_WIDTH - 1 : 0]      mixedColor;
-    wire [SUB_PIXEL_WIDTH - 1 : 0]  texelAlpha;
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 0
+    // Calculate the fog intensity
+    // Clocks: 4 
+    ////////////////////////////////////////////////////////////////////////////
+    wire [23 : 0]               step0_fogIntensity;
+    wire [PIXEL_WIDTH - 1 :0]   step0_texelColor;
+
+    ValueDelay #(
+        .VALUE_SIZE(PIXEL_WIDTH), 
+        .DELAY(4)
+    ) step0_texelColorDelay (
+        .clk(aclk), 
+        .in(texelColor),
+        .out(step0_texelColor)
+    );
+
+    FunctionInterpolator #(
+        .STREAM_WIDTH(CMD_STREAM_WIDTH)
+    )
+    step0_calculateFogIntensity (
+        .aclk(aclk), 
+        .resetn(resetn), 
+        .x(depth),
+        .fx(step0_fogIntensity),
+        .s_axis_tvalid(s_fog_lut_axis_tvalid), 
+        .s_axis_tready(s_fog_lut_axis_tready), 
+        .s_axis_tlast(s_fog_lut_axis_tlast), 
+        .s_axis_tdata(s_fog_lut_axis_tdata)
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 1
+    // Fog color mixing
+    // Clocks: 2
+    ////////////////////////////////////////////////////////////////////////////
+    wire [SUB_PIXEL_WIDTH - 1 : 0]  step1_texelAlpha;
+    wire [PIXEL_WIDTH - 1 : 0]      step1_mixedColor;
 
     ValueDelay #(
         .VALUE_SIZE(SUB_PIXEL_WIDTH), 
         .DELAY(2)
-    ) alphaDelay (
+    ) step0_alphaDelay (
         .clk(aclk), 
-        .in(texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
-        .out(texelAlpha)
+        .in(step0_texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
+        .out(step1_texelAlpha)
     );
 
     ColorInterpolator #(
@@ -58,18 +106,23 @@ module Fog
         .aclk(aclk),
         .resetn(resetn),
 
-        .intensity(intensity),
-        .colorA(texelColor),
-        .colorB(fogColor),
+        .intensity((step0_fogIntensity[22]) ? 16'hffff : step0_fogIntensity[22 - 16 +: 16]),
+        .colorA(step0_texelColor),
+        .colorB(confFogColor),
 
-        .mixedColor(mixedColor)
+        .mixedColor(step1_mixedColor)
     );
 
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Output fogged texel
+    // Clocks: 0
+    ////////////////////////////////////////////////////////////////////////////
     assign color = {
-        mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
-        mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
-        mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
-        texelAlpha // Replace alpha, because it is specified that fog does not change the alpha value of a texel
+        step1_mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
+        step1_mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
+        step1_mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
+        step1_texelAlpha // Replace alpha, because it is specified that fog does not change the alpha value of a texel
     };
 
 endmodule

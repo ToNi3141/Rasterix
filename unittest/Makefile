@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator textureBuffer colorInterpolator
+all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator textureSampler colorInterpolator
  
 clean:
 	rm -rf obj_dir
@@ -25,10 +25,10 @@ functionInterpolator:
 	-make -C obj_dir -f VFunctionInterpolator.mk
 	./obj_dir/VFunctionInterpolator
 
-textureBuffer:
-	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/TextureBuffer.v --top-module TextureBuffer cpp/sim_TextureBuffer.cpp -I../rtl/Rasterix/
-	-make -C obj_dir -f VTextureBuffer.mk
-	./obj_dir/VTextureBuffer
+textureSampler:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe v/TextureSamplerTestModule.v --top-module TextureSamplerTestModule cpp/sim_TextureSampler.cpp -I../rtl/Rasterix/ -I../rtl/float/rtl/float/
+	-make -C obj_dir -f VTextureSamplerTestModule.mk
+	./obj_dir/VTextureSamplerTestModule
 
 colorInterpolator:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/ColorInterpolator.v --top-module ColorInterpolator cpp/sim_ColorInterpolator.cpp -I../rtl/Rasterix/
