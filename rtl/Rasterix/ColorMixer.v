@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // Mixes four colors together with the following formular 
 //  mixedColor = (colorA * colorB) + (colorC * colorD)
 // Each color is a vector of four sub colors.

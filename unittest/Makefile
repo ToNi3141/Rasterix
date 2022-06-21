@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator textureSampler colorInterpolator
+all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv
  
 clean:
 	rm -rf obj_dir
@@ -34,6 +34,11 @@ colorInterpolator:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/ColorInterpolator.v --top-module ColorInterpolator cpp/sim_ColorInterpolator.cpp -I../rtl/Rasterix/
 	-make -C obj_dir -f VColorInterpolator.mk
 	./obj_dir/VColorInterpolator
+
+texEnv:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/TexEnv.v --top-module TexEnv cpp/sim_TexEnv.cpp -I../rtl/Rasterix/
+	-make -C obj_dir -f VTexEnv.mk
+	./obj_dir/VTexEnv
 
 .SECONDARY:
 .PHONY: all clean

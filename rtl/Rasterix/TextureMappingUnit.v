@@ -91,9 +91,13 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
+    wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
         step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
+
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
+        step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
 
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
@@ -163,6 +167,7 @@ module TextureMappingUnit
 
         .func(confFunc),
 
+        .previousColor(step1_previousColor),
         .texSrcColor(step1_texel),
         .primaryColor(step1_primaryColor),
         .envColor(confTextureEnvColor),
