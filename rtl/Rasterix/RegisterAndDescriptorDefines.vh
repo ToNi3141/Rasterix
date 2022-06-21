@@ -227,12 +227,28 @@ localparam NOTEQUAL = 6;
 localparam GEQUAL = 7;
 
 // Tex Env and Blend func defines
-localparam DISABLE = 0;
-localparam REPLACE = 1;
-localparam MODULATE = 2;
-localparam DECAL = 3;
-localparam BLEND = 4;
-localparam ADD = 5;
+localparam REPLACE = 0;
+localparam MODULATE = 1;
+localparam ADD = 2;
+localparam ADD_SIGNED = 3;
+localparam INTERPOLATE = 4;
+localparam SUBTRACT = 5;
+localparam DOT3_RGB = 6;
+localparam DOT3_RGBA = 7;
+
+localparam SRC_TEXTURE = 0;
+localparam SRC_CONSTANT = 1;
+localparam SRC_PRIMARY_COLOR = 2;
+localparam SRC_PREVIOUS = 3;
+
+localparam OPERAND_RGB_SRC_ALPHA = 0;
+localparam OPERAND_RGB_ONE_MINUS_SRC_ALPHA = 1;
+localparam OPERAND_RGB_SRC_COLOR = 2;
+localparam OPERAND_RGB_ONE_MINUS_SRC_COLOR = 3;
+
+localparam OPERAND_ALPHA_SRC_ALPHA = 0;
+localparam OPERAND_ALPHA_ONE_MINUS_SRC_ALPHA = 1;
+
 
 // D and S factor defines
 localparam ZERO = 0;

@@ -29,12 +29,30 @@
 
 enum TexEnvParam
 {
-    DISABLE,
     REPLACE,
     MODULATE,
-    DECAL,
-    BLEND,
-    ADD
+    ADD,
+    ADD_SIGNED,
+    INTERPOLATE,
+    SUBTRACT,
+    DOT3_RGB,
+    DOT3_RGBA
+};
+
+enum Operand
+{
+    SRC_ALPHA,
+    ONE_MINUS_SRC_ALPHA,
+    SRC_COLOR,
+    ONE_MINUS_SRC_COLOR
+};
+
+enum SRC_COLOR
+{
+    TEXTURE,
+    CONSTANT,
+    PRIMARY_COLOR,
+    PREVIOUS
 };
 
 void clk(VTexEnv* t)
@@ -58,15 +76,30 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
     VTexEnv* top = new VTexEnv();
     reset(top);
 
-    top->func = REPLACE;
-    top->previousColor = 0xff000000;
-    top->texSrcColor = 0x00ff0000;
-    top->primaryColor = 0x0000ff00;
+    top->previousColor = 0xff000001;
+    top->texSrcColor = 0x00ff0002;
+    top->primaryColor = 0x0000ff03;
     top->envColor = 0x000000ff;
+
+    top->combineRgb = REPLACE;
+    top->combineAlpha = REPLACE;
+    top->srcRegRgb0 = TEXTURE;
+    top->srcRegRgb1 = TEXTURE;
+    top->srcRegRgb2 = TEXTURE;
+    top->srcRegAlpha0 = TEXTURE;
+    top->srcRegAlpha1 = TEXTURE;
+    top->srcRegAlpha2 = TEXTURE;
+    top->operandRgb0 = SRC_COLOR;
+    top->operandRgb1 = SRC_COLOR;
+    top->operandRgb2 = SRC_COLOR;
+    top->operandAlpha0 = SRC_ALPHA;
+    top->operandAlpha1 = SRC_ALPHA;
+    top->operandAlpha2 = SRC_ALPHA;
+    
 
     clk(top);
     clk(top);
-    REQUIRE(top->color == 0x00ff0000);
+    REQUIRE(top->color == 0x00ff0002);
 
     // Destroy model
     delete top;
