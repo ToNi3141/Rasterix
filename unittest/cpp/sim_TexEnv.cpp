@@ -27,7 +27,7 @@
 // Include model header, generated from Verilating "top.v"
 #include "VTexEnv.h"
 
-enum TexEnvParam
+enum Combine
 {
     REPLACE,
     MODULATE,
@@ -47,12 +47,30 @@ enum Operand
     ONE_MINUS_SRC_COLOR
 };
 
-enum SRC_COLOR
+enum SrcReg
 {
     TEXTURE,
     CONSTANT,
     PRIMARY_COLOR,
     PREVIOUS
+};
+
+struct __attribute__ ((__packed__)) ConfReg2
+{
+    Combine combineRgb : 3;
+    Combine combineAlpha : 3;
+    SrcReg srcRegRgb0 : 2;
+    SrcReg srcRegRgb1 : 2;
+    SrcReg srcRegRgb2 : 2;
+    SrcReg srcRegAlpha0 : 2;
+    SrcReg srcRegAlpha1 : 2;
+    SrcReg srcRegAlpha2 : 2;
+    Operand operandRgb0 : 2;
+    Operand operandRgb1 : 2;
+    Operand operandRgb2 : 2;
+    Operand operandAlpha0 : 1;
+    Operand operandAlpha1 : 1;
+    Operand operandAlpha2 : 1;
 };
 
 void clk(VTexEnv* t)
@@ -76,25 +94,32 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
     VTexEnv* top = new VTexEnv();
     reset(top);
 
+    union Conf {
+        ConfReg2 conf;
+        uint32_t value;
+    } conf;
+
     top->previousColor = 0xff000001;
     top->texSrcColor = 0x00ff0002;
     top->primaryColor = 0x0000ff03;
     top->envColor = 0x000000ff;
 
-    top->combineRgb = REPLACE;
-    top->combineAlpha = REPLACE;
-    top->srcRegRgb0 = TEXTURE;
-    top->srcRegRgb1 = TEXTURE;
-    top->srcRegRgb2 = TEXTURE;
-    top->srcRegAlpha0 = TEXTURE;
-    top->srcRegAlpha1 = TEXTURE;
-    top->srcRegAlpha2 = TEXTURE;
-    top->operandRgb0 = SRC_COLOR;
-    top->operandRgb1 = SRC_COLOR;
-    top->operandRgb2 = SRC_COLOR;
-    top->operandAlpha0 = SRC_ALPHA;
-    top->operandAlpha1 = SRC_ALPHA;
-    top->operandAlpha2 = SRC_ALPHA;
+    conf.conf.combineRgb = REPLACE;
+    conf.conf.combineAlpha = REPLACE;
+    conf.conf.srcRegRgb0 = TEXTURE;
+    conf.conf.srcRegRgb1 = TEXTURE;
+    conf.conf.srcRegRgb2 = TEXTURE;
+    conf.conf.srcRegAlpha0 = TEXTURE;
+    conf.conf.srcRegAlpha1 = TEXTURE;
+    conf.conf.srcRegAlpha2 = TEXTURE;
+    conf.conf.operandRgb0 = SRC_COLOR;
+    conf.conf.operandRgb1 = SRC_COLOR;
+    conf.conf.operandRgb2 = SRC_COLOR;
+    conf.conf.operandAlpha0 = SRC_ALPHA;
+    conf.conf.operandAlpha1 = SRC_ALPHA;
+    conf.conf.operandAlpha2 = SRC_ALPHA;
+
+    top->conf = conf.value;
     
 
     clk(top);

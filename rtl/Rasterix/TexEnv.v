@@ -16,40 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module calculates the texture environment 
-// combineRgb:
-//  REPLACE = 0;
-//  MODULATE = 1;
-//  ADD = 2;
-//  ADD_SIGNED = 3;
-//  INTERPOLATE = 4;
-//  SUBTRACT = 5;
-//  DOT3_RGB = 6;
-//  DOT3_RGBA = 7;
-// combineAlpha:
-//  REPLACE = 0;
-//  MODULATE = 1;
-//  ADD = 2;
-//  ADD_SIGNED = 3;
-//  INTERPOLATE = 4;
-//  SUBTRACT = 5;
-// srcRegRgbx
-//  SRC_TEXTURE = 0;
-//  SRC_CONSTANT = 1;
-//  SRC_PRIMARY_COLOR = 2;
-//  SRC_PREVIOUS = 3;
-// srcRegAlphax
-//  SRC_TEXTURE = 0;
-//  SRC_CONSTANT = 1;
-//  SRC_PRIMARY_COLOR = 2;
-//  SRC_PREVIOUS = 3;
-// operandRgbx
-//  OPERAND_RGB_SRC_ALPHA = 0;
-//  OPERAND_RGB_ONE_MINUS_SRC_ALPHA = 1;
-//  OPERAND_RGB_SRC_COLOR = 2;
-//  OPERAND_RGB_ONE_MINUS_SRC_COLOR = 3;
-// operandAlphax
-//  OPERAND_ALPHA_SRC_ALPHA = 0;
-//  OPERAND_ALPHA_ONE_MINUS_SRC_ALPHA = 1;
 // Pipelined: yes
 // Depth: 2 cycles
 module TexEnv 
@@ -63,20 +29,7 @@ module TexEnv
     input  wire                         aclk,
     input  wire                         resetn,
     
-    input  wire [ 2 : 0]                combineRgb,
-    input  wire [ 2 : 0]                combineAlpha,
-    input  wire [ 1 : 0]                srcRegRgb0,
-    input  wire [ 1 : 0]                srcRegRgb1,
-    input  wire [ 1 : 0]                srcRegRgb2,
-    input  wire [ 1 : 0]                srcRegAlpha0,
-    input  wire [ 1 : 0]                srcRegAlpha1,
-    input  wire [ 1 : 0]                srcRegAlpha2,
-    input  wire [ 1 : 0]                operandRgb0,
-    input  wire [ 1 : 0]                operandRgb1,
-    input  wire [ 1 : 0]                operandRgb2,
-    input  wire [ 0 : 0]                operandAlpha0,
-    input  wire [ 0 : 0]                operandAlpha1,
-    input  wire [ 0 : 0]                operandAlpha2,
+    input  wire [31 : 0]                conf,
 
     input  wire [PIXEL_WIDTH - 1 : 0]   previousColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   texSrcColor, // Cs 
@@ -157,6 +110,20 @@ module TexEnv
         endcase
     endfunction
     
+    wire [ 2 : 0] combineRgb    = conf[ REG2_TMU_COMBINE_RGB_POS    +: REG2_TMU_COMBINE_RGB_SIZE ];
+    wire [ 2 : 0] combineAlpha  = conf[ REG2_TMU_COMBINE_ALPHA_POS  +: REG2_TMU_COMBINE_ALPHA_SIZE ];
+    wire [ 1 : 0] srcRegRgb0    = conf[ REG2_TMU_SRC_REG_RGB0_POS   +: REG2_TMU_SRC_REG_RGB0_SIZE ];
+    wire [ 1 : 0] srcRegRgb1    = conf[ REG2_TMU_SRC_REG_RGB1_POS   +: REG2_TMU_SRC_REG_RGB1_SIZE ];
+    wire [ 1 : 0] srcRegRgb2    = conf[ REG2_TMU_SRC_REG_RGB2_POS   +: REG2_TMU_SRC_REG_RGB2_SIZE ]; 
+    wire [ 1 : 0] srcRegAlpha0  = conf[ REG2_TMU_SRC_REG_ALPHA0_POS +: REG2_TMU_SRC_REG_ALPHA0_SIZE ];
+    wire [ 1 : 0] srcRegAlpha1  = conf[ REG2_TMU_SRC_REG_ALPHA1_POS +: REG2_TMU_SRC_REG_ALPHA1_SIZE ];
+    wire [ 1 : 0] srcRegAlpha2  = conf[ REG2_TMU_SRC_REG_ALPHA2_POS +: REG2_TMU_SRC_REG_ALPHA2_SIZE ];
+    wire [ 1 : 0] operandRgb0   = conf[ REG2_TMU_OPERAND_RGB0_POS   +: REG2_TMU_OPERAND_RGB0_SIZE ];
+    wire [ 1 : 0] operandRgb1   = conf[ REG2_TMU_OPERAND_RGB1_POS   +: REG2_TMU_OPERAND_RGB1_SIZE ];
+    wire [ 1 : 0] operandRgb2   = conf[ REG2_TMU_OPERAND_RGB2_POS   +: REG2_TMU_OPERAND_RGB2_SIZE ];
+    wire [ 0 : 0] operandAlpha0 = conf[ REG2_TMU_OPERAND_ALPHA0_POS +: REG2_TMU_OPERAND_ALPHA0_SIZE ];
+    wire [ 0 : 0] operandAlpha1 = conf[ REG2_TMU_OPERAND_ALPHA1_POS +: REG2_TMU_OPERAND_ALPHA1_SIZE ];
+    wire [ 0 : 0] operandAlpha2 = conf[ REG2_TMU_OPERAND_ALPHA2_POS +: REG2_TMU_OPERAND_ALPHA2_SIZE ];
 
     reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
