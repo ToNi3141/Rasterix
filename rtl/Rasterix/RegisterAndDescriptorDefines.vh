@@ -198,7 +198,7 @@ localparam REG1_BLEND_FUNC_DFACTOR_SIZE = 4;
 //  |   2 bit operand RGB 2 | 2 bit operand RGB 1 | 2 bit operand RGB 0 | 2 bit src reg alpha 2 |
 //  +- bit 15 ------------------------------------------------------------------------- bit  8 -+
 //  | 2 bit src reg alpha 1 | 2 bit src reg alpha 0 | 2 bit src reg rgb 2 | 2 bit src reg rgb 1 |
-//  +- bit 7 -------------------------------------------------------------------------- bit  0 -+
+//  +- bit  7 ------------------------------------------------------------------------- bit  0 -+
 //  |                             2 bit src reg rgb 0 | 3 bit combine alpha | 3 bit combine RGB |
 //  +-------------------------------------------------------------------------------------------+
 localparam REG2_TMU_COMBINE_RGB_POS = 0;

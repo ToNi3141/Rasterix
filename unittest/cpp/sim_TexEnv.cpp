@@ -124,6 +124,8 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
 
     clk(top);
     clk(top);
+    clk(top);
+    clk(top);
     REQUIRE(top->color == 0x00ff0002);
 
     // Destroy model

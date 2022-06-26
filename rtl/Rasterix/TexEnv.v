@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // This module calculates the texture environment 
 // Pipelined: yes
-// Depth: 2 cycles
+// Depth: 4 cycles
 module TexEnv 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
@@ -36,11 +38,13 @@ module TexEnv
     input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
     input  wire [PIXEL_WIDTH - 1 : 0]   envColor, // Cc
 
-    output wire [PIXEL_WIDTH - 1 : 0]   color
+    output reg  [PIXEL_WIDTH - 1 : 0]   color
 );
 `include "RegisterAndDescriptorDefines.vh"
     parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
     parameter [SUB_PIXEL_WIDTH - 1 : 0] ZERO_DOT_FIVE = { 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
+
+    `Saturate(Saturate, SUB_PIXEL_WIDTH);
 
     function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
         input [ 1 : 0]                  conf;
@@ -125,6 +129,15 @@ module TexEnv
     wire [ 0 : 0] operandAlpha1 = conf[ REG2_TMU_OPERAND_ALPHA1_POS +: REG2_TMU_OPERAND_ALPHA1_SIZE ];
     wire [ 0 : 0] operandAlpha2 = conf[ REG2_TMU_OPERAND_ALPHA2_POS +: REG2_TMU_OPERAND_ALPHA2_SIZE ];
 
+    wire [ 2 : 0] combineRgbDelay;
+    ValueDelay #(.VALUE_SIZE(REG2_TMU_COMBINE_RGB_SIZE), .DELAY(3)) 
+        glob_combineRgbDelay (.clk(aclk), .in(combineRgb), .out(combineRgbDelay));
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 0
+    // Select parameters and arguments
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
     reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v02;
@@ -141,8 +154,7 @@ module TexEnv
     reg [SUB_PIXEL_WIDTH - 1 : 0] v31;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v32;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
-
-    always @*
+    always @(posedge aclk)
     begin : SelectColor
         reg [SUB_PIXEL_WIDTH - 1 : 0] rt;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gt;
@@ -472,6 +484,12 @@ module TexEnv
         endcase
     end
 
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 1
+    // Mix colors
+    // Clocks: 2
+    ////////////////////////////////////////////////////////////////////////////
+    wire [PIXEL_WIDTH - 1 : 0] step1_color;
     ColorMixer #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) colorMixer (
@@ -503,7 +521,61 @@ module TexEnv
             v33
         }),
 
-        .mixedColor(color) // TODO: The summation of the color components in the DOT3 case is not yet implemented
+        .mixedColor(step1_color) // TODO: The summation of the color components in the DOT3 case is not yet implemented
     );
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Calculate dot product sum
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+
+    initial 
+    begin
+        if (COLOR_A_POS != 0) 
+        begin
+            $error("Check the dot product expansion. Alpha was assumed to be at position 0.");
+            $finish;
+        end
+    end
+
+    always @(posedge aclk)
+    begin : DotCalculation
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ac;
+        reg [SUB_PIXEL_WIDTH * 2 : 0] dotSum;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] dot;
+
+        rc = step1_color[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gc = step1_color[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bc = step1_color[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ac = step1_color[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
+        dotSum = { { SUB_PIXEL_WIDTH { 1'b0 } }, rc } 
+                + { { SUB_PIXEL_WIDTH { 1'b0 } }, gc } 
+                + { { SUB_PIXEL_WIDTH { 1'b0 } }, bc };
+        dot = Saturate(dotSum << 2); // Sum is multiplied by 4
+
+        case (combineRgbDelay)
+            DOT3_RGBA:
+                color <= {
+                    dot,
+                    dot,
+                    dot,
+                    dot
+                };
+            DOT3_RGB:
+                color <= {
+                    dot,
+                    dot,
+                    dot,
+                    ac
+                };
+            default: 
+                color <= step1_color;
+        endcase
+    end
 
 endmodule
