@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
 // This module calculates the texture environment 
 // Pipelined: yes
 // Depth: 4 cycles
@@ -43,8 +41,6 @@ module TexEnv
 `include "RegisterAndDescriptorDefines.vh"
     parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
     parameter [SUB_PIXEL_WIDTH - 1 : 0] ZERO_DOT_FIVE = { 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
-
-    `Saturate(Saturate, SUB_PIXEL_WIDTH);
 
     function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
         input [ 1 : 0]                  conf;
@@ -521,7 +517,7 @@ module TexEnv
             v33
         }),
 
-        .mixedColor(step1_color) // TODO: The summation of the color components in the DOT3 case is not yet implemented
+        .mixedColor(step1_color)
     );
     
     ////////////////////////////////////////////////////////////////////////////
@@ -553,10 +549,19 @@ module TexEnv
         bc = step1_color[COLOR_B_POS +: SUB_PIXEL_WIDTH];
         ac = step1_color[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        dotSum = { { SUB_PIXEL_WIDTH { 1'b0 } }, rc } 
+        dotSum = ({ { SUB_PIXEL_WIDTH { 1'b0 } }, rc } 
                 + { { SUB_PIXEL_WIDTH { 1'b0 } }, gc } 
-                + { { SUB_PIXEL_WIDTH { 1'b0 } }, bc };
-        dot = Saturate(dotSum << 2); // Sum is multiplied by 4
+                + { { SUB_PIXEL_WIDTH { 1'b0 } }, bc }) << 0;
+
+        // Saturate dot product
+        if (|dotSum[SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH])
+        begin
+            dot = { SUB_PIXEL_WIDTH { 1'b1 } };
+        end
+        else 
+        begin
+            dot = dotSum[0 +: SUB_PIXEL_WIDTH];
+        end
 
         case (combineRgbDelay)
             DOT3_RGBA:

@@ -40,89 +40,62 @@ module ColorMixer #(
     // Colors will be saturated
     output reg  [PIXEL_WIDTH - 1 : 0]   mixedColor
 );
+    localparam SIGN_WIDTH = 1;
+    localparam SUB_PIXEL_SIGNED_WIDTH = SUB_PIXEL_WIDTH + SIGN_WIDTH;
+    localparam PIXEL_SIGNED_WIDTH = SUB_PIXEL_SIGNED_WIDTH * NUMBER_OF_SUB_PIXEL;
+
     localparam SUB_PIXEL_0_POS = SUB_PIXEL_WIDTH * 0;
     localparam SUB_PIXEL_1_POS = SUB_PIXEL_WIDTH * 1;
     localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
-    parameter [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_DOT_ZERO = { { SUB_PIXEL_WIDTH{1'b0}}, { SUB_PIXEL_WIDTH{1'b1} } };
-    `Saturate(Saturate, SUB_PIXEL_WIDTH);
+    localparam SUB_PIXEL_0_SIGNED_POS = SUB_PIXEL_SIGNED_WIDTH * 0;
+    localparam SUB_PIXEL_1_SIGNED_POS = SUB_PIXEL_SIGNED_WIDTH * 1;
+    localparam SUB_PIXEL_2_SIGNED_POS = SUB_PIXEL_SIGNED_WIDTH * 2;
+    localparam SUB_PIXEL_3_SIGNED_POS = SUB_PIXEL_SIGNED_WIDTH * 3;
 
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V00;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V01;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V02;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V03;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V10;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V11;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V12;
-    reg [(SUB_PIXEL_WIDTH * 2) - 1 : 0] V13;
-    always @(posedge aclk)
-    begin : Blending
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ca0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ca1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ca2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ca3;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cb0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cb1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cb2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cb3;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cc0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cc1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cc2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cc3;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cd0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cd1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cd2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] cd3;
+    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_SIGNED_WIDTH);  
 
-        ca0 = colorA[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
-        ca1 = colorA[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
-        ca2 = colorA[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
-        ca3 = colorA[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
+    wire [PIXEL_SIGNED_WIDTH - 1 : 0] mixedColorSigned;
 
-        cb0 = colorB[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
-        cb1 = colorB[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
-        cb2 = colorB[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
-        cb3 = colorB[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
+    ColorMixerSigned #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_SIGNED_WIDTH)
+    ) colorMixer (
+        .aclk(aclk),
+        .resetn(resetn),
+        
+        .colorA({
+            1'b0, colorA[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorA[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorA[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorA[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH]
+        }),
+        .colorB({
+            1'b0, colorB[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorB[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorB[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorB[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH]
+        }),
+        .colorC({
+            1'b0, colorC[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorC[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorC[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorC[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH]
+        }),
+        .colorD({
+            1'b0, colorD[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorD[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorD[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH], 
+            1'b0, colorD[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH]
+        }),
 
-        cc0 = colorC[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
-        cc1 = colorC[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
-        cc2 = colorC[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
-        cc3 = colorC[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
+        .mixedColor(mixedColorSigned)
+    );
 
-        cd0 = colorD[SUB_PIXEL_0_POS +: SUB_PIXEL_WIDTH];
-        cd1 = colorD[SUB_PIXEL_1_POS +: SUB_PIXEL_WIDTH];
-        cd2 = colorD[SUB_PIXEL_2_POS +: SUB_PIXEL_WIDTH];
-        cd3 = colorD[SUB_PIXEL_3_POS +: SUB_PIXEL_WIDTH];
-
-        V00 <= (ca0 * cb0);
-        V01 <= (ca1 * cb1);
-        V02 <= (ca2 * cb2);
-        V03 <= (ca3 * cb3);
-
-        V10 <= (cc0 * cd0);
-        V11 <= (cc1 * cd1);
-        V12 <= (cc2 * cd2);
-        V13 <= (cc3 * cd3);
-    end
-
-    always @(posedge aclk)
-    begin : Result
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] c0;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] c1;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] c2;
-        reg [(SUB_PIXEL_WIDTH * 2) : 0] c3;
-
-        c0 = (V00 + V10) + ONE_DOT_ZERO;
-        c1 = (V01 + V11) + ONE_DOT_ZERO;
-        c2 = (V02 + V12) + ONE_DOT_ZERO;
-        c3 = (V03 + V13) + ONE_DOT_ZERO;
-
-        mixedColor <= {
-            Saturate(c3),
-            Saturate(c2),
-            Saturate(c1),
-            Saturate(c0)
-        };
-    end
+    assign mixedColor = {
+        SaturateCastSignedToUnsigned(mixedColorSigned[SUB_PIXEL_0_SIGNED_POS +: SUB_PIXEL_SIGNED_WIDTH]),
+        SaturateCastSignedToUnsigned(mixedColorSigned[SUB_PIXEL_1_SIGNED_POS +: SUB_PIXEL_SIGNED_WIDTH]),
+        SaturateCastSignedToUnsigned(mixedColorSigned[SUB_PIXEL_2_SIGNED_POS +: SUB_PIXEL_SIGNED_WIDTH]),
+        SaturateCastSignedToUnsigned(mixedColorSigned[SUB_PIXEL_3_SIGNED_POS +: SUB_PIXEL_SIGNED_WIDTH])
+    };
 endmodule

@@ -25,6 +25,41 @@
                                                     : subpixel[(SubPixelWidth * 2) - 1 : SubPixelWidth]; \
     endfunction
 
+// Gets an signed integer S1.X and clamps and satureates it to a S0.Y number.
+`define ReduceAndSaturateSigned(FuncName, SubPixelWidthIn, SubPixelWidthOut) \
+    function [SubPixelWidthOut - 1 : 0] FuncName; \
+        input [SubPixelWidthIn - 1 : 0] subpixel; \
+        if (subpixel[SubPixelWidthIn - 1]) // check sign \
+        begin \
+            // In the negative case, clamp to 'b10000... \
+            FuncName = (!subpixel[SubPixelWidthIn - 2]) ? { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b0} } } \
+                                                        : { subpixel[SubPixelWidthIn - 1], subpixel[SubPixelWidthIn - SubPixelWidthOut - 1 +: SubPixelWidthOut - 1] }; \
+        end \
+        else \
+        begin \
+            // In the positive case, clamp to 'b01111... \
+            FuncName = (subpixel[SubPixelWidthIn - 2])  ? { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b1} } } \
+                                                        : { subpixel[SubPixelWidthIn - 1], subpixel[SubPixelWidthIn - SubPixelWidthOut - 1 +: SubPixelWidthOut - 1] }; \
+        end \
+    endfunction
+
+// Casts a signed integer to an unsigned by removing the sign.
+// In case the integer is negative, it clamps it to zero.
+`define SaturateCastSignedToUnsigned(FuncName, SubPixelWidthSigned) \
+    function [SubPixelWidthSigned - 2 : 0] FuncName; // with removed sign \
+        input [SubPixelWidthSigned - 1 : 0] subpixel; \
+        if (subpixel[SubPixelWidthSigned - 1]) // check sign \
+        begin \
+            // in case the value is negative, clamp to zero \
+            FuncName = 0; \
+        end \
+        else \
+        begin \
+            // In the positive case, just remove the sign \
+            FuncName = subpixel[0 +: SubPixelWidthSigned - 1]; \
+        end \
+    endfunction
+
 `define Expand(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
     function [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] FuncName; \
         input [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
