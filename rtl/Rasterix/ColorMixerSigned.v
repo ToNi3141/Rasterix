@@ -50,7 +50,7 @@ module ColorMixerSigned #(
     localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
-    localparam [SUB_PIXEL_WIDTH_BIG - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_UNSIGNED_WIDTH{1'b0} }, { SUB_PIXEL_UNSIGNED_WIDTH{1'b1} } };
+    localparam signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_UNSIGNED_WIDTH{1'b0} }, { SUB_PIXEL_UNSIGNED_WIDTH{1'b1} } };
     `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_OVERSIZE, SUB_PIXEL_WIDTH);  
 
     reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V00;
@@ -118,10 +118,10 @@ module ColorMixerSigned #(
         reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c2;
         reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c3;
 
-        c0 = (V00 + V10) + ONE_DOT_ZERO;
-        c1 = (V01 + V11) + ONE_DOT_ZERO;
-        c2 = (V02 + V12) + ONE_DOT_ZERO;
-        c3 = (V03 + V13) + ONE_DOT_ZERO;
+        c0 = ((V00 + V10) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
+        c1 = ((V01 + V11) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
+        c2 = ((V02 + V12) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
+        c3 = ((V03 + V13) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
 
         mixedColor <= {
             ReduceAndSaturateSigned(c3),

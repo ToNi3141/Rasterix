@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // This module calculates the texture environment 
 // Pipelined: yes
 // Depth: 4 cycles
@@ -39,8 +41,14 @@ module TexEnv
     output reg  [PIXEL_WIDTH - 1 : 0]   color
 );
 `include "RegisterAndDescriptorDefines.vh"
-    parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
-    parameter [SUB_PIXEL_WIDTH - 1 : 0] ZERO_DOT_FIVE = { 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
+
+    localparam SIGN_WIDTH = 1;
+    localparam SUB_PIXEL_WIDTH_SIGNED = SUB_PIXEL_WIDTH + SIGN_WIDTH;
+    localparam PIXEL_WIDTH_SIGNED = SUB_PIXEL_WIDTH_SIGNED * NUMBER_OF_SUB_PIXEL;
+
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO_UNSIGNED = { SUB_PIXEL_WIDTH{1'b1} };
+    localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_WIDTH{1'b1} } };
+    localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ZERO_DOT_FIVE = { 1'b0, 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
 
     function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
         input [ 1 : 0]                  conf;
@@ -54,7 +62,7 @@ module TexEnv
             end
             OPERAND_RGB_ONE_MINUS_SRC_COLOR:
             begin
-                SelectRgbOperand = ONE_DOT_ZERO - subPixel;
+                SelectRgbOperand = ONE_DOT_ZERO_UNSIGNED - subPixel;
             end
             OPERAND_RGB_SRC_ALPHA:
             begin
@@ -62,7 +70,7 @@ module TexEnv
             end
             OPERAND_RGB_ONE_MINUS_SRC_ALPHA:
             begin
-                SelectRgbOperand = ONE_DOT_ZERO - alpha;
+                SelectRgbOperand = ONE_DOT_ZERO_UNSIGNED - alpha;
             end
         endcase
     endfunction
@@ -78,7 +86,7 @@ module TexEnv
             end
             OPERAND_ALPHA_ONE_MINUS_SRC_ALPHA:
             begin
-                SelectAlphaOperand = ONE_DOT_ZERO - alpha;
+                SelectAlphaOperand = ONE_DOT_ZERO_UNSIGNED - alpha;
             end
         endcase
     endfunction
@@ -134,22 +142,22 @@ module TexEnv
     // Select parameters and arguments
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v02;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v03;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v10;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v11;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v12;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v13;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v20;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v21;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v22;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v23;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v30;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v31;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v32;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v00;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v01;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v02;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v03;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v10;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v11;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v12;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v13;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v20;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v21;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v22;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v23;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v30;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v31;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v32;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v33;
     always @(posedge aclk)
     begin : SelectColor
         reg [SUB_PIXEL_WIDTH - 1 : 0] rt;
@@ -169,18 +177,31 @@ module TexEnv
         reg [SUB_PIXEL_WIDTH - 1 : 0] bp;
         reg [SUB_PIXEL_WIDTH - 1 : 0] ap;
 
-        reg [SUB_PIXEL_WIDTH - 1 : 0] r0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] g0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] b0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] a0;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] r1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] g1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] b1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] a1;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] r2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] g2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] b2;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] a2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au2;
+
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a2;
 
         rt = texSrcColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
         gt = texSrcColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
@@ -202,51 +223,64 @@ module TexEnv
         bp = previousColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
         ap = previousColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        r0 = SelectRgbOperand(operandRgb0, 
+        ru0 = SelectRgbOperand(operandRgb0, 
                               SelectSrcColor(srcRegRgb0, rt, rc, rpc, rp), 
                               SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
 
-        r1 = SelectRgbOperand(operandRgb1, 
+        ru1 = SelectRgbOperand(operandRgb1, 
                               SelectSrcColor(srcRegRgb1, rt, rc, rpc, rp), 
                               SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
 
-        r2 = SelectRgbOperand(operandRgb2, 
+        ru2 = SelectRgbOperand(operandRgb2, 
                               SelectSrcColor(srcRegRgb2, rt, rc, rpc, rp), 
                               SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
 
-        g0 = SelectRgbOperand(operandRgb0, 
+        gu0 = SelectRgbOperand(operandRgb0, 
                               SelectSrcColor(srcRegRgb0, gt, gc, gpc, gp), 
                               SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
 
-        g1 = SelectRgbOperand(operandRgb1, 
+        gu1 = SelectRgbOperand(operandRgb1, 
                               SelectSrcColor(srcRegRgb1, gt, gc, gpc, gp), 
                               SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
 
-        g2 = SelectRgbOperand(operandRgb2, 
+        gu2 = SelectRgbOperand(operandRgb2, 
                               SelectSrcColor(srcRegRgb2, gt, gc, gpc, gp), 
                               SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
 
-        b0 = SelectRgbOperand(operandRgb0, 
+        bu0 = SelectRgbOperand(operandRgb0, 
                               SelectSrcColor(srcRegRgb0, bt, bc, bpc, bp), 
                               SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
 
-        b1 = SelectRgbOperand(operandRgb1, 
+        bu1 = SelectRgbOperand(operandRgb1, 
                               SelectSrcColor(srcRegRgb1, bt, bc, bpc, bp), 
                               SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
 
-        b2 = SelectRgbOperand(operandRgb2, 
+        bu2 = SelectRgbOperand(operandRgb2, 
                               SelectSrcColor(srcRegRgb2, bt, bc, bpc, bp), 
                               SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
 
-        a0 = SelectAlphaOperand(operandAlpha0, 
+        au0 = SelectAlphaOperand(operandAlpha0, 
                                 SelectSrcColor(srcRegAlpha0, at, ac, apc, ap));
 
-        a1 = SelectAlphaOperand(operandAlpha1, 
+        au1 = SelectAlphaOperand(operandAlpha1, 
                                 SelectSrcColor(srcRegAlpha1, at, ac, apc, ap));
 
-        a2 = SelectAlphaOperand(operandAlpha2,
+        au2 = SelectAlphaOperand(operandAlpha2,
                                 SelectSrcColor(srcRegAlpha2, at, ac, apc, ap));
-                
+
+        r0 = {1'b0, ru0};
+        g0 = {1'b0, gu0};
+        b0 = {1'b0, bu0};
+        a0 = {1'b0, au0};
+        r1 = {1'b0, ru1};
+        g1 = {1'b0, gu1};
+        b1 = {1'b0, bu1};
+        a1 = {1'b0, au1};
+        r2 = {1'b0, ru2};
+        g2 = {1'b0, gu2};
+        b2 = {1'b0, bu2};
+        a2 = {1'b0, au2};
+
         case (combineRgb)
             REPLACE:
             begin
@@ -478,6 +512,25 @@ module TexEnv
                 
             end 
         endcase
+
+        $display("v00 %d ", v00);
+        $display("v01 %d ", v01);
+        $display("v02 %d ", v02);
+        $display("v03 %d ", v03);
+        $display("v10 %d ", v10);
+        $display("v11 %d ", v11);
+        $display("v12 %d ", v12);
+        $display("v13 %d ", v13);
+        $display("v20 %d ", v20);
+        $display("v21 %d ", v21);
+        $display("v22 %d ", v22);
+        $display("v23 %d ", v23);
+        $display("v30 %d ", v30);
+        $display("v31 %d ", v31);
+        $display("v32 %d ", v32);
+        $display("v33 %d \r\n", v33);
+
+
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -485,9 +538,9 @@ module TexEnv
     // Mix colors
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0] step1_color;
-    ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    wire [PIXEL_WIDTH_SIGNED - 1 : 0] step1_color;
+    ColorMixerSigned #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH_SIGNED)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
@@ -528,58 +581,82 @@ module TexEnv
 
     initial 
     begin
-        if (COLOR_A_POS != 0) 
+        if (COLOR_R_POS != (SUB_PIXEL_WIDTH * 3)) 
         begin
-            $error("Check the dot product expansion. Alpha was assumed to be at position 0.");
+            $error("Expecting red to be the 3. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_G_POS != (SUB_PIXEL_WIDTH * 2)) 
+        begin
+            $error("Expecting green to be the 2. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_B_POS != (SUB_PIXEL_WIDTH * 1)) 
+        begin
+            $error("Expecting blue to be the 1. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_A_POS != (SUB_PIXEL_WIDTH * 0)) 
+        begin
+            $error("Expecting alpha to be the 0. sub pixel.");
             $finish;
         end
     end
 
+    localparam COLOR_A_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 0;
+    localparam COLOR_B_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 1;
+    localparam COLOR_G_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 2;
+    localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
+
+    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 3, SUB_PIXEL_WIDTH_SIGNED);
+    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 3);
+
     always @(posedge aclk)
     begin : DotCalculation
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bc;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ac;
-        reg [SUB_PIXEL_WIDTH * 2 : 0] dotSum;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] dot;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ac;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED + 2 : 0] dotSum;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] dot;
 
-        rc = step1_color[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gc = step1_color[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bc = step1_color[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ac = step1_color[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rc = $signed(step1_color[COLOR_R_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        gc = $signed(step1_color[COLOR_G_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        bc = $signed(step1_color[COLOR_B_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        ac = $signed(step1_color[COLOR_A_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
 
-        dotSum = ({ { SUB_PIXEL_WIDTH { 1'b0 } }, rc } 
-                + { { SUB_PIXEL_WIDTH { 1'b0 } }, gc } 
-                + { { SUB_PIXEL_WIDTH { 1'b0 } }, bc }) << 0;
+        $display("r %d g %d b %d a %d\r\n", rc, gc, bc, ac);
 
-        // Saturate dot product
-        if (|dotSum[SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH])
-        begin
-            dot = { SUB_PIXEL_WIDTH { 1'b1 } };
-        end
-        else 
-        begin
-            dot = dotSum[0 +: SUB_PIXEL_WIDTH];
-        end
+        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc)) << 0; // TODO: Enable shift (spec multiplies this by 4)
+
+        dot = ReduceAndSaturateSigned(dotSum);
 
         case (combineRgbDelay)
             DOT3_RGBA:
                 color <= {
-                    dot,
-                    dot,
-                    dot,
-                    dot
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(dot)
                 };
             DOT3_RGB:
                 color <= {
-                    dot,
-                    dot,
-                    dot,
-                    ac
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(dot),
+                    SaturateCastSignedToUnsigned(ac)
                 };
             default: 
-                color <= step1_color;
+                color <= {
+                    SaturateCastSignedToUnsigned(rc),
+                    SaturateCastSignedToUnsigned(gc),
+                    SaturateCastSignedToUnsigned(bc),
+                    SaturateCastSignedToUnsigned(ac)
+                };
         endcase
     end
 

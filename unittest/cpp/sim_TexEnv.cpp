@@ -89,7 +89,7 @@ void reset(VTexEnv* t)
     clk(t);
 }
 
-TEST_CASE("Check interpolation", "[ColorInterpolator]")
+TEST_CASE("Check TexEnv", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     reset(top);
@@ -127,6 +127,55 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
     clk(top);
     clk(top);
     REQUIRE(top->color == 0x00ff0002);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check DOT3_RGB", "[TexEnv]")
+{
+    VTexEnv* top = new VTexEnv();
+    reset(top);
+
+    union Conf {
+        ConfReg2 conf;
+        uint32_t value;
+    } conf;
+
+    top->previousColor = 0x11000001;
+    top->texSrcColor = 0x00669902; // 0x66 = 0.4
+    top->primaryColor = 0x00000003; // 0x99 = 0.6
+    top->envColor = 0x000000ff;
+
+    // r = (0 - 0.5) * (0 - 0.5) = 0.25
+    // g = (0.4 - 0.5) * (0 - 0.5) = 0.05
+    // b = (0.6 - 0.5) * (0 - 0.5) = -0.05
+    // rgb = 0.25 + 0.05 + -0.05 = 0.25 (0x40)
+    // In reality it is 0x41 because of rounding issues
+
+    conf.conf.combineRgb = DOT3_RGB;
+    conf.conf.combineAlpha = REPLACE;
+    conf.conf.srcRegRgb0 = TEXTURE;
+    conf.conf.srcRegRgb1 = PRIMARY_COLOR;
+    conf.conf.srcRegRgb2 = PREVIOUS;
+    conf.conf.srcRegAlpha0 = TEXTURE;
+    conf.conf.srcRegAlpha1 = TEXTURE;
+    conf.conf.srcRegAlpha2 = TEXTURE;
+    conf.conf.operandRgb0 = SRC_COLOR;
+    conf.conf.operandRgb1 = SRC_COLOR;
+    conf.conf.operandRgb2 = SRC_COLOR;
+    conf.conf.operandAlpha0 = SRC_ALPHA;
+    conf.conf.operandAlpha1 = SRC_ALPHA;
+    conf.conf.operandAlpha2 = SRC_ALPHA;
+
+    top->conf = conf.value;
+    
+
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x41414102);
 
     // Destroy model
     delete top;

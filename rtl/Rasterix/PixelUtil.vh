@@ -29,18 +29,27 @@
 `define ReduceAndSaturateSigned(FuncName, SubPixelWidthIn, SubPixelWidthOut) \
     function [SubPixelWidthOut - 1 : 0] FuncName; \
         input [SubPixelWidthIn - 1 : 0] subpixel; \
+        localparam Diff = SubPixelWidthIn - SubPixelWidthOut; \
         if (subpixel[SubPixelWidthIn - 1]) // check sign \
         begin \
             // In the negative case, clamp to 'b10000... \
-            FuncName = (!subpixel[SubPixelWidthIn - 2]) ? { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b0} } } \
-                                                        : { subpixel[SubPixelWidthIn - 1], subpixel[SubPixelWidthIn - SubPixelWidthOut - 1 +: SubPixelWidthOut - 1] }; \
+            FuncName = (&subpixel[SubPixelWidthOut - 1 +: Diff])    ? { subpixel[SubPixelWidthIn - 1], subpixel[0 +: SubPixelWidthOut - 1] } \
+                                                                    : { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b0} } }; \
         end \
         else \
         begin \
             // In the positive case, clamp to 'b01111... \
-            FuncName = (subpixel[SubPixelWidthIn - 2])  ? { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b1} } } \
-                                                        : { subpixel[SubPixelWidthIn - 1], subpixel[SubPixelWidthIn - SubPixelWidthOut - 1 +: SubPixelWidthOut - 1] }; \
+            FuncName = (|subpixel[SubPixelWidthOut - 1 +: Diff])    ? { subpixel[SubPixelWidthIn - 1], { (SubPixelWidthOut - 1){1'b1} } } \
+                                                                    : { subpixel[SubPixelWidthIn - 1], subpixel[0 +: SubPixelWidthOut - 1] }; \
         end \
+    endfunction
+
+
+// Expands the size of a signed integer.
+`define ExpandSigned(FuncName, SubPixelWidthIn, SubPixelWidthOut) \
+    function [SubPixelWidthOut - 1 : 0] FuncName; \
+        input [SubPixelWidthIn - 1 : 0] subpixel; \
+        FuncName = { { (SubPixelWidthOut - SubPixelWidthIn){subpixel[SubPixelWidthIn - 1]} }, subpixel}; \
     endfunction
 
 // Casts a signed integer to an unsigned by removing the sign.
