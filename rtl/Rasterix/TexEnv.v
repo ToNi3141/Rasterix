@@ -512,25 +512,6 @@ module TexEnv
                 
             end 
         endcase
-
-        $display("v00 %d ", v00);
-        $display("v01 %d ", v01);
-        $display("v02 %d ", v02);
-        $display("v03 %d ", v03);
-        $display("v10 %d ", v10);
-        $display("v11 %d ", v11);
-        $display("v12 %d ", v12);
-        $display("v13 %d ", v13);
-        $display("v20 %d ", v20);
-        $display("v21 %d ", v21);
-        $display("v22 %d ", v22);
-        $display("v23 %d ", v23);
-        $display("v30 %d ", v30);
-        $display("v31 %d ", v31);
-        $display("v32 %d ", v32);
-        $display("v33 %d \r\n", v33);
-
-
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -628,8 +609,6 @@ module TexEnv
         gc = $signed(step1_color[COLOR_G_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         bc = $signed(step1_color[COLOR_B_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         ac = $signed(step1_color[COLOR_A_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
-
-        $display("r %d g %d b %d a %d\r\n", rc, gc, bc, ac);
 
         dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc)) << 0; // TODO: Enable shift (spec multiplies this by 4)
 
