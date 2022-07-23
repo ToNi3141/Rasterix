@@ -180,6 +180,7 @@ private:
     IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
     bool m_texEnableMagFilter = true;
+    IRenderer::TexEnvConf m_texEnvConf0;
 
     // Test functions
     bool m_enableAlphaTest = true;
