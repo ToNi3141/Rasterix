@@ -71,6 +71,8 @@ struct __attribute__ ((__packed__)) ConfReg2
     Operand operandAlpha0 : 1;
     Operand operandAlpha1 : 1;
     Operand operandAlpha2 : 1;
+    uint8_t shiftRgb : 2;
+    uint8_t shiftAlpha : 2;
 };
 
 void clk(VTexEnv* t)
@@ -110,6 +112,8 @@ void initConf(Conf& conf)
     conf.conf.operandAlpha0 = SRC_ALPHA;
     conf.conf.operandAlpha1 = SRC_ALPHA;
     conf.conf.operandAlpha2 = SRC_ALPHA;
+    conf.conf.shiftAlpha = 0;
+    conf.conf.shiftRgb = 0;
 }
 
 
@@ -789,6 +793,118 @@ TEST_CASE("Check TexEnv REPLACE Pipeline", "[TexEnv]")
     REQUIRE(top->color == 0x0000ff03);
     clk(top);
     REQUIRE(top->color == 0xffff0004);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
+{
+    VTexEnv* top = new VTexEnv();
+    reset(top);
+
+    Conf conf;
+    initConf(conf);
+    conf.conf.combineRgb = REPLACE;
+
+    top->texSrcColor = 0x01084002;
+
+    // Scale of 1
+    conf.conf.shiftRgb = 1;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x02108002);
+
+    // Scale of 2
+    conf.conf.shiftRgb = 2;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x0420ff02);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
+{
+    VTexEnv* top = new VTexEnv();
+    reset(top);
+
+    Conf conf;
+    initConf(conf);
+    conf.conf.combineRgb = REPLACE;
+
+    top->texSrcColor = 0x01084040;
+
+    // Scale of 1
+    conf.conf.shiftAlpha = 1;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x01084080);
+
+    // Scale of 2
+    conf.conf.shiftAlpha = 2;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x010840ff);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
+{
+    VTexEnv* top = new VTexEnv();
+    reset(top);
+
+    top->previousColor = 0x11000001;
+    top->texSrcColor = 0x00669902; // 0x66 = 0.4
+    top->primaryColor = 0x00000003; // 0x99 = 0.6
+    top->envColor = 0x000000ff;
+
+    // r = (0 - 0.5) * (0 - 0.5) = 0.25
+    // g = (0.4 - 0.5) * (0 - 0.5) = 0.05
+    // b = (0.6 - 0.5) * (0 - 0.5) = -0.05
+    // rgb = 0.25 + 0.05 + -0.05 = 0.25 (0x40)
+    // In reality it is 0x41 because of rounding issues
+
+    Conf conf;
+    initConf(conf);
+    conf.conf.combineRgb = DOT3_RGB;
+    conf.conf.srcRegRgb0 = TEXTURE;
+    conf.conf.srcRegRgb1 = PRIMARY_COLOR;
+    conf.conf.srcRegRgb2 = PREVIOUS;
+    
+
+    // Scale of 1
+    conf.conf.shiftRgb = 1;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0x82828202);
+
+    // Scale of 2
+    conf.conf.shiftRgb = 2;
+    top->conf = conf.value;
+    clk(top);
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->color == 0xffffff02);
 
     // Destroy model
     delete top;

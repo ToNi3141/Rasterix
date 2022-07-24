@@ -593,8 +593,8 @@ module TexEnv
     localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
 
     `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 3, SUB_PIXEL_WIDTH_SIGNED);
-    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 3);
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED);
+    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2);
 
     always @(posedge aclk)
     begin : DotCalculation
@@ -602,39 +602,50 @@ module TexEnv
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gc;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bc;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ac;
-        reg signed [SUB_PIXEL_WIDTH_SIGNED + 2 : 0] dotSum;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED + 1 : 0] dotSum;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] dot;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] dotScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] acScaled;
 
         rc = $signed(step1_color[COLOR_R_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         gc = $signed(step1_color[COLOR_G_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         bc = $signed(step1_color[COLOR_B_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         ac = $signed(step1_color[COLOR_A_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
 
-        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc)) << 0; // TODO: Enable shift (spec multiplies this by 4)
+        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc));
 
         dot = ReduceAndSaturateSigned(dotSum);
 
+        dotScaled = ReduceAndSaturateSigned(ExpandSigned(dot) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        rcScaled = ReduceAndSaturateSigned(ExpandSigned(rc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        gcScaled = ReduceAndSaturateSigned(ExpandSigned(gc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        bcScaled = ReduceAndSaturateSigned(ExpandSigned(bc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        acScaled = ReduceAndSaturateSigned(ExpandSigned(ac) << conf[REG2_TMU_SHIFT_ALPHA_POS +: REG2_TMU_SHIFT_ALPHA_SIZE]);
+        
         case (combineRgbDelay)
             DOT3_RGBA:
                 color <= {
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(dot)
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled)
                 };
             DOT3_RGB:
                 color <= {
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(dot),
-                    SaturateCastSignedToUnsigned(ac)
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(acScaled)
                 };
             default: 
                 color <= {
-                    SaturateCastSignedToUnsigned(rc),
-                    SaturateCastSignedToUnsigned(gc),
-                    SaturateCastSignedToUnsigned(bc),
-                    SaturateCastSignedToUnsigned(ac)
+                    SaturateCastSignedToUnsigned(rcScaled),
+                    SaturateCastSignedToUnsigned(gcScaled),
+                    SaturateCastSignedToUnsigned(bcScaled),
+                    SaturateCastSignedToUnsigned(acScaled)
                 };
         endcase
     end

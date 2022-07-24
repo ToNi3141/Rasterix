@@ -192,15 +192,16 @@ localparam REG1_BLEND_FUNC_DFACTOR_POS = REG1_BLEND_FUNC_SFACTOR_POS + REG1_BLEN
 localparam REG1_BLEND_FUNC_DFACTOR_SIZE = 4;
 
 // OP_RENDER_CONFIG_REG2
-//  +- bit 31 ------------------------------------------------------------------------- bit 24 -+
-//  |    5 bit reserved | 1 bit operand alpha 2 | 1 bit operand alpha 1 | 1 bit operand alpha 0 |
-//  +- bit 23 ------------------------------------------------------------------------- bit 15 -+
-//  |   2 bit operand RGB 2 | 2 bit operand RGB 1 | 2 bit operand RGB 0 | 2 bit src reg alpha 2 |
-//  +- bit 15 ------------------------------------------------------------------------- bit  8 -+
-//  | 2 bit src reg alpha 1 | 2 bit src reg alpha 0 | 2 bit src reg rgb 2 | 2 bit src reg rgb 1 |
-//  +- bit  7 ------------------------------------------------------------------------- bit  0 -+
-//  |                             2 bit src reg rgb 0 | 3 bit combine alpha | 3 bit combine RGB |
-//  +-------------------------------------------------------------------------------------------+
+//  +- bit 31 ------------------------------------------------------------------------ bit 24 -+
+//  | 1 bit res | 2 bit a shift | 2 bit RGB shift | 1 bit op a 2 | 1 bit op a 1 | 1 bit op a 0 |
+//  +- bit 23 ------------------------------------------------------------------------ bit 15 -+
+//  |                     2 bit op RGB 2 | 2 bit op RGB 1 | 2 bit op RGB 0 | 2 bit src reg a 2 |
+//  +- bit 15 ------------------------------------------------------------------------ bit  8 -+
+//  |        2 bit src reg a 1 | 2 bit src reg a 0 | 2 bit src reg rgb 2 | 2 bit src reg rgb 1 |
+//  +- bit  7 ------------------------------------------------------------------------ bit  0 -+
+//  |                                2 bit src reg rgb 0 | 3 bit combine a | 3 bit combine RGB |
+//  +------------------------------------------------------------------------------------------+
+// Note: A shift value of 0x3 is undefined.
 localparam REG2_TMU_COMBINE_RGB_POS = 0;
 localparam REG2_TMU_COMBINE_RGB_SIZE = 3;
 localparam REG2_TMU_COMBINE_ALPHA_POS = REG2_TMU_COMBINE_RGB_POS + REG2_TMU_COMBINE_RGB_SIZE;
@@ -229,6 +230,10 @@ localparam REG2_TMU_OPERAND_ALPHA1_POS = REG2_TMU_OPERAND_ALPHA0_POS + REG2_TMU_
 localparam REG2_TMU_OPERAND_ALPHA1_SIZE = 1;
 localparam REG2_TMU_OPERAND_ALPHA2_POS = REG2_TMU_OPERAND_ALPHA1_POS + REG2_TMU_OPERAND_ALPHA1_SIZE;
 localparam REG2_TMU_OPERAND_ALPHA2_SIZE = 1;
+localparam REG2_TMU_SHIFT_RGB_POS = REG2_TMU_OPERAND_ALPHA2_POS + REG2_TMU_OPERAND_ALPHA2_SIZE;
+localparam REG2_TMU_SHIFT_RGB_SIZE = 2;
+localparam REG2_TMU_SHIFT_ALPHA_POS = REG2_TMU_SHIFT_RGB_POS + REG2_TMU_SHIFT_RGB_SIZE;
+localparam REG2_TMU_SHIFT_ALPHA_SIZE = 2;
 
 // OP_RENDER_CONFIG_REG3
 //  +-------------------------------------------------------------------------------------------------+

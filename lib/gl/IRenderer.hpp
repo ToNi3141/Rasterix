@@ -86,7 +86,9 @@ public:
             operandRgb2(Operand::SRC_COLOR),
             operandAlpha0(Operand::SRC_ALPHA),
             operandAlpha1(Operand::SRC_ALPHA),
-            operandAlpha2(Operand::SRC_ALPHA)
+            operandAlpha2(Operand::SRC_ALPHA),
+            shiftRgb(0),
+            shiftAlpha(0)
         { }
         Combine combineRgb : 3;
         Combine combineAlpha : 3;
@@ -102,6 +104,8 @@ public:
         Operand operandAlpha0 : 1;
         Operand operandAlpha1 : 1;
         Operand operandAlpha2 : 1;
+        uint8_t shiftRgb : 2;
+        uint8_t shiftAlpha : 2;
     };
 
     enum BlendFunc
