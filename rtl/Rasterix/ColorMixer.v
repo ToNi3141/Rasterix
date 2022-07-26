@@ -38,7 +38,7 @@ module ColorMixer #(
 
     // mixedColor = (colorA * colorB) + (colorC * colodrD)
     // Colors will be saturated
-    output reg  [PIXEL_WIDTH - 1 : 0]   mixedColor
+    output wire [PIXEL_WIDTH - 1 : 0]   mixedColor
 );
     localparam SIGN_WIDTH = 1;
     localparam SUB_PIXEL_SIGNED_WIDTH = SUB_PIXEL_WIDTH + SIGN_WIDTH;
