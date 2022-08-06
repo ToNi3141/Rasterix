@@ -18,6 +18,7 @@
 `include "PixelUtil.vh"
 
 // This module calculates the texture environment 
+// For documentation, see RegisterAndDescripterDefines.vh:OP_RENDER_CONFIG_REG2
 // Pipelined: yes
 // Depth: 4 cycles
 module TexEnv 
@@ -49,6 +50,15 @@ module TexEnv
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO_UNSIGNED = { SUB_PIXEL_WIDTH{1'b1} };
     localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_WIDTH{1'b1} } };
     localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ZERO_DOT_FIVE = { 1'b0, 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
+
+    localparam COLOR_A_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 0;
+    localparam COLOR_B_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 1;
+    localparam COLOR_G_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 2;
+    localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
+
+    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED);
+    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2);
 
     function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
         input [ 1 : 0]                  conf;
@@ -133,6 +143,37 @@ module TexEnv
     wire [ 0 : 0] operandAlpha1 = conf[ REG2_TMU_OPERAND_ALPHA1_POS +: REG2_TMU_OPERAND_ALPHA1_SIZE ];
     wire [ 0 : 0] operandAlpha2 = conf[ REG2_TMU_OPERAND_ALPHA2_POS +: REG2_TMU_OPERAND_ALPHA2_SIZE ];
 
+    initial 
+    begin
+        if (COLOR_R_POS != (SUB_PIXEL_WIDTH * 3)) 
+        begin
+            $error("Expecting red to be the 3. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_G_POS != (SUB_PIXEL_WIDTH * 2)) 
+        begin
+            $error("Expecting green to be the 2. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_B_POS != (SUB_PIXEL_WIDTH * 1)) 
+        begin
+            $error("Expecting blue to be the 1. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_A_POS != (SUB_PIXEL_WIDTH * 0)) 
+        begin
+            $error("Expecting alpha to be the 0. sub pixel.");
+            $finish;
+        end
+    end
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GLOBAL DELAY
+    // Delays parameters globaly to use them in further steps in the pipeline.
+    ////////////////////////////////////////////////////////////////////////////
     wire [ 2 : 0] combineRgbDelay;
     ValueDelay #(.VALUE_SIZE(REG2_TMU_COMBINE_RGB_SIZE), .DELAY(3)) 
         glob_combineRgbDelay (.clk(aclk), .in(combineRgb), .out(combineRgbDelay));
@@ -559,43 +600,6 @@ module TexEnv
     // Calculate dot product sum
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
-
-    initial 
-    begin
-        if (COLOR_R_POS != (SUB_PIXEL_WIDTH * 3)) 
-        begin
-            $error("Expecting red to be the 3. sub pixel.");
-            $finish;
-        end
-
-        if (COLOR_G_POS != (SUB_PIXEL_WIDTH * 2)) 
-        begin
-            $error("Expecting green to be the 2. sub pixel.");
-            $finish;
-        end
-
-        if (COLOR_B_POS != (SUB_PIXEL_WIDTH * 1)) 
-        begin
-            $error("Expecting blue to be the 1. sub pixel.");
-            $finish;
-        end
-
-        if (COLOR_A_POS != (SUB_PIXEL_WIDTH * 0)) 
-        begin
-            $error("Expecting alpha to be the 0. sub pixel.");
-            $finish;
-        end
-    end
-
-    localparam COLOR_A_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 0;
-    localparam COLOR_B_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 1;
-    localparam COLOR_G_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 2;
-    localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
-
-    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED);
-    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2);
-
     always @(posedge aclk)
     begin : DotCalculation
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rc;

@@ -50,8 +50,6 @@ IceGL::IceGL(IRenderer &renderer)
 
     float fogColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
     glFogfv(GL_FOG_COLOR, fogColor);
-
-    m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0);
 }
 
 void IceGL::commit()
@@ -777,7 +775,7 @@ void IceGL::glEnable(GLenum cap)
     {
     case GL_TEXTURE_2D:
         m_enableTextureMapping = true;
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, m_texEnvParam);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, m_texEnvMode);
         break;
     case GL_ALPHA_TEST:
         // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saveing
@@ -840,9 +838,9 @@ void IceGL::glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        const GLint tmpParam = m_texEnvParam;
+        const GLint tmpParam = m_texEnvMode;
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DISABLE);
-        m_texEnvParam = tmpParam;
+        m_texEnvMode = tmpParam;
         m_enableTextureMapping = false;
         break;
     }
@@ -1038,69 +1036,342 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
     }
 }
 
-void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
+GLint IceGL::convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param) 
 {
-    if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_MODE))
+    GLint ret = GL_NO_ERROR;
+    switch (param) {
+    case GL_DISABLE:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        break;
+    case GL_REPLACE:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        break;
+    case GL_MODULATE:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::MODULATE;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        break;
+    case GL_DECAL:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.operandRgb2 = IRenderer::TexEnvConf::Operand::SRC_ALPHA;
+        break;
+    case GL_BLEND:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::CONSTANT;
+        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        break;
+    case GL_ADD:
+        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::ADD;
+        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::ADD;
+        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        break;
+    case GL_COMBINE:
+        // Nothing to do here.
+        break;
+    default:
+        ret = GL_INVALID_ENUM;
+        break;
+    }
+    return ret;
+}
+
+GLint IceGL::convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha) 
+{
+    GLint ret = GL_NO_ERROR;
+    switch (val) 
     {
-        m_error = GL_NO_ERROR;
-        m_texEnvConf0 = IRenderer::TexEnvConf();
-        switch (param) {
-        case GL_DISABLE:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            break;
         case GL_REPLACE:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+            conv = IRenderer::TexEnvConf::Combine::REPLACE;
             break;
         case GL_MODULATE:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::MODULATE;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            break;
-        case GL_DECAL:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.operandRgb2 = IRenderer::TexEnvConf::Operand::SRC_ALPHA;
-            break;
-        case GL_BLEND:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::CONSTANT;
-            m_texEnvConf0.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+            conv = IRenderer::TexEnvConf::Combine::MODULATE;
             break;
         case GL_ADD:
-            m_texEnvConf0.combineRgb = IRenderer::TexEnvConf::Combine::ADD;
-            m_texEnvConf0.combineAlpha = IRenderer::TexEnvConf::Combine::ADD;
-            m_texEnvConf0.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-            m_texEnvConf0.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-            m_texEnvConf0.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+            conv = IRenderer::TexEnvConf::Combine::ADD;
+            break;
+        case GL_ADD_SIGNED:
+            conv = IRenderer::TexEnvConf::Combine::ADD_SIGNED;
+            break;
+        case GL_INTERPOLATE:
+            conv = IRenderer::TexEnvConf::Combine::INTERPOLATE;
+            break;
+        case GL_SUBTRACT:
+            conv = IRenderer::TexEnvConf::Combine::SUBTRACT;
+            break;
+        case GL_DOT3_RGB:
+            if (alpha) 
+            {
+                ret = GL_INVALID_ENUM;
+            }
+            else 
+            {
+                conv = IRenderer::TexEnvConf::Combine::DOT3_RGB;
+            }
+            break;
+        case GL_DOT3_RGBA:
+            if (alpha) 
+            {
+                ret = GL_INVALID_ENUM;
+            }
+            else 
+            {
+                conv = IRenderer::TexEnvConf::Combine::DOT3_RGBA;
+            }
             break;
         default:
-            m_error = GL_INVALID_ENUM;
+            ret = GL_INVALID_ENUM;
             break;
+    }
+    return ret;
+}
+
+GLint IceGL::convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha)
+{
+    GLint ret = GL_NO_ERROR;
+    switch (val)
+    {
+        case GL_SRC_ALPHA:
+            conf = IRenderer::TexEnvConf::Operand::SRC_ALPHA;
+            break;
+        case GL_ONE_MINUS_SRC_ALPHA:
+            conf = IRenderer::TexEnvConf::Operand::ONE_MINUS_SRC_ALPHA;
+            break;
+        case GL_SRC_COLOR:
+            if (alpha)
+            {
+                ret = GL_INVALID_ENUM;
+            }
+            else
+            {
+                conf = IRenderer::TexEnvConf::Operand::SRC_COLOR;
+            }
+            break;
+        case GL_ONE_MINUS_SRC_COLOR:
+            if (alpha)
+            {
+                ret = GL_INVALID_ENUM;
+            }
+            else
+            {
+                conf = IRenderer::TexEnvConf::Operand::ONE_MINUS_SRC_COLOR;
+            }
+            break;
+        default:
+            ret = GL_INVALID_ENUM;
+    }
+    return ret;
+}
+
+GLint IceGL::convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val)
+{
+    GLint ret = GL_NO_ERROR;
+    switch (val)
+    {
+        case GL_TEXTURE:
+            conf = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+            break;
+        case GL_CONSTANT:
+            conf = IRenderer::TexEnvConf::SrcReg::CONSTANT;
+            break;
+        case GL_PRIMARY_COLOR:
+            conf = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+            break;
+        case GL_PREVIOUS:
+            conf = IRenderer::TexEnvConf::SrcReg::PREVIOUS;
+            break;
+        default:
+            ret = GL_INVALID_ENUM;
+            break;
+    }
+    return ret;
+}
+
+void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
+{
+    m_error = GL_INVALID_ENUM;
+    if (target == GL_TEXTURE_ENV)
+    {
+        IRenderer::TexEnvConf texEnvConf = IRenderer::TexEnvConf();
+        if (m_texEnvMode == GL_COMBINE) 
+        {
+            texEnvConf = m_texEnvConf0;
         }
+        switch (pname) 
+        {
+            case GL_TEXTURE_ENV_MODE:
+                if (param == GL_COMBINE) 
+                {
+                    texEnvConf = m_texEnvConf0;
+                    m_error = GL_NO_ERROR;
+                }
+                else
+                {
+                    m_error = convertTexEnvMode(texEnvConf, param); 
+                }
+                m_texEnvMode = param;
+                break;
+            case GL_COMBINE_RGB:
+            {
+                IRenderer::TexEnvConf::Combine c{ texEnvConf.combineRgb };
+                m_error = convertCombine(c, param, false);
+                texEnvConf.combineRgb = c;
+                break;
+            }
+            case GL_COMBINE_ALPHA:
+            {
+                IRenderer::TexEnvConf::Combine c{ texEnvConf.combineAlpha };
+                m_error = convertCombine(c, param, true);
+                texEnvConf.combineAlpha = c;
+                break;
+            }
+            case GL_SRC0_RGB:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb0 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegRgb0 = c;
+                break;
+            }
+            case GL_SRC1_RGB:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb1 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegRgb1 = c;
+                break;            
+            }
+            case GL_SRC2_RGB:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb2 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegRgb2 = c;
+                break;
+            }
+            case GL_SRC0_ALPHA:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha0 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegAlpha0 = c;
+                break;
+            }
+            case GL_SRC1_ALPHA:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha1 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegAlpha1 = c;
+                break;            
+            }
+            case GL_SRC2_ALPHA:
+            {
+                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha2 };
+                m_error = convertSrcReg(c, param);
+                texEnvConf.srcRegAlpha2 = c;
+                break;
+            }
+            case GL_OPERAND0_RGB:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb0 };
+                m_error = convertOperand(c, param, false);
+                texEnvConf.operandRgb0 = c;
+                break;
+            }
+            case GL_OPERAND1_RGB:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb1 };
+                m_error = convertOperand(c, param, false);
+                texEnvConf.operandRgb1 = c;
+                break;
+            }
+            case GL_OPERAND2_RGB:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb2 };
+                m_error = convertOperand(c, param, false);
+                texEnvConf.operandRgb2 = c;
+                break;
+            }
+            case GL_OPERAND0_ALPHA:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha0 };
+                m_error = convertOperand(c, param, true);
+                texEnvConf.operandAlpha0 = c;
+                break;
+            }
+            case GL_OPERAND1_ALPHA:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha1 };
+                m_error = convertOperand(c, param, true);
+                texEnvConf.operandAlpha1 = c;
+                break;
+            }
+            case GL_OPERAND2_ALPHA:
+            {
+                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha2 };
+                m_error = convertOperand(c, param, true);
+                texEnvConf.operandAlpha2 = c;
+                break;
+            }
+            case GL_RGB_SCALE:
+                {
+                    const uint8_t shift = log2(param);
+                    if ((shift >= 0) && (shift <= 2))
+                    {
+                        texEnvConf.shiftRgb = shift;
+                        m_error = GL_NO_ERROR;
+                    }
+                    else 
+                    {
+                        m_error = GL_INVALID_VALUE;
+                    }
+                }
+                break;
+            case GL_ALPHA_SCALE:
+                {
+                    const uint8_t shift = log2(param);
+                    if ((shift >= 0) && (shift <= 2))
+                    {
+                        texEnvConf.shiftAlpha = shift;
+                        m_error = GL_NO_ERROR;
+                    }
+                    else 
+                    {
+                        m_error = GL_INVALID_VALUE;
+                    }
+                }
+                break;
+            default:
+                m_error = GL_INVALID_ENUM;
+                break;
+        };
         if (m_error == GL_NO_ERROR)
         {
-            m_texEnvParam = param;
+            // Only set the new texEnvConfig when the current mode is GL_COMBINE, and when it wasn't set yet (otherwise the current config would be overwritten)
+            if ((m_texEnvMode == GL_COMBINE) && (param != GL_COMBINE)) 
+            {
+                m_texEnvConf0 = texEnvConf;
+            }
+
             if (m_enableTextureMapping)
             {
-                if (m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0))
+                if (m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf))
                 {
                     m_error = GL_NO_ERROR;
                 }
@@ -1110,10 +1381,6 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 }
             }
         }
-    }
-    else
-    {
-        m_error = m_error = GL_INVALID_ENUM;
     }
 }
 
