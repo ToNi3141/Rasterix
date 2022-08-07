@@ -109,12 +109,18 @@ typedef enum {
     GL_TEXTURE_ENV_COLOR,
     GL_COMBINE_RGB, 
     GL_COMBINE_ALPHA,
-    GL_SRC0_RGB, 
+    GL_SRC0_RGB,
+    GL_SOURCE0_RGB = GL_SRC0_RGB, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_SRC1_RGB,
+    GL_SOURCE1_RGB = GL_SRC1_RGB, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_SRC2_RGB, 
+    GL_SOURCE2_RGB = GL_SRC2_RGB, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_SRC0_ALPHA, 
+    GL_SOURCE0_ALPHA = GL_SRC0_ALPHA, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_SRC1_ALPHA, 
+    GL_SOURCE1_ALPHA = GL_SRC1_ALPHA, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_SRC2_ALPHA, 
+    GL_SOURCE2_ALPHA = GL_SRC2_ALPHA, // Redefinition, because OpenGL ES and OpenGL seems to differ regarding the symbol name
     GL_OPERAND0_RGB, 
     GL_OPERAND1_RGB, 
     GL_OPERAND2_RGB, 
