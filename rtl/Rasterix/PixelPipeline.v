@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 24 cycles
+// Depth: 26 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -155,7 +155,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate fragment color
-    // Clocks: 9
+    // Clocks: 11
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]                              step1_fragmentColor;
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step1_index;
@@ -170,13 +170,13 @@ module PixelPipeline
         (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
     };
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(11)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
     TextureMappingUnit #(
@@ -186,7 +186,7 @@ module PixelPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .confFunc(confReg2[REG2_TEX_ENV_FUNC_POS +: REG2_TEX_ENV_FUNC_SIZE]),
+        .confFunc(confReg2),
         .confTextureClampS(confReg3[REG3_TMU_CLAMP_S_POS +: REG3_TMU_CLAMP_S_SIZE]),
         .confTextureClampT(confReg3[REG3_TMU_CLAMP_T_POS +: REG3_TMU_CLAMP_T_SIZE]),
         .confTextureEnvColor(confTextureEnvColor),

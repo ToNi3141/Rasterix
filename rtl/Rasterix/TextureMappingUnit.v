@@ -19,7 +19,7 @@
 // It samples a texel from the texture memory, filters it and 
 // executes the texture environment.
 // Pipelined: yes
-// Depth: 9 cycles
+// Depth: 11 cycles
 module TextureMappingUnit
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -35,7 +35,7 @@ module TextureMappingUnit
     input  wire                         resetn,
 
     // TMU configurations
-    input  wire [ 2 : 0]                confFunc, // See TexEnv for more documentation
+    input  wire [ 31: 0]                confFunc, // See TexEnv for more documentation
     input  wire                         confTextureClampS,
     input  wire                         confTextureClampT,
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
@@ -91,9 +91,13 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
+    wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
         step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
+
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
+        step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
 
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
@@ -151,7 +155,7 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // Calculate texture environment
-    // Clocks: 2
+    // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step2_texel;
 
@@ -161,8 +165,9 @@ module TextureMappingUnit
         .aclk(aclk),
         .resetn(resetn),
 
-        .func(confFunc),
+        .conf(confFunc),
 
+        .previousColor(step1_previousColor),
         .texSrcColor(step1_texel),
         .primaryColor(step1_primaryColor),
         .envColor(confTextureEnvColor),

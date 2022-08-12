@@ -192,13 +192,48 @@ localparam REG1_BLEND_FUNC_DFACTOR_POS = REG1_BLEND_FUNC_SFACTOR_POS + REG1_BLEN
 localparam REG1_BLEND_FUNC_DFACTOR_SIZE = 4;
 
 // OP_RENDER_CONFIG_REG2
-//  +---------------------------------+
-//  | 28 bit reserved | 3 bit tex env |
-//  +---------------------------------+
-localparam REG2_TEX_ENV_FUNC_POS = 0;
-localparam REG2_TEX_ENV_FUNC_SIZE = 3;
-// localparam REG2_LOGIC_OP_POS = REG2_BLEND_FUNC_DFACTOR_POS + REG2_BLEND_FUNC_DFACTOR_SIZE;
-// localparam REG2_LOGIC_OP_SIZE = 4;
+//  +- bit 31 ------------------------------------------------------------------------ bit 24 -+
+//  | 1 bit res | 2 bit a shift | 2 bit RGB shift | 1 bit op a 2 | 1 bit op a 1 | 1 bit op a 0 |
+//  +- bit 23 ------------------------------------------------------------------------ bit 15 -+
+//  |                     2 bit op RGB 2 | 2 bit op RGB 1 | 2 bit op RGB 0 | 2 bit src reg a 2 |
+//  +- bit 15 ------------------------------------------------------------------------ bit  8 -+
+//  |        2 bit src reg a 1 | 2 bit src reg a 0 | 2 bit src reg rgb 2 | 2 bit src reg rgb 1 |
+//  +- bit  7 ------------------------------------------------------------------------ bit  0 -+
+//  |                                2 bit src reg rgb 0 | 3 bit combine a | 3 bit combine RGB |
+//  +------------------------------------------------------------------------------------------+
+// Note: A shift value of 0x3 is undefined.
+localparam REG2_TMU_COMBINE_RGB_POS = 0;
+localparam REG2_TMU_COMBINE_RGB_SIZE = 3;
+localparam REG2_TMU_COMBINE_ALPHA_POS = REG2_TMU_COMBINE_RGB_POS + REG2_TMU_COMBINE_RGB_SIZE;
+localparam REG2_TMU_COMBINE_ALPHA_SIZE = 3;
+localparam REG2_TMU_SRC_REG_RGB0_POS = REG2_TMU_COMBINE_ALPHA_POS + REG2_TMU_COMBINE_ALPHA_SIZE;
+localparam REG2_TMU_SRC_REG_RGB0_SIZE = 2;
+localparam REG2_TMU_SRC_REG_RGB1_POS = REG2_TMU_SRC_REG_RGB0_POS + REG2_TMU_SRC_REG_RGB0_SIZE;
+localparam REG2_TMU_SRC_REG_RGB1_SIZE = 2;
+localparam REG2_TMU_SRC_REG_RGB2_POS = REG2_TMU_SRC_REG_RGB1_POS + REG2_TMU_SRC_REG_RGB1_SIZE;
+localparam REG2_TMU_SRC_REG_RGB2_SIZE = 2;
+localparam REG2_TMU_SRC_REG_ALPHA0_POS = REG2_TMU_SRC_REG_RGB2_POS + REG2_TMU_SRC_REG_RGB2_SIZE;
+localparam REG2_TMU_SRC_REG_ALPHA0_SIZE = 2;
+localparam REG2_TMU_SRC_REG_ALPHA1_POS = REG2_TMU_SRC_REG_ALPHA0_POS + REG2_TMU_SRC_REG_ALPHA0_SIZE;
+localparam REG2_TMU_SRC_REG_ALPHA1_SIZE = 2;
+localparam REG2_TMU_SRC_REG_ALPHA2_POS = REG2_TMU_SRC_REG_ALPHA1_POS + REG2_TMU_SRC_REG_ALPHA1_SIZE;
+localparam REG2_TMU_SRC_REG_ALPHA2_SIZE = 2;
+localparam REG2_TMU_OPERAND_RGB0_POS = REG2_TMU_SRC_REG_ALPHA2_POS + REG2_TMU_SRC_REG_ALPHA2_SIZE;
+localparam REG2_TMU_OPERAND_RGB0_SIZE = 2;
+localparam REG2_TMU_OPERAND_RGB1_POS = REG2_TMU_OPERAND_RGB0_POS + REG2_TMU_OPERAND_RGB0_SIZE;
+localparam REG2_TMU_OPERAND_RGB1_SIZE = 2;
+localparam REG2_TMU_OPERAND_RGB2_POS = REG2_TMU_OPERAND_RGB1_POS + REG2_TMU_OPERAND_RGB1_SIZE;
+localparam REG2_TMU_OPERAND_RGB2_SIZE = 2;
+localparam REG2_TMU_OPERAND_ALPHA0_POS = REG2_TMU_OPERAND_RGB2_POS + REG2_TMU_OPERAND_RGB2_SIZE;
+localparam REG2_TMU_OPERAND_ALPHA0_SIZE = 1;
+localparam REG2_TMU_OPERAND_ALPHA1_POS = REG2_TMU_OPERAND_ALPHA0_POS + REG2_TMU_OPERAND_ALPHA0_SIZE;
+localparam REG2_TMU_OPERAND_ALPHA1_SIZE = 1;
+localparam REG2_TMU_OPERAND_ALPHA2_POS = REG2_TMU_OPERAND_ALPHA1_POS + REG2_TMU_OPERAND_ALPHA1_SIZE;
+localparam REG2_TMU_OPERAND_ALPHA2_SIZE = 1;
+localparam REG2_TMU_SHIFT_RGB_POS = REG2_TMU_OPERAND_ALPHA2_POS + REG2_TMU_OPERAND_ALPHA2_SIZE;
+localparam REG2_TMU_SHIFT_RGB_SIZE = 2;
+localparam REG2_TMU_SHIFT_ALPHA_POS = REG2_TMU_SHIFT_RGB_POS + REG2_TMU_SHIFT_RGB_SIZE;
+localparam REG2_TMU_SHIFT_ALPHA_SIZE = 2;
 
 // OP_RENDER_CONFIG_REG3
 //  +-------------------------------------------------------------------------------------------------+
@@ -227,12 +262,28 @@ localparam NOTEQUAL = 6;
 localparam GEQUAL = 7;
 
 // Tex Env and Blend func defines
-localparam DISABLE = 0;
-localparam REPLACE = 1;
-localparam MODULATE = 2;
-localparam DECAL = 3;
-localparam BLEND = 4;
-localparam ADD = 5;
+localparam REPLACE = 0;
+localparam MODULATE = 1;
+localparam ADD = 2;
+localparam ADD_SIGNED = 3;
+localparam INTERPOLATE = 4;
+localparam SUBTRACT = 5;
+localparam DOT3_RGB = 6;
+localparam DOT3_RGBA = 7;
+
+localparam SRC_TEXTURE = 0;
+localparam SRC_CONSTANT = 1;
+localparam SRC_PRIMARY_COLOR = 2;
+localparam SRC_PREVIOUS = 3;
+
+localparam OPERAND_RGB_SRC_ALPHA = 0;
+localparam OPERAND_RGB_ONE_MINUS_SRC_ALPHA = 1;
+localparam OPERAND_RGB_SRC_COLOR = 2;
+localparam OPERAND_RGB_ONE_MINUS_SRC_COLOR = 3;
+
+localparam OPERAND_ALPHA_SRC_ALPHA = 0;
+localparam OPERAND_ALPHA_ONE_MINUS_SRC_ALPHA = 1;
+
 
 // D and S factor defines
 localparam ZERO = 0;

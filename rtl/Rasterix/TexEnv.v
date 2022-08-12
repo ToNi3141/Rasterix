@@ -15,16 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 // This module calculates the texture environment 
-// func:
-//  DISABLE = 0
-//  REPLACE = 1
-//  MODULATE = 2
-//  DECAL = 3
-//  BLEND = 4
-//  ADD = 5
+// For documentation, see RegisterAndDescripterDefines.vh:OP_RENDER_CONFIG_REG2
 // Pipelined: yes
-// Depth: 2 cycles
+// Depth: 4 cycles
 module TexEnv 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
@@ -36,220 +32,521 @@ module TexEnv
     input  wire                         aclk,
     input  wire                         resetn,
     
-    input  wire [ 2 : 0]                func,
+    input  wire [31 : 0]                conf,
 
+    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   texSrcColor, // Cs 
     input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
     input  wire [PIXEL_WIDTH - 1 : 0]   envColor, // Cc
 
-    output wire [PIXEL_WIDTH - 1 : 0]   color
+    output reg  [PIXEL_WIDTH - 1 : 0]   color
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
+    localparam SIGN_WIDTH = 1;
+    localparam SUB_PIXEL_WIDTH_SIGNED = SUB_PIXEL_WIDTH + SIGN_WIDTH;
+    localparam PIXEL_WIDTH_SIGNED = SUB_PIXEL_WIDTH_SIGNED * NUMBER_OF_SUB_PIXEL;
 
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v01;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v02;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v03;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v10;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v11;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v12;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v13;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v20;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v21;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v22;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v23;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v30;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v31;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v32;
-    reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO_UNSIGNED = { SUB_PIXEL_WIDTH{1'b1} };
+    localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_WIDTH{1'b1} } };
+    localparam signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ZERO_DOT_FIVE = { 1'b0, 1'b0, ONE_DOT_ZERO[0 +: SUB_PIXEL_WIDTH - 1] };
 
-    always @*
+    localparam COLOR_A_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 0;
+    localparam COLOR_B_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 1;
+    localparam COLOR_G_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 2;
+    localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
+
+    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED);
+    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2);
+
+    function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
+        input [ 1 : 0]                  conf;
+        input [SUB_PIXEL_WIDTH - 1 : 0] subPixel;
+        input [SUB_PIXEL_WIDTH - 1 : 0] alpha;
+        
+        case (conf)
+            OPERAND_RGB_SRC_COLOR:
+            begin
+                SelectRgbOperand = subPixel;
+            end
+            OPERAND_RGB_ONE_MINUS_SRC_COLOR:
+            begin
+                SelectRgbOperand = ONE_DOT_ZERO_UNSIGNED - subPixel;
+            end
+            OPERAND_RGB_SRC_ALPHA:
+            begin
+                SelectRgbOperand = alpha;
+            end
+            OPERAND_RGB_ONE_MINUS_SRC_ALPHA:
+            begin
+                SelectRgbOperand = ONE_DOT_ZERO_UNSIGNED - alpha;
+            end
+        endcase
+    endfunction
+
+    function [SUB_PIXEL_WIDTH - 1 : 0] SelectAlphaOperand;
+        input [ 0 : 0]                  conf;
+        input [SUB_PIXEL_WIDTH - 1 : 0] alpha;
+        
+        case (conf)
+            OPERAND_ALPHA_SRC_ALPHA:
+            begin
+                SelectAlphaOperand = alpha;
+            end
+            OPERAND_ALPHA_ONE_MINUS_SRC_ALPHA:
+            begin
+                SelectAlphaOperand = ONE_DOT_ZERO_UNSIGNED - alpha;
+            end
+        endcase
+    endfunction
+
+    function [SUB_PIXEL_WIDTH - 1 : 0] SelectSrcColor;
+        input [ 1 : 0]                  conf;
+        input [SUB_PIXEL_WIDTH - 1 : 0] subPixelTexture;
+        input [SUB_PIXEL_WIDTH - 1 : 0] subPixelConstant;
+        input [SUB_PIXEL_WIDTH - 1 : 0] subPixelPrimaryColor;
+        input [SUB_PIXEL_WIDTH - 1 : 0] subPixelPrevious;
+
+        case (conf)
+            SRC_TEXTURE:
+            begin
+                SelectSrcColor = subPixelTexture;
+            end
+            SRC_CONSTANT:
+            begin
+                SelectSrcColor = subPixelConstant;
+            end
+            SRC_PRIMARY_COLOR:
+            begin
+                SelectSrcColor = subPixelPrimaryColor;
+            end
+            SRC_PREVIOUS:
+            begin
+                SelectSrcColor = subPixelPrevious;
+            end
+        endcase
+    endfunction
+    
+    wire [ 2 : 0] combineRgb    = conf[ REG2_TMU_COMBINE_RGB_POS    +: REG2_TMU_COMBINE_RGB_SIZE ];
+    wire [ 2 : 0] combineAlpha  = conf[ REG2_TMU_COMBINE_ALPHA_POS  +: REG2_TMU_COMBINE_ALPHA_SIZE ];
+    wire [ 1 : 0] srcRegRgb0    = conf[ REG2_TMU_SRC_REG_RGB0_POS   +: REG2_TMU_SRC_REG_RGB0_SIZE ];
+    wire [ 1 : 0] srcRegRgb1    = conf[ REG2_TMU_SRC_REG_RGB1_POS   +: REG2_TMU_SRC_REG_RGB1_SIZE ];
+    wire [ 1 : 0] srcRegRgb2    = conf[ REG2_TMU_SRC_REG_RGB2_POS   +: REG2_TMU_SRC_REG_RGB2_SIZE ]; 
+    wire [ 1 : 0] srcRegAlpha0  = conf[ REG2_TMU_SRC_REG_ALPHA0_POS +: REG2_TMU_SRC_REG_ALPHA0_SIZE ];
+    wire [ 1 : 0] srcRegAlpha1  = conf[ REG2_TMU_SRC_REG_ALPHA1_POS +: REG2_TMU_SRC_REG_ALPHA1_SIZE ];
+    wire [ 1 : 0] srcRegAlpha2  = conf[ REG2_TMU_SRC_REG_ALPHA2_POS +: REG2_TMU_SRC_REG_ALPHA2_SIZE ];
+    wire [ 1 : 0] operandRgb0   = conf[ REG2_TMU_OPERAND_RGB0_POS   +: REG2_TMU_OPERAND_RGB0_SIZE ];
+    wire [ 1 : 0] operandRgb1   = conf[ REG2_TMU_OPERAND_RGB1_POS   +: REG2_TMU_OPERAND_RGB1_SIZE ];
+    wire [ 1 : 0] operandRgb2   = conf[ REG2_TMU_OPERAND_RGB2_POS   +: REG2_TMU_OPERAND_RGB2_SIZE ];
+    wire [ 0 : 0] operandAlpha0 = conf[ REG2_TMU_OPERAND_ALPHA0_POS +: REG2_TMU_OPERAND_ALPHA0_SIZE ];
+    wire [ 0 : 0] operandAlpha1 = conf[ REG2_TMU_OPERAND_ALPHA1_POS +: REG2_TMU_OPERAND_ALPHA1_SIZE ];
+    wire [ 0 : 0] operandAlpha2 = conf[ REG2_TMU_OPERAND_ALPHA2_POS +: REG2_TMU_OPERAND_ALPHA2_SIZE ];
+
+    initial 
+    begin
+        if (COLOR_R_POS != (SUB_PIXEL_WIDTH * 3)) 
+        begin
+            $error("Expecting red to be the 3. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_G_POS != (SUB_PIXEL_WIDTH * 2)) 
+        begin
+            $error("Expecting green to be the 2. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_B_POS != (SUB_PIXEL_WIDTH * 1)) 
+        begin
+            $error("Expecting blue to be the 1. sub pixel.");
+            $finish;
+        end
+
+        if (COLOR_A_POS != (SUB_PIXEL_WIDTH * 0)) 
+        begin
+            $error("Expecting alpha to be the 0. sub pixel.");
+            $finish;
+        end
+    end
+
+    ////////////////////////////////////////////////////////////////////////////
+    // GLOBAL DELAY
+    // Delays parameters globaly to use them in further steps in the pipeline.
+    ////////////////////////////////////////////////////////////////////////////
+    wire [ 2 : 0] combineRgbDelay;
+    ValueDelay #(.VALUE_SIZE(REG2_TMU_COMBINE_RGB_SIZE), .DELAY(3)) 
+        glob_combineRgbDelay (.clk(aclk), .in(combineRgb), .out(combineRgbDelay));
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 0
+    // Select parameters and arguments
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v00;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v01;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v02;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v03;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v10;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v11;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v12;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v13;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v20;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v21;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v22;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v23;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v30;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v31;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v32;
+    reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v33;
+    always @(posedge aclk)
     begin : SelectColor
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bs;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] as;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] rp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] gp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] bp;
-        reg [SUB_PIXEL_WIDTH - 1 : 0] ap;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rt;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gt;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bt;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] at;
         reg [SUB_PIXEL_WIDTH - 1 : 0] rc;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gc;
         reg [SUB_PIXEL_WIDTH - 1 : 0] bc;
         reg [SUB_PIXEL_WIDTH - 1 : 0] ac;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rpc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gpc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bpc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] apc;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] rp;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gp;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bp;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ap;
 
-        // Texture source color (Cs)
-        rs = texSrcColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gs = texSrcColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bs = texSrcColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        as = texSrcColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au0;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au1;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] ru2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] gu2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] bu2;
+        reg [SUB_PIXEL_WIDTH - 1 : 0] au2;
 
-        // Input of texture unit n (or in case of texture unit 0 it is the primary color of the triangle (Cf))
-        // Currently we only have one texture unit, so Cp is Cf
-        rp = primaryColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gp = primaryColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bp = primaryColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ap = primaryColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a0;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a1;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] r2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] g2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b2;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a2;
 
-        // Texture environment color (Cc)
+        rt = texSrcColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gt = texSrcColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bt = texSrcColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        at = texSrcColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+
         rc = envColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
         gc = envColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
         bc = envColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
         ac = envColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
-                
-        case (func)
-            DISABLE:
-            begin
-                // Disables the tex env, so just use the triangle color instread of the texture
-                // (The opposite of the GL_REPLACE)
 
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
+        rpc = primaryColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gpc = primaryColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bpc = primaryColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        apc = primaryColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-                v10 = ONE_DOT_ZERO;
-                v11 = ONE_DOT_ZERO;
-                v12 = ONE_DOT_ZERO;
-                v13 = ONE_DOT_ZERO;
+        rp = previousColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gp = previousColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bp = previousColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ap = previousColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-                v20 = 0;
-                v21 = 0;
-                v22 = 0;
-                v23 = 0;
+        ru0 = SelectRgbOperand(operandRgb0, 
+                              SelectSrcColor(srcRegRgb0, rt, rc, rpc, rp), 
+                              SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
 
-                v30 = 0;
-                v31 = 0;
-                v32 = 0;
-                v33 = 0;
-            end
+        ru1 = SelectRgbOperand(operandRgb1, 
+                              SelectSrcColor(srcRegRgb1, rt, rc, rpc, rp), 
+                              SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
+
+        ru2 = SelectRgbOperand(operandRgb2, 
+                              SelectSrcColor(srcRegRgb2, rt, rc, rpc, rp), 
+                              SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
+
+        gu0 = SelectRgbOperand(operandRgb0, 
+                              SelectSrcColor(srcRegRgb0, gt, gc, gpc, gp), 
+                              SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
+
+        gu1 = SelectRgbOperand(operandRgb1, 
+                              SelectSrcColor(srcRegRgb1, gt, gc, gpc, gp), 
+                              SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
+
+        gu2 = SelectRgbOperand(operandRgb2, 
+                              SelectSrcColor(srcRegRgb2, gt, gc, gpc, gp), 
+                              SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
+
+        bu0 = SelectRgbOperand(operandRgb0, 
+                              SelectSrcColor(srcRegRgb0, bt, bc, bpc, bp), 
+                              SelectSrcColor(srcRegRgb0, at, ac, apc, ap));
+
+        bu1 = SelectRgbOperand(operandRgb1, 
+                              SelectSrcColor(srcRegRgb1, bt, bc, bpc, bp), 
+                              SelectSrcColor(srcRegRgb1, at, ac, apc, ap));
+
+        bu2 = SelectRgbOperand(operandRgb2, 
+                              SelectSrcColor(srcRegRgb2, bt, bc, bpc, bp), 
+                              SelectSrcColor(srcRegRgb2, at, ac, apc, ap));
+
+        au0 = SelectAlphaOperand(operandAlpha0, 
+                                SelectSrcColor(srcRegAlpha0, at, ac, apc, ap));
+
+        au1 = SelectAlphaOperand(operandAlpha1, 
+                                SelectSrcColor(srcRegAlpha1, at, ac, apc, ap));
+
+        au2 = SelectAlphaOperand(operandAlpha2,
+                                SelectSrcColor(srcRegAlpha2, at, ac, apc, ap));
+
+        r0 = {1'b0, ru0};
+        g0 = {1'b0, gu0};
+        b0 = {1'b0, bu0};
+        a0 = {1'b0, au0};
+        r1 = {1'b0, ru1};
+        g1 = {1'b0, gu1};
+        b1 = {1'b0, bu1};
+        a1 = {1'b0, au1};
+        r2 = {1'b0, ru2};
+        g2 = {1'b0, gu2};
+        b2 = {1'b0, bu2};
+        a2 = {1'b0, au2};
+
+        case (combineRgb)
             REPLACE:
             begin
-                // (s * 1.0) + (0.0 * 0.0)
-                // (as * 1.0) + (0.0 * 0.0)
+                // (x0 * 1.0) + (0.0 * 0.0)
 
-                v00 = rs;
-                v01 = gs;
-                v02 = bs;
-                v03 = as;
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
 
                 v10 = ONE_DOT_ZERO;
                 v11 = ONE_DOT_ZERO;
                 v12 = ONE_DOT_ZERO;
-                v13 = ONE_DOT_ZERO;
 
                 v20 = 0;
                 v21 = 0;
                 v22 = 0;
-                v23 = 0;
 
                 v30 = 0;
                 v31 = 0;
                 v32 = 0;
-                v33 = 0;
-            end
-            BLEND:
-            begin
-                // (p * (1.0 - s) + (c * s)
-                // (ap * as) + (0.0 * 0.0)      
-                
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = ONE_DOT_ZERO - rs;
-                v11 = ONE_DOT_ZERO - gs;
-                v12 = ONE_DOT_ZERO - bs;
-                v13 = as;
-
-                v20 = rc;
-                v21 = gc;
-                v22 = bc;
-                v23 = 0;
-
-                v30 = rs;
-                v31 = gs;
-                v32 = bs;
-                v33 = 0; 
-            end 
-            DECAL:
-            begin
-                // (p * (1.0 - as)) + (s * as)
-                // (ap * 1.0) + (0.0 * 0.0)
-
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
-
-                v10 = (ONE_DOT_ZERO - as);
-                v11 = (ONE_DOT_ZERO - as);
-                v12 = (ONE_DOT_ZERO - as);
-                v13 = ONE_DOT_ZERO;
-                
-                v20 = rs;
-                v21 = gs;
-                v22 = bs;
-                v23 = 0;
-
-                v30 = as;
-                v31 = as;
-                v32 = as;
-                v33 = 0;
-                
             end
             MODULATE:
             begin
-                // (p * s) + (0 * 0)
-                // (ap * as) + (0.0 * 0.0)
+                // (x0 * x1) + (0 * 0)
 
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
 
-                v10 = rs;
-                v11 = gs;
-                v12 = bs;
-                v13 = as;
+                v10 = r1;
+                v11 = g1;
+                v12 = b1;
 
                 v20 = 0;
                 v21 = 0;
                 v22 = 0;
-                v23 = 0;
 
                 v30 = 0;
                 v31 = 0;
                 v32 = 0;
-                v33 = 0;
             end
             ADD:
             begin 
-                // (p * 1.0) + (s * 1.0)
-                // (ap * as) + (0.0 * 0.0)
+                // (x0 * 1.0) + (x1 * 1.0)
 
-                v00 = rp;
-                v01 = gp;
-                v02 = bp;
-                v03 = ap;
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
 
                 v10 = ONE_DOT_ZERO;
                 v11 = ONE_DOT_ZERO;
                 v12 = ONE_DOT_ZERO;
-                v13 = as;
 
-                v20 = rs;
-                v21 = gs;
-                v22 = bs;
-                v23 = 0;
+                v20 = r1;
+                v21 = g1;
+                v22 = b1;
 
                 v30 = ONE_DOT_ZERO;
                 v31 = ONE_DOT_ZERO;
                 v32 = ONE_DOT_ZERO;
+
+            end
+            ADD_SIGNED:
+            begin 
+                // (x0 * 1.0) + ((x1 - 0.5) * 1.0)
+
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
+
+                v10 = ONE_DOT_ZERO;
+                v11 = ONE_DOT_ZERO;
+                v12 = ONE_DOT_ZERO;
+
+                v20 = r1 - ZERO_DOT_FIVE;
+                v21 = g1 - ZERO_DOT_FIVE;
+                v22 = b1 - ZERO_DOT_FIVE;
+
+                v30 = ONE_DOT_ZERO;
+                v31 = ONE_DOT_ZERO;
+                v32 = ONE_DOT_ZERO;
+
+            end
+            INTERPOLATE:
+            begin
+                // (x0 * x2) + (x1 * (1.0 - x2))   
+                
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
+
+                v10 = r2;
+                v11 = g2;
+                v12 = b2;
+
+                v20 = r1;
+                v21 = g1;
+                v22 = b1;
+
+                v30 = ONE_DOT_ZERO - r2;
+                v31 = ONE_DOT_ZERO - g2;
+                v32 = ONE_DOT_ZERO - b2;
+            end 
+            SUBTRACT:
+            begin
+                // (x0 * 1.0) + (x1 * -1.0)
+
+                v00 = r0;
+                v01 = g0;
+                v02 = b0;
+
+                v10 = ONE_DOT_ZERO;
+                v11 = ONE_DOT_ZERO;
+                v12 = ONE_DOT_ZERO;
+
+                v20 = r1;
+                v21 = g1;
+                v22 = b1;
+
+                v30 = -ONE_DOT_ZERO;
+                v31 = -ONE_DOT_ZERO;
+                v32 = -ONE_DOT_ZERO;
+            end
+            DOT3_RGB:
+            begin
+                // ((x0 - 0.5) * (x1 - 0.5)) + (0 * 0)
+
+                v00 = r0 - ZERO_DOT_FIVE;
+                v01 = g0 - ZERO_DOT_FIVE;
+                v02 = b0 - ZERO_DOT_FIVE;
+
+                v10 = r1 - ZERO_DOT_FIVE;
+                v11 = g1 - ZERO_DOT_FIVE;
+                v12 = b1 - ZERO_DOT_FIVE;
+
+                v20 = 0;
+                v21 = 0;
+                v22 = 0;
+
+                v30 = 0;
+                v31 = 0;
+                v32 = 0;
+            end
+            DOT3_RGBA:
+            begin
+                // ((x0 - 0.5) * (x1 - 0.5)) + (0 * 0)
+
+                v00 = r0 - ZERO_DOT_FIVE;
+                v01 = g0 - ZERO_DOT_FIVE;
+                v02 = b0 - ZERO_DOT_FIVE;
+
+                v10 = r1 - ZERO_DOT_FIVE;
+                v11 = g1 - ZERO_DOT_FIVE;
+                v12 = b1 - ZERO_DOT_FIVE;
+
+                v20 = 0;
+                v21 = 0;
+                v22 = 0;
+
+                v30 = 0;
+                v31 = 0;
+                v32 = 0;
+            end
+            default:
+            begin
+                
+            end 
+        endcase
+
+        case (combineAlpha)
+            REPLACE:
+            begin
+                // (x0 * 1.0) + (0.0 * 0.0)
+
+                v03 = a0;
+                v13 = ONE_DOT_ZERO;
+                v23 = 0;
                 v33 = 0;
+            end
+            MODULATE:
+            begin
+                // (x0 * x1) + (0 * 0)
+
+                v03 = a0;
+                v13 = a1;
+                v23 = 0;
+                v33 = 0;
+            end
+            ADD:
+            begin 
+                // (x0 * 1.0) + (x1 * 1.0)
+
+                v03 = a0;
+                v13 = ONE_DOT_ZERO;
+                v23 = a1;
+                v33 = ONE_DOT_ZERO;
+
+            end
+            ADD_SIGNED:
+            begin 
+                // (x0 * 1.0) + ((x1 - 0.5) * 1.0)
+
+                v03 = a0;
+                v13 = ONE_DOT_ZERO;
+                v23 = a1 - ZERO_DOT_FIVE;
+                v33 = ONE_DOT_ZERO;
+
+            end
+            INTERPOLATE:
+            begin
+                // (x0 * x2) + (x1 * (1.0 - x2))   
+                
+                v03 = a0;
+                v13 = a2;
+                v23 = a1;
+                v33 = ONE_DOT_ZERO - a2;
+            end 
+            SUBTRACT:
+            begin
+                // (x0 * 1.0) + (x1 * -1.0)
+
+                v03 = a0;
+                v13 = ONE_DOT_ZERO;
+                v23 = a1;
+                v33 = -ONE_DOT_ZERO;
             end
             default:
             begin
@@ -258,8 +555,14 @@ module TexEnv
         endcase
     end
 
-    ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 1
+    // Mix colors
+    // Clocks: 2
+    ////////////////////////////////////////////////////////////////////////////
+    wire [PIXEL_WIDTH_SIGNED - 1 : 0] step1_color;
+    ColorMixerSigned #(
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH_SIGNED)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
@@ -289,7 +592,66 @@ module TexEnv
             v33
         }),
 
-        .mixedColor(color)
+        .mixedColor(step1_color)
     );
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Calculate dot product sum
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    always @(posedge aclk)
+    begin : DotCalculation
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bc;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] ac;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED + 1 : 0] dotSum;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] dot;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] dotScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bcScaled;
+        reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] acScaled;
+
+        rc = $signed(step1_color[COLOR_R_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        gc = $signed(step1_color[COLOR_G_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        bc = $signed(step1_color[COLOR_B_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+        ac = $signed(step1_color[COLOR_A_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
+
+        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc));
+
+        dot = ReduceAndSaturateSigned(dotSum);
+
+        dotScaled = ReduceAndSaturateSigned(ExpandSigned(dot) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        rcScaled = ReduceAndSaturateSigned(ExpandSigned(rc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        gcScaled = ReduceAndSaturateSigned(ExpandSigned(gc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        bcScaled = ReduceAndSaturateSigned(ExpandSigned(bc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
+        acScaled = ReduceAndSaturateSigned(ExpandSigned(ac) << conf[REG2_TMU_SHIFT_ALPHA_POS +: REG2_TMU_SHIFT_ALPHA_SIZE]);
+        
+        case (combineRgbDelay)
+            DOT3_RGBA:
+                color <= {
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled)
+                };
+            DOT3_RGB:
+                color <= {
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(dotScaled),
+                    SaturateCastSignedToUnsigned(acScaled)
+                };
+            default: 
+                color <= {
+                    SaturateCastSignedToUnsigned(rcScaled),
+                    SaturateCastSignedToUnsigned(gcScaled),
+                    SaturateCastSignedToUnsigned(bcScaled),
+                    SaturateCastSignedToUnsigned(acScaled)
+                };
+        endcase
+    end
 
 endmodule

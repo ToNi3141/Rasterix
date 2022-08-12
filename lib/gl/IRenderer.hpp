@@ -39,24 +39,75 @@ public:
         NOTEQUAL,
         GEQUAL
     };
-    enum TexEnvTarget
+
+    enum class TMU 
     {
-        TEXTURE_ENV
+        TMU0
     };
-    enum TexEnvParamName
+
+    struct __attribute__ ((__packed__)) TexEnvConf
     {
-        TEXTURE_ENV_MODE,
-        GL_TEXTURE_ENV_COLOR
+        enum class Combine
+        {
+            REPLACE,
+            MODULATE,
+            ADD,
+            ADD_SIGNED,
+            INTERPOLATE,
+            SUBTRACT,
+            DOT3_RGB,
+            DOT3_RGBA
+        };
+        enum class Operand
+        {
+            SRC_ALPHA,
+            ONE_MINUS_SRC_ALPHA,
+            SRC_COLOR,
+            ONE_MINUS_SRC_COLOR
+        };
+        enum class SrcReg
+        {
+            TEXTURE,
+            CONSTANT,
+            PRIMARY_COLOR,
+            PREVIOUS
+        };
+        TexEnvConf() :
+            combineRgb(Combine::MODULATE),
+            combineAlpha(Combine::MODULATE),
+            srcRegRgb0(SrcReg::TEXTURE),
+            srcRegRgb1(SrcReg::PREVIOUS),
+            srcRegRgb2(SrcReg::CONSTANT),
+            srcRegAlpha0(SrcReg::TEXTURE),
+            srcRegAlpha1(SrcReg::PREVIOUS),
+            srcRegAlpha2(SrcReg::CONSTANT),
+            operandRgb0(Operand::SRC_COLOR),
+            operandRgb1(Operand::SRC_COLOR),
+            operandRgb2(Operand::SRC_COLOR),
+            operandAlpha0(Operand::SRC_ALPHA),
+            operandAlpha1(Operand::SRC_ALPHA),
+            operandAlpha2(Operand::SRC_ALPHA),
+            shiftRgb(0),
+            shiftAlpha(0)
+        { }
+        Combine combineRgb : 3;
+        Combine combineAlpha : 3;
+        SrcReg srcRegRgb0 : 2;
+        SrcReg srcRegRgb1 : 2;
+        SrcReg srcRegRgb2 : 2;
+        SrcReg srcRegAlpha0 : 2;
+        SrcReg srcRegAlpha1 : 2;
+        SrcReg srcRegAlpha2 : 2;
+        Operand operandRgb0 : 2;
+        Operand operandRgb1 : 2;
+        Operand operandRgb2 : 2;
+        Operand operandAlpha0 : 1;
+        Operand operandAlpha1 : 1;
+        Operand operandAlpha2 : 1;
+        uint8_t shiftRgb : 2;
+        uint8_t shiftAlpha : 2;
     };
-    enum TexEnvParam
-    {
-        DISABLE,
-        REPLACE,
-        MODULATE,
-        DECAL,
-        BLEND,
-        ADD
-    };
+
     enum BlendFunc
     {
         ZERO,
@@ -203,7 +254,7 @@ public:
     /// @param pname parameter name of the env parameter
     /// @param param Function of the tex env
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setTexEnv(const TexEnvTarget target, const TexEnvParamName pname, const TexEnvParam param) = 0;
+    virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) = 0;
 
     /// @brief Set a static color for the tex environment
     /// @param color the color in ABGR

@@ -85,7 +85,6 @@ public:
         setDepthMask(false);
         setColorMask(true, true, true, true);
         setAlphaFunc(TestFunc::ALWAYS, 0xf);
-        setTexEnv(TexEnvTarget::TEXTURE_ENV, TexEnvParamName::TEXTURE_ENV_MODE, TexEnvParam::MODULATE);
         setBlendFunc(BlendFunc::ONE, BlendFunc::ZERO);
         setLogicOp(LogicOp::COPY);
         setTexEnvColor({{0, 0, 0, 0}});
@@ -273,12 +272,10 @@ public:
         return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
     }
 
-    virtual bool setTexEnv(const TexEnvTarget target, const TexEnvParamName pname, const TexEnvParam param) override
+    virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
-        (void)target; // Only TEXTURE_ENV is supported
-        (void)pname; // Only GL_TEXTURE_ENV_MODE is supported
-        m_confReg2.texEnvFunc = param;
-        return writeToReg(ListAssembler::SET_CONF_REG2, m_confReg2);
+        (void)target; // Only TMU0 is supported
+        return writeToReg(ListAssembler::SET_CONF_REG2, texEnvConfig);
     }
 
     virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
@@ -511,11 +508,6 @@ private:
         IRenderer::BlendFunc blendFuncSFactor : 4;
         IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg1;
-
-    struct __attribute__ ((__packed__)) ConfReg2
-    {
-        IRenderer::TexEnvParam texEnvFunc : 3;
-    } m_confReg2;
 
     struct __attribute__ ((__packed__)) ConfReg3
     {

@@ -139,6 +139,10 @@ private:
     TnL::RenderObj::Type convertType(GLenum type);
     TnL::RenderObj::DrawMode convertDrawMode(GLenum drawMode);
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
+    GLint convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param);
+    GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
+    GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
+    GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
     void recalculateAndSetTnLMatrices();
     static Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane);
     GLenum setFogLut(GLenum mode, float start, float end, float density);
@@ -176,10 +180,11 @@ private:
     GLint m_unpackAlignment = 4;
     GLuint m_boundTexture = 0;
     bool m_enableTextureMapping = true;
-    GLint m_texEnvParam = GL_REPLACE;
+    GLint m_texEnvMode = GL_REPLACE;
     IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
     bool m_texEnableMagFilter = true;
+    IRenderer::TexEnvConf m_texEnvConf0;
 
     // Test functions
     bool m_enableAlphaTest = true;
