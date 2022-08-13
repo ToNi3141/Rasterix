@@ -188,11 +188,7 @@ module PixelPipeline
 
         .confFunc(confTMU0TexEnvConfig),
         .confTextureEnvColor(confTMU0TexEnvColor),
-        .confTextureClampS(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_SIZE]),
-        .confTextureClampT(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE]),
-        .confTextureSizeWidth(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
-        .confTextureSizeHeight(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
-        .confTextureMagFilter(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
+        .confTextureConfig(confTMU0TextureConfig),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -205,8 +201,8 @@ module PixelPipeline
         .texelInput11(texelInput11),
 
         .primaryColor(step1_primaryColor),
-        .textureS(step_convert_texture_s[0 +: 24]),
-        .textureT(step_convert_texture_t[0 +: 24]),
+        .textureS(step_convert_texture_s),
+        .textureT(step_convert_texture_t),
 
         .previousColor(step1_primaryColor), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
 

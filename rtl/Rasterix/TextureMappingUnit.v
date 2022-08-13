@@ -35,13 +35,9 @@ module TextureMappingUnit
     input  wire                         resetn,
 
     // TMU configurations
-    input  wire [ 31: 0]                confFunc, // See TexEnv for more documentation
-    input  wire                         confTextureClampS,
-    input  wire                         confTextureClampT,
+    input  wire [ 31 : 0]               confFunc, // See TexEnv for more documentation
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
-    input  wire [ 7 : 0]                confTextureSizeWidth, 
-    input  wire [ 7 : 0]                confTextureSizeHeight,
-    input  wire                         confTextureMagFilter,
+    input  wire [ 31 : 0]               confTextureConfig,
 
     // Texture memory access of a texel quad
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr00,
@@ -65,25 +61,6 @@ module TextureMappingUnit
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    function [15 : 0] clampTexture;
-        input [23 : 0] texCoord;
-        input [ 0 : 0] mode; 
-        begin
-            clampTexture = texCoord[0 +: 16];
-            if (mode == CLAMP_TO_EDGE)
-            begin
-                if (texCoord[23]) // Check if it lower than 0 by only checking the sign bit
-                begin
-                    clampTexture = 0;
-                end
-                else if ((texCoord >> 15) != 0) // Check if it is greater than one by checking if the integer part is unequal to zero
-                begin
-                    clampTexture = 16'h7fff;
-                end  
-            end
-        end
-    endfunction
-
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Request texel from texture buffer and filter it
@@ -98,7 +75,7 @@ module TextureMappingUnit
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
         step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
-
+        
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel10Tmp;
@@ -111,8 +88,8 @@ module TextureMappingUnit
         .aclk(aclk),
         .resetn(resetn),
 
-        .textureSizeWidth(confTextureSizeWidth),
-        .textureSizeHeight(confTextureSizeHeight),
+        .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
+        .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -123,10 +100,10 @@ module TextureMappingUnit
         .texelInput10(texelInput10),
         .texelInput11(texelInput11),
 
-        .texelS(clampTexture(textureS[0 +: 24], confTextureClampS)),
-        .texelT(clampTexture(textureT[0 +: 24], confTextureClampT)),
-        .clampS(confTextureClampS),
-        .clampT(confTextureClampT),
+        .texelS(textureS),
+        .texelT(textureT),
+        .clampS(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_SIZE]),
+        .clampT(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE]),
         .texel00(step1_texel00Tmp),
         .texel01(step1_texel01Tmp),
         .texel10(step1_texel10Tmp),
@@ -140,7 +117,7 @@ module TextureMappingUnit
         .aclk(aclk),
         .resetn(resetn),
 
-        .enable(confTextureMagFilter),
+        .enable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
 
         .texel00(step1_texel00Tmp),
         .texel01(step1_texel01Tmp),
