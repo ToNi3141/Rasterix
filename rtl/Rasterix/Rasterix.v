@@ -251,8 +251,8 @@ module Rasterix #(
         .s_axis_tlast(s_texture_steam_tmu0_axis_tlast),
         .s_axis_tdata(s_texture_steam_tmu0_axis_tdata)
     );
-    defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
