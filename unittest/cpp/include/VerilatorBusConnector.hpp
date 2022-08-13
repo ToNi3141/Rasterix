@@ -67,7 +67,7 @@ public:
            m_streamAddr++;
        }
 
-       if (m_streamAddr == (m_resolutionW * m_resolutionH / (sizeof(FBType) / 2)))
+       if (m_streamAddr == (m_resolutionW * m_resolutionH / (sizeof(FBType) / 2))) // 4 for 32 bit color
        {
            m_streamAddr = 0;
        }

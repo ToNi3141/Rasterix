@@ -425,8 +425,8 @@ public:
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId],
                                                                                              tex.width * tex.height * 2);
 
-            const uint32_t texWidthOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(tex.width))) - 1);
-            const uint32_t texHeightOneHot = (1 << static_cast<uint32_t>(std::log2(static_cast<float>(tex.height))) - 1);
+            const uint32_t texWidthOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.width))) - 1));
+            const uint32_t texHeightOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.height))) - 1));
                 
             m_confReg3.texWidth = texWidthOneHot;
             m_confReg3.texHeight = texHeightOneHot;

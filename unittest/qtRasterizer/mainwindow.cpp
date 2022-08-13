@@ -231,12 +231,25 @@ MainWindow::MainWindow(QWidget *parent) :
     static constexpr bool ENABLE_LIGHT = true;
     if constexpr (ENABLE_LIGHT)
     {
-        glEnable(GL_LIGHT0);
-        glEnable(GL_LIGHTING);
+       glEnable(GL_LIGHT0);
+       glEnable(GL_LIGHTING);
 
-        static constexpr float colors[4] = {0.0, 0.0, 0.0, 0.0};
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+       static constexpr float colors[4] = {0.0, 0.0, 0.0, 0.0};
+       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+       glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
+    }
+
+    static constexpr bool ENABLE_BLACK_WHITE = false;
+    if constexpr (ENABLE_BLACK_WHITE)
+    {
+        float colors[4] = {.7, .7, .7, 0.0};
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
         glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
+        glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+        glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_DOT3_RGB);
+        glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_ONE_MINUS_SRC_COLOR);
+        glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 4);
     }
 }
 
@@ -309,6 +322,7 @@ void MainWindow::newFrame()
 
     m_ogl.commit();
 
+#if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)
     {
         for (uint32_t j = 0; j < RESOLUTION_W; j++)
@@ -316,10 +330,14 @@ void MainWindow::newFrame()
             uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 12) & 0xf) << 4;
             uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 8) & 0xf) << 4;
             uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 4) & 0xf) << 4;
+            // uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 24) & 0xff) << 0;
+            // uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 16) & 0xff) << 0;
+            // uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 8) & 0xff) << 0;
             m_image.setPixelColor(QPoint(j, i), QColor(r, g, b));
         }
     }
     ui->label->setPixmap(QPixmap::fromImage(m_image.scaled(m_image.width()*PREVIEW_WINDOW_SCALING, m_image.height()*PREVIEW_WINDOW_SCALING)));
+#endif
 }
 
 MainWindow::~MainWindow()

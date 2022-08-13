@@ -8,8 +8,8 @@ double sc_time_stamp() {
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+    static QApplication a(argc, argv);
+    static MainWindow w;
     w.show();
 
     return a.exec();

@@ -6,9 +6,12 @@
 #include <QTimer>
 #include "IceGL.hpp"
 #include "Renderer.hpp"
+#if USE_SIMULATION
 #include "VerilatorBusConnector.hpp"
-#ifdef SOFTWARE_RENDERER
-#include "softwarerenderer.h"
+#endif
+#if USE_HARDWARE
+#undef VOID // Undef void because it is defined in the tcl.h and there is a typedef in WinTypes.h (which is used for the FT2232 library)
+#include "FT60XBusConnector.hpp"
 #endif
 
 namespace Ui {
@@ -27,18 +30,29 @@ public slots:
     void newFrame();
 
 private:
-    static const uint32_t RESOLUTION_W = 640;
-    static const uint32_t RESOLUTION_H = 480;
-    static const uint32_t PREVIEW_WINDOW_SCALING = 1;
     GLuint loadTexture(const char *tex);
 
-#ifdef SOFTWARE_RENDERER
-    uint16_t m_zbuffer[RESOLUTION_W*RESOLUTION_H];
-    SoftwareRenderer m_renderer{m_framebuffer, m_zbuffer, RESOLUTION_W, RESOLUTION_H};
-#else
+#if USE_SIMULATION
+public:
+    static const uint32_t PREVIEW_WINDOW_SCALING = 1;
+    static const uint32_t RESOLUTION_W = 640;
+    static const uint32_t RESOLUTION_H = 480;
+private:
+    uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
+
     VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    Renderer<16384, 4, RESOLUTION_H / 4, 32> m_renderer{m_busConnector};
+    Renderer<1024*1024, 10, RESOLUTION_H / 10, 64> m_renderer{m_busConnector};
 #endif
+
+#if USE_HARDWARE
+public:
+    static const uint32_t RESOLUTION_H = 600;
+    static const uint32_t RESOLUTION_W = 1024;
+private:
+    FT60XBusConnector m_busConnector;
+    Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
+#endif
+
     IceGL m_ogl{m_renderer};
 
     GLuint m_textureId = 0;
@@ -49,8 +63,6 @@ private:
 
     QTimer m_timer;
     QImage m_image;
-
-    uint16_t m_framebuffer[RESOLUTION_W*RESOLUTION_H];
 };
 
 #endif // MAINWINDOW_H
