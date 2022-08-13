@@ -124,10 +124,10 @@ module Rasterix #(
     wire [15:0] confDepthBufferClearDepth;
 
     // Texture memory AXIS
-    wire        s_texture_axis_tvalid;
-    wire        s_texture_axis_tready;
-    wire        s_texture_axis_tlast;
-    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_axis_tdata;
+    wire        s_texture_steam_tmu0_axis_tvalid;
+    wire        s_texture_steam_tmu0_axis_tready;
+    wire        s_texture_steam_tmu0_axis_tlast;
+    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu0_axis_tdata;
 
     // Attribute interpolator
     wire        m_attr_inter_axis_tvalid;
@@ -204,10 +204,10 @@ module Rasterix #(
         .confDepthBufferClearDepth(confDepthBufferClearDepth),
 
         // Texture AXIS interface
-        .m_texture_axis_tvalid(s_texture_axis_tvalid),
-        .m_texture_axis_tready(s_texture_axis_tready),
-        .m_texture_axis_tlast(s_texture_axis_tlast),
-        .m_texture_axis_tdata(s_texture_axis_tdata),
+        .m_texture_steam_tmu0_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
+        .m_texture_steam_tmu0_axis_tready(s_texture_steam_tmu0_axis_tready),
+        .m_texture_steam_tmu0_axis_tlast(s_texture_steam_tmu0_axis_tlast),
+        .m_texture_steam_tmu0_axis_tdata(s_texture_steam_tmu0_axis_tdata),
 
         // Debug
         .dbgStreamState(dbgStreamState)
@@ -232,7 +232,7 @@ module Rasterix #(
     defparam regBank.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
     defparam regBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-    TextureBuffer texCache (
+    TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -246,10 +246,10 @@ module Rasterix #(
         .texelOutput10(texelInput10),
         .texelOutput11(texelInput11),
 
-        .s_axis_tvalid(s_texture_axis_tvalid),
-        .s_axis_tready(s_texture_axis_tready),
-        .s_axis_tlast(s_texture_axis_tlast),
-        .s_axis_tdata(s_texture_axis_tdata)
+        .s_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
+        .s_axis_tready(s_texture_steam_tmu0_axis_tready),
+        .s_axis_tlast(s_texture_steam_tmu0_axis_tlast),
+        .s_axis_tdata(s_texture_steam_tmu0_axis_tdata)
     );
     defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
