@@ -36,11 +36,11 @@ module CommandParser #(
 
     // Rasterizer
     // Configs
-    output wire [31:0]  confReg1,
-    output wire [31:0]  confReg2,
-    output wire [31:0]  confReg3,
-    output wire [31:0]  confTextureEnvColor,
-    output wire [31:0]  confFogColor,
+    output wire [31:0]  confFragmentPipelineConfig,
+    output wire [31:0]  confFragmentPipelineFogColor,
+    output wire [31:0]  confTMU0TexEnvConfig,
+    output wire [31:0]  confTMU0TextureConfig,
+    output wire [31:0]  confTMU0TexEnvColor,
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -108,11 +108,11 @@ module CommandParser #(
     assign applied = colorBufferApplied & depthBufferApplied;
     assign confColorBufferClearColor = configReg[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR];
     assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
-    assign confReg1 = configReg[OP_RENDER_CONFIG_REG1];
-    assign confReg2 = configReg[OP_RENDER_CONFIG_REG2];
-    assign confReg3 = configReg[OP_RENDER_CONFIG_REG3];
-    assign confTextureEnvColor = configReg[OP_RENDER_CONFIG_TEX_ENV_COLOR];
-    assign confFogColor = configReg[OP_RENDER_CONFIG_FOG_COLOR];
+    assign confFragmentPipelineConfig = configReg[OP_RENDER_CONFIG_FRAGMENT_PIPELINE];
+    assign confFragmentPipelineFogColor = configReg[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR];
+    assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
+    assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
+    assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
 
     assign dbgStreamState = state[3:0];
 

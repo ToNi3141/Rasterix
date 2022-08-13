@@ -18,7 +18,7 @@
 `include "PixelUtil.vh"
 
 // This module calculates the texture environment 
-// For documentation, see RegisterAndDescripterDefines.vh:OP_RENDER_CONFIG_REG2
+// For documentation, see RegisterAndDescripterDefines.vh:OP_RENDER_CONFIG_TMU_TEX_ENV
 // Pipelined: yes
 // Depth: 4 cycles
 module TexEnv 
@@ -128,20 +128,20 @@ module TexEnv
         endcase
     endfunction
     
-    wire [ 2 : 0] combineRgb    = conf[ REG2_TMU_COMBINE_RGB_POS    +: REG2_TMU_COMBINE_RGB_SIZE ];
-    wire [ 2 : 0] combineAlpha  = conf[ REG2_TMU_COMBINE_ALPHA_POS  +: REG2_TMU_COMBINE_ALPHA_SIZE ];
-    wire [ 1 : 0] srcRegRgb0    = conf[ REG2_TMU_SRC_REG_RGB0_POS   +: REG2_TMU_SRC_REG_RGB0_SIZE ];
-    wire [ 1 : 0] srcRegRgb1    = conf[ REG2_TMU_SRC_REG_RGB1_POS   +: REG2_TMU_SRC_REG_RGB1_SIZE ];
-    wire [ 1 : 0] srcRegRgb2    = conf[ REG2_TMU_SRC_REG_RGB2_POS   +: REG2_TMU_SRC_REG_RGB2_SIZE ]; 
-    wire [ 1 : 0] srcRegAlpha0  = conf[ REG2_TMU_SRC_REG_ALPHA0_POS +: REG2_TMU_SRC_REG_ALPHA0_SIZE ];
-    wire [ 1 : 0] srcRegAlpha1  = conf[ REG2_TMU_SRC_REG_ALPHA1_POS +: REG2_TMU_SRC_REG_ALPHA1_SIZE ];
-    wire [ 1 : 0] srcRegAlpha2  = conf[ REG2_TMU_SRC_REG_ALPHA2_POS +: REG2_TMU_SRC_REG_ALPHA2_SIZE ];
-    wire [ 1 : 0] operandRgb0   = conf[ REG2_TMU_OPERAND_RGB0_POS   +: REG2_TMU_OPERAND_RGB0_SIZE ];
-    wire [ 1 : 0] operandRgb1   = conf[ REG2_TMU_OPERAND_RGB1_POS   +: REG2_TMU_OPERAND_RGB1_SIZE ];
-    wire [ 1 : 0] operandRgb2   = conf[ REG2_TMU_OPERAND_RGB2_POS   +: REG2_TMU_OPERAND_RGB2_SIZE ];
-    wire [ 0 : 0] operandAlpha0 = conf[ REG2_TMU_OPERAND_ALPHA0_POS +: REG2_TMU_OPERAND_ALPHA0_SIZE ];
-    wire [ 0 : 0] operandAlpha1 = conf[ REG2_TMU_OPERAND_ALPHA1_POS +: REG2_TMU_OPERAND_ALPHA1_SIZE ];
-    wire [ 0 : 0] operandAlpha2 = conf[ REG2_TMU_OPERAND_ALPHA2_POS +: REG2_TMU_OPERAND_ALPHA2_SIZE ];
+    wire [ 2 : 0] combineRgb    = conf[ RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_POS    +: RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_SIZE ];
+    wire [ 2 : 0] combineAlpha  = conf[ RENDER_CONFIG_TMU_TEX_ENV_COMBINE_ALPHA_POS  +: RENDER_CONFIG_TMU_TEX_ENV_COMBINE_ALPHA_SIZE ];
+    wire [ 1 : 0] srcRegRgb0    = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS   +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE ];
+    wire [ 1 : 0] srcRegRgb1    = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS   +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE ];
+    wire [ 1 : 0] srcRegRgb2    = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS   +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE ]; 
+    wire [ 1 : 0] srcRegAlpha0  = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_SIZE ];
+    wire [ 1 : 0] srcRegAlpha1  = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE ];
+    wire [ 1 : 0] srcRegAlpha2  = conf[ RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE ];
+    wire [ 1 : 0] operandRgb0   = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB0_POS   +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB0_SIZE ];
+    wire [ 1 : 0] operandRgb1   = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB1_POS   +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB1_SIZE ];
+    wire [ 1 : 0] operandRgb2   = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB2_POS   +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_RGB2_SIZE ];
+    wire [ 0 : 0] operandAlpha0 = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA0_SIZE ];
+    wire [ 0 : 0] operandAlpha1 = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA1_SIZE ];
+    wire [ 0 : 0] operandAlpha2 = conf[ RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_OPERAND_ALPHA2_SIZE ];
 
     initial 
     begin
@@ -175,7 +175,7 @@ module TexEnv
     // Delays parameters globaly to use them in further steps in the pipeline.
     ////////////////////////////////////////////////////////////////////////////
     wire [ 2 : 0] combineRgbDelay;
-    ValueDelay #(.VALUE_SIZE(REG2_TMU_COMBINE_RGB_SIZE), .DELAY(3)) 
+    ValueDelay #(.VALUE_SIZE(RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_SIZE), .DELAY(3)) 
         glob_combineRgbDelay (.clk(aclk), .in(combineRgb), .out(combineRgbDelay));
 
     ////////////////////////////////////////////////////////////////////////////
@@ -623,11 +623,11 @@ module TexEnv
 
         dot = ReduceAndSaturateSigned(dotSum);
 
-        dotScaled = ReduceAndSaturateSigned(ExpandSigned(dot) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
-        rcScaled = ReduceAndSaturateSigned(ExpandSigned(rc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
-        gcScaled = ReduceAndSaturateSigned(ExpandSigned(gc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
-        bcScaled = ReduceAndSaturateSigned(ExpandSigned(bc) << conf[REG2_TMU_SHIFT_RGB_POS +: REG2_TMU_SHIFT_RGB_SIZE]);
-        acScaled = ReduceAndSaturateSigned(ExpandSigned(ac) << conf[REG2_TMU_SHIFT_ALPHA_POS +: REG2_TMU_SHIFT_ALPHA_SIZE]);
+        dotScaled = ReduceAndSaturateSigned(ExpandSigned(dot) << conf[RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_POS +: RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_SIZE]);
+        rcScaled = ReduceAndSaturateSigned(ExpandSigned(rc) << conf[RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_POS +: RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_SIZE]);
+        gcScaled = ReduceAndSaturateSigned(ExpandSigned(gc) << conf[RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_POS +: RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_SIZE]);
+        bcScaled = ReduceAndSaturateSigned(ExpandSigned(bc) << conf[RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_POS +: RENDER_CONFIG_TMU_TEX_ENV_SHIFT_RGB_SIZE]);
+        acScaled = ReduceAndSaturateSigned(ExpandSigned(ac) << conf[RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_POS +: RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_SIZE]);
         
         case (combineRgbDelay)
             DOT3_RGBA:

@@ -136,11 +136,11 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31:0] confReg1;
-    wire [31:0] confReg2;
-    wire [31:0] confReg3;
-    wire [31:0] confTextureEnvColor;
-    wire [31:0] confFogColor;
+    wire [31:0] confFragmentPipelineConfig;
+    wire [31:0] confFragmentPipelineFogColor;
+    wire [31:0] confTMU0TexEnvConfig;
+    wire [31:0] confTMU0TextureConfig;
+    wire [31:0] confTMU0TexEnvColor;
 
     // Rasterizer
     wire        m_rasterizer_axis_tvalid;
@@ -177,11 +177,11 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confReg1(confReg1),
-        .confReg2(confReg2),
-        .confReg3(confReg3),
-        .confTextureEnvColor(confTextureEnvColor),
-        .confFogColor(confFogColor),
+        .confFragmentPipelineConfig(confFragmentPipelineConfig),
+        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
+        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
+        .confTMU0TextureConfig(confTMU0TextureConfig),
+        .confTMU0TexEnvColor(confTMU0TexEnvColor),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -263,7 +263,7 @@ module Rasterix #(
         .fragIndexWrite(depthIndexWrite),
         .fragIn(depthOut),
         .fragWriteEnable(depthWriteEnable),
-        .fragMask(confReg1[REG1_DEPTH_MASK_POS +: REG1_DEPTH_MASK_SIZE]),
+        .fragMask(confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE]),
         
         .apply(depthBufferApply),
         .applied(depthBufferApplied),
@@ -291,10 +291,10 @@ module Rasterix #(
         .fragIndexWrite(colorIndexWrite),
         .fragIn(Reduce(colorOut)),
         .fragWriteEnable(colorWriteEnable),
-        .fragMask({ confReg1[REG1_COLOR_MASK_R_POS +: REG1_COLOR_MASK_R_SIZE], 
-                    confReg1[REG1_COLOR_MASK_G_POS +: REG1_COLOR_MASK_G_SIZE], 
-                    confReg1[REG1_COLOR_MASK_B_POS +: REG1_COLOR_MASK_B_SIZE], 
-                    confReg1[REG1_COLOR_MASK_A_POS +: REG1_COLOR_MASK_A_SIZE]}),
+        .fragMask({ confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE]}),
         
         .apply(colorBufferApply),
         .applied(colorBufferApplied),
@@ -393,11 +393,11 @@ module Rasterix #(
         .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
-        .confReg1(confReg1),
-        .confReg2(confReg2),
-        .confReg3(confReg3),
-        .confTextureEnvColor(confTextureEnvColor),
-        .confFogColor(confFogColor),
+        .confFragmentPipelineConfig(confFragmentPipelineConfig),
+        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
+        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
+        .confTMU0TextureConfig(confTMU0TextureConfig),
+        .confTMU0TexEnvColor(confTMU0TexEnvColor),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),

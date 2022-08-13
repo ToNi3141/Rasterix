@@ -37,7 +37,7 @@ module PerFragmentPipeline
     input  wire                         resetn,
 
     // Shader configurations
-    input  wire [31 : 0]                confReg1,
+    input  wire [31 : 0]                conf,
 
     // Fragment input
     input  wire                         valid,
@@ -132,8 +132,8 @@ module PerFragmentPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .funcSFactor(confReg1[REG1_BLEND_FUNC_SFACTOR_POS +: REG1_BLEND_FUNC_SFACTOR_SIZE]),
-        .funcDFactor(confReg1[REG1_BLEND_FUNC_DFACTOR_POS +: REG1_BLEND_FUNC_DFACTOR_SIZE]),
+        .funcSFactor(conf[RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS +: RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE]),
+        .funcDFactor(conf[RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS +: RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE]),
         .sourceColor(step0_fragmentColor),
         .destColor(colorIn),
 
@@ -146,8 +146,8 @@ module PerFragmentPipeline
     ) alphaTest (
         .aclk(aclk),
         .resetn(resetn),
-        .func(confReg1[REG1_ALPHA_TEST_FUNC_POS +: REG1_ALPHA_TEST_FUNC_SIZE]),
-        .refVal(confReg1[REG1_ALPHA_TEST_REF_VALUE_POS +: REG1_ALPHA_TEST_REF_VALUE_SIZE]),
+        .func(conf[RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_POS +: RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_SIZE]),
+        .refVal(conf[RENDER_CONFIG_FRAGMENT_ALPHA_TEST_REF_VALUE_POS +: RENDER_CONFIG_FRAGMENT_ALPHA_TEST_REF_VALUE_SIZE]),
         .val(step0_fragmentColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
         .success(step1_alphaTestTmp)
     );
@@ -158,7 +158,7 @@ module PerFragmentPipeline
     ) depthTest (
         .aclk(aclk),
         .resetn(resetn),
-        .func(confReg1[REG1_DEPTH_TEST_FUNC_POS +: REG1_DEPTH_TEST_FUNC_SIZE]),
+        .func(conf[RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE]),
         .refVal(depthIn),
         .val(step0_depth),
         .success(step1_depthTestTmp)
@@ -168,7 +168,7 @@ module PerFragmentPipeline
     begin
         step1_writeFramebuffer <= (
             // Check if the depth test passed or force to always pass the depth test when the depth test is disabled
-            step1_depthTestTmp || !confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE]
+            step1_depthTestTmp || !conf[RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_POS +: RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_SIZE]
             // Check if the alpha test passes
         ) & step1_alphaTestTmp;
     end
@@ -189,7 +189,7 @@ module PerFragmentPipeline
         end
         fragmentProcessed <= step1_valid;
         colorWriteEnable <= step1_valid & step1_writeFramebuffer;
-        depthWriteEnable <= step1_valid & step1_writeFramebuffer & confReg1[REG1_ENABLE_DEPTH_TEST_POS +: REG1_ENABLE_DEPTH_TEST_SIZE];
+        depthWriteEnable <= step1_valid & step1_writeFramebuffer & conf[RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_POS +: RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_SIZE];
     end
 endmodule
 
