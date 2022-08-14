@@ -44,34 +44,22 @@ localparam OP_IMM_SIZE = 28;
 localparam OP_NOP_STREAM = 0;
 
 //---------------------------------------------------------------------------------------------------------
-// Texture Stream
-//  +-------------------------------------------------------------------------------------------------+
-//  | 4'h1 | 12'hx reserved | 8'hx TMU nr (currently unused) | 8'hx texture stream size in power of 2 |
-//  +-------------------------------------------------------------------------------------------------+
-// Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB. The stream size is not dependent 
-// on the actual texture size. This allows partial texture updates.
-// Steam size n 32bit values.
-localparam OP_TEXTURE_STREAM_TMU0 = 1;
-localparam TEXTURE_STREAM_SIZE_POS = 0;
-localparam TEXTURE_STREAM_SIZE_SIZE = 8;
-localparam TEXTURE_STREAM_TMU_NR_POS = 8;
-localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
-
-//---------------------------------------------------------------------------------------------------------
 // Register writing
 //  +----------------------------+
 //  | 4'h2 | 28'hx register addr |
 //  +----------------------------+
 // Steam size 1 32bit value.
-localparam OP_RENDER_CONFIG = 2;
+localparam OP_RENDER_CONFIG = 1;
 localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
-localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR + 1;
-localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH + 1;
-localparam OP_RENDER_CONFIG_FRAGMENT_PIPELINE = OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR + 1;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = OP_RENDER_CONFIG_FRAGMENT_PIPELINE + 1;
-localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = OP_RENDER_CONFIG_TMU0_TEX_ENV + 1;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG + 1;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR;
+localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
+localparam OP_RENDER_CONFIG_FRAGMENT_PIPELINE = 2;
+localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 3;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 4;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 5;
+localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 6;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 7;
+
+
 
 //---------------------------------------------------------------------------------------------------------
 // Framebuffer configuration
@@ -80,7 +68,7 @@ localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR
 //  +-----------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 // Steam size 1 32bit value.
-localparam OP_FRAMEBUFFER = 3;
+localparam OP_FRAMEBUFFER = 2;
 localparam OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer (color buffer) content via the framebuffer_axis 
 localparam OP_FRAMEBUFFER_MEMSET_POS = 1; // Clears the frame buffer with the configured clear color / depth value
 // The selected buffer where to execute the command above (multiple selections are possible)
@@ -94,7 +82,7 @@ localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 //  +---------------------------------------------------+
 // Immediate value contains size of triangle in bytes (inclusive the additional bytes which are required for CMD_AXIS bus alignment).
 // Steam size n 32bit values.
-localparam OP_TRIANGLE_STREAM = 4;
+localparam OP_TRIANGLE_STREAM = 3;
 
 //---------------------------------------------------------------------------------------------------------
 // Fog LuT configuration
@@ -103,9 +91,21 @@ localparam OP_TRIANGLE_STREAM = 4;
 //  +-----------------------+
 // Stream of the fog LuT
 // Steam size 33 32bit values.
-localparam OP_FOG_LUT_STREAM = 5;
+localparam OP_FOG_LUT_STREAM = 4;
 
-
+//---------------------------------------------------------------------------------------------------------
+// Texture Stream
+//  +-------------------------------------------------------------------------------------------------+
+//  | 4'h1 | 12'hx reserved | 8'hx TMU nr (currently unused) | 8'hx texture stream size in power of 2 |
+//  +-------------------------------------------------------------------------------------------------+
+// Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB. The stream size is not dependent 
+// on the actual texture size. This allows partial texture updates.
+// Steam size n 32bit values.
+localparam OP_TEXTURE_STREAM = 5;
+localparam TEXTURE_STREAM_SIZE_POS = 0;
+localparam TEXTURE_STREAM_SIZE_SIZE = 8;
+localparam TEXTURE_STREAM_TMU_NR_POS = 8;
+localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ localparam OP_FOG_LUT_STREAM = 5;
 // Has no arguments. 
 
 //---------------------------------------------------------------------------------------------------------
-// OP_TEXTURE_STREAM_TMU0
+// OP_TEXTURE_STREAM
 // Each texel is build like the following:
 //  +-----------------------------------+
 //  | 4'hx R | 4'hx G | 4'hx B | 4'hx A |

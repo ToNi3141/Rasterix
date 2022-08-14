@@ -241,13 +241,13 @@ public:
     virtual bool setDepthMask(const bool flag) override
     {
         m_confReg1.depthMask = flag;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool enableDepthTest(const bool enable) override
     {
         m_confReg1.enableDepthTest = enable;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool setColorMask(const bool r, const bool g, const bool b, const bool a) override
@@ -256,33 +256,33 @@ public:
         m_confReg1.colorMaskB = b;
         m_confReg1.colorMaskG = g;
         m_confReg1.colorMaskR = r;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool setDepthFunc(const TestFunc func) override
     {
         m_confReg1.depthFunc = func;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool setAlphaFunc(const TestFunc func, const uint8_t ref) override
     {
         m_confReg1.alphaFunc = func;
         m_confReg1.referenceAlphaValue = ref;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
         (void)target; // Only TMU0 is supported
-        return writeToReg(ListAssembler::SET_CONF_REG2, texEnvConfig);
+        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig);
     }
 
     virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
     {
         m_confReg1.blendFuncSFactor = sfactor;
         m_confReg1.blendFuncDFactor = dfactor;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
     }
 
     virtual bool setLogicOp(const LogicOp opcode) override
@@ -293,7 +293,7 @@ public:
 
     virtual bool setTexEnvColor(const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_TEX_ENV_COLOR, convertColor(color));
+        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV_COLOR, convertColor(color));
     }
 
     virtual bool setFogColor(const Vec4i& color) override
@@ -433,7 +433,7 @@ public:
             m_confReg3.wrapModeS = tex.wrapModeS;
             m_confReg3.wrapModeT = tex.wrapModeT;
             m_confReg3.enableMagFilter = tex.enableMagFilter;
-            ret = ret && writeToReg(ListAssembler::SET_CONF_REG3, m_confReg3);
+            ret = ret && writeToReg(ListAssembler::SET_TMU0_TEXTURE_CONFIG, m_confReg3);
         }
         return ret;
     }

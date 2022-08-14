@@ -52,45 +52,44 @@ private:
         static constexpr StreamCommandType DSE_STREAM    = 0x4000'0000;
 
         // OPs for the rasterizer
-        static constexpr StreamCommandType RR_NOP              = 0x0000'0000;
-        static constexpr StreamCommandType RR_TEXTURE_STREAM   = 0x1000'0000;
-        static constexpr StreamCommandType RR_SET_REG          = 0x2000'0000;
-        static constexpr StreamCommandType RR_FRAMEBUFFER_OP   = 0x3000'0000;
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM  = 0x4000'0000;
-        static constexpr StreamCommandType RR_FOG_LUT_STREAM   = 0x5000'0000;
+        static constexpr StreamCommandType RR_OP_NOP                = 0x0000'0000;
+        static constexpr StreamCommandType RR_OP_RENDER_CONFIG      = 0x1000'0000;
+        static constexpr StreamCommandType RR_OP_FRAMEBUFFER        = 0x2000'0000;
+        static constexpr StreamCommandType RR_OP_TRIANGLE_STREAM    = 0x3000'0000;
+        static constexpr StreamCommandType RR_OP_FOG_LUT_STREAM     = 0x4000'0000;
+        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM     = 0x5000'0000;
 
         // Immediate values
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS   = 0; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS = 8; // size: 8 bit
-       
 
-        static constexpr StreamCommandType RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR = 0x0000;
-        static constexpr StreamCommandType RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR = RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR + 1;
-        static constexpr StreamCommandType RR_FOG_COLOR_ADDR                    = RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR + 1;
-        static constexpr StreamCommandType RR_CONF_REG1_ADDR                    = RR_FOG_COLOR_ADDR + 1;
-        static constexpr StreamCommandType RR_CONF_REG2_ADDR                    = RR_CONF_REG1_ADDR + 1;
-        static constexpr StreamCommandType RR_CONF_REG3_ADDR                    = RR_CONF_REG2_ADDR + 1;
-        static constexpr StreamCommandType RR_TEX_ENV_COLOR_REG_ADDR            = RR_CONF_REG3_ADDR + 1;
-        
+        static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0000;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH    = 0x0000'0001;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_PIPELINE           = 0x0000'0002;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR          = 0x0000'0003;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV                = 0x0000'0004;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR          = 0x0000'0005;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0006;
 
-        static constexpr StreamCommandType RR_FRAMEBUFFER_COMMIT   = RR_FRAMEBUFFER_OP | 0x0001;
-        static constexpr StreamCommandType RR_FRAMEBUFFER_MEMSET   = RR_FRAMEBUFFER_OP | 0x0002;
-        static constexpr StreamCommandType RR_FRAMEBUFFER_COLOR    = RR_FRAMEBUFFER_OP | 0x0010;
-        static constexpr StreamCommandType RR_FRAMEBUFFER_DEPTH    = RR_FRAMEBUFFER_OP | 0x0020;
+        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
+        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
+        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0010;
+        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0020;
 
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_FULL  = RR_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
 
 public:
-    static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR = StreamCommand::RR_COLOR_BUFFER_CLEAR_COLOR_REG_ADDR;
-    static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH = StreamCommand::RR_DEPTH_BUFFER_CLEAR_DEPTH_REG_ADDR;
-    static constexpr uint32_t SET_CONF_REG1                = StreamCommand::RR_CONF_REG1_ADDR;
-    static constexpr uint32_t SET_CONF_REG2                = StreamCommand::RR_CONF_REG2_ADDR;
-    static constexpr uint32_t SET_CONF_REG3                = StreamCommand::RR_CONF_REG3_ADDR;
-    static constexpr uint32_t SET_TEX_ENV_COLOR            = StreamCommand::RR_TEX_ENV_COLOR_REG_ADDR;
-    static constexpr uint32_t SET_FOG_COLOR                = StreamCommand::RR_FOG_COLOR_ADDR;
-    static constexpr uint32_t SET_FOG_LUT                  = StreamCommand::RR_FOG_LUT_STREAM;
+    static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR  = StreamCommand::RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR;
+    static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH  = StreamCommand::RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH;
+    static constexpr uint32_t SET_FRAGMENT_PIPELINE_CONFIG  = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_PIPELINE;
+    static constexpr uint32_t SET_TMU0_TEX_ENV              = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV;
+    static constexpr uint32_t SET_TMU0_TEXTURE_CONFIG       = StreamCommand::RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG;
+    static constexpr uint32_t SET_TMU0_TEX_ENV_COLOR        = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR;
+    static constexpr uint32_t SET_FOG_COLOR                 = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR;
+
+    static constexpr uint32_t SET_FOG_LUT                   = StreamCommand::RR_OP_FOG_LUT_STREAM;
 
     void clearAssembler()
     {
@@ -107,7 +106,7 @@ public:
             SCT *op = m_displayList.template create<SCT>();
             if (op)
             {
-                *op = StreamCommand::RR_FRAMEBUFFER_COMMIT | StreamCommand::RR_FRAMEBUFFER_COLOR;
+                *op = StreamCommand::RR_OP_FRAMEBUFFER_COMMIT | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
             }
 
             closeStreamSection();
@@ -121,7 +120,7 @@ public:
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand = false;
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TEXTURE_STREAM_FULL);
+            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
         }
         return nullptr;
     }
@@ -162,8 +161,7 @@ public:
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
 
-                *m_texStreamOp = StreamCommand::RR_TEXTURE_STREAM 
-                    | texSizeLog2;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
@@ -197,8 +195,8 @@ public:
     {
         if (openNewStreamSection())
         {
-            const SCT opColorBuffer = StreamCommand::RR_FRAMEBUFFER_MEMSET | StreamCommand::RR_FRAMEBUFFER_COLOR;
-            const SCT opDepthBuffer = StreamCommand::RR_FRAMEBUFFER_MEMSET | StreamCommand::RR_FRAMEBUFFER_DEPTH;
+            const SCT opColorBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
+            const SCT opDepthBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
 
             SCT *op = m_displayList.template create<SCT>();
             if (op)
@@ -217,7 +215,7 @@ public:
                 }
                 else
                 {
-                    *op = StreamCommand::RR_NOP;
+                    *op = StreamCommand::RR_OP_NOP;
                 }
             }
             return op != nullptr;
@@ -230,7 +228,7 @@ public:
     {
         if (openNewStreamSection())
         {
-            return appendStreamCommand<TArg>(StreamCommand::RR_SET_REG | regIndex, regVal);
+            return appendStreamCommand<TArg>(StreamCommand::RR_OP_RENDER_CONFIG | regIndex, regVal);
         }
         return false;
     }

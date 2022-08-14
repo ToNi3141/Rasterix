@@ -172,7 +172,7 @@ module CommandParser #(
                         /* verilator lint_off WIDTH */
                         state <= EXEC_TRIANGLE_STREAM;
                     end
-                    OP_TEXTURE_STREAM_TMU0:
+                    OP_TEXTURE_STREAM:
                     begin
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
 
@@ -193,9 +193,7 @@ module CommandParser #(
                     end
                     OP_RENDER_CONFIG:
                     begin
-                        /* verilator lint_off WIDTH */
-                        streamCounter <= s_cmd_axis_tdata[3 : 0];
-                        /* verilator lint_off WIDTH */
+                        streamCounter <= s_cmd_axis_tdata[0 +: 14];
                         state <= EXEC_RENDER_CONFIG;
                     end
                     OP_FRAMEBUFFER:
