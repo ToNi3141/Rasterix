@@ -180,7 +180,7 @@ public:
             {
                 static constexpr uint32_t TEX_UPLOAD_SIZE = MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize();
                 DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
-                uploader.updateTexture(i * MAX_TEXTURE_SIZE, texture.gramAddr, texture.width * texture.height * 2);
+                uploader.updateTexture(i * MAX_TEXTURE_SIZE, texture.gramAddr, texture.size);
 
                 while (!m_busConnector.clearToSend())
                     ;
@@ -399,13 +399,14 @@ public:
             m_textureLut[texId] = newTextureSlot;
 
             m_textures[newTextureSlot].gramAddr = pixels;
-            m_textures[newTextureSlot].width = texWidth;
-            m_textures[newTextureSlot].height = texHeight;
+            m_textures[newTextureSlot].size = texWidth * texHeight * 2;
             m_textures[newTextureSlot].inUse = true;
             m_textures[newTextureSlot].requiresUpload = true;
-            m_textures[newTextureSlot].wrapModeS = wrapModeS;
-            m_textures[newTextureSlot].wrapModeT = wrapModeT;
-            m_textures[newTextureSlot].enableMagFilter = enableMagFilter;
+            m_textures[newTextureSlot].tmuConfig.wrapModeS = wrapModeS;
+            m_textures[newTextureSlot].tmuConfig.wrapModeT = wrapModeT;
+            m_textures[newTextureSlot].tmuConfig.enableMagFilter = enableMagFilter;
+            m_textures[newTextureSlot].tmuConfig.texWidth = (1 << (static_cast<uint32_t>(log2(static_cast<float>(texWidth))) - 1));
+            m_textures[newTextureSlot].tmuConfig.texHeight = (1 << (static_cast<uint32_t>(log2(static_cast<float>(texHeight))) - 1));
             return true;
         }
         return false;
@@ -422,18 +423,9 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId],
-                                                                                             tex.width * tex.height * 2);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size);
 
-            const uint32_t texWidthOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.width))) - 1));
-            const uint32_t texHeightOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.height))) - 1));
-                
-            m_confReg3.texWidth = texWidthOneHot;
-            m_confReg3.texHeight = texHeightOneHot;
-            m_confReg3.wrapModeS = tex.wrapModeS;
-            m_confReg3.wrapModeT = tex.wrapModeT;
-            m_confReg3.enableMagFilter = tex.enableMagFilter;
-            ret = ret && writeToReg(ListAssembler::SET_TMU0_TEXTURE_CONFIG, m_confReg3);
+            ret = ret && writeToReg(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
         }
         return ret;
     }
@@ -455,11 +447,15 @@ private:
         bool requiresUpload;
         bool requiresDelete;
         std::shared_ptr<const uint16_t> gramAddr;
-        uint16_t width;
-        uint16_t height;
-        TextureWrapMode wrapModeS;
-        TextureWrapMode wrapModeT;
-        bool enableMagFilter;
+        uint32_t size;
+        struct __attribute__ ((__packed__)) TmuTextureConfig
+        {
+            uint8_t texWidth : 8;
+            uint8_t texHeight : 8;
+            TextureWrapMode wrapModeS : 1;
+            TextureWrapMode wrapModeT : 1;
+            bool enableMagFilter : 1;
+        } tmuConfig;
     };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
@@ -509,14 +505,6 @@ private:
         IRenderer::BlendFunc blendFuncDFactor : 4;
     } m_confReg1;
 
-    struct __attribute__ ((__packed__)) ConfReg3
-    {
-        uint8_t texWidth : 8;
-        uint8_t texHeight : 8;
-        TextureWrapMode wrapModeS : 1;
-        TextureWrapMode wrapModeT : 1;
-        bool enableMagFilter : 1;
-    } m_confReg3;
 
     std::future<bool> m_renderThread;
 };
