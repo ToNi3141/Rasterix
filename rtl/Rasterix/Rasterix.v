@@ -155,7 +155,7 @@ module Rasterix #(
     wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata;
 
     // Register bank
-    wire [(PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
+    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -324,17 +324,17 @@ module Rasterix #(
         .m_axis_tlast(m_rasterizer_axis_tlast),
         .m_axis_tdata(m_rasterizer_axis_tdata),
 
-        .bbStart(triangleParams[BB_START * PARAM_SIZE +: PARAM_SIZE]),
-        .bbEnd(triangleParams[BB_END * PARAM_SIZE +: PARAM_SIZE]),
-        .w0(triangleParams[INC_W0 * PARAM_SIZE +: PARAM_SIZE]),
-        .w1(triangleParams[INC_W1 * PARAM_SIZE +: PARAM_SIZE]),
-        .w2(triangleParams[INC_W2 * PARAM_SIZE +: PARAM_SIZE]),
-        .w0IncX(triangleParams[INC_W0_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w1IncX(triangleParams[INC_W1_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w2IncX(triangleParams[INC_W2_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w0IncY(triangleParams[INC_W0_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .w1IncY(triangleParams[INC_W1_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .w2IncY(triangleParams[INC_W2_Y * PARAM_SIZE +: PARAM_SIZE])
+        .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0(triangleParams[TRIANGLE_STREAM_INC_W0 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1(triangleParams[TRIANGLE_STREAM_INC_W1 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2(triangleParams[TRIANGLE_STREAM_INC_W2 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0IncX(triangleParams[TRIANGLE_STREAM_INC_W0_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1IncX(triangleParams[TRIANGLE_STREAM_INC_W1_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2IncX(triangleParams[TRIANGLE_STREAM_INC_W2_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0IncY(triangleParams[TRIANGLE_STREAM_INC_W0_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1IncY(triangleParams[TRIANGLE_STREAM_INC_W1_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
     defparam rop.X_RESOLUTION = X_RESOLUTION;
     defparam rop.Y_RESOLUTION = Y_RESOLUTION;
@@ -357,30 +357,30 @@ module Rasterix #(
         .m_axis_tlast(m_attr_inter_axis_tlast),
         .m_axis_tdata(m_attr_inter_axis_tdata),
 
-        .tex_s(triangleParams[INC_TEX_S * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t(triangleParams[INC_TEX_T * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_s_inc_x(triangleParams[INC_TEX_S_X * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t_inc_x(triangleParams[INC_TEX_T_X * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_s_inc_y(triangleParams[INC_TEX_S_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t_inc_y(triangleParams[INC_TEX_T_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w(triangleParams[INC_DEPTH_W * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w_inc_x(triangleParams[INC_DEPTH_W_X * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w_inc_y(triangleParams[INC_DEPTH_W_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z(triangleParams[INC_DEPTH_Z * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z_inc_x(triangleParams[INC_DEPTH_Z_X * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z_inc_y(triangleParams[INC_DEPTH_Z_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r(triangleParams[INC_COLOR_R * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r_inc_x(triangleParams[INC_COLOR_R_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r_inc_y(triangleParams[INC_COLOR_R_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g(triangleParams[INC_COLOR_G * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g_inc_x(triangleParams[INC_COLOR_G_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g_inc_y(triangleParams[INC_COLOR_G_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b(triangleParams[INC_COLOR_B * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b_inc_x(triangleParams[INC_COLOR_B_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b_inc_y(triangleParams[INC_COLOR_B_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a(triangleParams[INC_COLOR_A * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a_inc_x(triangleParams[INC_COLOR_A_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a_inc_y(triangleParams[INC_COLOR_A_Y * PARAM_SIZE +: PARAM_SIZE])
+        .tex_s(triangleParams[TRIANGLE_STREAM_INC_TEX_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t(triangleParams[TRIANGLE_STREAM_INC_TEX_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
 
     PixelPipeline pixelPipeline (    

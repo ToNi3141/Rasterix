@@ -312,56 +312,49 @@ localparam COLOR_A_POS = COLOR_SUB_PIXEL_WIDTH * 0;
 //---------------------------------------------------------------------------------------------------------
 // OP_TRIANGLE_STREAM 
 // Triangle Descriptor, each value containts 4 bytes.
-localparam PARAM_SIZE = 32;
-localparam TRIANGLE_COLOR = 0;
-localparam BB_START = 1; // S15.0, S15.0 (32bit)
-localparam BB_END = 2; // S15.0, S15.0 (32bit)
-localparam INC_W0 = 3; // Sn.m (32bit)
-localparam INC_W1 = 4; // Sn.m (32bit)
-localparam INC_W2 = 5; // Sn.m (32bit)
-localparam INC_W0_X = 6; // Sn.m (32bit)
-localparam INC_W1_X = 7; // Sn.m (32bit)
-localparam INC_W2_X = 8; // Sn.m (32bit)
-localparam INC_W0_Y = 9; // Sn.m (32bit)
-localparam INC_W1_Y = 10; // Sn.m (32bit)
-localparam INC_W2_Y = 11; // Sn.m (32bit)
-localparam INC_TEX_S = 12; // float (32bit)
-localparam INC_TEX_T = 13; // float (32bit)
-localparam INC_TEX_S_X = 14; // float (32bit)
-localparam INC_TEX_T_X = 15; // float (32bit)
-localparam INC_TEX_S_Y = 16; // float (32bit)
-localparam INC_TEX_T_Y = 17; // float (32bit)
-localparam INC_DEPTH_W = 18; // float (32bit)
-localparam INC_DEPTH_W_X = 19; // float (32bit)
-localparam INC_DEPTH_W_Y = 20; // float (32bit)
-localparam INC_DEPTH_Z = 21; // float (32bit)
-localparam INC_DEPTH_Z_X = 22; // float (32bit)
-localparam INC_DEPTH_Z_Y = 23; // float (32bit)
-localparam INC_COLOR_R = 24; // float (32bit)
-localparam INC_COLOR_G = 25; // float (32bit)
-localparam INC_COLOR_B = 26; // float (32bit)
-localparam INC_COLOR_A = 27; // float (32bit)
-localparam INC_COLOR_R_X = 28; // float (32bit)
-localparam INC_COLOR_G_X = 29; // float (32bit)
-localparam INC_COLOR_B_X = 30; // float (32bit)
-localparam INC_COLOR_A_X = 31; // float (32bit)
-localparam INC_COLOR_R_Y = 32; // float (32bit)
-localparam INC_COLOR_G_Y = 33; // float (32bit)
-localparam INC_COLOR_B_Y = 34; // float (32bit)
-localparam INC_COLOR_A_Y = 35; // float (32bit)
-localparam PADDING_1 = INC_COLOR_A_Y + 4;
-localparam TRIANGLE_DATA_SET_SIZE_128 = INC_COLOR_A_Y + 1; // Max command port width: 128 bit
+localparam TRIANGLE_STREAM_PARAM_SIZE = 32;
+localparam TRIANGLE_RESERVED = 0; // (32 bit)
+localparam TRIANGLE_STREAM_BB_START = 1; // S15.0, S15.0 (32bit)
+localparam TRIANGLE_STREAM_BB_END = 2; // S15.0, S15.0 (32bit)
+localparam TRIANGLE_STREAM_INC_W0 = 3; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W1 = 4; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W2 = 5; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W0_X = 6; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W1_X = 7; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W2_X = 8; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W0_Y = 9; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W1_Y = 10; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_W2_Y = 11; // Sn.m (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_S = 12; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_T = 13; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_S_X = 14; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_T_X = 15; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_S_Y = 16; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX_T_Y = 17; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_W = 18; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_W_X = 19; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_W_Y = 20; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_Z = 21; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_Z_X = 22; // float (32bit)
+localparam TRIANGLE_STREAM_INC_DEPTH_Z_Y = 23; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_R = 24; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_G = 25; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_B = 26; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_A = 27; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_R_X = 28; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_G_X = 29; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_B_X = 30; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_A_X = 31; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_R_Y = 32; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_G_Y = 33; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_B_Y = 34; // float (32bit)
+localparam TRIANGLE_STREAM_INC_COLOR_A_Y = 35; // float (32bit)
+localparam PADDING_1 = TRIANGLE_STREAM_INC_COLOR_A_Y + 4;
+localparam TRIANGLE_DATA_SET_SIZE_128 = TRIANGLE_STREAM_INC_COLOR_A_Y + 1; // Max command port width: 128 bit
 localparam TRIANGLE_DATA_SET_SIZE_256 = PADDING_1 + 1; // Max command port width: 256 bit
 `define GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(x) (x <= 128 ? TRIANGLE_DATA_SET_SIZE_128 : \
                                             x <= 256 ? TRIANGLE_DATA_SET_SIZE_256 : \
                                             0)
-// BB_START and BB_END defines
-localparam BB_X_POS = 0;
-localparam BB_Y_POS = 16;
-// TRIANGLE_CONFIGURATION defines
-localparam TRIANGLE_STATIC_COLOR_POS = 16;
-localparam ENABLE_W_INTERPOLATION_POS = 0;
-localparam ENABLE_TEXTURE_INTERPOLATION_POS = 1;
 
 //---------------------------------------------------------------------------------------------------------
 // OP_FOG_LUT_STREAM
