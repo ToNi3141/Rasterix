@@ -135,7 +135,7 @@ private:
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
     // If we have this, we could make all this functions const and return an empty optional if the conversion failed
-    IRenderer::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
+    IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
     TnL::RenderObj::Type convertType(GLenum type);
     TnL::RenderObj::DrawMode convertDrawMode(GLenum drawMode);
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
@@ -185,6 +185,9 @@ private:
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
     bool m_texEnableMagFilter = true;
     IRenderer::TexEnvConf m_texEnvConf0;
+
+    // Current fragment pipeline configuration 
+    IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
 
     // Test functions
     bool m_enableAlphaTest = true;

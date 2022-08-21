@@ -32,10 +32,6 @@ IceGL::IceGL(IRenderer &renderer)
     m_t.identity();
 
     //glLogicOp(GL_COPY);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_FOG);
     glClearDepthf(1.0f);
 
@@ -778,19 +774,20 @@ void IceGL::glEnable(GLenum cap)
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, m_texEnvMode);
         break;
     case GL_ALPHA_TEST:
-        // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saveing
+        // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saving
         // the current alpha test func and the reference value. When the test is enabled, we just recover this values.
         // Seems to work perfect.
         m_enableAlphaTest = true;
         glAlphaFunc(m_alphaTestFunc, m_alphaTestRefValue);
         break;
     case GL_DEPTH_TEST:
-        // For the depth test it is not possible to use a similar algorithem like we do for the alpha test. The main reason
+        // For the depth test it is not possible to use a similar algorithm like we do for the alpha test. The main reason
         // behind that is that the depth test uses a depth buffer. Is the depth test is disabled, the depth test always passes
         // and never writes into the depth buffer. We could use glDepthMask to avoid writing, but then we also disabling
         // glClear() what we obviously dont want. The easiest fix is to introduce a special switch. If this switch is disabled
         // the depth buffer always passes and never writes and glClear() can clear the depth buffer.
-        m_renderer.enableDepthTest(true);
+        m_fragmentPipelineConf.enableDepthTest = true;
+        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
         break;
     case GL_BLEND:
         m_enableBlending = true;
@@ -856,7 +853,8 @@ void IceGL::glDisable(GLenum cap)
     }
     case GL_DEPTH_TEST:
     {
-        m_renderer.enableDepthTest(false);
+        m_fragmentPipelineConf.enableDepthTest = false;
+        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
         break;
     }
     case GL_BLEND:
@@ -908,7 +906,11 @@ void IceGL::glDisable(GLenum cap)
 void IceGL::glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     m_error = GL_NO_ERROR;
-    if (m_renderer.setColorMask(red == GL_TRUE, green == GL_TRUE, blue == GL_TRUE, alpha == GL_TRUE))
+    m_fragmentPipelineConf.colorMaskR = (red == GL_TRUE);
+    m_fragmentPipelineConf.colorMaskG = (green == GL_TRUE);
+    m_fragmentPipelineConf.colorMaskB = (blue == GL_TRUE);
+    m_fragmentPipelineConf.colorMaskA = (alpha == GL_TRUE);
+    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
     {
         m_error = GL_NO_ERROR;
     }
@@ -921,7 +923,8 @@ void IceGL::glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 void IceGL::glDepthMask(GLboolean flag)
 {
     m_error = GL_NO_ERROR;
-    if (m_renderer.setDepthMask(flag == GL_TRUE))
+    m_fragmentPipelineConf.depthMask = (flag == GL_TRUE);
+    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
     {
         m_error = GL_NO_ERROR;
     }
@@ -933,33 +936,33 @@ void IceGL::glDepthMask(GLboolean flag)
 
 void IceGL::glDepthFunc(GLenum func)
 {
-    IRenderer::TestFunc testFunc{IRenderer::TestFunc::LESS};
+    IRenderer::FragmentPipelineConf::TestFunc testFunc{IRenderer::FragmentPipelineConf::TestFunc::LESS};
     m_error = GL_NO_ERROR;
     switch (func)
     {
     case GL_ALWAYS:
-        testFunc = IRenderer::TestFunc::ALWAYS;
+        testFunc = IRenderer::FragmentPipelineConf::FragmentPipelineConf::TestFunc::ALWAYS;
         break;
     case GL_NEVER:
-        testFunc = IRenderer::TestFunc::NEVER;
+        testFunc = IRenderer::FragmentPipelineConf::FragmentPipelineConf::TestFunc::NEVER;
         break;
     case GL_LESS:
-        testFunc = IRenderer::TestFunc::LESS;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LESS;
         break;
     case GL_EQUAL:
-        testFunc = IRenderer::TestFunc::EQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::EQUAL;
         break;
     case GL_LEQUAL:
-        testFunc = IRenderer::TestFunc::LEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LEQUAL;
         break;
     case GL_GREATER:
-        testFunc = IRenderer::TestFunc::GREATER;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GREATER;
         break;
     case GL_NOTEQUAL:
-        testFunc = IRenderer::TestFunc::NOTEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NOTEQUAL;
         break;
     case GL_GEQUAL:
-        testFunc = IRenderer::TestFunc::GEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GEQUAL;
         break;
 
     default:
@@ -969,7 +972,8 @@ void IceGL::glDepthFunc(GLenum func)
 
     if (m_error == GL_NO_ERROR)
     {
-        if (m_renderer.setDepthFunc(testFunc))
+        m_fragmentPipelineConf.depthFunc = testFunc;
+        if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
         {
             m_error = GL_NO_ERROR;
         }
@@ -982,33 +986,33 @@ void IceGL::glDepthFunc(GLenum func)
 
 void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
 {
-    IRenderer::TestFunc testFunc{IRenderer::TestFunc::LESS};
+    IRenderer::FragmentPipelineConf::TestFunc testFunc{IRenderer::FragmentPipelineConf::TestFunc::LESS};
     m_error = GL_NO_ERROR;
     switch (func)
     {
     case GL_ALWAYS:
-        testFunc = IRenderer::TestFunc::ALWAYS;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::ALWAYS;
         break;
     case GL_NEVER:
-        testFunc = IRenderer::TestFunc::NEVER;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NEVER;
         break;
     case GL_LESS:
-        testFunc = IRenderer::TestFunc::LESS;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LESS;
         break;
     case GL_EQUAL:
-        testFunc = IRenderer::TestFunc::EQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::EQUAL;
         break;
     case GL_LEQUAL:
-        testFunc = IRenderer::TestFunc::LEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LEQUAL;
         break;
     case GL_GREATER:
-        testFunc = IRenderer::TestFunc::GREATER;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GREATER;
         break;
     case GL_NOTEQUAL:
-        testFunc = IRenderer::TestFunc::NOTEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NOTEQUAL;
         break;
     case GL_GEQUAL:
-        testFunc = IRenderer::TestFunc::GEQUAL;
+        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GEQUAL;
         break;
 
     default:
@@ -1023,8 +1027,14 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
         if (m_enableAlphaTest)
         {
             // Convert reference value from float to fix point
-            const uint8_t refFix = ref * (1 << 8);
-            if (m_renderer.setAlphaFunc(testFunc, refFix))
+            uint8_t refFix = ref * (1 << 8);
+            if (ref >= 1.0f)
+            {
+                refFix = 0xff;
+            }
+            m_fragmentPipelineConf.alphaFunc = testFunc;
+            m_fragmentPipelineConf.referenceAlphaValue = refFix;
+            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
             {
                 m_error = GL_NO_ERROR;
             }
@@ -1411,37 +1421,37 @@ void IceGL::glTexEnvfv(GLenum target, GLenum pname, const GLfloat *param)
     }
 }
 
-IRenderer::BlendFunc IceGL::convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+IRenderer::FragmentPipelineConf::BlendFunc IceGL::convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc) {
     case GL_ZERO:
-        return IRenderer::BlendFunc::ZERO;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
     case GL_ONE:
-        return IRenderer::BlendFunc::ONE;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ONE;
     case GL_DST_COLOR:
-        return IRenderer::BlendFunc::DST_COLOR;
+        return IRenderer::FragmentPipelineConf::BlendFunc::DST_COLOR;
     case GL_SRC_COLOR:
-        return IRenderer::BlendFunc::SRC_COLOR;
+        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_COLOR;
     case GL_ONE_MINUS_DST_COLOR:
-        return IRenderer::BlendFunc::ONE_MINUS_DST_COLOR;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_DST_COLOR;
     case GL_ONE_MINUS_SRC_COLOR:
-        return IRenderer::BlendFunc::ONE_MINUS_SRC_COLOR;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_SRC_COLOR;
     case GL_SRC_ALPHA:
-        return IRenderer::BlendFunc::SRC_ALPHA;
+        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_ALPHA;
     case GL_ONE_MINUS_SRC_ALPHA:
-        return IRenderer::BlendFunc::ONE_MINUS_SRC_ALPHA;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_SRC_ALPHA;
     case GL_DST_ALPHA:
-        return IRenderer::BlendFunc::DST_ALPHA;
+        return IRenderer::FragmentPipelineConf::BlendFunc::DST_ALPHA;
     case GL_ONE_MINUS_DST_ALPHA:
-        return IRenderer::BlendFunc::ONE_MINUS_DST_ALPHA;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_DST_ALPHA;
     case GL_SRC_ALPHA_SATURATE:
-        return IRenderer::BlendFunc::SRC_ALPHA_SATURATE;
+        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_ALPHA_SATURATE;
     default:
         m_error = GL_INVALID_ENUM;
-        return IRenderer::BlendFunc::ZERO;
+        return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
     }
     m_error = GL_INVALID_ENUM;
-    return IRenderer::BlendFunc::ZERO;
+    return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
 }
 
 void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
@@ -1457,7 +1467,9 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
         m_blendDfactor = dfactor;
         if (m_enableBlending)
         {
-            if (m_renderer.setBlendFunc(convertGlBlendFuncToRenderBlendFunc(sfactor), convertGlBlendFuncToRenderBlendFunc(dfactor)))
+            m_fragmentPipelineConf.blendFuncSFactor = convertGlBlendFuncToRenderBlendFunc(sfactor);
+            m_fragmentPipelineConf.blendFuncDFactor = convertGlBlendFuncToRenderBlendFunc(dfactor);
+            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
             {
                 m_error = GL_NO_ERROR;
             }
@@ -1471,61 +1483,62 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
 
 void IceGL::glLogicOp(GLenum opcode)
 {
-    IRenderer::LogicOp logicOp{IRenderer::LogicOp::COPY};
+    IRenderer::FragmentPipelineConf::LogicOp logicOp{IRenderer::FragmentPipelineConf::LogicOp::COPY};
     switch (opcode) {
     case GL_CLEAR:
-        logicOp = IRenderer::LogicOp::CLEAR;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = IRenderer::LogicOp::SET;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = IRenderer::LogicOp::COPY;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = IRenderer::LogicOp::COPY_INVERTED;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = IRenderer::LogicOp::NOOP;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NOOP;
         break;
     case GL_INVERTED:
-        logicOp = IRenderer::LogicOp::INVERTED;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::INVERTED;
         break;
     case GL_AND:
-        logicOp = IRenderer::LogicOp::AND;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = IRenderer::LogicOp::NAND;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = IRenderer::LogicOp::OR;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = IRenderer::LogicOp::NOR;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = IRenderer::LogicOp::XOR;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = IRenderer::LogicOp::EQUIV;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = IRenderer::LogicOp::AND_REVERSE;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = IRenderer::LogicOp::AND_INVERTED;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = IRenderer::LogicOp::OR_REVERSE;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = IRenderer::LogicOp::OR_INVERTED;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = IRenderer::LogicOp::COPY;
+        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY;
         break;
     }
-    if (m_renderer.setLogicOp(logicOp))
+    // m_fragmentPipelineConf.logicOp = setLogicOp; // TODO: Not yet implemented
+    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
     {
         m_error = GL_NO_ERROR;
     }

@@ -81,12 +81,6 @@ public:
             t = 0;
         }
 
-        setDepthFunc(TestFunc::LESS);
-        setDepthMask(false);
-        setColorMask(true, true, true, true);
-        setAlphaFunc(TestFunc::ALWAYS, 0xf);
-        setBlendFunc(BlendFunc::ONE, BlendFunc::ZERO);
-        setLogicOp(LogicOp::COPY);
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
@@ -238,57 +232,15 @@ public:
         return writeToReg(ListAssembler::SET_DEPTH_BUFFER_CLEAR_DEPTH, depth);
     }
 
-    virtual bool setDepthMask(const bool flag) override
+    virtual bool setFragmentPipelineConfig(const FragmentPipelineConf& pipelineConf) override 
     {
-        m_confReg1.depthMask = flag;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
-    }
-
-    virtual bool enableDepthTest(const bool enable) override
-    {
-        m_confReg1.enableDepthTest = enable;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
-    }
-
-    virtual bool setColorMask(const bool r, const bool g, const bool b, const bool a) override
-    {
-        m_confReg1.colorMaskA = a;
-        m_confReg1.colorMaskB = b;
-        m_confReg1.colorMaskG = g;
-        m_confReg1.colorMaskR = r;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
-    }
-
-    virtual bool setDepthFunc(const TestFunc func) override
-    {
-        m_confReg1.depthFunc = func;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
-    }
-
-    virtual bool setAlphaFunc(const TestFunc func, const uint8_t ref) override
-    {
-        m_confReg1.alphaFunc = func;
-        m_confReg1.referenceAlphaValue = ref;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, pipelineConf); 
     }
 
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
         (void)target; // Only TMU0 is supported
         return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig);
-    }
-
-    virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
-    {
-        m_confReg1.blendFuncSFactor = sfactor;
-        m_confReg1.blendFuncDFactor = dfactor;
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, m_confReg1);
-    }
-
-    virtual bool setLogicOp(const LogicOp opcode) override
-    {
-        (void)opcode;
-        return false;
     }
 
     virtual bool setTexEnvColor(const Vec4i& color) override
@@ -489,22 +441,6 @@ private:
     std::array<uint32_t, MAX_NUMBER_OF_TEXTURES> m_textureLut;
 
     IBusConnector& m_busConnector;
-
-    struct __attribute__ ((__packed__)) ConfReg1
-    {
-        bool enableDepthTest : 1;
-        IRenderer::TestFunc depthFunc : 3;
-        IRenderer::TestFunc alphaFunc : 3;
-        uint8_t referenceAlphaValue : 8;
-        bool depthMask : 1;
-        bool colorMaskA : 1;
-        bool colorMaskB : 1;
-        bool colorMaskG : 1;
-        bool colorMaskR : 1;
-        IRenderer::BlendFunc blendFuncSFactor : 4;
-        IRenderer::BlendFunc blendFuncDFactor : 4;
-    } m_confReg1;
-
 
     std::future<bool> m_renderThread;
 };
