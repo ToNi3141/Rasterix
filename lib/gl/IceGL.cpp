@@ -643,7 +643,7 @@ void IceGL::glBindTexture(GLenum target, GLuint texture)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_renderer.useTexture(m_boundTexture);
+        m_renderer.useTexture(IRenderer::TMU::TMU0, m_boundTexture);
     }
     else 
     {

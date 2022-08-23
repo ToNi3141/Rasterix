@@ -76,6 +76,9 @@ private:
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0010;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0020;
 
+        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU0    = RR_OP_TEXTURE_STREAM | 0x0000;
+        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU1    = RR_OP_TEXTURE_STREAM | 0x0100;
+
         static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
@@ -138,9 +141,11 @@ public:
         return false;
     }
 
-    bool useTexture(const uint32_t texAddr, 
+    bool useTexture(const uint8_t tmu,
+                    const uint32_t texAddr, 
                     const uint32_t texSize)
     {
+        (void)tmu;
         bool ret = false;
         if (openNewStreamSection())
         {
@@ -161,7 +166,7 @@ public:
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;

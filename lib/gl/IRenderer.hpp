@@ -218,9 +218,10 @@ public:
                                const bool enableMagFilter) = 0;
     
     /// @brief Activates a texture which then is used for rendering
+    /// @param target is used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool useTexture(const uint16_t texId) = 0; 
+    virtual bool useTexture(const TMU target, const uint16_t texId) = 0; 
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete
@@ -245,7 +246,7 @@ public:
     virtual bool setClearDepth(uint16_t depth) = 0;
 
     /// @brief Configures the texture environment. See glTexEnv()
-    /// @param target The target of the texture env
+    /// @param target is used TMU
     /// @param pname parameter name of the env parameter
     /// @param param Function of the tex env
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)

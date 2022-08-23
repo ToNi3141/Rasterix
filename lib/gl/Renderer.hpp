@@ -296,13 +296,14 @@ public:
         return m_textureManager.updateTexture(texId, pixels, texWidth, texHeight, wrapModeS, wrapModeT, enableMagFilter);
     }
 
-    virtual bool useTexture(const uint16_t texId) override 
+    virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
+        (void)target;
         typename TextureManager::TextureObject tex = m_textureManager.getTexture(texId);
         bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(tex.addr, tex.size);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
         }
         return ret;
