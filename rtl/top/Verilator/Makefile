@@ -6,7 +6,7 @@ X_RESOLUTION = 640
 Y_RESOLUTION = 480
 Y_LINE_RESOLUTION = 48
 
-all: simulation 
+all: mem 
 
 clean:
 	rm -rf obj_dir
