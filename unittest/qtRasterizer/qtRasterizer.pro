@@ -24,6 +24,7 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     $${ICEGL_PATH}/IceGL.cpp \
     $${ICEGL_PATH}/Clipper.cpp \
+    $${ICEGL_PATH}/Lighting.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp
 
 HEADERS  += mainwindow.h\
@@ -40,6 +41,7 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
     $${ICEGL_PATH}/Clipper.hpp \
+    $${ICEGL_PATH}/Lighting.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
 
 equals(TARGET_BUILD, "hardware") {

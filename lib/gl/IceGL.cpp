@@ -23,6 +23,7 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
+    , m_tnl(m_lighting)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
@@ -794,7 +795,7 @@ void IceGL::glEnable(GLenum cap)
         glBlendFunc(m_blendSfactor, m_blendDfactor);
         break;
     case GL_LIGHTING:
-        m_tnl.enableLighting(true);
+        m_lighting.enableLighting(true);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -804,7 +805,7 @@ void IceGL::glEnable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_tnl.enableLight(cap - GL_LIGHT0, true);
+        m_lighting.enableLight(cap - GL_LIGHT0, true);
         break;
     case GL_TEXTURE_GEN_S:
         m_tnl.enableTexGenS(true);
@@ -868,7 +869,7 @@ void IceGL::glDisable(GLenum cap)
         break;
     }
     case GL_LIGHTING:
-        m_tnl.enableLighting(false);
+        m_lighting.enableLighting(false);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -878,7 +879,7 @@ void IceGL::glDisable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_tnl.enableLight(cap - GL_LIGHT0, false);
+        m_lighting.enableLight(cap - GL_LIGHT0, false);
         break;
     case GL_TEXTURE_GEN_S:
         m_tnl.enableTexGenS(false);
@@ -891,7 +892,7 @@ void IceGL::glDisable(GLenum cap)
         break;
     case GL_COLOR_MATERIAL:
         m_enableColorMaterial = false;
-        m_tnl.enableColorMaterial(false, false, false, false);
+        m_lighting.enableColorMaterial(false, false, false, false);
         break;
     case GL_FOG:
         m_enableFog = false;
@@ -1645,7 +1646,7 @@ void IceGL::glMaterialf(GLenum face, GLenum pname, GLfloat param)
     {
         if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
         {
-            m_tnl.setSpecularExponentMaterial(param);
+            m_lighting.setSpecularExponentMaterial(param);
             m_error = GL_NO_ERROR;
         }
     }
@@ -1659,20 +1660,20 @@ void IceGL::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
         m_error = GL_NO_ERROR;
         switch (pname) {
         case GL_AMBIENT:
-            m_tnl.setAmbientColorMaterial({params});
+            m_lighting.setAmbientColorMaterial({params});
             break;
         case GL_DIFFUSE:
-            m_tnl.setDiffuseColorMaterial({params});
+            m_lighting.setDiffuseColorMaterial({params});
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            m_tnl.setAmbientColorMaterial({params});
-            m_tnl.setDiffuseColorMaterial({params});
+            m_lighting.setAmbientColorMaterial({params});
+            m_lighting.setDiffuseColorMaterial({params});
             break;
         case GL_SPECULAR:
-            m_tnl.setSpecularColorMaterial({params});
+            m_lighting.setSpecularColorMaterial({params});
             break;
         case GL_EMISSION:
-            m_tnl.setEmissiveColorMaterial({params});
+            m_lighting.setEmissiveColorMaterial({params});
             break;
         default:
             glMaterialf(face, pname, params[0]);
@@ -1692,29 +1693,29 @@ void IceGL::glColorMaterial(GLenum face, GLenum pname)
         switch (pname) {
         case GL_AMBIENT:
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(false, true, false, false);
+                m_lighting.enableColorMaterial(false, true, false, false);
             break;
         case GL_DIFFUSE:
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(false, false, true, false);
+                m_lighting.enableColorMaterial(false, false, true, false);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(false, true, true, false);
+                m_lighting.enableColorMaterial(false, true, true, false);
             break;
         case GL_SPECULAR:
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(false, false, false, true);
+                m_lighting.enableColorMaterial(false, false, false, true);
             break;
         case GL_EMISSION:
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(true, false, false, false);
+                m_lighting.enableColorMaterial(true, false, false, false);
             break;
         default:
             m_error = GL_INVALID_ENUM;
             m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
             if (m_enableColorMaterial)
-                m_tnl.enableColorMaterial(false, true, true, false);
+                m_lighting.enableColorMaterial(false, true, true, false);
             break;
         }
     }
@@ -1735,13 +1736,13 @@ void IceGL::glLightf(GLenum light, GLenum pname, GLfloat param)
         m_error = GL_SPEC_DEVIATION;
         break;
     case GL_CONSTANT_ATTENUATION:
-        m_tnl.setConstantAttenuationLight(light - GL_LIGHT0, param);
+        m_lighting.setConstantAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_LINEAR_ATTENUATION:
-        m_tnl.setLinearAttenuationLight(light - GL_LIGHT0, param);
+        m_lighting.setLinearAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_QUADRATIC_ATTENUATION:
-        m_tnl.setQuadraticAttenuationLight(light - GL_LIGHT0, param);
+        m_lighting.setQuadraticAttenuationLight(light - GL_LIGHT0, param);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1758,18 +1759,22 @@ void IceGL::glLightfv(GLenum light, GLenum pname, const GLfloat *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_AMBIENT:
-        m_tnl.setAmbientColorLight(light - GL_LIGHT0, {params});
+        m_lighting.setAmbientColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_DIFFUSE:
-        m_tnl.setDiffuseColorLight(light - GL_LIGHT0, {params});
+        m_lighting.setDiffuseColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_SPECULAR:
-        m_tnl.setSpecularColorLight(light - GL_LIGHT0, {params});
+        m_lighting.setSpecularColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_POSITION:
-        recalculateAndSetTnLMatrices();
-        m_tnl.setPosLight(light - GL_LIGHT0, {params});
+    {
+        Vec4 lightPos{params};
+        Vec4 lightPosTransformed{};
+        m_m.transform(lightPosTransformed, lightPos);
+        m_lighting.setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
+    }
     case GL_SPOT_DIRECTION:
         m_error = GL_SPEC_DEVIATION;
         break;
@@ -1797,7 +1802,7 @@ void IceGL::glLightModelfv(GLenum pname, const GLfloat *params)
     m_error = GL_INVALID_ENUM;
     if (pname == GL_LIGHT_MODEL_AMBIENT)
     {
-        m_tnl.setAmbientColorScene({params});
+        m_lighting.setAmbientColorScene({params});
         m_error = GL_NO_ERROR;
     }
     else
@@ -2222,7 +2227,7 @@ void IceGL::glGetIntegerv(GLenum pname, GLint *params)
 {
     switch (pname) {
     case GL_MAX_LIGHTS:
-        *params = m_tnl.MAX_LIGHTS;
+        *params = m_lighting.MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
         *params = MODEL_MATRIX_STACK_DEPTH;

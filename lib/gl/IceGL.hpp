@@ -25,6 +25,7 @@
 #include "TnL.hpp"
 #include "Vec.hpp"
 #include "IceGLTypes.h"
+#include "Lighting.hpp"
 
 //#define CLIP_UNITCUBE
 
@@ -149,6 +150,7 @@ private:
 
 
     IRenderer& m_renderer;
+    Lighting m_lighting;
     TnL m_tnl;
     TnL::RenderObj m_renderObj;
 
