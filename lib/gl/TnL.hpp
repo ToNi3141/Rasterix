@@ -20,9 +20,8 @@
 
 #include "Vec.hpp"
 #include "IRenderer.hpp"
-#include <tuple>
-#include <array>
 #include "Mat44.hpp"
+#include "Clipper.hpp"
 
 class TnL
 {
@@ -273,21 +272,6 @@ public:
     void enableCulling(bool enable);
     void setCullMode(CullMode mode);
 private:
-    // Each clipping plane can potentally introduce one more vertex, so, we have 3 vertexes, plus 6 possible planes, results in 9 vertexes
-    using ClipVertList = std::array<Vec4, 9>;
-    using ClipStList = std::array<Vec2, 9>;
-    using ClipColorList = std::array<Vec4, 9>;
-
-    enum OutCode
-    {
-        NONE    = 0x00,
-        NEAR    = 0x01,
-        FAR     = 0x02,
-        TOP     = 0x04,
-        BOTTOM  = 0x08,
-        LEFT    = 0x10,
-        RIGHT   = 0x20
-    };
 
     struct MaterialConfig
     {
@@ -331,24 +315,7 @@ private:
         }
     };
 
-    float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
-    void lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt);
-    void lerpSt(Vec2& vOut, const Vec2& v0, const Vec2& v1, const float amt);
-    OutCode outCode(const Vec4 &v);
-    std::tuple<const uint32_t, ClipVertList &, ClipStList &, ClipColorList &> clip(ClipVertList& vertList,
-                                                                                   ClipVertList& vertListBuffer,
-                                                                                   ClipStList& stList,
-                                                                                   ClipStList& stListBuffer,
-                                                                                   ClipColorList& colorList,
-                                                                                   ClipColorList& colorListBuffer);
-    uint32_t clipAgainstPlane(ClipVertList& vertListOut,
-                              ClipStList& stListOut,
-                              ClipColorList &colorListOut,
-                              const OutCode clipPlane,
-                              const ClipVertList& vertListIn,
-                              const ClipStList& stListIn,
-                              const ClipColorList &colorListIn,
-                              const uint32_t listInSize);
+
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
@@ -364,7 +331,7 @@ private:
                         const Vec4& materialSpecularColor,
                         const Vec4& v0,
                         const Vec3& n0) const;
-    void calculateTexGenCoords(ClipStList& stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+    void calculateTexGenCoords(Clipper::ClipStList& stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
 
     Mat44 m_t; // ModelViewProjection
     Mat44 m_m; // ModelView
@@ -400,10 +367,6 @@ private:
 
     bool m_enableCulling{false};
     CullMode m_cullMode{CullMode::BACK};
-
-    friend TnL::OutCode operator|=(TnL::OutCode& lhs, TnL::OutCode rhs);
 };
-
-TnL::OutCode operator|=(TnL::OutCode& lhs, TnL::OutCode rhs);
 
 #endif // TNL_HPP

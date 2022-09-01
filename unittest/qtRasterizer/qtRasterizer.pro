@@ -1,5 +1,5 @@
-#TARGET_BUILD = simulation
-TARGET_BUILD = hardware
+TARGET_BUILD = simulation
+#TARGET_BUILD = hardware
 
 # Set here the path to your local verilator installation
 
@@ -23,6 +23,7 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/TnL.cpp \
         mainwindow.cpp \
     $${ICEGL_PATH}/IceGL.cpp \
+    $${ICEGL_PATH}/Clipper.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp
 
 HEADERS  += mainwindow.h\
@@ -38,6 +39,7 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/IceGL.hpp \
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
+    $${ICEGL_PATH}/Clipper.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
 
 equals(TARGET_BUILD, "hardware") {
