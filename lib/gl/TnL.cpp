@@ -37,7 +37,7 @@ TnL::TnL(Lighting& lighting, TexGen& texGen)
     m_n.identity();
 }
 
-bool TnL::drawObj(IRenderer &renderer, const TnL::RenderObj &obj)
+bool TnL::drawObj(IRenderer &renderer, const RenderObj &obj)
 {
     // TODO: It is possible to precompute all transformations and lights here and save it in an temporary array.
     // That avoids that we have to transform and light every vertex three times.

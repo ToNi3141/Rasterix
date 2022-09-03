@@ -27,6 +27,7 @@
 #include "IceGLTypes.h"
 #include "Lighting.hpp"
 #include "TexGen.hpp"
+#include "RenderObj.hpp"
 
 //#define CLIP_UNITCUBE
 
@@ -138,8 +139,8 @@ private:
     // It would be nice to have std::optional, but it does not work with arduino
     // If we have this, we could make all this functions const and return an empty optional if the conversion failed
     IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
-    TnL::RenderObj::Type convertType(GLenum type);
-    TnL::RenderObj::DrawMode convertDrawMode(GLenum drawMode);
+    RenderObj::Type convertType(GLenum type);
+    RenderObj::DrawMode convertDrawMode(GLenum drawMode);
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
     GLint convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param);
     GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
@@ -152,7 +153,7 @@ private:
     Lighting m_lighting;
     TexGen m_texGen;
     TnL m_tnl;
-    TnL::RenderObj m_renderObj;
+    RenderObj m_renderObj;
 
     // Buffer
     std::vector<Vec4> m_vertexBuffer;

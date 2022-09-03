@@ -1863,13 +1863,13 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
     m_error = GL_NO_ERROR;
     switch (type) {
     case GL_UNSIGNED_BYTE:
-        m_renderObj.indicesType = TnL::RenderObj::Type::BYTE;
+        m_renderObj.indicesType = RenderObj::Type::BYTE;
         break;
     case GL_UNSIGNED_SHORT:
-        m_renderObj.indicesType = TnL::RenderObj::Type::SHORT;
+        m_renderObj.indicesType = RenderObj::Type::SHORT;
         break;
     case GL_UNSIGNED_INT:
-        m_renderObj.indicesType = TnL::RenderObj::Type::UNSIGNED_INT;
+        m_renderObj.indicesType = RenderObj::Type::UNSIGNED_INT;
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1922,39 +1922,39 @@ void IceGL::setClientState(const GLenum array, bool enable)
     }
 }
 
-TnL::RenderObj::Type IceGL::convertType(GLenum type)
+RenderObj::Type IceGL::convertType(GLenum type)
 {
     switch (type) {
     case GL_BYTE:
-        return TnL::RenderObj::Type::BYTE;
+        return RenderObj::Type::BYTE;
     case GL_UNSIGNED_BYTE:
-        return TnL::RenderObj::Type::UNSIGNED_BYTE;
+        return RenderObj::Type::UNSIGNED_BYTE;
     case GL_SHORT:
-        return TnL::RenderObj::Type::SHORT;
+        return RenderObj::Type::SHORT;
     case GL_UNSIGNED_SHORT:
-        return TnL::RenderObj::Type::UNSIGNED_SHORT;
+        return RenderObj::Type::UNSIGNED_SHORT;
     case GL_FLOAT:
-        return TnL::RenderObj::Type::FLOAT;
+        return RenderObj::Type::FLOAT;
     case GL_UNSIGNED_INT:
-        return TnL::RenderObj::Type::UNSIGNED_INT;
+        return RenderObj::Type::UNSIGNED_INT;
     default:
         m_error = GL_INVALID_ENUM;
-        return TnL::RenderObj::Type::BYTE;
+        return RenderObj::Type::BYTE;
     }
 }
 
-TnL::RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
+RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
 {
     switch (drawMode) {
     case GL_TRIANGLES:
-        return TnL::RenderObj::DrawMode::TRIANGLES;
+        return RenderObj::DrawMode::TRIANGLES;
     case GL_TRIANGLE_FAN:
-        return TnL::RenderObj::DrawMode::TRIANGLE_FAN;
+        return RenderObj::DrawMode::TRIANGLE_FAN;
     case GL_TRIANGLE_STRIP:
-        return TnL::RenderObj::DrawMode::TRIANGLE_STRIP;
+        return RenderObj::DrawMode::TRIANGLE_STRIP;
     default:
         m_error = GL_INVALID_ENUM;
-        return TnL::RenderObj::DrawMode::TRIANGLES;
+        return RenderObj::DrawMode::TRIANGLES;
     }
 }
 
