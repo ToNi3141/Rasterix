@@ -23,7 +23,7 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
-    , m_tnl(m_lighting)
+    , m_tnl(m_lighting, m_texGen)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
@@ -808,10 +808,10 @@ void IceGL::glEnable(GLenum cap)
         m_lighting.enableLight(cap - GL_LIGHT0, true);
         break;
     case GL_TEXTURE_GEN_S:
-        m_tnl.enableTexGenS(true);
+        m_texGen.enableTexGenS(true);
         break;
     case GL_TEXTURE_GEN_T:
-        m_tnl.enableTexGenT(true);
+        m_texGen.enableTexGenT(true);
         break;
     case GL_CULL_FACE:
         m_tnl.enableCulling(true);
@@ -882,10 +882,10 @@ void IceGL::glDisable(GLenum cap)
         m_lighting.enableLight(cap - GL_LIGHT0, false);
         break;
     case GL_TEXTURE_GEN_S:
-        m_tnl.enableTexGenS(false);
+        m_texGen.enableTexGenS(false);
         break;
     case GL_TEXTURE_GEN_T:
-        m_tnl.enableTexGenT(false);
+        m_texGen.enableTexGenT(false);
         break;
     case GL_CULL_FACE:
         m_tnl.enableCulling(false);
@@ -2051,16 +2051,16 @@ void IceGL::recalculateAndSetTnLMatrices()
 void IceGL::glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
     m_error = GL_NO_ERROR;
-    TnL::TexGenMode mode;
+    TexGen::TexGenMode mode;
     switch (param) {
     case GL_OBJECT_LINEAR:
-        mode = TnL::TexGenMode::OBJECT_LINEAR;
+        mode = TexGen::TexGenMode::OBJECT_LINEAR;
         break;
     case GL_EYE_LINEAR:
-        mode = TnL::TexGenMode::EYE_LINEAR;
+        mode = TexGen::TexGenMode::EYE_LINEAR;
         break;
     case GL_SPHERE_MAP:
-        mode = TnL::TexGenMode::SPHERE_MAP;
+        mode = TexGen::TexGenMode::SPHERE_MAP;
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -2071,10 +2071,10 @@ void IceGL::glTexGeni(GLenum coord, GLenum pname, GLint param)
     {
         switch (coord) {
         case GL_S:
-            m_tnl.setTexGenModeS(mode);
+            m_texGen.setTexGenModeS(mode);
             break;
         case GL_T:
-            m_tnl.setTexGenModeT(mode);
+            m_texGen.setTexGenModeT(mode);
             break;
         default:
             // Normally GL_R and GL_Q wouldn't rise an invalid enum, but they are right now not implemented
@@ -2095,17 +2095,17 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
     switch (pname) {
     case GL_OBJECT_PLANE:
         if (coord == GL_S)
-            m_tnl.setTexGenVecObjS({param});
+            m_texGen.setTexGenVecObjS({param});
         else if (coord == GL_T)
-            m_tnl.setTexGenVecObjT({param});
+            m_texGen.setTexGenVecObjT({param});
         else
             m_error = GL_INVALID_ENUM;
         break;
     case GL_EYE_PLANE:
         if (coord == GL_S)
-            m_tnl.setTexGenVecEyeS(calcTexGenEyePlane(m_m, {param}));
+            m_texGen.setTexGenVecEyeS(m_m, {param});
         else if (coord == GL_T)
-            m_tnl.setTexGenVecEyeT(calcTexGenEyePlane(m_m, {param}));
+            m_texGen.setTexGenVecEyeT(m_m, {param});
         else
             m_error = GL_INVALID_ENUM;
         break;
@@ -2113,16 +2113,6 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
         glTexGeni(coord, pname, static_cast<GLint>(param[0]));
         break;
     }
-}
-
-Vec4 IceGL::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane)
-{
-    Mat44 inv{mat};
-    inv.invert();
-    inv.transpose();
-    Vec4 newPlane;
-    inv.transform(newPlane, plane);
-    return newPlane;
 }
 
 GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)

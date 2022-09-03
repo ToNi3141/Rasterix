@@ -23,17 +23,11 @@
 #include "Mat44.hpp"
 #include "Clipper.hpp"
 #include "Lighting.hpp"
+#include "TexGen.hpp"
 
 class TnL
 {
 public:
-    enum TexGenMode
-    {
-        OBJECT_LINEAR,
-        EYE_LINEAR,
-        SPHERE_MAP
-    };
-
     enum CullMode
     {
         BACK,
@@ -232,7 +226,7 @@ public:
         Vec4 color2;
     };
 
-    TnL(Lighting& lighting);
+    TnL(Lighting& lighting, TexGen& texGen);
 
     bool drawObj(IRenderer& renderer, const RenderObj& obj);
     bool drawTriangle(IRenderer &renderer, const Triangle& triangle);
@@ -242,23 +236,12 @@ public:
     void setModelMatrix(const Mat44& m);
     void setNormalMatrix(const Mat44& m);
 
-    void enableTexGenS(bool enable);
-    void enableTexGenT(bool enable);
-    void setTexGenModeS(TexGenMode mode);
-    void setTexGenModeT(TexGenMode mode);
-    void setTexGenVecObjS(const Vec4& val);
-    void setTexGenVecObjT(const Vec4& val);
-    void setTexGenVecEyeS(const Vec4& val);
-    void setTexGenVecEyeT(const Vec4& val);
-
     void enableCulling(bool enable);
     void setCullMode(CullMode mode);
 private:
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
     inline void perspectiveDivide(Vec4& v);
-
-    void calculateTexGenCoords(Clipper::ClipStList& stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
 
     Mat44 m_t; // ModelViewProjection
     Mat44 m_m; // ModelView
@@ -275,20 +258,11 @@ private:
     float m_viewportHeightHalf = 0.0f;
     float m_viewportWidthHalf = 0.0f;
 
-
-    bool m_texGenEnableS{false};
-    bool m_texGenEnableT{false};
-    TexGenMode m_texGenModeS{TexGenMode::EYE_LINEAR};
-    TexGenMode m_texGenModeT{TexGenMode::EYE_LINEAR};
-    Vec4 m_texGenVecObjS{{1.0f, 0.0f, 0.0f, 0.0f}};
-    Vec4 m_texGenVecObjT{{0.0f, 1.0f, 0.0f, 0.0f}};
-    Vec4 m_texGenVecEyeS{{1.0f, 0.0f, 0.0f, 0.0f}};
-    Vec4 m_texGenVecEyeT{{0.0f, 1.0f, 0.0f, 0.0f}};
-
     bool m_enableCulling{false};
     CullMode m_cullMode{CullMode::BACK};
 
     Lighting& m_lighting;
+    TexGen& m_texGen;
 };
 
 #endif // TNL_HPP

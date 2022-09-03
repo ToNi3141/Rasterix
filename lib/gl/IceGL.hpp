@@ -26,6 +26,7 @@
 #include "Vec.hpp"
 #include "IceGLTypes.h"
 #include "Lighting.hpp"
+#include "TexGen.hpp"
 
 //#define CLIP_UNITCUBE
 
@@ -145,12 +146,11 @@ private:
     GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
     GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
     void recalculateAndSetTnLMatrices();
-    static Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane);
     GLenum setFogLut(GLenum mode, float start, float end, float density);
-
 
     IRenderer& m_renderer;
     Lighting m_lighting;
+    TexGen m_texGen;
     TnL m_tnl;
     TnL::RenderObj m_renderObj;
 

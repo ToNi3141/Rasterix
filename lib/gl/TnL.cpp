@@ -28,8 +28,9 @@
 #define min std::min
 
 
-TnL::TnL(Lighting& lighting)
+TnL::TnL(Lighting& lighting, TexGen& texGen)
     : m_lighting(lighting)
+    , m_texGen(texGen)
 {
     m_t.identity();
     m_m.identity();
@@ -177,7 +178,7 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     colorList[1] = color1;
     colorList[2] = color2;
 
-    calculateTexGenCoords(stList, triangle.v0, triangle.v1, triangle.v2);
+    m_texGen.calculateTexGenCoords(m_m, stList[0], stList[1], stList[2], triangle.v0, triangle.v1, triangle.v2);
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
     auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
@@ -220,63 +221,6 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     return true;
 }
 
-void TnL::calculateTexGenCoords(Clipper::ClipStList &stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const
-{
-    if (m_texGenEnableS || m_texGenEnableT)
-    {
-        Vec4 v0Transformed;
-        Vec4 v1Transformed;
-        Vec4 v2Transformed;
-        if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))
-        {
-            // TODO: We are transforming the vertexes twice, one time for the light and again here for the texture generation.
-            // It would be convenient if we would do this only once.
-            m_m.transform(v0Transformed, v0);
-            m_m.transform(v1Transformed, v1);
-            m_m.transform(v2Transformed, v2);
-        }
-        if (m_texGenEnableS)
-        {
-            switch (m_texGenModeS) {
-            case TexGenMode::OBJECT_LINEAR:
-                stList[0][0] = m_texGenVecObjS.dot(v0);
-                stList[1][0] = m_texGenVecObjS.dot(v1);
-                stList[2][0] = m_texGenVecObjS.dot(v2);
-                break;
-            case TexGenMode::EYE_LINEAR:
-                stList[0][0] = m_texGenVecEyeS.dot(v0Transformed);
-                stList[1][0] = m_texGenVecEyeS.dot(v1Transformed);
-                stList[2][0] = m_texGenVecEyeS.dot(v2Transformed);
-                break;
-            case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
-                break;
-            default:
-                break;
-            }
-        }
-        if (m_texGenEnableT)
-        {
-            switch (m_texGenModeT) {
-            case TexGenMode::OBJECT_LINEAR:
-                stList[0][1] = m_texGenVecObjT.dot(v0);
-                stList[1][1] = m_texGenVecObjT.dot(v1);
-                stList[2][1] = m_texGenVecObjT.dot(v2);
-                break;
-            case TexGenMode::EYE_LINEAR:
-                stList[0][1] = m_texGenVecEyeT.dot(v0Transformed);
-                stList[1][1] = m_texGenVecEyeT.dot(v1Transformed);
-                stList[2][1] = m_texGenVecEyeT.dot(v2Transformed);
-                break;
-            case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
 
 void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {
@@ -361,46 +305,6 @@ void TnL::setModelMatrix(const Mat44 &m)
 void TnL::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
-}
-
-void TnL::enableTexGenS(bool enable)
-{
-    m_texGenEnableS = enable;
-}
-
-void TnL::enableTexGenT(bool enable)
-{
-    m_texGenEnableT = enable;
-}
-
-void TnL::setTexGenModeS(TexGenMode mode)
-{
-    m_texGenModeS = mode;
-}
-
-void TnL::setTexGenModeT(TexGenMode mode)
-{
-    m_texGenModeT = mode;
-}
-
-void TnL::setTexGenVecObjS(const Vec4 &val)
-{
-    m_texGenVecObjS = val;
-}
-
-void TnL::setTexGenVecObjT(const Vec4 &val)
-{
-    m_texGenVecObjT = val;
-}
-
-void TnL::setTexGenVecEyeS(const Vec4 &val)
-{
-    m_texGenVecEyeS = val;
-}
-
-void TnL::setTexGenVecEyeT(const Vec4 &val)
-{
-    m_texGenVecEyeT = val;
 }
 
 void TnL::setCullMode(TnL::CullMode mode)
