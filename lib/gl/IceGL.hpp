@@ -29,8 +29,6 @@
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 
-//#define CLIP_UNITCUBE
-
 class IceGL
 {
 public:
