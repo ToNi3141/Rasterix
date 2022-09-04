@@ -23,6 +23,10 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/TnL.cpp \
         mainwindow.cpp \
     $${ICEGL_PATH}/IceGL.cpp \
+    $${ICEGL_PATH}/Clipper.cpp \
+    $${ICEGL_PATH}/Lighting.cpp \
+    $${ICEGL_PATH}/TexGen.cpp \
+    $${ICEGL_PATH}/RenderObj.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp
 
 HEADERS  += mainwindow.h\
@@ -35,10 +39,13 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/TnL.hpp \
     $${ICEGL_PATH}/Vec.hpp \
     $${ICEGL_PATH}/Veci.hpp \
-    $${ICEGL_PATH}/GRamAlloc.hpp \
     $${ICEGL_PATH}/IceGL.hpp \
     $${ICEGL_PATH}/Rasterizer.hpp \
     $${ICEGL_PATH}/Mat44.hpp \
+    $${ICEGL_PATH}/Clipper.hpp \
+    $${ICEGL_PATH}/Lighting.hpp \
+    $${ICEGL_PATH}/TexGen.hpp \
+    $${ICEGL_PATH}/RenderObj.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
 
 equals(TARGET_BUILD, "hardware") {
@@ -60,7 +67,7 @@ equals(TARGET_BUILD, "hardware") {
 }
 equals(TARGET_BUILD, "simulation") {
     VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
-    VERILATOR_BUS_CONNECTOR_PATH = ../../unittest/cpp/include
+    VERILATOR_BUS_CONNECTOR_PATH = ../../lib/driver
     VERILATOR_CODE_GEN_PATH = ../../rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION

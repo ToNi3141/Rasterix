@@ -124,10 +124,10 @@ module Rasterix #(
     wire [15:0] confDepthBufferClearDepth;
 
     // Texture memory AXIS
-    wire        s_texture_axis_tvalid;
-    wire        s_texture_axis_tready;
-    wire        s_texture_axis_tlast;
-    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_axis_tdata;
+    wire        s_texture_steam_tmu0_axis_tvalid;
+    wire        s_texture_steam_tmu0_axis_tready;
+    wire        s_texture_steam_tmu0_axis_tlast;
+    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu0_axis_tdata;
 
     // Attribute interpolator
     wire        m_attr_inter_axis_tvalid;
@@ -136,11 +136,11 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31:0] confReg1;
-    wire [31:0] confReg2;
-    wire [31:0] confReg3;
-    wire [31:0] confTextureEnvColor;
-    wire [31:0] confFogColor;
+    wire [31:0] confFragmentPipelineConfig;
+    wire [31:0] confFragmentPipelineFogColor;
+    wire [31:0] confTMU0TexEnvConfig;
+    wire [31:0] confTMU0TextureConfig;
+    wire [31:0] confTMU0TexEnvColor;
 
     // Rasterizer
     wire        m_rasterizer_axis_tvalid;
@@ -155,7 +155,7 @@ module Rasterix #(
     wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata;
 
     // Register bank
-    wire [(PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
+    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -177,11 +177,11 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
-        .confReg1(confReg1),
-        .confReg2(confReg2),
-        .confReg3(confReg3),
-        .confTextureEnvColor(confTextureEnvColor),
-        .confFogColor(confFogColor),
+        .confFragmentPipelineConfig(confFragmentPipelineConfig),
+        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
+        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
+        .confTMU0TextureConfig(confTMU0TextureConfig),
+        .confTMU0TexEnvColor(confTMU0TexEnvColor),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -204,10 +204,10 @@ module Rasterix #(
         .confDepthBufferClearDepth(confDepthBufferClearDepth),
 
         // Texture AXIS interface
-        .m_texture_axis_tvalid(s_texture_axis_tvalid),
-        .m_texture_axis_tready(s_texture_axis_tready),
-        .m_texture_axis_tlast(s_texture_axis_tlast),
-        .m_texture_axis_tdata(s_texture_axis_tdata),
+        .m_texture_steam_tmu0_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
+        .m_texture_steam_tmu0_axis_tready(s_texture_steam_tmu0_axis_tready),
+        .m_texture_steam_tmu0_axis_tlast(s_texture_steam_tmu0_axis_tlast),
+        .m_texture_steam_tmu0_axis_tdata(s_texture_steam_tmu0_axis_tdata),
 
         // Debug
         .dbgStreamState(dbgStreamState)
@@ -232,7 +232,7 @@ module Rasterix #(
     defparam regBank.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
     defparam regBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-    TextureBuffer texCache (
+    TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -246,13 +246,13 @@ module Rasterix #(
         .texelOutput10(texelInput10),
         .texelOutput11(texelInput11),
 
-        .s_axis_tvalid(s_texture_axis_tvalid),
-        .s_axis_tready(s_texture_axis_tready),
-        .s_axis_tlast(s_texture_axis_tlast),
-        .s_axis_tdata(s_texture_axis_tdata)
+        .s_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
+        .s_axis_tready(s_texture_steam_tmu0_axis_tready),
+        .s_axis_tlast(s_texture_steam_tmu0_axis_tlast),
+        .s_axis_tdata(s_texture_steam_tmu0_axis_tdata)
     );
-    defparam texCache.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam texCache.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -263,7 +263,7 @@ module Rasterix #(
         .fragIndexWrite(depthIndexWrite),
         .fragIn(depthOut),
         .fragWriteEnable(depthWriteEnable),
-        .fragMask(confReg1[REG1_DEPTH_MASK_POS +: REG1_DEPTH_MASK_SIZE]),
+        .fragMask(confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE]),
         
         .apply(depthBufferApply),
         .applied(depthBufferApplied),
@@ -291,10 +291,10 @@ module Rasterix #(
         .fragIndexWrite(colorIndexWrite),
         .fragIn(Reduce(colorOut)),
         .fragWriteEnable(colorWriteEnable),
-        .fragMask({ confReg1[REG1_COLOR_MASK_R_POS +: REG1_COLOR_MASK_R_SIZE], 
-                    confReg1[REG1_COLOR_MASK_G_POS +: REG1_COLOR_MASK_G_SIZE], 
-                    confReg1[REG1_COLOR_MASK_B_POS +: REG1_COLOR_MASK_B_SIZE], 
-                    confReg1[REG1_COLOR_MASK_A_POS +: REG1_COLOR_MASK_A_SIZE]}),
+        .fragMask({ confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE]}),
         
         .apply(colorBufferApply),
         .applied(colorBufferApplied),
@@ -324,17 +324,17 @@ module Rasterix #(
         .m_axis_tlast(m_rasterizer_axis_tlast),
         .m_axis_tdata(m_rasterizer_axis_tdata),
 
-        .bbStart(triangleParams[BB_START * PARAM_SIZE +: PARAM_SIZE]),
-        .bbEnd(triangleParams[BB_END * PARAM_SIZE +: PARAM_SIZE]),
-        .w0(triangleParams[INC_W0 * PARAM_SIZE +: PARAM_SIZE]),
-        .w1(triangleParams[INC_W1 * PARAM_SIZE +: PARAM_SIZE]),
-        .w2(triangleParams[INC_W2 * PARAM_SIZE +: PARAM_SIZE]),
-        .w0IncX(triangleParams[INC_W0_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w1IncX(triangleParams[INC_W1_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w2IncX(triangleParams[INC_W2_X * PARAM_SIZE +: PARAM_SIZE]),
-        .w0IncY(triangleParams[INC_W0_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .w1IncY(triangleParams[INC_W1_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .w2IncY(triangleParams[INC_W2_Y * PARAM_SIZE +: PARAM_SIZE])
+        .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0(triangleParams[TRIANGLE_STREAM_INC_W0 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1(triangleParams[TRIANGLE_STREAM_INC_W1 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2(triangleParams[TRIANGLE_STREAM_INC_W2 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0IncX(triangleParams[TRIANGLE_STREAM_INC_W0_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1IncX(triangleParams[TRIANGLE_STREAM_INC_W1_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2IncX(triangleParams[TRIANGLE_STREAM_INC_W2_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w0IncY(triangleParams[TRIANGLE_STREAM_INC_W0_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w1IncY(triangleParams[TRIANGLE_STREAM_INC_W1_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
     defparam rop.X_RESOLUTION = X_RESOLUTION;
     defparam rop.Y_RESOLUTION = Y_RESOLUTION;
@@ -357,30 +357,30 @@ module Rasterix #(
         .m_axis_tlast(m_attr_inter_axis_tlast),
         .m_axis_tdata(m_attr_inter_axis_tdata),
 
-        .tex_s(triangleParams[INC_TEX_S * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t(triangleParams[INC_TEX_T * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_s_inc_x(triangleParams[INC_TEX_S_X * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t_inc_x(triangleParams[INC_TEX_T_X * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_s_inc_y(triangleParams[INC_TEX_S_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .tex_t_inc_y(triangleParams[INC_TEX_T_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w(triangleParams[INC_DEPTH_W * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w_inc_x(triangleParams[INC_DEPTH_W_X * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_w_inc_y(triangleParams[INC_DEPTH_W_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z(triangleParams[INC_DEPTH_Z * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z_inc_x(triangleParams[INC_DEPTH_Z_X * PARAM_SIZE +: PARAM_SIZE]),
-        .depth_z_inc_y(triangleParams[INC_DEPTH_Z_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r(triangleParams[INC_COLOR_R * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r_inc_x(triangleParams[INC_COLOR_R_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_r_inc_y(triangleParams[INC_COLOR_R_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g(triangleParams[INC_COLOR_G * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g_inc_x(triangleParams[INC_COLOR_G_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_g_inc_y(triangleParams[INC_COLOR_G_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b(triangleParams[INC_COLOR_B * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b_inc_x(triangleParams[INC_COLOR_B_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_b_inc_y(triangleParams[INC_COLOR_B_Y * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a(triangleParams[INC_COLOR_A * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a_inc_x(triangleParams[INC_COLOR_A_X * PARAM_SIZE +: PARAM_SIZE]),
-        .color_a_inc_y(triangleParams[INC_COLOR_A_Y * PARAM_SIZE +: PARAM_SIZE])
+        .tex_s(triangleParams[TRIANGLE_STREAM_INC_TEX_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t(triangleParams[TRIANGLE_STREAM_INC_TEX_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
 
     PixelPipeline pixelPipeline (    
@@ -393,11 +393,11 @@ module Rasterix #(
         .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
-        .confReg1(confReg1),
-        .confReg2(confReg2),
-        .confReg3(confReg3),
-        .confTextureEnvColor(confTextureEnvColor),
-        .confFogColor(confFogColor),
+        .confFragmentPipelineConfig(confFragmentPipelineConfig),
+        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
+        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
+        .confTMU0TextureConfig(confTMU0TextureConfig),
+        .confTMU0TexEnvColor(confTMU0TexEnvColor),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),

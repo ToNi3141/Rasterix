@@ -28,18 +28,6 @@
 class IRenderer
 {
 public:
-    enum TestFunc
-    {
-        ALWAYS,
-        NEVER,
-        LESS,
-        EQUAL,
-        LEQUAL,
-        GREATER,
-        NOTEQUAL,
-        GEQUAL
-    };
-
     enum class TMU 
     {
         TMU0
@@ -108,47 +96,86 @@ public:
         uint8_t shiftAlpha : 2;
     };
 
-    enum BlendFunc
+    struct __attribute__ ((__packed__)) FragmentPipelineConf
     {
-        ZERO,
-        ONE,
-        DST_COLOR,
-        SRC_COLOR,
-        ONE_MINUS_DST_COLOR,
-        ONE_MINUS_SRC_COLOR,
-        SRC_ALPHA,
-        ONE_MINUS_SRC_ALPHA,
-        DST_ALPHA,
-        ONE_MINUS_DST_ALPHA,
-        SRC_ALPHA_SATURATE
+        enum class TestFunc
+        {
+            ALWAYS,
+            NEVER,
+            LESS,
+            EQUAL,
+            LEQUAL,
+            GREATER,
+            NOTEQUAL,
+            GEQUAL
+        };
+
+        enum BlendFunc
+        {
+            ZERO,
+            ONE,
+            DST_COLOR,
+            SRC_COLOR,
+            ONE_MINUS_DST_COLOR,
+            ONE_MINUS_SRC_COLOR,
+            SRC_ALPHA,
+            ONE_MINUS_SRC_ALPHA,
+            DST_ALPHA,
+            ONE_MINUS_DST_ALPHA,
+            SRC_ALPHA_SATURATE
+        };
+
+        enum LogicOp
+        {
+            CLEAR,
+            SET,
+            COPY,
+            COPY_INVERTED,
+            NOOP,
+            INVERTED,
+            AND,
+            NAND,
+            OR,
+            NOR,
+            XOR,
+            EQUIV,
+            AND_REVERSE,
+            AND_INVERTED,
+            OR_REVERSE,
+            OR_INVERTED
+        };
+
+        FragmentPipelineConf() : 
+            enableDepthTest(false),
+            depthFunc(TestFunc::LESS),
+            alphaFunc(TestFunc::ALWAYS),
+            referenceAlphaValue(0xf),
+            depthMask(false),
+            colorMaskA(true),
+            colorMaskB(true),
+            colorMaskG(true),
+            colorMaskR(true),
+            blendFuncSFactor(BlendFunc::ONE),
+            blendFuncDFactor(BlendFunc::ZERO)
+        { }
+
+        bool enableDepthTest : 1;
+        TestFunc depthFunc : 3;
+        TestFunc alphaFunc : 3;
+        uint8_t referenceAlphaValue : 8;
+        bool depthMask : 1;
+        bool colorMaskA : 1;
+        bool colorMaskB : 1;
+        bool colorMaskG : 1;
+        bool colorMaskR : 1;
+        BlendFunc blendFuncSFactor : 4;
+        BlendFunc blendFuncDFactor : 4;
     };
-    enum LogicOp
-    {
-        CLEAR,
-        SET,
-        COPY,
-        COPY_INVERTED,
-        NOOP,
-        INVERTED,
-        AND,
-        NAND,
-        OR,
-        NOR,
-        XOR,
-        EQUIV,
-        AND_REVERSE,
-        AND_INVERTED,
-        OR_REVERSE,
-        OR_INVERTED
-    };
+
     enum TextureWrapMode
     {
         REPEAT,
         CLAMP_TO_EDGE
-    };
-    enum FogFunction {
-        NONE,
-        LINEAR
     };
 
     /// @brief Will render a triangle which is constructed with the given parameters
@@ -191,9 +218,10 @@ public:
                                const bool enableMagFilter) = 0;
     
     /// @brief Activates a texture which then is used for rendering
+    /// @param target is used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool useTexture(const uint16_t texId) = 0; 
+    virtual bool useTexture(const TMU target, const uint16_t texId) = 0; 
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete
@@ -217,40 +245,8 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setClearDepth(uint16_t depth) = 0;
 
-    /// @brief Enables the depth buffer tests
-    /// @param enable true to enable the depth buffer tests. If the depth test enabled, a fragment is discarded when the depth test
-    /// failed or is written to the depth buffer.
-    /// if enable is false, the depth test always passes and the current depth value is not written into the depth buffer. Unlike
-    /// setDepthMask(), this function does not prevent that clear() writes into the depth buffer.
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool enableDepthTest(const bool enable) = 0;
-
-    /// @brief Enables writing to the depth buffer. See also glDepthMask().
-    /// @param flag true means writing to the depth buffer is enabled
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setDepthMask(const bool flag) = 0;
-
-    /// @brief Enables writing to the color buffer. See also glColorMask().
-    /// @param r true means writing ret to the color buffer is enabled
-    /// @param g true means writing green to the color buffer is enabled
-    /// @param b true means writing blue to the color buffer is enabled
-    /// @param a true means writing alpha to the color buffer is enabled
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setColorMask(const bool r, const bool g, const bool b, const bool a) = 0;
-
-    /// @brief Configures a depth function. See also glDepthFunc().
-    /// @param func The depth function
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setDepthFunc(const TestFunc func) = 0;
-
-    /// @brief Configures the alpha test. See also glAlphaFunc().
-    /// @param func The alpha function
-    /// @param ref The reference value agaist func is testing (4 bit color)
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setAlphaFunc(const TestFunc func, const uint8_t ref) = 0;
-
     /// @brief Configures the texture environment. See glTexEnv()
-    /// @param target The target of the texture env
+    /// @param target is used TMU
     /// @param pname parameter name of the env parameter
     /// @param param Function of the tex env
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
@@ -261,16 +257,10 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setTexEnvColor(const Vec4i& color) = 0;
 
-    /// @brief Configures the blend func. See glBlendFunc()
-    /// @param sfactor Source factor function
-    /// @param dfactor Destination factor function
+    /// @brief Updates the fragment pipeline configuration 
+    /// @param pipelineConf The new pipeline configuration 
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) = 0;
-
-    /// @brief Configures the logic opcodes. See glLogicOp()
-    /// @param opcode The used opcode
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setLogicOp(const LogicOp opcode) = 0;
+    virtual bool setFragmentPipelineConfig(const FragmentPipelineConf& pipelineConf) = 0;
 
     /// @brief Set the fog color
     /// @param color the color in ABGR

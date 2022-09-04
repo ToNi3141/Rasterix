@@ -64,8 +64,6 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
         {
             // Copy entries one by one. It is more efficient for the MCU than a copy constructor or a memcopy.
             // It has a big impact on the performance
-            incrementedTriangle.triangleConfiguration = triangleToIncrement.triangleConfiguration;
-            incrementedTriangle.triangleStaticColor = triangleToIncrement.triangleStaticColor;
             incrementedTriangle.bbStartX = triangleToIncrement.bbStartX;
             incrementedTriangle.bbStartY = triangleToIncrement.bbStartY;
             incrementedTriangle.bbEndX = triangleToIncrement.bbEndX;

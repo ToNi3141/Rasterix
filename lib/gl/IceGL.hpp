@@ -25,8 +25,9 @@
 #include "TnL.hpp"
 #include "Vec.hpp"
 #include "IceGLTypes.h"
-
-//#define CLIP_UNITCUBE
+#include "Lighting.hpp"
+#include "TexGen.hpp"
+#include "RenderObj.hpp"
 
 class IceGL
 {
@@ -135,22 +136,22 @@ private:
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
     // If we have this, we could make all this functions const and return an empty optional if the conversion failed
-    IRenderer::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
-    TnL::RenderObj::Type convertType(GLenum type);
-    TnL::RenderObj::DrawMode convertDrawMode(GLenum drawMode);
+    IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
+    RenderObj::Type convertType(GLenum type);
+    RenderObj::DrawMode convertDrawMode(GLenum drawMode);
     IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
     GLint convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param);
     GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
     GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
     GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
     void recalculateAndSetTnLMatrices();
-    static Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane);
     GLenum setFogLut(GLenum mode, float start, float end, float density);
 
-
     IRenderer& m_renderer;
+    Lighting m_lighting;
+    TexGen m_texGen;
     TnL m_tnl;
-    TnL::RenderObj m_renderObj;
+    RenderObj m_renderObj;
 
     // Buffer
     std::vector<Vec4> m_vertexBuffer;
@@ -185,6 +186,9 @@ private:
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
     bool m_texEnableMagFilter = true;
     IRenderer::TexEnvConf m_texEnvConf0;
+
+    // Current fragment pipeline configuration 
+    IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
 
     // Test functions
     bool m_enableAlphaTest = true;

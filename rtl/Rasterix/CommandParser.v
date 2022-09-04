@@ -28,7 +28,7 @@ module CommandParser #(
     input  wire         s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
-        // Fog function LUT stream
+    // Fog function LUT stream
     output reg         m_fog_lut_axis_tvalid,
     input  wire        m_fog_lut_axis_tready,
     output reg         m_fog_lut_axis_tlast,
@@ -36,11 +36,11 @@ module CommandParser #(
 
     // Rasterizer
     // Configs
-    output wire [31:0]  confReg1,
-    output wire [31:0]  confReg2,
-    output wire [31:0]  confReg3,
-    output wire [31:0]  confTextureEnvColor,
-    output wire [31:0]  confFogColor,
+    output wire [31:0]  confFragmentPipelineConfig,
+    output wire [31:0]  confFragmentPipelineFogColor,
+    output wire [31:0]  confTMU0TexEnvConfig,
+    output wire [31:0]  confTMU0TextureConfig,
+    output wire [31:0]  confTMU0TexEnvColor,
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -63,10 +63,10 @@ module CommandParser #(
     output wire [15:0]  confDepthBufferClearDepth,
 
     // Texture stream interface
-    output reg          m_texture_axis_tvalid,
-    input  wire         m_texture_axis_tready,
-    output reg          m_texture_axis_tlast,
-    output reg  [TEXTURE_STREAM_WIDTH - 1 : 0]  m_texture_axis_tdata,
+    output reg          m_texture_steam_tmu0_axis_tvalid,
+    input  wire         m_texture_steam_tmu0_axis_tready,
+    output reg          m_texture_steam_tmu0_axis_tlast,
+    output reg  [TEXTURE_STREAM_WIDTH - 1 : 0]  m_texture_steam_tmu0_axis_tdata,
 
     // Debug
     output wire [ 3 : 0]  dbgStreamState
@@ -108,11 +108,11 @@ module CommandParser #(
     assign applied = colorBufferApplied & depthBufferApplied;
     assign confColorBufferClearColor = configReg[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR];
     assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
-    assign confReg1 = configReg[OP_RENDER_CONFIG_REG1];
-    assign confReg2 = configReg[OP_RENDER_CONFIG_REG2];
-    assign confReg3 = configReg[OP_RENDER_CONFIG_REG3];
-    assign confTextureEnvColor = configReg[OP_RENDER_CONFIG_TEX_ENV_COLOR];
-    assign confFogColor = configReg[OP_RENDER_CONFIG_FOG_COLOR];
+    assign confFragmentPipelineConfig = configReg[OP_RENDER_CONFIG_FRAGMENT_PIPELINE];
+    assign confFragmentPipelineFogColor = configReg[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR];
+    assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
+    assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
+    assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
 
     assign dbgStreamState = state[3:0];
 
@@ -128,8 +128,8 @@ module CommandParser #(
             apply <= 0;
             s_cmd_axis_tready <= 0;
 
-            m_texture_axis_tvalid <= 0;
-            m_texture_axis_tlast <= 0;
+            m_texture_steam_tmu0_axis_tvalid <= 0;
+            m_texture_steam_tmu0_axis_tlast <= 0;
             
             m_rasterizer_axis_tvalid <= 0;
             m_rasterizer_axis_tlast <= 0;
@@ -146,8 +146,8 @@ module CommandParser #(
             begin
                 m_rasterizer_axis_tlast <= 0;
                 m_rasterizer_axis_tvalid <= 0;
-                m_texture_axis_tvalid <= 0;
-                m_texture_axis_tlast <= 0;
+                m_texture_steam_tmu0_axis_tvalid <= 0;
+                m_texture_steam_tmu0_axis_tlast <= 0;
                 m_fog_lut_axis_tvalid <= 0;
                 m_fog_lut_axis_tlast <= 0;
                 if (rasterizerRunning)
@@ -193,9 +193,7 @@ module CommandParser #(
                     end
                     OP_RENDER_CONFIG:
                     begin
-                        /* verilator lint_off WIDTH */
-                        streamCounter <= s_cmd_axis_tdata[3 : 0];
-                        /* verilator lint_off WIDTH */
+                        streamCounter <= s_cmd_axis_tdata[0 +: 14];
                         state <= EXEC_RENDER_CONFIG;
                     end
                     OP_FRAMEBUFFER:
@@ -241,18 +239,18 @@ module CommandParser #(
             end
             EXEC_TEXTURE_STREAM:
             begin
-                s_cmd_axis_tready <= m_texture_axis_tready;
-                if (m_texture_axis_tready)
+                s_cmd_axis_tready <= m_texture_steam_tmu0_axis_tready;
+                if (m_texture_steam_tmu0_axis_tready)
                 begin
-                    m_texture_axis_tvalid <= s_cmd_axis_tvalid;
-                    m_texture_axis_tdata <= s_cmd_axis_tdata[0 +: TEXTURE_STREAM_WIDTH];
+                    m_texture_steam_tmu0_axis_tvalid <= s_cmd_axis_tvalid;
+                    m_texture_steam_tmu0_axis_tdata <= s_cmd_axis_tdata[0 +: TEXTURE_STREAM_WIDTH];
                     if (s_cmd_axis_tvalid)
                     begin
                         streamCounter <= streamCounter - 1;
                         if (streamCounter == 1)
                         begin
                             s_cmd_axis_tready <= 0;
-                            m_texture_axis_tlast <= 1;
+                            m_texture_steam_tmu0_axis_tlast <= 1;
                             state <= WAIT_FOR_IDLE;
                         end
                     end
@@ -262,12 +260,12 @@ module CommandParser #(
             begin : Copy16
                 reg [15:0] lsp;
 
-                if (m_texture_axis_tready)
+                if (m_texture_steam_tmu0_axis_tready)
                 begin
                     if (wlsp == 0)
                     begin
-                        m_texture_axis_tvalid <= s_cmd_axis_tvalid;
-                        m_texture_axis_tdata <= s_cmd_axis_tdata[0 +: 16];
+                        m_texture_steam_tmu0_axis_tvalid <= s_cmd_axis_tvalid;
+                        m_texture_steam_tmu0_axis_tdata <= s_cmd_axis_tdata[0 +: 16];
                         lsp <= s_cmd_axis_tdata[16 +: 16];
                         if (s_cmd_axis_tvalid)
                         begin
@@ -277,7 +275,7 @@ module CommandParser #(
                     end
                     else 
                     begin
-                        m_texture_axis_tdata <= lsp;
+                        m_texture_steam_tmu0_axis_tdata <= lsp;
                         s_cmd_axis_tready <= 1;
                         wlsp <= 0;
 
@@ -285,7 +283,7 @@ module CommandParser #(
                         if (streamCounter == 1)
                         begin
                             s_cmd_axis_tready <= 0;
-                            m_texture_axis_tlast <= 1;
+                            m_texture_steam_tmu0_axis_tlast <= 1;
                             state <= WAIT_FOR_IDLE;
                         end
                     end

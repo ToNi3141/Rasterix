@@ -29,6 +29,7 @@
 #include "DisplayListAssembler.hpp"
 #include <future>
 #include <algorithm>
+#include "TextureMemoryManager.hpp"
 
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
@@ -69,24 +70,6 @@ public:
             entry.clearAssembler();
         }
 
-        for (auto& texture : m_textures)
-        {
-            texture.inUse = false;
-            texture.requiresDelete = false;
-            texture.requiresUpload = false;
-        }
-
-        for (auto& t : m_textureLut)
-        {
-            t = 0;
-        }
-
-        setDepthFunc(TestFunc::LESS);
-        setDepthMask(false);
-        setColorMask(true, true, true, true);
-        setAlphaFunc(TestFunc::ALWAYS, 0xf);
-        setBlendFunc(BlendFunc::ONE, BlendFunc::ZERO);
-        setLogicOp(LogicOp::COPY);
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
@@ -173,33 +156,17 @@ public:
         }
 
         // Upload textures
-        for (uint32_t i = 0; i < m_textures.size(); i++)
+        m_textureManager.uploadTextures([&](std::shared_ptr<const uint16_t> texAddr, uint32_t gramAddr, uint32_t texSize)
         {
-            Texture& texture = m_textures[i];
-            if (texture.requiresUpload)
-            {
-                static constexpr uint32_t TEX_UPLOAD_SIZE = MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize();
-                DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
-                uploader.updateTexture(i * MAX_TEXTURE_SIZE, texture.gramAddr, texture.width * texture.height * 2);
+            static constexpr uint32_t TEX_UPLOAD_SIZE = TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize();
+            DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
+            uploader.updateTexture(gramAddr, texAddr, texSize);
 
-                while (!m_busConnector.clearToSend())
-                    ;
-                m_busConnector.writeData(uploader.getDisplayList()->getMemPtr(), uploader.getDisplayList()->getSize());
-                texture.requiresUpload = false;
-            }
-        }
-
-        // Collect garbage textures
-        for (uint32_t i = 0; i < m_textures.size(); i++)
-        {
-            Texture& texture = m_textures[i];
-            if (texture.requiresDelete)
-            {
-                texture.requiresDelete = false;
-                texture.inUse = false;
-                texture.gramAddr = std::shared_ptr<const uint16_t>();
-            }
-        }
+            while (!m_busConnector.clearToSend())
+                ;
+            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr(), uploader.getDisplayList()->getSize());
+            return true;
+        });
 
         // Render image (in new thread)
         if (ret)
@@ -238,62 +205,20 @@ public:
         return writeToReg(ListAssembler::SET_DEPTH_BUFFER_CLEAR_DEPTH, depth);
     }
 
-    virtual bool setDepthMask(const bool flag) override
+    virtual bool setFragmentPipelineConfig(const FragmentPipelineConf& pipelineConf) override 
     {
-        m_confReg1.depthMask = flag;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
-    }
-
-    virtual bool enableDepthTest(const bool enable) override
-    {
-        m_confReg1.enableDepthTest = enable;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
-    }
-
-    virtual bool setColorMask(const bool r, const bool g, const bool b, const bool a) override
-    {
-        m_confReg1.colorMaskA = a;
-        m_confReg1.colorMaskB = b;
-        m_confReg1.colorMaskG = g;
-        m_confReg1.colorMaskR = r;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
-    }
-
-    virtual bool setDepthFunc(const TestFunc func) override
-    {
-        m_confReg1.depthFunc = func;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
-    }
-
-    virtual bool setAlphaFunc(const TestFunc func, const uint8_t ref) override
-    {
-        m_confReg1.alphaFunc = func;
-        m_confReg1.referenceAlphaValue = ref;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, pipelineConf); 
     }
 
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
         (void)target; // Only TMU0 is supported
-        return writeToReg(ListAssembler::SET_CONF_REG2, texEnvConfig);
-    }
-
-    virtual bool setBlendFunc(const BlendFunc sfactor, const BlendFunc dfactor) override
-    {
-        m_confReg1.blendFuncSFactor = sfactor;
-        m_confReg1.blendFuncDFactor = dfactor;
-        return writeToReg(ListAssembler::SET_CONF_REG1, m_confReg1);
-    }
-
-    virtual bool setLogicOp(const LogicOp opcode) override
-    {
-        (void)opcode;
-        return false;
+        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig);
     }
 
     virtual bool setTexEnvColor(const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_TEX_ENV_COLOR, convertColor(color));
+        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV_COLOR, convertColor(color));
     }
 
     virtual bool setFogColor(const Vec4i& color) override
@@ -357,14 +282,7 @@ public:
 
     virtual std::pair<bool, uint16_t> createTexture() override
     {
-        for (uint32_t i = 1; i < m_textureLut.size(); i++)
-        {
-            if (m_textureLut[i] == 0)
-            {
-                return {true, i};
-            }
-        }
-        return {false, 0};
+        return m_textureManager.createTexture();
     }
 
     virtual bool updateTexture(const uint16_t texId, 
@@ -375,94 +293,30 @@ public:
                                const TextureWrapMode wrapModeT,
                                const bool enableMagFilter) override
     {
-        const uint32_t textureSlot = m_textureLut[texId];
-
-        // If the current ID has already a bound texture slot, then we have to mark it for deletion.
-        // We can't just update a texture, because even deleted textures could be used as long as the rasterizer runs.
-        if (textureSlot != 0)
-        {
-            m_textures[textureSlot].requiresDelete = true;
-        }
-
-        uint32_t newTextureSlot = 0;
-        for (uint32_t i = 1; i < m_textures.size(); i++)
-        {
-            if (m_textures[i].inUse == false)
-            {
-                newTextureSlot = i;
-                break;
-            }
-        }
-
-        if (newTextureSlot != 0)
-        {
-            m_textureLut[texId] = newTextureSlot;
-
-            m_textures[newTextureSlot].gramAddr = pixels;
-            m_textures[newTextureSlot].width = texWidth;
-            m_textures[newTextureSlot].height = texHeight;
-            m_textures[newTextureSlot].inUse = true;
-            m_textures[newTextureSlot].requiresUpload = true;
-            m_textures[newTextureSlot].wrapModeS = wrapModeS;
-            m_textures[newTextureSlot].wrapModeT = wrapModeT;
-            m_textures[newTextureSlot].enableMagFilter = enableMagFilter;
-            return true;
-        }
-        return false;
+        return m_textureManager.updateTexture(texId, pixels, texWidth, texHeight, wrapModeS, wrapModeT, enableMagFilter);
     }
 
-    virtual bool useTexture(const uint16_t texId) override 
+    virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        Texture& tex = m_textures[m_textureLut[texId]];
-        if (!tex.inUse || texId == 0 || !tex.gramAddr)
-        {
-            return false;
-        }
-
-        bool ret = true;
+        (void)target;
+        typename TextureManager::TextureObject tex = m_textureManager.getTexture(texId);
+        bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(MAX_TEXTURE_SIZE * m_textureLut[texId],
-                                                                                             tex.width * tex.height * 2);
-
-            const uint32_t texWidthOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.width))) - 1));
-            const uint32_t texHeightOneHot = (1 << (static_cast<uint32_t>(log2(static_cast<float>(tex.height))) - 1));
-                
-            m_confReg3.texWidth = texWidthOneHot;
-            m_confReg3.texHeight = texHeightOneHot;
-            m_confReg3.wrapModeS = tex.wrapModeS;
-            m_confReg3.wrapModeT = tex.wrapModeT;
-            m_confReg3.enableMagFilter = tex.enableMagFilter;
-            ret = ret && writeToReg(ListAssembler::SET_CONF_REG3, m_confReg3);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
         }
         return ret;
     }
 
     virtual bool deleteTexture(const uint16_t texId) override 
     {
-        const uint32_t texLutId = m_textureLut[texId];
-        m_textureLut[texId] = 0;
-        m_textures[texLutId].requiresDelete = true;
-        return true;
+        return m_textureManager.deleteTexture(texId);
     }
 
 private:
-    static constexpr uint32_t MAX_TEXTURE_SIZE = 128 * 128 * 2;
-
-    struct Texture
-    {
-        bool inUse;
-        bool requiresUpload;
-        bool requiresDelete;
-        std::shared_ptr<const uint16_t> gramAddr;
-        uint16_t width;
-        uint16_t height;
-        TextureWrapMode wrapModeS;
-        TextureWrapMode wrapModeT;
-        bool enableMagFilter;
-    };
-
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
+    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
 
     static uint32_t convertColor(const Vec4i color)
     {
@@ -488,35 +342,9 @@ private:
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
 
-    // Texture memory allocator
-    std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
-    std::array<uint32_t, MAX_NUMBER_OF_TEXTURES> m_textureLut;
-
     IBusConnector& m_busConnector;
 
-    struct __attribute__ ((__packed__)) ConfReg1
-    {
-        bool enableDepthTest : 1;
-        IRenderer::TestFunc depthFunc : 3;
-        IRenderer::TestFunc alphaFunc : 3;
-        uint8_t referenceAlphaValue : 8;
-        bool depthMask : 1;
-        bool colorMaskA : 1;
-        bool colorMaskB : 1;
-        bool colorMaskG : 1;
-        bool colorMaskR : 1;
-        IRenderer::BlendFunc blendFuncSFactor : 4;
-        IRenderer::BlendFunc blendFuncDFactor : 4;
-    } m_confReg1;
-
-    struct __attribute__ ((__packed__)) ConfReg3
-    {
-        uint8_t texWidth : 8;
-        uint8_t texHeight : 8;
-        TextureWrapMode wrapModeS : 1;
-        TextureWrapMode wrapModeT : 1;
-        bool enableMagFilter : 1;
-    } m_confReg3;
+    TextureManager m_textureManager;
 
     std::future<bool> m_renderThread;
 };

@@ -28,35 +28,16 @@
 #define min std::min
 
 
-TnL::TnL()
+TnL::TnL(Lighting& lighting, TexGen& texGen)
+    : m_lighting(lighting)
+    , m_texGen(texGen)
 {
     m_t.identity();
     m_m.identity();
     m_n.identity();
-
-    setEmissiveColorMaterial({{0.0f, 0.0f, 0.0f, 1.0f}});
-    setAmbientColorMaterial({{0.2f, 0.2f, 0.2f, 1.0}});
-    setAmbientColorScene({{0.2f, 0.2f, 0.2f, 1.0f}});
-    setDiffuseColorMaterial({{0.8f, 0.8f, 0.8f, 1.0}});
-    setSpecularColorMaterial({{0.0f, 0.0f, 0.0f, 1.0}});
-    setSpecularExponentMaterial(0.0f);
-
-    for (uint8_t i = 0; i < m_lights.size(); i++)
-    {
-        enableLight(i, false);
-        setAmbientColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setDiffuseColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setSpecularColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setPosLight(i, {{0.0f, 0.0f, 1.0f, 0.0f}});
-        setConstantAttenuationLight(i, 1.0f);
-        setLinearAttenuationLight(i, 0.0f);
-        setQuadraticAttenuationLight(i, 0.0f);
-    }
-    setDiffuseColorLight(0, {{1.0f, 1.0f, 1.0f, 1.0f}}); // Light Zero has a slightly different configuration here
-    setSpecularColorLight(0, {{1.0f, 1.0f, 1.0f, 1.0f}}); // Light Zero has a slightly different configuration here
 }
 
-bool TnL::drawObj(IRenderer &renderer, const TnL::RenderObj &obj)
+bool TnL::drawObj(IRenderer &renderer, const RenderObj &obj)
 {
     // TODO: It is possible to precompute all transformations and lights here and save it in an temporary array.
     // That avoids that we have to transform and light every vertex three times.
@@ -148,7 +129,7 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     Vec4 color0;
     Vec4 color1;
     Vec4 color2;
-    if (m_enableLighting)
+    if (m_lighting.lightingEnabled())
     {
         Vec4 v0, v1, v2;
         Vec3 n0, n1, n2;
@@ -167,52 +148,9 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
         m_m.transform(v1, triangle.v1);
         m_m.transform(v2, triangle.v2);
 
-        calculateSceneLight(color0,
-                            (m_enableColorMaterialEmission) ? triangle.color0 : m_material.emissiveColor,
-                            (m_enableColorMaterialAmbient) ? triangle.color0 : m_material.ambientColor,
-                            m_material.ambientColorScene);
-        calculateSceneLight(color1,
-                            (m_enableColorMaterialEmission) ? triangle.color1 : m_material.emissiveColor,
-                            (m_enableColorMaterialAmbient) ? triangle.color1 : m_material.ambientColor,
-                            m_material.ambientColorScene);
-        calculateSceneLight(color2,
-                            (m_enableColorMaterialEmission) ? triangle.color2 : m_material.emissiveColor,
-                            (m_enableColorMaterialAmbient) ? triangle.color2 : m_material.ambientColor,
-                            m_material.ambientColorScene);
-
-        for (auto& light : m_lights)
-        {
-            if (!light.enable)
-                continue;
-            calculateLight(color0,
-                           light,
-                           m_material.specularExponent,
-                           (m_enableColorMaterialAmbient) ? triangle.color0 : m_material.ambientColor,
-                           (m_enableColorMaterialDiffuse) ? triangle.color0 : m_material.diffuseColor,
-                           (m_enableColorMaterialSpecular) ? triangle.color0 : m_material.specularColor,
-                           v0,
-                           n0);
-            calculateLight(color1,
-                           light,
-                           m_material.specularExponent,
-                           (m_enableColorMaterialAmbient) ? triangle.color1 : m_material.ambientColor,
-                           (m_enableColorMaterialDiffuse) ? triangle.color1 : m_material.diffuseColor,
-                           (m_enableColorMaterialSpecular) ? triangle.color1 : m_material.specularColor,
-                           v1,
-                           n1);
-            calculateLight(color2,
-                           light,
-                           m_material.specularExponent,
-                           (m_enableColorMaterialAmbient) ? triangle.color2 : m_material.ambientColor,
-                           (m_enableColorMaterialDiffuse) ? triangle.color2 : m_material.diffuseColor,
-                           (m_enableColorMaterialSpecular) ? triangle.color2 : m_material.specularColor,
-                           v2,
-                           n2);
-        }
-
-        color0[3] = triangle.color0[3];
-        color1[3] = triangle.color1[3];
-        color2[3] = triangle.color2[3];
+        m_lighting.calculateLights(color0, triangle.color0, v0, n0);
+        m_lighting.calculateLights(color1, triangle.color1, v1, n1);
+        m_lighting.calculateLights(color2, triangle.color2, v2, n2);
     }
     else
     {
@@ -221,12 +159,12 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
         color2 = triangle.color2;
     }
 
-    ClipVertList vertList;
-    ClipStList stList;
-    ClipColorList colorList;
-    ClipVertList vertListBuffer;
-    ClipStList stListBuffer;
-    ClipColorList colorListBuffer;
+    Clipper::ClipVertList vertList;
+    Clipper::ClipStList stList;
+    Clipper::ClipColorList colorList;
+    Clipper::ClipVertList vertListBuffer;
+    Clipper::ClipStList stListBuffer;
+    Clipper::ClipColorList colorListBuffer;
 
     m_t.transform(vertList[0], triangle.v0);
     m_t.transform(vertList[1], triangle.v1);
@@ -240,10 +178,10 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     colorList[1] = color1;
     colorList[2] = color2;
 
-    calculateTexGenCoords(stList, triangle.v0, triangle.v1, triangle.v2);
+    m_texGen.calculateTexGenCoords(m_m, stList[0], stList[1], stList[2], triangle.v0, triangle.v1, triangle.v2);
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
-    auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
+    auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     for (uint8_t i = 0; i < vertListSize; i++)
@@ -283,403 +221,6 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     return true;
 }
 
-void TnL::calculateTexGenCoords(TnL::ClipStList &stList, const Vec4& v0, const Vec4& v1, const Vec4& v2) const
-{
-    if (m_texGenEnableS || m_texGenEnableT)
-    {
-        Vec4 v0Transformed;
-        Vec4 v1Transformed;
-        Vec4 v2Transformed;
-        if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))
-        {
-            // TODO: We are transforming the vertexes twice, one time for the light and again here for the texture generation.
-            // It would be convenient if we would do this only once.
-            m_m.transform(v0Transformed, v0);
-            m_m.transform(v1Transformed, v1);
-            m_m.transform(v2Transformed, v2);
-        }
-        if (m_texGenEnableS)
-        {
-            switch (m_texGenModeS) {
-            case TexGenMode::OBJECT_LINEAR:
-                stList[0][0] = m_texGenVecObjS.dot(v0);
-                stList[1][0] = m_texGenVecObjS.dot(v1);
-                stList[2][0] = m_texGenVecObjS.dot(v2);
-                break;
-            case TexGenMode::EYE_LINEAR:
-                stList[0][0] = m_texGenVecEyeS.dot(v0Transformed);
-                stList[1][0] = m_texGenVecEyeS.dot(v1Transformed);
-                stList[2][0] = m_texGenVecEyeS.dot(v2Transformed);
-                break;
-            case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
-                break;
-            default:
-                break;
-            }
-        }
-        if (m_texGenEnableT)
-        {
-            switch (m_texGenModeT) {
-            case TexGenMode::OBJECT_LINEAR:
-                stList[0][1] = m_texGenVecObjT.dot(v0);
-                stList[1][1] = m_texGenVecObjT.dot(v1);
-                stList[2][1] = m_texGenVecObjT.dot(v2);
-                break;
-            case TexGenMode::EYE_LINEAR:
-                stList[0][1] = m_texGenVecEyeT.dot(v0Transformed);
-                stList[1][1] = m_texGenVecEyeT.dot(v1Transformed);
-                stList[2][1] = m_texGenVecEyeT.dot(v2Transformed);
-                break;
-            case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
-
-void TnL::calculateLight(Vec4 &color,
-                         const LightConfig& lightConfig,
-                         const float materialSpecularExponent,
-                         const Vec4& materialAmbientColor,
-                         const Vec4& materialDiffuseColor,
-                         const Vec4& materialSpecularColor,
-                         const Vec4& v0,
-                         const Vec3& n0) const
-{
-    Vec4 n{{n0[0], n0[1], n0[2], 0}};
-
-    if (lightConfig.enable)
-    {
-        // Calculate light from lights
-        Vec4 dir;
-        float att = 1.0f;
-
-        // Calculate Diffuse Light
-        // w unequal zero means: Point light
-        // w equal to zero means: Directional light
-        // It seems that mac os is interpolating between 0.0 and 1.0 so that the different
-        // light sources can lerp to each other. We will not do this here.
-        if (lightConfig.position[3] != 0.0f)
-        {
-            // Point light, is the normalized direction vector
-            dir = lightConfig.position;
-            dir -= v0;
-            dir.normalize();
-
-            const float dist = v0.dist(lightConfig.position);
-            att = 1.0f / (lightConfig.constantAttenuation + (lightConfig.linearAttenuation * dist) + lightConfig.quadraticAttenuation * (dist * dist));
-        }
-        else
-        {
-            // Directional light, direction is the unit vector
-            dir = lightConfig.preCalcDirectionalLightDir;
-        }
-        float dotDirDiffuse = n.dot(dir);
-        dotDirDiffuse = (dotDirDiffuse < 0.01f) ? 0.0f : dotDirDiffuse;
-
-        // Calculate specular light
-        float f = 0.0f;
-        if (dotDirDiffuse != 0.0f)
-        {
-            f = 1.0f;
-        }
-
-        // Convert now the direction in dir to the half way vector
-        if (lightConfig.localViewer)
-        {
-            Vec4 dirEye{{0.0f, 0.0f, 0.0f, 1.0f}};
-            dirEye -= v0;
-            dirEye.normalize();
-            dir += dirEye;
-            dir.unit();
-        }
-        else
-        {
-            // Optimization: When position.w is equal to zero, then dirDiffuse is constant and
-            // we can precompute with this constant value the half way vector.
-            // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
-            if (lightConfig.position[3] != 0.0f)
-            {
-                const Vec4 pointEye{{0.0f, 0.0f, 1.0f, 1.0f}};
-                dir += pointEye;
-                dir.unit();
-            }
-            else
-            {
-                dir = lightConfig.preCalcHalfWayVectorInfinite;
-            }
-        }
-
-        float dotDirSpecular = n.dot(dir);
-
-        // Optimization: pows are expensive
-        if (materialSpecularExponent == 0.0f) // x^0 == 1.0
-        {
-            dotDirSpecular = 1.0f;
-        }
-        else if (materialSpecularExponent != 1.0f) // x^1 == x
-        {
-            dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
-        }
-
-        Vec4 ambientColor = lightConfig.ambientColor;
-        ambientColor *= materialAmbientColor;
-        Vec4 colorLight = lightConfig.diffuseColor;
-        colorLight *= materialDiffuseColor;
-        colorLight *= dotDirDiffuse;
-        colorLight += ambientColor;
-        Vec4 colorLightSpecular = lightConfig.specularColor;
-        colorLightSpecular *= materialSpecularColor;
-        colorLightSpecular *= (f * dotDirSpecular);
-        colorLight += colorLightSpecular;
-
-        colorLight *= att;
-        // TODO: Spotlight has to be implemented. Please see in the OpenGL 1.5 spec equation 2.5.
-        // Basically it is a val = dot(normalize(v0 - lightConfig.position), unit(lightConfig.spotlightDirectionLight))
-        // spot = pow(val, lightConfig.spotlightExponentLight); when lightConfig.spotlightCutoffLight != 180 and val >= cos(lightConfig.spotlightCutoffLight)
-        // spot = 0; when lightConfig.spotlightCutoffLight != 180 and val < cos(lightConfig.spotlightCutoffLight)
-        // spot = 1; when lightConfig.spotlightCutoffLight == 180
-        // colorLight0 *= spot;
-
-        // Add light sums to final color
-        color += colorLight;
-    }
-}
-
-void TnL::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt)
-{
-#ifdef CLIP_UNITCUBE
-    vOut[3] = ((v0[3] - v1[3]) * amt) + v1[3];
-    vOut[2] = ((v0[2] - v1[2]) * amt) + v1[2];
-    vOut[1] = ((v0[1] - v1[1]) * amt) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * amt) + v1[0];
-#else
-    vOut[3] = ((v0[3] - v1[3]) * (1-amt)) + v1[3];
-    vOut[2] = ((v0[2] - v1[2]) * (1-amt)) + v1[2];
-    vOut[1] = ((v0[1] - v1[1]) * (1-amt)) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * (1-amt)) + v1[0];
-    // float a1 = 1.0 - amt;
-    // vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
-    // vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
-    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
-#endif
-}
-
-void TnL::lerpSt(Vec2& vOut, const Vec2& v0, const Vec2& v1, const float amt)
-{
-#ifdef CLIP_UNITCUBE
-    vOut[1] = ((v0[1] - v1[1]) * amt) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * amt) + v1[0];
-#else
-    float a1 = 1.0 - amt;
-    vOut[1] = ((v0[1] - v1[1]) * a1) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * a1) + v1[0];
-    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
-#endif
-}
-
-
-
-TnL::OutCode TnL::outCode(const Vec4& v)
-{
-    OutCode c = OutCode::NONE;
-    const float w = v[3];
-
-    if (v[0] < -w)
-        c |= OutCode::LEFT;
-    if (v[0] > w)
-        c |= OutCode::RIGHT;
-    if (v[1] < -w)
-        c |= OutCode::BOTTOM;
-    if (v[1] > w)
-        c |= OutCode::TOP;
-    if (v[2] < -w)
-        c |= OutCode::NEAR;
-    if (v[2] > w)
-        c |= OutCode::FAR;
-
-    return c;
-}
-
-float TnL::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
-{
-#ifdef CLIP_UNITCUBE
-    // The clipping with a unit cube is easier to imagine, because it uses normal coordinates instead of homogeneous.
-    // In the unit cube, we just have to check, if the axis against we want to clip is greater than one. If this is the case
-    // than we have to check how much is the point over the one to get our factor by how much we have the lerp.
-
-    // Clipping against near clipping plane
-    float clip = -1; // This is the clipping plane. Values over -1 are clipped
-    float a = v0[2] / v0[3]; // Convert from homogeneous coords to normal ones (Perspective division)
-    float b = v1[2] / v1[3];
-    return (clip-b) / (a - b); // Calculate the difference between two points. Then calculate how much b is over the clipping range
-    // and then divide that with the difference of the two points and we will get our amount, how much
-    // the values from the clipped point have to be lerped to the not clipped point
-#else
-    // For a better explanation see https://chaosinmotion.com/2016/05/22/3d-clipping-in-homogeneous-coordinates/
-    // and https://github.com/w3woody/arduboy/blob/master/Demo3D/pipeline.cpp
-    float zDot0 = 0.0f;
-    float zDot1 = 0.0f;
-
-    switch (plane)
-    {
-    case OutCode::RIGHT: // v.dot(1,0,0,-1)
-        zDot0 = v0[0] - v0[3];
-        zDot1 = v1[0] - v1[3];
-        break;
-    case OutCode::LEFT: // v.dot(1,0,0,1)
-        zDot0 = v0[0] + v0[3];
-        zDot1 = v1[0] + v1[3];
-        break;
-    case OutCode::TOP: // v.dot(0,1,0,-1)
-        zDot0 = v0[1] - v0[3];
-        zDot1 = v1[1] - v1[3];
-        break;
-    case OutCode::BOTTOM: // v.dot(0,1,0,1)
-        zDot0 = v0[1] + v0[3];
-        zDot1 = v1[1] + v1[3];
-        break;
-    case OutCode::NEAR: // v.dot(0,0,1,1)
-        zDot0 = v0[2] + v0[3];
-        zDot1 = v1[2] + v1[3];
-        break;
-    case OutCode::FAR: // v.dot(0,0,1,-1)
-    default:
-        zDot0 = v0[2] - v0[3];
-        zDot1 = v1[2] - v1[3];
-        break;
-    }
-    return zDot0 / (zDot0 - zDot1);
-#endif
-}
-
-std::tuple<const uint32_t, TnL::ClipVertList&, TnL::ClipStList&, TnL::ClipColorList&> TnL::clip(ClipVertList& vertList,
-                                                                                                ClipVertList& vertListBuffer,
-                                                                                                ClipStList& stList,
-                                                                                                ClipStList& stListBuffer,
-                                                                                                ClipColorList& colorList,
-                                                                                                ClipColorList& colorListBuffer)
-{
-    // Check if the triangle is completely outside by checking if all vertices have the same outcode
-    OutCode oc0 = outCode(vertList[0]);
-    OutCode oc1 = outCode(vertList[1]);
-    OutCode oc2 = outCode(vertList[2]);
-    if (oc0 & oc1 & oc2)
-    {
-        return {0u, vertList, stList, colorList};
-    }
-
-    // Checking if the triangle is completely inside by checking, if no vertex has an outcode
-    if ((oc0 | oc1 | oc2) == OutCode::NONE)
-    {
-        return {3u, vertList, stList, colorList};
-    }
-
-    ClipVertList* currentVertListBufferIn = &vertList;
-    ClipVertList* currentVertListBufferOut = &vertListBuffer;
-    ClipStList* currentStListBufferIn = &stList;
-    ClipStList* currentStListBufferOut = &stListBuffer;
-    ClipColorList* currentColorListBufferIn = &colorList;
-    ClipColorList* currentColorListBufferOut = &colorListBuffer;
-
-    int8_t numberOfVerts = 3; // Initial the list contains 3 vertecies
-    int8_t numberOfVertsCurrentPlane = 0;
-
-    for (auto oc : {OutCode::NEAR, OutCode::FAR, OutCode::LEFT, OutCode::RIGHT, OutCode::TOP, OutCode::BOTTOM})
-    {
-        // Optimization hint: If no vertex has an outcode given from oc, then it can just be
-        // ignored. We just have to avoid that the swapping of the buffers is executed.
-        // Then we can skip the unneeded copying of data.
-        numberOfVertsCurrentPlane = clipAgainstPlane(*currentVertListBufferOut,
-                                                     *currentStListBufferOut,
-                                                     *currentColorListBufferOut,
-                                                     oc,
-                                                     *currentVertListBufferIn,
-                                                     *currentStListBufferIn,
-                                                     *currentColorListBufferIn,
-                                                     numberOfVerts);
-        if (numberOfVertsCurrentPlane > 0)
-        {
-            // Swap buffers
-            ClipVertList* tmpVertIn = currentVertListBufferIn;
-            currentVertListBufferIn = currentVertListBufferOut;
-            currentVertListBufferOut = tmpVertIn;
-
-            ClipStList* tmpStIn = currentStListBufferIn;
-            currentStListBufferIn = currentStListBufferOut;
-            currentStListBufferOut = tmpStIn;
-
-            ClipColorList* tmpColorIn = currentColorListBufferIn;
-            currentColorListBufferIn = currentColorListBufferOut;
-            currentColorListBufferOut = tmpColorIn;
-
-            // Safe the new number of planes
-            numberOfVerts = numberOfVertsCurrentPlane;
-        }
-    }
-
-    // Assume in this trivial case, that we have clipped a triangle, which was already
-    // complete outside. So this triangle shouldn't result in a bigger triangle
-    if (outCode((*currentVertListBufferIn)[0]) & outCode((*currentVertListBufferIn)[1]) & outCode((*currentVertListBufferIn)[2]))
-        return {0u, vertList, stList, colorList};
-
-    return {numberOfVerts, *currentVertListBufferIn, *currentStListBufferIn, *currentColorListBufferIn};
-}
-
-uint32_t TnL::clipAgainstPlane(ClipVertList& vertListOut, 
-                               ClipStList& stListOut,
-                               ClipColorList& colorListOut,
-                               const OutCode clipPlane,
-                               const ClipVertList& vertListIn,
-                               const ClipStList& stListIn,
-                               const ClipColorList& colorListIn,
-                               const uint32_t listInSize)
-{
-    // Start Clipping
-    int i = 0;
-
-    for (int8_t vert = 0; vert < static_cast<int8_t>(listInSize); vert++)
-    {
-        if (outCode(vertListIn[vert]) & clipPlane)
-        {
-            //            uint8_t vertMod = (vert-1)%vertSize;
-            uint8_t vertMod = (vert - 1) < 0 ? listInSize-1 : vert - 1;
-            if (!(outCode(vertListIn[vertMod]) & clipPlane))
-            {
-                float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
-                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpSt(stListOut[i], stListIn[vert], stListIn[vertMod], lerpw);
-                i++;
-            }
-
-            vertMod = (vert + 1) % listInSize;
-            if (!(outCode(vertListIn[vertMod]) & clipPlane))
-            {
-                float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
-                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpSt(stListOut[i], stListIn[vert], stListIn[vertMod], lerpw);
-                i++;
-            }
-        }
-        else
-        {
-            vertListOut[i] = vertListIn[vert];
-            colorListOut[i] = colorListIn[vert];
-            stListOut[i] = stListIn[vert];
-            i++;
-        }
-    }
-
-    return i;
-}
 
 void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {
@@ -727,14 +268,6 @@ void TnL::perspectiveDivide(Vec4 &v)
     v[2] = v[2] * v[3];
 }
 
-void TnL::calculateSceneLight(Vec4 &sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
-{
-    // Emission color of material
-    sceneLight = emissiveColor;
-    // Ambient Color Material and ambient scene color
-    sceneLight += ambientColor * ambientColorScene;
-}
-
 void TnL::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {
     // Note: The screen resolution is width and height. But during view port transformation we are clamping between
@@ -764,12 +297,6 @@ void TnL::setModelProjectionMatrix(const Mat44 &m)
     m_t = m;
 }
 
-
-TnL::OutCode operator|=(TnL::OutCode& lhs, TnL::OutCode rhs)
-{
-    return lhs = static_cast<TnL::OutCode>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
-}
-
 void TnL::setModelMatrix(const Mat44 &m)
 {
     m_m = m;
@@ -778,130 +305,6 @@ void TnL::setModelMatrix(const Mat44 &m)
 void TnL::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
-}
-
-void TnL::enableLighting(bool enable)
-{
-    m_enableLighting = enable;
-}
-
-void TnL::enableLight(const uint8_t light, const bool enable)
-{
-    m_lights[light].enable = enable;
-}
-
-void TnL::setAmbientColorLight(const uint8_t light, const Vec4 &color)
-{
-    m_lights[light].ambientColor = color;
-}
-
-void TnL::setDiffuseColorLight(const uint8_t light, const Vec4 &color)
-{
-    m_lights[light].diffuseColor = color;
-}
-
-void TnL::setSpecularColorLight(const uint8_t light, const Vec4 &color)
-{
-    m_lights[light].specularColor = color;
-}
-
-void TnL::setPosLight(const uint8_t light, const Vec4 &pos)
-{
-    m_m.transform(m_lights[light].position, pos);
-    m_lights[light].preCalcVectors();
-}
-
-void TnL::setConstantAttenuationLight(const uint8_t light, const float val)
-{
-    m_lights[light].constantAttenuation = val;
-}
-
-void TnL::setLinearAttenuationLight(const uint8_t light, const float val)
-{
-    m_lights[light].linearAttenuation = val;
-}
-
-void TnL::setQuadraticAttenuationLight(const uint8_t light, const float val)
-{
-    m_lights[light].quadraticAttenuation = val;
-}
-
-void TnL::enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular)
-{
-    m_enableColorMaterialEmission = emission;
-    m_enableColorMaterialAmbient = ambient;
-    m_enableColorMaterialDiffuse = diffuse;
-    m_enableColorMaterialSpecular = specular;
-}
-
-void TnL::setEmissiveColorMaterial(const Vec4 &color)
-{
-    m_material.emissiveColor = color;
-}
-
-void TnL::setAmbientColorMaterial(const Vec4 &color)
-{
-    m_material.ambientColor = color;
-}
-
-void TnL::setAmbientColorScene(const Vec4 &color)
-{
-    m_material.ambientColorScene = color;
-}
-
-void TnL::setDiffuseColorMaterial(const Vec4 &color)
-{
-    m_material.diffuseColor = color;
-}
-
-void TnL::setSpecularColorMaterial(const Vec4 &color)
-{
-    m_material.specularColor = color;
-}
-
-void TnL::setSpecularExponentMaterial(const float val)
-{
-    m_material.specularExponent = val;
-}
-
-void TnL::enableTexGenS(bool enable)
-{
-    m_texGenEnableS = enable;
-}
-
-void TnL::enableTexGenT(bool enable)
-{
-    m_texGenEnableT = enable;
-}
-
-void TnL::setTexGenModeS(TexGenMode mode)
-{
-    m_texGenModeS = mode;
-}
-
-void TnL::setTexGenModeT(TexGenMode mode)
-{
-    m_texGenModeT = mode;
-}
-
-void TnL::setTexGenVecObjS(const Vec4 &val)
-{
-    m_texGenVecObjS = val;
-}
-
-void TnL::setTexGenVecObjT(const Vec4 &val)
-{
-    m_texGenVecObjT = val;
-}
-
-void TnL::setTexGenVecEyeS(const Vec4 &val)
-{
-    m_texGenVecEyeS = val;
-}
-
-void TnL::setTexGenVecEyeT(const Vec4 &val)
-{
-    m_texGenVecEyeT = val;
 }
 
 void TnL::setCullMode(TnL::CullMode mode)

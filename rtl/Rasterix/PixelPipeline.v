@@ -51,11 +51,11 @@ module PixelPipeline
     input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
 
     // Shader configurations
-    input  wire [31 : 0]                confReg1,
-    input  wire [31 : 0]                confReg2,
-    input  wire [31 : 0]                confReg3,
-    input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor,
-    input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
+    input  wire [31 : 0]                confFragmentPipelineConfig,
+    input  wire [PIXEL_WIDTH - 1 : 0]   confFragmentPipelineFogColor,
+    input  wire [31 : 0]                confTMU0TexEnvConfig,
+    input  wire [31 : 0]                confTMU0TextureConfig,
+    input  wire [PIXEL_WIDTH - 1 : 0]   confTMU0TexEnvColor,
 
     // Fragment Stream
     input  wire                         s_axis_tvalid,
@@ -186,13 +186,9 @@ module PixelPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .confFunc(confReg2),
-        .confTextureClampS(confReg3[REG3_TMU_CLAMP_S_POS +: REG3_TMU_CLAMP_S_SIZE]),
-        .confTextureClampT(confReg3[REG3_TMU_CLAMP_T_POS +: REG3_TMU_CLAMP_T_SIZE]),
-        .confTextureEnvColor(confTextureEnvColor),
-        .confTextureSizeWidth(confReg3[REG3_TMU_WIDTH_POS +: REG3_TMU_WIDTH_SIZE]),
-        .confTextureSizeHeight(confReg3[REG3_TMU_HEIGHT_POS +: REG3_TMU_HEIGHT_SIZE]),
-        .confTextureMagFilter(confReg3[REG3_TMU_MAG_FILTER_POS +: REG3_TMU_MAG_FILTER_SIZE]),
+        .confFunc(confTMU0TexEnvConfig),
+        .confTextureEnvColor(confTMU0TexEnvColor),
+        .confTextureConfig(confTMU0TextureConfig),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -205,8 +201,8 @@ module PixelPipeline
         .texelInput11(texelInput11),
 
         .primaryColor(step1_primaryColor),
-        .textureS(step_convert_texture_s[0 +: 24]),
-        .textureT(step_convert_texture_t[0 +: 24]),
+        .textureS(step_convert_texture_s),
+        .textureT(step_convert_texture_t),
 
         .previousColor(step1_primaryColor), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
 
@@ -242,7 +238,7 @@ module PixelPipeline
         .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
-        .confFogColor(confFogColor),
+        .confFogColor(confFragmentPipelineFogColor),
 
         .depth(step1_depthWFloat),
         .texelColor(step1_fragmentColor),
@@ -263,7 +259,7 @@ module PixelPipeline
         .aclk(aclk),
         .resetn(resetn),
 
-        .confReg1(confReg1),
+        .conf(confFragmentPipelineConfig),
 
         .valid(step2_valid),
         .fragmentColor(step2_fragmentColor),

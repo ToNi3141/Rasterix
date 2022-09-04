@@ -32,8 +32,8 @@ module TextureSamplerTestModule #(
     input  wire [ 7 : 0]                textureSizeWidth, 
     input  wire [ 7 : 0]                textureSizeHeight,
 
-    input  wire [15 : 0]                texelS, // Q1.15
-    input  wire [15 : 0]                texelT, // Q1.15
+    input  wire [31 : 0]                texelS, // S16.15
+    input  wire [31 : 0]                texelT, // S16.15
     input  wire                         clampS,
     input  wire                         clampT,
     output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
