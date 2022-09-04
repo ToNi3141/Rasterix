@@ -128,7 +128,7 @@ public:
     void commit();
 
 private:
-
+    static constexpr uint16_t MAX_TEX_SIZE = 256;
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH = 16;
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH = 4;
 

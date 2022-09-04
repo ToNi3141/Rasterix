@@ -8,7 +8,7 @@ template <uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE = 128 * 128 * 2;
+    static constexpr uint32_t MAX_TEXTURE_SIZE = 256 * 256 * 2;
     struct TextureObject 
     {
         bool valid;

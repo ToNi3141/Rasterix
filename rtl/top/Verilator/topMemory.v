@@ -38,7 +38,7 @@ module top #(
     parameter X_RESOLUTION = `X_RESOLUTION;
     parameter Y_RESOLUTION = `Y_RESOLUTION;
     parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
-    parameter TEXTURE_BUFFER_SIZE = 15;
+    parameter TEXTURE_BUFFER_SIZE = 17;
 
     wire m_cmd_axis_tvalid;
     wire m_cmd_axis_tready;

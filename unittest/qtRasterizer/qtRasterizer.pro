@@ -46,6 +46,7 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/Lighting.hpp \
     $${ICEGL_PATH}/TexGen.hpp \
     $${ICEGL_PATH}/RenderObj.hpp \
+    $${ICEGL_PATH}/TextureMemoryManager.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
 
 equals(TARGET_BUILD, "hardware") {

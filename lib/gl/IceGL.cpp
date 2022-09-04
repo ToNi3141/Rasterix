@@ -449,9 +449,9 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
     }
 
     if (/*level < 0
-                    || !(level & GL_TEXTURE_SUPPORTED_SIZES)*/ // Level is rightnow not supported
-            !(width & GL_TEXTURE_SUPPORTED_SIZES)
-            || !(height & GL_TEXTURE_SUPPORTED_SIZES)
+                    || (level > MAX_TEX_SIZE)*/ // Level is right now not supported
+            (width > MAX_TEX_SIZE)
+            || (height > MAX_TEX_SIZE)
             || border != 0) // In OpenGL ES 1.1 it has to be 0. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
     {
         m_error = GL_INVALID_VALUE;
@@ -474,7 +474,12 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         return;
     }
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(width * height * 2)], [] (const uint16_t *p) { delete [] p; });
+    // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
+    // without crashing the software. But it is likely that it will produce graphical errors.
+    const uint16_t widthRounded = pow(2, ceil(log(width)/log(2)));
+    const uint16_t heightRounded = pow(2, ceil(log(height)/log(2)));
+    
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(widthRounded * heightRounded * 2)], [] (const uint16_t *p) { delete [] p; });
     if (!texMemShared)
     {
         m_error = GL_OUT_OF_MEMORY;
@@ -536,8 +541,8 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
 
         if (!m_renderer.updateTexture(m_boundTexture, 
                                       texMemShared, 
-                                      width, 
-                                      height,
+                                      widthRounded,
+                                      heightRounded,
                                       m_texWrapModeS,
                                       m_texWrapModeT,
                                       m_texEnableMagFilter))
@@ -2226,7 +2231,7 @@ void IceGL::glGetIntegerv(GLenum pname, GLint *params)
         *params = PROJECTION_MATRIX_STACK_DEPTH;
         break;
     case GL_MAX_TEXTURE_SIZE:
-        *params = 128;
+        *params = MAX_TEX_SIZE;
         break;
     case GL_DOUBLEBUFFER:
         *params = 1;
