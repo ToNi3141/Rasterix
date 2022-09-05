@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "TnL.hpp"
+#include "VertexPipeline.hpp"
 #include "Vec.hpp"
 #include "Veci.hpp"
 #include <string.h>
@@ -28,7 +28,7 @@
 #define min std::min
 
 
-TnL::TnL(Lighting& lighting, TexGen& texGen)
+VertexPipeline::VertexPipeline(Lighting& lighting, TexGen& texGen)
     : m_lighting(lighting)
     , m_texGen(texGen)
 {
@@ -37,7 +37,7 @@ TnL::TnL(Lighting& lighting, TexGen& texGen)
     m_n.identity();
 }
 
-bool TnL::drawObj(IRenderer &renderer, const RenderObj &obj)
+bool VertexPipeline::drawObj(IRenderer &renderer, const RenderObj &obj)
 {
     // TODO: It is possible to precompute all transformations and lights here and save it in an temporary array.
     // That avoids that we have to transform and light every vertex three times.
@@ -124,7 +124,7 @@ bool TnL::drawObj(IRenderer &renderer, const RenderObj &obj)
     return true;
 }
 
-bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
+bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
 {
     Vec4 color0;
     Vec4 color1;
@@ -222,7 +222,7 @@ bool TnL::drawTriangle(IRenderer &renderer, const Triangle& triangle)
 }
 
 
-void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
+void VertexPipeline::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {
     v0[0] = ((v0[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
     v1[0] = ((v1[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
@@ -248,7 +248,7 @@ void TnL::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 
 }
 
-void TnL::viewportTransform(Vec4 &v)
+void VertexPipeline::viewportTransform(Vec4 &v)
 {
     // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
     // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
@@ -260,7 +260,7 @@ void TnL::viewportTransform(Vec4 &v)
     v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 
-void TnL::perspectiveDivide(Vec4 &v)
+void VertexPipeline::perspectiveDivide(Vec4 &v)
 {
     v[3] = 1.0f / v[3];
     v[0] = v[0] * v[3];
@@ -268,7 +268,7 @@ void TnL::perspectiveDivide(Vec4 &v)
     v[2] = v[2] * v[3];
 }
 
-void TnL::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
+void VertexPipeline::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {
     // Note: The screen resolution is width and height. But during view port transformation we are clamping between
     // 0 and height which means a effective screen resolution of height + 1. For instance, we have a resolution of
@@ -286,33 +286,33 @@ void TnL::setViewport(const int16_t x, const int16_t y, const int16_t width, con
 
 }
 
-void TnL::setDepthRange(const float zNear, const float zFar)
+void VertexPipeline::setDepthRange(const float zNear, const float zFar)
 {
     m_depthRangeZFar = zFar;
     m_depthRangeZNear = zNear;
 }
 
-void TnL::setModelProjectionMatrix(const Mat44 &m)
+void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
 {
     m_t = m;
 }
 
-void TnL::setModelMatrix(const Mat44 &m)
+void VertexPipeline::setModelMatrix(const Mat44 &m)
 {
     m_m = m;
 }
 
-void TnL::setNormalMatrix(const Mat44& m)
+void VertexPipeline::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
 }
 
-void TnL::setCullMode(TnL::CullMode mode)
+void VertexPipeline::setCullMode(VertexPipeline::CullMode mode)
 {
     m_cullMode = mode;
 }
 
-void TnL::enableCulling(bool enable)
+void VertexPipeline::enableCulling(bool enable)
 {
     m_enableCulling = enable;
 }

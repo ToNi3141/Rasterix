@@ -23,7 +23,7 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
-    , m_tnl(m_lighting, m_texGen)
+    , m_vertexPipeline(m_lighting, m_texGen)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
@@ -214,7 +214,7 @@ void IceGL::glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
     // 0 and height which means a effective screen resolution of height + 1. For instance, we have a resolution of
     // 480 x 272. The view port transformation would go from 0 to 480 which are then 481px. Thats the reason why we
     // decrement here the resolution by one.
-    m_tnl.setViewport(x, y, width, height);
+    m_vertexPipeline.setViewport(x, y, width, height);
 }
 
 void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
@@ -224,7 +224,7 @@ void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
     if (zFar  > 1.0f) zFar  = 1.0f;
     if (zFar  < -1.0f) zFar  = -1.0f;
 
-    m_tnl.setDepthRange(zNear, zFar);
+    m_vertexPipeline.setDepthRange(zNear, zFar);
     // TODO: Check in which state the renderer is and throw an GL_INVALID_OPERATION if this is called within an glBegin / glEnd
 }
 
@@ -255,7 +255,7 @@ void IceGL::glEnd()
     {
         for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i += 3)
         {
-            m_tnl.drawTriangle(m_renderer,
+            m_vertexPipeline.drawTriangle(m_renderer,
             {m_vertexBuffer[i],
              m_vertexBuffer[i + 1],
              m_vertexBuffer[i + 2],
@@ -274,7 +274,7 @@ void IceGL::glEnd()
     {
         for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
         {
-            m_tnl.drawTriangle(m_renderer,
+            m_vertexPipeline.drawTriangle(m_renderer,
             {m_vertexBuffer[0],
              m_vertexBuffer[i + 1],
              m_vertexBuffer[i + 2],
@@ -296,7 +296,7 @@ void IceGL::glEnd()
         {
             if (i & 0x1)
             {
-                m_tnl.drawTriangle(m_renderer,
+                m_vertexPipeline.drawTriangle(m_renderer,
                 {m_vertexBuffer[i + 1],
                  m_vertexBuffer[i],
                  m_vertexBuffer[i + 2],
@@ -312,7 +312,7 @@ void IceGL::glEnd()
             }
             else
             {
-                m_tnl.drawTriangle(m_renderer,
+                m_vertexPipeline.drawTriangle(m_renderer,
                 {m_vertexBuffer[i],
                  m_vertexBuffer[i + 1],
                  m_vertexBuffer[i + 2],
@@ -334,7 +334,7 @@ void IceGL::glEnd()
         {
             if (i & 0x2)
             {
-                m_tnl.drawTriangle(m_renderer,
+                m_vertexPipeline.drawTriangle(m_renderer,
                 {m_vertexBuffer[i + 1],
                  m_vertexBuffer[i],
                  m_vertexBuffer[i + 2],
@@ -350,7 +350,7 @@ void IceGL::glEnd()
             }
             else
             {
-                m_tnl.drawTriangle(m_renderer,
+                m_vertexPipeline.drawTriangle(m_renderer,
                 {m_vertexBuffer[i],
                  m_vertexBuffer[i + 1],
                  m_vertexBuffer[i + 2],
@@ -819,7 +819,7 @@ void IceGL::glEnable(GLenum cap)
         m_texGen.enableTexGenT(true);
         break;
     case GL_CULL_FACE:
-        m_tnl.enableCulling(true);
+        m_vertexPipeline.enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
         m_enableColorMaterial = true;
@@ -893,7 +893,7 @@ void IceGL::glDisable(GLenum cap)
         m_texGen.enableTexGenT(false);
         break;
     case GL_CULL_FACE:
-        m_tnl.enableCulling(false);
+        m_vertexPipeline.enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
         m_enableColorMaterial = false;
@@ -1859,7 +1859,7 @@ void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_tnl.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
     }
 }
 
@@ -1891,7 +1891,7 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
 
     if (m_error == GL_NO_ERROR)
     {
-        m_tnl.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
     }
 }
 
@@ -2040,14 +2040,14 @@ void IceGL::recalculateAndSetTnLMatrices()
         // Update transformation matrix
         Mat44 t{m_m};
         t *= m_p;
-        m_tnl.setModelProjectionMatrix(t);
-        m_tnl.setModelMatrix(m_m);
+        m_vertexPipeline.setModelProjectionMatrix(t);
+        m_vertexPipeline.setModelMatrix(m_m);
 
         Mat44 inv{m_m};
         inv.invert();
         inv.transpose();
         // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
-        m_tnl.setNormalMatrix(inv);
+        m_vertexPipeline.setNormalMatrix(inv);
 
         m_matricesOutdated = false;
     }
@@ -2273,13 +2273,13 @@ void IceGL::glCullFace(GLenum mode)
     m_error = GL_NO_ERROR;
     switch (mode) {
     case GL_BACK:
-        m_tnl.setCullMode(TnL::CullMode::BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::BACK);
         break;
     case GL_FRONT:
-        m_tnl.setCullMode(TnL::CullMode::FRONT);
+        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        m_tnl.setCullMode(TnL::CullMode::FRONT_AND_BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT_AND_BACK);
         break;
     default:
         m_error = GL_INVALID_ENUM;

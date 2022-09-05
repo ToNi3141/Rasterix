@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef TNL_HPP
-#define TNL_HPP
+#ifndef VERTEXPIPELINE_HPP
+#define VERTEXPIPELINE_HPP
 
 #include "Vec.hpp"
 #include "IRenderer.hpp"
@@ -26,7 +26,7 @@
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 
-class TnL
+class VertexPipeline
 {
 public:
     enum CullMode
@@ -52,7 +52,7 @@ public:
         Vec4 color2;
     };
 
-    TnL(Lighting& lighting, TexGen& texGen);
+    VertexPipeline(Lighting& lighting, TexGen& texGen);
 
     bool drawObj(IRenderer& renderer, const RenderObj& obj);
     bool drawTriangle(IRenderer &renderer, const Triangle& triangle);
@@ -91,4 +91,4 @@ private:
     TexGen& m_texGen;
 };
 
-#endif // TNL_HPP
+#endif // VERTEXPIPELINE_HPP

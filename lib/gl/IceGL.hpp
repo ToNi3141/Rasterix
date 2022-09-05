@@ -22,7 +22,7 @@
 #include <array>
 #include <functional>
 #include "IRenderer.hpp"
-#include "TnL.hpp"
+#include "VertexPipeline.hpp"
 #include "Vec.hpp"
 #include "IceGLTypes.h"
 #include "Lighting.hpp"
@@ -150,7 +150,7 @@ private:
     IRenderer& m_renderer;
     Lighting m_lighting;
     TexGen m_texGen;
-    TnL m_tnl;
+    VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
 
     // Buffer
