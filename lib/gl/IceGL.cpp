@@ -251,121 +251,35 @@ void IceGL::glBegin(GLenum mode)
 void IceGL::glEnd()
 {
     recalculateAndSetTnLMatrices();
-    if (m_beginMode == GL_TRIANGLES)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i += 3)
-        {
-            m_vertexPipeline.drawTriangle(m_renderer,
-            {m_vertexBuffer[i],
-             m_vertexBuffer[i + 1],
-             m_vertexBuffer[i + 2],
-             m_textureVertexBuffer[i],
-             m_textureVertexBuffer[i + 1],
-             m_textureVertexBuffer[i + 2],
-             m_normalVertexBuffer[i],
-             m_normalVertexBuffer[i + 1],
-             m_normalVertexBuffer[i + 2],
-             m_colorVertexBuffer[i],
-             m_colorVertexBuffer[i + 1],
-             m_colorVertexBuffer[i + 2]});
-        }
-    }
-    if (m_beginMode == GL_TRIANGLE_FAN)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            m_vertexPipeline.drawTriangle(m_renderer,
-            {m_vertexBuffer[0],
-             m_vertexBuffer[i + 1],
-             m_vertexBuffer[i + 2],
-             m_textureVertexBuffer[0],
-             m_textureVertexBuffer[i + 1],
-             m_textureVertexBuffer[i + 2],
-             m_normalVertexBuffer[0],
-             m_normalVertexBuffer[i + 1],
-             m_normalVertexBuffer[i + 2],
-             m_colorVertexBuffer[0],
-             m_colorVertexBuffer[i + 1],
-             m_colorVertexBuffer[i + 2]});
-        }
-    }
 
-    if (m_beginMode == GL_TRIANGLE_STRIP)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            if (i & 0x1)
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 2]});
-            }
-            else
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i],
-                 m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i + 2]});
-            }
-        }
-    }
-    if (m_beginMode == GL_QUAD_STRIP)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            if (i & 0x2)
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 2]});
-            }
-            else
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i],
-                 m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i + 2]});
-            }
-        }
-    }
+    m_renderObjBeginEnd.vertexArrayEnabled = true;
+    m_renderObjBeginEnd.vertexSize = 4;
+    m_renderObjBeginEnd.vertexType = RenderObj::Type::FLOAT;
+    m_renderObjBeginEnd.vertexStride = 0;
+    m_renderObjBeginEnd.vertexPointer = m_vertexBuffer.data();
+
+    m_renderObjBeginEnd.texCoordArrayEnabled = true;
+    m_renderObjBeginEnd.texCoordSize = 2;
+    m_renderObjBeginEnd.texCoordType = RenderObj::Type::FLOAT;
+    m_renderObjBeginEnd.texCoordStride = 0;
+    m_renderObjBeginEnd.texCoordPointer = m_textureVertexBuffer.data();
+
+    m_renderObjBeginEnd.normalArrayEnabled = true;
+    m_renderObjBeginEnd.normalType = RenderObj::Type::FLOAT;
+    m_renderObjBeginEnd.normalStride = 0;
+    m_renderObjBeginEnd.normalPointer = m_normalVertexBuffer.data();
+
+    m_renderObjBeginEnd.colorArrayEnabled = true;
+    m_renderObjBeginEnd.colorSize = 4;
+    m_renderObjBeginEnd.colorType = RenderObj::Type::FLOAT;
+    m_renderObjBeginEnd.colorStride = 0;
+    m_renderObjBeginEnd.colorPointer = m_colorVertexBuffer.data();
+
+    m_renderObjBeginEnd.indicesEnabled = false;
+    m_renderObjBeginEnd.drawMode = convertDrawMode(m_beginMode);
+    m_renderObjBeginEnd.count = m_vertexBuffer.size();
+
+    m_vertexPipeline.drawObj(m_renderer, m_renderObjBeginEnd);
 }
 
 void IceGL::glTexCoord2f(GLfloat s, GLfloat t)
@@ -1957,6 +1871,8 @@ RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
         return RenderObj::DrawMode::TRIANGLE_FAN;
     case GL_TRIANGLE_STRIP:
         return RenderObj::DrawMode::TRIANGLE_STRIP;
+    case GL_QUAD_STRIP:
+        return RenderObj::DrawMode::QUAD_STRIP;
     default:
         m_error = GL_INVALID_ENUM;
         return RenderObj::DrawMode::TRIANGLES;

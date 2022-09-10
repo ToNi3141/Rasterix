@@ -10,7 +10,8 @@ public:
     {
         TRIANGLES,
         TRIANGLE_FAN,
-        TRIANGLE_STRIP
+        TRIANGLE_STRIP,
+        QUAD_STRIP
     };
 
     enum Type
@@ -61,6 +62,12 @@ public:
     const void* indicesPointer;
 
     uint32_t arrayOffset;
+
+    static constexpr std::size_t MAX_VERTEX_CNT {8192};
+    std::array<Vec4, MAX_VERTEX_CNT> transformedVertex;
+    std::array<Vec4, MAX_VERTEX_CNT> transformedColor;
+    std::array<Vec2, MAX_VERTEX_CNT> transformedTexCoord;
+
 private:
     template <typename T>
     bool getFromArray(T& vec, const Type type, const void* arr, const uint32_t stride, uint8_t size, const uint32_t index) const

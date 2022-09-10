@@ -44,9 +44,6 @@ public:
         Vec2 st0;
         Vec2 st1;
         Vec2 st2;
-        Vec3 n0;
-        Vec3 n1;
-        Vec3 n2;
         Vec4 color0;
         Vec4 color1;
         Vec4 color2;
@@ -54,7 +51,7 @@ public:
 
     VertexPipeline(Lighting& lighting, TexGen& texGen);
 
-    bool drawObj(IRenderer& renderer, const RenderObj& obj);
+    bool drawObj(IRenderer& renderer, RenderObj &obj);
     bool drawTriangle(IRenderer &renderer, const Triangle& triangle);
     void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
     void setDepthRange(const float zNear, const float zFar);

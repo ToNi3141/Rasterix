@@ -14,7 +14,7 @@ public:
         SPHERE_MAP
     };
 
-    void calculateTexGenCoords(const Mat44& modelMatrix, Vec2& st0, Vec2& st1, Vec2& st2, const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+    void calculateTexGenCoords(const Mat44& modelMatrix, Vec2& st0, const Vec4& v0) const;
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);

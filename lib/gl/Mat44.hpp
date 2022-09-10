@@ -140,6 +140,30 @@ public:
         dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2];
     }
 
+    void transform(Vec4* __restrict dst, const Vec4* const __restrict src, const std::size_t cnt)
+    {
+        // __restrict and alignedCnt to make it easier for the compiler to vectorize  
+        // See https://developer.arm.com/documentation/dht0002/a/Introducing-NEON/Developing-for-NEON/Automatic-vectorization
+        const std::size_t alignedCnt = (cnt & ~3);
+        for (std::size_t i = 0; i < alignedCnt; i += 4) 
+        {
+            dst[i][0] = src[i][0] * mat[0][0] + src[i][1] * mat[1][0] + src[i][2] * mat[2][0] + src[i][3] * mat[3][0];
+            dst[i][1] = src[i][0] * mat[0][1] + src[i][1] * mat[1][1] + src[i][2] * mat[2][1] + src[i][3] * mat[3][1];
+            dst[i][2] = src[i][0] * mat[0][2] + src[i][1] * mat[1][2] + src[i][2] * mat[2][2] + src[i][3] * mat[3][2];
+            dst[i][3] = src[i][0] * mat[0][3] + src[i][1] * mat[1][3] + src[i][2] * mat[2][3] + src[i][3] * mat[3][3];
+        }
+    }
+
+    void transform(Vec3* __restrict dst, const Vec3* const __restrict src, const std::size_t cnt)
+    {
+        for (std::size_t i = 0; i < cnt; i += 3)
+        {
+            dst[i][0] = src[i][0] * mat[0][0] + src[i][1] * mat[1][0] + src[i][2] * mat[2][0];
+            dst[i][1] = src[i][0] * mat[0][1] + src[i][1] * mat[1][1] + src[i][2] * mat[2][1];
+            dst[i][2] = src[i][0] * mat[0][2] + src[i][1] * mat[1][2] + src[i][2] * mat[2][2];
+        }
+    }
+
     void operator*= (const Mat44& rhs)
     {
         Mat44 m{*this};

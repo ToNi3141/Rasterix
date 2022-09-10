@@ -59,5 +59,5 @@ uint32_t RenderObj::getIndex(const uint32_t index) const
             return index;
         }
     }
-    return index;
+    return index + arrayOffset;
 }

@@ -37,11 +37,67 @@ VertexPipeline::VertexPipeline(Lighting& lighting, TexGen& texGen)
     m_n.identity();
 }
 
-bool VertexPipeline::drawObj(IRenderer &renderer, const RenderObj &obj)
+bool VertexPipeline::drawObj(IRenderer &renderer, RenderObj &obj)
 {
-    // TODO: It is possible to precompute all transformations and lights here and save it in an temporary array.
-    // That avoids that we have to transform and light every vertex three times.
-    // Then one can call drawTriangle() which then applies the clipping and sends it to the rasterizer.
+    // Transform vertex and calculate colors
+    for (uint32_t i = 0; i < obj.count; i++)
+    {
+        const uint32_t index = obj.getIndex(i);
+        if (!(i < RenderObj::MAX_VERTEX_CNT))
+        {
+            return false;
+        }
+
+        Vec4 v;
+        Vec4 c;
+        if (obj.colorArrayEnabled)
+        {
+            obj.getColor(c, index);
+        }
+        else
+        {
+            // If no color is defined, use the global color
+            c = obj.vertexColor;
+        }
+
+        if (obj.vertexArrayEnabled)
+        {
+            obj.getVertex(v, index);
+            m_t.transform(obj.transformedVertex[i], v);
+        }
+
+        if (obj.texCoordArrayEnabled)
+        {
+            obj.getTexCoord(obj.transformedTexCoord[i], index);
+        }
+        m_texGen.calculateTexGenCoords(m_m, obj.transformedTexCoord[i], v);
+
+
+        if (m_lighting.lightingEnabled())
+        {
+            Vec4 vl;
+            Vec3 nl;
+            Vec3 n;
+            if (obj.normalArrayEnabled)
+            {
+                obj.getNormal(n, index);
+                m_n.transform(nl, n);
+                // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
+                // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
+                nl.normalize();
+            }
+            if (obj.vertexArrayEnabled)
+            {
+                m_m.transform(vl, v);
+            }
+
+            m_lighting.calculateLights(obj.transformedColor[i], c, vl, nl);
+        }
+        else
+        {
+            obj.transformedColor[i] = c;
+        }
+    }
 
     Triangle triangle;
     uint32_t index0 = 0;
@@ -51,29 +107,44 @@ bool VertexPipeline::drawObj(IRenderer &renderer, const RenderObj &obj)
     {
         switch (obj.drawMode) {
         case RenderObj::DrawMode::TRIANGLES:
-            index0 = obj.getIndex(i);
-            index1 = obj.getIndex(i + 1);
-            index2 = obj.getIndex(i + 2);
+            index0 = (i);
+            index1 = (i + 1);
+            index2 = (i + 2);
             i += 3;
             break;
         case RenderObj::DrawMode::TRIANGLE_FAN:
-            index0 = obj.getIndex(0);
-            index1 = obj.getIndex(i + 1);
-            index2 = obj.getIndex(i + 2);
+            index0 = (0);
+            index1 = (i + 1);
+            index2 = (i + 2);
             i += 1;
             break;
         case RenderObj::DrawMode::TRIANGLE_STRIP:
             if (i & 0x1)
             {
-                index0 = obj.getIndex(i + 1);
-                index1 = obj.getIndex(i);
-                index2 = obj.getIndex(i + 2);
+                index0 = (i + 1);
+                index1 = (i);
+                index2 = (i + 2);
             }
             else
             {
-                index0 = obj.getIndex(i);
-                index1 = obj.getIndex(i + 1);
-                index2 = obj.getIndex(i + 2);
+                index0 = (i);
+                index1 = (i + 1);
+                index2 = (i + 2);
+            }
+            i += 1;
+            break;
+        case RenderObj::DrawMode::QUAD_STRIP:
+            if (i & 0x2)
+            {
+                index0 = (i + 1);
+                index1 = (i);
+                index2 = (i + 2);
+            }
+            else
+            {
+                index0 = (i);
+                index1 = (i + 1);
+                index2 = (i + 2);
             }
             i += 1;
             break;
@@ -81,40 +152,17 @@ bool VertexPipeline::drawObj(IRenderer &renderer, const RenderObj &obj)
             break;
         }
 
-        if (obj.vertexArrayEnabled)
-        {
-            obj.getVertex(triangle.v0, index0);
-            obj.getVertex(triangle.v1, index1);
-            obj.getVertex(triangle.v2, index2);
-        }
+        triangle.v0 = obj.transformedVertex[index0];
+        triangle.v1 = obj.transformedVertex[index1];
+        triangle.v2 = obj.transformedVertex[index2];
 
-        if (obj.texCoordArrayEnabled)
-        {
-            obj.getTexCoord(triangle.st0, index0);
-            obj.getTexCoord(triangle.st1, index1);
-            obj.getTexCoord(triangle.st2, index2);
-        }
-
-        if (obj.colorArrayEnabled)
-        {
-            obj.getColor(triangle.color0, index0);
-            obj.getColor(triangle.color1, index1);
-            obj.getColor(triangle.color2, index2);
-        }
-        else
-        {
-            // If no color is defined, use the globally setted color
-            triangle.color0 = obj.vertexColor;
-            triangle.color1 = obj.vertexColor;
-            triangle.color2 = obj.vertexColor;
-        }
-
-        if (obj.normalArrayEnabled)
-        {
-            obj.getNormal(triangle.n0, index0);
-            obj.getNormal(triangle.n1, index1);
-            obj.getNormal(triangle.n2, index2);
-        }
+        triangle.st0 = obj.transformedTexCoord[index0];
+        triangle.st1 = obj.transformedTexCoord[index1];
+        triangle.st2 = obj.transformedTexCoord[index2];
+        
+        triangle.color0 = obj.transformedColor[index0];
+        triangle.color1 = obj.transformedColor[index1];
+        triangle.color2 = obj.transformedColor[index2];
 
         if (!drawTriangle(renderer, triangle))
         {
@@ -126,39 +174,6 @@ bool VertexPipeline::drawObj(IRenderer &renderer, const RenderObj &obj)
 
 bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
 {
-    Vec4 color0;
-    Vec4 color1;
-    Vec4 color2;
-    if (m_lighting.lightingEnabled())
-    {
-        Vec4 v0, v1, v2;
-        Vec3 n0, n1, n2;
-
-        m_n.transform(n0, triangle.n0);
-        m_n.transform(n1, triangle.n1);
-        m_n.transform(n2, triangle.n2);
-
-        // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
-        // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
-        n0.normalize();
-        n1.normalize();
-        n2.normalize();
-
-        m_m.transform(v0, triangle.v0);
-        m_m.transform(v1, triangle.v1);
-        m_m.transform(v2, triangle.v2);
-
-        m_lighting.calculateLights(color0, triangle.color0, v0, n0);
-        m_lighting.calculateLights(color1, triangle.color1, v1, n1);
-        m_lighting.calculateLights(color2, triangle.color2, v2, n2);
-    }
-    else
-    {
-        color0 = triangle.color0;
-        color1 = triangle.color1;
-        color2 = triangle.color2;
-    }
-
     Clipper::ClipVertList vertList;
     Clipper::ClipStList stList;
     Clipper::ClipColorList colorList;
@@ -166,19 +181,17 @@ bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     Clipper::ClipStList stListBuffer;
     Clipper::ClipColorList colorListBuffer;
 
-    m_t.transform(vertList[0], triangle.v0);
-    m_t.transform(vertList[1], triangle.v1);
-    m_t.transform(vertList[2], triangle.v2);
+    vertList[0] = triangle.v0;
+    vertList[1] = triangle.v1;
+    vertList[2] = triangle.v2;
 
     stList[0] = triangle.st0;
     stList[1] = triangle.st1;
     stList[2] = triangle.st2;
 
-    colorList[0] = color0;
-    colorList[1] = color1;
-    colorList[2] = color2;
-
-    m_texGen.calculateTexGenCoords(m_m, stList[0], stList[1], stList[2], triangle.v0, triangle.v1, triangle.v2);
+    colorList[0] = triangle.color0;
+    colorList[1] = triangle.color1;
+    colorList[2] = triangle.color2;
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
     auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
