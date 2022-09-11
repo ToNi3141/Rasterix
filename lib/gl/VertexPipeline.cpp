@@ -39,134 +39,145 @@ VertexPipeline::VertexPipeline(Lighting& lighting, TexGen& texGen)
 
 bool VertexPipeline::drawObj(IRenderer &renderer, RenderObj &obj)
 {
-    // Transform vertex and calculate colors
-    for (uint32_t i = 0; i < obj.count; i++)
+    for (uint32_t it = 0; it < obj.count; it += RenderObj::MAX_VERTEX_CNT)
     {
-        const uint32_t index = obj.getIndex(i);
-        if (!(i < RenderObj::MAX_VERTEX_CNT))
+        const std::size_t diff = obj.count - it;
+        const std::size_t cnt = min(RenderObj::MAX_VERTEX_CNT + RenderObj::OVERLAP, diff);
+
+        if (diff <= RenderObj::OVERLAP)
         {
-            return false;
+            // A triangle needs at least three points to be constructed. There is a overlap between two
+            // sections. Normally the overlap must always be two, otherwise there is an extra vertex, which can't
+            // be used. This can happen when the asserts for MAX_VERTEX_CNT are not full filled.
+            break;
         }
 
-        Vec4 v;
-        Vec4 c;
-        if (obj.colorArrayEnabled)
+        // Transform vertex and calculate colors
+        for (uint32_t i = it, itCnt = 0; itCnt < cnt; i++, itCnt++)
         {
-            obj.getColor(c, index);
-        }
-        else
-        {
-            // If no color is defined, use the global color
-            c = obj.vertexColor;
-        }
+            const uint32_t index = obj.getIndex(i);
 
-        if (obj.vertexArrayEnabled)
-        {
-            obj.getVertex(v, index);
-            m_t.transform(obj.transformedVertex[i], v);
-        }
-
-        if (obj.texCoordArrayEnabled)
-        {
-            obj.getTexCoord(obj.transformedTexCoord[i], index);
-        }
-        m_texGen.calculateTexGenCoords(m_m, obj.transformedTexCoord[i], v);
-
-
-        if (m_lighting.lightingEnabled())
-        {
-            Vec4 vl;
-            Vec3 nl;
-            Vec3 n;
-            if (obj.normalArrayEnabled)
+            Vec4 v;
+            Vec4 c;
+            if (obj.colorArrayEnabled)
             {
-                obj.getNormal(n, index);
-                m_n.transform(nl, n);
-                // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
-                // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
-                nl.normalize();
+                obj.getColor(c, index);
             }
+            else
+            {
+                // If no color is defined, use the global color
+                c = obj.vertexColor;
+            }
+
             if (obj.vertexArrayEnabled)
             {
-                m_m.transform(vl, v);
+                obj.getVertex(v, index);
+                m_t.transform(obj.transformedVertex[itCnt], v);
             }
 
-            m_lighting.calculateLights(obj.transformedColor[i], c, vl, nl);
-        }
-        else
-        {
-            obj.transformedColor[i] = c;
-        }
-    }
-
-    Triangle triangle;
-    uint32_t index0 = 0;
-    uint32_t index1 = 0;
-    uint32_t index2 = 0;
-    for (uint32_t i = 0; i < obj.count - 2; )
-    {
-        switch (obj.drawMode) {
-        case RenderObj::DrawMode::TRIANGLES:
-            index0 = (i);
-            index1 = (i + 1);
-            index2 = (i + 2);
-            i += 3;
-            break;
-        case RenderObj::DrawMode::TRIANGLE_FAN:
-            index0 = (0);
-            index1 = (i + 1);
-            index2 = (i + 2);
-            i += 1;
-            break;
-        case RenderObj::DrawMode::TRIANGLE_STRIP:
-            if (i & 0x1)
+            if (obj.texCoordArrayEnabled)
             {
-                index0 = (i + 1);
-                index1 = (i);
-                index2 = (i + 2);
+                obj.getTexCoord(obj.transformedTexCoord[itCnt], index);
+            }
+            m_texGen.calculateTexGenCoords(m_m, obj.transformedTexCoord[itCnt], v);
+
+
+            if (m_lighting.lightingEnabled())
+            {
+                Vec4 vl;
+                Vec3 nl;
+                Vec3 n;
+                if (obj.normalArrayEnabled)
+                {
+                    obj.getNormal(n, index);
+                    m_n.transform(nl, n);
+                    // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
+                    // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
+                    nl.normalize();
+                }
+                if (obj.vertexArrayEnabled)
+                {
+                    m_m.transform(vl, v);
+                }
+
+                m_lighting.calculateLights(obj.transformedColor[itCnt], c, vl, nl);
             }
             else
             {
-                index0 = (i);
-                index1 = (i + 1);
-                index2 = (i + 2);
+                obj.transformedColor[itCnt] = c;
             }
-            i += 1;
-            break;
-        case RenderObj::DrawMode::QUAD_STRIP:
-            if (i & 0x2)
-            {
-                index0 = (i + 1);
-                index1 = (i);
-                index2 = (i + 2);
-            }
-            else
-            {
-                index0 = (i);
-                index1 = (i + 1);
-                index2 = (i + 2);
-            }
-            i += 1;
-            break;
-        default:
-            break;
         }
 
-        triangle.v0 = obj.transformedVertex[index0];
-        triangle.v1 = obj.transformedVertex[index1];
-        triangle.v2 = obj.transformedVertex[index2];
-
-        triangle.st0 = obj.transformedTexCoord[index0];
-        triangle.st1 = obj.transformedTexCoord[index1];
-        triangle.st2 = obj.transformedTexCoord[index2];
-        
-        triangle.color0 = obj.transformedColor[index0];
-        triangle.color1 = obj.transformedColor[index1];
-        triangle.color2 = obj.transformedColor[index2];
-
-        if (!drawTriangle(renderer, triangle))
+        Triangle triangle;
+        uint32_t index0 = 0;
+        uint32_t index1 = 0;
+        uint32_t index2 = 0;
+        static_assert(RenderObj::OVERLAP == 2, "RenderObj::OVERLAP must be at least two");
+        for (uint32_t i = 0; i < (cnt - RenderObj::OVERLAP); )
         {
-            return false;
+            switch (obj.drawMode) {
+            case RenderObj::DrawMode::TRIANGLES:
+                index0 = (i);
+                index1 = (i + 1);
+                index2 = (i + 2);
+                i += 3;
+                break;
+            case RenderObj::DrawMode::TRIANGLE_FAN:
+                index0 = (0);
+                index1 = (i + 1);
+                index2 = (i + 2);
+                i += 1;
+                break;
+            case RenderObj::DrawMode::TRIANGLE_STRIP:
+                if (i & 0x1)
+                {
+                    index0 = (i + 1);
+                    index1 = (i);
+                    index2 = (i + 2);
+                }
+                else
+                {
+                    index0 = (i);
+                    index1 = (i + 1);
+                    index2 = (i + 2);
+                }
+                i += 1;
+                break;
+            case RenderObj::DrawMode::QUAD_STRIP:
+                if (i & 0x2)
+                {
+                    index0 = (i + 1);
+                    index1 = (i);
+                    index2 = (i + 2);
+                }
+                else
+                {
+                    index0 = (i);
+                    index1 = (i + 1);
+                    index2 = (i + 2);
+                }
+                i += 1;
+                break;
+            default:
+                break;
+            }
+
+            triangle.v0 = obj.transformedVertex[index0];
+            triangle.v1 = obj.transformedVertex[index1];
+            triangle.v2 = obj.transformedVertex[index2];
+
+            triangle.st0 = obj.transformedTexCoord[index0];
+            triangle.st1 = obj.transformedTexCoord[index1];
+            triangle.st2 = obj.transformedTexCoord[index2];
+            
+            triangle.color0 = obj.transformedColor[index0];
+            triangle.color1 = obj.transformedColor[index1];
+            triangle.color2 = obj.transformedColor[index2];
+
+            if (!drawTriangle(renderer, triangle))
+            {
+                return false;
+            }
         }
     }
     return true;
@@ -206,12 +217,14 @@ bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     // Cull triangle
     if (m_enableCulling)
     {
-        const float edgeVal = Rasterizer::edgeFunctionFloat(vertList[0], vertList[1], vertList[2]);
+        // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
+        // facing backwards, then all in the clipping list will do this and vice versa.
+        const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
         const CullMode currentOrientation = (edgeVal <= 0.0f) ? CullMode::BACK : CullMode::FRONT;
         if (currentOrientation != m_cullMode)
             return true;
     }
-
+    
     // Render the triangle
     for (uint8_t i = 3; i <= vertListSize; i++)
     {

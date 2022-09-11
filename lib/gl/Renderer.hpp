@@ -130,7 +130,7 @@ public:
     virtual void commit() override
     {
         // Check if the previous rendering has finished. If not, block till it is finished.
-        if (m_renderThread.get() != true)
+        if (m_renderThread.valid() && (m_renderThread.get() != true))
         {
             // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
             return;

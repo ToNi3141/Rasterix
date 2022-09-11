@@ -63,10 +63,13 @@ public:
 
     uint32_t arrayOffset;
 
-    static constexpr std::size_t MAX_VERTEX_CNT {8192};
-    std::array<Vec4, MAX_VERTEX_CNT> transformedVertex;
-    std::array<Vec4, MAX_VERTEX_CNT> transformedColor;
-    std::array<Vec2, MAX_VERTEX_CNT> transformedTexCoord;
+    static constexpr std::size_t MAX_VERTEX_CNT { 252 }; // TODO: Static assert that it must be dividable with 3 and 4
+    static_assert(MAX_VERTEX_CNT % 4 == 0, "MAX_VERTEX_CNT must be dividable through 4 (used for GL_QUADS");
+    static_assert(MAX_VERTEX_CNT % 3 == 0, "MAX_VERTEX_CNT must be dividable through 3 (used for GL_TRIANGLES");
+    static constexpr std::size_t OVERLAP { 2 };
+    std::array<Vec4, MAX_VERTEX_CNT + OVERLAP> transformedVertex;
+    std::array<Vec4, MAX_VERTEX_CNT + OVERLAP> transformedColor;
+    std::array<Vec2, MAX_VERTEX_CNT + OVERLAP> transformedTexCoord;
 
 private:
     template <typename T>
