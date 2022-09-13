@@ -27,9 +27,9 @@
 #define max std::max
 #define min std::min
 
-
-VertexPipeline::VertexPipeline(Lighting& lighting, TexGen& texGen)
-    : m_lighting(lighting)
+VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen)
+    : m_renderer(renderer)
+    , m_lighting(lighting)
     , m_texGen(texGen)
 {
     m_t.identity();
@@ -37,153 +37,65 @@ VertexPipeline::VertexPipeline(Lighting& lighting, TexGen& texGen)
     m_n.identity();
 }
 
-bool VertexPipeline::drawObj(IRenderer &renderer, RenderObj &obj)
+bool VertexPipeline::drawObj(RenderObj &obj)
 {
-    for (uint32_t it = 0; it < obj.count; it += RenderObj::MAX_VERTEX_CNT)
+    for (uint32_t it = 0; it < obj.count; it += VERTEX_BUFFER_SIZE)
     {
         const std::size_t diff = obj.count - it;
-        const std::size_t cnt = min(RenderObj::MAX_VERTEX_CNT + RenderObj::OVERLAP, diff);
+        const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
 
-        if (diff <= RenderObj::OVERLAP)
+        if (diff <= VERTEX_OVERLAP)
         {
             // A triangle needs at least three points to be constructed. There is a overlap between two
             // sections. Normally the overlap must always be two, otherwise there is an extra vertex, which can't
-            // be used. This can happen when the asserts for MAX_VERTEX_CNT are not full filled.
+            // be used. This can happen when the asserts for VERTEX_BUFFER_SIZE are not full filled.
             break;
         }
+        Vec4Array vertex;
+        Vec4Array color;
+        Vec2Array texCoord;
+        Vec3Array normal;
 
-        // Transform vertex and calculate colors
-        for (uint32_t i = it, itCnt = 0; itCnt < cnt; i++, itCnt++)
+        Vec4Array transformedVertex;
+        Vec4Array transformedColor;
+        Vec2Array transformedTexCoord;
+        Vec3Array transformedNormal;
+
+        loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
+
+        transform(
+            transformedVertex,
+            transformedColor,
+            transformedNormal,
+            transformedTexCoord,
+            obj.vertexArrayEnabled,
+            obj.colorArrayEnabled,
+            obj.normalArrayEnabled,
+            obj.texCoordArrayEnabled,
+            vertex,
+            color,
+            normal,
+            texCoord,
+            obj.vertexColor,
+            cnt
+        );
+
+        const bool ret = drawTriangleArray(
+            transformedVertex,
+            transformedColor,
+            transformedTexCoord,
+            cnt,
+            obj.drawMode
+        );
+        if (!ret)
         {
-            const uint32_t index = obj.getIndex(i);
-
-            Vec4 v;
-            Vec4 c;
-            if (obj.colorArrayEnabled)
-            {
-                obj.getColor(c, index);
-            }
-            else
-            {
-                // If no color is defined, use the global color
-                c = obj.vertexColor;
-            }
-
-            if (obj.vertexArrayEnabled)
-            {
-                obj.getVertex(v, index);
-                m_t.transform(obj.transformedVertex[itCnt], v);
-            }
-
-            if (obj.texCoordArrayEnabled)
-            {
-                obj.getTexCoord(obj.transformedTexCoord[itCnt], index);
-            }
-            m_texGen.calculateTexGenCoords(m_m, obj.transformedTexCoord[itCnt], v);
-
-
-            if (m_lighting.lightingEnabled())
-            {
-                Vec4 vl;
-                Vec3 nl;
-                Vec3 n;
-                if (obj.normalArrayEnabled)
-                {
-                    obj.getNormal(n, index);
-                    m_n.transform(nl, n);
-                    // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
-                    // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
-                    nl.normalize();
-                }
-                if (obj.vertexArrayEnabled)
-                {
-                    m_m.transform(vl, v);
-                }
-
-                m_lighting.calculateLights(obj.transformedColor[itCnt], c, vl, nl);
-            }
-            else
-            {
-                obj.transformedColor[itCnt] = c;
-            }
-        }
-
-        Triangle triangle;
-        uint32_t index0 = 0;
-        uint32_t index1 = 0;
-        uint32_t index2 = 0;
-        static_assert(RenderObj::OVERLAP == 2, "RenderObj::OVERLAP must be at least two");
-        for (uint32_t i = 0; i < (cnt - RenderObj::OVERLAP); )
-        {
-            switch (obj.drawMode) {
-            case RenderObj::DrawMode::TRIANGLES:
-                index0 = (i);
-                index1 = (i + 1);
-                index2 = (i + 2);
-                i += 3;
-                break;
-            case RenderObj::DrawMode::TRIANGLE_FAN:
-                index0 = (0);
-                index1 = (i + 1);
-                index2 = (i + 2);
-                i += 1;
-                break;
-            case RenderObj::DrawMode::TRIANGLE_STRIP:
-                if (i & 0x1)
-                {
-                    index0 = (i + 1);
-                    index1 = (i);
-                    index2 = (i + 2);
-                }
-                else
-                {
-                    index0 = (i);
-                    index1 = (i + 1);
-                    index2 = (i + 2);
-                }
-                i += 1;
-                break;
-            case RenderObj::DrawMode::QUAD_STRIP:
-                if (i & 0x2)
-                {
-                    index0 = (i + 1);
-                    index1 = (i);
-                    index2 = (i + 2);
-                }
-                else
-                {
-                    index0 = (i);
-                    index1 = (i + 1);
-                    index2 = (i + 2);
-                }
-                i += 1;
-                break;
-            default:
-                break;
-            }
-
-            triangle.v0 = obj.transformedVertex[index0];
-            triangle.v1 = obj.transformedVertex[index1];
-            triangle.v2 = obj.transformedVertex[index2];
-
-            triangle.st0 = obj.transformedTexCoord[index0];
-            triangle.st1 = obj.transformedTexCoord[index1];
-            triangle.st2 = obj.transformedTexCoord[index2];
-            
-            triangle.color0 = obj.transformedColor[index0];
-            triangle.color1 = obj.transformedColor[index1];
-            triangle.color2 = obj.transformedColor[index2];
-
-            if (!drawTriangle(renderer, triangle))
-            {
-                return false;
-            }
+            return false;
         }
     }
     return true;
 }
 
-bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
+bool VertexPipeline::drawTriangle(const Triangle& triangle)
 {
     Clipper::ClipVertList vertList;
     Clipper::ClipStList stList;
@@ -230,7 +142,7 @@ bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     {
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan
-        const bool success = renderer.drawTriangle(vertListClipped[0],
+        const bool success = m_renderer.drawTriangle(vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
                 stListClipped[0],
@@ -247,6 +159,167 @@ bool VertexPipeline::drawTriangle(IRenderer &renderer, const Triangle& triangle)
     return true;
 }
 
+void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec2Array& tex, const std::size_t offset, const std::size_t count)
+{
+    for (uint32_t o = offset, i = 0; i < count; o++, i++)
+    {
+        const uint32_t index = obj.getIndex(o);
+        if (obj.colorArrayEnabled)
+        {
+            obj.getColor(color[i], index);
+        }
+        if (obj.vertexArrayEnabled)
+        {
+            obj.getVertex(vertex[i], index);
+        }
+        if (obj.normalArrayEnabled)
+        {
+            obj.getNormal(normal[i], index);
+        }
+        if (obj.texCoordArrayEnabled)
+        {
+            obj.getTexCoord(tex[i], index);
+        }
+    }
+}
+
+void VertexPipeline::transform(
+    Vec4Array& transformedVertex, 
+    Vec4Array& transformedColor, 
+    Vec3Array& transformedNormal, 
+    Vec2Array& transformedTex, 
+    const bool enableVertexArray,
+    const bool enableColorArray,
+    const bool enableNormalArray,
+    const bool enableTexArray,
+    const Vec4Array& vertex, 
+    const Vec4Array& color, 
+    const Vec3Array& normal, 
+    const Vec2Array& tex,
+    const Vec4& vertexColor,
+    const std::size_t count)
+{
+    for (std::size_t i = 0; i < count; i++)
+    {
+        if (enableColorArray)
+        {
+            transformedColor[i] = color[i];
+        }
+        else
+        {
+            transformedColor[i] = vertexColor;
+        }
+    }
+
+    if (m_lighting.lightingEnabled())
+    {
+        if (enableVertexArray)
+            m_m.transform(transformedVertex.data(), vertex.data(), count);
+        if (enableNormalArray)
+            m_n.transform(transformedNormal.data(), normal.data(), count);
+        
+        for (std::size_t i = 0; i < count; i++)
+        {
+            if (enableNormalArray)
+                transformedNormal[i].normalize();
+            m_lighting.calculateLights(transformedColor[i], transformedColor[i], transformedVertex[i], transformedNormal[i]);
+        }
+    }
+
+    for (std::size_t i = 0; i < count; i++)
+    {
+        if (enableTexArray)
+        {
+            transformedTex[i] = tex[i];
+        }
+        m_texGen.calculateTexGenCoords(m_m, transformedTex[i], vertex[i]);
+    }
+
+    if (enableVertexArray)
+        m_t.transform(transformedVertex.data(), vertex.data(), count);
+}
+
+bool VertexPipeline::drawTriangleArray(
+    const Vec4Array& vertex, 
+    const Vec4Array& color, 
+    const Vec2Array& tex, 
+    const std::size_t count, 
+    const RenderObj::DrawMode drawMode)
+{
+    Triangle triangle; // TODO: Use references
+    uint32_t index0 = 0;
+    uint32_t index1 = 0;
+    uint32_t index2 = 0;
+    static_assert(VERTEX_OVERLAP == 2, "VERTEX_OVERLAP must be at least two");
+    for (uint32_t i = 0; i < (count - VERTEX_OVERLAP); )
+    {
+        switch (drawMode) {
+        case RenderObj::DrawMode::TRIANGLES:
+            index0 = (i);
+            index1 = (i + 1);
+            index2 = (i + 2);
+            i += 3;
+            break;
+        case RenderObj::DrawMode::TRIANGLE_FAN:
+            index0 = (0);
+            index1 = (i + 1);
+            index2 = (i + 2);
+            i += 1;
+            break;
+        case RenderObj::DrawMode::TRIANGLE_STRIP:
+            if (i & 0x1)
+            {
+                index0 = (i + 1);
+                index1 = (i);
+                index2 = (i + 2);
+            }
+            else
+            {
+                index0 = (i);
+                index1 = (i + 1);
+                index2 = (i + 2);
+            }
+            i += 1;
+            break;
+        case RenderObj::DrawMode::QUAD_STRIP:
+            if (i & 0x2)
+            {
+                index0 = (i + 1);
+                index1 = (i);
+                index2 = (i + 2);
+            }
+            else
+            {
+                index0 = (i);
+                index1 = (i + 1);
+                index2 = (i + 2);
+            }
+            i += 1;
+            break;
+        default:
+            break;
+        }
+
+        triangle.v0 = vertex[index0];
+        triangle.v1 = vertex[index1];
+        triangle.v2 = vertex[index2];
+
+        triangle.st0 = tex[index0];
+        triangle.st1 = tex[index1];
+        triangle.st2 = tex[index2];
+        
+        triangle.color0 = color[index0];
+        triangle.color1 = color[index1];
+        triangle.color2 = color[index2];
+
+
+        if (!drawTriangle(triangle))
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 void VertexPipeline::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
 {

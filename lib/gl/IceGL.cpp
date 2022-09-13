@@ -23,7 +23,7 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
-    , m_vertexPipeline(m_lighting, m_texGen)
+    , m_vertexPipeline(renderer, m_lighting, m_texGen)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
@@ -279,7 +279,7 @@ void IceGL::glEnd()
     m_renderObjBeginEnd.drawMode = convertDrawMode(m_beginMode);
     m_renderObjBeginEnd.count = m_vertexBuffer.size();
 
-    m_vertexPipeline.drawObj(m_renderer, m_renderObjBeginEnd);
+    m_vertexPipeline.drawObj(m_renderObjBeginEnd);
 }
 
 void IceGL::glTexCoord2f(GLfloat s, GLfloat t)
@@ -1773,7 +1773,7 @@ void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderObj);
     }
 }
 
@@ -1805,7 +1805,7 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderObj);
     }
 }
 

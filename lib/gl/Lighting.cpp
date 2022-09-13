@@ -31,7 +31,8 @@ void Lighting::calculateLights(Vec4& color,
 {
     if (m_lightingEnabled)
     {
-        calculateSceneLight(color,
+        Vec4 colorTmp;
+        calculateSceneLight(colorTmp,
                             (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor,
                             (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
                             m_material.ambientColorScene);
@@ -40,7 +41,7 @@ void Lighting::calculateLights(Vec4& color,
         {
             if (!light.enable)
                 continue;
-            calculateLight(color,
+            calculateLight(colorTmp,
                            light,
                            m_material.specularExponent,
                            (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
@@ -50,6 +51,7 @@ void Lighting::calculateLights(Vec4& color,
                            normal);
         }
 
+        color = colorTmp;
         color[3] = triangleColor[3];
     }
 }

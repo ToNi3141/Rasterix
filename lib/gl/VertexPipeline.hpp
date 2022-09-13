@@ -49,10 +49,10 @@ public:
         Vec4 color2;
     };
 
-    VertexPipeline(Lighting& lighting, TexGen& texGen);
+    VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen);
 
-    bool drawObj(IRenderer& renderer, RenderObj &obj);
-    bool drawTriangle(IRenderer &renderer, const Triangle& triangle);
+    bool drawObj(RenderObj &obj);
+    bool drawTriangle(const Triangle& triangle);
     void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
     void setDepthRange(const float zNear, const float zFar);
     void setModelProjectionMatrix(const Mat44& m);
@@ -62,9 +62,42 @@ public:
     void enableCulling(bool enable);
     void setCullMode(CullMode mode);
 private:
+    static constexpr std::size_t VERTEX_BUFFER_SIZE { 252 };
+    static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
+    static_assert(VERTEX_BUFFER_SIZE % 3 == 0, "VERTEX_BUFFER_SIZE must be dividable through 3 (used for GL_TRIANGLES");
+    static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
+    using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+    using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+    using Vec2Array = std::array<Vec2, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
     inline void perspectiveDivide(Vec4& v);
+    
+    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec2Array& tex, const std::size_t offset, const std::size_t count);
+    void transform(
+        Vec4Array& transformedVertex, 
+        Vec4Array& transformedColor, 
+        Vec3Array& transformedNormal, 
+        Vec2Array& transformedTex, 
+        const bool enableVertexArray,
+        const bool enableColorArray,
+        const bool enableNormalArray,
+        const bool enableTexArray,
+        const Vec4Array& vertex, 
+        const Vec4Array& color, 
+        const Vec3Array& normal, 
+        const Vec2Array& tex, 
+        const Vec4& vertexColor,
+        const std::size_t count
+    );
+    bool drawTriangleArray(        
+        const Vec4Array& vertex, 
+        const Vec4Array& color, 
+        const Vec2Array& tex, 
+        const std::size_t count,
+        const RenderObj::DrawMode drawMode
+    );
 
     Mat44 m_t; // ModelViewProjection
     Mat44 m_m; // ModelView
@@ -84,6 +117,7 @@ private:
     bool m_enableCulling{false};
     CullMode m_cullMode{CullMode::BACK};
 
+    IRenderer& m_renderer;
     Lighting& m_lighting;
     TexGen& m_texGen;
 };
