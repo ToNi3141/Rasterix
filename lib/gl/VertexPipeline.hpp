@@ -36,23 +36,10 @@ public:
         FRONT_AND_BACK
     };
 
-    struct Triangle
-    {
-        Vec4 v0;
-        Vec4 v1;
-        Vec4 v2;
-        Vec2 st0;
-        Vec2 st1;
-        Vec2 st2;
-        Vec4 color0;
-        Vec4 color1;
-        Vec4 color2;
-    };
-
     VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen);
 
     bool drawObj(RenderObj &obj);
-    bool drawTriangle(const Triangle& triangle);
+
     void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
     void setDepthRange(const float zNear, const float zFar);
     void setModelProjectionMatrix(const Mat44& m);
@@ -69,6 +56,20 @@ private:
     using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec2Array = std::array<Vec2, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+    struct Triangle
+    {
+        const Vec4& v0;
+        const Vec4& v1;
+        const Vec4& v2;
+        const Vec2& st0;
+        const Vec2& st1;
+        const Vec2& st2;
+        const Vec4& color0;
+        const Vec4& color1;
+        const Vec4& color2;
+    };
+
+    bool drawTriangle(const Triangle& triangle);
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);

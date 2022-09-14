@@ -51,6 +51,7 @@ bool VertexPipeline::drawObj(RenderObj &obj)
             // be used. This can happen when the asserts for VERTEX_BUFFER_SIZE are not full filled.
             break;
         }
+
         Vec4Array vertex;
         Vec4Array color;
         Vec2Array texCoord;
@@ -246,13 +247,12 @@ bool VertexPipeline::drawTriangleArray(
     const std::size_t count, 
     const RenderObj::DrawMode drawMode)
 {
-    Triangle triangle; // TODO: Use references
-    uint32_t index0 = 0;
-    uint32_t index1 = 0;
-    uint32_t index2 = 0;
     static_assert(VERTEX_OVERLAP == 2, "VERTEX_OVERLAP must be at least two");
     for (uint32_t i = 0; i < (count - VERTEX_OVERLAP); )
     {
+        uint32_t index0;
+        uint32_t index1;
+        uint32_t index2;
         switch (drawMode) {
         case RenderObj::DrawMode::TRIANGLES:
             index0 = (i);
@@ -300,17 +300,18 @@ bool VertexPipeline::drawTriangleArray(
             break;
         }
 
-        triangle.v0 = vertex[index0];
-        triangle.v1 = vertex[index1];
-        triangle.v2 = vertex[index2];
 
-        triangle.st0 = tex[index0];
-        triangle.st1 = tex[index1];
-        triangle.st2 = tex[index2];
-        
-        triangle.color0 = color[index0];
-        triangle.color1 = color[index1];
-        triangle.color2 = color[index2];
+        Triangle triangle {
+            vertex[index0],
+            vertex[index1],
+            vertex[index2],
+            tex[index0],
+            tex[index1],
+            tex[index2],
+            color[index0],
+            color[index1],
+            color[index2]
+        };
 
 
         if (!drawTriangle(triangle))
