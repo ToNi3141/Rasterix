@@ -29,6 +29,7 @@ void Lighting::calculateLights(Vec4& color,
                                const Vec4& vertex,
                                const Vec3& normal) 
 {
+    const float alphaOld = triangleColor[3];
     if (m_lightingEnabled)
     {
         Vec4 colorTmp;
@@ -52,7 +53,7 @@ void Lighting::calculateLights(Vec4& color,
         }
 
         color = colorTmp;
-        color[3] = triangleColor[3];
+        color[3] = alphaOld;
     }
 }
 
