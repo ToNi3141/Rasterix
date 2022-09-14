@@ -3,20 +3,20 @@
 bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
 {
     vec.initHomogeneous();
-    return getFromArray(vec, vertexType, vertexPointer, vertexStride, vertexSize, index);
+    return getFromArray(vec, m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
 bool RenderObj::getTexCoord(Vec2& vec, const uint32_t index) const
 {
-    return getFromArray(vec, texCoordType, texCoordPointer, texCoordStride, texCoordSize, index);
+    return getFromArray(vec, m_texCoordType, m_texCoordPointer, m_texCoordStride, m_texCoordSize, index);
 }
 
 bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
 {
-    bool retVal = getFromArray(vec, colorType, colorPointer, colorStride, colorSize, index);
+    bool retVal = getFromArray(vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
     if (retVal)
     {
-        switch (colorType) {
+        switch (m_colorType) {
         case Type::UNSIGNED_BYTE:
         case Type::UNSIGNED_SHORT:
         case Type::UNSIGNED_INT:
@@ -38,26 +38,26 @@ bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
 
 bool RenderObj::getNormal(Vec3& vec, const uint32_t index) const
 {
-    return getFromArray(vec, normalType, normalPointer, normalStride, 3, index);
+    return getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
 }
 
 uint32_t RenderObj::getIndex(const uint32_t index) const
 {
-    if (indicesEnabled)
+    if (m_indicesEnabled)
     {
-        switch (indicesType)
+        switch (m_indicesType)
         {
         case Type::BYTE:
         case Type::UNSIGNED_BYTE:
-            return static_cast<const uint8_t*>(indicesPointer)[index];
+            return static_cast<const uint8_t*>(m_indicesPointer)[index];
         case Type::SHORT:
         case Type::UNSIGNED_SHORT:
-            return static_cast<const uint16_t*>(indicesPointer)[index];
+            return static_cast<const uint16_t*>(m_indicesPointer)[index];
         case Type::UNSIGNED_INT:
-            return static_cast<const uint32_t*>(indicesPointer)[index];
+            return static_cast<const uint32_t*>(m_indicesPointer)[index];
         default:
             return index;
         }
     }
-    return index;
+    return index + m_arrayOffset;
 }

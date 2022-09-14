@@ -152,6 +152,7 @@ private:
     TexGen m_texGen;
     VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
+    RenderObj m_renderObjBeginEnd;
 
     // Buffer
     std::vector<Vec4> m_vertexBuffer;

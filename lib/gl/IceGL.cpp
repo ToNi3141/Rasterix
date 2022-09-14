@@ -23,7 +23,7 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
-    , m_vertexPipeline(m_lighting, m_texGen)
+    , m_vertexPipeline(renderer, m_lighting, m_texGen)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
@@ -251,121 +251,36 @@ void IceGL::glBegin(GLenum mode)
 void IceGL::glEnd()
 {
     recalculateAndSetTnLMatrices();
-    if (m_beginMode == GL_TRIANGLES)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i += 3)
-        {
-            m_vertexPipeline.drawTriangle(m_renderer,
-            {m_vertexBuffer[i],
-             m_vertexBuffer[i + 1],
-             m_vertexBuffer[i + 2],
-             m_textureVertexBuffer[i],
-             m_textureVertexBuffer[i + 1],
-             m_textureVertexBuffer[i + 2],
-             m_normalVertexBuffer[i],
-             m_normalVertexBuffer[i + 1],
-             m_normalVertexBuffer[i + 2],
-             m_colorVertexBuffer[i],
-             m_colorVertexBuffer[i + 1],
-             m_colorVertexBuffer[i + 2]});
-        }
-    }
-    if (m_beginMode == GL_TRIANGLE_FAN)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            m_vertexPipeline.drawTriangle(m_renderer,
-            {m_vertexBuffer[0],
-             m_vertexBuffer[i + 1],
-             m_vertexBuffer[i + 2],
-             m_textureVertexBuffer[0],
-             m_textureVertexBuffer[i + 1],
-             m_textureVertexBuffer[i + 2],
-             m_normalVertexBuffer[0],
-             m_normalVertexBuffer[i + 1],
-             m_normalVertexBuffer[i + 2],
-             m_colorVertexBuffer[0],
-             m_colorVertexBuffer[i + 1],
-             m_colorVertexBuffer[i + 2]});
-        }
-    }
 
-    if (m_beginMode == GL_TRIANGLE_STRIP)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            if (i & 0x1)
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 2]});
-            }
-            else
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i],
-                 m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i + 2]});
-            }
-        }
-    }
-    if (m_beginMode == GL_QUAD_STRIP)
-    {
-        for (uint32_t i = 0; i < m_vertexBuffer.size() - 2; i++)
-        {
-            if (i & 0x2)
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 2]});
-            }
-            else
-            {
-                m_vertexPipeline.drawTriangle(m_renderer,
-                {m_vertexBuffer[i],
-                 m_vertexBuffer[i + 1],
-                 m_vertexBuffer[i + 2],
-                 m_textureVertexBuffer[i],
-                 m_textureVertexBuffer[i + 1],
-                 m_textureVertexBuffer[i + 2],
-                 m_normalVertexBuffer[i],
-                 m_normalVertexBuffer[i + 1],
-                 m_normalVertexBuffer[i + 2],
-                 m_colorVertexBuffer[i],
-                 m_colorVertexBuffer[i + 1],
-                 m_colorVertexBuffer[i + 2]});
-            }
-        }
-    }
+    m_renderObjBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
+    m_renderObjBeginEnd.setVertexSize(4);
+    m_renderObjBeginEnd.setVertexType(RenderObj::Type::FLOAT);
+    m_renderObjBeginEnd.setVertexStride(0);
+    m_renderObjBeginEnd.setVertexPointer(m_vertexBuffer.data());
+
+    m_renderObjBeginEnd.enableTexCoordArray(!m_textureVertexBuffer.empty());
+    m_renderObjBeginEnd.setTexCoordSize(2);
+    m_renderObjBeginEnd.setTexCoordType(RenderObj::Type::FLOAT);
+    m_renderObjBeginEnd.setTexCoordStride(0);
+    m_renderObjBeginEnd.setTexCoordPointer(m_textureVertexBuffer.data());
+
+    m_renderObjBeginEnd.enableNormalArray(!m_normalVertexBuffer.empty());
+    m_renderObjBeginEnd.setNormalType(RenderObj::Type::FLOAT);
+    m_renderObjBeginEnd.setNormalStride(0);
+    m_renderObjBeginEnd.setNormalPointer(m_normalVertexBuffer.data());
+
+    m_renderObjBeginEnd.enableColorArray(!m_colorVertexBuffer.empty());
+    m_renderObjBeginEnd.setColorSize(4);
+    m_renderObjBeginEnd.setColorType(RenderObj::Type::FLOAT);
+    m_renderObjBeginEnd.setColorStride(0);
+    m_renderObjBeginEnd.setColorPointer(m_colorVertexBuffer.data());
+
+    m_renderObjBeginEnd.enableIndices(false);
+    m_renderObjBeginEnd.setDrawMode(convertDrawMode(m_beginMode));
+    m_renderObjBeginEnd.setCount(m_vertexBuffer.size());
+
+
+    m_vertexPipeline.drawObj(m_renderObjBeginEnd);
 }
 
 void IceGL::glTexCoord2f(GLfloat s, GLfloat t)
@@ -1818,48 +1733,48 @@ void IceGL::glLightModelfv(GLenum pname, const GLfloat *params)
 
 void IceGL::glVertexPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.vertexSize = size;
-    m_renderObj.vertexType = convertType(type);
-    m_renderObj.vertexStride = stride;
-    m_renderObj.vertexPointer = pointer;
+    m_renderObj.setVertexSize(size);
+    m_renderObj.setVertexType(convertType(type));
+    m_renderObj.setVertexStride(stride);
+    m_renderObj.setVertexPointer(pointer);
 }
 
 void IceGL::glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.texCoordSize = size;
-    m_renderObj.texCoordType = convertType(type);
-    m_renderObj.texCoordStride = stride;
-    m_renderObj.texCoordPointer = pointer;
+    m_renderObj.setTexCoordSize(size);
+    m_renderObj.setTexCoordType(convertType(type));
+    m_renderObj.setTexCoordStride(stride);
+    m_renderObj.setTexCoordPointer(pointer);
 }
 
 void IceGL::glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.normalType = convertType(type);
-    m_renderObj.normalStride = stride;
-    m_renderObj.normalPointer = pointer;
+    m_renderObj.setNormalType(convertType(type));
+    m_renderObj.setNormalStride(stride);
+    m_renderObj.setNormalPointer(pointer);
 }
 
 void IceGL::glColorPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.colorSize = size;
-    m_renderObj.colorType = convertType(type);
-    m_renderObj.colorStride = stride;
-    m_renderObj.colorPointer = pointer;
+    m_renderObj.setColorSize(size);
+    m_renderObj.setColorType(convertType(type));
+    m_renderObj.setColorStride(stride);
+    m_renderObj.setColorPointer(pointer);
 }
 
 void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
     recalculateAndSetTnLMatrices();
 
-    m_renderObj.count = count;
-    m_renderObj.arrayOffset = first;
-    m_renderObj.drawMode = convertDrawMode(mode);
-    m_renderObj.indicesEnabled = false;
-    m_renderObj.vertexColor = m_vertexColor;
+    m_renderObj.setCount(count);
+    m_renderObj.setArrayOffset(first);
+    m_renderObj.setDrawMode(convertDrawMode(mode));
+    m_renderObj.enableIndices(false);
+    m_renderObj.setVertexColor(m_vertexColor);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderObj);
     }
 }
 
@@ -1868,13 +1783,13 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
     m_error = GL_NO_ERROR;
     switch (type) {
     case GL_UNSIGNED_BYTE:
-        m_renderObj.indicesType = RenderObj::Type::BYTE;
+        m_renderObj.setIndicesType(RenderObj::Type::BYTE);
         break;
     case GL_UNSIGNED_SHORT:
-        m_renderObj.indicesType = RenderObj::Type::SHORT;
+        m_renderObj.setIndicesType(RenderObj::Type::SHORT);
         break;
     case GL_UNSIGNED_INT:
-        m_renderObj.indicesType = RenderObj::Type::UNSIGNED_INT;
+        m_renderObj.setIndicesType(RenderObj::Type::UNSIGNED_INT);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1883,15 +1798,15 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
 
     recalculateAndSetTnLMatrices();
 
-    m_renderObj.count = count;
-    m_renderObj.drawMode = convertDrawMode(mode);
-    m_renderObj.indicesPointer = indices;
-    m_renderObj.indicesEnabled = true;
-    m_renderObj.vertexColor = m_vertexColor;
+    m_renderObj.setCount(count);
+    m_renderObj.setDrawMode(convertDrawMode(mode));
+    m_renderObj.setIndicesPointer(indices);
+    m_renderObj.enableIndices(true);
+    m_renderObj.setVertexColor(m_vertexColor);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderer, m_renderObj);
+        m_vertexPipeline.drawObj(m_renderObj);
     }
 }
 
@@ -1910,16 +1825,16 @@ void IceGL::setClientState(const GLenum array, bool enable)
     m_error = GL_NO_ERROR;
     switch (array) {
     case GL_COLOR_ARRAY:
-        m_renderObj.colorArrayEnabled = enable;
+        m_renderObj.enableColorArray(enable);
         break;
     case GL_NORMAL_ARRAY:
-        m_renderObj.normalArrayEnabled = enable;
+        m_renderObj.enableNormalArray(enable);
         break;
     case GL_TEXTURE_COORD_ARRAY:
-        m_renderObj.texCoordArrayEnabled = enable;
+        m_renderObj.enableTexCoordArray(enable);
         break;
     case GL_VERTEX_ARRAY:
-        m_renderObj.vertexArrayEnabled = enable;
+        m_renderObj.enableVertexArray(enable);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1957,6 +1872,8 @@ RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
         return RenderObj::DrawMode::TRIANGLE_FAN;
     case GL_TRIANGLE_STRIP:
         return RenderObj::DrawMode::TRIANGLE_STRIP;
+    case GL_QUAD_STRIP:
+        return RenderObj::DrawMode::QUAD_STRIP;
     default:
         m_error = GL_INVALID_ENUM;
         return RenderObj::DrawMode::TRIANGLES;
