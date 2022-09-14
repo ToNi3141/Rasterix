@@ -37,6 +37,97 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
     m_n.identity();
 }
 
+// Might be a faster version than the other implementation.
+// Needs to be profiled. Leave it for now as dead code.
+// bool VertexPipeline::drawObj(RenderObj &obj)
+// {
+//     for (uint32_t it = 0; it < obj.count; it += VERTEX_BUFFER_SIZE)
+//     {
+//         const std::size_t diff = obj.count - it;
+//         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
+
+//         if (diff <= VERTEX_OVERLAP)
+//         {
+//             // A triangle needs at least three points to be constructed. There is a overlap between two
+//             // sections. Normally the overlap must always be two, otherwise there is an extra vertex, which can't
+//             // be used. This can happen when the asserts for VERTEX_BUFFER_SIZE are not full filled.
+//             break;
+//         }
+
+//         Vec4Array transformedVertex;
+//         Vec4Array transformedColor;
+//         Vec2Array transformedTexCoord;
+//         Vec3Array transformedNormal;
+//         for (uint32_t i = 0, itCnt = it; i < cnt; i++, itCnt++)
+//         {
+//             const uint32_t index = obj.getIndex(itCnt);
+
+//             Vec4 v;
+//             Vec4 c;
+//             if (obj.colorArrayEnabled)
+//             {
+//                 obj.getColor(c, index);
+//             }
+//             else
+//             {
+//                 // If no color is defined, use the global color
+//                 c = obj.vertexColor;
+//             }
+
+//             if (obj.vertexArrayEnabled)
+//             {
+//                 obj.getVertex(v, index);
+//                 m_t.transform(transformedVertex[i], v);
+//             }
+
+//             if (obj.texCoordArrayEnabled)
+//             {
+//                 obj.getTexCoord(transformedTexCoord[i], index);
+//             }
+//             m_texGen.calculateTexGenCoords(m_m, transformedTexCoord[i], v);
+
+
+//             if (m_lighting.lightingEnabled())
+//             {
+//                 Vec4 vl;
+//                 Vec3 nl;
+//                 Vec3 n;
+//                 if (obj.normalArrayEnabled)
+//                 {
+//                     obj.getNormal(n, index);
+//                     m_n.transform(nl, n);
+//                     // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
+//                     // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
+//                     nl.normalize();
+//                 }
+//                 if (obj.vertexArrayEnabled)
+//                 {
+//                     m_m.transform(vl, v);
+//                 }
+
+//                 m_lighting.calculateLights(transformedColor[i], c, vl, nl);
+//             }
+//             else
+//             {
+//                 transformedColor[i] = c;
+//             }
+//         }
+
+//         const bool ret = drawTriangleArray(
+//             transformedVertex,
+//             transformedColor,
+//             transformedTexCoord,
+//             cnt,
+//             obj.drawMode
+//         );
+//         if (!ret)
+//         {
+//             return false;
+//         }
+//     }
+//     return true;
+// }
+
 bool VertexPipeline::drawObj(RenderObj &obj)
 {
     for (uint32_t it = 0; it < obj.count; it += VERTEX_BUFFER_SIZE)
@@ -200,18 +291,6 @@ void VertexPipeline::transform(
     const Vec4& vertexColor,
     const std::size_t count)
 {
-    for (std::size_t i = 0; i < count; i++)
-    {
-        if (enableColorArray)
-        {
-            transformedColor[i] = color[i];
-        }
-        else
-        {
-            transformedColor[i] = vertexColor;
-        }
-    }
-
     if (m_lighting.lightingEnabled())
     {
         if (enableVertexArray)
@@ -221,9 +300,33 @@ void VertexPipeline::transform(
         
         for (std::size_t i = 0; i < count; i++)
         {
+            Vec4 c;
+            if (enableColorArray)
+            {
+                c = color[i];
+            }
+            else
+            {
+                c = vertexColor;
+            }
+
             if (enableNormalArray)
                 transformedNormal[i].normalize();
-            m_lighting.calculateLights(transformedColor[i], transformedColor[i], transformedVertex[i], transformedNormal[i]);
+            m_lighting.calculateLights(transformedColor[i], c, transformedVertex[i], transformedNormal[i]);
+        }
+    }
+    else
+    {
+        for (std::size_t i = 0; i < count; i++)
+        {
+            if (enableColorArray)
+            {
+                transformedColor[i] = color[i];
+            }
+            else
+            {
+                transformedColor[i] = vertexColor;
+            }
         }
     }
 
