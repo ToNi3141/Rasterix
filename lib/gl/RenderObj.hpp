@@ -24,44 +24,51 @@ public:
         UNSIGNED_INT
     };
 
+    bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     bool getVertex(Vec4& vec, const uint32_t index) const;
+    bool texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     bool getTexCoord(Vec2& vec, const uint32_t index) const;
+    bool colorArrayEnabled() const { return m_colorArrayEnabled; }
     bool getColor(Vec4& vec, const uint32_t index) const;
+    bool normalArrayEnabled() const { return m_normalArrayEnabled; }
     bool getNormal(Vec3& vec, const uint32_t index) const;
+
     uint32_t getIndex(const uint32_t index) const;
+    DrawMode getDrawMode() const { return m_drawMode; }
+    std::size_t getCount() const { return m_count; }
+    const Vec4& getVertexColor() const { return m_vertexColor; }
 
-    DrawMode drawMode;
-    uint32_t count;
-    Vec4 vertexColor;
+    void enableVertexArray(bool enable) { m_vertexArrayEnabled = enable; }
+    void setVertexSize(uint8_t size) { m_vertexSize = size; }
+    void setVertexType(Type type) { m_vertexType = type; }
+    void setVertexStride(uint32_t stride) { m_vertexStride = stride; }
+    void setVertexPointer(const void* ptr) { m_vertexPointer = ptr; }
 
-    bool vertexArrayEnabled;
-    uint8_t vertexSize;
-    Type vertexType;
-    uint32_t vertexStride;
-    const void* vertexPointer;
+    void enableTexCoordArray(bool enable) { m_texCoordArrayEnabled = enable; }
+    void setTexCoordSize(uint8_t size) { m_texCoordSize = size; }
+    void setTexCoordType(Type type) { m_texCoordType = type; }
+    void setTexCoordStride(uint32_t stride) { m_texCoordStride = stride; }
+    void setTexCoordPointer(const void* ptr) { m_texCoordPointer = ptr; }
 
-    bool texCoordArrayEnabled;
-    uint8_t texCoordSize;
-    Type texCoordType;
-    uint32_t texCoordStride;
-    const void* texCoordPointer;
+    void enableNormalArray(bool enable) { m_normalArrayEnabled = enable; }
+    void setNormalType(Type type) { m_normalType = type; }
+    void setNormalStride(uint32_t stride) { m_normalStride = stride; }
+    void setNormalPointer(const void* ptr) { m_normalPointer = ptr; }
 
-    bool normalArrayEnabled;
-    Type normalType;
-    uint32_t normalStride;
-    const void* normalPointer;
+    void enableColorArray(bool enable) { m_colorArrayEnabled = enable; }
+    void setColorSize(uint8_t size) { m_colorSize = size; }
+    void setColorType(Type type) { m_colorType = type; }
+    void setColorStride(uint32_t stride) { m_colorStride = stride; }
+    void setColorPointer(const void* ptr) { m_colorPointer = ptr; }
 
-    bool colorArrayEnabled;
-    uint8_t colorSize;
-    Type colorType;
-    uint32_t colorStride;
-    const void* colorPointer;
+    void setDrawMode(DrawMode mode) { m_drawMode = mode; }
+    void setVertexColor(const Vec4& color) { m_vertexColor = color; }
 
-    bool indicesEnabled;
-    Type indicesType;
-    const void* indicesPointer;
-
-    uint32_t arrayOffset;
+    void enableIndices(bool enable) { m_indicesEnabled = enable; }
+    void setCount(std::size_t count) { m_count = count; }
+    void setIndicesType(Type type) { m_indicesType = type; }
+    void setIndicesPointer(const void* ptr) { m_indicesPointer = ptr; }
+    void setArrayOffset(uint32_t offset) { m_arrayOffset = offset; }
 
 private:
     template <typename T>
@@ -123,5 +130,38 @@ private:
         }
         return false;
     }
+
+    DrawMode m_drawMode;
+    std::size_t m_count;
+    Vec4 m_vertexColor;
+
+    bool m_vertexArrayEnabled;
+    uint8_t m_vertexSize;
+    Type m_vertexType;
+    uint32_t m_vertexStride;
+    const void* m_vertexPointer;
+
+    bool m_texCoordArrayEnabled;
+    uint8_t m_texCoordSize;
+    Type m_texCoordType;
+    uint32_t m_texCoordStride;
+    const void* m_texCoordPointer;
+
+    bool m_normalArrayEnabled;
+    Type m_normalType;
+    uint32_t m_normalStride;
+    const void* m_normalPointer;
+
+    bool m_colorArrayEnabled;
+    uint8_t m_colorSize;
+    Type m_colorType;
+    uint32_t m_colorStride;
+    const void* m_colorPointer;
+
+    bool m_indicesEnabled;
+    Type m_indicesType;
+    const void* m_indicesPointer;
+
+    uint32_t m_arrayOffset;
 };
 #endif // RENDEROBJ_HPP

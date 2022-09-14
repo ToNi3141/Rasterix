@@ -41,9 +41,9 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 // Needs to be profiled. Leave it for now as dead code.
 // bool VertexPipeline::drawObj(RenderObj &obj)
 // {
-//     for (uint32_t it = 0; it < obj.count; it += VERTEX_BUFFER_SIZE)
+//     for (uint32_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
 //     {
-//         const std::size_t diff = obj.count - it;
+//         const std::size_t diff = obj.getCount() - it;
 //         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
 
 //         if (diff <= VERTEX_OVERLAP)
@@ -64,23 +64,23 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 
 //             Vec4 v;
 //             Vec4 c;
-//             if (obj.colorArrayEnabled)
+//             if (obj.colorArrayEnabled())
 //             {
 //                 obj.getColor(c, index);
 //             }
 //             else
 //             {
 //                 // If no color is defined, use the global color
-//                 c = obj.vertexColor;
+//                 c = obj.getVertexColor();
 //             }
 
-//             if (obj.vertexArrayEnabled)
+//             if (obj.vertexArrayEnabled())
 //             {
 //                 obj.getVertex(v, index);
 //                 m_t.transform(transformedVertex[i], v);
 //             }
 
-//             if (obj.texCoordArrayEnabled)
+//             if (obj.texCoordArrayEnabled())
 //             {
 //                 obj.getTexCoord(transformedTexCoord[i], index);
 //             }
@@ -92,7 +92,7 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 //                 Vec4 vl;
 //                 Vec3 nl;
 //                 Vec3 n;
-//                 if (obj.normalArrayEnabled)
+//                 if (obj.normalArrayEnabled())
 //                 {
 //                     obj.getNormal(n, index);
 //                     m_n.transform(nl, n);
@@ -100,7 +100,7 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 //                     // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
 //                     nl.normalize();
 //                 }
-//                 if (obj.vertexArrayEnabled)
+//                 if (obj.vertexArrayEnabled())
 //                 {
 //                     m_m.transform(vl, v);
 //                 }
@@ -118,7 +118,7 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 //             transformedColor,
 //             transformedTexCoord,
 //             cnt,
-//             obj.drawMode
+//             obj.getDrawMode()
 //         );
 //         if (!ret)
 //         {
@@ -130,9 +130,9 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 
 bool VertexPipeline::drawObj(RenderObj &obj)
 {
-    for (uint32_t it = 0; it < obj.count; it += VERTEX_BUFFER_SIZE)
+    for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
-        const std::size_t diff = obj.count - it;
+        const std::size_t diff = obj.getCount() - it;
         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
 
         if (diff <= VERTEX_OVERLAP)
@@ -160,15 +160,15 @@ bool VertexPipeline::drawObj(RenderObj &obj)
             transformedColor,
             transformedNormal,
             transformedTexCoord,
-            obj.vertexArrayEnabled,
-            obj.colorArrayEnabled,
-            obj.normalArrayEnabled,
-            obj.texCoordArrayEnabled,
+            obj.vertexArrayEnabled(),
+            obj.colorArrayEnabled(),
+            obj.normalArrayEnabled(),
+            obj.texCoordArrayEnabled(),
             vertex,
             color,
             normal,
             texCoord,
-            obj.vertexColor,
+            obj.getVertexColor(),
             cnt
         );
 
@@ -177,7 +177,7 @@ bool VertexPipeline::drawObj(RenderObj &obj)
             transformedColor,
             transformedTexCoord,
             cnt,
-            obj.drawMode
+            obj.getDrawMode()
         );
         if (!ret)
         {
@@ -256,19 +256,19 @@ void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
         const uint32_t index = obj.getIndex(o);
-        if (obj.colorArrayEnabled)
+        if (obj.colorArrayEnabled())
         {
             obj.getColor(color[i], index);
         }
-        if (obj.vertexArrayEnabled)
+        if (obj.vertexArrayEnabled())
         {
             obj.getVertex(vertex[i], index);
         }
-        if (obj.normalArrayEnabled)
+        if (obj.normalArrayEnabled())
         {
             obj.getNormal(normal[i], index);
         }
-        if (obj.texCoordArrayEnabled)
+        if (obj.texCoordArrayEnabled())
         {
             obj.getTexCoord(tex[i], index);
         }
