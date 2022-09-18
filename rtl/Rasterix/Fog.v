@@ -42,6 +42,7 @@ module Fog
 
     // Fog Color
     input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
+    input  wire                         confEnable,
 
     // Fog calculation
     input  wire [FLOAT_SIZE - 1 : 0]    depth,
@@ -88,16 +89,16 @@ module Fog
     // Fog color mixing
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
-    wire [SUB_PIXEL_WIDTH - 1 : 0]  step1_texelAlpha;
-    wire [PIXEL_WIDTH - 1 : 0]      step1_mixedColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_texelColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_mixedColor;
 
     ValueDelay #(
-        .VALUE_SIZE(SUB_PIXEL_WIDTH), 
+        .VALUE_SIZE(PIXEL_WIDTH), 
         .DELAY(2)
-    ) step0_alphaDelay (
+    ) step0_texelDelay (
         .clk(aclk), 
-        .in(step0_texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
-        .out(step1_texelAlpha)
+        .in(step0_texelColor),
+        .out(step1_texelColor)
     );
 
     ColorInterpolator #(
@@ -118,11 +119,11 @@ module Fog
     // Output fogged texel
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign color = {
-        step1_mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
-        step1_mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
-        step1_mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
-        step1_texelAlpha // Replace alpha, because it is specified that fog does not change the alpha value of a texel
-    };
+    assign color = (confEnable) ? {
+            step1_mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
+            step1_mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
+            step1_mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
+            step1_texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH] // Replace alpha, because it is specified that fog does not change the alpha value of a texel
+        } : step1_texelColor;
 
 endmodule

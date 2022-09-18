@@ -37,6 +37,7 @@ module TestFunc
     
     input  wire [ 2 : 0]                    func,
     input  wire [SUB_PIXEL_WIDTH - 1 : 0]   refVal,
+    input  wire                             confEnable,
 
     input  wire [SUB_PIXEL_WIDTH - 1 : 0]   val,
 
@@ -49,29 +50,32 @@ module TestFunc
         reg less;
         reg greater;
         reg equal;
+        reg check;
         less =    val <  refVal;
         greater = val >  refVal;
         equal =   val == refVal;
         case (func)
             ALWAYS:
-                success <= 1;
+                check = 1;
             NEVER:
-                success <= 0;
+                check = 0;
             LESS:
-                success <= less;
+                check = less;
             EQUAL:
-                success <= equal;
+                check = equal;
             LEQUAL:
-                success <= less | equal;
+                check = less | equal;
             GREATER:
-                success <= greater;
+                check = greater;
             NOTEQUAL:
-                success <= !equal;
+                check = !equal;
             GEQUAL:
-                success <= greater | equal;
+                check = greater | equal;
             default: 
-                success <= 1;
+                check = 1;
         endcase
+
+        success <= !confEnable || check;
     end
 
 endmodule

@@ -146,10 +146,9 @@ public:
         };
 
         FragmentPipelineConf() : 
-            enableDepthTest(false),
             depthFunc(TestFunc::LESS),
             alphaFunc(TestFunc::ALWAYS),
-            referenceAlphaValue(0xf),
+            referenceAlphaValue(0xff),
             depthMask(false),
             colorMaskA(true),
             colorMaskB(true),
@@ -159,7 +158,6 @@ public:
             blendFuncDFactor(BlendFunc::ZERO)
         { }
 
-        bool enableDepthTest : 1;
         TestFunc depthFunc : 3;
         TestFunc alphaFunc : 3;
         uint8_t referenceAlphaValue : 8;
@@ -170,6 +168,24 @@ public:
         bool colorMaskR : 1;
         BlendFunc blendFuncSFactor : 4;
         BlendFunc blendFuncDFactor : 4;
+    };
+
+    struct __attribute__ ((__packed__)) FeatureEnableConf
+    {
+        FeatureEnableConf() 
+            : fog(false)
+            , blending(false)
+            , depthTest(false)
+            , alphaTest(false)
+            , tmu0(false)
+            
+        { }
+
+        bool fog : 1;
+        bool blending : 1;
+        bool depthTest : 1;
+        bool alphaTest : 1;
+        bool tmu0 : 1;
     };
 
     enum TextureWrapMode
@@ -274,7 +290,13 @@ public:
     /// The fog values between start and end must not exceed 1.0f
     /// @param start the start value of the fog
     /// @param end the end value of the fog
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) = 0;
+
+    /// @brief Enable or disable a feature
+    /// @param featureEnable The enabled features
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) = 0;
 };
 
 #endif // IRENDERER_HPP

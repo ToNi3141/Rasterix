@@ -63,13 +63,14 @@ private:
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS   = 0; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS = 8; // size: 8 bit
 
-        static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0000;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH    = 0x0000'0001;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_PIPELINE           = 0x0000'0002;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR          = 0x0000'0003;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV                = 0x0000'0004;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR          = 0x0000'0005;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0006;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_FEATURE_ENABLE              = 0x0000'0000;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0001;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH    = 0x0000'0002;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_PIPELINE           = 0x0000'0003;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR          = 0x0000'0004;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV                = 0x0000'0005;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR          = 0x0000'0006;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0007;
 
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
@@ -84,6 +85,7 @@ private:
     using SCT = typename StreamCommand::StreamCommandType;
 
 public:
+    static constexpr uint32_t SET_FEATURE_ENABLE            = StreamCommand::RR_RENDER_CONFIG_FEATURE_ENABLE; 
     static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR  = StreamCommand::RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR;
     static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH  = StreamCommand::RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH;
     static constexpr uint32_t SET_FRAGMENT_PIPELINE_CONFIG  = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_PIPELINE;

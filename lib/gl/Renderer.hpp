@@ -314,6 +314,11 @@ public:
         return m_textureManager.deleteTexture(texId);
     }
 
+    virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) override
+    {
+        return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable);
+    }
+
 private:
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;

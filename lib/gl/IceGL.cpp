@@ -653,15 +653,15 @@ void IceGL::glEnable(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        m_enableTextureMapping = true;
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, m_texEnvMode);
+        m_featureEnableConf.tmu0 = true;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     case GL_ALPHA_TEST:
         // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saving
         // the current alpha test func and the reference value. When the test is enabled, we just recover this values.
         // Seems to work perfect.
-        m_enableAlphaTest = true;
-        glAlphaFunc(m_alphaTestFunc, m_alphaTestRefValue);
+        m_featureEnableConf.alphaTest = true;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     case GL_DEPTH_TEST:
         // For the depth test it is not possible to use a similar algorithm like we do for the alpha test. The main reason
@@ -669,12 +669,12 @@ void IceGL::glEnable(GLenum cap)
         // and never writes into the depth buffer. We could use glDepthMask to avoid writing, but then we also disabling
         // glClear() what we obviously dont want. The easiest fix is to introduce a special switch. If this switch is disabled
         // the depth buffer always passes and never writes and glClear() can clear the depth buffer.
-        m_fragmentPipelineConf.enableDepthTest = true;
-        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+        m_featureEnableConf.depthTest = true;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     case GL_BLEND:
-        m_enableBlending = true;
-        glBlendFunc(m_blendSfactor, m_blendDfactor);
+        m_featureEnableConf.blending = true;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     case GL_LIGHTING:
         m_vertexPipeline.getLighting().enableLighting(true);
@@ -703,8 +703,8 @@ void IceGL::glEnable(GLenum cap)
         glColorMaterial(m_colorMaterialFace, m_colorMaterialTracking);
         break;
     case GL_FOG:
-        m_enableFog = true;
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+        m_featureEnableConf.fog = true;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -718,36 +718,26 @@ void IceGL::glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        const GLint tmpParam = m_texEnvMode;
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DISABLE);
-        m_texEnvMode = tmpParam;
-        m_enableTextureMapping = false;
+        m_featureEnableConf.tmu0 = false;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     }
     case GL_ALPHA_TEST:
     {
-        const GLclampf refValue = m_alphaTestRefValue;
-        const GLenum func = m_alphaTestFunc;
-        glAlphaFunc(GL_ALWAYS, 0.0f);
-        m_alphaTestRefValue = refValue;
-        m_alphaTestFunc = func;
-        m_enableAlphaTest = false;
+        m_featureEnableConf.alphaTest = false;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     }
     case GL_DEPTH_TEST:
     {
-        m_fragmentPipelineConf.enableDepthTest = false;
-        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+        m_featureEnableConf.depthTest = false;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     }
     case GL_BLEND:
     {
-        const GLenum dfactor = m_blendDfactor;
-        const GLenum sfactor = m_blendSfactor;
-        glBlendFunc(GL_ONE, GL_ZERO);
-        m_blendDfactor = dfactor;
-        m_blendSfactor = sfactor;
-        m_enableBlending = false;
+        m_featureEnableConf.blending = false;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     }
     case GL_LIGHTING:
@@ -777,8 +767,8 @@ void IceGL::glDisable(GLenum cap)
         m_vertexPipeline.getLighting().enableColorMaterial(false, false, false, false);
         break;
     case GL_FOG:
-        m_enableFog = false;
-        m_error = setFogLut(GL_ZERO, 0, std::numeric_limits<float>::max(), m_fogDensity);
+        m_featureEnableConf.fog = false;
+        m_renderer.setFeatureEnableConfig(m_featureEnableConf);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -907,24 +897,22 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
     {
         m_alphaTestFunc = func;
         m_alphaTestRefValue = ref;
-        if (m_enableAlphaTest)
+
+        // Convert reference value from float to fix point
+        uint8_t refFix = ref * (1 << 8);
+        if (ref >= 1.0f)
         {
-            // Convert reference value from float to fix point
-            uint8_t refFix = ref * (1 << 8);
-            if (ref >= 1.0f)
-            {
-                refFix = 0xff;
-            }
-            m_fragmentPipelineConf.alphaFunc = testFunc;
-            m_fragmentPipelineConf.referenceAlphaValue = refFix;
-            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-            {
-                m_error = GL_NO_ERROR;
-            }
-            else
-            {
-                m_error = GL_OUT_OF_MEMORY;
-            }
+            refFix = 0xff;
+        }
+        m_fragmentPipelineConf.alphaFunc = testFunc;
+        m_fragmentPipelineConf.referenceAlphaValue = refFix;
+        if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
+        {
+            m_error = GL_NO_ERROR;
+        }
+        else
+        {
+            m_error = GL_OUT_OF_MEMORY;
         }
     }
 }
@@ -1262,16 +1250,13 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 m_texEnvConf0 = texEnvConf;
             }
 
-            if (m_enableTextureMapping)
+            if (m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf))
             {
-                if (m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf))
-                {
-                    m_error = GL_NO_ERROR;
-                }
-                else
-                {
-                    m_error = GL_OUT_OF_MEMORY;
-                }
+                m_error = GL_NO_ERROR;
+            }
+            else
+            {
+                m_error = GL_OUT_OF_MEMORY;
             }
         }
     }
@@ -1348,18 +1333,16 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
     {
         m_blendSfactor = sfactor;
         m_blendDfactor = dfactor;
-        if (m_enableBlending)
+
+        m_fragmentPipelineConf.blendFuncSFactor = convertGlBlendFuncToRenderBlendFunc(sfactor);
+        m_fragmentPipelineConf.blendFuncDFactor = convertGlBlendFuncToRenderBlendFunc(dfactor);
+        if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
         {
-            m_fragmentPipelineConf.blendFuncSFactor = convertGlBlendFuncToRenderBlendFunc(sfactor);
-            m_fragmentPipelineConf.blendFuncDFactor = convertGlBlendFuncToRenderBlendFunc(dfactor);
-            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-            {
-                m_error = GL_NO_ERROR;
-            }
-            else
-            {
-                m_error = GL_OUT_OF_MEMORY;
-            }
+            m_error = GL_NO_ERROR;
+        }
+        else
+        {
+            m_error = GL_OUT_OF_MEMORY;
         }
     }
 }
@@ -1464,7 +1447,7 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
         break;
     }
 
-    if (valueChanged && m_enableFog && (m_error == GL_NO_ERROR))
+    if (valueChanged && (m_error == GL_NO_ERROR))
     {
         m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     }

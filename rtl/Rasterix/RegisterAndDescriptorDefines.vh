@@ -50,14 +50,15 @@ localparam OP_NOP_STREAM = 0;
 //  +----------------------------+
 // Steam size 1 32bit value.
 localparam OP_RENDER_CONFIG = 1;
-localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 0;
-localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 1;
-localparam OP_RENDER_CONFIG_FRAGMENT_PIPELINE = 2;
-localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 3;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 4;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 5;
-localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 6;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 7;
+localparam OP_RENDER_CONFIG_FEATURE_ENABLE = 0;
+localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 1;
+localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 2;
+localparam OP_RENDER_CONFIG_FRAGMENT_PIPELINE = 3;
+localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 4;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 5;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 6;
+localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 7;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 8;
 
 
 
@@ -127,6 +128,21 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 // OP_RENDER_CONFIG
 // Description of the different registers:
 
+// OP_RENDER_CONFIG_FEATURE_ENABLE
+//  +-------------------------------------------------------------------------------------------+
+//  | 27'hx reserved | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
+//  +-------------------------------------------------------------------------------------------+
+localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_POS = 0;
+localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS = RENDER_CONFIG_FEATURE_ENABLE_FOG_POS + RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS = RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS + RENDER_CONFIG_FEATURE_ENABLE_BLENDING_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS = RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
+
 // OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
 //  +-----------------------------------+
 //  | 8'hx R | 8'hx G | 8'hx B | 8'hx A |
@@ -138,12 +154,10 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 //  +-----------------+
 
 // OP_RENDER_CONFIG_FRAGMENT_PIPELINE
-//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 4'hx reserved | 4'hx blend d | 4'hx blend s | 1'hx color mask R | 1'hx color mask G | 1'hx color mask B | 1'hx color mask A | 1'hx depth mask | 8'hx A ref | 3'hx A func | 3'hx depth func | 1'hx enable depth test |
-//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-localparam RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_POS = 0;
-localparam RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_SIZE = 1;
-localparam RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS = RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_POS + RENDER_CONFIG_FRAGMENT_ENABLE_DEPTH_TEST_SIZE;
+//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 5'hx reserved | 4'hx blend d | 4'hx blend s | 1'hx color mask R | 1'hx color mask G | 1'hx color mask B | 1'hx color mask A | 1'hx depth mask | 8'hx A ref | 3'hx A func | 3'hx depth func |
+//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+localparam RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS = 0;
 localparam RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE = 3;
 localparam RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_POS = RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS + RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE;
 localparam RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_SIZE = 3;

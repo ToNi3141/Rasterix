@@ -161,6 +161,7 @@ private:
     GLenum m_beginMode = GL_TRIANGLES;
 
     // OpenGL Context Variables
+    IRenderer::FeatureEnableConf m_featureEnableConf;
 
     // Textures
     GLint m_unpackAlignment = 4;
@@ -170,7 +171,6 @@ private:
     bool m_texEnableMagFilter = true;
 
     // TMU
-    bool m_enableTextureMapping = true;
     GLint m_texEnvMode = GL_REPLACE;
     IRenderer::TexEnvConf m_texEnvConf0;
 
@@ -178,22 +178,19 @@ private:
     IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
 
     // Test functions
-    bool m_enableAlphaTest = true;
     GLclampf m_alphaTestRefValue = 0.0f;
     GLenum m_alphaTestFunc = GL_ALWAYS;
 
     // Blending
-    bool m_enableBlending = true;
     GLenum m_blendDfactor = GL_ZERO;
     GLenum m_blendSfactor = GL_ONE;
 
     // Color material
-    bool m_enableColorMaterial = false;
-    GLenum m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
-    GLenum m_colorMaterialFace = GL_FRONT_AND_BACK;
+    bool m_enableColorMaterial { false };
+    GLenum m_colorMaterialTracking { GL_AMBIENT_AND_DIFFUSE };
+    GLenum m_colorMaterialFace { GL_FRONT_AND_BACK };
 
     // Fog
-    bool m_enableFog = false;
     GLenum m_fogMode = GL_EXP;
     GLfloat m_fogStart = 0.0f;
     GLfloat m_fogEnd = 1.0f;
