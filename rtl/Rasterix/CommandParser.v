@@ -98,7 +98,7 @@ module CommandParser #(
     reg  [31 : 0]   configReg[0 : OP_RENDER_CONFIG_NUMBER_OR_REGS - 1];
     reg             apply;
     wire            applied;
-    reg  [13 : 0]   streamCounter;
+    reg  [18 : 0]   streamCounter;
     reg             parameterComplete;
 
     // Local Statemachine variables
