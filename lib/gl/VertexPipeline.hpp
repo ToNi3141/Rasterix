@@ -42,7 +42,7 @@ public:
         PROJECTION
     };
 
-    VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen);
+    VertexPipeline(IRenderer& renderer);
 
     bool drawObj(RenderObj &obj);
 
@@ -68,6 +68,9 @@ public:
     const Mat44& getProjectionMatrix() const;
 
     void setMatrixMode(const MatrixMode matrixMode);
+
+    Lighting& getLighting();
+    TexGen& getTexGen();
 
     static uint8_t getModelMatrixStackDepth();
     static uint8_t getProjectionMatrixStackDepth();
@@ -155,8 +158,8 @@ private:
     bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
 
     IRenderer& m_renderer;
-    Lighting& m_lighting;
-    TexGen& m_texGen;
+    Lighting m_lighting;
+    TexGen m_texGen;
 };
 
 #endif // VERTEXPIPELINE_HPP

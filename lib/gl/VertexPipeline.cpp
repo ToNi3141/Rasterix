@@ -29,10 +29,8 @@
 
 #define __glPi 3.14159265358979323846f
 
-VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen)
+VertexPipeline::VertexPipeline(IRenderer& renderer)
     : m_renderer(renderer)
-    , m_lighting(lighting)
-    , m_texGen(texGen)
 {
     m_t.identity();
     m_m.identity();
@@ -699,4 +697,14 @@ uint8_t VertexPipeline::getModelMatrixStackDepth()
 uint8_t VertexPipeline::getProjectionMatrixStackDepth()
 {
     return PROJECTION_MATRIX_STACK_DEPTH;
+}
+
+Lighting& VertexPipeline::getLighting()
+{
+    return m_lighting;
+}
+
+TexGen& VertexPipeline::getTexGen()
+{
+    return m_texGen;
 }

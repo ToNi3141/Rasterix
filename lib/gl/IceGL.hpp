@@ -144,8 +144,6 @@ private:
     GLenum setFogLut(GLenum mode, float start, float end, float density);
 
     IRenderer& m_renderer;
-    Lighting m_lighting;
-    TexGen m_texGen;
     VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
     RenderObj m_renderObjBeginEnd;
@@ -167,11 +165,13 @@ private:
     // Textures
     GLint m_unpackAlignment = 4;
     GLuint m_boundTexture = 0;
-    bool m_enableTextureMapping = true;
-    GLint m_texEnvMode = GL_REPLACE;
     IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
     IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
     bool m_texEnableMagFilter = true;
+
+    // TMU
+    bool m_enableTextureMapping = true;
+    GLint m_texEnvMode = GL_REPLACE;
     IRenderer::TexEnvConf m_texEnvConf0;
 
     // Current fragment pipeline configuration 
