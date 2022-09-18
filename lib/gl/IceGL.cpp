@@ -28,10 +28,6 @@ IceGL::IceGL(IRenderer &renderer)
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
 
-    m_m.identity();
-    m_p.identity();
-    m_t.identity();
-
     //glLogicOp(GL_COPY);
     glDisable(GL_FOG);
     glClearDepthf(1.0f);
@@ -56,22 +52,25 @@ void IceGL::commit()
 
 void IceGL::glMatrixMode(GLenum mm)
 {
-    matrixMode = mm;
+    m_error = GL_NO_ERROR;
+    if (mm == GL_MODELVIEW)
+    {
+        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::MODELVIEW);
+    }
+    else if (mm == GL_PROJECTION)
+    {
+        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
+    }
+    else
+    {
+        m_error = GL_INVALID_ENUM;
+    }
 }
 
 void IceGL::glMultMatrixf(const GLfloat* m)
 {
     const Mat44 *m44 = reinterpret_cast<const Mat44*>(m);
-    if (matrixMode == GL_MODELVIEW)
-    {
-        m_m = *m44 * m_m;
-    }
-    else
-    {
-        m_p = *m44 * m_p;
-    }
-
-    m_matricesOutdated = true;
+    m_vertexPipeline.multiply(*m44);
 }
 
 void IceGL::glMultMatrixd(const GLdouble* m)
@@ -86,57 +85,22 @@ void IceGL::glMultMatrixd(const GLdouble* m)
 
 void IceGL::glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
-    Mat44 m;
-    m.identity();
-    m[3][0] = x;
-    m[3][1] = y;
-    m[3][2] = z;
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.translate(x, y, z);
 }
 
 void IceGL::glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
-    Mat44 m;
-    m.identity();
-    m[0][0] = x;
-    m[1][1] = y;
-    m[2][2] = z;
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.scale(x, y, z);
 }
 
 void IceGL::glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-    float angle_rad = angle * (__glPi/180.0f);
-
-    float c = cosf(angle_rad);
-    float s = sinf(angle_rad);
-    float t = 1.0f - c;
-
-    Mat44 m
-    {{{
-                {c+x*x*t,   y*x*t+z*s,  z*x*t-y*s,  0.0f},
-                {x*y*t-z*s, c+y*y*t,    z*y*t+x*s,  0.0f},
-                {x*z*t+y*s, y*z*t-x*s,  z*z*t+c,    0.0f},
-                {0.0f,      0.0f,       0.0f,       1.0f}
-            }}};
-
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.rotate(angle, x, y, z);
 }
 
 void IceGL::glLoadIdentity()
 {
-    if (matrixMode == GL_MODELVIEW)
-    {
-        m_m.identity();
-    }
-    else
-    {
-        m_p.identity();
-    }
-    m_matricesOutdated = true;
+    m_vertexPipeline.loadIdentity();
 }
 
 void IceGL::gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
@@ -250,8 +214,6 @@ void IceGL::glBegin(GLenum mode)
 
 void IceGL::glEnd()
 {
-    recalculateAndSetTnLMatrices();
-
     m_renderObjBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
     m_renderObjBeginEnd.setVertexSize(4);
     m_renderObjBeginEnd.setVertexType(RenderObj::Type::FLOAT);
@@ -1691,7 +1653,7 @@ void IceGL::glLightfv(GLenum light, GLenum pname, const GLfloat *params)
     {
         Vec4 lightPos{params};
         Vec4 lightPosTransformed{};
-        m_m.transform(lightPosTransformed, lightPos);
+        m_vertexPipeline.getModelMatrix().transform(lightPosTransformed, lightPos);
         m_lighting.setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
     }
@@ -1764,8 +1726,6 @@ void IceGL::glColorPointer(GLint size, GLenum type, GLsizei stride, const void *
 
 void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
-    recalculateAndSetTnLMatrices();
-
     m_renderObj.setCount(count);
     m_renderObj.setArrayOffset(first);
     m_renderObj.setDrawMode(convertDrawMode(mode));
@@ -1795,8 +1755,6 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
         m_error = GL_INVALID_ENUM;
         return;
     }
-
-    recalculateAndSetTnLMatrices();
 
     m_renderObj.setCount(count);
     m_renderObj.setDrawMode(convertDrawMode(mode));
@@ -1882,91 +1840,25 @@ RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
 
 void IceGL::glPushMatrix()
 {
-    m_error = GL_NO_ERROR;
-    if (matrixMode == GL_MODELVIEW)
+    if (m_vertexPipeline.pushMatrix())
     {
-        if (m_mStackIndex < MODEL_MATRIX_STACK_DEPTH)
-        {
-            m_mStack[m_mStackIndex] = m_m;
-            m_mStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_OVERFLOW;
-        }
-    }
-    else if (matrixMode == GL_PROJECTION)
-    {
-        if (m_pStackIndex < PROJECTION_MATRIX_STACK_DEPTH)
-        {
-            m_pStack[m_pStackIndex] = m_p;
-            m_pStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_OVERFLOW;
-        }
+        m_error = GL_NO_ERROR;
     }
     else
     {
-        m_error = GL_INVALID_ENUM;
+        m_error = GL_STACK_OVERFLOW;
     }
 }
 
 void IceGL::glPopMatrix()
 {
-    m_error = GL_NO_ERROR;
-    if (matrixMode == GL_MODELVIEW)
+    if (m_vertexPipeline.popMatrix())
     {
-        if (m_mStackIndex > 0)
-        {
-            m_mStackIndex--;
-            m_m = m_mStack[m_mStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_UNDERFLOW;
-        }
-    }
-    else if (matrixMode == GL_PROJECTION)
-    {
-        if (m_pStackIndex > 0)
-        {
-            m_pStackIndex--;
-            m_p = m_pStack[m_pStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_UNDERFLOW;
-        }
+        m_error = GL_NO_ERROR;
     }
     else
     {
-        m_error = GL_INVALID_ENUM;
-    }
-}
-
-void IceGL::recalculateAndSetTnLMatrices()
-{
-    if (m_matricesOutdated)
-    {
-        // Update transformation matrix
-        Mat44 t{m_m};
-        t *= m_p;
-        m_vertexPipeline.setModelProjectionMatrix(t);
-        m_vertexPipeline.setModelMatrix(m_m);
-
-        Mat44 inv{m_m};
-        inv.invert();
-        inv.transpose();
-        // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
-        m_vertexPipeline.setNormalMatrix(inv);
-
-        m_matricesOutdated = false;
+        m_error = GL_STACK_OVERFLOW;
     }
 }
 
@@ -2025,9 +1917,9 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
         break;
     case GL_EYE_PLANE:
         if (coord == GL_S)
-            m_texGen.setTexGenVecEyeS(m_m, {param});
+            m_texGen.setTexGenVecEyeS(m_vertexPipeline.getModelMatrix(), {param});
         else if (coord == GL_T)
-            m_texGen.setTexGenVecEyeT(m_m, {param});
+            m_texGen.setTexGenVecEyeT(m_vertexPipeline.getModelMatrix(), {param});
         else
             m_error = GL_INVALID_ENUM;
         break;
@@ -2142,10 +2034,10 @@ void IceGL::glGetIntegerv(GLenum pname, GLint *params)
         *params = m_lighting.MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
-        *params = MODEL_MATRIX_STACK_DEPTH;
+        *params = VertexPipeline::getModelMatrixStackDepth();
         break;
     case GL_MAX_PROJECTION_STACK_DEPTH:
-        *params = PROJECTION_MATRIX_STACK_DEPTH;
+        *params = VertexPipeline::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
         *params = MAX_TEX_SIZE;

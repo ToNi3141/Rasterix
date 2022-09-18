@@ -36,6 +36,12 @@ public:
         FRONT_AND_BACK
     };
 
+    enum MatrixMode
+    {
+        MODELVIEW,
+        PROJECTION
+    };
+
     VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen);
 
     bool drawObj(RenderObj &obj);
@@ -46,8 +52,25 @@ public:
     void setModelMatrix(const Mat44& m);
     void setNormalMatrix(const Mat44& m);
 
-    void enableCulling(bool enable);
-    void setCullMode(CullMode mode);
+    void enableCulling(const bool enable);
+    void setCullMode(const CullMode mode);
+
+    void multiply(const Mat44& mat);
+    void translate(const float x, const float y, const float z);
+    void scale(const float x, const float y, const float z);
+    void rotate(const float angle, const float x, const float y, const float z);
+    void loadIdentity();
+
+    bool pushMatrix();
+    bool popMatrix();
+
+    const Mat44& getModelMatrix() const;
+    const Mat44& getProjectionMatrix() const;
+
+    void setMatrixMode(const MatrixMode matrixMode);
+
+    static uint8_t getModelMatrixStackDepth();
+    static uint8_t getProjectionMatrixStackDepth();
 private:
     static constexpr std::size_t VERTEX_BUFFER_SIZE { 252 };
     static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
@@ -56,6 +79,9 @@ private:
     using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec2Array = std::array<Vec2, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+    static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
+    static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
+
     struct Triangle
     {
         const Vec4& v0;
@@ -100,9 +126,7 @@ private:
         const RenderObj::DrawMode drawMode
     );
 
-    Mat44 m_t; // ModelViewProjection
-    Mat44 m_m; // ModelView
-    Mat44 m_n; // Normal
+    void recalculateMatrices();
 
     float m_depthRangeZNear = 0.0f;
     float m_depthRangeZFar = 1.0f;
@@ -115,8 +139,20 @@ private:
     float m_viewportHeightHalf = 0.0f;
     float m_viewportWidthHalf = 0.0f;
 
-    bool m_enableCulling{false};
-    CullMode m_cullMode{CullMode::BACK};
+    bool m_enableCulling{ false };
+    CullMode m_cullMode{ CullMode::BACK };
+
+    // Matrix modes
+    MatrixMode m_matrixMode { MatrixMode::PROJECTION };
+    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH];
+    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH];
+    uint8_t m_mStackIndex{ 0 };
+    uint8_t m_pStackIndex{ 0 };
+    Mat44 m_p; // Projection 
+    Mat44 m_t; // ModelViewProjection
+    Mat44 m_m; // ModelView
+    Mat44 m_n; // Normal
+    bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
 
     IRenderer& m_renderer;
     Lighting& m_lighting;

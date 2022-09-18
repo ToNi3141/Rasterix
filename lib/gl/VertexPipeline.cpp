@@ -27,6 +27,8 @@
 #define max std::max
 #define min std::min
 
+#define __glPi 3.14159265358979323846f
+
 VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& texGen)
     : m_renderer(renderer)
     , m_lighting(lighting)
@@ -34,6 +36,7 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 {
     m_t.identity();
     m_m.identity();
+    m_p.identity();
     m_n.identity();
 }
 
@@ -41,6 +44,7 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 // Needs to be profiled. Leave it for now as dead code.
 // bool VertexPipeline::drawObj(RenderObj &obj)
 // {
+//     recalculateMatrices();
 //     for (uint32_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
 //     {
 //         const std::size_t diff = obj.getCount() - it;
@@ -130,6 +134,8 @@ VertexPipeline::VertexPipeline(IRenderer& renderer, Lighting& lighting, TexGen& 
 
 bool VertexPipeline::drawObj(RenderObj &obj)
 {
+    recalculateMatrices();
+
     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
         const std::size_t diff = obj.getCount() - it;
@@ -510,12 +516,187 @@ void VertexPipeline::setNormalMatrix(const Mat44& m)
     m_n = m;
 }
 
-void VertexPipeline::setCullMode(VertexPipeline::CullMode mode)
+void VertexPipeline::setCullMode(const VertexPipeline::CullMode mode)
 {
     m_cullMode = mode;
 }
 
-void VertexPipeline::enableCulling(bool enable)
+void VertexPipeline::enableCulling(const bool enable)
 {
     m_enableCulling = enable;
+}
+
+void VertexPipeline::multiply(const Mat44& mat)
+{
+    if (m_matrixMode == MatrixMode::MODELVIEW)
+    {
+        m_m = mat * m_m;
+    }
+    else
+    {
+        m_p = mat * m_p;
+    }
+
+    m_matricesOutdated = true;
+}
+
+void VertexPipeline::translate(const float x, const float y, const float z)
+{
+    Mat44 m;
+    m.identity();
+    m[3][0] = x;
+    m[3][1] = y;
+    m[3][2] = z;
+    multiply(m);
+    m_matricesOutdated = true;
+}
+
+void VertexPipeline::scale(const float x, const float y, const float z)
+{
+    Mat44 m;
+    m.identity();
+    m[0][0] = x;
+    m[1][1] = y;
+    m[2][2] = z;
+    multiply(m);
+    m_matricesOutdated = true;
+}
+
+void VertexPipeline::rotate(const float angle, const float x, const float y, const float z)
+{
+    float angle_rad = angle * (__glPi/180.0f);
+
+    float c = cosf(angle_rad);
+    float s = sinf(angle_rad);
+    float t = 1.0f - c;
+
+    Mat44 m
+    {{{
+        {c+x*x*t,   y*x*t+z*s,  z*x*t-y*s,  0.0f},
+        {x*y*t-z*s, c+y*y*t,    z*y*t+x*s,  0.0f},
+        {x*z*t+y*s, y*z*t-x*s,  z*z*t+c,    0.0f},
+        {0.0f,      0.0f,       0.0f,       1.0f}
+    }}};
+
+    multiply(m);
+    m_matricesOutdated = true;
+}
+
+void VertexPipeline::loadIdentity()
+{
+    if (m_matrixMode == MatrixMode::MODELVIEW)
+    {
+        m_m.identity();
+    }
+    else
+    {
+        m_p.identity();
+    }
+    m_matricesOutdated = true;
+}
+
+bool VertexPipeline::pushMatrix()
+{
+    if (m_matrixMode == MatrixMode::MODELVIEW)
+    {
+        if (m_mStackIndex < MODEL_MATRIX_STACK_DEPTH)
+        {
+            m_mStack[m_mStackIndex] = m_m;
+            m_mStackIndex++;
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (m_matrixMode == MatrixMode::PROJECTION)
+    {
+        if (m_pStackIndex < PROJECTION_MATRIX_STACK_DEPTH)
+        {
+            m_pStack[m_pStackIndex] = m_p;
+            m_pStackIndex++;
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool VertexPipeline::popMatrix()
+{
+    if (m_matrixMode == MatrixMode::MODELVIEW)
+    {
+        if (m_mStackIndex > 0)
+        {
+            m_mStackIndex--;
+            m_m = m_mStack[m_mStackIndex];
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (m_matrixMode == MatrixMode::PROJECTION)
+    {
+        if (m_pStackIndex > 0)
+        {
+            m_pStackIndex--;
+            m_p = m_pStack[m_pStackIndex];
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+const Mat44& VertexPipeline::getModelMatrix() const
+{
+    return m_m;
+}
+
+const Mat44& VertexPipeline::getProjectionMatrix() const
+{
+    return m_p;
+}
+
+void VertexPipeline::recalculateMatrices()
+{
+    if (m_matricesOutdated)
+    {
+        // Update transformation matrix
+        Mat44 t{m_m};
+        t *= m_p;
+        setModelProjectionMatrix(t);
+        setModelMatrix(m_m);
+
+        Mat44 inv{m_m};
+        inv.invert();
+        inv.transpose();
+        // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
+        setNormalMatrix(inv);
+
+        m_matricesOutdated = false;
+    }
+}
+
+void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
+{
+    m_matrixMode = matrixMode;
+}
+
+uint8_t VertexPipeline::getModelMatrixStackDepth()
+{
+    return MODEL_MATRIX_STACK_DEPTH;
+}
+
+uint8_t VertexPipeline::getProjectionMatrixStackDepth()
+{
+    return PROJECTION_MATRIX_STACK_DEPTH;
 }

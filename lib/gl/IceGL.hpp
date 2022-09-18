@@ -129,9 +129,6 @@ public:
 
 private:
     static constexpr uint16_t MAX_TEX_SIZE = 256;
-    static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH = 16;
-    static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH = 4;
-
 
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
@@ -144,7 +141,6 @@ private:
     GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
     GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
     GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
-    void recalculateAndSetTnLMatrices();
     GLenum setFogLut(GLenum mode, float start, float end, float density);
 
     IRenderer& m_renderer;
@@ -167,16 +163,6 @@ private:
     GLenum m_beginMode = GL_TRIANGLES;
 
     // OpenGL Context Variables
-    // Matrix modes
-    GLenum matrixMode = GL_PROJECTION;
-    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH];
-    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH];
-    uint8_t m_mStackIndex{0};
-    uint8_t m_pStackIndex{0};
-    Mat44 m_m; // Model matrix
-    Mat44 m_p; // Projection matrix
-    Mat44 m_t;
-    bool m_matricesOutdated{true}; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
 
     // Textures
     GLint m_unpackAlignment = 4;
@@ -200,10 +186,6 @@ private:
     bool m_enableBlending = true;
     GLenum m_blendDfactor = GL_ZERO;
     GLenum m_blendSfactor = GL_ONE;
-
-    // Cull mode
-    bool m_enableCulling = false;
-    GLenum m_cullMode = GL_BACK;
 
     // Color material
     bool m_enableColorMaterial = false;
