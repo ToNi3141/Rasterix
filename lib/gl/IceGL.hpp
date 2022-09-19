@@ -177,19 +177,6 @@ private:
     // Current fragment pipeline configuration 
     IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
 
-    // Test functions
-    GLclampf m_alphaTestRefValue = 0.0f;
-    GLenum m_alphaTestFunc = GL_ALWAYS;
-
-    // Blending
-    GLenum m_blendDfactor = GL_ZERO;
-    GLenum m_blendSfactor = GL_ONE;
-
-    // Color material
-    bool m_enableColorMaterial { false };
-    GLenum m_colorMaterialTracking { GL_AMBIENT_AND_DIFFUSE };
-    GLenum m_colorMaterialFace { GL_FRONT_AND_BACK };
-
     // Fog
     GLenum m_fogMode = GL_EXP;
     GLfloat m_fogStart = 0.0f;

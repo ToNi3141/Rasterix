@@ -29,17 +29,26 @@
 class VertexPipeline
 {
 public:
-    enum CullMode
-    {
-        BACK,
-        FRONT,
-        FRONT_AND_BACK
-    };
-
     enum MatrixMode
     {
         MODELVIEW,
         PROJECTION
+    };
+
+    enum class ColorMaterialTracking
+    {
+        AMBIENT,
+        DIFFUSE,
+        AMBIENT_AND_DIFFUSE,
+        SPECULAR,
+        EMISSION
+    };
+
+    enum class Face
+    {
+        BACK,
+        FRONT,
+        FRONT_AND_BACK
     };
 
     VertexPipeline(IRenderer& renderer);
@@ -53,7 +62,7 @@ public:
     void setNormalMatrix(const Mat44& m);
 
     void enableCulling(const bool enable);
-    void setCullMode(const CullMode mode);
+    void setCullMode(const Face mode);
 
     void multiply(const Mat44& mat);
     void translate(const float x, const float y, const float z);
@@ -68,6 +77,9 @@ public:
     const Mat44& getProjectionMatrix() const;
 
     void setMatrixMode(const MatrixMode matrixMode);
+
+    void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
+    void enableColorMaterial(const bool enable);
 
     Lighting& getLighting();
     TexGen& getTexGen();
@@ -131,31 +143,36 @@ private:
 
     void recalculateMatrices();
 
-    float m_depthRangeZNear = 0.0f;
-    float m_depthRangeZFar = 1.0f;
-    int16_t m_viewportX = 0;
-    int16_t m_viewportY = 0;
-    int16_t m_viewportHeight = 0;
-    int16_t m_viewportWidth = 0;
-    float m_viewportXShift = 0.0f;
-    float m_viewportYShift = 0.0f;
-    float m_viewportHeightHalf = 0.0f;
-    float m_viewportWidthHalf = 0.0f;
+    float m_depthRangeZNear { 0.0f };
+    float m_depthRangeZFar { 1.0f };
+    int16_t m_viewportX { 0 };
+    int16_t m_viewportY { 0 };
+    int16_t m_viewportHeight { 0 };
+    int16_t m_viewportWidth { 0 };
+    float m_viewportXShift { 0.0f };
+    float m_viewportYShift { 0.0f };
+    float m_viewportHeightHalf { 0.0f };
+    float m_viewportWidthHalf { 0.0f };
 
     bool m_enableCulling{ false };
-    CullMode m_cullMode{ CullMode::BACK };
+    Face m_cullMode{ Face::BACK };
 
     // Matrix modes
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
-    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH];
-    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH];
+    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH] {};
+    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH] {};
     uint8_t m_mStackIndex{ 0 };
     uint8_t m_pStackIndex{ 0 };
-    Mat44 m_p; // Projection 
-    Mat44 m_t; // ModelViewProjection
-    Mat44 m_m; // ModelView
-    Mat44 m_n; // Normal
+    Mat44 m_p {}; // Projection 
+    Mat44 m_t {}; // ModelViewProjection
+    Mat44 m_m {}; // ModelView
+    Mat44 m_n {}; // Normal
     bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
+
+    // Color material
+    bool m_enableColorMaterial { false };
+    ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
+    Face m_colorMaterialFace { Face::FRONT_AND_BACK };
 
     IRenderer& m_renderer;
     Lighting m_lighting;

@@ -228,7 +228,7 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
         // facing backwards, then all in the clipping list will do this and vice versa.
         const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
-        const CullMode currentOrientation = (edgeVal <= 0.0f) ? CullMode::BACK : CullMode::FRONT;
+        const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
         if (currentOrientation != m_cullMode)
             return true;
     }
@@ -514,7 +514,7 @@ void VertexPipeline::setNormalMatrix(const Mat44& m)
     m_n = m;
 }
 
-void VertexPipeline::setCullMode(const VertexPipeline::CullMode mode)
+void VertexPipeline::setCullMode(const VertexPipeline::Face mode)
 {
     m_cullMode = mode;
 }
@@ -707,4 +707,49 @@ Lighting& VertexPipeline::getLighting()
 TexGen& VertexPipeline::getTexGen()
 {
     return m_texGen;
+}
+
+void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)
+{
+    switch (material) {
+        case ColorMaterialTracking::AMBIENT:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(false, true, false, false);
+            break;
+        case ColorMaterialTracking::DIFFUSE:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(false, false, true, false);
+            break;
+        case ColorMaterialTracking::AMBIENT_AND_DIFFUSE:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(false, true, true, false);
+            break;
+        case ColorMaterialTracking::SPECULAR:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(false, false, false, true);
+            break;
+            case ColorMaterialTracking::EMISSION:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(true, false, false, false);
+            break;
+        default:
+            if (m_enableColorMaterial)
+                getLighting().enableColorMaterial(false, true, true, false);
+            break;
+    }
+    m_colorMaterialTracking = material;
+    m_colorMaterialFace = face;
+}
+
+void VertexPipeline::enableColorMaterial(const bool enable)
+{
+    m_enableColorMaterial = enable;
+    if (enable)
+    {
+        setColorMaterialTracking(m_colorMaterialFace, m_colorMaterialTracking);
+    }
+    else 
+    {
+        getLighting().enableColorMaterial(false, false, false, false);
+    }
 }

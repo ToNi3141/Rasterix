@@ -699,8 +699,7 @@ void IceGL::glEnable(GLenum cap)
         m_vertexPipeline.enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
-        m_enableColorMaterial = true;
-        glColorMaterial(m_colorMaterialFace, m_colorMaterialTracking);
+        m_vertexPipeline.enableColorMaterial(true);
         break;
     case GL_FOG:
         m_featureEnableConf.fog = true;
@@ -763,8 +762,7 @@ void IceGL::glDisable(GLenum cap)
         m_vertexPipeline.enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
-        m_enableColorMaterial = false;
-        m_vertexPipeline.getLighting().enableColorMaterial(false, false, false, false);
+        m_vertexPipeline.enableColorMaterial(false);
         break;
     case GL_FOG:
         m_featureEnableConf.fog = false;
@@ -895,9 +893,6 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_alphaTestFunc = func;
-        m_alphaTestRefValue = ref;
-
         // Convert reference value from float to fix point
         uint8_t refFix = ref * (1 << 8);
         if (ref >= 1.0f)
@@ -1331,9 +1326,6 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
     }
     else
     {
-        m_blendSfactor = sfactor;
-        m_blendDfactor = dfactor;
-
         m_fragmentPipelineConf.blendFuncSFactor = convertGlBlendFuncToRenderBlendFunc(sfactor);
         m_fragmentPipelineConf.blendFuncDFactor = convertGlBlendFuncToRenderBlendFunc(dfactor);
         if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
@@ -1553,35 +1545,46 @@ void IceGL::glColorMaterial(GLenum face, GLenum pname)
     if (face == GL_FRONT_AND_BACK)
     {
         m_error = GL_NO_ERROR;
-        m_colorMaterialFace = face;
-        m_colorMaterialTracking = pname;
-        switch (pname) {
-        case GL_AMBIENT:
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(false, true, false, false);
-            break;
-        case GL_DIFFUSE:
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(false, false, true, false);
-            break;
-        case GL_AMBIENT_AND_DIFFUSE:
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(false, true, true, false);
-            break;
-        case GL_SPECULAR:
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(false, false, false, true);
-            break;
-        case GL_EMISSION:
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(true, false, false, false);
-            break;
-        default:
-            m_error = GL_INVALID_ENUM;
-            m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
-            if (m_enableColorMaterial)
-                m_vertexPipeline.getLighting().enableColorMaterial(false, true, true, false);
-            break;
+        VertexPipeline::Face faceConverted;
+        switch (face) {
+            case GL_FRONT:
+                faceConverted = VertexPipeline::Face::FRONT;
+                break;
+            case GL_BACK:
+                faceConverted = VertexPipeline::Face::BACK;
+                break;
+            case GL_FRONT_AND_BACK:
+                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+                break;
+            default:
+                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+                m_error = GL_INVALID_ENUM;
+                break;
+        }
+
+        if (m_error != GL_INVALID_ENUM)
+        {
+            switch (pname) {
+            case GL_AMBIENT:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
+                break;
+            case GL_DIFFUSE:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
+                break;
+            case GL_AMBIENT_AND_DIFFUSE:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                break;
+            case GL_SPECULAR:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
+                break;
+            case GL_EMISSION:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
+                break;
+            default:
+                m_error = GL_INVALID_ENUM;
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                break;
+            }
         }
     }
 }
@@ -2065,13 +2068,13 @@ void IceGL::glCullFace(GLenum mode)
     m_error = GL_NO_ERROR;
     switch (mode) {
     case GL_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::BACK);
         break;
     case GL_FRONT:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT_AND_BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT_AND_BACK);
         break;
     default:
         m_error = GL_INVALID_ENUM;
