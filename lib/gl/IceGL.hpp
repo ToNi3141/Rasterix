@@ -28,6 +28,7 @@
 #include "Lighting.hpp"
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
+#include "PixelPipeline.hpp"
 
 class IceGL
 {
@@ -136,14 +137,14 @@ private:
     IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
     RenderObj::Type convertType(GLenum type);
     RenderObj::DrawMode convertDrawMode(GLenum drawMode);
-    IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
-    GLint convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param);
+    PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
+    GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param);
     GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
     GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
     GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
-    GLenum setFogLut(GLenum mode, float start, float end, float density);
 
     IRenderer& m_renderer;
+    PixelPipeline m_pixelPipeline;
     VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
     RenderObj m_renderObjBeginEnd;
@@ -159,30 +160,6 @@ private:
     Vec2 m_textureCoord;
     Vec3 m_normal;
     GLenum m_beginMode = GL_TRIANGLES;
-
-    // OpenGL Context Variables
-    IRenderer::FeatureEnableConf m_featureEnableConf;
-
-    // Textures
-    GLint m_unpackAlignment = 4;
-    GLuint m_boundTexture = 0;
-    IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
-    IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
-    bool m_texEnableMagFilter = true;
-
-    // TMU
-    GLint m_texEnvMode = GL_REPLACE;
-    IRenderer::TexEnvConf m_texEnvConf0;
-
-    // Current fragment pipeline configuration 
-    IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
-
-    // Fog
-    GLenum m_fogMode = GL_EXP;
-    GLfloat m_fogStart = 0.0f;
-    GLfloat m_fogEnd = 1.0f;
-    GLfloat m_fogDensity = 1.0f;
-    Vec4 m_fogColor {{0.0f, 0.0f, 0.0f, 0.0f}};
 
     // Errors
     GLint m_error = GL_NO_ERROR;

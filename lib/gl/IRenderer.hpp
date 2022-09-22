@@ -33,8 +33,9 @@ public:
         TMU0
     };
 
-    struct __attribute__ ((__packed__)) TexEnvConf
+    class TexEnvConf
     {
+    public:
         enum class Combine
         {
             REPLACE,
@@ -60,44 +61,76 @@ public:
             PRIMARY_COLOR,
             PREVIOUS
         };
-        TexEnvConf() :
-            combineRgb(Combine::MODULATE),
-            combineAlpha(Combine::MODULATE),
-            srcRegRgb0(SrcReg::TEXTURE),
-            srcRegRgb1(SrcReg::PREVIOUS),
-            srcRegRgb2(SrcReg::CONSTANT),
-            srcRegAlpha0(SrcReg::TEXTURE),
-            srcRegAlpha1(SrcReg::PREVIOUS),
-            srcRegAlpha2(SrcReg::CONSTANT),
-            operandRgb0(Operand::SRC_COLOR),
-            operandRgb1(Operand::SRC_COLOR),
-            operandRgb2(Operand::SRC_COLOR),
-            operandAlpha0(Operand::SRC_ALPHA),
-            operandAlpha1(Operand::SRC_ALPHA),
-            operandAlpha2(Operand::SRC_ALPHA),
-            shiftRgb(0),
-            shiftAlpha(0)
-        { }
-        Combine combineRgb : 3;
-        Combine combineAlpha : 3;
-        SrcReg srcRegRgb0 : 2;
-        SrcReg srcRegRgb1 : 2;
-        SrcReg srcRegRgb2 : 2;
-        SrcReg srcRegAlpha0 : 2;
-        SrcReg srcRegAlpha1 : 2;
-        SrcReg srcRegAlpha2 : 2;
-        Operand operandRgb0 : 2;
-        Operand operandRgb1 : 2;
-        Operand operandRgb2 : 2;
-        Operand operandAlpha0 : 1;
-        Operand operandAlpha1 : 1;
-        Operand operandAlpha2 : 1;
-        uint8_t shiftRgb : 2;
-        uint8_t shiftAlpha : 2;
+
+        TexEnvConf() = default;
+
+        void setCombineRgb(const Combine val) { m_regVal.fields.combineRgb = val; }
+        void setCombineAlpha(const Combine val) { m_regVal.fields.combineAlpha = val; }
+        void setSrcRegRgb0(const SrcReg val) { m_regVal.fields.srcRegRgb0 = val; }
+        void setSrcRegRgb1(const SrcReg val) { m_regVal.fields.srcRegRgb1 = val; }
+        void setSrcRegRgb2(const SrcReg val) { m_regVal.fields.srcRegRgb2 = val; }
+        void setSrcRegAlpha0(const SrcReg val) { m_regVal.fields.srcRegAlpha0 = val; }
+        void setSrcRegAlpha1(const SrcReg val) { m_regVal.fields.srcRegAlpha1 = val; }
+        void setSrcRegAlpha2(const SrcReg val) { m_regVal.fields.srcRegAlpha2 = val; }
+        void setOperandRgb0(const Operand val) { m_regVal.fields.operandRgb0 = val; }
+        void setOperandRgb1(const Operand val) { m_regVal.fields.operandRgb1 = val; }
+        void setOperandRgb2(const Operand val) { m_regVal.fields.operandRgb2 = val; }
+        void setOperandAlpha0(const Operand val) { m_regVal.fields.operandAlpha0 = val; }
+        void setOperandAlpha1(const Operand val) { m_regVal.fields.operandAlpha1 = val; }
+        void setOperandAlpha2(const Operand val) { m_regVal.fields.operandAlpha2 = val; }
+        void setShiftRgb(const uint8_t val) { m_regVal.fields.shiftRgb = val; }
+        void setShiftAlpha(const uint8_t val) { m_regVal.fields.shiftAlpha = val; }
+
+        uint32_t serialize() const { return m_regVal.data; }
+
+    private:
+        union RegVal
+        {
+            struct __attribute__ ((__packed__)) RegContent
+            {
+                RegContent() :
+                    combineRgb(Combine::MODULATE),
+                    combineAlpha(Combine::MODULATE),
+                    srcRegRgb0(SrcReg::TEXTURE),
+                    srcRegRgb1(SrcReg::PREVIOUS),
+                    srcRegRgb2(SrcReg::CONSTANT),
+                    srcRegAlpha0(SrcReg::TEXTURE),
+                    srcRegAlpha1(SrcReg::PREVIOUS),
+                    srcRegAlpha2(SrcReg::CONSTANT),
+                    operandRgb0(Operand::SRC_COLOR),
+                    operandRgb1(Operand::SRC_COLOR),
+                    operandRgb2(Operand::SRC_COLOR),
+                    operandAlpha0(Operand::SRC_ALPHA),
+                    operandAlpha1(Operand::SRC_ALPHA),
+                    operandAlpha2(Operand::SRC_ALPHA),
+                    shiftRgb(0),
+                    shiftAlpha(0)
+                { }
+
+                Combine combineRgb : 3;
+                Combine combineAlpha : 3;
+                SrcReg srcRegRgb0 : 2;
+                SrcReg srcRegRgb1 : 2;
+                SrcReg srcRegRgb2 : 2;
+                SrcReg srcRegAlpha0 : 2;
+                SrcReg srcRegAlpha1 : 2;
+                SrcReg srcRegAlpha2 : 2;
+                Operand operandRgb0 : 2;
+                Operand operandRgb1 : 2;
+                Operand operandRgb2 : 2;
+                Operand operandAlpha0 : 1;
+                Operand operandAlpha1 : 1;
+                Operand operandAlpha2 : 1;
+                uint8_t shiftRgb : 2;
+                uint8_t shiftAlpha : 2;
+            } fields {};
+            uint32_t data;
+        } m_regVal;
     };
 
-    struct __attribute__ ((__packed__)) FragmentPipelineConf
+    class FragmentPipelineConf
     {
+    public:
         enum class TestFunc
         {
             ALWAYS,
@@ -110,7 +143,7 @@ public:
             GEQUAL
         };
 
-        enum BlendFunc
+        enum class BlendFunc
         {
             ZERO,
             ONE,
@@ -125,7 +158,7 @@ public:
             SRC_ALPHA_SATURATE
         };
 
-        enum LogicOp
+        enum class LogicOp
         {
             CLEAR,
             SET,
@@ -145,58 +178,96 @@ public:
             OR_INVERTED
         };
 
-        FragmentPipelineConf() : 
-            depthFunc(TestFunc::LESS),
-            alphaFunc(TestFunc::ALWAYS),
-            referenceAlphaValue(0xff),
-            depthMask(false),
-            colorMaskA(true),
-            colorMaskB(true),
-            colorMaskG(true),
-            colorMaskR(true),
-            blendFuncSFactor(BlendFunc::ONE),
-            blendFuncDFactor(BlendFunc::ZERO)
-        { }
+        FragmentPipelineConf() = default;
 
-        TestFunc depthFunc : 3;
-        TestFunc alphaFunc : 3;
-        uint8_t referenceAlphaValue : 8;
-        bool depthMask : 1;
-        bool colorMaskA : 1;
-        bool colorMaskB : 1;
-        bool colorMaskG : 1;
-        bool colorMaskR : 1;
-        BlendFunc blendFuncSFactor : 4;
-        BlendFunc blendFuncDFactor : 4;
+        void setDepthFunc(const TestFunc val) { m_regVal.fields.depthFunc = val; }
+        void setAlphaFunc(const TestFunc val) { m_regVal.fields.alphaFunc = val; }
+        void setRefAlphaValue(const uint8_t val) { m_regVal.fields.referenceAlphaValue = val; }
+        void setDepthMask(const bool val) { m_regVal.fields.depthMask = val; }
+        void setColorMaskA(const bool val) { m_regVal.fields.colorMaskA  = val; }
+        void setColorMaskR(const bool val) { m_regVal.fields.colorMaskB  = val; }
+        void setColorMaskG(const bool val) { m_regVal.fields.colorMaskG  = val; }
+        void setColorMaskB(const bool val) { m_regVal.fields.colorMaskR  = val; }
+        void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = val; }
+        void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = val; }
+
+        uint32_t serialize() const { return m_regVal.data; }
+
+    private:
+        union RegVal
+        {
+            struct __attribute__ ((__packed__)) RegContent
+            {
+                RegContent() :
+                    depthFunc(TestFunc::LESS),
+                    alphaFunc(TestFunc::ALWAYS),
+                    referenceAlphaValue(0xff),
+                    depthMask(false),
+                    colorMaskA(true),
+                    colorMaskB(true),
+                    colorMaskG(true),
+                    colorMaskR(true),
+                    blendFuncSFactor(BlendFunc::ONE),
+                    blendFuncDFactor(BlendFunc::ZERO)
+                { }
+
+                TestFunc depthFunc : 3;
+                TestFunc alphaFunc : 3;
+                uint8_t referenceAlphaValue : 8;
+                bool depthMask : 1;
+                bool colorMaskA : 1;
+                bool colorMaskB : 1;
+                bool colorMaskG : 1;
+                bool colorMaskR : 1;
+                BlendFunc blendFuncSFactor : 4;
+                BlendFunc blendFuncDFactor : 4;
+            } fields {};
+            uint32_t data;
+        } m_regVal;
     };
 
-    struct __attribute__ ((__packed__)) FeatureEnableConf
+    class FeatureEnableConf
     {
-        FeatureEnableConf() 
-            : fog(false)
-            , blending(false)
-            , depthTest(false)
-            , alphaTest(false)
-            , tmu0(false)
-            
-        { }
+    public:
+        FeatureEnableConf() = default;
+        void setEnableFog(const bool val) { m_regVal.fields.fog = val; }
+        void setEnableBlending(const bool val) { m_regVal.fields.blending = val; }
+        void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
+        void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
+        void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
 
-        bool fog : 1;
-        bool blending : 1;
-        bool depthTest : 1;
-        bool alphaTest : 1;
-        bool tmu0 : 1;
+        uint32_t serialize() const { return m_regVal.data; }
+    private:
+        union RegVal
+        {
+            struct __attribute__ ((__packed__)) RegContent
+            {
+                RegContent()
+                    : fog(false)
+                    , blending(false)
+                    , depthTest(false)
+                    , alphaTest(false)
+                    , tmu0(false)
+
+                { }
+
+                bool fog : 1;
+                bool blending : 1;
+                bool depthTest : 1;
+                bool alphaTest : 1;
+                bool tmu0 : 1;
+            } fields {};
+            uint32_t data;
+        } m_regVal;
     };
 
-    enum TextureWrapMode
+    enum class TextureWrapMode
     {
         REPEAT,
         CLAMP_TO_EDGE
     };
 
     /// @brief Will render a triangle which is constructed with the given parameters
-    /// TODO: Document ranges, the vectors should be in screen coordinates, textures should be in the range of 0..1.0
-    /// color 0..255
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     virtual bool drawTriangle(const Vec4& v0,
                               const Vec4& v1,

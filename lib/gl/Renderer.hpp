@@ -207,13 +207,13 @@ public:
 
     virtual bool setFragmentPipelineConfig(const FragmentPipelineConf& pipelineConf) override 
     {
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, pipelineConf); 
+        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, pipelineConf.serialize());
     }
 
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
         (void)target; // Only TMU0 is supported
-        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig);
+        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig.serialize());
     }
 
     virtual bool setTexEnvColor(const Vec4i& color) override
@@ -316,7 +316,7 @@ public:
 
     virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) override
     {
-        return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable);
+        return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
     }
 
 private:

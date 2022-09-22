@@ -19,7 +19,7 @@
 #define VERTEXPIPELINE_HPP
 
 #include "Vec.hpp"
-#include "IRenderer.hpp"
+#include "PixelPipeline.hpp"
 #include "Mat44.hpp"
 #include "Clipper.hpp"
 #include "Lighting.hpp"
@@ -51,7 +51,7 @@ public:
         FRONT_AND_BACK
     };
 
-    VertexPipeline(IRenderer& renderer);
+    VertexPipeline(PixelPipeline& renderer);
 
     bool drawObj(RenderObj &obj);
 
@@ -174,7 +174,7 @@ private:
     ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
     Face m_colorMaterialFace { Face::FRONT_AND_BACK };
 
-    IRenderer& m_renderer;
+    PixelPipeline& m_renderer;
     Lighting m_lighting;
     TexGen m_texGen;
 };

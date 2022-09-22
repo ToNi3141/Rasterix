@@ -1,0 +1,238 @@
+#include "PixelPipeline.hpp"
+
+PixelPipeline::PixelPipeline(IRenderer& renderer) 
+    : m_renderer(renderer)
+{
+    m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0);
+    m_renderer.setFeatureEnableConfig(m_featureEnable);
+    m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+}
+
+bool PixelPipeline::drawTriangle(const Vec4& v0,
+                                 const Vec4& v1,
+                                 const Vec4& v2,
+                                 const Vec2& st0,
+                                 const Vec2& st1,
+                                 const Vec2& st2,
+                                 const Vec4& c0,
+                                 const Vec4& c1,
+                                 const Vec4& c2) 
+{
+    return m_renderer.drawTriangle(v0, v1, v2, st0, st1, st2, c0, c1, c2);
+}
+
+bool PixelPipeline::updatePipeline()
+{
+    bool ret { true };
+    if ((m_texEnvMode == TexEnvMode::COMBINE) && (m_texEnvConfUploaded0.serialize() != m_texEnvConf0.serialize()))
+    {
+        ret = ret && m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0);
+        m_texEnvConfUploaded0 = m_texEnvConf0;
+    }
+    if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize())
+    {
+        ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
+        m_featureEnableUploaded = m_featureEnable;
+    }
+    if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize())
+    {
+        ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+        m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;
+    }
+    if (m_fogDirty)
+    {
+        ret = ret && updateFogLut();
+        m_fogDirty = false;
+    }
+    return ret;
+}
+
+bool PixelPipeline::uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY)
+{
+    bool ret = m_renderer.updateTexture(m_boundTexture, pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter);
+            
+    // Rebind texture to update the rasterizer with the new texture meta information
+    // TODO: Check if this is still required
+    ret = ret && useTexture(TMU::TMU0);
+    return ret;
+}
+
+void PixelPipeline::setFogMode(const FogMode val)
+{
+    if (m_fogMode != val)
+    {
+        m_fogMode = val;
+        m_fogDirty = true;
+    }
+}
+
+void PixelPipeline::setFogStart(const float val)
+{
+    if (m_fogStart != val)
+    {
+        m_fogStart = val;
+        m_fogDirty = true;
+    }
+}
+
+void PixelPipeline::setFogEnd(const float val)
+{
+    if (m_fogEnd != val)
+    {
+        m_fogEnd = val;
+        m_fogDirty = true;
+    }
+}
+
+void PixelPipeline::setFogDensity(const float val)
+{
+    if (m_fogDensity != val)
+    {
+        m_fogDensity = val;
+        m_fogDirty = true;
+    }
+}
+
+bool PixelPipeline::setFogColor(const Vec4& val)
+{
+    Vec4i color;
+    color.fromVec(val.vec);
+    color.mul<0>(255);
+    return m_renderer.setFogColor(color);
+}
+
+bool PixelPipeline::updateFogLut()
+{
+    std::function <float(float)> fogFunction;
+
+    // Set fog function
+    switch (m_fogMode) {
+    case FogMode::LINEAR:
+        fogFunction = [&](float z) {
+            float f = (m_fogEnd - z) / (m_fogEnd - m_fogStart);
+            return f;
+        };
+        break;
+    case FogMode::EXP:
+        fogFunction = [&](float z) {
+            float f = expf(-(m_fogDensity * z));
+            return f;
+        };
+        break;
+    case FogMode::EXP2:
+        fogFunction = [&](float z) {
+            float f = expf(powf(-(m_fogDensity * z), 2));
+            return f;
+        };
+        break;
+    default:
+        fogFunction = [](float) {
+            return 1.0f;
+        };
+        break;
+    }
+
+    // Calculate fog LUT
+    std::array<float, 33> lut;
+    for (std::size_t i = 0; i < lut.size(); i++)
+    {
+        float f = fogFunction(powf(2, i));
+        lut[i] = f;
+    }
+
+    // Set fog LUT
+    return m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
+}
+
+bool PixelPipeline::useTexture(const TMU& tmu)
+{
+    return m_renderer.useTexture(tmu, m_boundTexture);
+}
+
+bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
+{
+    m_texEnvMode = mode;
+    IRenderer::TexEnvConf texEnvConf {};
+    switch (mode) {
+    case TexEnvMode::DISABLE:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        break;
+    case TexEnvMode::REPLACE:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        break;
+    case TexEnvMode::MODULATE:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::MODULATE);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        break;
+    case TexEnvMode::DECAL:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setOperandRgb2(IRenderer::TexEnvConf::Operand::SRC_ALPHA);
+        break;
+    case TexEnvMode::BLEND:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::CONSTANT);
+        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        break;
+    case TexEnvMode::ADD:
+        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::ADD);
+        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::ADD);
+        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        break;
+    case TexEnvMode::COMBINE:
+        // Nothing to do here.
+        break;
+    default:
+        break;
+    }
+    if (mode != TexEnvMode::COMBINE)
+    {
+        return m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf);
+    }
+    return true;
+}
+
+bool PixelPipeline::setTexEnvColor(const Vec4& color)
+{
+    return m_renderer.setTexEnvColor({ { static_cast<uint8_t>(color[0] * 255.0f),
+                                         static_cast<uint8_t>(color[1] * 255.0f),
+                                         static_cast<uint8_t>(color[2] * 255.0f),
+                                         static_cast<uint8_t>(color[3] * 255.0f) } });
+}
+
+bool PixelPipeline::setClearColor(const Vec4& color)
+{
+    return m_renderer.setClearColor({ { static_cast<uint8_t>(color[0] * 255.0f),
+                                        static_cast<uint8_t>(color[1] * 255.0f),
+                                        static_cast<uint8_t>(color[2] * 255.0f),
+                                        static_cast<uint8_t>(color[3] * 255.0f) } });
+}
+
+bool PixelPipeline::setClearDepth(const float depth)
+{
+    // Convert from signed float (-1.0 .. 1.0) to unsigned fix (0 .. 65535)
+    const uint16_t depthx = (depth + 1.0f) * 32767;
+    return m_renderer.setClearDepth(depthx);
+}

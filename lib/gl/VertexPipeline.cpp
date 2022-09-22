@@ -29,7 +29,7 @@
 
 #define __glPi 3.14159265358979323846f
 
-VertexPipeline::VertexPipeline(IRenderer& renderer)
+VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
     m_t.identity();
@@ -133,6 +133,10 @@ VertexPipeline::VertexPipeline(IRenderer& renderer)
 bool VertexPipeline::drawObj(RenderObj &obj)
 {
     recalculateMatrices();
+    if (!m_renderer.updatePipeline()) 
+    {
+        return false;
+    }
 
     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
