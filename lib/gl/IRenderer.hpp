@@ -185,9 +185,9 @@ public:
         void setRefAlphaValue(const uint8_t val) { m_regVal.fields.referenceAlphaValue = val; }
         void setDepthMask(const bool val) { m_regVal.fields.depthMask = val; }
         void setColorMaskA(const bool val) { m_regVal.fields.colorMaskA  = val; }
-        void setColorMaskR(const bool val) { m_regVal.fields.colorMaskB  = val; }
+        void setColorMaskR(const bool val) { m_regVal.fields.colorMaskR  = val; }
         void setColorMaskG(const bool val) { m_regVal.fields.colorMaskG  = val; }
-        void setColorMaskB(const bool val) { m_regVal.fields.colorMaskR  = val; }
+        void setColorMaskB(const bool val) { m_regVal.fields.colorMaskB  = val; }
         void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = val; }
         void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = val; }
 
