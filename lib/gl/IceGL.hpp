@@ -28,6 +28,7 @@
 #include "Lighting.hpp"
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
+#include "PixelPipeline.hpp"
 
 class IceGL
 {
@@ -129,9 +130,6 @@ public:
 
 private:
     static constexpr uint16_t MAX_TEX_SIZE = 256;
-    static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH = 16;
-    static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH = 4;
-
 
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
@@ -139,17 +137,14 @@ private:
     IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
     RenderObj::Type convertType(GLenum type);
     RenderObj::DrawMode convertDrawMode(GLenum drawMode);
-    IRenderer::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
-    GLint convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param);
+    PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
+    GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param);
     GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
     GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
     GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
-    void recalculateAndSetTnLMatrices();
-    GLenum setFogLut(GLenum mode, float start, float end, float density);
 
     IRenderer& m_renderer;
-    Lighting m_lighting;
-    TexGen m_texGen;
+    PixelPipeline m_pixelPipeline;
     VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
     RenderObj m_renderObjBeginEnd;
@@ -165,58 +160,6 @@ private:
     Vec2 m_textureCoord;
     Vec3 m_normal;
     GLenum m_beginMode = GL_TRIANGLES;
-
-    // OpenGL Context Variables
-    // Matrix modes
-    GLenum matrixMode = GL_PROJECTION;
-    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH];
-    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH];
-    uint8_t m_mStackIndex{0};
-    uint8_t m_pStackIndex{0};
-    Mat44 m_m; // Model matrix
-    Mat44 m_p; // Projection matrix
-    Mat44 m_t;
-    bool m_matricesOutdated{true}; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
-
-    // Textures
-    GLint m_unpackAlignment = 4;
-    GLuint m_boundTexture = 0;
-    bool m_enableTextureMapping = true;
-    GLint m_texEnvMode = GL_REPLACE;
-    IRenderer::TextureWrapMode m_texWrapModeS = IRenderer::TextureWrapMode::REPEAT;
-    IRenderer::TextureWrapMode m_texWrapModeT = IRenderer::TextureWrapMode::REPEAT;
-    bool m_texEnableMagFilter = true;
-    IRenderer::TexEnvConf m_texEnvConf0;
-
-    // Current fragment pipeline configuration 
-    IRenderer::FragmentPipelineConf m_fragmentPipelineConf;
-
-    // Test functions
-    bool m_enableAlphaTest = true;
-    GLclampf m_alphaTestRefValue = 0.0f;
-    GLenum m_alphaTestFunc = GL_ALWAYS;
-
-    // Blending
-    bool m_enableBlending = true;
-    GLenum m_blendDfactor = GL_ZERO;
-    GLenum m_blendSfactor = GL_ONE;
-
-    // Cull mode
-    bool m_enableCulling = false;
-    GLenum m_cullMode = GL_BACK;
-
-    // Color material
-    bool m_enableColorMaterial = false;
-    GLenum m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
-    GLenum m_colorMaterialFace = GL_FRONT_AND_BACK;
-
-    // Fog
-    bool m_enableFog = false;
-    GLenum m_fogMode = GL_EXP;
-    GLfloat m_fogStart = 0.0f;
-    GLfloat m_fogEnd = 1.0f;
-    GLfloat m_fogDensity = 1.0f;
-    Vec4 m_fogColor {{0.0f, 0.0f, 0.0f, 0.0f}};
 
     // Errors
     GLint m_error = GL_NO_ERROR;

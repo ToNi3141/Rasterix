@@ -36,11 +36,13 @@ module CommandParser #(
 
     // Rasterizer
     // Configs
+    output wire [31:0]  confFeatureEnable,
     output wire [31:0]  confFragmentPipelineConfig,
     output wire [31:0]  confFragmentPipelineFogColor,
     output wire [31:0]  confTMU0TexEnvConfig,
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
+
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -96,7 +98,7 @@ module CommandParser #(
     reg  [31 : 0]   configReg[0 : OP_RENDER_CONFIG_NUMBER_OR_REGS - 1];
     reg             apply;
     wire            applied;
-    reg  [13 : 0]   streamCounter;
+    reg  [18 : 0]   streamCounter;
     reg             parameterComplete;
 
     // Local Statemachine variables
@@ -106,6 +108,7 @@ module CommandParser #(
     reg             wlsp = 0;
 
     assign applied = colorBufferApplied & depthBufferApplied;
+    assign confFeatureEnable = configReg[OP_RENDER_CONFIG_FEATURE_ENABLE];
     assign confColorBufferClearColor = configReg[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR];
     assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
     assign confFragmentPipelineConfig = configReg[OP_RENDER_CONFIG_FRAGMENT_PIPELINE];

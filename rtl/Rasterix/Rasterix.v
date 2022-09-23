@@ -136,6 +136,7 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
+    wire [31:0] confFeatureEnable;
     wire [31:0] confFragmentPipelineConfig;
     wire [31:0] confFragmentPipelineFogColor;
     wire [31:0] confTMU0TexEnvConfig;
@@ -177,6 +178,7 @@ module Rasterix #(
 
         // Rasterizer
         // Configs
+        .confFeatureEnable(confFeatureEnable),
         .confFragmentPipelineConfig(confFragmentPipelineConfig),
         .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
@@ -393,6 +395,7 @@ module Rasterix #(
         .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
+        .confFeatureEnable(confFeatureEnable),
         .confFragmentPipelineConfig(confFragmentPipelineConfig),
         .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),

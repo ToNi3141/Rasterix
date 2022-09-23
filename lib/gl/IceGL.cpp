@@ -23,14 +23,11 @@
 
 IceGL::IceGL(IRenderer &renderer)
     : m_renderer(renderer)
-    , m_vertexPipeline(renderer, m_lighting, m_texGen)
+    , m_pixelPipeline(renderer)
+    , m_vertexPipeline(m_pixelPipeline)
 {
     // Preallocate the first texture. This is the default texture and it also can't be deleted.
     m_renderer.createTexture();
-
-    m_m.identity();
-    m_p.identity();
-    m_t.identity();
 
     //glLogicOp(GL_COPY);
     glDisable(GL_FOG);
@@ -56,22 +53,25 @@ void IceGL::commit()
 
 void IceGL::glMatrixMode(GLenum mm)
 {
-    matrixMode = mm;
+    m_error = GL_NO_ERROR;
+    if (mm == GL_MODELVIEW)
+    {
+        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::MODELVIEW);
+    }
+    else if (mm == GL_PROJECTION)
+    {
+        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
+    }
+    else
+    {
+        m_error = GL_INVALID_ENUM;
+    }
 }
 
 void IceGL::glMultMatrixf(const GLfloat* m)
 {
     const Mat44 *m44 = reinterpret_cast<const Mat44*>(m);
-    if (matrixMode == GL_MODELVIEW)
-    {
-        m_m = *m44 * m_m;
-    }
-    else
-    {
-        m_p = *m44 * m_p;
-    }
-
-    m_matricesOutdated = true;
+    m_vertexPipeline.multiply(*m44);
 }
 
 void IceGL::glMultMatrixd(const GLdouble* m)
@@ -86,57 +86,22 @@ void IceGL::glMultMatrixd(const GLdouble* m)
 
 void IceGL::glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
-    Mat44 m;
-    m.identity();
-    m[3][0] = x;
-    m[3][1] = y;
-    m[3][2] = z;
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.translate(x, y, z);
 }
 
 void IceGL::glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
-    Mat44 m;
-    m.identity();
-    m[0][0] = x;
-    m[1][1] = y;
-    m[2][2] = z;
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.scale(x, y, z);
 }
 
 void IceGL::glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-    float angle_rad = angle * (__glPi/180.0f);
-
-    float c = cosf(angle_rad);
-    float s = sinf(angle_rad);
-    float t = 1.0f - c;
-
-    Mat44 m
-    {{{
-                {c+x*x*t,   y*x*t+z*s,  z*x*t-y*s,  0.0f},
-                {x*y*t-z*s, c+y*y*t,    z*y*t+x*s,  0.0f},
-                {x*z*t+y*s, y*z*t-x*s,  z*z*t+c,    0.0f},
-                {0.0f,      0.0f,       0.0f,       1.0f}
-            }}};
-
-    glMultMatrixf(&m[0][0]);
-    m_matricesOutdated = true;
+    m_vertexPipeline.rotate(angle, x, y, z);
 }
 
 void IceGL::glLoadIdentity()
 {
-    if (matrixMode == GL_MODELVIEW)
-    {
-        m_m.identity();
-    }
-    else
-    {
-        m_p.identity();
-    }
-    m_matricesOutdated = true;
+    m_vertexPipeline.loadIdentity();
 }
 
 void IceGL::gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
@@ -250,8 +215,6 @@ void IceGL::glBegin(GLenum mode)
 
 void IceGL::glEnd()
 {
-    recalculateAndSetTnLMatrices();
-
     m_renderObjBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
     m_renderObjBeginEnd.setVertexSize(4);
     m_renderObjBeginEnd.setVertexType(RenderObj::Type::FLOAT);
@@ -401,6 +364,11 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         return;
     }
 
+    // Initialize the memory with zero for non power of two textures.
+    // Its probably the most reasonable init, because if the alpha channel is activated,
+    // then the not used area is then just transparent.
+    memset(texMemShared.get(), 0, widthRounded * heightRounded * 2);
+
     if (pixels != nullptr)
     {
         // Currently only GL_RGB and GL_RGBA is supported
@@ -454,20 +422,11 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             }
         }
 
-        if (!m_renderer.updateTexture(m_boundTexture, 
-                                      texMemShared, 
-                                      widthRounded,
-                                      heightRounded,
-                                      m_texWrapModeS,
-                                      m_texWrapModeT,
-                                      m_texEnableMagFilter))
+        if (!m_pixelPipeline.uploadTexture(texMemShared, widthRounded, heightRounded))
         {
             m_error = GL_INVALID_VALUE;
             return;
         }
-
-        // Rebind texture to update the rasterizer with the new texture meta information
-        glBindTexture(target, m_boundTexture);
     }
     else
     {
@@ -493,7 +452,7 @@ void IceGL::glPixelStorei(GLenum pname, GLint param)
         case 2:
         case 4:
         case 8:
-            m_unpackAlignment = param;
+            // m_unpackAlignment = param;
             break;
         default:
             m_error = GL_INVALID_VALUE;
@@ -517,7 +476,7 @@ void IceGL::glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::pair<bool, uint16_t> ret = m_renderer.createTexture();
+        std::pair<bool, uint16_t> ret = m_pixelPipeline.createTexture();
         if (ret.first)
         {
             textures[i] = ret.second;
@@ -545,7 +504,7 @@ void IceGL::glDeleteTextures(GLsizei n, const GLuint *textures)
         // From the specification: glDeleteTextures silently ignores 0's and names that do not correspond to existing textures.
         if (textures[i] != 0) 
         {
-            m_renderer.deleteTexture(textures[i]);
+            m_pixelPipeline.deleteTexture(textures[i]);
         }
         
     }
@@ -560,11 +519,11 @@ void IceGL::glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
-    m_boundTexture = texture;
+    m_pixelPipeline.setBoundTexture(texture);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_renderer.useTexture(IRenderer::TMU::TMU0, m_boundTexture);
+        m_pixelPipeline.useTexture(PixelPipeline::TMU::TMU0);
     }
     else 
     {
@@ -585,7 +544,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (m_error == GL_NO_ERROR)
             {
-                m_texWrapModeS = mode;
+                m_pixelPipeline.setTexWrapModeS(mode);
             }
             break;
         }
@@ -594,7 +553,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (m_error == GL_NO_ERROR)
             {
-                m_texWrapModeT = mode;
+                m_pixelPipeline.setTexWrapModeT(mode);
             }
             break;
         }
@@ -602,7 +561,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
         case GL_TEXTURE_MAG_FILTER:
             if ((param == GL_LINEAR) || (param == GL_NEAREST))
             {
-                m_texEnableMagFilter = (param == GL_LINEAR);
+                m_pixelPipeline.setEnableMagFilter(param == GL_LINEAR);
             }
             else
             {
@@ -629,7 +588,7 @@ void IceGL::glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 void IceGL::glClear(GLbitfield mask)
 {
     // TODO GL_STENCIL_BUFFER_BIT has to be implemented
-    if (m_renderer.clear(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT))
+    if (m_pixelPipeline.clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT))
     {
         m_error = GL_NO_ERROR;
     }
@@ -642,10 +601,7 @@ void IceGL::glClear(GLbitfield mask)
 void IceGL::glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     (void)alpha;
-    if (m_renderer.setClearColor({{static_cast<uint8_t>(red * 255.0f),
-                                 static_cast<uint8_t>(green * 255.0f),
-                                 static_cast<uint8_t>(blue * 255.0f),
-                                 static_cast<uint8_t>(alpha * 255.0f)}}))
+    if (m_pixelPipeline.setClearColor({ { red, green, blue, alpha } }))
     {
         m_error = GL_NO_ERROR;
     }
@@ -667,9 +623,7 @@ void IceGL::glClearDepthf(GLclampf depth)
         depth = 1.0f;
     }
 
-    // Convert from signed float (-1.0 .. 1.0) to unsigned fix (0 .. 65535)
-    const uint16_t depthx = (depth + 1.0f) * 32767;
-    if (m_renderer.setClearDepth(depthx))
+    if (m_pixelPipeline.setClearDepth(depth))
     {
         m_error = GL_NO_ERROR;
     }
@@ -691,15 +645,13 @@ void IceGL::glEnable(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        m_enableTextureMapping = true;
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, m_texEnvMode);
+        m_pixelPipeline.featureEnable().setEnableTmu0(true);
         break;
     case GL_ALPHA_TEST:
         // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saving
         // the current alpha test func and the reference value. When the test is enabled, we just recover this values.
         // Seems to work perfect.
-        m_enableAlphaTest = true;
-        glAlphaFunc(m_alphaTestFunc, m_alphaTestRefValue);
+        m_pixelPipeline.featureEnable().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
         // For the depth test it is not possible to use a similar algorithm like we do for the alpha test. The main reason
@@ -707,15 +659,13 @@ void IceGL::glEnable(GLenum cap)
         // and never writes into the depth buffer. We could use glDepthMask to avoid writing, but then we also disabling
         // glClear() what we obviously dont want. The easiest fix is to introduce a special switch. If this switch is disabled
         // the depth buffer always passes and never writes and glClear() can clear the depth buffer.
-        m_fragmentPipelineConf.enableDepthTest = true;
-        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+        m_pixelPipeline.featureEnable().setEnableDepthTest(true);
         break;
     case GL_BLEND:
-        m_enableBlending = true;
-        glBlendFunc(m_blendSfactor, m_blendDfactor);
+        m_pixelPipeline.featureEnable().setEnableBlending(true);
         break;
     case GL_LIGHTING:
-        m_lighting.enableLighting(true);
+        m_vertexPipeline.getLighting().enableLighting(true);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -725,24 +675,22 @@ void IceGL::glEnable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_lighting.enableLight(cap - GL_LIGHT0, true);
+        m_vertexPipeline.getLighting().enableLight(cap - GL_LIGHT0, true);
         break;
     case GL_TEXTURE_GEN_S:
-        m_texGen.enableTexGenS(true);
+        m_vertexPipeline.getTexGen().enableTexGenS(true);
         break;
     case GL_TEXTURE_GEN_T:
-        m_texGen.enableTexGenT(true);
+        m_vertexPipeline.getTexGen().enableTexGenT(true);
         break;
     case GL_CULL_FACE:
         m_vertexPipeline.enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
-        m_enableColorMaterial = true;
-        glColorMaterial(m_colorMaterialFace, m_colorMaterialTracking);
+        m_vertexPipeline.enableColorMaterial(true);
         break;
     case GL_FOG:
-        m_enableFog = true;
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
+        m_pixelPipeline.featureEnable().setEnableFog(true);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -756,40 +704,26 @@ void IceGL::glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        const GLint tmpParam = m_texEnvMode;
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DISABLE);
-        m_texEnvMode = tmpParam;
-        m_enableTextureMapping = false;
+        m_pixelPipeline.featureEnable().setEnableTmu0(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
-        const GLclampf refValue = m_alphaTestRefValue;
-        const GLenum func = m_alphaTestFunc;
-        glAlphaFunc(GL_ALWAYS, 0.0f);
-        m_alphaTestRefValue = refValue;
-        m_alphaTestFunc = func;
-        m_enableAlphaTest = false;
+        m_pixelPipeline.featureEnable().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
-        m_fragmentPipelineConf.enableDepthTest = false;
-        m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+        m_pixelPipeline.featureEnable().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
-        const GLenum dfactor = m_blendDfactor;
-        const GLenum sfactor = m_blendSfactor;
-        glBlendFunc(GL_ONE, GL_ZERO);
-        m_blendDfactor = dfactor;
-        m_blendSfactor = sfactor;
-        m_enableBlending = false;
+        m_pixelPipeline.featureEnable().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
-        m_lighting.enableLighting(false);
+        m_vertexPipeline.getLighting().enableLighting(false);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -799,24 +733,22 @@ void IceGL::glDisable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_lighting.enableLight(cap - GL_LIGHT0, false);
+        m_vertexPipeline.getLighting().enableLight(cap - GL_LIGHT0, false);
         break;
     case GL_TEXTURE_GEN_S:
-        m_texGen.enableTexGenS(false);
+        m_vertexPipeline.getTexGen().enableTexGenS(false);
         break;
     case GL_TEXTURE_GEN_T:
-        m_texGen.enableTexGenT(false);
+        m_vertexPipeline.getTexGen().enableTexGenT(false);
         break;
     case GL_CULL_FACE:
         m_vertexPipeline.enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
-        m_enableColorMaterial = false;
-        m_lighting.enableColorMaterial(false, false, false, false);
+        m_vertexPipeline.enableColorMaterial(false);
         break;
     case GL_FOG:
-        m_enableFog = false;
-        m_error = setFogLut(GL_ZERO, 0, std::numeric_limits<float>::max(), m_fogDensity);
+        m_pixelPipeline.featureEnable().setEnableFog(false);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -827,63 +759,47 @@ void IceGL::glDisable(GLenum cap)
 void IceGL::glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     m_error = GL_NO_ERROR;
-    m_fragmentPipelineConf.colorMaskR = (red == GL_TRUE);
-    m_fragmentPipelineConf.colorMaskG = (green == GL_TRUE);
-    m_fragmentPipelineConf.colorMaskB = (blue == GL_TRUE);
-    m_fragmentPipelineConf.colorMaskA = (alpha == GL_TRUE);
-    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-    {
-        m_error = GL_NO_ERROR;
-    }
-    else
-    {
-        m_error = GL_OUT_OF_MEMORY;
-    }
+    m_pixelPipeline.fragmentPipeline().setColorMaskR(red == GL_TRUE);
+    m_pixelPipeline.fragmentPipeline().setColorMaskG(green == GL_TRUE);
+    m_pixelPipeline.fragmentPipeline().setColorMaskB(blue == GL_TRUE);
+    m_pixelPipeline.fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
 }
 
 void IceGL::glDepthMask(GLboolean flag)
 {
     m_error = GL_NO_ERROR;
-    m_fragmentPipelineConf.depthMask = (flag == GL_TRUE);
-    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-    {
-        m_error = GL_NO_ERROR;
-    }
-    else
-    {
-        m_error = GL_OUT_OF_MEMORY;
-    }
+    m_pixelPipeline.fragmentPipeline().setDepthMask(flag == GL_TRUE);
 }
 
 void IceGL::glDepthFunc(GLenum func)
 {
-    IRenderer::FragmentPipelineConf::TestFunc testFunc{IRenderer::FragmentPipelineConf::TestFunc::LESS};
+    PixelPipeline::TestFunc testFunc { PixelPipeline::TestFunc::LESS };
     m_error = GL_NO_ERROR;
     switch (func)
     {
     case GL_ALWAYS:
-        testFunc = IRenderer::FragmentPipelineConf::FragmentPipelineConf::TestFunc::ALWAYS;
+        testFunc = PixelPipeline::TestFunc::ALWAYS;
         break;
     case GL_NEVER:
-        testFunc = IRenderer::FragmentPipelineConf::FragmentPipelineConf::TestFunc::NEVER;
+        testFunc = PixelPipeline::TestFunc::NEVER;
         break;
     case GL_LESS:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LESS;
+        testFunc = PixelPipeline::TestFunc::LESS;
         break;
     case GL_EQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::EQUAL;
+        testFunc = PixelPipeline::TestFunc::EQUAL;
         break;
     case GL_LEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LEQUAL;
+        testFunc = PixelPipeline::TestFunc::LEQUAL;
         break;
     case GL_GREATER:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GREATER;
+        testFunc = PixelPipeline::TestFunc::GREATER;
         break;
     case GL_NOTEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NOTEQUAL;
+        testFunc = PixelPipeline::TestFunc::NOTEQUAL;
         break;
     case GL_GEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GEQUAL;
+        testFunc = PixelPipeline::TestFunc::GEQUAL;
         break;
 
     default:
@@ -893,47 +809,39 @@ void IceGL::glDepthFunc(GLenum func)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_fragmentPipelineConf.depthFunc = testFunc;
-        if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-        {
-            m_error = GL_NO_ERROR;
-        }
-        else
-        {
-            m_error = GL_OUT_OF_MEMORY;
-        }
+        m_pixelPipeline.fragmentPipeline().setDepthFunc(testFunc);
     }
 }
 
 void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
 {
-    IRenderer::FragmentPipelineConf::TestFunc testFunc{IRenderer::FragmentPipelineConf::TestFunc::LESS};
+    PixelPipeline::TestFunc testFunc { PixelPipeline::TestFunc::LESS };
     m_error = GL_NO_ERROR;
     switch (func)
     {
     case GL_ALWAYS:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::ALWAYS;
+        testFunc = PixelPipeline::TestFunc::ALWAYS;
         break;
     case GL_NEVER:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NEVER;
+        testFunc = PixelPipeline::TestFunc::NEVER;
         break;
     case GL_LESS:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LESS;
+        testFunc = PixelPipeline::TestFunc::LESS;
         break;
     case GL_EQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::EQUAL;
+        testFunc = PixelPipeline::TestFunc::EQUAL;
         break;
     case GL_LEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::LEQUAL;
+        testFunc = PixelPipeline::TestFunc::LEQUAL;
         break;
     case GL_GREATER:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GREATER;
+        testFunc = PixelPipeline::TestFunc::GREATER;
         break;
     case GL_NOTEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::NOTEQUAL;
+        testFunc = PixelPipeline::TestFunc::NOTEQUAL;
         break;
     case GL_GEQUAL:
-        testFunc = IRenderer::FragmentPipelineConf::TestFunc::GEQUAL;
+        testFunc = PixelPipeline::TestFunc::GEQUAL;
         break;
 
     default:
@@ -943,85 +851,45 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_alphaTestFunc = func;
-        m_alphaTestRefValue = ref;
-        if (m_enableAlphaTest)
+        // Convert reference value from float to fix point
+        uint8_t refFix = ref * (1 << 8);
+        if (ref >= 1.0f)
         {
-            // Convert reference value from float to fix point
-            uint8_t refFix = ref * (1 << 8);
-            if (ref >= 1.0f)
-            {
-                refFix = 0xff;
-            }
-            m_fragmentPipelineConf.alphaFunc = testFunc;
-            m_fragmentPipelineConf.referenceAlphaValue = refFix;
-            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-            {
-                m_error = GL_NO_ERROR;
-            }
-            else
-            {
-                m_error = GL_OUT_OF_MEMORY;
-            }
+            refFix = 0xff;
         }
+        m_pixelPipeline.fragmentPipeline().setAlphaFunc(testFunc);
+        m_pixelPipeline.fragmentPipeline().setRefAlphaValue(refFix);
     }
 }
 
-GLint IceGL::convertTexEnvMode(IRenderer::TexEnvConf& texEnvConf, GLint param) 
+GLint IceGL::convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {
     GLint ret = GL_NO_ERROR;
     switch (param) {
     case GL_DISABLE:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        mode = PixelPipeline::TexEnvMode::DISABLE;
         break;
     case GL_REPLACE:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::REPLACE;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        mode = PixelPipeline::TexEnvMode::REPLACE;
         break;
     case GL_MODULATE:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::MODULATE;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        mode = PixelPipeline::TexEnvMode::MODULATE;
         break;
     case GL_DECAL:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::REPLACE;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.operandRgb2 = IRenderer::TexEnvConf::Operand::SRC_ALPHA;
+        mode = PixelPipeline::TexEnvMode::DECAL;
         break;
     case GL_BLEND:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::INTERPOLATE;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::MODULATE;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::CONSTANT;
-        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegRgb2 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+        mode = PixelPipeline::TexEnvMode::BLEND;
         break;
     case GL_ADD:
-        texEnvConf.combineRgb = IRenderer::TexEnvConf::Combine::ADD;
-        texEnvConf.combineAlpha = IRenderer::TexEnvConf::Combine::ADD;
-        texEnvConf.srcRegRgb0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegRgb1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
-        texEnvConf.srcRegAlpha0 = IRenderer::TexEnvConf::SrcReg::TEXTURE;
-        texEnvConf.srcRegAlpha1 = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+        mode = PixelPipeline::TexEnvMode::ADD;
         break;
     case GL_COMBINE:
-        // Nothing to do here.
+        mode = PixelPipeline::TexEnvMode::COMBINE;
         break;
     default:
         ret = GL_INVALID_ENUM;
+        mode = PixelPipeline::TexEnvMode::REPLACE;
         break;
     }
     return ret;
@@ -1143,121 +1011,126 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
     m_error = GL_INVALID_ENUM;
     if (target == GL_TEXTURE_ENV)
     {
-        IRenderer::TexEnvConf texEnvConf = IRenderer::TexEnvConf();
-        if (m_texEnvMode == GL_COMBINE) 
-        {
-            texEnvConf = m_texEnvConf0;
-        }
         switch (pname) 
         {
             case GL_TEXTURE_ENV_MODE:
-                if (param == GL_COMBINE) 
-                {
-                    texEnvConf = m_texEnvConf0;
-                    m_error = GL_NO_ERROR;
-                }
-                else
-                {
-                    m_error = convertTexEnvMode(texEnvConf, param); 
-                }
-                m_texEnvMode = param;
+            {
+                PixelPipeline::TexEnvMode mode {};
+                m_error = convertTexEnvMode(mode, param);
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.setTexEnvMode(mode); 
                 break;
+            }
             case GL_COMBINE_RGB:
             {
-                IRenderer::TexEnvConf::Combine c{ texEnvConf.combineRgb };
+                IRenderer::TexEnvConf::Combine c {};
                 m_error = convertCombine(c, param, false);
-                texEnvConf.combineRgb = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setCombineRgb(c);
                 break;
             }
             case GL_COMBINE_ALPHA:
             {
-                IRenderer::TexEnvConf::Combine c{ texEnvConf.combineAlpha };
+                IRenderer::TexEnvConf::Combine c {};
                 m_error = convertCombine(c, param, true);
-                texEnvConf.combineAlpha = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setCombineAlpha(c);
                 break;
             }
             case GL_SRC0_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb0 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegRgb0 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegRgb0(c);
                 break;
             }
             case GL_SRC1_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb1 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegRgb1 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegRgb1(c);
                 break;            
             }
             case GL_SRC2_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegRgb2 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegRgb2 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegRgb2(c);
                 break;
             }
             case GL_SRC0_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha0 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegAlpha0 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegAlpha0(c);
                 break;
             }
             case GL_SRC1_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha1 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegAlpha1 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegAlpha1(c);
                 break;            
             }
             case GL_SRC2_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c{ texEnvConf.srcRegAlpha2 };
+                IRenderer::TexEnvConf::SrcReg c {};
                 m_error = convertSrcReg(c, param);
-                texEnvConf.srcRegAlpha2 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setSrcRegAlpha2(c);
                 break;
             }
             case GL_OPERAND0_RGB:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb0 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, false);
-                texEnvConf.operandRgb0 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandRgb0(c);
                 break;
             }
             case GL_OPERAND1_RGB:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb1 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, false);
-                texEnvConf.operandRgb1 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandRgb1(c);
                 break;
             }
             case GL_OPERAND2_RGB:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandRgb2 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, false);
-                texEnvConf.operandRgb2 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandRgb2(c);
                 break;
             }
             case GL_OPERAND0_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha0 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, true);
-                texEnvConf.operandAlpha0 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandAlpha0(c);
                 break;
             }
             case GL_OPERAND1_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha1 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, true);
-                texEnvConf.operandAlpha1 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandAlpha1(c);
                 break;
             }
             case GL_OPERAND2_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c{ texEnvConf.operandAlpha2 };
+                IRenderer::TexEnvConf::Operand c {};
                 m_error = convertOperand(c, param, true);
-                texEnvConf.operandAlpha2 = c;
+                if (m_error == GL_NO_ERROR)
+                    m_pixelPipeline.texEnv().setOperandAlpha2(c);
                 break;
             }
             case GL_RGB_SCALE:
@@ -1265,7 +1138,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = log2(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        texEnvConf.shiftRgb = shift;
+                        m_pixelPipeline.texEnv().setShiftRgb(shift);
                         m_error = GL_NO_ERROR;
                     }
                     else 
@@ -1279,7 +1152,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = log2(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        texEnvConf.shiftAlpha = shift;
+                        m_pixelPipeline.texEnv().setShiftAlpha(shift);
                         m_error = GL_NO_ERROR;
                     }
                     else 
@@ -1292,26 +1165,6 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 m_error = GL_INVALID_ENUM;
                 break;
         };
-        if (m_error == GL_NO_ERROR)
-        {
-            // Only set the new texEnvConfig when the current mode is GL_COMBINE, and when it wasn't set yet (otherwise the current config would be overwritten)
-            if ((m_texEnvMode == GL_COMBINE) && (param != GL_COMBINE)) 
-            {
-                m_texEnvConf0 = texEnvConf;
-            }
-
-            if (m_enableTextureMapping)
-            {
-                if (m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf))
-                {
-                    m_error = GL_NO_ERROR;
-                }
-                else
-                {
-                    m_error = GL_OUT_OF_MEMORY;
-                }
-            }
-        }
     }
 }
 
@@ -1324,10 +1177,7 @@ void IceGL::glTexEnvfv(GLenum target, GLenum pname, const GLfloat *param)
 {
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (m_renderer.setTexEnvColor({{static_cast<uint8_t>(param[0] * 255.0f),
-                                      static_cast<uint8_t>(param[1] * 255.0f),
-                                      static_cast<uint8_t>(param[2] * 255.0f),
-                                      static_cast<uint8_t>(param[3] * 255.0f)}}))
+        if (m_pixelPipeline.setTexEnvColor({ { param[0], param[1], param[2], param[3] } }))
         {
             m_error = GL_NO_ERROR;
         }
@@ -1342,37 +1192,37 @@ void IceGL::glTexEnvfv(GLenum target, GLenum pname, const GLfloat *param)
     }
 }
 
-IRenderer::FragmentPipelineConf::BlendFunc IceGL::convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+PixelPipeline::BlendFunc IceGL::convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc) {
     case GL_ZERO:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
+        return PixelPipeline::BlendFunc::ZERO;
     case GL_ONE:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ONE;
+        return PixelPipeline::BlendFunc::ONE;
     case GL_DST_COLOR:
-        return IRenderer::FragmentPipelineConf::BlendFunc::DST_COLOR;
+        return PixelPipeline::BlendFunc::DST_COLOR;
     case GL_SRC_COLOR:
-        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_COLOR;
+        return PixelPipeline::BlendFunc::SRC_COLOR;
     case GL_ONE_MINUS_DST_COLOR:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_DST_COLOR;
+        return PixelPipeline::BlendFunc::ONE_MINUS_DST_COLOR;
     case GL_ONE_MINUS_SRC_COLOR:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_SRC_COLOR;
+        return PixelPipeline::BlendFunc::ONE_MINUS_SRC_COLOR;
     case GL_SRC_ALPHA:
-        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_ALPHA;
+        return PixelPipeline::BlendFunc::SRC_ALPHA;
     case GL_ONE_MINUS_SRC_ALPHA:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_SRC_ALPHA;
+        return PixelPipeline::BlendFunc::ONE_MINUS_SRC_ALPHA;
     case GL_DST_ALPHA:
-        return IRenderer::FragmentPipelineConf::BlendFunc::DST_ALPHA;
+        return PixelPipeline::BlendFunc::DST_ALPHA;
     case GL_ONE_MINUS_DST_ALPHA:
-        return IRenderer::FragmentPipelineConf::BlendFunc::ONE_MINUS_DST_ALPHA;
+        return PixelPipeline::BlendFunc::ONE_MINUS_DST_ALPHA;
     case GL_SRC_ALPHA_SATURATE:
-        return IRenderer::FragmentPipelineConf::BlendFunc::SRC_ALPHA_SATURATE;
+        return PixelPipeline::BlendFunc::SRC_ALPHA_SATURATE;
     default:
         m_error = GL_INVALID_ENUM;
-        return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
+        return PixelPipeline::BlendFunc::ZERO;
     }
     m_error = GL_INVALID_ENUM;
-    return IRenderer::FragmentPipelineConf::BlendFunc::ZERO;
+    return PixelPipeline::BlendFunc::ZERO;
 }
 
 void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
@@ -1384,105 +1234,93 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
     }
     else
     {
-        m_blendSfactor = sfactor;
-        m_blendDfactor = dfactor;
-        if (m_enableBlending)
-        {
-            m_fragmentPipelineConf.blendFuncSFactor = convertGlBlendFuncToRenderBlendFunc(sfactor);
-            m_fragmentPipelineConf.blendFuncDFactor = convertGlBlendFuncToRenderBlendFunc(dfactor);
-            if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-            {
-                m_error = GL_NO_ERROR;
-            }
-            else
-            {
-                m_error = GL_OUT_OF_MEMORY;
-            }
-        }
+        m_pixelPipeline.fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(sfactor));
+        m_pixelPipeline.fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dfactor));
     }
 }
 
 void IceGL::glLogicOp(GLenum opcode)
 {
-    IRenderer::FragmentPipelineConf::LogicOp logicOp{IRenderer::FragmentPipelineConf::LogicOp::COPY};
+    PixelPipeline::LogicOp logicOp { PixelPipeline::LogicOp::COPY };
     switch (opcode) {
     case GL_CLEAR:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::CLEAR;
+        logicOp = PixelPipeline::LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::SET;
+        logicOp = PixelPipeline::LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY;
+        logicOp = PixelPipeline::LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY_INVERTED;
+        logicOp = PixelPipeline::LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NOOP;
+        logicOp = PixelPipeline::LogicOp::NOOP;
         break;
     case GL_INVERTED:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::INVERTED;
+        logicOp = PixelPipeline::LogicOp::INVERTED;
         break;
     case GL_AND:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND;
+        logicOp = PixelPipeline::LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NAND;
+        logicOp = PixelPipeline::LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR;
+        logicOp = PixelPipeline::LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::NOR;
+        logicOp = PixelPipeline::LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::XOR;
+        logicOp = PixelPipeline::LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::EQUIV;
+        logicOp = PixelPipeline::LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND_REVERSE;
+        logicOp = PixelPipeline::LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::AND_INVERTED;
+        logicOp = PixelPipeline::LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR_REVERSE;
+        logicOp = PixelPipeline::LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::OR_INVERTED;
+        logicOp = PixelPipeline::LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = IRenderer::FragmentPipelineConf::LogicOp::COPY;
+        logicOp = PixelPipeline::LogicOp::COPY;
         break;
     }
-    // m_fragmentPipelineConf.logicOp = setLogicOp; // TODO: Not yet implemented
-    if (m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf))
-    {
-        m_error = GL_NO_ERROR;
-    }
-    else
-    {
-        m_error = GL_OUT_OF_MEMORY;
-    }
+    // m_pixelPipeline.setLogicOp(setLogicOp); // TODO: Not yet implemented
 }
 
 void IceGL::glFogf(GLenum pname, GLfloat param)
 {
-    bool valueChanged = false;
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_FOG_MODE:
-        valueChanged = m_fogMode != static_cast<GLenum>(param);
-        m_fogMode = static_cast<GLenum>(param);
+        switch (static_cast<GLenum>(param)) {
+            case GL_EXP:
+                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::EXP);
+                break;
+            case GL_EXP2:
+                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::EXP2);
+                break;
+            case GL_LINEAR:
+                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::LINEAR);
+                break;
+            default:
+                m_error = GL_INVALID_ENUM;
+        }
         break;
     case GL_FOG_DENSITY:
         if (param >= 0.0f)
         {
-            valueChanged = m_fogDensity != param;
-            m_fogDensity = param;
+            m_pixelPipeline.setFogDensity(param);
         }
         else
         {
@@ -1490,21 +1328,14 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
         }
         break;
     case GL_FOG_START:
-        valueChanged = m_fogStart != param;
-        m_fogStart = param;
+        m_pixelPipeline.setFogStart(param);
         break;
     case GL_FOG_END:
-        valueChanged = m_fogEnd != param;
-        m_fogEnd = param;
+        m_pixelPipeline.setFogEnd(param);
         break;
     default:
         m_error = GL_INVALID_ENUM;
         break;
-    }
-
-    if (valueChanged && m_enableFog && (m_error == GL_NO_ERROR))
-    {
-        m_error = setFogLut(m_fogMode, m_fogStart, m_fogEnd, m_fogDensity);
     }
 }
 
@@ -1520,11 +1351,9 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
         break;
     case GL_FOG_COLOR:
     {
-        m_fogColor.fromArray(params, 4);
-        Vec4i color;
-        color.fromVec(m_fogColor.vec);
-        color.mul<0>(255);
-        m_renderer.setFogColor({{color.vec[0], color.vec[1], color.vec[2], color.vec[3]}});
+        Vec4 fogColor {};
+        fogColor.fromArray(params, 4);
+        m_pixelPipeline.setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
     }
         break;
     default:
@@ -1549,10 +1378,13 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
         glFogi(pname, *params);
         break;
     case GL_FOG_COLOR:
-        m_fogColor.fromArray(params, 4);
-        m_fogColor.div(255);
-        m_renderer.setFogColor({{params[0], params[1], params[2], params[3]}});
+    {
+        Vec4 fogColor {};
+        fogColor.fromArray(params, 4);
+        fogColor.div(255);
+        m_pixelPipeline.setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
         break;
+    }
     default:
         m_error = GL_INVALID_ENUM;
         break;
@@ -1566,7 +1398,7 @@ void IceGL::glMaterialf(GLenum face, GLenum pname, GLfloat param)
     {
         if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
         {
-            m_lighting.setSpecularExponentMaterial(param);
+            m_vertexPipeline.getLighting().setSpecularExponentMaterial(param);
             m_error = GL_NO_ERROR;
         }
     }
@@ -1580,20 +1412,20 @@ void IceGL::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
         m_error = GL_NO_ERROR;
         switch (pname) {
         case GL_AMBIENT:
-            m_lighting.setAmbientColorMaterial({params});
+            m_vertexPipeline.getLighting().setAmbientColorMaterial({params});
             break;
         case GL_DIFFUSE:
-            m_lighting.setDiffuseColorMaterial({params});
+            m_vertexPipeline.getLighting().setDiffuseColorMaterial({params});
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            m_lighting.setAmbientColorMaterial({params});
-            m_lighting.setDiffuseColorMaterial({params});
+            m_vertexPipeline.getLighting().setAmbientColorMaterial({params});
+            m_vertexPipeline.getLighting().setDiffuseColorMaterial({params});
             break;
         case GL_SPECULAR:
-            m_lighting.setSpecularColorMaterial({params});
+            m_vertexPipeline.getLighting().setSpecularColorMaterial({params});
             break;
         case GL_EMISSION:
-            m_lighting.setEmissiveColorMaterial({params});
+            m_vertexPipeline.getLighting().setEmissiveColorMaterial({params});
             break;
         default:
             glMaterialf(face, pname, params[0]);
@@ -1608,35 +1440,46 @@ void IceGL::glColorMaterial(GLenum face, GLenum pname)
     if (face == GL_FRONT_AND_BACK)
     {
         m_error = GL_NO_ERROR;
-        m_colorMaterialFace = face;
-        m_colorMaterialTracking = pname;
-        switch (pname) {
-        case GL_AMBIENT:
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(false, true, false, false);
-            break;
-        case GL_DIFFUSE:
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(false, false, true, false);
-            break;
-        case GL_AMBIENT_AND_DIFFUSE:
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(false, true, true, false);
-            break;
-        case GL_SPECULAR:
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(false, false, false, true);
-            break;
-        case GL_EMISSION:
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(true, false, false, false);
-            break;
-        default:
-            m_error = GL_INVALID_ENUM;
-            m_colorMaterialTracking = GL_AMBIENT_AND_DIFFUSE;
-            if (m_enableColorMaterial)
-                m_lighting.enableColorMaterial(false, true, true, false);
-            break;
+        VertexPipeline::Face faceConverted;
+        switch (face) {
+            case GL_FRONT:
+                faceConverted = VertexPipeline::Face::FRONT;
+                break;
+            case GL_BACK:
+                faceConverted = VertexPipeline::Face::BACK;
+                break;
+            case GL_FRONT_AND_BACK:
+                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+                break;
+            default:
+                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+                m_error = GL_INVALID_ENUM;
+                break;
+        }
+
+        if (m_error != GL_INVALID_ENUM)
+        {
+            switch (pname) {
+            case GL_AMBIENT:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
+                break;
+            case GL_DIFFUSE:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
+                break;
+            case GL_AMBIENT_AND_DIFFUSE:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                break;
+            case GL_SPECULAR:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
+                break;
+            case GL_EMISSION:
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
+                break;
+            default:
+                m_error = GL_INVALID_ENUM;
+                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                break;
+            }
         }
     }
 }
@@ -1656,13 +1499,13 @@ void IceGL::glLightf(GLenum light, GLenum pname, GLfloat param)
         m_error = GL_SPEC_DEVIATION;
         break;
     case GL_CONSTANT_ATTENUATION:
-        m_lighting.setConstantAttenuationLight(light - GL_LIGHT0, param);
+        m_vertexPipeline.getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_LINEAR_ATTENUATION:
-        m_lighting.setLinearAttenuationLight(light - GL_LIGHT0, param);
+        m_vertexPipeline.getLighting().setLinearAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_QUADRATIC_ATTENUATION:
-        m_lighting.setQuadraticAttenuationLight(light - GL_LIGHT0, param);
+        m_vertexPipeline.getLighting().setQuadraticAttenuationLight(light - GL_LIGHT0, param);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1679,20 +1522,20 @@ void IceGL::glLightfv(GLenum light, GLenum pname, const GLfloat *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_AMBIENT:
-        m_lighting.setAmbientColorLight(light - GL_LIGHT0, {params});
+        m_vertexPipeline.getLighting().setAmbientColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_DIFFUSE:
-        m_lighting.setDiffuseColorLight(light - GL_LIGHT0, {params});
+        m_vertexPipeline.getLighting().setDiffuseColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_SPECULAR:
-        m_lighting.setSpecularColorLight(light - GL_LIGHT0, {params});
+        m_vertexPipeline.getLighting().setSpecularColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_POSITION:
     {
         Vec4 lightPos{params};
         Vec4 lightPosTransformed{};
-        m_m.transform(lightPosTransformed, lightPos);
-        m_lighting.setPosLight(light - GL_LIGHT0, lightPosTransformed);
+        m_vertexPipeline.getModelMatrix().transform(lightPosTransformed, lightPos);
+        m_vertexPipeline.getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
     }
     case GL_SPOT_DIRECTION:
@@ -1722,7 +1565,7 @@ void IceGL::glLightModelfv(GLenum pname, const GLfloat *params)
     m_error = GL_INVALID_ENUM;
     if (pname == GL_LIGHT_MODEL_AMBIENT)
     {
-        m_lighting.setAmbientColorScene({params});
+        m_vertexPipeline.getLighting().setAmbientColorScene({params});
         m_error = GL_NO_ERROR;
     }
     else
@@ -1764,8 +1607,6 @@ void IceGL::glColorPointer(GLint size, GLenum type, GLsizei stride, const void *
 
 void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
-    recalculateAndSetTnLMatrices();
-
     m_renderObj.setCount(count);
     m_renderObj.setArrayOffset(first);
     m_renderObj.setDrawMode(convertDrawMode(mode));
@@ -1795,8 +1636,6 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
         m_error = GL_INVALID_ENUM;
         return;
     }
-
-    recalculateAndSetTnLMatrices();
 
     m_renderObj.setCount(count);
     m_renderObj.setDrawMode(convertDrawMode(mode));
@@ -1882,91 +1721,25 @@ RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
 
 void IceGL::glPushMatrix()
 {
-    m_error = GL_NO_ERROR;
-    if (matrixMode == GL_MODELVIEW)
+    if (m_vertexPipeline.pushMatrix())
     {
-        if (m_mStackIndex < MODEL_MATRIX_STACK_DEPTH)
-        {
-            m_mStack[m_mStackIndex] = m_m;
-            m_mStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_OVERFLOW;
-        }
-    }
-    else if (matrixMode == GL_PROJECTION)
-    {
-        if (m_pStackIndex < PROJECTION_MATRIX_STACK_DEPTH)
-        {
-            m_pStack[m_pStackIndex] = m_p;
-            m_pStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_OVERFLOW;
-        }
+        m_error = GL_NO_ERROR;
     }
     else
     {
-        m_error = GL_INVALID_ENUM;
+        m_error = GL_STACK_OVERFLOW;
     }
 }
 
 void IceGL::glPopMatrix()
 {
-    m_error = GL_NO_ERROR;
-    if (matrixMode == GL_MODELVIEW)
+    if (m_vertexPipeline.popMatrix())
     {
-        if (m_mStackIndex > 0)
-        {
-            m_mStackIndex--;
-            m_m = m_mStack[m_mStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_UNDERFLOW;
-        }
-    }
-    else if (matrixMode == GL_PROJECTION)
-    {
-        if (m_pStackIndex > 0)
-        {
-            m_pStackIndex--;
-            m_p = m_pStack[m_pStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            m_error = GL_STACK_UNDERFLOW;
-        }
+        m_error = GL_NO_ERROR;
     }
     else
     {
-        m_error = GL_INVALID_ENUM;
-    }
-}
-
-void IceGL::recalculateAndSetTnLMatrices()
-{
-    if (m_matricesOutdated)
-    {
-        // Update transformation matrix
-        Mat44 t{m_m};
-        t *= m_p;
-        m_vertexPipeline.setModelProjectionMatrix(t);
-        m_vertexPipeline.setModelMatrix(m_m);
-
-        Mat44 inv{m_m};
-        inv.invert();
-        inv.transpose();
-        // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
-        m_vertexPipeline.setNormalMatrix(inv);
-
-        m_matricesOutdated = false;
+        m_error = GL_STACK_OVERFLOW;
     }
 }
 
@@ -1993,10 +1766,10 @@ void IceGL::glTexGeni(GLenum coord, GLenum pname, GLint param)
     {
         switch (coord) {
         case GL_S:
-            m_texGen.setTexGenModeS(mode);
+            m_vertexPipeline.getTexGen().setTexGenModeS(mode);
             break;
         case GL_T:
-            m_texGen.setTexGenModeT(mode);
+            m_vertexPipeline.getTexGen().setTexGenModeT(mode);
             break;
         default:
             // Normally GL_R and GL_Q wouldn't rise an invalid enum, but they are right now not implemented
@@ -2017,17 +1790,17 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
     switch (pname) {
     case GL_OBJECT_PLANE:
         if (coord == GL_S)
-            m_texGen.setTexGenVecObjS({param});
+            m_vertexPipeline.getTexGen().setTexGenVecObjS({param});
         else if (coord == GL_T)
-            m_texGen.setTexGenVecObjT({param});
+            m_vertexPipeline.getTexGen().setTexGenVecObjT({param});
         else
             m_error = GL_INVALID_ENUM;
         break;
     case GL_EYE_PLANE:
         if (coord == GL_S)
-            m_texGen.setTexGenVecEyeS(m_m, {param});
+            m_vertexPipeline.getTexGen().setTexGenVecEyeS(m_vertexPipeline.getModelMatrix(), {param});
         else if (coord == GL_T)
-            m_texGen.setTexGenVecEyeT(m_m, {param});
+            m_vertexPipeline.getTexGen().setTexGenVecEyeT(m_vertexPipeline.getModelMatrix(), {param});
         else
             m_error = GL_INVALID_ENUM;
         break;
@@ -2035,53 +1808,6 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
         glTexGeni(coord, pname, static_cast<GLint>(param[0]));
         break;
     }
-}
-
-GLenum IceGL::setFogLut(GLenum mode, float start, float end, float density)
-{
-    std::function <float(float)> fogFunction;
-
-    // Set fog function
-    switch (mode) {
-    case GL_LINEAR:
-        fogFunction = [&](float z) {
-            float f = (end - z) / (end - start);
-            return f;
-        };
-        break;
-    case GL_EXP:
-        fogFunction = [&](float z) {
-            float f = expf(-(density * z));
-            return f;
-        };
-        break;
-    case GL_EXP2:
-        fogFunction = [&](float z) {
-            float f = expf(powf(-(density * z), 2));
-            return f;
-        };
-        break;
-    default:
-        fogFunction = [](float) {
-            return 1.0f;
-        };
-        break;
-    }
-
-    // Calculate fog LUT
-    std::array<float, 33> lut;
-    for (std::size_t i = 0; i < lut.size(); i++)
-    {
-        float f = fogFunction(powf(2, i));
-        lut[i] = f;
-    }
-
-    // Set fog LUT
-    if (m_renderer.setFogLut(lut, start, end))
-    {
-        return GL_NO_ERROR;
-    }
-    return GL_OUT_OF_MEMORY;
 }
 
 void IceGL::glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far)
@@ -2139,13 +1865,13 @@ void IceGL::glGetIntegerv(GLenum pname, GLint *params)
 {
     switch (pname) {
     case GL_MAX_LIGHTS:
-        *params = m_lighting.MAX_LIGHTS;
+        *params = m_vertexPipeline.getLighting().MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
-        *params = MODEL_MATRIX_STACK_DEPTH;
+        *params = VertexPipeline::getModelMatrixStackDepth();
         break;
     case GL_MAX_PROJECTION_STACK_DEPTH:
-        *params = PROJECTION_MATRIX_STACK_DEPTH;
+        *params = VertexPipeline::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
         *params = MAX_TEX_SIZE;
@@ -2190,13 +1916,13 @@ void IceGL::glCullFace(GLenum mode)
     m_error = GL_NO_ERROR;
     switch (mode) {
     case GL_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::BACK);
         break;
     case GL_FRONT:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::CullMode::FRONT_AND_BACK);
+        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT_AND_BACK);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -2204,15 +1930,15 @@ void IceGL::glCullFace(GLenum mode)
     }
 }
 
-IRenderer::TextureWrapMode IceGL::convertGlTextureWrapMode(const GLenum mode)
+PixelPipeline::TextureWrapMode IceGL::convertGlTextureWrapMode(const GLenum mode)
 {
     switch (mode) {
     case GL_CLAMP_TO_EDGE:
-        return IRenderer::TextureWrapMode::CLAMP_TO_EDGE;
+        return PixelPipeline::TextureWrapMode::CLAMP_TO_EDGE;
     case GL_REPEAT:
-        return IRenderer::TextureWrapMode::REPEAT;
+        return PixelPipeline::TextureWrapMode::REPEAT;
     default:
         m_error = GL_INVALID_ENUM;
-        return IRenderer::TextureWrapMode::REPEAT;
+        return PixelPipeline::TextureWrapMode::REPEAT;
     }
 }

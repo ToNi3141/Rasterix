@@ -38,6 +38,7 @@ module TextureMappingUnit
     input  wire [ 31 : 0]               confFunc, // See TexEnv for more documentation
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
     input  wire [ 31 : 0]               confTextureConfig,
+    input  wire                         confEnable,
 
     // Texture memory access of a texel quad
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr00,
@@ -135,6 +136,10 @@ module TextureMappingUnit
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step2_texel;
+    wire [PIXEL_WIDTH - 1 : 0]  step2_previousColor;
+
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(4)) 
+        step2_previousColorDelay (.clk(aclk), .in(step1_previousColor), .out(step2_previousColor));
 
     TexEnv #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
@@ -157,7 +162,7 @@ module TextureMappingUnit
     // Output final texel color
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign fragmentColor = step2_texel;
+    assign fragmentColor = (confEnable) ? step2_texel : step2_previousColor;
 
 endmodule
 

@@ -51,6 +51,7 @@ module PixelPipeline
     input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
 
     // Shader configurations
+    input  wire [31 : 0]                confFeatureEnable,
     input  wire [31 : 0]                confFragmentPipelineConfig,
     input  wire [PIXEL_WIDTH - 1 : 0]   confFragmentPipelineFogColor,
     input  wire [31 : 0]                confTMU0TexEnvConfig,
@@ -189,6 +190,7 @@ module PixelPipeline
         .confFunc(confTMU0TexEnvConfig),
         .confTextureEnvColor(confTMU0TexEnvColor),
         .confTextureConfig(confTMU0TextureConfig),
+        .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS]),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -239,6 +241,7 @@ module PixelPipeline
         .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
         .confFogColor(confFragmentPipelineFogColor),
+        .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_FOG_POS]),
 
         .depth(step1_depthWFloat),
         .texelColor(step1_fragmentColor),
@@ -260,6 +263,7 @@ module PixelPipeline
         .resetn(resetn),
 
         .conf(confFragmentPipelineConfig),
+        .confFeatureEnable(confFeatureEnable),
 
         .valid(step2_valid),
         .fragmentColor(step2_fragmentColor),

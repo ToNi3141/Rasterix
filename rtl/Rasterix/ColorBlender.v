@@ -50,6 +50,7 @@ module ColorBlender
 
     input  wire [ 3 : 0]                funcSFactor,
     input  wire [ 3 : 0]                funcDFactor,
+    input  wire                         confEnable,
 
     input  wire [PIXEL_WIDTH - 1 : 0]   sourceColor,
     input  wire [PIXEL_WIDTH - 1 : 0]   destColor,
@@ -76,6 +77,11 @@ module ColorBlender
     reg [SUB_PIXEL_WIDTH - 1 : 0] v31;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v32;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v33;
+    wire [PIXEL_WIDTH - 1 : 0]    colorMixed;
+    wire [PIXEL_WIDTH - 1 : 0]    step_sourceColor;
+
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(2)) 
+        step_sourceColorDelay (.clk(aclk), .in(sourceColor), .out(step_sourceColor));
 
     always @*
     begin : Select
@@ -273,7 +279,8 @@ module ColorBlender
             v33
         }),
 
-        .mixedColor(color)
+        .mixedColor(colorMixed)
     );
 
+    assign color = (confEnable) ? colorMixed : step_sourceColor;
 endmodule
