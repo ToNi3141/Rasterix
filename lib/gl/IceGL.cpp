@@ -364,6 +364,11 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
         return;
     }
 
+    // Initialize the memory with zero for non power of two textures.
+    // Its probably the most reasonable init, because if the alpha channel is activated,
+    // then the not used area is then just transparent.
+    memset(texMemShared.get(), 0, widthRounded * heightRounded * 2);
+
     if (pixels != nullptr)
     {
         // Currently only GL_RGB and GL_RGBA is supported
