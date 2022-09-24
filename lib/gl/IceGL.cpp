@@ -895,28 +895,28 @@ GLint IceGL::convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint para
     return ret;
 }
 
-GLint IceGL::convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha) 
+GLint IceGL::convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha) 
 {
     GLint ret = GL_NO_ERROR;
     switch (val) 
     {
         case GL_REPLACE:
-            conv = IRenderer::TexEnvConf::Combine::REPLACE;
+            conv = PixelPipeline::TexEnv::Combine::REPLACE;
             break;
         case GL_MODULATE:
-            conv = IRenderer::TexEnvConf::Combine::MODULATE;
+            conv = PixelPipeline::TexEnv::Combine::MODULATE;
             break;
         case GL_ADD:
-            conv = IRenderer::TexEnvConf::Combine::ADD;
+            conv = PixelPipeline::TexEnv::Combine::ADD;
             break;
         case GL_ADD_SIGNED:
-            conv = IRenderer::TexEnvConf::Combine::ADD_SIGNED;
+            conv = PixelPipeline::TexEnv::Combine::ADD_SIGNED;
             break;
         case GL_INTERPOLATE:
-            conv = IRenderer::TexEnvConf::Combine::INTERPOLATE;
+            conv = PixelPipeline::TexEnv::Combine::INTERPOLATE;
             break;
         case GL_SUBTRACT:
-            conv = IRenderer::TexEnvConf::Combine::SUBTRACT;
+            conv = PixelPipeline::TexEnv::Combine::SUBTRACT;
             break;
         case GL_DOT3_RGB:
             if (alpha) 
@@ -925,7 +925,7 @@ GLint IceGL::convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, boo
             }
             else 
             {
-                conv = IRenderer::TexEnvConf::Combine::DOT3_RGB;
+                conv = PixelPipeline::TexEnv::Combine::DOT3_RGB;
             }
             break;
         case GL_DOT3_RGBA:
@@ -935,7 +935,7 @@ GLint IceGL::convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, boo
             }
             else 
             {
-                conv = IRenderer::TexEnvConf::Combine::DOT3_RGBA;
+                conv = PixelPipeline::TexEnv::Combine::DOT3_RGBA;
             }
             break;
         default:
@@ -945,16 +945,16 @@ GLint IceGL::convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, boo
     return ret;
 }
 
-GLint IceGL::convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha)
+GLint IceGL::convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
         case GL_SRC_ALPHA:
-            conf = IRenderer::TexEnvConf::Operand::SRC_ALPHA;
+            conf = PixelPipeline::TexEnv::Operand::SRC_ALPHA;
             break;
         case GL_ONE_MINUS_SRC_ALPHA:
-            conf = IRenderer::TexEnvConf::Operand::ONE_MINUS_SRC_ALPHA;
+            conf = PixelPipeline::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
             break;
         case GL_SRC_COLOR:
             if (alpha)
@@ -963,7 +963,7 @@ GLint IceGL::convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, boo
             }
             else
             {
-                conf = IRenderer::TexEnvConf::Operand::SRC_COLOR;
+                conf = PixelPipeline::TexEnv::Operand::SRC_COLOR;
             }
             break;
         case GL_ONE_MINUS_SRC_COLOR:
@@ -973,7 +973,7 @@ GLint IceGL::convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, boo
             }
             else
             {
-                conf = IRenderer::TexEnvConf::Operand::ONE_MINUS_SRC_COLOR;
+                conf = PixelPipeline::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
             }
             break;
         default:
@@ -982,22 +982,22 @@ GLint IceGL::convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, boo
     return ret;
 }
 
-GLint IceGL::convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val)
+GLint IceGL::convertSrcReg(PixelPipeline::TexEnv::SrcReg& conf, GLint val)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
         case GL_TEXTURE:
-            conf = IRenderer::TexEnvConf::SrcReg::TEXTURE;
+            conf = PixelPipeline::TexEnv::SrcReg::TEXTURE;
             break;
         case GL_CONSTANT:
-            conf = IRenderer::TexEnvConf::SrcReg::CONSTANT;
+            conf = PixelPipeline::TexEnv::SrcReg::CONSTANT;
             break;
         case GL_PRIMARY_COLOR:
-            conf = IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR;
+            conf = PixelPipeline::TexEnv::SrcReg::PRIMARY_COLOR;
             break;
         case GL_PREVIOUS:
-            conf = IRenderer::TexEnvConf::SrcReg::PREVIOUS;
+            conf = PixelPipeline::TexEnv::SrcReg::PREVIOUS;
             break;
         default:
             ret = GL_INVALID_ENUM;
@@ -1023,7 +1023,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_COMBINE_RGB:
             {
-                IRenderer::TexEnvConf::Combine c {};
+                PixelPipeline::TexEnv::Combine c {};
                 m_error = convertCombine(c, param, false);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setCombineRgb(c);
@@ -1031,7 +1031,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_COMBINE_ALPHA:
             {
-                IRenderer::TexEnvConf::Combine c {};
+                PixelPipeline::TexEnv::Combine c {};
                 m_error = convertCombine(c, param, true);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setCombineAlpha(c);
@@ -1039,7 +1039,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC0_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegRgb0(c);
@@ -1047,7 +1047,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC1_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegRgb1(c);
@@ -1055,7 +1055,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC2_RGB:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegRgb2(c);
@@ -1063,7 +1063,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC0_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegAlpha0(c);
@@ -1071,7 +1071,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC1_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegAlpha1(c);
@@ -1079,7 +1079,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_SRC2_ALPHA:
             {
-                IRenderer::TexEnvConf::SrcReg c {};
+                PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setSrcRegAlpha2(c);
@@ -1087,7 +1087,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND0_RGB:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandRgb0(c);
@@ -1095,7 +1095,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND1_RGB:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandRgb1(c);
@@ -1103,7 +1103,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND2_RGB:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandRgb2(c);
@@ -1111,7 +1111,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND0_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandAlpha0(c);
@@ -1119,7 +1119,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND1_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandAlpha1(c);
@@ -1127,7 +1127,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_OPERAND2_ALPHA:
             {
-                IRenderer::TexEnvConf::Operand c {};
+                PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
                     m_pixelPipeline.texEnv().setOperandAlpha2(c);

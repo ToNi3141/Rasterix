@@ -26,15 +26,16 @@ public:
         COMBINE
     };
 
-    using TextureWrapMode = IRenderer::TextureWrapMode;
-    using Combine = IRenderer::TexEnvConf::Combine;
+    using FragmentPipeline = IRenderer::FragmentPipelineConf;
     using TestFunc = IRenderer::FragmentPipelineConf::TestFunc;
     using BlendFunc = IRenderer::FragmentPipelineConf::BlendFunc;
     using LogicOp = IRenderer::FragmentPipelineConf::LogicOp;
 
     using TMU = IRenderer::TMU;
+    using TextureWrapMode = IRenderer::TextureWrapMode;
+    using Combine = IRenderer::TexEnvConf::Combine;
     using TexEnv = IRenderer::TexEnvConf;
-    using FragmentPipeline = IRenderer::FragmentPipelineConf;
+    
     using FeatureEnable = IRenderer::FeatureEnableConf;
 
     PixelPipeline(IRenderer& renderer);

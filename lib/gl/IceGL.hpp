@@ -134,14 +134,14 @@ private:
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
     // If we have this, we could make all this functions const and return an empty optional if the conversion failed
-    IRenderer::FragmentPipelineConf::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
+    PixelPipeline::FragmentPipeline::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
     RenderObj::Type convertType(GLenum type);
     RenderObj::DrawMode convertDrawMode(GLenum drawMode);
     PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
     GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param);
-    GLint convertCombine(IRenderer::TexEnvConf::Combine& conv, GLint val, bool alpha);
-    GLint convertOperand(IRenderer::TexEnvConf::Operand& conf, GLint val, bool alpha);
-    GLint convertSrcReg(IRenderer::TexEnvConf::SrcReg& conf, GLint val);
+    GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha);
+    GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha);
+    GLint convertSrcReg(PixelPipeline::TexEnv::SrcReg& conf, GLint val);
 
     IRenderer& m_renderer;
     PixelPipeline m_pixelPipeline;
