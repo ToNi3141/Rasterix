@@ -56,11 +56,11 @@ void IceGL::glMatrixMode(GLenum mm)
     m_error = GL_NO_ERROR;
     if (mm == GL_MODELVIEW)
     {
-        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::MODELVIEW);
+        vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::MODELVIEW);
     }
     else if (mm == GL_PROJECTION)
     {
-        m_vertexPipeline.setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
+        vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
     }
     else
     {
@@ -71,7 +71,7 @@ void IceGL::glMatrixMode(GLenum mm)
 void IceGL::glMultMatrixf(const GLfloat* m)
 {
     const Mat44 *m44 = reinterpret_cast<const Mat44*>(m);
-    m_vertexPipeline.multiply(*m44);
+    vertexPipeline().multiply(*m44);
 }
 
 void IceGL::glMultMatrixd(const GLdouble* m)
@@ -86,22 +86,22 @@ void IceGL::glMultMatrixd(const GLdouble* m)
 
 void IceGL::glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
-    m_vertexPipeline.translate(x, y, z);
+    vertexPipeline().translate(x, y, z);
 }
 
 void IceGL::glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
-    m_vertexPipeline.scale(x, y, z);
+    vertexPipeline().scale(x, y, z);
 }
 
 void IceGL::glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-    m_vertexPipeline.rotate(angle, x, y, z);
+    vertexPipeline().rotate(angle, x, y, z);
 }
 
 void IceGL::glLoadIdentity()
 {
-    m_vertexPipeline.loadIdentity();
+    vertexPipeline().loadIdentity();
 }
 
 void IceGL::gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
@@ -179,7 +179,7 @@ void IceGL::glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
     // 0 and height which means a effective screen resolution of height + 1. For instance, we have a resolution of
     // 480 x 272. The view port transformation would go from 0 to 480 which are then 481px. Thats the reason why we
     // decrement here the resolution by one.
-    m_vertexPipeline.setViewport(x, y, width, height);
+    vertexPipeline().setViewport(x, y, width, height);
 }
 
 void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
@@ -189,7 +189,7 @@ void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
     if (zFar  > 1.0f) zFar  = 1.0f;
     if (zFar  < -1.0f) zFar  = -1.0f;
 
-    m_vertexPipeline.setDepthRange(zNear, zFar);
+    vertexPipeline().setDepthRange(zNear, zFar);
     // TODO: Check in which state the renderer is and throw an GL_INVALID_OPERATION if this is called within an glBegin / glEnd
 }
 
@@ -243,7 +243,7 @@ void IceGL::glEnd()
     m_renderObjBeginEnd.setCount(m_vertexBuffer.size());
 
 
-    m_vertexPipeline.drawObj(m_renderObjBeginEnd);
+    vertexPipeline().drawObj(m_renderObjBeginEnd);
 }
 
 void IceGL::glTexCoord2f(GLfloat s, GLfloat t)
@@ -422,7 +422,7 @@ void IceGL::glTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsi
             }
         }
 
-        if (!m_pixelPipeline.uploadTexture(texMemShared, widthRounded, heightRounded))
+        if (!pixelPipeline().uploadTexture(texMemShared, widthRounded, heightRounded))
         {
             m_error = GL_INVALID_VALUE;
             return;
@@ -476,7 +476,7 @@ void IceGL::glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::pair<bool, uint16_t> ret = m_pixelPipeline.createTexture();
+        std::pair<bool, uint16_t> ret = pixelPipeline().createTexture();
         if (ret.first)
         {
             textures[i] = ret.second;
@@ -504,7 +504,7 @@ void IceGL::glDeleteTextures(GLsizei n, const GLuint *textures)
         // From the specification: glDeleteTextures silently ignores 0's and names that do not correspond to existing textures.
         if (textures[i] != 0) 
         {
-            m_pixelPipeline.deleteTexture(textures[i]);
+            pixelPipeline().deleteTexture(textures[i]);
         }
         
     }
@@ -519,11 +519,11 @@ void IceGL::glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
-    m_pixelPipeline.setBoundTexture(texture);
+    pixelPipeline().setBoundTexture(texture);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_pixelPipeline.useTexture(PixelPipeline::TMU::TMU0);
+        pixelPipeline().useTexture(PixelPipeline::TMU::TMU0);
     }
     else 
     {
@@ -544,7 +544,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (m_error == GL_NO_ERROR)
             {
-                m_pixelPipeline.setTexWrapModeS(mode);
+                pixelPipeline().setTexWrapModeS(mode);
             }
             break;
         }
@@ -553,7 +553,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (m_error == GL_NO_ERROR)
             {
-                m_pixelPipeline.setTexWrapModeT(mode);
+                pixelPipeline().setTexWrapModeT(mode);
             }
             break;
         }
@@ -561,7 +561,7 @@ void IceGL::glTexParameteri(GLenum target, GLenum pname, GLint param)
         case GL_TEXTURE_MAG_FILTER:
             if ((param == GL_LINEAR) || (param == GL_NEAREST))
             {
-                m_pixelPipeline.setEnableMagFilter(param == GL_LINEAR);
+                pixelPipeline().setEnableMagFilter(param == GL_LINEAR);
             }
             else
             {
@@ -588,7 +588,7 @@ void IceGL::glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 void IceGL::glClear(GLbitfield mask)
 {
     // TODO GL_STENCIL_BUFFER_BIT has to be implemented
-    if (m_pixelPipeline.clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT))
+    if (pixelPipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT))
     {
         m_error = GL_NO_ERROR;
     }
@@ -601,7 +601,7 @@ void IceGL::glClear(GLbitfield mask)
 void IceGL::glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     (void)alpha;
-    if (m_pixelPipeline.setClearColor({ { red, green, blue, alpha } }))
+    if (pixelPipeline().setClearColor({ { red, green, blue, alpha } }))
     {
         m_error = GL_NO_ERROR;
     }
@@ -623,7 +623,7 @@ void IceGL::glClearDepthf(GLclampf depth)
         depth = 1.0f;
     }
 
-    if (m_pixelPipeline.setClearDepth(depth))
+    if (pixelPipeline().setClearDepth(depth))
     {
         m_error = GL_NO_ERROR;
     }
@@ -645,13 +645,13 @@ void IceGL::glEnable(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        m_pixelPipeline.featureEnable().setEnableTmu0(true);
+        pixelPipeline().featureEnable().setEnableTmu0(true);
         break;
     case GL_ALPHA_TEST:
         // Note: The alpha test disabling and enabling is a bit special. If the alpha test is disabled, we are just saving
         // the current alpha test func and the reference value. When the test is enabled, we just recover this values.
         // Seems to work perfect.
-        m_pixelPipeline.featureEnable().setEnableAlphaTest(true);
+        pixelPipeline().featureEnable().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
         // For the depth test it is not possible to use a similar algorithm like we do for the alpha test. The main reason
@@ -659,13 +659,13 @@ void IceGL::glEnable(GLenum cap)
         // and never writes into the depth buffer. We could use glDepthMask to avoid writing, but then we also disabling
         // glClear() what we obviously dont want. The easiest fix is to introduce a special switch. If this switch is disabled
         // the depth buffer always passes and never writes and glClear() can clear the depth buffer.
-        m_pixelPipeline.featureEnable().setEnableDepthTest(true);
+        pixelPipeline().featureEnable().setEnableDepthTest(true);
         break;
     case GL_BLEND:
-        m_pixelPipeline.featureEnable().setEnableBlending(true);
+        pixelPipeline().featureEnable().setEnableBlending(true);
         break;
     case GL_LIGHTING:
-        m_vertexPipeline.getLighting().enableLighting(true);
+        vertexPipeline().getLighting().enableLighting(true);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -675,22 +675,22 @@ void IceGL::glEnable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_vertexPipeline.getLighting().enableLight(cap - GL_LIGHT0, true);
+        vertexPipeline().getLighting().enableLight(cap - GL_LIGHT0, true);
         break;
     case GL_TEXTURE_GEN_S:
-        m_vertexPipeline.getTexGen().enableTexGenS(true);
+        vertexPipeline().getTexGen().enableTexGenS(true);
         break;
     case GL_TEXTURE_GEN_T:
-        m_vertexPipeline.getTexGen().enableTexGenT(true);
+        vertexPipeline().getTexGen().enableTexGenT(true);
         break;
     case GL_CULL_FACE:
-        m_vertexPipeline.enableCulling(true);
+        vertexPipeline().enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
-        m_vertexPipeline.enableColorMaterial(true);
+        vertexPipeline().enableColorMaterial(true);
         break;
     case GL_FOG:
-        m_pixelPipeline.featureEnable().setEnableFog(true);
+        pixelPipeline().featureEnable().setEnableFog(true);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -704,26 +704,26 @@ void IceGL::glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        m_pixelPipeline.featureEnable().setEnableTmu0(false);
+        pixelPipeline().featureEnable().setEnableTmu0(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
-        m_pixelPipeline.featureEnable().setEnableAlphaTest(false);
+        pixelPipeline().featureEnable().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
-        m_pixelPipeline.featureEnable().setEnableDepthTest(false);
+        pixelPipeline().featureEnable().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
-        m_pixelPipeline.featureEnable().setEnableBlending(false);
+        pixelPipeline().featureEnable().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
-        m_vertexPipeline.getLighting().enableLighting(false);
+        vertexPipeline().getLighting().enableLighting(false);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -733,22 +733,22 @@ void IceGL::glDisable(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        m_vertexPipeline.getLighting().enableLight(cap - GL_LIGHT0, false);
+        vertexPipeline().getLighting().enableLight(cap - GL_LIGHT0, false);
         break;
     case GL_TEXTURE_GEN_S:
-        m_vertexPipeline.getTexGen().enableTexGenS(false);
+        vertexPipeline().getTexGen().enableTexGenS(false);
         break;
     case GL_TEXTURE_GEN_T:
-        m_vertexPipeline.getTexGen().enableTexGenT(false);
+        vertexPipeline().getTexGen().enableTexGenT(false);
         break;
     case GL_CULL_FACE:
-        m_vertexPipeline.enableCulling(false);
+        vertexPipeline().enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
-        m_vertexPipeline.enableColorMaterial(false);
+        vertexPipeline().enableColorMaterial(false);
         break;
     case GL_FOG:
-        m_pixelPipeline.featureEnable().setEnableFog(false);
+        pixelPipeline().featureEnable().setEnableFog(false);
         break;
     default:
         m_error = GL_SPEC_DEVIATION;
@@ -759,16 +759,16 @@ void IceGL::glDisable(GLenum cap)
 void IceGL::glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     m_error = GL_NO_ERROR;
-    m_pixelPipeline.fragmentPipeline().setColorMaskR(red == GL_TRUE);
-    m_pixelPipeline.fragmentPipeline().setColorMaskG(green == GL_TRUE);
-    m_pixelPipeline.fragmentPipeline().setColorMaskB(blue == GL_TRUE);
-    m_pixelPipeline.fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
+    pixelPipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
+    pixelPipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
+    pixelPipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
+    pixelPipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
 }
 
 void IceGL::glDepthMask(GLboolean flag)
 {
     m_error = GL_NO_ERROR;
-    m_pixelPipeline.fragmentPipeline().setDepthMask(flag == GL_TRUE);
+    pixelPipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
 }
 
 void IceGL::glDepthFunc(GLenum func)
@@ -809,7 +809,7 @@ void IceGL::glDepthFunc(GLenum func)
 
     if (m_error == GL_NO_ERROR)
     {
-        m_pixelPipeline.fragmentPipeline().setDepthFunc(testFunc);
+        pixelPipeline().fragmentPipeline().setDepthFunc(testFunc);
     }
 }
 
@@ -857,8 +857,8 @@ void IceGL::glAlphaFunc(GLenum func, GLclampf ref)
         {
             refFix = 0xff;
         }
-        m_pixelPipeline.fragmentPipeline().setAlphaFunc(testFunc);
-        m_pixelPipeline.fragmentPipeline().setRefAlphaValue(refFix);
+        pixelPipeline().fragmentPipeline().setAlphaFunc(testFunc);
+        pixelPipeline().fragmentPipeline().setRefAlphaValue(refFix);
     }
 }
 
@@ -1018,7 +1018,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnvMode mode {};
                 m_error = convertTexEnvMode(mode, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.setTexEnvMode(mode); 
+                    pixelPipeline().setTexEnvMode(mode); 
                 break;
             }
             case GL_COMBINE_RGB:
@@ -1026,7 +1026,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Combine c {};
                 m_error = convertCombine(c, param, false);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setCombineRgb(c);
+                    pixelPipeline().texEnv().setCombineRgb(c);
                 break;
             }
             case GL_COMBINE_ALPHA:
@@ -1034,7 +1034,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Combine c {};
                 m_error = convertCombine(c, param, true);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setCombineAlpha(c);
+                    pixelPipeline().texEnv().setCombineAlpha(c);
                 break;
             }
             case GL_SRC0_RGB:
@@ -1042,7 +1042,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegRgb0(c);
+                    pixelPipeline().texEnv().setSrcRegRgb0(c);
                 break;
             }
             case GL_SRC1_RGB:
@@ -1050,7 +1050,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegRgb1(c);
+                    pixelPipeline().texEnv().setSrcRegRgb1(c);
                 break;            
             }
             case GL_SRC2_RGB:
@@ -1058,7 +1058,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegRgb2(c);
+                    pixelPipeline().texEnv().setSrcRegRgb2(c);
                 break;
             }
             case GL_SRC0_ALPHA:
@@ -1066,7 +1066,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegAlpha0(c);
+                    pixelPipeline().texEnv().setSrcRegAlpha0(c);
                 break;
             }
             case GL_SRC1_ALPHA:
@@ -1074,7 +1074,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegAlpha1(c);
+                    pixelPipeline().texEnv().setSrcRegAlpha1(c);
                 break;            
             }
             case GL_SRC2_ALPHA:
@@ -1082,7 +1082,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::SrcReg c {};
                 m_error = convertSrcReg(c, param);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setSrcRegAlpha2(c);
+                    pixelPipeline().texEnv().setSrcRegAlpha2(c);
                 break;
             }
             case GL_OPERAND0_RGB:
@@ -1090,7 +1090,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandRgb0(c);
+                    pixelPipeline().texEnv().setOperandRgb0(c);
                 break;
             }
             case GL_OPERAND1_RGB:
@@ -1098,7 +1098,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandRgb1(c);
+                    pixelPipeline().texEnv().setOperandRgb1(c);
                 break;
             }
             case GL_OPERAND2_RGB:
@@ -1106,7 +1106,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, false);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandRgb2(c);
+                    pixelPipeline().texEnv().setOperandRgb2(c);
                 break;
             }
             case GL_OPERAND0_ALPHA:
@@ -1114,7 +1114,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandAlpha0(c);
+                    pixelPipeline().texEnv().setOperandAlpha0(c);
                 break;
             }
             case GL_OPERAND1_ALPHA:
@@ -1122,7 +1122,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandAlpha1(c);
+                    pixelPipeline().texEnv().setOperandAlpha1(c);
                 break;
             }
             case GL_OPERAND2_ALPHA:
@@ -1130,7 +1130,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                 PixelPipeline::TexEnv::Operand c {};
                 m_error = convertOperand(c, param, true);
                 if (m_error == GL_NO_ERROR)
-                    m_pixelPipeline.texEnv().setOperandAlpha2(c);
+                    pixelPipeline().texEnv().setOperandAlpha2(c);
                 break;
             }
             case GL_RGB_SCALE:
@@ -1138,7 +1138,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = log2(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        m_pixelPipeline.texEnv().setShiftRgb(shift);
+                        pixelPipeline().texEnv().setShiftRgb(shift);
                         m_error = GL_NO_ERROR;
                     }
                     else 
@@ -1152,7 +1152,7 @@ void IceGL::glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = log2(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        m_pixelPipeline.texEnv().setShiftAlpha(shift);
+                        pixelPipeline().texEnv().setShiftAlpha(shift);
                         m_error = GL_NO_ERROR;
                     }
                     else 
@@ -1177,7 +1177,7 @@ void IceGL::glTexEnvfv(GLenum target, GLenum pname, const GLfloat *param)
 {
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (m_pixelPipeline.setTexEnvColor({ { param[0], param[1], param[2], param[3] } }))
+        if (pixelPipeline().setTexEnvColor({ { param[0], param[1], param[2], param[3] } }))
         {
             m_error = GL_NO_ERROR;
         }
@@ -1234,8 +1234,8 @@ void IceGL::glBlendFunc(GLenum sfactor, GLenum dfactor)
     }
     else
     {
-        m_pixelPipeline.fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(sfactor));
-        m_pixelPipeline.fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dfactor));
+        pixelPipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(sfactor));
+        pixelPipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dfactor));
     }
 }
 
@@ -1295,7 +1295,7 @@ void IceGL::glLogicOp(GLenum opcode)
         logicOp = PixelPipeline::LogicOp::COPY;
         break;
     }
-    // m_pixelPipeline.setLogicOp(setLogicOp); // TODO: Not yet implemented
+    // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
 }
 
 void IceGL::glFogf(GLenum pname, GLfloat param)
@@ -1305,13 +1305,13 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
     case GL_FOG_MODE:
         switch (static_cast<GLenum>(param)) {
             case GL_EXP:
-                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::EXP);
+                pixelPipeline().setFogMode(PixelPipeline::FogMode::EXP);
                 break;
             case GL_EXP2:
-                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::EXP2);
+                pixelPipeline().setFogMode(PixelPipeline::FogMode::EXP2);
                 break;
             case GL_LINEAR:
-                m_pixelPipeline.setFogMode(PixelPipeline::FogMode::LINEAR);
+                pixelPipeline().setFogMode(PixelPipeline::FogMode::LINEAR);
                 break;
             default:
                 m_error = GL_INVALID_ENUM;
@@ -1320,7 +1320,7 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
     case GL_FOG_DENSITY:
         if (param >= 0.0f)
         {
-            m_pixelPipeline.setFogDensity(param);
+            pixelPipeline().setFogDensity(param);
         }
         else
         {
@@ -1328,10 +1328,10 @@ void IceGL::glFogf(GLenum pname, GLfloat param)
         }
         break;
     case GL_FOG_START:
-        m_pixelPipeline.setFogStart(param);
+        pixelPipeline().setFogStart(param);
         break;
     case GL_FOG_END:
-        m_pixelPipeline.setFogEnd(param);
+        pixelPipeline().setFogEnd(param);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1353,7 +1353,7 @@ void IceGL::glFogfv(GLenum pname, const GLfloat *params)
     {
         Vec4 fogColor {};
         fogColor.fromArray(params, 4);
-        m_pixelPipeline.setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
     }
         break;
     default:
@@ -1382,7 +1382,7 @@ void IceGL::glFogiv(GLenum pname, const GLint *params)
         Vec4 fogColor {};
         fogColor.fromArray(params, 4);
         fogColor.div(255);
-        m_pixelPipeline.setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
         break;
     }
     default:
@@ -1398,7 +1398,7 @@ void IceGL::glMaterialf(GLenum face, GLenum pname, GLfloat param)
     {
         if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
         {
-            m_vertexPipeline.getLighting().setSpecularExponentMaterial(param);
+            vertexPipeline().getLighting().setSpecularExponentMaterial(param);
             m_error = GL_NO_ERROR;
         }
     }
@@ -1412,20 +1412,20 @@ void IceGL::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
         m_error = GL_NO_ERROR;
         switch (pname) {
         case GL_AMBIENT:
-            m_vertexPipeline.getLighting().setAmbientColorMaterial({params});
+            vertexPipeline().getLighting().setAmbientColorMaterial({params});
             break;
         case GL_DIFFUSE:
-            m_vertexPipeline.getLighting().setDiffuseColorMaterial({params});
+            vertexPipeline().getLighting().setDiffuseColorMaterial({params});
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            m_vertexPipeline.getLighting().setAmbientColorMaterial({params});
-            m_vertexPipeline.getLighting().setDiffuseColorMaterial({params});
+            vertexPipeline().getLighting().setAmbientColorMaterial({params});
+            vertexPipeline().getLighting().setDiffuseColorMaterial({params});
             break;
         case GL_SPECULAR:
-            m_vertexPipeline.getLighting().setSpecularColorMaterial({params});
+            vertexPipeline().getLighting().setSpecularColorMaterial({params});
             break;
         case GL_EMISSION:
-            m_vertexPipeline.getLighting().setEmissiveColorMaterial({params});
+            vertexPipeline().getLighting().setEmissiveColorMaterial({params});
             break;
         default:
             glMaterialf(face, pname, params[0]);
@@ -1461,23 +1461,23 @@ void IceGL::glColorMaterial(GLenum face, GLenum pname)
         {
             switch (pname) {
             case GL_AMBIENT:
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
                 break;
             case GL_DIFFUSE:
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
                 break;
             case GL_AMBIENT_AND_DIFFUSE:
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
                 break;
             case GL_SPECULAR:
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
                 break;
             case GL_EMISSION:
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
                 break;
             default:
                 m_error = GL_INVALID_ENUM;
-                m_vertexPipeline.setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+                vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
                 break;
             }
         }
@@ -1499,13 +1499,13 @@ void IceGL::glLightf(GLenum light, GLenum pname, GLfloat param)
         m_error = GL_SPEC_DEVIATION;
         break;
     case GL_CONSTANT_ATTENUATION:
-        m_vertexPipeline.getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
+        vertexPipeline().getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_LINEAR_ATTENUATION:
-        m_vertexPipeline.getLighting().setLinearAttenuationLight(light - GL_LIGHT0, param);
+        vertexPipeline().getLighting().setLinearAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_QUADRATIC_ATTENUATION:
-        m_vertexPipeline.getLighting().setQuadraticAttenuationLight(light - GL_LIGHT0, param);
+        vertexPipeline().getLighting().setQuadraticAttenuationLight(light - GL_LIGHT0, param);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1522,20 +1522,20 @@ void IceGL::glLightfv(GLenum light, GLenum pname, const GLfloat *params)
     m_error = GL_NO_ERROR;
     switch (pname) {
     case GL_AMBIENT:
-        m_vertexPipeline.getLighting().setAmbientColorLight(light - GL_LIGHT0, {params});
+        vertexPipeline().getLighting().setAmbientColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_DIFFUSE:
-        m_vertexPipeline.getLighting().setDiffuseColorLight(light - GL_LIGHT0, {params});
+        vertexPipeline().getLighting().setDiffuseColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_SPECULAR:
-        m_vertexPipeline.getLighting().setSpecularColorLight(light - GL_LIGHT0, {params});
+        vertexPipeline().getLighting().setSpecularColorLight(light - GL_LIGHT0, {params});
         break;
     case GL_POSITION:
     {
         Vec4 lightPos{params};
         Vec4 lightPosTransformed{};
-        m_vertexPipeline.getModelMatrix().transform(lightPosTransformed, lightPos);
-        m_vertexPipeline.getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
+        vertexPipeline().getModelMatrix().transform(lightPosTransformed, lightPos);
+        vertexPipeline().getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
     }
     case GL_SPOT_DIRECTION:
@@ -1565,7 +1565,7 @@ void IceGL::glLightModelfv(GLenum pname, const GLfloat *params)
     m_error = GL_INVALID_ENUM;
     if (pname == GL_LIGHT_MODEL_AMBIENT)
     {
-        m_vertexPipeline.getLighting().setAmbientColorScene({params});
+        vertexPipeline().getLighting().setAmbientColorScene({params});
         m_error = GL_NO_ERROR;
     }
     else
@@ -1576,46 +1576,46 @@ void IceGL::glLightModelfv(GLenum pname, const GLfloat *params)
 
 void IceGL::glVertexPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.setVertexSize(size);
-    m_renderObj.setVertexType(convertType(type));
-    m_renderObj.setVertexStride(stride);
-    m_renderObj.setVertexPointer(pointer);
+    renderObj().setVertexSize(size);
+    renderObj().setVertexType(convertType(type));
+    renderObj().setVertexStride(stride);
+    renderObj().setVertexPointer(pointer);
 }
 
 void IceGL::glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.setTexCoordSize(size);
-    m_renderObj.setTexCoordType(convertType(type));
-    m_renderObj.setTexCoordStride(stride);
-    m_renderObj.setTexCoordPointer(pointer);
+    renderObj().setTexCoordSize(size);
+    renderObj().setTexCoordType(convertType(type));
+    renderObj().setTexCoordStride(stride);
+    renderObj().setTexCoordPointer(pointer);
 }
 
 void IceGL::glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.setNormalType(convertType(type));
-    m_renderObj.setNormalStride(stride);
-    m_renderObj.setNormalPointer(pointer);
+    renderObj().setNormalType(convertType(type));
+    renderObj().setNormalStride(stride);
+    renderObj().setNormalPointer(pointer);
 }
 
 void IceGL::glColorPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
 {
-    m_renderObj.setColorSize(size);
-    m_renderObj.setColorType(convertType(type));
-    m_renderObj.setColorStride(stride);
-    m_renderObj.setColorPointer(pointer);
+    renderObj().setColorSize(size);
+    renderObj().setColorType(convertType(type));
+    renderObj().setColorStride(stride);
+    renderObj().setColorPointer(pointer);
 }
 
 void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
-    m_renderObj.setCount(count);
-    m_renderObj.setArrayOffset(first);
-    m_renderObj.setDrawMode(convertDrawMode(mode));
-    m_renderObj.enableIndices(false);
-    m_renderObj.setVertexColor(m_vertexColor);
+    renderObj().setCount(count);
+    renderObj().setArrayOffset(first);
+    renderObj().setDrawMode(convertDrawMode(mode));
+    renderObj().enableIndices(false);
+    renderObj().setVertexColor(m_vertexColor);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderObj);
+        vertexPipeline().drawObj(m_renderObj);
     }
 }
 
@@ -1624,28 +1624,28 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
     m_error = GL_NO_ERROR;
     switch (type) {
     case GL_UNSIGNED_BYTE:
-        m_renderObj.setIndicesType(RenderObj::Type::BYTE);
+        renderObj().setIndicesType(RenderObj::Type::BYTE);
         break;
     case GL_UNSIGNED_SHORT:
-        m_renderObj.setIndicesType(RenderObj::Type::SHORT);
+        renderObj().setIndicesType(RenderObj::Type::SHORT);
         break;
     case GL_UNSIGNED_INT:
-        m_renderObj.setIndicesType(RenderObj::Type::UNSIGNED_INT);
+        renderObj().setIndicesType(RenderObj::Type::UNSIGNED_INT);
         break;
     default:
         m_error = GL_INVALID_ENUM;
         return;
     }
 
-    m_renderObj.setCount(count);
-    m_renderObj.setDrawMode(convertDrawMode(mode));
-    m_renderObj.setIndicesPointer(indices);
-    m_renderObj.enableIndices(true);
-    m_renderObj.setVertexColor(m_vertexColor);
+    renderObj().setCount(count);
+    renderObj().setDrawMode(convertDrawMode(mode));
+    renderObj().setIndicesPointer(indices);
+    renderObj().enableIndices(true);
+    renderObj().setVertexColor(m_vertexColor);
 
     if (m_error == GL_NO_ERROR)
     {
-        m_vertexPipeline.drawObj(m_renderObj);
+        vertexPipeline().drawObj(m_renderObj);
     }
 }
 
@@ -1664,16 +1664,16 @@ void IceGL::setClientState(const GLenum array, bool enable)
     m_error = GL_NO_ERROR;
     switch (array) {
     case GL_COLOR_ARRAY:
-        m_renderObj.enableColorArray(enable);
+        renderObj().enableColorArray(enable);
         break;
     case GL_NORMAL_ARRAY:
-        m_renderObj.enableNormalArray(enable);
+        renderObj().enableNormalArray(enable);
         break;
     case GL_TEXTURE_COORD_ARRAY:
-        m_renderObj.enableTexCoordArray(enable);
+        renderObj().enableTexCoordArray(enable);
         break;
     case GL_VERTEX_ARRAY:
-        m_renderObj.enableVertexArray(enable);
+        renderObj().enableVertexArray(enable);
         break;
     default:
         m_error = GL_INVALID_ENUM;
@@ -1721,7 +1721,7 @@ RenderObj::DrawMode IceGL::convertDrawMode(GLenum drawMode)
 
 void IceGL::glPushMatrix()
 {
-    if (m_vertexPipeline.pushMatrix())
+    if (vertexPipeline().pushMatrix())
     {
         m_error = GL_NO_ERROR;
     }
@@ -1733,7 +1733,7 @@ void IceGL::glPushMatrix()
 
 void IceGL::glPopMatrix()
 {
-    if (m_vertexPipeline.popMatrix())
+    if (vertexPipeline().popMatrix())
     {
         m_error = GL_NO_ERROR;
     }
@@ -1766,10 +1766,10 @@ void IceGL::glTexGeni(GLenum coord, GLenum pname, GLint param)
     {
         switch (coord) {
         case GL_S:
-            m_vertexPipeline.getTexGen().setTexGenModeS(mode);
+            vertexPipeline().getTexGen().setTexGenModeS(mode);
             break;
         case GL_T:
-            m_vertexPipeline.getTexGen().setTexGenModeT(mode);
+            vertexPipeline().getTexGen().setTexGenModeT(mode);
             break;
         default:
             // Normally GL_R and GL_Q wouldn't rise an invalid enum, but they are right now not implemented
@@ -1790,17 +1790,17 @@ void IceGL::glTexGenfv(GLenum coord, GLenum pname, const GLfloat *param)
     switch (pname) {
     case GL_OBJECT_PLANE:
         if (coord == GL_S)
-            m_vertexPipeline.getTexGen().setTexGenVecObjS({param});
+            vertexPipeline().getTexGen().setTexGenVecObjS({param});
         else if (coord == GL_T)
-            m_vertexPipeline.getTexGen().setTexGenVecObjT({param});
+            vertexPipeline().getTexGen().setTexGenVecObjT({param});
         else
             m_error = GL_INVALID_ENUM;
         break;
     case GL_EYE_PLANE:
         if (coord == GL_S)
-            m_vertexPipeline.getTexGen().setTexGenVecEyeS(m_vertexPipeline.getModelMatrix(), {param});
+            vertexPipeline().getTexGen().setTexGenVecEyeS(vertexPipeline().getModelMatrix(), {param});
         else if (coord == GL_T)
-            m_vertexPipeline.getTexGen().setTexGenVecEyeT(m_vertexPipeline.getModelMatrix(), {param});
+            vertexPipeline().getTexGen().setTexGenVecEyeT(vertexPipeline().getModelMatrix(), {param});
         else
             m_error = GL_INVALID_ENUM;
         break;
@@ -1865,7 +1865,7 @@ void IceGL::glGetIntegerv(GLenum pname, GLint *params)
 {
     switch (pname) {
     case GL_MAX_LIGHTS:
-        *params = m_vertexPipeline.getLighting().MAX_LIGHTS;
+        *params = vertexPipeline().getLighting().MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
         *params = VertexPipeline::getModelMatrixStackDepth();
@@ -1916,13 +1916,13 @@ void IceGL::glCullFace(GLenum mode)
     m_error = GL_NO_ERROR;
     switch (mode) {
     case GL_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::Face::BACK);
+        vertexPipeline().setCullMode(VertexPipeline::Face::BACK);
         break;
     case GL_FRONT:
-        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT);
+        vertexPipeline().setCullMode(VertexPipeline::Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        m_vertexPipeline.setCullMode(VertexPipeline::Face::FRONT_AND_BACK);
+        vertexPipeline().setCullMode(VertexPipeline::Face::FRONT_AND_BACK);
         break;
     default:
         m_error = GL_INVALID_ENUM;

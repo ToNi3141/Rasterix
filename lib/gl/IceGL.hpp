@@ -126,6 +126,9 @@ public:
                    GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
                    GLfloat upz);
 
+    VertexPipeline& vertexPipeline() { return m_vertexPipeline; }
+    PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
+    RenderObj& renderObj() { return m_renderObj; }
     void commit();
 
 private:
