@@ -53,7 +53,7 @@ public:
 
     VertexPipeline(PixelPipeline& renderer);
 
-    bool drawObj(RenderObj &obj);
+    bool drawObj(const RenderObj &obj);
 
     void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
     void setDepthRange(const float zNear, const float zFar);

@@ -195,95 +195,66 @@ void IceGL::glDepthRange(GLclampd zNear, GLclampd zFar)
 
 void IceGL::glBegin(GLenum mode)
 {
-    if ((mode == GL_TRIANGLES)
-            || (mode == GL_TRIANGLE_FAN)
-            || (mode == GL_TRIANGLE_STRIP)
-            || (mode == GL_QUAD_STRIP))
-    {
-        m_beginMode = mode;
-        m_textureVertexBuffer.clear();
-        m_vertexBuffer.clear();
-        m_normalVertexBuffer.clear();
-        m_colorVertexBuffer.clear();
-        m_error = GL_NO_ERROR;
-    }
-    else
-    {
-        m_error = GL_INVALID_ENUM;
+    switch (mode) {
+        case GL_TRIANGLES: 
+            vertexQueue().begin(VertexQueue::DrawMode::TRIANGLES);
+            break;
+        case GL_TRIANGLE_FAN: 
+            vertexQueue().begin(VertexQueue::DrawMode::TRIANGLE_FAN);
+            break;
+        case GL_TRIANGLE_STRIP: 
+            vertexQueue().begin(VertexQueue::DrawMode::TRIANGLE_STRIP);
+            break;
+        case GL_QUAD_STRIP: 
+            vertexQueue().begin(VertexQueue::DrawMode::QUAD_STRIP);
+            break;
+        default:
+            m_error = GL_INVALID_ENUM;
     }
 }
 
 void IceGL::glEnd()
 {
-    m_renderObjBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
-    m_renderObjBeginEnd.setVertexSize(4);
-    m_renderObjBeginEnd.setVertexType(RenderObj::Type::FLOAT);
-    m_renderObjBeginEnd.setVertexStride(0);
-    m_renderObjBeginEnd.setVertexPointer(m_vertexBuffer.data());
-
-    m_renderObjBeginEnd.enableTexCoordArray(!m_textureVertexBuffer.empty());
-    m_renderObjBeginEnd.setTexCoordSize(2);
-    m_renderObjBeginEnd.setTexCoordType(RenderObj::Type::FLOAT);
-    m_renderObjBeginEnd.setTexCoordStride(0);
-    m_renderObjBeginEnd.setTexCoordPointer(m_textureVertexBuffer.data());
-
-    m_renderObjBeginEnd.enableNormalArray(!m_normalVertexBuffer.empty());
-    m_renderObjBeginEnd.setNormalType(RenderObj::Type::FLOAT);
-    m_renderObjBeginEnd.setNormalStride(0);
-    m_renderObjBeginEnd.setNormalPointer(m_normalVertexBuffer.data());
-
-    m_renderObjBeginEnd.enableColorArray(!m_colorVertexBuffer.empty());
-    m_renderObjBeginEnd.setColorSize(4);
-    m_renderObjBeginEnd.setColorType(RenderObj::Type::FLOAT);
-    m_renderObjBeginEnd.setColorStride(0);
-    m_renderObjBeginEnd.setColorPointer(m_colorVertexBuffer.data());
-
-    m_renderObjBeginEnd.enableIndices(false);
-    m_renderObjBeginEnd.setDrawMode(convertDrawMode(m_beginMode));
-    m_renderObjBeginEnd.setCount(m_vertexBuffer.size());
-
-
-    vertexPipeline().drawObj(m_renderObjBeginEnd);
+    vertexQueue().end();
+    vertexPipeline().drawObj(vertexQueue().renderObj());
 }
 
 void IceGL::glTexCoord2f(GLfloat s, GLfloat t)
 {
-    m_textureCoord = {s, t};
+    vertexQueue().setTexCoord({ { s, t } });
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glVertex3f(GLfloat x, GLfloat y, GLfloat z)
 {
-    m_vertexBuffer.push_back({{x, y, z, 1.0f}});
-    m_normalVertexBuffer.push_back(m_normal);
-    m_textureVertexBuffer.push_back(m_textureCoord);
-    m_colorVertexBuffer.push_back(m_vertexColor);
+    vertexQueue().addVertex({ { x, y, z, 1.0f } });
 }
 
 void IceGL::glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 {
-    m_normal = {nx, ny, nz};
+    vertexQueue().setNormal({ { nx, ny, nz } });
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-    m_vertexColor = {red, green, blue, alpha};
+    vertexQueue().setColor({ { red, green, blue, alpha } });
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
-    m_vertexColor = {(static_cast<float>(red) / 255.0f), 
-                     (static_cast<float>(green) / 255.0f), 
-                     (static_cast<float>(blue) / 255.0f), 
-                     (static_cast<float>(alpha) / 255.0f)};
+    vertexQueue().setColor({ {
+        (static_cast<float>(red) / 255.0f), 
+        (static_cast<float>(green) / 255.0f), 
+        (static_cast<float>(blue) / 255.0f), 
+        (static_cast<float>(alpha) / 255.0f) } });
     m_error = GL_NO_ERROR;
 }
 
 void IceGL::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
 {
-    m_vertexColor = {red, green, blue, 1.0f};
+    vertexQueue().setColor({ { red, green, blue, 1.0f } });
     m_error = GL_NO_ERROR;
 }
 
@@ -1611,7 +1582,7 @@ void IceGL::glDrawArrays(GLenum mode, GLint first, GLsizei count)
     renderObj().setArrayOffset(first);
     renderObj().setDrawMode(convertDrawMode(mode));
     renderObj().enableIndices(false);
-    renderObj().setVertexColor(m_vertexColor);
+    renderObj().setVertexColor(vertexQueue().color());
 
     if (m_error == GL_NO_ERROR)
     {
@@ -1641,7 +1612,7 @@ void IceGL::glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *
     renderObj().setDrawMode(convertDrawMode(mode));
     renderObj().setIndicesPointer(indices);
     renderObj().enableIndices(true);
-    renderObj().setVertexColor(m_vertexColor);
+    renderObj().setVertexColor(vertexQueue().color());
 
     if (m_error == GL_NO_ERROR)
     {

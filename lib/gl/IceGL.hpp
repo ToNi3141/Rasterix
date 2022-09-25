@@ -29,6 +29,7 @@
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 #include "PixelPipeline.hpp"
+#include "VertexQueue.hpp"
 
 class IceGL
 {
@@ -129,6 +130,7 @@ public:
     VertexPipeline& vertexPipeline() { return m_vertexPipeline; }
     PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
     RenderObj& renderObj() { return m_renderObj; }
+    VertexQueue& vertexQueue() { return m_vertexQueue; }
     void commit();
 
 private:
@@ -150,19 +152,7 @@ private:
     PixelPipeline m_pixelPipeline;
     VertexPipeline m_vertexPipeline;
     RenderObj m_renderObj;
-    RenderObj m_renderObjBeginEnd;
-
-    // Buffer
-    std::vector<Vec4> m_vertexBuffer;
-    std::vector<Vec2> m_textureVertexBuffer;
-    std::vector<Vec3> m_normalVertexBuffer;
-    std::vector<Vec4> m_colorVertexBuffer;
-
-    // State values
-    Vec4 m_vertexColor;
-    Vec2 m_textureCoord;
-    Vec3 m_normal;
-    GLenum m_beginMode = GL_TRIANGLES;
+    VertexQueue m_vertexQueue {};
 
     // Errors
     GLint m_error = GL_NO_ERROR;

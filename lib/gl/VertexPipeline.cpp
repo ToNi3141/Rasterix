@@ -40,7 +40,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 
 // Might be a faster version than the other implementation.
 // Needs to be profiled. Leave it for now as dead code.
-// bool VertexPipeline::drawObj(RenderObj &obj)
+// bool VertexPipeline::drawObj(const RenderObj &obj)
 // {
 //     recalculateMatrices();
 //     for (uint32_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
@@ -130,7 +130,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //     return true;
 // }
 
-bool VertexPipeline::drawObj(RenderObj &obj)
+bool VertexPipeline::drawObj(const RenderObj &obj)
 {
     recalculateMatrices();
     if (!m_renderer.updatePipeline()) 
