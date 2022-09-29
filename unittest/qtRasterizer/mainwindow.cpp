@@ -7,7 +7,8 @@
 #include "QTime"
 #include <QThread>
 #include <QFile>
-#include "IceGLWrapper.h"
+#include <spdlog/spdlog.h>
+#include "glu.h"
 
 static constexpr uint16_t cubeIndex[] = {
     0, 1, 2, 0, 2, 3, // Face three
@@ -195,11 +196,11 @@ MainWindow::MainWindow(QWidget *parent) :
     m_image(RESOLUTION_W, RESOLUTION_H, QImage::Format_RGB888)
 {
     ui->setupUi(this);
-    initIceGlCWrapper(&m_ogl);
+    IceGL::createInstance(m_renderer);
 
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);
     ui->label->setPixmap(QPixmap::fromImage(m_image));
-    m_timer.setInterval(50);
+    m_timer.setInterval(17);
     m_timer.setSingleShot(false);
     m_timer.start();
 
@@ -239,16 +240,16 @@ MainWindow::MainWindow(QWidget *parent) :
        glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
     }
 
-    static constexpr bool ENABLE_BLACK_WHITE = false;
+    static constexpr bool ENABLE_BLACK_WHITE = true;
     if constexpr (ENABLE_BLACK_WHITE)
     {
-        float colors[4] = {.7, .7, .7, 0.0};
+        static constexpr float colors[4] = {.7, .7, .7, 0.0};
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
         glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
         glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
         glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
         glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_DOT3_RGB);
-        glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_ONE_MINUS_SRC_COLOR);
+        glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
         glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 4);
     }
 }
@@ -320,7 +321,7 @@ void MainWindow::newFrame()
     glNormalPointer(GL_FLOAT, 0, cubeNormals);
     glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
 
-    m_ogl.commit();
+    IceGL::getInstance().commit();
 
 #if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)

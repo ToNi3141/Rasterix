@@ -1,5 +1,5 @@
-TARGET_BUILD = simulation
-#TARGET_BUILD = hardware
+#TARGET_BUILD = simulation
+TARGET_BUILD = hardware
 
 # Set here the path to your local verilator installation
 
@@ -19,7 +19,6 @@ QT += serialport
 TARGET = qtRasterizer
 
 SOURCES += main.cpp\
-    $${ICEGL_PATH}/IceGLWrapper.cpp \
     $${ICEGL_PATH}/VertexPipeline.cpp \
         mainwindow.cpp \
     $${ICEGL_PATH}/IceGL.cpp \
@@ -28,14 +27,16 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/TexGen.cpp \
     $${ICEGL_PATH}/RenderObj.cpp \
     $${ICEGL_PATH}/PixelPipeline.cpp \
+    $${ICEGL_PATH}/gl.cpp \
+    $${ICEGL_PATH}/glu.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp
 
 HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/DisplayList.hpp \
     $${ICEGL_PATH}/IBusConnector.hpp \
     $${ICEGL_PATH}/IRenderer.hpp \
-    $${ICEGL_PATH}/IceGLTypes.h \
-    $${ICEGL_PATH}/IceGLWrapper.h \
+    $${ICEGL_PATH}/gl.h \
+    $${ICEGL_PATH}/glu.h \
     $${ICEGL_PATH}/Renderer.hpp \
     $${ICEGL_PATH}/VertexPipeline.hpp \
     $${ICEGL_PATH}/Vec.hpp \
@@ -50,6 +51,16 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/TextureMemoryManager.hpp \
     $${ICEGL_PATH}/PixelPipeline.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
+
+
+DEFINES += SPDLOG_ACTIVE_LEVEL=0
+QMAKE_CXXFLAGS += -I../../lib/3rdParty/spdlog-1.10.0/include/
+QMAKE_CFLAGS += -I../../lib/3rdParty/spdlog-1.10.0/include/
+
+QMAKE_CXXFLAGS += -I../3rdParty/spdlog-1.10.0/include/
+QMAKE_CFLAGS += -I../3rdParty/spdlog-1.10.0/include/
+
+
 
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE

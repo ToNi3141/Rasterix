@@ -24,12 +24,12 @@
 #include "IRenderer.hpp"
 #include "VertexPipeline.hpp"
 #include "Vec.hpp"
-#include "IceGLTypes.h"
 #include "Lighting.hpp"
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 #include "PixelPipeline.hpp"
 #include "VertexQueue.hpp"
+#include "gl.h"
 
 class IceGL
 {
@@ -127,14 +127,22 @@ public:
                    GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
                    GLfloat upz);
 
+
+    static IceGL& getInstance();
+    static bool createInstance(IRenderer& renderer);
+
+    void setError(const uint32_t error) { m_error = error; }
+    uint32_t getError() const { return m_error; }
+
     VertexPipeline& vertexPipeline() { return m_vertexPipeline; }
     PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
     RenderObj& renderObj() { return m_renderObj; }
     VertexQueue& vertexQueue() { return m_vertexQueue; }
     void commit();
 
-private:
     static constexpr uint16_t MAX_TEX_SIZE = 256;
+private:
+
 
     void setClientState(const GLenum array, bool enable);
     // It would be nice to have std::optional, but it does not work with arduino
@@ -155,12 +163,7 @@ private:
     VertexQueue m_vertexQueue {};
 
     // Errors
-    GLint m_error = GL_NO_ERROR;
+    uint32_t m_error { 0 };
 };
-
-inline GLenum operator- (const GLenum lhs, const GLenum rhs)
-{
-    return static_cast<GLenum>(static_cast<const int32_t>(lhs) - static_cast<const int32_t>(rhs));
-}
 
 #endif // ICEGL_HPP
