@@ -740,6 +740,7 @@ GLAPI void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, 
 GLAPI void APIENTRY glColorMaterial(GLenum face, GLenum mode)
 {
     SPDLOG_DEBUG("glColorMaterial face %d mode %d called", face, mode);
+    IceGL::getInstance().setError(GL_NO_ERROR);
     if (face == GL_FRONT_AND_BACK)
     {
         VertexPipeline::Face faceConverted {};
@@ -1814,7 +1815,7 @@ GLAPI void APIENTRY glMatrixMode(GLenum mode)
 
 GLAPI void APIENTRY glMultMatrixd(const GLdouble *m)
 {
-    SPDLOG_DEBUG("glMultMatrixd called");
+    SPDLOG_DEBUG("glMultMatrixd redirected to glMultMatrixf");
     GLfloat mf[16];
     for (uint32_t i = 0; i < 4*4; i++)
     {
@@ -1838,61 +1839,61 @@ GLAPI void APIENTRY glNewList(GLuint list, GLenum mode)
 GLAPI void APIENTRY glNormal3b(GLbyte nx, GLbyte ny, GLbyte nz)
 {
     SPDLOG_DEBUG("glNormal3b (%f, %f, %f) called", static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz) } });
 }
 
 GLAPI void APIENTRY glNormal3bv(const GLbyte *v)
 {
     SPDLOG_DEBUG("glNormal3bv (%f, %f, %f) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) } });
 }
 
 GLAPI void APIENTRY glNormal3d(GLdouble nx, GLdouble ny, GLdouble nz)
 {
     SPDLOG_DEBUG("glNormal3d (%f, %f, %f) called", static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz) } });
 }
 
 GLAPI void APIENTRY glNormal3dv(const GLdouble *v)
 {
     SPDLOG_DEBUG("glNormal3dv (%f, %f, %f) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) } });
 }
 
 GLAPI void APIENTRY glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 {
     SPDLOG_DEBUG("glNormal3f (%f, %f, %f) called", nx, ny, nz);
-    IceGL::getInstance().vertexQueue().addVertex({ { nx, ny, nz, 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { nx, ny, nz } });
 }
 
 GLAPI void APIENTRY glNormal3fv(const GLfloat *v)
 {
     SPDLOG_DEBUG("glNormal3f (%f, %f, %f) called", v[0], v[1], v[2]);
-    IceGL::getInstance().vertexQueue().addVertex({ { v[0], v[1], v[2], 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { v[0], v[1], v[2] } });
 }
 
 GLAPI void APIENTRY glNormal3i(GLint nx, GLint ny, GLint nz)
 {
     SPDLOG_DEBUG("glNormal3i (%f, %f, %f) called", static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz) } });
 }
 
 GLAPI void APIENTRY glNormal3iv(const GLint *v)
 {
     SPDLOG_DEBUG("glNormal3iv (%f, %f, %f) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) } });
 }
 
 GLAPI void APIENTRY glNormal3s(GLshort nx, GLshort ny, GLshort nz)
 {
     SPDLOG_DEBUG("glNormal3s (%f, %f, %f) called", static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz) } });
 }
 
 GLAPI void APIENTRY glNormal3sv(const GLshort *v)
 {
     SPDLOG_DEBUG("glNormal3sv (%f, %f, %f) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
-    IceGL::getInstance().vertexQueue().addVertex({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
+    IceGL::getInstance().vertexQueue().setNormal({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) } });
 }
 
 GLAPI void APIENTRY glOrthof(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
@@ -2671,10 +2672,69 @@ GLAPI void APIENTRY glTexGendv(GLenum coord, GLenum pname, const GLdouble *param
 
 GLAPI void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param)
 {
-    SPDLOG_DEBUG("glTexGenf coord %d pname %d param %d called", coord, pname, param);
-    // TODO: Move to glTexGeni
+    SPDLOG_DEBUG("glTexGenf redirected to glTexGeni");
+    glTexGeni(coord, pname, static_cast<GLint>(param));
+}
+
+GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params)
+{
+    SPDLOG_DEBUG("glTexGenfv coord %d pname %d called", coord, pname);
+    switch (pname) {
+    case GL_OBJECT_PLANE:
+        switch (coord) {
+            case GL_S:
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjS({ params });
+                break;
+            case GL_T:
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjT({ params });
+                break;
+            case GL_R:
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+            case GL_Q:
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+            default:
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+        }
+        break;
+    case GL_EYE_PLANE:
+        switch (coord) {
+            case GL_S:
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
+                break;
+            case GL_T:
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
+                break;
+            case GL_R:
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+            case GL_Q:
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+            default:
+                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                break;
+        }
+        break;
+    default:
+        SPDLOG_DEBUG("glTexGenfv redirected to glTexGenf");
+        glTexGenf(coord, pname, params[0]);
+        break;
+    }
+}
+
+GLAPI void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
+{
+    SPDLOG_DEBUG("glTexGeni coord %d pname %d param %d called", coord, pname, param);
     TexGen::TexGenMode mode {};
-    switch (static_cast<GLenum>(param)) {
+    IceGL::getInstance().setError(GL_NO_ERROR);
+    switch (param) {
     case GL_OBJECT_LINEAR:
         mode = TexGen::TexGenMode::OBJECT_LINEAR;
         break;
@@ -2699,11 +2759,11 @@ GLAPI void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param)
             IceGL::getInstance().vertexPipeline().getTexGen().setTexGenModeT(mode);
             break;
         case GL_R:
-            SPDLOG_DEBUG("glTexGenf GL_R not implemented");
+            SPDLOG_WARN("glTexGeni GL_R not implemented");
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             break;
         case GL_Q:
-            SPDLOG_DEBUG("glTexGenf GL_Q not implemented");
+            SPDLOG_WARN("glTexGeni GL_Q not implemented");
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             break;
         default:
@@ -2714,66 +2774,7 @@ GLAPI void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param)
     else
     {
         IceGL::getInstance().setError(GL_INVALID_ENUM);
-    }  
-}
-
-GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params)
-{
-    SPDLOG_DEBUG("glTexGenfv coord %d pname %d called", coord, pname);
-    switch (pname) {
-    case GL_OBJECT_PLANE:
-        switch (coord) {
-            case GL_S:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjS({ params });
-                break;
-            case GL_T:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjT({ params });
-                break;
-            case GL_R:
-                SPDLOG_DEBUG("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-            case GL_Q:
-                SPDLOG_DEBUG("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-            default:
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-        }
-        break;
-    case GL_EYE_PLANE:
-        switch (coord) {
-            case GL_S:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
-                break;
-            case GL_T:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
-                break;
-            case GL_R:
-                SPDLOG_DEBUG("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-            case GL_Q:
-                SPDLOG_DEBUG("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-            default:
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-        }
-        break;
-    default:
-        SPDLOG_DEBUG("glTexGenfv redirected to glTexGenf");
-        glTexGenf(coord, pname, params[0]);
-        break;
-    }
-}
-
-GLAPI void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
-{
-    SPDLOG_DEBUG("glTexGeni redirected to glTexGenf");
-    glTexGenf(coord, pname, static_cast<float>(param));
+    } 
 }
 
 GLAPI void APIENTRY glTexGeniv(GLenum coord, GLenum pname, const GLint *params)
@@ -3270,7 +3271,7 @@ GLAPI void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count)
 GLAPI void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
     SPDLOG_DEBUG("glDrawElements mode %d count %d type %d called", mode, count, type);
-
+    IceGL::getInstance().setError(GL_NO_ERROR);
     switch (type) {
     case GL_UNSIGNED_BYTE:
         IceGL::getInstance().renderObj().setIndicesType(RenderObj::Type::BYTE);
