@@ -1954,7 +1954,34 @@ GLAPI void APIENTRY glPixelStoref(GLenum pname, GLfloat param)
 
 GLAPI void APIENTRY glPixelStorei(GLenum pname, GLint param)
 {
-    SPDLOG_DEBUG("glPixelStorei not implemented");
+    SPDLOG_DEBUG("glPixelStorei pname {} param {} called", pname, param);
+    IceGL::getInstance().setError(GL_NO_ERROR); 
+
+    if (pname == GL_PACK_ALIGNMENT)
+    {
+        IceGL::getInstance().setError(GL_INVALID_ENUM); 
+        return;
+    }
+
+    if (pname == GL_UNPACK_ALIGNMENT)
+    {
+        switch (param)
+        {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            // m_unpackAlignment = param;
+            break;
+        default:
+            IceGL::getInstance().setError(GL_INVALID_VALUE); 
+            break;
+        }
+    }
+    else
+    {
+        IceGL::getInstance().setError(GL_INVALID_ENUM); 
+    }
 }
 
 GLAPI void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
