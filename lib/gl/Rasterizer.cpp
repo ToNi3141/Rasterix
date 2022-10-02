@@ -275,10 +275,10 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
     stx.mul(vW);
     sty.mul(vW);
 
-    cr.mul(vW);
-    cg.mul(vW);
-    cb.mul(vW);
-    ca.mul(vW);
+    // cr.mul(vW);
+    // cg.mul(vW);
+    // cb.mul(vW);
+    // ca.mul(vW);
 #endif
 
     // Interpolate texture
