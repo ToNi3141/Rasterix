@@ -656,6 +656,8 @@ bool VertexPipeline::popMatrix()
             return false;
         }
     }
+
+    return true;
 }
 
 const Mat44& VertexPipeline::getModelMatrix() const

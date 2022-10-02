@@ -48,22 +48,8 @@ public:
     VertexQueue& vertexQueue() { return m_vertexQueue; }
     void commit();
 
-    static constexpr uint16_t MAX_TEX_SIZE = 256;
+    static constexpr uint16_t MAX_TEX_SIZE { 256 }; // TODO: Query this from the renderer
 private:
-
-
-    void setClientState(const GLenum array, bool enable);
-    // It would be nice to have std::optional, but it does not work with arduino
-    // If we have this, we could make all this functions const and return an empty optional if the conversion failed
-    PixelPipeline::FragmentPipeline::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc);
-    RenderObj::Type convertType(GLenum type);
-    RenderObj::DrawMode convertDrawMode(GLenum drawMode);
-    PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode);
-    GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param);
-    GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha);
-    GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha);
-    GLint convertSrcReg(PixelPipeline::TexEnv::SrcReg& conf, GLint val);
-
     IRenderer& m_renderer;
     PixelPipeline m_pixelPipeline;
     VertexPipeline m_vertexPipeline;

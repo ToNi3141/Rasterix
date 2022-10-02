@@ -1,8 +1,28 @@
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2022 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 #include "gl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
 
-static constexpr uint32_t MAX_TEX_SIZE { 256 };
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+static constexpr int32_t MAX_TEX_SIZE { 256 };
 
 GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {
@@ -1004,7 +1024,7 @@ GLAPI void APIENTRY glEnable(GLenum cap)
         IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
         break;
     default:
-        SPDLOG_WARN("glBegin cap {} not supported");
+        SPDLOG_WARN("glEnable cap {} not supported", cap);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
         break;
     }
@@ -1209,6 +1229,7 @@ GLAPI void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GL
 GLAPI GLuint APIENTRY glGenLists(GLsizei range)
 {
     SPDLOG_DEBUG("glGenLists not implemented");
+    return 0;
 }
 
 GLAPI void APIENTRY glGetBooleanv(GLenum pname, GLboolean *params)
@@ -1232,6 +1253,7 @@ GLAPI void APIENTRY glGetDoublev(GLenum pname, GLdouble *params)
 GLAPI GLenum APIENTRY glGetError(void)
 {
     SPDLOG_DEBUG("glGetError not implemented");
+    return GL_INVALID_ENUM;
 }
 
 GLAPI void APIENTRY glGetFloatv(GLenum pname, GLfloat *params)
@@ -1461,11 +1483,13 @@ GLAPI void APIENTRY glInitNames(void)
 GLAPI GLboolean APIENTRY glIsEnabled(GLenum cap)
 {
     SPDLOG_DEBUG("glIsEnabled not implemented");
+    return false;
 }
 
 GLAPI GLboolean APIENTRY glIsList(GLuint list)
 {
     SPDLOG_DEBUG("glIsList not implemented");
+    return false;
 }
 
 GLAPI void APIENTRY glLightModelf(GLenum pname, GLfloat param)
@@ -2242,6 +2266,7 @@ GLAPI void APIENTRY glRectsv(const GLshort *v1, const GLshort *v2)
 GLAPI GLint APIENTRY glRenderMode(GLenum mode)
 {
     SPDLOG_DEBUG("glRenderMode not implemented");
+    return 0;
 }
 
 GLAPI void APIENTRY glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z)
@@ -2637,7 +2662,7 @@ GLAPI void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_RGB_SCALE:
                 {
-                    const uint8_t shift = log2(param);
+                    const uint8_t shift = std::log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
                         IceGL::getInstance().pixelPipeline().texEnv().setShiftRgb(shift);
@@ -2651,7 +2676,7 @@ GLAPI void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
                 break;
             case GL_ALPHA_SCALE:
                 {
-                    const uint8_t shift = log2(param);
+                    const uint8_t shift = std::log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
                         IceGL::getInstance().pixelPipeline().texEnv().setShiftAlpha(shift);
@@ -3192,6 +3217,7 @@ GLAPI void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 GLAPI GLboolean APIENTRY glAreTexturesResident(GLsizei n, const GLuint *textures, GLboolean *residences)
 {
     SPDLOG_DEBUG("glAreTexturesResident not implemented");
+    return false;
 }
 
 GLAPI void APIENTRY glArrayElement(GLint i)
@@ -3349,7 +3375,7 @@ GLAPI void APIENTRY glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::pair<bool, uint16_t> ret = IceGL::getInstance().pixelPipeline().createTexture();
+        std::pair<bool, uint16_t> ret { IceGL::getInstance().pixelPipeline().createTexture() };
         if (ret.first)
         {
             textures[i] = ret.second;
@@ -3371,6 +3397,7 @@ GLAPI void APIENTRY glGetPointerv(GLenum pname, GLvoid **params)
 GLAPI GLboolean APIENTRY glIsTexture(GLuint texture)
 {
     SPDLOG_DEBUG("glIsTexture not implemented");
+    return false;
 }
 
 GLAPI void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const GLvoid *pointer)

@@ -21,8 +21,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define __glPi 3.14159265358979323846f
-
 IceGL* instance { nullptr };
 
 IceGL& IceGL::getInstance()
@@ -32,6 +30,10 @@ IceGL& IceGL::getInstance()
 
 bool IceGL::createInstance(IRenderer& renderer)
 {
+    if (instance)
+    {
+        delete instance;
+    }
     instance = new IceGL { renderer };
     return instance != nullptr;
 }
@@ -41,7 +43,7 @@ IceGL::IceGL(IRenderer &renderer)
     , m_pixelPipeline(renderer)
     , m_vertexPipeline(m_pixelPipeline)
 {
-    // Preallocate the first texture. This is the default texture and it also can't be deleted.
+    // Preallocate the first texture. This is the default texture which also can't be deleted.
     m_renderer.createTexture();
 }
 
