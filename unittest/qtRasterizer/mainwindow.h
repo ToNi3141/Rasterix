@@ -6,6 +6,7 @@
 #include <QTimer>
 #include "IceGL.hpp"
 #include "Renderer.hpp"
+#include "gl.h"
 #if USE_SIMULATION
 #include "VerilatorBusConnector.hpp"
 #endif
@@ -52,8 +53,6 @@ private:
     FT60XBusConnector m_busConnector;
     Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
 #endif
-
-    IceGL m_ogl{m_renderer};
 
     GLuint m_textureId = 0;
     int32_t m_fbSel = 0;

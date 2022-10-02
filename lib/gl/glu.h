@@ -15,39 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "IceGL.hpp"
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
 
-IceGL* instance { nullptr };
+#ifndef GLU_H 
+#define GLU_H
 
-IceGL& IceGL::getInstance()
-{
-    return *instance;
+#include "gl.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar);
+GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
+                              GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
+                              GLfloat upz);
+
+#ifdef __cplusplus
 }
+#endif
 
-bool IceGL::createInstance(IRenderer& renderer)
-{
-    if (instance)
-    {
-        delete instance;
-    }
-    instance = new IceGL { renderer };
-    return instance != nullptr;
-}
-
-IceGL::IceGL(IRenderer &renderer)
-    : m_renderer(renderer)
-    , m_pixelPipeline(renderer)
-    , m_vertexPipeline(m_pixelPipeline)
-{
-    // Preallocate the first texture. This is the default texture which also can't be deleted.
-    m_renderer.createTexture();
-}
-
-void IceGL::commit()
-{
-    m_renderer.commit();
-}
+#endif // GLU_H
