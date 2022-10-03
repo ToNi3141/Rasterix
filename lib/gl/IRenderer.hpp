@@ -368,6 +368,19 @@ public:
     /// @param featureEnable The enabled features
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) = 0;
+
+    /// @brief Sets the scissor box parameter
+    /// @param x X coordinate of the box
+    /// @param y Y coordinate of the box
+    /// @param width Width of the box
+    /// @param height Height of the box
+    /// @return true if success
+    virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) = 0;
+
+    /// @brief Enables the scissor 
+    /// @param enable True to enable the scissor box
+    /// @return true if success
+    virtual bool enableScissor(const bool enable) = 0;
 };
 
 #endif // IRENDERER_HPP

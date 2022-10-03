@@ -96,7 +96,7 @@ public:
     {
         Rasterizer::RasterizedTriangle triangleConf;
 
-        if (!Rasterizer::rasterize(triangleConf, v0, tc0, c0, v1, tc1, c1, v2, tc2, c2))
+        if (!m_rasterizer.rasterize(triangleConf, v0, tc0, c0, v1, tc1, c1, v2, tc2, c2))
         {
             // Triangle is not visible
             return true;
@@ -319,6 +319,18 @@ public:
         return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
     }
 
+    virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
+    {
+        m_rasterizer.setScissorBox(x, y, width, height);
+        return true;
+    }
+
+    virtual bool enableScissor(const bool enable) override
+    {
+        m_rasterizer.enableScissor(enable);
+        return true;
+    }
+
 private:
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
@@ -348,9 +360,8 @@ private:
     uint8_t m_backList = 1;
 
     IBusConnector& m_busConnector;
-
     TextureManager m_textureManager;
-
+    Rasterizer m_rasterizer;
     std::future<bool> m_renderThread;
 };
 

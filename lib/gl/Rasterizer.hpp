@@ -48,17 +48,21 @@ public:
         Vec4 colorXInc;
         Vec4 colorYInc;
     };
+
     Rasterizer();
-    static bool rasterize(RasterizedTriangle& rasterizedTriangle,
-                          const Vec4& v0f,
-                          const Vec4& tc0f,
-                          const Vec4& c0f,
-                          const Vec4& v1f,
-                          const Vec4& tc1f,
-                          const Vec4& c1f,
-                          const Vec4& v2f,
-                          const Vec4& tc2f,
-                          const Vec4& c2f);
+    bool rasterize(RasterizedTriangle& rasterizedTriangle,
+                   const Vec4& v0f,
+                   const Vec4& tc0f,
+                   const Vec4& c0f,
+                   const Vec4& v1f,
+                   const Vec4& tc1f,
+                   const Vec4& c1f,
+                   const Vec4& v2f,
+                   const Vec4& tc2f,
+                   const Vec4& c2f);
+
+    void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
+    void enableScissor(const bool enable);
 
     static bool calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                                   const RasterizedTriangle &triangleToIncrement,
@@ -72,7 +76,7 @@ public:
                                                  const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
-    inline static bool rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
+    inline bool rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
                                          const Vec4& v0f,
                                          const Vec4& tc0f,
                                          const Vec4& c0f,
@@ -84,6 +88,12 @@ private:
                                          const Vec4& c2f);
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
     inline static VecInt calcRecip(VecInt val);
+
+    int32_t m_scissorX { 0 };
+    int32_t m_scissorY { 0 };
+    uint32_t m_scissorWidth { 0 };
+    uint32_t m_scissorHeight { 0 };
+    bool m_enableScissor { false };
 
 };
 

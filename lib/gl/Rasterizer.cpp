@@ -209,6 +209,23 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
     bbEndX = (bbEndX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
     bbEndY = (bbEndY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
 
+    if (m_enableScissor)
+    {
+        bbStartX = max(bbStartX, static_cast<int32_t>(m_scissorX));
+        bbStartY = max(bbStartY, static_cast<int32_t>(m_scissorY));
+        bbEndX = min(bbEndX, static_cast<int32_t>(m_scissorX + m_scissorWidth));
+        bbEndY = min(bbEndY, static_cast<int32_t>(m_scissorY + m_scissorHeight));
+
+        if (bbStartX >= bbEndX)
+        {
+            return false;
+        }
+        if (bbStartY >= bbEndY)
+        {
+            return false;
+        }
+    }
+
 //    // Clamp against the view port
 //    // Should not be needed when the clipping is enabled
 //         bbStartX = max(bbStartX, (int32_t)0);
@@ -318,4 +335,17 @@ float Rasterizer::edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c)
     float val2 = (c[1] - a[1]) * (b[0] - a[0]);
     float ges = val1 - val2;
     return ges;
+}
+
+void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
+{
+    m_scissorX = x;
+    m_scissorY = y;
+    m_scissorWidth = width;
+    m_scissorHeight = height;
+}
+
+void Rasterizer::enableScissor(const bool enable)
+{
+    m_enableScissor = enable;
 }

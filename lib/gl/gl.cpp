@@ -950,6 +950,9 @@ GLAPI void APIENTRY glDisable(GLenum cap)
     case GL_FOG:
         IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
         break;
+    case GL_SCISSOR_TEST:
+        IceGL::getInstance().pixelPipeline().enableScissor(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap {} not supported", cap);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1022,6 +1025,9 @@ GLAPI void APIENTRY glEnable(GLenum cap)
         break;
     case GL_FOG:
         IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
+        break;
+    case GL_SCISSOR_TEST:
+        IceGL::getInstance().pixelPipeline().enableScissor(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap {} not supported", cap);
@@ -2307,7 +2313,15 @@ GLAPI void APIENTRY glScalef(GLfloat x, GLfloat y, GLfloat z)
 
 GLAPI void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    SPDLOG_DEBUG("glScissor not implemented");
+    SPDLOG_DEBUG("glScissor x {} y {} width {} height {} called", x, y, width, height);
+    if ((width < 0) || (height < 0))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+    }
+    else
+    {
+        IceGL::getInstance().pixelPipeline().setScissorBox(x, y, width, height);
+    }
 }
 
 GLAPI void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer)
