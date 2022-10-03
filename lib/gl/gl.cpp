@@ -2337,42 +2337,50 @@ GLAPI void APIENTRY glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
 GLAPI void APIENTRY glTexCoord1d(GLdouble s)
 {
-    SPDLOG_DEBUG("glTexCoord1d not implemented");
+    SPDLOG_DEBUG("glTexCoord1d ({}) called", static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1dv(const GLdouble *v)
 {
-    SPDLOG_DEBUG("glTexCoord1dv not implemented");
+    SPDLOG_DEBUG("glTexCoord1dv ({}) called", static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1f(GLfloat s)
 {
-    SPDLOG_DEBUG("glTexCoord1f not implemented");
+    SPDLOG_DEBUG("glTexCoord1f ({}) called", s);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { s, 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1fv(const GLfloat *v)
 {
-    SPDLOG_DEBUG("glTexCoord1fv not implemented");
+    SPDLOG_DEBUG("glTexCoord1fv ({}) called", v[0]);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { v[0], 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1i(GLint s)
 {
-    SPDLOG_DEBUG("glTexCoord1i not implemented");
+    SPDLOG_DEBUG("glTexCoord1i ({}) called", static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1iv(const GLint *v)
 {
-    SPDLOG_DEBUG("glTexCoord1iv not implemented");
+    SPDLOG_DEBUG("glTexCoord1iv ({}) called", static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1s(GLshort s)
 {
-    SPDLOG_DEBUG("glTexCoord1s not implemented");
+    SPDLOG_DEBUG("glTexCoord1s ({}) called", static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord1sv(const GLshort *v)
 {
-    SPDLOG_DEBUG("glTexCoord1sv not implemented");
+    SPDLOG_DEBUG("glTexCoord1sv ({}) called", static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2d(GLdouble s, GLdouble t)
@@ -2425,82 +2433,98 @@ GLAPI void APIENTRY glTexCoord2sv(const GLshort *v)
 
 GLAPI void APIENTRY glTexCoord3d(GLdouble s, GLdouble t, GLdouble r)
 {
-    SPDLOG_DEBUG("glTexCoord3d not implemented");
+    SPDLOG_DEBUG("glTexCoord3d ({}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3dv(const GLdouble *v)
 {
-    SPDLOG_DEBUG("glTexCoord3dv not implemented");
+    SPDLOG_DEBUG("glTexCoord3dv ({}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3f(GLfloat s, GLfloat t, GLfloat r)
 {
-    SPDLOG_DEBUG("glTexCoord3f not implemented");
+    SPDLOG_DEBUG("glTexCoord3f ({}, {}, {}) called", s, t, r);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { s, t, r, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3fv(const GLfloat *v)
 {
-    SPDLOG_DEBUG("glTexCoord3fv not implemented");
+    SPDLOG_DEBUG("glTexCoord3fv ({}, {}, {}) called", v[0], v[1], v[2]);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { v[0], v[1], v[2], 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3i(GLint s, GLint t, GLint r)
 {
-    SPDLOG_DEBUG("glTexCoord3i not implemented");
+    SPDLOG_DEBUG("glTexCoord3i ({}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3iv(const GLint *v)
 {
-    SPDLOG_DEBUG("glTexCoord3iv not implemented");
+    SPDLOG_DEBUG("glTexCoord3iv ({}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3s(GLshort s, GLshort t, GLshort r)
 {
-    SPDLOG_DEBUG("glTexCoord3s not implemented");
+    SPDLOG_DEBUG("glTexCoord3s ({}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3sv(const GLshort *v)
 {
-    SPDLOG_DEBUG("glTexCoord3sv not implemented");
+    SPDLOG_DEBUG("glTexCoord3sv ({}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord4d(GLdouble s, GLdouble t, GLdouble r, GLdouble q)
 {
-    SPDLOG_DEBUG("glTexCoord4d not implemented");
+    SPDLOG_DEBUG("glTexCoord4d ({}, {}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glTexCoord4dv(const GLdouble *v)
 {
-    SPDLOG_DEBUG("glTexCoord4dv not implemented");
+    SPDLOG_DEBUG("glTexCoord4dv ({}, {}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glTexCoord4f(GLfloat s, GLfloat t, GLfloat r, GLfloat q)
 {
-    SPDLOG_DEBUG("glTexCoord4f not implemented");
+    SPDLOG_DEBUG("glTexCoord4f ({}, {}, {}, {}) called", s, t, r, q);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { s, t, r, q } });
 }
 
 GLAPI void APIENTRY glTexCoord4fv(const GLfloat *v)
 {
-    SPDLOG_DEBUG("glTexCoord4fv not implemented");
+    SPDLOG_DEBUG("glTexCoord4fv ({}, {}, {}, {}) called", v[0], v[1], v[2], v[3]);
+    IceGL::getInstance().vertexQueue().setTexCoord({ { v[0], v[1], v[2], v[3] } });
 }
 
 GLAPI void APIENTRY glTexCoord4i(GLint s, GLint t, GLint r, GLint q)
 {
-    SPDLOG_DEBUG("glTexCoord4i not implemented");
+    SPDLOG_DEBUG("glTexCoord4i ({}, {}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glTexCoord4iv(const GLint *v)
 {
-    SPDLOG_DEBUG("glTexCoord4iv not implemented");
+    SPDLOG_DEBUG("glTexCoord4iv ({}, {}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glTexCoord4s(GLshort s, GLshort t, GLshort r, GLshort q)
 {
-    SPDLOG_DEBUG("glTexCoord4s not implemented");
+    SPDLOG_DEBUG("glTexCoord4s ({}, {}, {}, {}) called", static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glTexCoord4sv(const GLshort *v)
 {
-    SPDLOG_DEBUG("glTexCoord4sv not implemented");
+    SPDLOG_DEBUG("glTexCoord4sv ({}, {}, {}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param)
