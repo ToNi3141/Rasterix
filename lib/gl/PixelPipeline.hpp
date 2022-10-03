@@ -61,9 +61,9 @@ public:
     bool drawTriangle(const Vec4& v0,
                       const Vec4& v1,
                       const Vec4& v2,
-                      const Vec2& st0,
-                      const Vec2& st1,
-                      const Vec2& st2,
+                      const Vec4& tc0,
+                      const Vec4& tc1,
+                      const Vec4& tc2,
                       const Vec4& c0,
                       const Vec4& c1,
                       const Vec4& c2);

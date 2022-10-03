@@ -45,7 +45,7 @@ public:
     bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     bool getVertex(Vec4& vec, const uint32_t index) const;
     bool texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
-    bool getTexCoord(Vec2& vec, const uint32_t index) const;
+    bool getTexCoord(Vec4& vec, const uint32_t index) const;
     bool colorArrayEnabled() const { return m_colorArrayEnabled; }
     bool getColor(Vec4& vec, const uint32_t index) const;
     bool normalArrayEnabled() const { return m_normalArrayEnabled; }

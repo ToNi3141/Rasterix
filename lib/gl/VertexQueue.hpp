@@ -45,7 +45,7 @@ public:
     }
     void setColor(const Vec4& color) { m_vertexColor = color; }
     void setNormal(const Vec3& normal) { m_normal = normal; }
-    void setTexCoord(const Vec2& texCoord) { m_textureCoord = texCoord; }
+    void setTexCoord(const Vec4& texCoord) { m_textureCoord = texCoord; }
     void end()
     {
         m_obj.enableVertexArray(!m_vertexBuffer.empty());
@@ -55,7 +55,7 @@ public:
         m_obj.setVertexPointer(m_vertexBuffer.data());
 
         m_obj.enableTexCoordArray(!m_textureVertexBuffer.empty());
-        m_obj.setTexCoordSize(2);
+        m_obj.setTexCoordSize(4);
         m_obj.setTexCoordType(RenderObj::Type::FLOAT);
         m_obj.setTexCoordStride(0);
         m_obj.setTexCoordPointer(m_textureVertexBuffer.data());
@@ -83,13 +83,13 @@ public:
 private:
     // Buffer
     std::vector<Vec4> m_vertexBuffer;
-    std::vector<Vec2> m_textureVertexBuffer;
+    std::vector<Vec4> m_textureVertexBuffer;
     std::vector<Vec3> m_normalVertexBuffer;
     std::vector<Vec4> m_colorVertexBuffer;
 
     // State values
     Vec4 m_vertexColor {};
-    Vec2 m_textureCoord {};
+    Vec4 m_textureCoord {};
     Vec3 m_normal {};
     DrawMode m_beginMode { DrawMode::TRIANGLES };
 

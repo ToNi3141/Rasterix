@@ -29,14 +29,14 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
 bool PixelPipeline::drawTriangle(const Vec4& v0,
                                  const Vec4& v1,
                                  const Vec4& v2,
-                                 const Vec2& st0,
-                                 const Vec2& st1,
-                                 const Vec2& st2,
+                                 const Vec4& tc0,
+                                 const Vec4& tc1,
+                                 const Vec4& tc2,
                                  const Vec4& c0,
                                  const Vec4& c1,
                                  const Vec4& c2) 
 {
-    return m_renderer.drawTriangle(v0, v1, v2, st0, st1, st2, c0, c1, c2);
+    return m_renderer.drawTriangle(v0, v1, v2, tc0, tc1, tc2, c0, c1, c2);
 }
 
 bool PixelPipeline::updatePipeline()

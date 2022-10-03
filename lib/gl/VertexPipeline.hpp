@@ -93,7 +93,6 @@ private:
     static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
     using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
-    using Vec2Array = std::array<Vec2, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
 
@@ -102,9 +101,9 @@ private:
         const Vec4& v0;
         const Vec4& v1;
         const Vec4& v2;
-        const Vec2& st0;
-        const Vec2& st1;
-        const Vec2& st2;
+        const Vec4& tc0;
+        const Vec4& tc1;
+        const Vec4& tc2;
         const Vec4& color0;
         const Vec4& color1;
         const Vec4& color2;
@@ -114,14 +113,13 @@ private:
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
-    inline void perspectiveDivide(Vec4& v);
     
-    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec2Array& tex, const std::size_t offset, const std::size_t count);
+    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec4Array& tex, const std::size_t offset, const std::size_t count);
     void transform(
         Vec4Array& transformedVertex, 
         Vec4Array& transformedColor, 
         Vec3Array& transformedNormal, 
-        Vec2Array& transformedTex, 
+        Vec4Array& transformedTex, 
         const bool enableVertexArray,
         const bool enableColorArray,
         const bool enableNormalArray,
@@ -129,14 +127,14 @@ private:
         const Vec4Array& vertex, 
         const Vec4Array& color, 
         const Vec3Array& normal, 
-        const Vec2Array& tex, 
+        const Vec4Array& tex, 
         const Vec4& vertexColor,
         const std::size_t count
     );
     bool drawTriangleArray(        
         const Vec4Array& vertex, 
         const Vec4Array& color, 
-        const Vec2Array& tex, 
+        const Vec4Array& tex, 
         const std::size_t count,
         const RenderObj::DrawMode drawMode
     );

@@ -2378,49 +2378,49 @@ GLAPI void APIENTRY glTexCoord1sv(const GLshort *v)
 GLAPI void APIENTRY glTexCoord2d(GLdouble s, GLdouble t)
 {
     SPDLOG_DEBUG("glTexCoord2d ({}, {}) called", static_cast<float>(s), static_cast<float>(t));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2dv(const GLdouble *v)
 {
     SPDLOG_DEBUG("glTexCoord2dv ({}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2f(GLfloat s, GLfloat t)
 {
     SPDLOG_DEBUG("glTexCoord2f ({}, {}) called", s, t);
-    IceGL::getInstance().vertexQueue().setTexCoord({ { s, t } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { s, t, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2fv(const GLfloat *v)
 {
     SPDLOG_DEBUG("glTexCoord2fv ({}, {}) called", v[0], v[1]);
-    IceGL::getInstance().vertexQueue().setTexCoord({ { v[0], v[1] } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { v[0], v[1], 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2i(GLint s, GLint t)
 {
     SPDLOG_DEBUG("glTexCoord2i ({}, {}) called", static_cast<float>(s), static_cast<float>(t));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2iv(const GLint *v)
 {
     SPDLOG_DEBUG("glTexCoord2iv ({}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2s(GLshort s, GLshort t)
 {
     SPDLOG_DEBUG("glTexCoord2s ({}, {}) called", static_cast<float>(s), static_cast<float>(t));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord2sv(const GLshort *v)
 {
     SPDLOG_DEBUG("glTexCoord2sv ({}, {}) called", static_cast<float>(v[0]), static_cast<float>(v[1]));
-    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]) } });
+    IceGL::getInstance().vertexQueue().setTexCoord({ { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glTexCoord3d(GLdouble s, GLdouble t, GLdouble r)

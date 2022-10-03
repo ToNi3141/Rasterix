@@ -87,16 +87,16 @@ public:
     virtual bool drawTriangle(const Vec4& v0,
                               const Vec4& v1,
                               const Vec4& v2,
-                              const Vec2& st0,
-                              const Vec2& st1,
-                              const Vec2& st2,
+                              const Vec4& tc0,
+                              const Vec4& tc1,
+                              const Vec4& tc2,
                               const Vec4& c0,
                               const Vec4& c1,
                               const Vec4& c2) override
     {
         Rasterizer::RasterizedTriangle triangleConf;
 
-        if (!Rasterizer::rasterize(triangleConf, v0, st0, c0, v1, st1, c1, v2, st2, c2))
+        if (!Rasterizer::rasterize(triangleConf, v0, tc0, c0, v1, tc1, c1, v2, tc2, c2))
         {
             // Triangle is not visible
             return true;

@@ -57,6 +57,14 @@ public:
         return *this;
     }
 
+    void perspectiveDivide()
+    {
+        const float inv = 1.0f / vec[VecSize - 1];
+        vec[VecSize - 1] = inv;
+        for (uint32_t i = 0; i < VecSize - 1; i++)
+            vec[i] = vec[i] * inv;
+    }
+
     void div(float val)
     {
         for (uint32_t i = 0; i < VecSize; i++)

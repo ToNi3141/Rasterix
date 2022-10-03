@@ -58,7 +58,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 
 //         Vec4Array transformedVertex;
 //         Vec4Array transformedColor;
-//         Vec2Array transformedTexCoord;
+//         Vec4Array transformedTexCoord;
 //         Vec3Array transformedNormal;
 //         for (uint32_t i = 0, itCnt = it; i < cnt; i++, itCnt++)
 //         {
@@ -153,12 +153,12 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 
         Vec4Array vertex;
         Vec4Array color;
-        Vec2Array texCoord;
+        Vec4Array texCoord;
         Vec3Array normal;
 
         Vec4Array transformedVertex;
         Vec4Array transformedColor;
-        Vec2Array transformedTexCoord;
+        Vec4Array transformedTexCoord;
         Vec3Array transformedNormal;
 
         loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
@@ -198,31 +198,40 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 bool VertexPipeline::drawTriangle(const Triangle& triangle)
 {
     Clipper::ClipVertList vertList;
-    Clipper::ClipStList stList;
-    Clipper::ClipColorList colorList;
+    Clipper::ClipVertList texCoordList;
+    Clipper::ClipVertList colorList;
     Clipper::ClipVertList vertListBuffer;
-    Clipper::ClipStList stListBuffer;
-    Clipper::ClipColorList colorListBuffer;
+    Clipper::ClipVertList texCoordListBuffer;
+    Clipper::ClipVertList colorListBuffer;
 
     vertList[0] = triangle.v0;
     vertList[1] = triangle.v1;
     vertList[2] = triangle.v2;
 
-    stList[0] = triangle.st0;
-    stList[1] = triangle.st1;
-    stList[2] = triangle.st2;
+    texCoordList[0] = triangle.tc0;
+    texCoordList[1] = triangle.tc1;
+    texCoordList[2] = triangle.tc2;
 
     colorList[0] = triangle.color0;
     colorList[1] = triangle.color1;
     colorList[2] = triangle.color2;
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
-    auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
+    auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     for (uint8_t i = 0; i < vertListSize; i++)
     {
-        perspectiveDivide(vertListClipped[i]);
+        // Perspective division
+        vertListClipped[i].perspectiveDivide();
+
+        // Perspective correction of the texture coordinates
+        texCoordListClipped[i].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+        // TODO: Perspective correction of the color 
+        // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
+        // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
+
+        // Viewport transformation of the vertex
         viewportTransform(vertListClipped[i]);
     }
 
@@ -245,9 +254,9 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         const bool success = m_renderer.drawTriangle(vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
-                stListClipped[0],
-                stListClipped[i - 2],
-                stListClipped[i - 1],
+                texCoordListClipped[0],
+                texCoordListClipped[i - 2],
+                texCoordListClipped[i - 1],
                 colorListClipped[0],
                 colorListClipped[i - 2],
                 colorListClipped[i - 1]);
@@ -259,7 +268,7 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
     return true;
 }
 
-void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec2Array& tex, const std::size_t offset, const std::size_t count)
+void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec4Array& tex, const std::size_t offset, const std::size_t count)
 {
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
@@ -287,7 +296,7 @@ void VertexPipeline::transform(
     Vec4Array& transformedVertex, 
     Vec4Array& transformedColor, 
     Vec3Array& transformedNormal, 
-    Vec2Array& transformedTex, 
+    Vec4Array& transformedTex, 
     const bool enableVertexArray,
     const bool enableColorArray,
     const bool enableNormalArray,
@@ -295,7 +304,7 @@ void VertexPipeline::transform(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
     const Vec3Array& normal, 
-    const Vec2Array& tex,
+    const Vec4Array& tex,
     const Vec4& vertexColor,
     const std::size_t count)
 {
@@ -344,6 +353,10 @@ void VertexPipeline::transform(
         {
             transformedTex[i] = tex[i];
         }
+        else
+        {
+            transformedTex[i].initHomogeneous();
+        }
         m_texGen.calculateTexGenCoords(m_m, transformedTex[i], vertex[i]);
     }
 
@@ -354,7 +367,7 @@ void VertexPipeline::transform(
 bool VertexPipeline::drawTriangleArray(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
-    const Vec2Array& tex, 
+    const Vec4Array& tex, 
     const std::size_t count, 
     const RenderObj::DrawMode drawMode)
 {
@@ -471,13 +484,6 @@ void VertexPipeline::viewportTransform(Vec4 &v)
     v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 
-void VertexPipeline::perspectiveDivide(Vec4 &v)
-{
-    v[3] = 1.0f / v[3];
-    v[0] = v[0] * v[3];
-    v[1] = v[1] * v[3];
-    v[2] = v[2] * v[3];
-}
 
 void VertexPipeline::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {

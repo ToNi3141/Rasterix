@@ -44,10 +44,13 @@ module AttributeInterpolator #(
     // Attributes
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_s,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_t,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_q,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_s_inc_x,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_t_inc_x,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_q_inc_x,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_s_inc_y,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_t_inc_y,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex_q_inc_y,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    depth_w,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    depth_w_inc_x,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    depth_w_inc_y,
@@ -90,6 +93,9 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] inc_texture_t   = tex_t[FLOAT_SIZE_DIFF           +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_t_x = tex_t_inc_x[FLOAT_SIZE_DIFF     +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture_t_y = tex_t_inc_y[FLOAT_SIZE_DIFF     +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
+    wire [FLOAT_SIZE - 1 : 0] inc_texture_q   = tex_q[FLOAT_SIZE_DIFF           +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
+    wire [FLOAT_SIZE - 1 : 0] inc_texture_q_x = tex_q_inc_x[FLOAT_SIZE_DIFF     +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
+    wire [FLOAT_SIZE - 1 : 0] inc_texture_q_y = tex_q_inc_y[FLOAT_SIZE_DIFF     +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_depth_w     = depth_w[FLOAT_SIZE_DIFF         +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_depth_w_x   = depth_w_inc_x[FLOAT_SIZE_DIFF   +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_depth_w_y   = depth_w_inc_y[FLOAT_SIZE_DIFF   +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
@@ -158,6 +164,8 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_s_y;
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_t_x;
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_t_y;
+    wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_q_x;
+    wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_q_y;
 
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_depth_w_x;
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_depth_w_y;
@@ -181,7 +189,11 @@ module AttributeInterpolator #(
         inc_step_t_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_texture_t_x), .prod(step_2_inc_texture_t_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
         inc_step_t_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_texture_t_y), .prod(step_2_inc_texture_t_y));
-
+    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
+        inc_step_tex_q_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_texture_q_x), .prod(step_2_inc_texture_q_x));
+    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
+        inc_step_tex_q_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_texture_q_y), .prod(step_2_inc_texture_q_y)); 
+    
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
         inc_step_depth_w_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_depth_w_x), .prod(step_2_inc_depth_w_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
@@ -213,7 +225,8 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     wire [FLOAT_SIZE - 1 : 0] step_3_texture_s;
     wire [FLOAT_SIZE - 1 : 0] step_3_texture_t;
-
+    wire [FLOAT_SIZE - 1 : 0] step_3_texture_q;
+       
     wire [FLOAT_SIZE - 1 : 0] step_3_depth_w;
     wire [FLOAT_SIZE - 1 : 0] step_3_depth_z;
 
@@ -226,6 +239,8 @@ module AttributeInterpolator #(
         add_to_final_inc_s (.clk(aclk), .aIn(step_2_inc_texture_s_x), .bIn(step_2_inc_texture_s_y), .sum(step_3_texture_s));
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_final_inc_t (.clk(aclk), .aIn(step_2_inc_texture_t_x), .bIn(step_2_inc_texture_t_y), .sum(step_3_texture_t));
+    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+        add_to_final_inc_q (.clk(aclk), .aIn(step_2_inc_texture_q_x), .bIn(step_2_inc_texture_q_y), .sum(step_3_texture_q));
 
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_final_inc_d_w (.clk(aclk), .aIn(step_2_inc_depth_w_x), .bIn(step_2_inc_depth_w_y), .sum(step_3_depth_w));
@@ -247,6 +262,7 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     wire [FLOAT_SIZE - 1 : 0] step_4_texture_s_inv;
     wire [FLOAT_SIZE - 1 : 0] step_4_texture_t_inv;
+    wire [FLOAT_SIZE - 1 : 0] step_4_texture_q_inv;
 
     wire [FLOAT_SIZE - 1 : 0] step_4_depth_w_inv;
     wire [FLOAT_SIZE - 1 : 0] step_4_depth_z_inv;
@@ -260,6 +276,8 @@ module AttributeInterpolator #(
         add_to_base_s (.clk(aclk), .aIn(step_3_texture_s), .bIn(inc_texture_s), .sum(step_4_texture_s_inv));
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_base_t (.clk(aclk), .aIn(step_3_texture_t), .bIn(inc_texture_t), .sum(step_4_texture_t_inv));
+    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+        add_to_base_q (.clk(aclk), .aIn(step_3_texture_q), .bIn(inc_texture_q), .sum(step_4_texture_q_inv));
 
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_base_d_w (.clk(aclk), .aIn(step_3_depth_w), .bIn(inc_depth_w), .sum(step_4_depth_w_inv));
@@ -278,10 +296,17 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5 Calculate w reciprocal
     ////////////////////////////////////////////////////////////////////////////
+    wire [FLOAT_SIZE - 1 : 0] step_5_texture_q;
     wire [FLOAT_SIZE - 1 : 0] step_5_depth_w;
 
     FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
-        recip_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w));
+        recip_tex_q (.clk(aclk), .in(step_4_texture_q_inv), .out(step_5_texture_q));
+    
+    // Use the cheap reciprocal calculation. It should be sufficient for fog.
+    wire [FLOAT_SIZE - 1 : 0] step_5_depth_w_tmp;
+    FloatFastRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
+        recip_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w_tmp));
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(RECIP_DELAY - 4)) step_5_delay_d_w (.clk(aclk), .in(step_5_depth_w_tmp), .out(step_5_depth_w));
 
     wire [FLOAT_SIZE - 1 : 0] step_5_texture_s_inv;
     wire [FLOAT_SIZE - 1 : 0] step_5_texture_t_inv;
@@ -309,6 +334,7 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] step_6_texture_s;
     wire [FLOAT_SIZE - 1 : 0] step_6_texture_t;
 
+    wire [FLOAT_SIZE - 1 : 0] step_6_depth_w;
     wire [FLOAT_SIZE - 1 : 0] step_6_depth_z;
 
     wire [FLOAT_SIZE - 1 : 0] step_6_color_r;
@@ -317,12 +343,17 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] step_6_color_a;
 
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        mul_texture_s_w (.clk(aclk), .facAIn(step_5_texture_s_inv), .facBIn(step_5_depth_w), .prod(step_6_texture_s));
+        mul_texture_s_w (.clk(aclk), .facAIn(step_5_texture_s_inv), .facBIn(step_5_texture_q), .prod(step_6_texture_s));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        mul_texture_t_w (.clk(aclk), .facAIn(step_5_texture_t_inv), .facBIn(step_5_depth_w), .prod(step_6_texture_t));
+        mul_texture_t_w (.clk(aclk), .facAIn(step_5_texture_t_inv), .facBIn(step_5_texture_q), .prod(step_6_texture_t));
 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_w (.clk(aclk), .in(step_5_depth_w), .out(step_6_depth_w));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_d_z (.clk(aclk), .in(step_5_depth_z_inv), .out(step_6_depth_z));
 
+    // Enable this to have perspective correct color interpolation
+    // Note that each texture unit has its own w (or in texture coord terms: q). Therefore the color needs its own w. But this can be easily implemented.
+    // Just use the w from the vertex. It is not yet implemented to keep the logic count low. If this is implemented, the hardware must interpolate a 
+    // new attribute and also has to divide this new attribute and later on, must mutiply it as you can see here.
     // FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
     //     mul_color_r (.clk(aclk), .facAIn(step_5_color_r_inv), .facBIn(step_5_depth_w), .prod(step_6_color_r));
     // FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
@@ -336,9 +367,6 @@ module AttributeInterpolator #(
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_c_g (.clk(aclk), .in(step_5_color_g_inv), .out(step_6_color_g));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_c_b (.clk(aclk), .in(step_5_color_b_inv), .out(step_6_color_b));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_c_a (.clk(aclk), .in(step_5_color_a_inv), .out(step_6_color_a));
-
-    wire [FLOAT_SIZE - 1 : 0] step_6_depth_w;
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_w (.clk(aclk), .in(step_5_depth_w), .out(step_6_depth_w));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7 Output calculated values

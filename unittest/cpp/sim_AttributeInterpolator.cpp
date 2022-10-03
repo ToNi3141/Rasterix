@@ -62,6 +62,9 @@ struct Attributes
     float tb = 0.0f;
     float tx = 0.0f;
     float ty = 0.0f;
+    float qb = 0.0f;
+    float qx = 0.0f;
+    float qy = 0.0f;
     float wb = 0.0f;
     float wx = 0.0f;
     float wy = 0.0f;
@@ -86,6 +89,7 @@ struct AttributesResult
 {
     float s = 0.0f;
     float t = 0.0f;
+    float q = 0.0f;
     float w = 0.0f;
     float z = 0.0f;
     float r = 0.0f;
@@ -102,6 +106,8 @@ void calculateVertexAttributes(Attributes attr,
     attr.sy *= y;
     attr.tx *= x;
     attr.ty *= y;
+    attr.qx *= x;
+    attr.qy *= y;
     attr.wx *= x;
     attr.wy *= y;
     attr.zx *= x;
@@ -118,6 +124,7 @@ void calculateVertexAttributes(Attributes attr,
     res.w = attr.wb + (attr.wx + attr.wy);
     res.s = attr.sb + (attr.sx + attr.sy);
     res.t = attr.tb + (attr.tx + attr.ty);
+    res.q = attr.qb + (attr.qx + attr.qy);
     res.z = attr.zb + (attr.zx + attr.zy);
     res.r = attr.rb + (attr.rx + attr.ry);
     res.g = attr.gb + (attr.gx + attr.gy);
@@ -125,13 +132,17 @@ void calculateVertexAttributes(Attributes attr,
     res.a = attr.ab + (attr.ax + attr.ay);
 
     res.w = 1.0f / res.w;
+    res.q = 1.0f / res.q;
 
-    res.s *= res.w;
-    res.t *= res.w;
-    res.r *= res.w;
-    res.g *= res.w;
-    res.b *= res.w;
-    res.a *= res.w;
+    res.s *= res.q;
+    res.t *= res.q;
+    res.q *= res.q;
+
+    // Perspective correction for colors is currently disabled
+    // res.r *= res.w;
+    // res.g *= res.w;
+    // res.b *= res.w;
+    // res.a *= res.w;
 }
 
 TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolator]")
@@ -157,6 +168,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         top->tex_t = 0;
         top->tex_t_inc_x = 0;
         top->tex_t_inc_y = 0;
+        top->tex_q = 0;
+        top->tex_q_inc_x = 0;
+        top->tex_q_inc_y = 0;
         top->depth_w = 0;
         top->depth_w_inc_x = 0;
         top->depth_w_inc_y = 0;
@@ -207,9 +221,12 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     attr.tb = 4.0;
     attr.tx = 0.20;
     attr.ty = 0.10;
-    attr.wb = 0.06754551082849503;
-    attr.wx = -1.5070709196152166e-05;
-    attr.wy = 3.105480573140085e-05;
+    attr.qb = 0.06754551082849503;
+    attr.qx = -1.5070709196152166e-05;
+    attr.qy = 3.105480573140085e-05;
+    attr.wb = 5.06754551082849503;
+    attr.wx = -3.5070709196152166e-02;
+    attr.wy = 9.105480573140085e-03;
     attr.zb = 1.1;
     attr.zx = 0.1;
     attr.zy = 0.2;
@@ -233,6 +250,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     top->tex_t = *(uint32_t*)&attr.tb;
     top->tex_t_inc_x = *(uint32_t*)&attr.tx;
     top->tex_t_inc_y = *(uint32_t*)&attr.ty;
+    top->tex_q = *(uint32_t*)&attr.qb;
+    top->tex_q_inc_x = *(uint32_t*)&attr.qx;
+    top->tex_q_inc_y = *(uint32_t*)&attr.qy;
     top->depth_w = *(uint32_t*)&attr.wb;
     top->depth_w_inc_x = *(uint32_t*)&attr.wx;
     top->depth_w_inc_y = *(uint32_t*)&attr.wy;
@@ -285,7 +305,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             
             REQUIRE(Approx(s).epsilon(0.01) == expectedResult.s);
             REQUIRE(Approx(t).epsilon(0.01) == expectedResult.t);
-            REQUIRE(Approx(w).epsilon(0.01) == expectedResult.w);
+            REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
             REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
             REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);
             REQUIRE(Approx(g).epsilon(0.01) == expectedResult.g);
@@ -334,7 +354,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         
         REQUIRE(Approx(s).epsilon(0.01) == expectedResult.s);
         REQUIRE(Approx(t).epsilon(0.01) == expectedResult.t);
-        REQUIRE(Approx(w).epsilon(0.01) == expectedResult.w);
+        REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
         REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
         REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);
         REQUIRE(Approx(g).epsilon(0.01) == expectedResult.g);

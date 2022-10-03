@@ -35,9 +35,9 @@ public:
         Vec3i wXInc;
         Vec3i wYInc;
         // TODO: Maybe rearrange the vertex attributes in the hardware to avoid copying of data in the software
-        Vec2 texSt;
-        Vec2 texStXInc;
-        Vec2 texStYInc;
+        Vec3 texStq;
+        Vec3 texStqXInc;
+        Vec3 texStqYInc;
         float depthW;
         float depthWXInc;
         float depthWYInc;
@@ -51,13 +51,13 @@ public:
     Rasterizer();
     static bool rasterize(RasterizedTriangle& rasterizedTriangle,
                           const Vec4& v0f,
-                          const Vec2& st0f,
+                          const Vec4& tc0f,
                           const Vec4& c0f,
                           const Vec4& v1f,
-                          const Vec2& st1f,
+                          const Vec4& tc1f,
                           const Vec4& c1f,
                           const Vec4& v2f,
-                          const Vec2& st2f,
+                          const Vec4& tc2f,
                           const Vec4& c2f);
 
     static bool calcLineIncrement(RasterizedTriangle &incrementedTriangle,
@@ -74,25 +74,16 @@ private:
     static constexpr uint64_t DECIMAL_POINT = 12;
     inline static bool rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
                                          const Vec4& v0f,
-                                         const Vec2& st0f,
+                                         const Vec4& tc0f,
                                          const Vec4& c0f,
                                          const Vec4& v1f,
-                                         const Vec2& st1f,
+                                         const Vec4& tc1f,
                                          const Vec4& c1f,
                                          const Vec4& v2f,
-                                         const Vec2& st2f,
+                                         const Vec4& tc2f,
                                          const Vec4& c2f);
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
     inline static VecInt calcRecip(VecInt val);
-
-    inline static bool rasterizeFloat(RasterizedTriangle &rasterizedTriangle,
-                                      const Vec4 &v0f,
-                                      const Vec2 &st0f,
-                                      const Vec4 &v1f,
-                                      const Vec2 &st1f,
-                                      const Vec4 &v2f,
-                                      const Vec2 &st2f);
-
 
 };
 

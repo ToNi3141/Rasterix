@@ -24,8 +24,9 @@ bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
     return getFromArray(vec, m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
-bool RenderObj::getTexCoord(Vec2& vec, const uint32_t index) const
+bool RenderObj::getTexCoord(Vec4& vec, const uint32_t index) const
 {
+    vec.initHomogeneous();
     return getFromArray(vec, m_texCoordType, m_texCoordPointer, m_texCoordStride, m_texCoordSize, index);
 }
 
