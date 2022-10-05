@@ -29,7 +29,12 @@ public:
         TRIANGLES,
         TRIANGLE_FAN,
         TRIANGLE_STRIP,
-        QUAD_STRIP
+        POLYGON,
+        QUADS,
+        QUAD_STRIP,
+        LINES,
+        LINE_STRIP,
+        LINE_LOOP
     };
 
     enum Type

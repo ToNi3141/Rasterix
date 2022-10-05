@@ -255,6 +255,16 @@ RenderObj::DrawMode convertDrawMode(GLenum drawMode)
         return RenderObj::DrawMode::TRIANGLE_STRIP;
     case GL_QUAD_STRIP:
         return RenderObj::DrawMode::QUAD_STRIP;
+    case GL_QUADS:
+        return RenderObj::DrawMode::QUADS;
+    case GL_POLYGON:
+        return RenderObj::DrawMode::POLYGON;
+    case GL_LINES:
+        return RenderObj::DrawMode::LINES;
+    case GL_LINE_STRIP:
+        return RenderObj::DrawMode::LINE_STRIP;
+    case GL_LINE_LOOP:
+        return RenderObj::DrawMode::LINE_LOOP;
     default:
         IceGL::getInstance().setError(GL_INVALID_ENUM);
         return RenderObj::DrawMode::TRIANGLES;
@@ -341,22 +351,7 @@ GLAPI void APIENTRY glAlphaFunc(GLenum func, GLclampf ref)
 GLAPI void APIENTRY glBegin(GLenum mode)
 {
     SPDLOG_DEBUG("glBegin {} called", mode);
-    switch (mode) {
-        case GL_TRIANGLES: 
-            IceGL::getInstance().vertexQueue().begin(VertexQueue::DrawMode::TRIANGLES);
-            break;
-        case GL_TRIANGLE_FAN: 
-            IceGL::getInstance().vertexQueue().begin(VertexQueue::DrawMode::TRIANGLE_FAN);
-            break;
-        case GL_TRIANGLE_STRIP: 
-            IceGL::getInstance().vertexQueue().begin(VertexQueue::DrawMode::TRIANGLE_STRIP);
-            break;
-        case GL_QUAD_STRIP: 
-            IceGL::getInstance().vertexQueue().begin(VertexQueue::DrawMode::QUAD_STRIP);
-            break;
-        default:
-            IceGL::getInstance().setError(GL_INVALID_ENUM);
-    }
+    IceGL::getInstance().vertexQueue().begin(convertDrawMode(mode));
 }
 
 GLAPI void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xOrig, GLfloat yOrig, GLfloat xMove, GLfloat yMove, const GLubyte *bitmap)
@@ -1625,7 +1620,12 @@ GLAPI void APIENTRY glLineStipple(GLint factor, GLushort pattern)
 
 GLAPI void APIENTRY glLineWidth(GLfloat width)
 {
-    SPDLOG_DEBUG("glLineWidth not implemented");
+    SPDLOG_DEBUG("glLineWidth {} called", width);
+    if (width <= 0.0f)
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+    }
+    IceGL::getInstance().vertexPipeline().setLineWidth(width);
 }
 
 GLAPI void APIENTRY glListBase(GLuint base)

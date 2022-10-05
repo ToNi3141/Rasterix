@@ -80,6 +80,8 @@ public:
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
+    
+    void setLineWidth(const float width);
 
     Lighting& getLighting();
     TexGen& getTexGen();
@@ -109,7 +111,18 @@ private:
         const Vec4& color2;
     };
 
+    struct Line
+    {
+        const Vec4& v0;
+        const Vec4& v1;
+        const Vec4& tc0;
+        const Vec4& tc1;
+        const Vec4& color0;
+        const Vec4& color1;
+    };
+
     bool drawTriangle(const Triangle& triangle);
+    bool drawLine(const Line& line);
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
@@ -136,7 +149,8 @@ private:
         const Vec4Array& color, 
         const Vec4Array& tex, 
         const std::size_t count,
-        const RenderObj::DrawMode drawMode
+        const RenderObj::DrawMode drawMode,
+        const bool lastRound
     );
 
     void recalculateMatrices();
@@ -171,6 +185,9 @@ private:
     bool m_enableColorMaterial { false };
     ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
     Face m_colorMaterialFace { Face::FRONT_AND_BACK };
+
+    // Line width
+    float m_lineWidth { 1.0f };
 
     PixelPipeline& m_renderer;
     Lighting m_lighting;
