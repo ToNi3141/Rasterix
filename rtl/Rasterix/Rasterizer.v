@@ -31,7 +31,7 @@ module Rasterizer
 
     localparam ATTRIBUTE_SIZE = 32,
 
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 2 * ATTRIBUTE_SIZE
+    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE
 )
 (
     input wire                              clk,
@@ -48,6 +48,7 @@ module Rasterizer
     output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
 
     // Triangle Attributes
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    offsetY,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbStart,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbEnd,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    w0,
@@ -125,7 +126,7 @@ module Rasterizer
                 regW1 <= w1;
                 regW2 <= w2;
 
-                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d, offsetY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH], offsetY[0 +: 16]);
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
                 y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
@@ -347,7 +348,8 @@ module Rasterizer
                     // Arguments for the shader
                     m_axis_tdata <= {
                         {{(ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - bbStart[BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: 16]}
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} + offsetY[0 +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x}},
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - bbStart[BB_Y_POS +: Y_BIT_WIDTH], {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: X_BIT_WIDTH]}
                     };
                 end
             end

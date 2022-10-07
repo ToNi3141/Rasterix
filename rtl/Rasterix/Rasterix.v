@@ -88,15 +88,19 @@ module Rasterix #(
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
     wire        colorWriteEnable;
-    wire [15:0] colorIn;
-    wire [31:0] colorOut;
+    wire [15 : 0] colorIn;
+    wire [31 : 0] colorOut;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosX;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosY;
 
     // Depth buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite;
     wire        depthWriteEnable;
-    wire [15:0] depthIn;
-    wire [15:0] depthOut;
+    wire [15 : 0] depthIn;
+    wire [15 : 0] depthOut;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosX;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosY;
 
     wire pixelInPipelineInterpolator;
     wire pixelInPipelineShader;
@@ -142,6 +146,8 @@ module Rasterix #(
     wire [31:0] confTMU0TexEnvConfig;
     wire [31:0] confTMU0TextureConfig;
     wire [31:0] confTMU0TexEnvColor;
+    wire [31:0] confScissorStartXY;
+    wire [31:0] confScissorEndXY;
 
     // Rasterizer
     wire        m_rasterizer_axis_tvalid;
@@ -184,6 +190,8 @@ module Rasterix #(
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
+        .confScissorStartXY(confScissorStartXY),
+        .confScissorEndXY(confScissorEndXY),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -266,11 +274,18 @@ module Rasterix #(
         .fragIn(depthOut),
         .fragWriteEnable(depthWriteEnable),
         .fragMask(confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE]),
-        
+        .screenPosX(depthOutScreenPosX),
+        .screenPosY(depthOutScreenPosY),
+
         .apply(depthBufferApply),
         .applied(depthBufferApplied),
         .cmdCommit(depthBufferCmdCommit),
         .cmdMemset(depthBufferCmdMemset),
+        .enableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+        .scissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
+        .scissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
+        .scissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
+        .scissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
 
         .m_axis_tvalid(),
         .m_axis_tready(1'b1),
@@ -283,6 +298,7 @@ module Rasterix #(
     defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
+    defparam depthBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
 
     FrameBuffer colorBuffer (  
         .clk(aclk),
@@ -297,12 +313,19 @@ module Rasterix #(
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE]}),
+        .screenPosX(colorOutScreenPosX),
+        .screenPosY(colorOutScreenPosY),
         
         .apply(colorBufferApply),
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
         .clearColor(Reduce(confColorBufferClearColor)),
+        .enableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+        .scissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]), // TODO: Add conf prefix
+        .scissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
+        .scissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
+        .scissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
@@ -313,6 +336,7 @@ module Rasterix #(
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
     defparam colorBuffer.SUB_PIXEL_WIDTH = MEMORY_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -326,6 +350,7 @@ module Rasterix #(
         .m_axis_tlast(m_rasterizer_axis_tlast),
         .m_axis_tdata(m_rasterizer_axis_tdata),
 
+        .offsetY(triangleParams[TRIANGLE_STREAM_OFFSET_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .w0(triangleParams[TRIANGLE_STREAM_INC_W0 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -425,12 +450,16 @@ module Rasterix #(
         .colorIndexWrite(colorIndexWrite),
         .colorWriteEnable(colorWriteEnable),
         .colorOut(colorOut),
+        .colorOutScreenPosX(colorOutScreenPosX),
+        .colorOutScreenPosY(colorOutScreenPosY),
 
         .depthIndexRead(depthIndexRead),
         .depthIn(depthIn),
         .depthIndexWrite(depthIndexWrite),
         .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut)
+        .depthOut(depthOut),
+        .depthOutScreenPosX(depthOutScreenPosX),
+        .depthOutScreenPosY(depthOutScreenPosY)
     );
     defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;

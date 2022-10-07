@@ -105,7 +105,6 @@ public:
 
     // Scissor 
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
-    void enableScissor(const bool enable) { m_renderer.enableScissor(enable); }
 
 private:
     bool updateFogLut();

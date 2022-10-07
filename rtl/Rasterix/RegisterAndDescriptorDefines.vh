@@ -58,7 +58,9 @@ localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 4;
 localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 5;
 localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 6;
 localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 7;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 8;
+localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 8;
+localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 9;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 10;
 
 
 
@@ -129,9 +131,9 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 // Description of the different registers:
 
 // OP_RENDER_CONFIG_FEATURE_ENABLE
-//  +-------------------------------------------------------------------------------------------+
-//  | 27'hx reserved | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
-//  +-------------------------------------------------------------------------------------------+
+//  +---------------------------------------------------------------------------------------------------------------+
+//  | 26'hx reserved | 1'hx Scissor test | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
+//  +---------------------------------------------------------------------------------------------------------------+
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_POS = 0;
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS = RENDER_CONFIG_FEATURE_ENABLE_FOG_POS + RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE;
@@ -142,6 +144,8 @@ localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS = RENDER_CONFIG_FEATURE_E
 localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE = 1;
 
 // OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
 //  +-----------------------------------+
@@ -238,6 +242,24 @@ localparam RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE = 1;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS = RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS + RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE = 1;
 
+// OP_RENDER_CONFIG_SCISSOR_START_XY
+//  +---------------------------------------------+
+//  | 16'h scissor start y | 16'h scissor start x |
+//  +---------------------------------------------+
+localparam RENDER_CONFIG_SCISSOR_START_X_POS = 0;
+localparam RENDER_CONFIG_SCISSOR_START_X_SIZE = 16;
+localparam RENDER_CONFIG_SCISSOR_START_Y_POS = 16;
+localparam RENDER_CONFIG_SCISSOR_START_Y_SIZE = 16;
+
+// OP_RENDER_CONFIG_SCISSOR_END_XY
+//  +-----------------------------------------+
+//  | 16'h scissor end y | 16'h scissor end x |
+//  +-----------------------------------------+
+localparam RENDER_CONFIG_SCISSOR_END_X_POS = 0;
+localparam RENDER_CONFIG_SCISSOR_END_X_SIZE = 16;
+localparam RENDER_CONFIG_SCISSOR_END_Y_POS = 16;
+localparam RENDER_CONFIG_SCISSOR_END_Y_SIZE = 16;
+
 // Depth and Alpha func defines
 localparam ALWAYS = 0;
 localparam NEVER = 1;
@@ -327,7 +349,7 @@ localparam COLOR_A_POS = COLOR_SUB_PIXEL_WIDTH * 0;
 // OP_TRIANGLE_STREAM 
 // Triangle Descriptor, each value containts 4 bytes.
 localparam TRIANGLE_STREAM_PARAM_SIZE = 32;
-localparam TRIANGLE_RESERVED = 0; // (32 bit)
+localparam TRIANGLE_STREAM_OFFSET_Y = 0; // (U32 bit)
 localparam TRIANGLE_STREAM_BB_START = 1; // S15.0, S15.0 (32bit)
 localparam TRIANGLE_STREAM_BB_END = 2; // S15.0, S15.0 (32bit)
 localparam TRIANGLE_STREAM_INC_W0 = 3; // Sn.m (32bit)

@@ -24,6 +24,7 @@ module PerFragmentPipeline
 #(
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
+    parameter SCREEN_POS_WIDTH = 16,
 
     parameter DEPTH_WIDTH = 16,
 
@@ -45,6 +46,8 @@ module PerFragmentPipeline
     input  wire [PIXEL_WIDTH - 1 : 0]   fragmentColor,
     input  wire [31 : 0]                depth,
     input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] index,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosY,
 
     // Signals when the fragment wents through the pipeline
     output reg                          fragmentProcessed,
@@ -57,6 +60,8 @@ module PerFragmentPipeline
     output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite,
     output reg                          colorWriteEnable,
     output reg  [PIXEL_WIDTH - 1 : 0]   colorOut,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosY,
 
     // ZBuffer buffer access
     // Read
@@ -65,7 +70,9 @@ module PerFragmentPipeline
     // Write
     output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite,
     output reg                          depthWriteEnable,
-    output reg  [DEPTH_WIDTH - 1 : 0]   depthOut
+    output reg  [DEPTH_WIDTH - 1 : 0]   depthOut,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosY
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -95,12 +102,18 @@ module PerFragmentPipeline
     wire                                    step0_valid;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step0_index;
     wire [DEPTH_WIDTH - 1 : 0]              step0_depth;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosY;
     wire [PIXEL_WIDTH - 1 : 0]              step0_fragmentColor;
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(2)) 
         step0_validDelay (.clk(aclk), .in(valid), .out(step0_valid));
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(2)) 
         step0_indexDelay (.clk(aclk), .in(index), .out(step0_index));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2)) 
+        step0_screenPosXDelay (.clk(aclk), .in(screenPosX), .out(step0_screenPosX));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2)) 
+        step0_screenPosYDelay (.clk(aclk), .in(screenPosY), .out(step0_screenPosY));
     ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(2)) 
         step0_depthDelay (.clk(aclk), .in(clampDepth(depth)), .out(step0_depth));
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(2)) 
@@ -116,6 +129,8 @@ module PerFragmentPipeline
     ////////////////////////////////////////////////////////////////////////////
     wire                                    step1_valid;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step1_index;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosY;
     wire [DEPTH_WIDTH - 1 : 0]              step1_depth;
     wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
     reg                                     step1_writeFramebuffer;
@@ -124,6 +139,10 @@ module PerFragmentPipeline
         step1_validDelay (.clk(aclk), .in(step0_valid), .out(step1_valid));
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(2)) 
         step1_indexDelay (.clk(aclk), .in(step0_index), .out(step1_index));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2)) 
+        step1_screenPosXDelay (.clk(aclk), .in(step0_screenPosX), .out(step1_screenPosX));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2)) 
+        step1_screenPosYDelay (.clk(aclk), .in(step0_screenPosY), .out(step1_screenPosY));
     ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(2)) 
         step1_depthDelay (.clk(aclk), .in(step0_depth), .out(step1_depth)); 
 
@@ -183,7 +202,11 @@ module PerFragmentPipeline
         if (step1_valid)
         begin
             colorIndexWrite <= step1_index;
+            colorOutScreenPosX <= step1_screenPosX;
+            colorOutScreenPosY <= step1_screenPosY;
             depthIndexWrite <= step1_index;
+            depthOutScreenPosX <= step1_screenPosX;
+            depthOutScreenPosY <= step1_screenPosY;
             depthOut <= step1_depth;
             colorOut <= step1_fragmentColor;
         end

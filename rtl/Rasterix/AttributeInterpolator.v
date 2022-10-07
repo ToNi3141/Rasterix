@@ -19,8 +19,8 @@ module AttributeInterpolator #(
     parameter FLOAT_SIZE = 32,
 
     localparam ATTRIBUTE_SIZE = 32,
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 2 * ATTRIBUTE_SIZE,
-    localparam ATTR_INTERP_AXIS_PARAMETER_SIZE = 9 * ATTRIBUTE_SIZE
+    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
+    localparam ATTR_INTERP_AXIS_PARAMETER_SIZE = 10 * ATTRIBUTE_SIZE
 )
 (
     input wire                              aclk,
@@ -73,8 +73,9 @@ module AttributeInterpolator #(
     localparam SCREEN_X_POS = 0;
     localparam SCREEN_Y_POS = 16;
     localparam AXIS_SCREEN_POS_SIZE = 16;
-    localparam AXIS_SCREEN_POS = 0;
-    localparam AXIS_FRAMEBUFFER_INDEX_POS = 32;
+    localparam AXIS_BOUNDING_BOX_POS = 0;
+    localparam AXIS_SCREEN_POS = 32;
+    localparam AXIS_FRAMEBUFFER_INDEX_POS = 64;
 
     localparam EXPONENT_SIZE = 8; // Size of a IEEE 754 32 bit float
     localparam MANTISSA_SIZE = FLOAT_SIZE - 1 - EXPONENT_SIZE; // Calculate the mantissa size by substracting from the FLOAT_SIZE the sign and exponent
@@ -119,6 +120,10 @@ module AttributeInterpolator #(
     wire [AXIS_SCREEN_POS_SIZE - 1 : 0] screen_pos_x = s_axis_tdata[AXIS_SCREEN_POS + SCREEN_X_POS +: AXIS_SCREEN_POS_SIZE];
     wire [AXIS_SCREEN_POS_SIZE - 1 : 0] screen_pos_y = s_axis_tdata[AXIS_SCREEN_POS + SCREEN_Y_POS +: AXIS_SCREEN_POS_SIZE];
 
+    // Bounding box position
+    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] bounding_box_pos_x = s_axis_tdata[AXIS_BOUNDING_BOX_POS + SCREEN_X_POS +: AXIS_SCREEN_POS_SIZE];
+    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] bounding_box_pos_y = s_axis_tdata[AXIS_BOUNDING_BOX_POS + SCREEN_Y_POS +: AXIS_SCREEN_POS_SIZE];
+
     // Static attributes
     wire [ATTRIBUTE_SIZE - 1 : 0] framebuffer_index = s_axis_tdata[AXIS_FRAMEBUFFER_INDEX_POS +: ATTRIBUTE_SIZE];
 
@@ -126,13 +131,21 @@ module AttributeInterpolator #(
     // STEP 0 Setup delays for pass through values
     ////////////////////////////////////////////////////////////////////////////
     wire [ATTRIBUTE_SIZE - 1 : 0] step_0_framebuffer_index; 
-    wire [ATTRIBUTE_SIZE - 1 : 0] step_0_triangle_static_color;
+    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] step_0_screen_pos_x; 
+    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] step_0_screen_pos_y; 
     wire step_0_tvalid;
     wire step_0_tlast;
     ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_framebuffer_index (.clk(aclk), .in(framebuffer_index), .out(step_0_framebuffer_index));
+
+    ValueDelay #(.VALUE_SIZE(AXIS_SCREEN_POS_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+        step_0_delay_screen_pos_x (.clk(aclk), .in(screen_pos_x), .out(step_0_screen_pos_x));
+    ValueDelay #(.VALUE_SIZE(AXIS_SCREEN_POS_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+        step_0_delay_screen_pos_y (.clk(aclk), .in(screen_pos_y), .out(step_0_screen_pos_y));
+
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_1_delay_tvalid (.clk(aclk), .in(s_axis_tvalid), .out(step_0_tvalid));
+
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_1_delay_tlast (.clk(aclk), .in(s_axis_tlast), .out(step_0_tlast));
 
@@ -148,17 +161,17 @@ module AttributeInterpolator #(
     assign s_axis_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 1 Convert screen positions integers to float 
+    // STEP 1 Convert bounding box positions integers to float 
     ////////////////////////////////////////////////////////////////////////////
-    wire [FLOAT_SIZE - 1 : 0] step_1_screen_pos_x_float;
-    wire [FLOAT_SIZE - 1 : 0] step_1_screen_pos_y_float;
+    wire [FLOAT_SIZE - 1 : 0] step_1_bounding_box_pos_x_float;
+    wire [FLOAT_SIZE - 1 : 0] step_1_bounding_box_pos_y_float;
     IntToFloat #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .INT_SIZE(32))
-        intToFloatScreenX (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, screen_pos_x}), .out(step_1_screen_pos_x_float));
+        intToFloatBBX (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_x}), .out(step_1_bounding_box_pos_x_float));
     IntToFloat #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .INT_SIZE(32))
-        intToFloatScreenY (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, screen_pos_y}), .out(step_1_screen_pos_y_float));   
+        intToFloatBBY (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_y}), .out(step_1_bounding_box_pos_y_float));   
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 2 Multiply screen positions with the vertex attribute increments
+    // STEP 2 Multiply bounding box positions with the vertex attribute increments
     ////////////////////////////////////////////////////////////////////////////
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_s_x;
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_texture_s_y;
@@ -182,43 +195,43 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] step_2_inc_color_a_y;
 
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_s_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_texture_s_x), .prod(step_2_inc_texture_s_x));
+        inc_step_s_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture_s_x), .prod(step_2_inc_texture_s_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_s_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_texture_s_y), .prod(step_2_inc_texture_s_y));
+        inc_step_s_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture_s_y), .prod(step_2_inc_texture_s_y));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_t_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_texture_t_x), .prod(step_2_inc_texture_t_x));
+        inc_step_t_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture_t_x), .prod(step_2_inc_texture_t_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_t_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_texture_t_y), .prod(step_2_inc_texture_t_y));
+        inc_step_t_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture_t_y), .prod(step_2_inc_texture_t_y));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_tex_q_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_texture_q_x), .prod(step_2_inc_texture_q_x));
+        inc_step_tex_q_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture_q_x), .prod(step_2_inc_texture_q_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_tex_q_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_texture_q_y), .prod(step_2_inc_texture_q_y)); 
+        inc_step_tex_q_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture_q_y), .prod(step_2_inc_texture_q_y)); 
     
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_depth_w_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_depth_w_x), .prod(step_2_inc_depth_w_x));
+        inc_step_depth_w_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_depth_w_x), .prod(step_2_inc_depth_w_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_depth_w_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_depth_w_y), .prod(step_2_inc_depth_w_y)); 
+        inc_step_depth_w_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_depth_w_y), .prod(step_2_inc_depth_w_y)); 
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_depth_z_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_depth_z_x), .prod(step_2_inc_depth_z_x));
+        inc_step_depth_z_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_depth_z_x), .prod(step_2_inc_depth_z_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_depth_z_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_depth_z_y), .prod(step_2_inc_depth_z_y));
+        inc_step_depth_z_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_depth_z_y), .prod(step_2_inc_depth_z_y));
 
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_r_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_color_r_x), .prod(step_2_inc_color_r_x));
+        inc_step_color_r_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_color_r_x), .prod(step_2_inc_color_r_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_t_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_color_g_x), .prod(step_2_inc_color_g_x));
+        inc_step_color_t_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_color_g_x), .prod(step_2_inc_color_g_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_b_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_color_b_x), .prod(step_2_inc_color_b_x));
+        inc_step_color_b_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_color_b_x), .prod(step_2_inc_color_b_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_a_x(.clk(aclk), .facAIn(step_1_screen_pos_x_float), .facBIn(inc_color_a_x), .prod(step_2_inc_color_a_x));
+        inc_step_color_a_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_color_a_x), .prod(step_2_inc_color_a_x));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_r_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_color_r_y), .prod(step_2_inc_color_r_y));
+        inc_step_color_r_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_color_r_y), .prod(step_2_inc_color_r_y));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_g_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_color_g_y), .prod(step_2_inc_color_g_y));
+        inc_step_color_g_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_color_g_y), .prod(step_2_inc_color_g_y));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_b_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_color_b_y), .prod(step_2_inc_color_b_y));
+        inc_step_color_b_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_color_b_y), .prod(step_2_inc_color_b_y));
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
-        inc_step_color_a_y(.clk(aclk), .facAIn(step_1_screen_pos_y_float), .facBIn(inc_color_a_y), .prod(step_2_inc_color_a_y));
+        inc_step_color_a_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_color_a_y), .prod(step_2_inc_color_a_y));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3 Add vertex attributes to the final increment
@@ -375,6 +388,7 @@ module AttributeInterpolator #(
     assign m_axis_tlast = step_0_tlast;
     assign m_axis_tdata = {
         step_0_framebuffer_index,
+        {step_0_screen_pos_y, step_0_screen_pos_x},
         {step_6_depth_w, {FLOAT_SIZE_DIFF{1'b0}}},
         {step_6_texture_t, {FLOAT_SIZE_DIFF{1'b0}}},
         {step_6_texture_s, {FLOAT_SIZE_DIFF{1'b0}}},

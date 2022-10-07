@@ -26,7 +26,8 @@ class Rasterizer
 public:  
     struct __attribute__ ((__packed__)) RasterizedTriangle
     {
-        uint32_t reserved;
+        uint16_t offsetY;
+        uint16_t reserved;
         uint16_t bbStartX;
         uint16_t bbStartY;
         uint16_t bbEndX;

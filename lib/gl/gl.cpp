@@ -946,7 +946,7 @@ GLAPI void APIENTRY glDisable(GLenum cap)
         IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().enableScissor(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap {} not supported", cap);
@@ -1022,7 +1022,7 @@ GLAPI void APIENTRY glEnable(GLenum cap)
         IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().enableScissor(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap {} not supported", cap);

@@ -62,7 +62,7 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
         if ((triangleToIncrement.bbEndY >= lineStart) &&
                 (triangleToIncrement.bbStartY < lineEnd))
         {
-            // Copy entries one by one. It is more efficient for the MCU than a copy constructor or a memcopy.
+            // Copy entries one by one. It is more efficient for the MCU than a copy constructor or a memcpy.
             // It has a big impact on the performance
             incrementedTriangle.bbStartX = triangleToIncrement.bbStartX;
             incrementedTriangle.bbStartY = triangleToIncrement.bbStartY;
@@ -81,7 +81,7 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
 
 
             // The triangle is within the current display area
-            // Check if the trinagle started in the previous area. If so, we have to move the interpolation factors
+            // Check if the triangle started in the previous area. If so, move the interpolation factors
             // to the current area
             if (incrementedTriangle.bbStartY < lineStart)
             {
@@ -109,8 +109,10 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.color = incrementedTriangle.colorYInc;
                 incrementedTriangle.color *= bbDiff;
                 incrementedTriangle.color += triangleToIncrement.color;
+
+                incrementedTriangle.offsetY = lineStart;
             }
-            // The triangle starts in this area. So we just have to readjust the bounding box
+            // The triangle starts in this area. Readjust the bounding box
             else
             {
                 incrementedTriangle.bbStartY -= lineStart;
@@ -120,6 +122,7 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                 incrementedTriangle.depthW = triangleToIncrement.depthW;
                 incrementedTriangle.depthZ = triangleToIncrement.depthZ;
                 incrementedTriangle.color = triangleToIncrement.color;
+                incrementedTriangle.offsetY = lineStart;
             }
 
             return true;
@@ -326,6 +329,9 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
     rasterizedTriangle.colorYInc[1] = cg.dot(wIncYNorm);
     rasterizedTriangle.colorYInc[2] = cb.dot(wIncYNorm);
     rasterizedTriangle.colorYInc[3] = ca.dot(wIncYNorm);
+
+    // Offset
+    rasterizedTriangle.offsetY = 0;
     return true;
 }
 

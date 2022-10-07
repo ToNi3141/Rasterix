@@ -40,7 +40,8 @@ module FrameBuffer
 
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     localparam SIZE = $clog2(FRAME_SIZE * (PIXEL_WIDTH / 8)), // The size of the frame buffer as bytes in power of two
-    localparam ADDR_WIDTH = SIZE - 1 // Convert SIZE from 8 bit bytes to 16 bit pixels
+    localparam ADDR_WIDTH = SIZE - 1, // Convert SIZE from 8 bit bytes to 16 bit pixels
+    parameter SCREEN_POS_WIDTH = 16
 )
 (
     input   wire                        clk,
@@ -57,6 +58,8 @@ module FrameBuffer
     input  wire [PIXEL_WIDTH - 1 : 0]   fragIn,
     input  wire                         fragWriteEnable,
     input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  fragMask,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosY,
     
     /////////////////////////
     // Control
@@ -68,12 +71,17 @@ module FrameBuffer
     input   wire                        cmdCommit,
     input   wire                        cmdMemset,
     input  wire [PIXEL_WIDTH - 1 : 0]   clearColor,
+    input  wire                         enableScissor,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorStartX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorStartY,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorEndX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorEndY,
 
     // AXI Stream master interface
-        output reg                          m_axis_tvalid,
-        input  wire                         m_axis_tready,
-        output reg                          m_axis_tlast,
-        output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata
+    output reg                          m_axis_tvalid,
+    input  wire                         m_axis_tready,
+    output reg                          m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata
     
 );
     localparam PIXEL_PER_BEAT = STREAM_WIDTH / PIXEL_WIDTH;
@@ -129,11 +137,12 @@ module FrameBuffer
         end
         else
         begin
+            assign scissor = !enableScissor || ((screenPosX >= scissorStartX) && (screenPosX < scissorEndX) && (screenPosY >= scissorStartY) && (screenPosY < scissorEndY));
             for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
             begin
                 for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[j];
+                    assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[j] & scissor;
                 end
             end
             assign fragAddrWrite = fragIndexWrite[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];

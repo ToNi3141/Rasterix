@@ -235,6 +235,7 @@ public:
         void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
         void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
         void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
+        void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
 
         uint32_t serialize() const { return m_regVal.data; }
     private:
@@ -248,7 +249,7 @@ public:
                     , depthTest(false)
                     , alphaTest(false)
                     , tmu0(false)
-
+                    , scissor(false)
                 { }
 
                 bool fog : 1;
@@ -256,6 +257,7 @@ public:
                 bool depthTest : 1;
                 bool alphaTest : 1;
                 bool tmu0 : 1;
+                bool scissor : 1;
             } fields {};
             uint32_t data;
         } m_regVal;
@@ -376,11 +378,6 @@ public:
     /// @param height Height of the box
     /// @return true if success
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) = 0;
-
-    /// @brief Enables the scissor 
-    /// @param enable True to enable the scissor box
-    /// @return true if success
-    virtual bool enableScissor(const bool enable) = 0;
 };
 
 #endif // IRENDERER_HPP

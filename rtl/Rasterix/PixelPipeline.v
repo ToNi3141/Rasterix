@@ -83,6 +83,8 @@ module PixelPipeline
     output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite,
     output wire                         colorWriteEnable,
     output wire [PIXEL_WIDTH - 1 : 0]   colorOut,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosY,
 
     // ZBuffer buffer access
     // Read
@@ -91,10 +93,13 @@ module PixelPipeline
     // Write
     output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite,
     output wire                         depthWriteEnable,
-    output wire [DEPTH_WIDTH - 1 : 0]   depthOut
+    output wire [DEPTH_WIDTH - 1 : 0]   depthOut,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosY
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
+    localparam SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
 
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
@@ -117,6 +122,8 @@ module PixelPipeline
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
     wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]  step_convert_framebuffer_index;
+    wire [SCREEN_POS_WIDTH - 1 : 0] step_convert_sreen_pos_x;
+    wire [SCREEN_POS_WIDTH - 1 : 0] step_convert_sreen_pos_y;
     wire [FLOAT_SIZE - 1 : 0]   step_convert_depth_w_float;
     wire [31 : 0]               step_convert_texture_s;
     wire [31 : 0]               step_convert_texture_t;
@@ -130,6 +137,12 @@ module PixelPipeline
 
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
         convert_framebuffer_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
+
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
+        convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_x));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
+        convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_y));
+
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
         convert_depth_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
@@ -158,12 +171,14 @@ module PixelPipeline
     // Calculate fragment color
     // Clocks: 11
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]                              step1_fragmentColor;
-    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step1_index;
-    wire [31 : 0]                                           step1_depth;
-    wire [31 : 0]                                           step1_depthWFloat;
-    wire                                                    step1_valid;
-    wire [PIXEL_WIDTH - 1 : 0]                              step1_primaryColor = {
+    wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step1_index;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosY;
+    wire [31 : 0]                           step1_depth;
+    wire [31 : 0]                           step1_depthWFloat;
+    wire                                    step1_valid;
+    wire [PIXEL_WIDTH - 1 : 0]              step1_primaryColor = {
         // clamp colors 
         (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
         (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
@@ -171,8 +186,14 @@ module PixelPipeline
         (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
     };
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(11)) 
-        step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
+    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(11)) 
+        step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index[0 +: FRAMEBUFFER_INDEX_WIDTH]), .out(step1_index));
+
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+        step1_screenPosXDelay (.clk(aclk), .in(step_convert_sreen_pos_x), .out(step1_screenPosX));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+        step1_screenPosYDelay (.clk(aclk), .in(step_convert_sreen_pos_y), .out(step1_screenPosY));
+
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
@@ -216,13 +237,19 @@ module PixelPipeline
     // Calculate Fog
     // Clocks: 6
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]                              step2_fragmentColor;
-    wire [ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - 1 : 0]   step2_index;
-    wire [31 : 0]                                           step2_depth;
-    wire                                                    step2_valid;
+    wire [PIXEL_WIDTH - 1 : 0]              step2_fragmentColor;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step2_index;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosY;
+    wire [31 : 0]                           step2_depth;
+    wire                                    step2_valid;
 
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(6)) 
+    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(6)) 
         step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(6)) 
+        step2_screenPosXDelay (.clk(aclk), .in(step1_screenPosX), .out(step2_screenPosX));
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(6)) 
+        step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(6)) 
         step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
@@ -256,6 +283,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     PerFragmentPipeline #(
         .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
+        .SCREEN_POS_WIDTH(SCREEN_POS_WIDTH),
         .DEPTH_WIDTH(DEPTH_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) perFragmentPipeline (
@@ -268,7 +296,9 @@ module PixelPipeline
         .valid(step2_valid),
         .fragmentColor(step2_fragmentColor),
         .depth(step2_depth),
-        .index(step2_index[0 +: FRAMEBUFFER_INDEX_WIDTH]),
+        .index(step2_index),
+        .screenPosX(step2_screenPosX),
+        .screenPosY(step2_screenPosY),
 
         .fragmentProcessed(fragmentProcessed),
 
@@ -278,13 +308,17 @@ module PixelPipeline
         .colorIndexWrite(colorIndexWrite),
         .colorWriteEnable(colorWriteEnable),
         .colorOut(colorOut),
+        .colorOutScreenPosX(colorOutScreenPosX),
+        .colorOutScreenPosY(colorOutScreenPosY),
 
         .depthIndexRead(depthIndexRead),
         .depthIn(depthIn),
         
         .depthIndexWrite(depthIndexWrite),
         .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut)
+        .depthOut(depthOut),
+        .depthOutScreenPosX(depthOutScreenPosX),
+        .depthOutScreenPosY(depthOutScreenPosY)
     );
 endmodule
 

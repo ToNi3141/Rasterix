@@ -42,6 +42,8 @@ module CommandParser #(
     output wire [31:0]  confTMU0TexEnvConfig,
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
+    output wire [31:0]  confScissorStartXY,
+    output wire [31:0]  confScissorEndXY,
 
     // Control
     input  wire         rasterizerRunning,
@@ -116,6 +118,8 @@ module CommandParser #(
     assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
     assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
     assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
+    assign confScissorStartXY = configReg[OP_RENDER_CONFIG_SCISSOR_START_XY];
+    assign confScissorEndXY = configReg[OP_RENDER_CONFIG_SCISSOR_END_XY];
 
     assign dbgStreamState = state[3:0];
 
@@ -315,7 +319,7 @@ module CommandParser #(
             begin
                 if (s_cmd_axis_tvalid)
                 begin
-                    configReg[streamCounter[0 +: 3]] <= s_cmd_axis_tdata[0 +: 32];
+                    configReg[streamCounter[0 +: 4]] <= s_cmd_axis_tdata[0 +: 32];
                     s_cmd_axis_tready <= 0;
                     state <= WAIT_FOR_IDLE;
                 end

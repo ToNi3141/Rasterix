@@ -321,14 +321,16 @@ public:
 
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
     {
-        m_rasterizer.setScissorBox(x, y, width, height);
-        return true;
-    }
-
-    virtual bool enableScissor(const bool enable) override
-    {
-        m_rasterizer.enableScissor(enable);
-        return true;
+        bool ret = true;
+        const uint32_t start {
+            (static_cast<uint32_t>(y) << 16) | static_cast<uint32_t>(x)
+        };
+        const uint32_t end {
+            (static_cast<uint32_t>(y + height) << 16) | static_cast<uint32_t>(x + width)
+        };
+        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_START_XY, start);
+        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_END_XY, end);
+        return ret;
     }
 
 private:
