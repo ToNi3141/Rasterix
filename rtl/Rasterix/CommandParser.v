@@ -44,7 +44,7 @@ module CommandParser #(
     output wire [31:0]  confTMU0TexEnvColor,
     output wire [31:0]  confScissorStartXY,
     output wire [31:0]  confScissorEndXY,
-    output reg  [11:0]  confTriangleYOffset,
+    output wire [11:0]  confYOffset,
 
     // Control
     input  wire         rasterizerRunning,
@@ -121,6 +121,7 @@ module CommandParser #(
     assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
     assign confScissorStartXY = configReg[OP_RENDER_CONFIG_SCISSOR_START_XY];
     assign confScissorEndXY = configReg[OP_RENDER_CONFIG_SCISSOR_END_XY];
+    assign confYOffset = configReg[OP_RENDER_CONFIG_Y_OFFSET][0 +: 12];
 
     assign dbgStreamState = state[3:0];
 
@@ -178,7 +179,6 @@ module CommandParser #(
                         /* verilator lint_off WIDTH */
                         streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_TRIANGLE_STEEAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         /* verilator lint_off WIDTH */
-                        confTriangleYOffset <= s_cmd_axis_tdata[OP_TRIANGLE_STREAM_Y_OFFSET +: OP_TRIANGLE_STEEAM_Y_OFFSET_SIZE];
                         state <= EXEC_TRIANGLE_STREAM;
                     end
                     OP_TEXTURE_STREAM:

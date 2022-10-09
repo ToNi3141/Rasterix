@@ -73,6 +73,7 @@ private:
         static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0007;
         static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG     = 0x0000'0008;
         static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG       = 0x0000'0009;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_Y_OFFSET                    = 0x0000'000A;
 
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
@@ -81,11 +82,6 @@ private:
 
         static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU0    = RR_OP_TEXTURE_STREAM | 0x0000;
         static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU1    = RR_OP_TEXTURE_STREAM | 0x0100;
-
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_SIZE_POS      = 0;
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_SIZE_SIZE     = 10;
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_Y_OFFSET_POS  = RR_TRIANGLE_STREAM_SIZE_POS + RR_TRIANGLE_STREAM_SIZE_SIZE;
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_Y_OFFSET_SIZE = 12;
 
         static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
@@ -129,13 +125,12 @@ public:
         return false;
     }
 
-    Rasterizer::RasterizedTriangle* drawTriangle(const uint32_t yOffset)
+    Rasterizer::RasterizedTriangle* drawTriangle()
     {
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand = false;
-            const typename StreamCommand::StreamCommandType tri { StreamCommand::RR_TRIANGLE_STREAM_FULL | (yOffset << StreamCommand::RR_TRIANGLE_STREAM_Y_OFFSET_POS) };
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(tri);
+            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
         }
         return nullptr;
     }
@@ -292,6 +287,11 @@ public:
             return true;
         }
         return false;
+    }
+
+    bool setYOffset(const uint32_t offset)
+    {
+        return writeRegister(StreamCommand::RR_RENDER_CONFIG_Y_OFFSET, offset);
     }
 
     const List* getDisplayList() const

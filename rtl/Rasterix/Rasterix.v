@@ -87,18 +87,18 @@ module Rasterix #(
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
-    wire        colorWriteEnable;
-    wire [15 : 0] colorIn;
-    wire [31 : 0] colorOut;
+    wire            colorWriteEnable;
+    wire [15 : 0]   colorIn;
+    wire [31 : 0]   colorOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosY;
 
     // Depth buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite;
-    wire        depthWriteEnable;
-    wire [15 : 0] depthIn;
-    wire [15 : 0] depthOut;
+    wire            depthWriteEnable;
+    wire [15 : 0]   depthIn;
+    wire [15 : 0]   depthOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosY;
 
@@ -109,57 +109,57 @@ module Rasterix #(
 
    
     // Control
-    wire        rasterizerRunning;
-    wire        s_rasterizer_axis_tvalid;
-    wire        s_rasterizer_axis_tready;
-    wire        s_rasterizer_axis_tlast;
+    wire            rasterizerRunning;
+    wire            s_rasterizer_axis_tvalid;
+    wire            s_rasterizer_axis_tready;
+    wire            s_rasterizer_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0] s_rasterizer_axis_tdata;
 
     // Memory
-    wire        colorBufferApply;
-    wire        colorBufferApplied;
-    wire        colorBufferCmdCommit;
-    wire        colorBufferCmdMemset;
-    wire [31:0] confColorBufferClearColor;
-    wire        depthBufferApply;
-    wire        depthBufferApplied;
-    wire        depthBufferCmdCommit;
-    wire        depthBufferCmdMemset;
-    wire [15:0] confDepthBufferClearDepth;
+    wire            colorBufferApply;
+    wire            colorBufferApplied;
+    wire            colorBufferCmdCommit;
+    wire            colorBufferCmdMemset;
+    wire [31 : 0]   confColorBufferClearColor;
+    wire            depthBufferApply;
+    wire            depthBufferApplied;
+    wire            depthBufferCmdCommit;
+    wire            depthBufferCmdMemset;
+    wire [15 : 0]   confDepthBufferClearDepth;
 
     // Texture memory AXIS
-    wire        s_texture_steam_tmu0_axis_tvalid;
-    wire        s_texture_steam_tmu0_axis_tready;
-    wire        s_texture_steam_tmu0_axis_tlast;
+    wire            s_texture_steam_tmu0_axis_tvalid;
+    wire            s_texture_steam_tmu0_axis_tready;
+    wire            s_texture_steam_tmu0_axis_tlast;
     wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu0_axis_tdata;
 
     // Attribute interpolator
-    wire        m_attr_inter_axis_tvalid;
-    wire        m_attr_inter_axis_tready;
-    wire        m_attr_inter_axis_tlast;
+    wire            m_attr_inter_axis_tvalid;
+    wire            m_attr_inter_axis_tready;
+    wire            m_attr_inter_axis_tlast;
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31:0] confFeatureEnable;
-    wire [31:0] confFragmentPipelineConfig;
-    wire [31:0] confFragmentPipelineFogColor;
-    wire [31:0] confTMU0TexEnvConfig;
-    wire [31:0] confTMU0TextureConfig;
-    wire [31:0] confTMU0TexEnvColor;
-    wire [31:0] confScissorStartXY;
-    wire [31:0] confScissorEndXY;
+    wire [31 : 0]   confFeatureEnable;
+    wire [31 : 0]   confFragmentPipelineConfig;
+    wire [31 : 0]   confFragmentPipelineFogColor;
+    wire [31 : 0]   confTMU0TexEnvConfig;
+    wire [31 : 0]   confTMU0TextureConfig;
+    wire [31 : 0]   confTMU0TexEnvColor;
+    wire [31 : 0]   confScissorStartXY;
+    wire [31 : 0]   confScissorEndXY;
+    wire [11 : 0]   confYOffset;
 
     // Rasterizer
     wire            m_rasterizer_axis_tvalid;
     wire            m_rasterizer_axis_tready;
     wire            m_rasterizer_axis_tlast;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
-    wire [11 : 0]   confTriangleYOffset;
 
     // Fog LUT
-    wire        s_fog_lut_axis_tvalid;
-    wire        s_fog_lut_axis_tready;
-    wire        s_fog_lut_axis_tlast;
+    wire            s_fog_lut_axis_tvalid;
+    wire            s_fog_lut_axis_tready;
+    wire            s_fog_lut_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata;
 
     // Register bank
@@ -193,7 +193,7 @@ module Rasterix #(
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
         .confScissorStartXY(confScissorStartXY),
         .confScissorEndXY(confScissorEndXY),
-        .confTriangleYOffset(confTriangleYOffset),
+        .confYOffset(confYOffset),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -270,6 +270,13 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
+        .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+        .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
+        .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
+        .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
+        .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
+        .confYOffset(confYOffset),
+
         .fragIndexRead(depthIndexRead),
         .fragOut(depthIn),
         .fragIndexWrite(depthIndexWrite),
@@ -283,11 +290,7 @@ module Rasterix #(
         .applied(depthBufferApplied),
         .cmdCommit(depthBufferCmdCommit),
         .cmdMemset(depthBufferCmdMemset),
-        .enableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
-        .scissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
-        .scissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
-        .scissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
-        .scissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
+
 
         .m_axis_tvalid(),
         .m_axis_tready(1'b1),
@@ -306,6 +309,13 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
+        .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+        .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
+        .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
+        .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
+        .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
+        .confYOffset(confYOffset),
+
         .fragIndexRead(colorIndexRead),
         .fragOut(colorIn),
         .fragIndexWrite(colorIndexWrite),
@@ -323,11 +333,6 @@ module Rasterix #(
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
         .clearColor(Reduce(confColorBufferClearColor)),
-        .enableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
-        .scissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]), // TODO: Add conf prefix
-        .scissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
-        .scissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
-        .scissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
@@ -346,7 +351,7 @@ module Rasterix #(
 
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
-        .yOffset(confTriangleYOffset),
+        .yOffset(confYOffset),
 
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),

@@ -68,6 +68,7 @@ public:
         for (auto& entry : m_displayListAssembler)
         {
             entry.clearAssembler();
+            // TODO: Set y offset, otherwise the first frame will be broken.
         }
 
         setTexEnvColor({{0, 0, 0, 0}});
@@ -110,7 +111,7 @@ public:
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle(currentScreenPositionStart);
+                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
                 if (triangleConfDl != nullptr)
                 {
                     std::memcpy(triangleConfDl, &triangleConf, sizeof(triangleConf));
@@ -176,6 +177,7 @@ public:
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
                 }
                 return true;
             });

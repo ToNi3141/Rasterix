@@ -60,7 +60,8 @@ localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 6;
 localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 7;
 localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 8;
 localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 9;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 10;
+localparam OP_RENDER_CONFIG_Y_OFFSET = 10;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 11;
 
 
 
@@ -80,16 +81,13 @@ localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 
 //---------------------------------------------------------------------------------------------------------
 // Triangle Stream
-//  +------------------------------------------------------------------------------------+
-//  | 4'h4 | 6'hx reserved | 12'hx Y Offset | 10'hx size of triangle descriptor in bytes |
-//  +------------------------------------------------------------------------------------+
+//  +--------------------------------------------------------------------+
+//  | 4'h4 | 18'hx reserved | 10'hx size of triangle descriptor in bytes |
+//  +--------------------------------------------------------------------+
 // Immediate value contains size of triangle in bytes (inclusive the additional bytes which are required for CMD_AXIS bus alignment).
-// Steam size n 32bit values.
 localparam OP_TRIANGLE_STREAM = 3;
 localparam OP_TIRANGLE_STREAM_SIZE_POS = 0;
 localparam OP_TRIANGLE_STEEAM_SIZE_SIZE = 10;
-localparam OP_TRIANGLE_STREAM_Y_OFFSET = OP_TRIANGLE_STEEAM_SIZE_SIZE;
-localparam OP_TRIANGLE_STEEAM_Y_OFFSET_SIZE = 12;
 
 //---------------------------------------------------------------------------------------------------------
 // Fog LuT configuration
