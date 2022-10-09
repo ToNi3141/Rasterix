@@ -48,87 +48,9 @@ bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
                                    const uint16_t lineStart,
                                    const uint16_t lineEnd)
 {
-    if ((lineStart == 0) && (triangleToIncrement.bbStartY < lineEnd))
-    {
-        // Handle the first case in a special manner, because this case is really fast to calculate. Just check
-        // for the bounding box and if the triangle is in this bounding box, just render it
-        memcpy(&incrementedTriangle, &triangleToIncrement, sizeof(incrementedTriangle));
-        return true;
-    }
-    else
-    {
-        // Check if the triangle is in the current area by checking if the end position is below the start line
-        // and if the start of the triangle is within this area
-        if ((triangleToIncrement.bbEndY >= lineStart) &&
-                (triangleToIncrement.bbStartY < lineEnd))
-        {
-            // Copy entries one by one. It is more efficient for the MCU than a copy constructor or a memcpy.
-            // It has a big impact on the performance
-            incrementedTriangle.bbStartX = triangleToIncrement.bbStartX;
-            incrementedTriangle.bbStartY = triangleToIncrement.bbStartY;
-            incrementedTriangle.bbEndX = triangleToIncrement.bbEndX;
-            incrementedTriangle.bbEndY = triangleToIncrement.bbEndY;
-            incrementedTriangle.wXInc = triangleToIncrement.wXInc;
-            incrementedTriangle.wYInc = triangleToIncrement.wYInc;
-            incrementedTriangle.texStqXInc = triangleToIncrement.texStqXInc;
-            incrementedTriangle.texStqYInc = triangleToIncrement.texStqYInc;
-            incrementedTriangle.depthWXInc = triangleToIncrement.depthWXInc;
-            incrementedTriangle.depthWYInc = triangleToIncrement.depthWYInc;
-            incrementedTriangle.depthZXInc = triangleToIncrement.depthZXInc;
-            incrementedTriangle.depthZYInc = triangleToIncrement.depthZYInc;
-            incrementedTriangle.colorXInc = triangleToIncrement.colorXInc;
-            incrementedTriangle.colorYInc = triangleToIncrement.colorYInc;
-
-
-            // The triangle is within the current display area
-            // Check if the triangle started in the previous area. If so, move the interpolation factors
-            // to the current area
-            if (incrementedTriangle.bbStartY < lineStart)
-            {
-                incrementedTriangle.depthW = triangleToIncrement.depthW;
-
-                incrementedTriangle.depthZ = triangleToIncrement.depthZ;
-
-                const int32_t bbDiff = lineStart - incrementedTriangle.bbStartY;
-                incrementedTriangle.bbStartY = 0;
-                incrementedTriangle.bbEndY -= lineStart;
-
-                incrementedTriangle.wInit = incrementedTriangle.wYInc;
-                incrementedTriangle.wInit *= bbDiff;
-                incrementedTriangle.wInit += triangleToIncrement.wInit;
-
-
-                incrementedTriangle.texStq = incrementedTriangle.texStqYInc;
-                incrementedTriangle.texStq *= bbDiff;
-                incrementedTriangle.texStq += triangleToIncrement.texStq;
-
-                incrementedTriangle.depthW += incrementedTriangle.depthWYInc * bbDiff;
-
-                incrementedTriangle.depthZ += incrementedTriangle.depthZYInc * bbDiff;
-
-                incrementedTriangle.color = incrementedTriangle.colorYInc;
-                incrementedTriangle.color *= bbDiff;
-                incrementedTriangle.color += triangleToIncrement.color;
-
-                incrementedTriangle.offsetY = lineStart;
-            }
-            // The triangle starts in this area. Readjust the bounding box
-            else
-            {
-                incrementedTriangle.bbStartY -= lineStart;
-                incrementedTriangle.bbEndY -= lineStart;
-                incrementedTriangle.wInit = triangleToIncrement.wInit;
-                incrementedTriangle.texStq = triangleToIncrement.texStq;
-                incrementedTriangle.depthW = triangleToIncrement.depthW;
-                incrementedTriangle.depthZ = triangleToIncrement.depthZ;
-                incrementedTriangle.color = triangleToIncrement.color;
-                incrementedTriangle.offsetY = lineStart;
-            }
-
-            return true;
-        }
-    }
-    return false;
+    memcpy(&incrementedTriangle, &triangleToIncrement, sizeof(incrementedTriangle));
+    incrementedTriangle.offsetY = lineStart;
+    return checkIfTriangleIsInBounds(incrementedTriangle, lineStart, lineEnd);
 }
 
 bool Rasterizer::checkIfTriangleIsInBounds(Rasterizer::RasterizedTriangle &triangle,

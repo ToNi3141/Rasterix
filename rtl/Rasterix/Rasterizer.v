@@ -83,6 +83,8 @@ module Rasterizer
     // Rasterizer variables
     reg  [5 : 0] rasterizerState;
     reg  [Y_BIT_WIDTH - 1 : 0] y;
+    reg  [Y_BIT_WIDTH - 1 : 0] yScreen;
+    reg  [Y_BIT_WIDTH - 1 : 0] yScreenEnd;
     reg  [X_BIT_WIDTH - 1 : 0] x;
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
     wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
@@ -122,14 +124,37 @@ module Rasterizer
             end
             RASTERIZER_INIT:
             begin
-                regW0 <= w0;
-                regW1 <= w1;
-                regW2 <= w2;
-
                 // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d, offsetY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH], offsetY[0 +: 16]);
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
-                y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+
+                if (offsetY[0 +: Y_BIT_WIDTH] <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
+                begin
+                    regW0 <= w0;
+                    regW1 <= w1;
+                    regW2 <= w2;
+                    
+                    yScreen <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - offsetY[0 +: Y_BIT_WIDTH];
+                end
+                else
+                begin
+                    regW0 <= w0 + ($signed(w0IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
+                    regW1 <= w1 + ($signed(w1IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
+                    regW2 <= w2 + ($signed(w2IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
+
+                    yScreen <= offsetY[0 +: Y_BIT_WIDTH];
+                    y <= 0;
+                end
+
+                if ((offsetY[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
+                begin
+                    yScreenEnd <= offsetY[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION;
+                end
+                else
+                begin
+                    yScreenEnd <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH];
+                end
 
                 // Initialize the edge walker
                 edgeWalkingDirection <= EDGE_WALKING_DIRECTION_RIGHT;
@@ -178,6 +203,7 @@ module Rasterizer
                     begin
                         // Line Increment
                         y <= y + 1;
+                        yScreen <= yScreen + 1;
 
                         regW0 <= regW0 + $signed(w0IncY);
                         regW1 <= regW1 + $signed(w1IncY);
@@ -205,7 +231,7 @@ module Rasterizer
                         end
                     end
 
-                    if ((y < bbEnd[BB_Y_POS +: Y_BIT_WIDTH]) && (y < Y_LINE_RESOLUTION))
+                    if (yScreen < yScreenEnd)
                     begin
                         case (edgeWalkingState)
                         RASTERIZER_EDGEWALKER_INIT:
@@ -348,8 +374,8 @@ module Rasterizer
                     // Arguments for the shader
                     m_axis_tdata <= {
                         {{(ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} + offsetY[0 +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x}},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - bbStart[BB_Y_POS +: Y_BIT_WIDTH], {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: X_BIT_WIDTH]}
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen}, {{(16 - X_BIT_WIDTH){1'b0}}, x}},
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]}, {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: X_BIT_WIDTH]}
                     };
                 end
             end
