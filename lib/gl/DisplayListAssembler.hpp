@@ -82,6 +82,11 @@ private:
         static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU0    = RR_OP_TEXTURE_STREAM | 0x0000;
         static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU1    = RR_OP_TEXTURE_STREAM | 0x0100;
 
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM_SIZE_POS      = 0;
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM_SIZE_SIZE     = 10;
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM_Y_OFFSET_POS  = RR_TRIANGLE_STREAM_SIZE_POS + RR_TRIANGLE_STREAM_SIZE_SIZE;
+        static constexpr StreamCommandType RR_TRIANGLE_STREAM_Y_OFFSET_SIZE = 12;
+
         static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
@@ -124,12 +129,13 @@ public:
         return false;
     }
 
-    Rasterizer::RasterizedTriangle* drawTriangle()
+    Rasterizer::RasterizedTriangle* drawTriangle(const uint32_t yOffset)
     {
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand = false;
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
+            const typename StreamCommand::StreamCommandType tri { StreamCommand::RR_TRIANGLE_STREAM_FULL | (yOffset << StreamCommand::RR_TRIANGLE_STREAM_Y_OFFSET_POS) };
+            return createStreamCommand<Rasterizer::RasterizedTriangle>(tri);
         }
         return nullptr;
     }

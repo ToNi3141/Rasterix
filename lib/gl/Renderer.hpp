@@ -110,13 +110,10 @@ public:
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
+                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle(currentScreenPositionStart);
                 if (triangleConfDl != nullptr)
                 {
-                    Rasterizer::calcLineIncrement(*triangleConfDl,
-                                                  triangleConf,
-                                                  currentScreenPositionStart,
-                                                  currentScreenPositionEnd);
+                    std::memcpy(triangleConfDl, &triangleConf, sizeof(triangleConf));
                 }
                 else
                 {

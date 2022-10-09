@@ -150,10 +150,11 @@ module Rasterix #(
     wire [31:0] confScissorEndXY;
 
     // Rasterizer
-    wire        m_rasterizer_axis_tvalid;
-    wire        m_rasterizer_axis_tready;
-    wire        m_rasterizer_axis_tlast;
+    wire            m_rasterizer_axis_tvalid;
+    wire            m_rasterizer_axis_tready;
+    wire            m_rasterizer_axis_tlast;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
+    wire [11 : 0]   confTriangleYOffset;
 
     // Fog LUT
     wire        s_fog_lut_axis_tvalid;
@@ -192,6 +193,7 @@ module Rasterix #(
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
         .confScissorStartXY(confScissorStartXY),
         .confScissorEndXY(confScissorEndXY),
+        .confTriangleYOffset(confTriangleYOffset),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
@@ -344,13 +346,13 @@ module Rasterix #(
 
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
+        .yOffset(confTriangleYOffset),
 
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),
         .m_axis_tlast(m_rasterizer_axis_tlast),
         .m_axis_tdata(m_rasterizer_axis_tdata),
 
-        .offsetY(triangleParams[TRIANGLE_STREAM_OFFSET_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .w0(triangleParams[TRIANGLE_STREAM_INC_W0 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),

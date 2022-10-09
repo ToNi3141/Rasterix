@@ -43,16 +43,6 @@ bool Rasterizer::rasterize(RasterizedTriangle& rasterizedTriangle,
    return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, c0f, v1f, st1f, c1f, v2f, st2f, c2f);
 }
 
-bool Rasterizer::calcLineIncrement(RasterizedTriangle &incrementedTriangle,
-                                   const RasterizedTriangle &triangleToIncrement,
-                                   const uint16_t lineStart,
-                                   const uint16_t lineEnd)
-{
-    memcpy(&incrementedTriangle, &triangleToIncrement, sizeof(incrementedTriangle));
-    incrementedTriangle.offsetY = lineStart;
-    return checkIfTriangleIsInBounds(incrementedTriangle, lineStart, lineEnd);
-}
-
 bool Rasterizer::checkIfTriangleIsInBounds(Rasterizer::RasterizedTriangle &triangle,
                                            const uint16_t lineStart,
                                            const uint16_t lineEnd)
@@ -252,8 +242,6 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
     rasterizedTriangle.colorYInc[2] = cb.dot(wIncYNorm);
     rasterizedTriangle.colorYInc[3] = ca.dot(wIncYNorm);
 
-    // Offset
-    rasterizedTriangle.offsetY = 0;
     return true;
 }
 

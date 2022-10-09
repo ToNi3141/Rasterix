@@ -80,12 +80,16 @@ localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 
 //---------------------------------------------------------------------------------------------------------
 // Triangle Stream
-//  +---------------------------------------------------+
-//  | 4'h4 | 28'hx size of triangle descriptor in bytes |
-//  +---------------------------------------------------+
+//  +------------------------------------------------------------------------------------+
+//  | 4'h4 | 6'hx reserved | 12'hx Y Offset | 10'hx size of triangle descriptor in bytes |
+//  +------------------------------------------------------------------------------------+
 // Immediate value contains size of triangle in bytes (inclusive the additional bytes which are required for CMD_AXIS bus alignment).
 // Steam size n 32bit values.
 localparam OP_TRIANGLE_STREAM = 3;
+localparam OP_TIRANGLE_STREAM_SIZE_POS = 0;
+localparam OP_TRIANGLE_STEEAM_SIZE_SIZE = 10;
+localparam OP_TRIANGLE_STREAM_Y_OFFSET = OP_TRIANGLE_STEEAM_SIZE_SIZE;
+localparam OP_TRIANGLE_STEEAM_Y_OFFSET_SIZE = 12;
 
 //---------------------------------------------------------------------------------------------------------
 // Fog LuT configuration
@@ -349,7 +353,7 @@ localparam COLOR_A_POS = COLOR_SUB_PIXEL_WIDTH * 0;
 // OP_TRIANGLE_STREAM 
 // Triangle Descriptor, each value containts 4 bytes.
 localparam TRIANGLE_STREAM_PARAM_SIZE = 32;
-localparam TRIANGLE_STREAM_OFFSET_Y = 0; // (U32 bit)
+localparam TRIANGLE_STREAM_RESERVED = 0; // 32 bit
 localparam TRIANGLE_STREAM_BB_START = 1; // S15.0, S15.0 (32bit)
 localparam TRIANGLE_STREAM_BB_END = 2; // S15.0, S15.0 (32bit)
 localparam TRIANGLE_STREAM_INC_W0 = 3; // Sn.m (32bit)

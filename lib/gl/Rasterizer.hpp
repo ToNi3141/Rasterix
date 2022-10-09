@@ -26,8 +26,7 @@ class Rasterizer
 public:  
     struct __attribute__ ((__packed__)) RasterizedTriangle
     {
-        uint16_t offsetY;
-        uint16_t reserved;
+        uint32_t reserved;
         uint16_t bbStartX;
         uint16_t bbStartY;
         uint16_t bbEndX;
@@ -64,11 +63,6 @@ public:
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable);
-
-    static bool calcLineIncrement(RasterizedTriangle &incrementedTriangle,
-                                  const RasterizedTriangle &triangleToIncrement,
-                                  const uint16_t lineStart,
-                                  const uint16_t lineEnd);
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
