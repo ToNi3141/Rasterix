@@ -85,6 +85,7 @@ module Rasterizer
     reg  [Y_BIT_WIDTH - 1 : 0] y;
     reg  [Y_BIT_WIDTH - 1 : 0] yScreen;
     reg  [Y_BIT_WIDTH - 1 : 0] yScreenEnd;
+    reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0] x;
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
     wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
@@ -117,6 +118,7 @@ module Rasterizer
                 m_axis_tvalid <= 0;
                 if (startRendering)
                 begin
+                    lineBBStart <= offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
                     rasterizerRunning <= 1;
                     rasterizerState <= RASTERIZER_INIT;
                     // $display("start rendering");
@@ -128,6 +130,13 @@ module Rasterizer
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
 
+                // Shift the triangle to the current framebuffer line. Everything can be calculated in software if this implementation
+                // takes too much logic. It can be completely discarded, when the framebuffer is big enough to contain the whole screen. This is only 
+                // required in the line mode, to handle the offsets in y direction when rendering a new line.
+                // Check if the current line offset is above the bounding box. Means, the bounding box starts in this line or in lines after this line.
+                // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start possition is in this
+                // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
+                // for this line.
                 if (offsetY[0 +: Y_BIT_WIDTH] <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
                 begin
                     regW0 <= w0;
@@ -139,14 +148,16 @@ module Rasterizer
                 end
                 else
                 begin
-                    regW0 <= w0 + ($signed(w0IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
-                    regW1 <= w1 + ($signed(w1IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
-                    regW2 <= w2 + ($signed(w2IncY) * (offsetY[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH]));
+                    regW0 <= w0 + ($signed(w0IncY) * lineBBStart);
+                    regW1 <= w1 + ($signed(w1IncY) * lineBBStart);
+                    regW2 <= w2 + ($signed(w2IncY) * lineBBStart);
 
                     yScreen <= offsetY[0 +: Y_BIT_WIDTH];
                     y <= 0;
                 end
-
+                // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
+                // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
+                // The the condition occures that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
                 if ((offsetY[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
                 begin
                     yScreenEnd <= offsetY[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION;
