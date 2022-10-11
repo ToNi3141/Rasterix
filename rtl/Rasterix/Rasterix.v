@@ -299,11 +299,13 @@ module Rasterix #(
 
         .clearColor(confDepthBufferClearDepth)
     );
-    defparam depthBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
     defparam depthBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
+    defparam depthBuffer.X_RESOLUTION = X_RESOLUTION;
+    defparam depthBuffer.Y_RESOLUTION = Y_RESOLUTION;
+    defparam depthBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
 
     FrameBuffer colorBuffer (  
         .clk(aclk),
@@ -339,11 +341,13 @@ module Rasterix #(
         .m_axis_tlast(m_framebuffer_axis_tlast),
         .m_axis_tdata(m_framebuffer_axis_tdata)
     );
-    defparam colorBuffer.FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION;
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
     defparam colorBuffer.SUB_PIXEL_WIDTH = MEMORY_SUB_PIXEL_WIDTH;
     defparam colorBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
+    defparam colorBuffer.X_RESOLUTION = X_RESOLUTION;
+    defparam colorBuffer.Y_RESOLUTION = Y_RESOLUTION;
+    defparam colorBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
 
     Rasterizer rop (
         .clk(aclk), 

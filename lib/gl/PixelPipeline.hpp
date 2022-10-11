@@ -84,7 +84,7 @@ public:
     void setEnableMagFilter(const bool val) { m_texEnableMagFilter = val; }
 
     // Framebuffer
-    bool clearFramebuffer(bool frameBuffer, bool zBuffer) { return m_renderer.clear(frameBuffer, zBuffer); }
+    bool clearFramebuffer(bool frameBuffer, bool zBuffer);
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
 

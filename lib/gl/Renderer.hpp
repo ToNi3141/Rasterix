@@ -68,7 +68,11 @@ public:
         for (auto& entry : m_displayListAssembler)
         {
             entry.clearAssembler();
-            // TODO: Set y offset, otherwise the first frame will be broken.
+        }
+        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        {
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
         }
 
         setTexEnvColor({{0, 0, 0, 0}});
@@ -186,6 +190,7 @@ public:
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
+        // TODO: Check scissor bounding box to avoid unnecessary clears
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {

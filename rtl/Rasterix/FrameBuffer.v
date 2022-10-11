@@ -29,7 +29,6 @@
 // Depth: 1 cycle
 module FrameBuffer
 #(
-    parameter FRAME_SIZE = 128 * 128, // 128px * 128px. Used for abort the memset and commit phase when all pixels are transferred without processing the padding pixel
     
     parameter STREAM_WIDTH = 16,
     
@@ -37,6 +36,11 @@ module FrameBuffer
     parameter NUMBER_OF_SUB_PIXELS = 4,
 
     parameter SUB_PIXEL_WIDTH = 4,
+
+    parameter X_RESOLUTION = 1024,
+    parameter Y_RESOLUTION = 600,
+    parameter Y_LINE_RESOLUTION = 48,
+    localparam FRAME_SIZE = X_RESOLUTION * Y_LINE_RESOLUTION, // 128px * 128px. Used for abort the memset and commit phase when all pixels are transferred without processing the padding pixel
 
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     localparam SIZE = $clog2(FRAME_SIZE * (PIXEL_WIDTH / 8)), // The size of the frame buffer as bytes in power of two
@@ -46,6 +50,16 @@ module FrameBuffer
 (
     input   wire                        clk,
     input   wire                        reset,
+
+    /////////////////////////
+    // Configs
+    /////////////////////////
+    input  wire                             confEnableScissor,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorStartX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorStartY,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorEndX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorEndY,
+    input  wire [11 : 0]                    confYOffset,
 
     /////////////////////////
     // Fragment interface
@@ -66,16 +80,12 @@ module FrameBuffer
     /////////////////////////
 
     // Cmd interface
-    input   wire                        apply, // This will apply and clear the cache
-    output  reg                         applied,
-    input   wire                        cmdCommit,
-    input   wire                        cmdMemset,
+    input  wire                         apply, // This will apply and clear the cache
+    output reg                          applied,
+    input  wire                         cmdCommit,
+    input  wire                         cmdMemset,
     input  wire [PIXEL_WIDTH - 1 : 0]   clearColor,
-    input  wire                         enableScissor,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorStartX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorStartY,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorEndX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  scissorEndY,
+
 
     // AXI Stream master interface
     output reg                          m_axis_tvalid,
@@ -88,7 +98,7 @@ module FrameBuffer
     localparam STROBES_PER_BEAT = STREAM_WIDTH / SUB_PIXEL_WIDTH;
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
-    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_TMP = {(FRAME_SIZE / PIXEL_PER_BEAT)};
+    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_TMP = (FRAME_SIZE / PIXEL_PER_BEAT);
     localparam [MEM_ADDR_WIDTH - 1 : 0] FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAMEBUFFER_FRAME_SIZE_IN_BEATS_TMP[MEM_ADDR_WIDTH - 1 : 0];
 
     // Stream states
@@ -97,59 +107,104 @@ module FrameBuffer
     localparam COMMAND_MEMSET = 2;
     localparam COMMAND_MEMCPY_INIT = 3;
 
+    function [0 : 0] scissorFunc;
+        input           enable;
+        input [15 : 0]  startX;
+        input [15 : 0]  startY;
+        input [15 : 0]  endX;
+        input [15 : 0]  endY;
+        input [15 : 0]  screenX;
+        input [15 : 0]  screenY;
+        begin
+            scissorFunc = !enable || ((screenX >= startX) && (screenX < endX) && (screenY >= startY) && (screenY < endY));
+        end
+    endfunction
+
     // Tile Control
-    reg [5:0] commandState;
-
-    wire [STROBES_PER_BEAT - 1 : 0] writeStrobe; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrWrite;
-    wire [STREAM_WIDTH - 1 : 0]     fragValIn; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrRead;
-    wire [STREAM_WIDTH - 1 : 0]     fragValOut;
-    reg  [ADDR_WIDTH - 1 : 0]       fragAddrReadDelay;
     
-    reg                             commandRunning;
-    reg  [MEM_ADDR_WIDTH - 1 : 0]   counter;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   counterNext = counter + 1;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   commitAddr = (m_axis_tready && m_axis_tvalid) ? counterNext : counter;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memsetWriteAddr = (m_axis_tready && (commandState == COMMAND_MEMCPY)) ? counterNext : counter;
+    reg  [STROBES_PER_BEAT - 1 : 0] memsetScissor;
 
-    reg                             fbWr;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusWrite  = (commandRunning) ? commitAddr : fragAddrWrite;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   fbAddrBusRead   = (commandRunning) ? memsetWriteAddr : fragAddrRead;
-    wire [STREAM_WIDTH - 1 : 0]     fbDataInBus     = (commandRunning) ? {PIXEL_PER_BEAT{clearColor}} : fragValIn;
-    wire                            fbWrBus         = (commandRunning) ? fbWr : fragWriteEnable;
-    wire [STROBES_PER_BEAT - 1 : 0] fbWrMaskBus     = (commandRunning) ? {PIXEL_PER_BEAT{fragMask}} : writeStrobe;
+    wire [STROBES_PER_BEAT - 1 : 0] fragWriteMask; 
+    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrWrite;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   fragAddrRead;
+    reg  [ADDR_WIDTH - 1 : 0]       fragAddrReadDelay;
+    wire [STREAM_WIDTH - 1 : 0]     fragDataIn; 
+    wire                            fragScissorTest;
+    
+    
+    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdIndex;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdIndexNext = cmdIndex + 1;
+    reg                             cmdRunning;
+    reg  [5 : 0]                    cmdState;
+    reg                             cmdWrite;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemsetAddr = cmdIndex;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemcpyAddr = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
+
+    reg  [15 : 0]                   cmdMemsetX;
+    wire [15 : 0]                   cmdMemsetXNext = cmdMemsetX + PIXEL_PER_BEAT;
+    reg  [15 : 0]                   cmdMemsetY;
+    wire [15 : 0]                   cmdMemsetYNext = cmdMemsetY - 1;
+    
+    wire [STROBES_PER_BEAT - 1 : 0] cmdMemsetScissorMask;
+    wire [PIXEL_PER_BEAT - 1 : 0]   cmdMemsetScissor;
+    
+    genvar i, j;
+    generate
+        if (PIXEL_PER_BEAT == 1)
+        begin : MemsetScissorSingle
+            assign cmdMemsetScissor = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX, cmdMemsetY);
+            assign cmdMemsetScissorMask = { NUMBER_OF_SUB_PIXELS { cmdMemsetScissor } };
+        end
+        else
+        begin
+            for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
+            begin
+                assign cmdMemsetScissor[i] = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX + i, cmdMemsetY);
+                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
+                begin
+                    assign cmdMemsetScissorMask[(i * NUMBER_OF_SUB_PIXELS) + j] = cmdMemsetScissor[i];
+                end
+            end
+        end
+    endgenerate
+    
+    wire [STREAM_WIDTH - 1 : 0]     memBusDataOut;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrWrite = (cmdRunning) ? cmdMemsetAddr                                          : fragAddrWrite;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrRead  = (cmdRunning) ? cmdMemcpyAddr                                          : fragAddrRead;
+    wire [STREAM_WIDTH - 1 : 0]     memBusDataIn    = (cmdRunning) ? { PIXEL_PER_BEAT { clearColor } }                      : fragDataIn;
+    wire                            memBusWrite     = (cmdRunning) ? cmdWrite                                               : fragWriteEnable;
+    wire [STROBES_PER_BEAT - 1 : 0] memBusWriteMask = (cmdRunning) ? { PIXEL_PER_BEAT { fragMask } } & cmdMemsetScissorMask : fragWriteMask;
 
     reg                             cmdMemsetPending = 0;
     reg  [PIXEL_WIDTH - 1 : 0]      clearColorPending = 0;
 
-    wire [PIXEL_WIDTH - 1 : 0]   fragOutTmp;
+    wire [PIXEL_WIDTH - 1 : 0]      fragOutTmp;
+
+    assign fragScissorTest = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, screenPosX, screenPosY);
 
     generate
-        genvar i, j;
         if (PIXEL_PER_BEAT == 1)
         begin
             assign fragAddrWrite = fragIndexWrite;
-            assign fragValIn = fragIn;
-            assign writeStrobe = fragMask;
+            assign fragDataIn = fragIn;
+            assign fragWriteMask = fragMask & {NUMBER_OF_SUB_PIXELS{fragScissorTest}};
             assign fragAddrRead = fragIndexRead;
-            assign fragOutTmp = fragValOut;
+            assign fragOutTmp = memBusDataOut;
         end
         else
         begin
-            assign scissor = !enableScissor || ((screenPosX >= scissorStartX) && (screenPosX < scissorEndX) && (screenPosY >= scissorStartY) && (screenPosY < scissorEndY));
             for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
             begin
                 for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign writeStrobe[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[j] & scissor;
+                    assign fragWriteMask[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & fragMask[j] & fragScissorTest;
                 end
             end
             assign fragAddrWrite = fragIndexWrite[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign fragValIn = {PIXEL_PER_BEAT{fragIn}};
+            assign fragDataIn = { PIXEL_PER_BEAT { fragIn } };
             assign fragAddrRead = fragIndexRead[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
-            assign fragOutTmp = fragValOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
+            assign fragOutTmp = memBusDataOut[fragAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
     endgenerate
 
@@ -158,19 +213,19 @@ module FrameBuffer
         fragOut <= fragOutTmp;
     end
 
-    assign m_axis_tdata = fragValOut;
+    assign m_axis_tdata = memBusDataOut;
 
     DualPortRam ramTile (
         .clk(clk),
         .reset(reset),
 
-        .writeData(fbDataInBus),
-        .write(fbWrBus),
-        .writeAddr(fbAddrBusWrite),
-        .writeMask(fbWrMaskBus),
+        .writeData(memBusDataIn),
+        .write(memBusWrite),
+        .writeAddr(memBusAddrWrite),
+        .writeMask(memBusWriteMask),
 
-        .readData(fragValOut),
-        .readAddr(fbAddrBusRead)
+        .readData(memBusDataOut),
+        .readAddr(memBusAddrRead)
     );
     defparam ramTile.MEM_SIZE_BYTES = SIZE;
     defparam ramTile.MEM_WIDTH = STREAM_WIDTH;
@@ -180,66 +235,73 @@ module FrameBuffer
     begin
         if (reset)
         begin
-            commandState <= COMMAND_WAIT_FOR_COMMAND;
-            commandRunning <= 0;
+            cmdState <= COMMAND_WAIT_FOR_COMMAND;
+            cmdRunning <= 0;
             m_axis_tvalid <= 0;
             m_axis_tlast <= 0;
-            fbWr <= 0;
+            cmdWrite <= 0;
             applied <= 1;
         end
         else
         begin
             fragAddrReadDelay <= fragIndexRead;
-            case (commandState)
+            case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
             begin
-                counter <= 0;
+                cmdIndex <= 0;
+                cmdMemsetX <= 0;
+
+                // Here is a missmatch between the RAM adresses and the OpenGL coordiate system.
+                // OpenGL starts at the lower left corner. But this a fairly high address in the RAM.
+                // The cmdIndex starts at zero. This is basically in OpenGL the position (0, Y_LINE_RESOLUTION - 1)
+                cmdMemsetY <= confYOffset + Y_LINE_RESOLUTION - 1;
+
                 if (apply)
                 begin
                     applied <= 0;
-                    commandRunning <= 1;
+                    cmdRunning <= 1;
 
                     cmdMemsetPending <= cmdMemset;
                     clearColorPending <= clearColor;
 
                     if (cmdMemset) 
                     begin
-                        fbWr <= 1;
-                        commandState <= COMMAND_MEMSET;
+                        cmdWrite <= 1;
+                        cmdState <= COMMAND_MEMSET;
                     end
 
                     // Commits have priority over a clear.
                     // When both are activated, the user probably wants first to commit and then to clear it.
                     if (cmdCommit)
                     begin
-                        fbWr <= 0;
-                        commandState <= COMMAND_MEMCPY_INIT;
+                        cmdWrite <= 0;
+                        cmdState <= COMMAND_MEMCPY_INIT;
                     end
                 end
                 else 
                 begin
                     applied <= 1;
-                    commandRunning <= 0;
+                    cmdRunning <= 0;
                 end
             end
             COMMAND_MEMCPY_INIT:
             begin
                 m_axis_tvalid <= 1;
-                commandState <= COMMAND_MEMCPY;
+                cmdState <= COMMAND_MEMCPY;
             end
             COMMAND_MEMCPY:
             begin
                 if (m_axis_tready)
                 begin
-                    counter <= counterNext;
+                    cmdIndex <= cmdIndexNext;
                 
-                    if (counterNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1))
+                    if (cmdIndexNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1))
                     begin
                         m_axis_tlast <= 1;
                     end
 
                     // Check if we reached the end of the copy process
-                    if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
+                    if (cmdIndexNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
                     begin
                         m_axis_tvalid <= 0; 
                         m_axis_tlast <= 0;
@@ -247,25 +309,35 @@ module FrameBuffer
                         // Continue with memset if it is activated
                         if (cmdMemsetPending) 
                         begin
-                            counter <= 0;
-                            fbWr <= 1;
-                            commandState <= COMMAND_MEMSET;
+                            cmdIndex <= 0;
+                            cmdWrite <= 1;
+                            cmdState <= COMMAND_MEMSET;
                         end
                         else
                         begin
-                            commandState <= COMMAND_WAIT_FOR_COMMAND;
+                            cmdState <= COMMAND_WAIT_FOR_COMMAND;
                         end
                     end
                 end
             end
             COMMAND_MEMSET:
             begin
-                if (counterNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
+                if (cmdIndexNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
                 begin
-                    fbWr <= 0;
-                    commandState <= COMMAND_WAIT_FOR_COMMAND;
+                    cmdWrite <= 0;
+                    cmdState <= COMMAND_WAIT_FOR_COMMAND;
                 end
-                counter <= counterNext;
+                cmdIndex <= cmdIndexNext;
+
+                if (cmdMemsetXNext == X_RESOLUTION)
+                begin
+                    cmdMemsetX <= 0;
+                    cmdMemsetY <= cmdMemsetYNext;
+                end
+                else
+                begin
+                    cmdMemsetX <= cmdMemsetXNext;
+                end
             end
             endcase
         end

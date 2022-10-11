@@ -254,3 +254,9 @@ bool PixelPipeline::setClearDepth(const float depth)
     const uint16_t depthx = (depth + 1.0f) * 32767;
     return m_renderer.setClearDepth(depthx);
 }
+
+bool PixelPipeline::clearFramebuffer(bool frameBuffer, bool zBuffer) 
+{ 
+    bool ret = updatePipeline();
+    return ret && m_renderer.clear(frameBuffer, zBuffer); 
+}
