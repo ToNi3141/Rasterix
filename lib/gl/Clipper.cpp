@@ -179,7 +179,7 @@ uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
                                const ClipVertList& colorListIn,
                                const uint32_t listInSize)
 {
-    // Texart Clipping
+    // Start Clipping
     int i = 0;
 
     for (int8_t vert = 0; vert < static_cast<int8_t>(listInSize); vert++)

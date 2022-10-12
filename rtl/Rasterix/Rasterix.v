@@ -291,7 +291,6 @@ module Rasterix #(
         .cmdCommit(depthBufferCmdCommit),
         .cmdMemset(depthBufferCmdMemset),
 
-
         .m_axis_tvalid(),
         .m_axis_tready(1'b1),
         .m_axis_tlast(),

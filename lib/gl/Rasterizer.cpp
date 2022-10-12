@@ -39,7 +39,6 @@ bool Rasterizer::rasterize(RasterizedTriangle& rasterizedTriangle,
                            const Vec4& st2f,
                            const Vec4& c2f)
 {
-//        return rasterizeFloat(rasterizedTriangle, v0f, st0f, v1f, st1f, v2f, st2f);
    return rasterizeFixPoint(rasterizedTriangle, v0f, st0f, c0f, v1f, st1f, c1f, v2f, st2f, c2f);
 }
 

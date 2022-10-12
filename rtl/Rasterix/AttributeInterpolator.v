@@ -364,9 +364,8 @@ module AttributeInterpolator #(
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) step_6_delay_d_z (.clk(aclk), .in(step_5_depth_z_inv), .out(step_6_depth_z));
 
     // Enable this to have perspective correct color interpolation
-    // Note that each texture unit has its own w (or in texture coord terms: q). Therefore the color needs its own w. But this can be easily implemented.
-    // Just use the w from the vertex. It is not yet implemented to keep the logic count low. If this is implemented, the hardware must interpolate a 
-    // new attribute and also has to divide this new attribute and later on, must mutiply it as you can see here.
+    // Note: When this is enabled, the color must be divided by w (the vertex w) in the Rasterizer.cpp. Afterwards step_5_depth_w can be used.
+    // It is right now questionable if this w has enough precision. It is currently not implemented to keep the logic count low.
     // FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
     //     mul_color_r (.clk(aclk), .facAIn(step_5_color_r_inv), .facBIn(step_5_depth_w), .prod(step_6_color_r));
     // FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE))
