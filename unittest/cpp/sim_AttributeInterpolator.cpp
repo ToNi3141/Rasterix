@@ -24,8 +24,9 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAttributeInterpolator.h"
 
-static constexpr uint32_t RASTERIZER_AXIS_SCREEN_POS_POS = 0;
-static constexpr uint32_t RASTERIZER_AXIS_FRAMEBUFFER_INDEX = 1;
+static constexpr uint32_t RASTERIZER_AXIS_BOUNDING_BOX_POS_POS = 0;
+static constexpr uint32_t RASTERIZER_AXIS_SCREEN_POS_POS = 1;
+static constexpr uint32_t RASTERIZER_AXIS_FRAMEBUFFER_INDEX = 2;
 
 static constexpr uint32_t RASTERIZER_M_AXIS_R = 0;
 static constexpr uint32_t RASTERIZER_M_AXIS_G = 1;
@@ -35,14 +36,14 @@ static constexpr uint32_t RASTERIZER_M_AXIS_Z = 4;
 static constexpr uint32_t RASTERIZER_M_AXIS_S = 5;
 static constexpr uint32_t RASTERIZER_M_AXIS_T = 6;
 static constexpr uint32_t RASTERIZER_M_AXIS_W = 7;
-static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 8;
+static constexpr uint32_t RASTERIZER_M_AXIS_SCREEN_XY_POS = 8;
+static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 9;
 
 union ScreenPos {
-    uint64_t u64;
+    uint32_t u32;
     struct {
         uint16_t x;
         uint16_t y;
-        uint32_t framebufferIndex;
     } val;
 };
 
@@ -190,7 +191,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         top->color_a_inc_x = 0;
         top->color_a_inc_y = 0;
 
-        top->s_axis_tdata = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_BOUNDING_BOX_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
 
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
@@ -209,9 +212,11 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->pixelInPipeline == 0);
 
     ScreenPos sp;
-    sp.val.x = 0;
-    sp.val.y = 100;
-    sp.val.framebufferIndex = 0;
+    ScreenPos bb;
+    sp.val.x = 400;
+    sp.val.y = 200;
+    bb.val.x = 0;
+    bb.val.y = 100;
 
     Attributes attr;
 
@@ -272,7 +277,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     top->color_a_inc_x = *(uint32_t*)&attr.ax;
     top->color_a_inc_y = *(uint32_t*)&attr.ay;
 
-    top->s_axis_tdata = sp.u64;
+    top->s_axis_tdata[RASTERIZER_AXIS_BOUNDING_BOX_POS_POS] = bb.u32;
+    top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
+    top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
+
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
 
@@ -280,11 +288,15 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     for (int i = 0; i < 100; i++)
     {
         clk(top);
-        if (i > CLOCK_DELAY)
+        if (i >= CLOCK_DELAY)
         {
             REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX] == i - CLOCK_DELAY);
             REQUIRE(top->m_axis_tvalid == 1);
             REQUIRE(top->m_axis_tlast == (i - CLOCK_DELAY) % 5);
+            ScreenPos sp;
+            sp.u32 = top->m_axis_tdata[RASTERIZER_M_AXIS_SCREEN_XY_POS];
+            REQUIRE(sp.val.x == (400 + static_cast<uint16_t>(i - CLOCK_DELAY)));
+            REQUIRE(sp.val.y == (200 + static_cast<uint16_t>(i - CLOCK_DELAY)));
 
             float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
             float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
@@ -298,7 +310,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             AttributesResult expectedResult;
 
             calculateVertexAttributes(attr,
-                                      sp.val.x - CLOCK_DELAY, sp.val.y + CLOCK_DELAY, 
+                                      bb.val.x - CLOCK_DELAY, bb.val.y + CLOCK_DELAY, 
                                       expectedResult);
             
             //printf("%d %f %f %f %f %f %f\n", i, s, sr, t, tr, w, wr);
@@ -313,19 +325,25 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             REQUIRE(Approx(a).epsilon(0.01) == expectedResult.a);
         }
         REQUIRE(top->pixelInPipeline == 1);
- 
-        sp.val.x++;
-        sp.val.y--;
-        
+
         top->s_axis_tvalid = 1;
         top->s_axis_tlast = i % 5;
-        sp.val.framebufferIndex = i;
-        top->s_axis_tdata = sp.u64;
+
+        top->s_axis_tdata[RASTERIZER_AXIS_BOUNDING_BOX_POS_POS] = bb.u32;
+        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = sp.u32;
+        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = i;
+
+        sp.val.x++;
+        sp.val.y++;
+        bb.val.x++;
+        bb.val.y--;
     }
 
     // Reset counter for the rest of the pixels in the pipeline
-    sp.val.x = 100 - CLOCK_DELAY;
-    sp.val.y = CLOCK_DELAY;
+    sp.val.x = 400 + CLOCK_DELAY;
+    sp.val.y = 200 + CLOCK_DELAY;
+    bb.val.x = 100 - CLOCK_DELAY;
+    bb.val.y = CLOCK_DELAY;
 
     // Check the pending pixels in the pipeline
     for (int i = 100 - CLOCK_DELAY; i < 100; i++)
@@ -336,6 +354,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(top->m_axis_tvalid == 1);
         REQUIRE(top->m_axis_tlast == i % 5);
         REQUIRE(top->pixelInPipeline == 1);
+        ScreenPos sp;
+        sp.u32 = top->m_axis_tdata[RASTERIZER_M_AXIS_SCREEN_XY_POS];
+        REQUIRE(sp.val.x == (400 + static_cast<uint16_t>(i)));
+        REQUIRE(sp.val.y == (200 + static_cast<uint16_t>(i)));
 
         float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
         float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
@@ -349,7 +371,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         AttributesResult expectedResult;
 
         calculateVertexAttributes(attr,
-                                  sp.val.x, sp.val.y, 
+                                  bb.val.x, bb.val.y, 
                                   expectedResult);
         
         REQUIRE(Approx(s).epsilon(0.01) == expectedResult.s);
@@ -361,17 +383,19 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(Approx(b).epsilon(0.01) == expectedResult.b);
         REQUIRE(Approx(a).epsilon(0.01) == expectedResult.a);
 
-        top->s_axis_tdata = 0;
-        top->s_axis_tvalid = 0;
-        top->s_axis_tlast = 0;
-
-        sp.val.x++;
-        sp.val.y--;
+        top->s_axis_tdata[RASTERIZER_AXIS_BOUNDING_BOX_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
 
         // Set init values
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
-        top->s_axis_tdata = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_BOUNDING_BOX_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_SCREEN_POS_POS] = 0;
+        top->s_axis_tdata[RASTERIZER_AXIS_FRAMEBUFFER_INDEX] = 0;
+
+        bb.val.x++;
+        bb.val.y--;
     }
 
     // Check again if the pipeline is now empty
