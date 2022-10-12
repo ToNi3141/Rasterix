@@ -239,6 +239,10 @@ MainWindow::MainWindow(QWidget *parent) :
        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
        glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
     }
+    else
+    {
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    }
 
     static constexpr bool ENABLE_BLACK_WHITE = true;
     if constexpr (ENABLE_BLACK_WHITE)
@@ -252,6 +256,11 @@ MainWindow::MainWindow(QWidget *parent) :
         glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
         glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 4);
     }
+
+    // glLineWidth(5.0f);
+
+    // glEnable(GL_SCISSOR_TEST);
+    // glScissor(200, 200, 200, 100);
 }
 
 // returns a valid textureID on success, otherwise 0

@@ -42,6 +42,9 @@ module CommandParser #(
     output wire [31:0]  confTMU0TexEnvConfig,
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
+    output wire [31:0]  confScissorStartXY,
+    output wire [31:0]  confScissorEndXY,
+    output wire [11:0]  confYOffset,
 
     // Control
     input  wire         rasterizerRunning,
@@ -116,6 +119,9 @@ module CommandParser #(
     assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
     assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
     assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
+    assign confScissorStartXY = configReg[OP_RENDER_CONFIG_SCISSOR_START_XY];
+    assign confScissorEndXY = configReg[OP_RENDER_CONFIG_SCISSOR_END_XY];
+    assign confYOffset = configReg[OP_RENDER_CONFIG_Y_OFFSET][0 +: 12];
 
     assign dbgStreamState = state[3:0];
 
@@ -171,7 +177,7 @@ module CommandParser #(
                     OP_TRIANGLE_STREAM:
                     begin
                         /* verilator lint_off WIDTH */
-                        streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_IMM_SIZE - DATABUS_SCALE_FACTOR_LOG2];
+                        streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_TRIANGLE_STEEAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         /* verilator lint_off WIDTH */
                         state <= EXEC_TRIANGLE_STREAM;
                     end
@@ -315,7 +321,7 @@ module CommandParser #(
             begin
                 if (s_cmd_axis_tvalid)
                 begin
-                    configReg[streamCounter[0 +: 3]] <= s_cmd_axis_tdata[0 +: 32];
+                    configReg[streamCounter[0 +: 4]] <= s_cmd_axis_tdata[0 +: 32];
                     s_cmd_axis_tready <= 0;
                     state <= WAIT_FOR_IDLE;
                 end

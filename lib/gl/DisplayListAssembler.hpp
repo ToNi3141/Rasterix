@@ -71,6 +71,9 @@ private:
         static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV                = 0x0000'0005;
         static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR          = 0x0000'0006;
         static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0007;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG     = 0x0000'0008;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG       = 0x0000'0009;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_Y_OFFSET                    = 0x0000'000A;
 
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
@@ -92,6 +95,8 @@ public:
     static constexpr uint32_t SET_TMU0_TEX_ENV              = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV;
     static constexpr uint32_t SET_TMU0_TEXTURE_CONFIG       = StreamCommand::RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG;
     static constexpr uint32_t SET_TMU0_TEX_ENV_COLOR        = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR;
+    static constexpr uint32_t SET_SCISSOR_START_XY          = StreamCommand::RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG;
+    static constexpr uint32_t SET_SCISSOR_END_XY            = StreamCommand::RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG;
     static constexpr uint32_t SET_FOG_COLOR                 = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR;
 
     static constexpr uint32_t SET_FOG_LUT                   = StreamCommand::RR_OP_FOG_LUT_STREAM;
@@ -282,6 +287,11 @@ public:
             return true;
         }
         return false;
+    }
+
+    bool setYOffset(const uint32_t offset)
+    {
+        return writeRegister(StreamCommand::RR_RENDER_CONFIG_Y_OFFSET, offset);
     }
 
     const List* getDisplayList() const

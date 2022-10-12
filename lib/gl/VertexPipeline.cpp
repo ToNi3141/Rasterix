@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Rasterizer.hpp"
+#include <cmath>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max
@@ -48,17 +49,9 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //         const std::size_t diff = obj.getCount() - it;
 //         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
 
-//         if (diff <= VERTEX_OVERLAP)
-//         {
-//             // A triangle needs at least three points to be constructed. There is a overlap between two
-//             // sections. Normally the overlap must always be two, otherwise there is an extra vertex, which can't
-//             // be used. This can happen when the asserts for VERTEX_BUFFER_SIZE are not full filled.
-//             break;
-//         }
-
 //         Vec4Array transformedVertex;
 //         Vec4Array transformedColor;
-//         Vec2Array transformedTexCoord;
+//         Vec4Array transformedTexCoord;
 //         Vec3Array transformedNormal;
 //         for (uint32_t i = 0, itCnt = it; i < cnt; i++, itCnt++)
 //         {
@@ -120,7 +113,8 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //             transformedColor,
 //             transformedTexCoord,
 //             cnt,
-//             obj.getDrawMode()
+//             obj.getDrawMode(),
+//             cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP
 //         );
 //         if (!ret)
 //         {
@@ -141,24 +135,24 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
         const std::size_t diff = obj.getCount() - it;
+        // Add a small overlap. This is convenient when rendering the triangle.
+        // For instance, if a overlap of 2 is used, then it is possible to draw
+        // the complete triangle and don't have to handle the edge case on the 
+        // boundaries, which would normally happen, when there is no overlap.
+        // (if the mode is triangles, and the size of the buffer is 10, then
+        // the renderer could draw 3 triangles but has to handle somehow the last
+        // vertex, because 11 and 12 are not known jet. with the overlap, vertex
+        // 11 and 12 would be available)
         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
-
-        if (diff <= VERTEX_OVERLAP)
-        {
-            // A triangle needs at least three points to be constructed. There is a overlap between two
-            // sections. Normally the overlap must always be two, otherwise there is an extra vertex, which can't
-            // be used. This can happen when the asserts for VERTEX_BUFFER_SIZE are not full filled.
-            break;
-        }
 
         Vec4Array vertex;
         Vec4Array color;
-        Vec2Array texCoord;
+        Vec4Array texCoord;
         Vec3Array normal;
 
         Vec4Array transformedVertex;
         Vec4Array transformedColor;
-        Vec2Array transformedTexCoord;
+        Vec4Array transformedTexCoord;
         Vec3Array transformedNormal;
 
         loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
@@ -185,7 +179,8 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
             transformedColor,
             transformedTexCoord,
             cnt,
-            obj.getDrawMode()
+            obj.getDrawMode(),
+            cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP
         );
         if (!ret)
         {
@@ -198,31 +193,40 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 bool VertexPipeline::drawTriangle(const Triangle& triangle)
 {
     Clipper::ClipVertList vertList;
-    Clipper::ClipStList stList;
-    Clipper::ClipColorList colorList;
+    Clipper::ClipVertList texCoordList;
+    Clipper::ClipVertList colorList;
     Clipper::ClipVertList vertListBuffer;
-    Clipper::ClipStList stListBuffer;
-    Clipper::ClipColorList colorListBuffer;
+    Clipper::ClipVertList texCoordListBuffer;
+    Clipper::ClipVertList colorListBuffer;
 
     vertList[0] = triangle.v0;
     vertList[1] = triangle.v1;
     vertList[2] = triangle.v2;
 
-    stList[0] = triangle.st0;
-    stList[1] = triangle.st1;
-    stList[2] = triangle.st2;
+    texCoordList[0] = triangle.tc0;
+    texCoordList[1] = triangle.tc1;
+    texCoordList[2] = triangle.tc2;
 
     colorList[0] = triangle.color0;
     colorList[1] = triangle.color1;
     colorList[2] = triangle.color2;
 
     // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
-    auto [vertListSize, vertListClipped, stListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, stList, stListBuffer, colorList, colorListBuffer);
+    auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     for (uint8_t i = 0; i < vertListSize; i++)
     {
-        perspectiveDivide(vertListClipped[i]);
+        // Perspective division
+        vertListClipped[i].perspectiveDivide();
+
+        // Perspective correction of the texture coordinates
+        texCoordListClipped[i].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+        // TODO: Perspective correction of the color 
+        // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
+        // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
+
+        // Viewport transformation of the vertex
         viewportTransform(vertListClipped[i]);
     }
 
@@ -245,9 +249,9 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         const bool success = m_renderer.drawTriangle(vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
-                stListClipped[0],
-                stListClipped[i - 2],
-                stListClipped[i - 1],
+                texCoordListClipped[0],
+                texCoordListClipped[i - 2],
+                texCoordListClipped[i - 1],
                 colorListClipped[0],
                 colorListClipped[i - 2],
                 colorListClipped[i - 1]);
@@ -259,7 +263,53 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
     return true;
 }
 
-void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec2Array& tex, const std::size_t offset, const std::size_t count)
+bool VertexPipeline::drawLine(const Line& line) 
+{
+    // Copied from swGL and adapted.
+
+    // Get the reciprocal viewport scaling factor
+    float rcpViewportScaleX = 2.0f / static_cast<float>(m_viewportWidth);
+    float rcpViewportScaleY = 2.0f / static_cast<float>(m_viewportHeight);
+
+    // Calculate the lines normal n = normalize(-dx, dy)
+    float nx = -((line.v1[1] / line.v1[3]) - (line.v0[1] / line.v0[3]));
+    float ny =  ((line.v1[0] / line.v1[3]) - (line.v0[0] / line.v0[3]));
+    float rcpLength = 1.0f / std::sqrt(nx * nx + ny * ny);
+    nx *= rcpLength;
+    ny *= rcpLength;
+
+    // Scale normal according to the width of the line
+    float halfLineWidth = m_lineWidth * 0.5f;
+    nx *= halfLineWidth;
+    ny *= halfLineWidth;
+
+    // Now create the vertices that define two triangles which are used to draw the line
+    Vec4 v[] { line.v0, line.v0, line.v1, line.v1 };
+
+    v[0][0] += ( nx * line.v0[3]) * rcpViewportScaleX;
+    v[0][1] += ( ny * line.v0[3]) * rcpViewportScaleY;
+    v[1][0] += (-nx * line.v0[3]) * rcpViewportScaleX;
+    v[1][1] += (-ny * line.v0[3]) * rcpViewportScaleY;
+
+    v[2][0] += ( nx * line.v1[3]) * rcpViewportScaleX;
+    v[2][1] += ( ny * line.v1[3]) * rcpViewportScaleY;
+    v[3][0] += (-nx * line.v1[3]) * rcpViewportScaleX;
+    v[3][1] += (-ny * line.v1[3]) * rcpViewportScaleY;
+
+    if (!drawTriangle({ v[0], v[1], v[2], line.tc0, line.tc0, line.tc1, line.color0, line.color0, line.color1 })) 
+    {
+        return false;
+    }
+
+    if (!drawTriangle({ v[2], v[1], v[3], line.tc1, line.tc0, line.tc1, line.color1, line.color0, line.color1 }))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec4Array& tex, const std::size_t offset, const std::size_t count)
 {
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
@@ -287,7 +337,7 @@ void VertexPipeline::transform(
     Vec4Array& transformedVertex, 
     Vec4Array& transformedColor, 
     Vec3Array& transformedNormal, 
-    Vec2Array& transformedTex, 
+    Vec4Array& transformedTex, 
     const bool enableVertexArray,
     const bool enableColorArray,
     const bool enableNormalArray,
@@ -295,7 +345,7 @@ void VertexPipeline::transform(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
     const Vec3Array& normal, 
-    const Vec2Array& tex,
+    const Vec4Array& tex,
     const Vec4& vertexColor,
     const std::size_t count)
 {
@@ -344,6 +394,10 @@ void VertexPipeline::transform(
         {
             transformedTex[i] = tex[i];
         }
+        else
+        {
+            transformedTex[i].initHomogeneous();
+        }
         m_texGen.calculateTexGenCoords(m_m, transformedTex[i], vertex[i]);
     }
 
@@ -354,80 +408,122 @@ void VertexPipeline::transform(
 bool VertexPipeline::drawTriangleArray(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
-    const Vec2Array& tex, 
+    const Vec4Array& tex, 
     const std::size_t count, 
-    const RenderObj::DrawMode drawMode)
+    const RenderObj::DrawMode drawMode,
+    const bool lastRound)
 {
-    static_assert(VERTEX_OVERLAP == 2, "VERTEX_OVERLAP must be at least two");
-    for (uint32_t i = 0; i < (count - VERTEX_OVERLAP); )
+    for (uint32_t i = 0; i < count; )
     {
-        uint32_t index0;
-        uint32_t index1;
-        uint32_t index2;
+        bool isTriangle { true };
+        uint32_t i0;
+        uint32_t i1;
+        uint32_t i2;
         switch (drawMode) {
         case RenderObj::DrawMode::TRIANGLES:
-            index0 = (i);
-            index1 = (i + 1);
-            index2 = (i + 2);
+            if ((i + 2) >= count) return true;
+            i0 = i;
+            i1 = i + 1;
+            i2 = i + 2;
             i += 3;
             break;
+        case RenderObj::DrawMode::POLYGON:
         case RenderObj::DrawMode::TRIANGLE_FAN:
-            index0 = (0);
-            index1 = (i + 1);
-            index2 = (i + 2);
+            if ((i + 2) >= count) return true;
+            i0 = 0;
+            i1 = i + 1;
+            i2 = i + 2;
             i += 1;
             break;
         case RenderObj::DrawMode::TRIANGLE_STRIP:
+            if ((i + 2) >= count) return true;
             if (i & 0x1)
             {
-                index0 = (i + 1);
-                index1 = (i);
-                index2 = (i + 2);
+                i0 = i + 1;
+                i1 = i;
+                i2 = i + 2;
             }
             else
             {
-                index0 = (i);
-                index1 = (i + 1);
-                index2 = (i + 2);
+                i0 = i;
+                i1 = i + 1;
+                i2 = i + 2;
             }
             i += 1;
             break;
-        case RenderObj::DrawMode::QUAD_STRIP:
-            if (i & 0x2)
+        case RenderObj::DrawMode::QUADS:
+            if ((i + 2) >= count) return true;
+            if (i & 0x1)
             {
-                index0 = (i + 1);
-                index1 = (i);
-                index2 = (i + 2);
+                i0 = i + 1;
+                i1 = i - 1;
+                i2 = i + 2;
+                i += 3;
             }
             else
             {
-                index0 = (i);
-                index1 = (i + 1);
-                index2 = (i + 2);
+                i0 = i;
+                i1 = i + 1;
+                i2 = i + 2;
+                i += 1;
+            }
+            break;
+        case RenderObj::DrawMode::QUAD_STRIP:
+            if ((i + 2) >= count) return true;
+            if (i & 0x2)
+            {
+                i0 = i + 1;
+                i1 = i;
+                i2 = i + 2;
+            }
+            else
+            {
+                i0 = i;
+                i1 = i + 1;
+                i2 = i + 2;
             }
             i += 1;
+            break;
+        case RenderObj::DrawMode::LINES:
+            if ((i + 1) >= count) return true;
+            i0 = i;
+            i1 = i + 1;
+            i += 2;
+            isTriangle = false;
+            break;
+        case RenderObj::DrawMode::LINE_LOOP:
+            if ((i + 1) >= count) return true;
+            i0 = i;
+            i1 = i + 1;
+            if (lastRound && (i1 >= count))
+                i1 = 0;
+            i += 1;
+            isTriangle = false;
+            break;
+        case RenderObj::DrawMode::LINE_STRIP:
+            if ((i + 1) >= count) return true;
+            i0 = i;
+            i1 = i + 1;
+            i += 1;
+            isTriangle = false;
             break;
         default:
             break;
         }
 
-
-        Triangle triangle {
-            vertex[index0],
-            vertex[index1],
-            vertex[index2],
-            tex[index0],
-            tex[index1],
-            tex[index2],
-            color[index0],
-            color[index1],
-            color[index2]
-        };
-
-
-        if (!drawTriangle(triangle))
+        if (isTriangle)
         {
-            return false;
+            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], tex[i0], tex[i1], tex[i2], color[i0], color[i1], color[i2] }))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (!drawLine({ vertex[i0], vertex[i1], tex[i0], tex[i1], color[i0], color[i1] }))
+            {
+                return false;
+            }
         }
     }
     return true;
@@ -471,13 +567,6 @@ void VertexPipeline::viewportTransform(Vec4 &v)
     v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
 }
 
-void VertexPipeline::perspectiveDivide(Vec4 &v)
-{
-    v[3] = 1.0f / v[3];
-    v[0] = v[0] * v[3];
-    v[1] = v[1] * v[3];
-    v[2] = v[2] * v[3];
-}
 
 void VertexPipeline::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {
@@ -758,4 +847,9 @@ void VertexPipeline::enableColorMaterial(const bool enable)
     {
         getLighting().enableColorMaterial(false, false, false, false);
     }
+}
+
+void VertexPipeline::setLineWidth(const float width)
+{
+    m_lineWidth = width;
 }

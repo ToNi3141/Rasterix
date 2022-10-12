@@ -18,7 +18,7 @@
 
 #include "TexGen.hpp"
 
-void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec2& st0, const Vec4& v0) const
+void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
 {
     if (m_texGenEnableS || m_texGenEnableT)
     {

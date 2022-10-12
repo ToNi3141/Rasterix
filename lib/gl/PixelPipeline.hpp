@@ -61,9 +61,9 @@ public:
     bool drawTriangle(const Vec4& v0,
                       const Vec4& v1,
                       const Vec4& v2,
-                      const Vec2& st0,
-                      const Vec2& st1,
-                      const Vec2& st2,
+                      const Vec4& tc0,
+                      const Vec4& tc1,
+                      const Vec4& tc2,
                       const Vec4& c0,
                       const Vec4& c1,
                       const Vec4& c2);
@@ -84,7 +84,7 @@ public:
     void setEnableMagFilter(const bool val) { m_texEnableMagFilter = val; }
 
     // Framebuffer
-    bool clearFramebuffer(bool frameBuffer, bool zBuffer) { return m_renderer.clear(frameBuffer, zBuffer); }
+    bool clearFramebuffer(bool frameBuffer, bool zBuffer);
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
 
@@ -102,6 +102,9 @@ public:
     void setFogEnd(const float val);
     void setFogDensity(const float val);
     bool setFogColor(const Vec4& val);
+
+    // Scissor 
+    void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:
     bool updateFogLut();

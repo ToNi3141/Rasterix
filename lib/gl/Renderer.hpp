@@ -69,6 +69,11 @@ public:
         {
             entry.clearAssembler();
         }
+        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        {
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
+        }
 
         setTexEnvColor({{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
@@ -87,16 +92,16 @@ public:
     virtual bool drawTriangle(const Vec4& v0,
                               const Vec4& v1,
                               const Vec4& v2,
-                              const Vec2& st0,
-                              const Vec2& st1,
-                              const Vec2& st2,
+                              const Vec4& tc0,
+                              const Vec4& tc1,
+                              const Vec4& tc2,
                               const Vec4& c0,
                               const Vec4& c1,
                               const Vec4& c2) override
     {
         Rasterizer::RasterizedTriangle triangleConf;
 
-        if (!Rasterizer::rasterize(triangleConf, v0, st0, c0, v1, st1, c1, v2, st2, c2))
+        if (!m_rasterizer.rasterize(triangleConf, v0, tc0, c0, v1, tc1, c1, v2, tc2, c2))
         {
             // Triangle is not visible
             return true;
@@ -113,10 +118,7 @@ public:
                 Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
                 if (triangleConfDl != nullptr)
                 {
-                    Rasterizer::calcLineIncrement(*triangleConfDl,
-                                                  triangleConf,
-                                                  currentScreenPositionStart,
-                                                  currentScreenPositionEnd);
+                    std::memcpy(triangleConfDl, &triangleConf, sizeof(triangleConf));
                 }
                 else
                 {
@@ -179,6 +181,7 @@ public:
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
                 }
                 return true;
             });
@@ -187,6 +190,7 @@ public:
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
+        // TODO: Check scissor bounding box to avoid unnecessary clears
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
@@ -319,6 +323,20 @@ public:
         return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
     }
 
+    virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
+    {
+        bool ret = true;
+        const uint32_t start {
+            (static_cast<uint32_t>(y) << 16) | static_cast<uint32_t>(x)
+        };
+        const uint32_t end {
+            (static_cast<uint32_t>(y + height) << 16) | static_cast<uint32_t>(x + width)
+        };
+        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_START_XY, start);
+        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_END_XY, end);
+        return ret;
+    }
+
 private:
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
@@ -348,9 +366,8 @@ private:
     uint8_t m_backList = 1;
 
     IBusConnector& m_busConnector;
-
     TextureManager m_textureManager;
-
+    Rasterizer m_rasterizer;
     std::future<bool> m_renderThread;
 };
 

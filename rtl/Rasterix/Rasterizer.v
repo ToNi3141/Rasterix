@@ -31,7 +31,7 @@ module Rasterizer
 
     localparam ATTRIBUTE_SIZE = 32,
 
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 2 * ATTRIBUTE_SIZE
+    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE
 )
 (
     input wire                              clk,
@@ -40,6 +40,7 @@ module Rasterizer
     // Rasterizer Control
     output reg                              rasterizerRunning,
     input  wire                             startRendering,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    yOffset,
 
     // Fragment Stream
     output reg                              m_axis_tvalid,
@@ -82,6 +83,9 @@ module Rasterizer
     // Rasterizer variables
     reg  [5 : 0] rasterizerState;
     reg  [Y_BIT_WIDTH - 1 : 0] y;
+    reg  [Y_BIT_WIDTH - 1 : 0] yScreen;
+    reg  [Y_BIT_WIDTH - 1 : 0] yScreenEnd;
+    reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0] x;
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
     wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
@@ -114,6 +118,7 @@ module Rasterizer
                 m_axis_tvalid <= 0;
                 if (startRendering)
                 begin
+                    lineBBStart <= yOffset[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
                     rasterizerRunning <= 1;
                     rasterizerState <= RASTERIZER_INIT;
                     // $display("start rendering");
@@ -121,14 +126,46 @@ module Rasterizer
             end
             RASTERIZER_INIT:
             begin
-                regW0 <= w0;
-                regW1 <= w1;
-                regW2 <= w2;
-
-                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d, yOffset %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH], yOffset[0 +: 16]);
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
-                y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+
+                // Shift the triangle to the current framebuffer line. Everything can be calculated in software if this implementation
+                // takes too much logic. It can be completely discarded, when the framebuffer is big enough to contain the whole screen. This is only 
+                // required in the line mode, to handle the offsets in y direction when rendering a new line.
+                // Check if the current line offset is above the bounding box. Means, the bounding box starts in this line or in lines after this line.
+                // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start possition is in this
+                // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
+                // for this line.
+                if (yOffset[0 +: Y_BIT_WIDTH] <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
+                begin
+                    regW0 <= w0;
+                    regW1 <= w1;
+                    regW2 <= w2;
+                    
+                    yScreen <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - yOffset[0 +: Y_BIT_WIDTH];
+                end
+                else
+                begin
+                    regW0 <= w0 + ($signed(w0IncY) * lineBBStart);
+                    regW1 <= w1 + ($signed(w1IncY) * lineBBStart);
+                    regW2 <= w2 + ($signed(w2IncY) * lineBBStart);
+
+                    yScreen <= yOffset[0 +: Y_BIT_WIDTH];
+                    y <= 0;
+                end
+                // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
+                // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
+                // The the condition occures that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
+                if ((yOffset[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
+                begin
+                    yScreenEnd <= yOffset[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION;
+                end
+                else
+                begin
+                    yScreenEnd <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH];
+                end
 
                 // Initialize the edge walker
                 edgeWalkingDirection <= EDGE_WALKING_DIRECTION_RIGHT;
@@ -177,6 +214,7 @@ module Rasterizer
                     begin
                         // Line Increment
                         y <= y + 1;
+                        yScreen <= yScreen + 1;
 
                         regW0 <= regW0 + $signed(w0IncY);
                         regW1 <= regW1 + $signed(w1IncY);
@@ -204,7 +242,7 @@ module Rasterizer
                         end
                     end
 
-                    if ((y < bbEnd[BB_Y_POS +: Y_BIT_WIDTH]) && (y < Y_LINE_RESOLUTION))
+                    if (yScreen < yScreenEnd)
                     begin
                         case (edgeWalkingState)
                         RASTERIZER_EDGEWALKER_INIT:
@@ -347,7 +385,8 @@ module Rasterizer
                     // Arguments for the shader
                     m_axis_tdata <= {
                         {{(ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, y} - bbStart[BB_Y_POS +: 16], {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: 16]}
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen}, {{(16 - X_BIT_WIDTH){1'b0}}, x}},
+                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]}, {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: X_BIT_WIDTH]}
                     };
                 end
             end

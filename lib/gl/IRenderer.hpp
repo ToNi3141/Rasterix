@@ -235,6 +235,7 @@ public:
         void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
         void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
         void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
+        void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
 
         uint32_t serialize() const { return m_regVal.data; }
     private:
@@ -248,7 +249,7 @@ public:
                     , depthTest(false)
                     , alphaTest(false)
                     , tmu0(false)
-
+                    , scissor(false)
                 { }
 
                 bool fog : 1;
@@ -256,6 +257,7 @@ public:
                 bool depthTest : 1;
                 bool alphaTest : 1;
                 bool tmu0 : 1;
+                bool scissor : 1;
             } fields {};
             uint32_t data;
         } m_regVal;
@@ -272,9 +274,9 @@ public:
     virtual bool drawTriangle(const Vec4& v0,
                               const Vec4& v1,
                               const Vec4& v2,
-                              const Vec2& st0,
-                              const Vec2& st1,
-                              const Vec2& st2,
+                              const Vec4& tc0,
+                              const Vec4& tc1,
+                              const Vec4& tc2,
                               const Vec4& c0,
                               const Vec4& c1,
                               const Vec4& c2) = 0;
@@ -368,6 +370,14 @@ public:
     /// @param featureEnable The enabled features
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) = 0;
+
+    /// @brief Sets the scissor box parameter
+    /// @param x X coordinate of the box
+    /// @param y Y coordinate of the box
+    /// @param width Width of the box
+    /// @param height Height of the box
+    /// @return true if success
+    virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) = 0;
 };
 
 #endif // IRENDERER_HPP
