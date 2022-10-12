@@ -25,6 +25,10 @@
 //
 // The fragment interface can be used to access single fragments from the framebuffer
 //
+// Improvements: The scrissor is not optimized. When memset is called, it will set the whole memory except
+// the scissor area. A improved version will just set the scissor area.
+// It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
+//
 // Pipelined: n/a
 // Depth: 1 cycle
 module FrameBuffer
