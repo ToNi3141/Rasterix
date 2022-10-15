@@ -20,11 +20,10 @@
 // Pipelined: n/a
 // Depth: 1 cylce
 module TrueDualPortRam #(
-    parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
     parameter MEMORY_PRIMITIVE = "block", // "distribute" or "block"
-    localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8)),
+    parameter ADDR_WIDTH = 8,
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
 (
@@ -34,13 +33,13 @@ module TrueDualPortRam #(
     // Write interface. When write is 0, writeDataOut can be used to read from this channel.
     input  wire [MEM_WIDTH - 1 : 0]         writeData,
     input  wire                             write,
-    input  wire [MEM_SIZE - 1 : 0]          writeAddr,
+    input  wire [ADDR_WIDTH - 1 : 0]        writeAddr,
     input  wire [WRITE_MASK_SIZE - 1 : 0]   writeMask,
     output wire [MEM_WIDTH - 1 : 0]         writeDataOut, 
 
     // Read interface
     output wire [MEM_WIDTH - 1 : 0]         readData,
-    input  wire [MEM_SIZE - 1 : 0]          readAddr
+    input  wire [ADDR_WIDTH - 1 : 0]        readAddr
 );
     
 `ifndef UNITTEST
@@ -49,8 +48,8 @@ module TrueDualPortRam #(
         for (i = 0; i < WRITE_MASK_SIZE; i = i + 1)
         begin
             xpm_memory_tdpram #(
-                .ADDR_WIDTH_A(MEM_SIZE),               // DECIMAL
-                .ADDR_WIDTH_B(MEM_SIZE),               // DECIMAL
+                .ADDR_WIDTH_A(ADDR_WIDTH),               // DECIMAL
+                .ADDR_WIDTH_B(ADDR_WIDTH),               // DECIMAL
                 .AUTO_SLEEP_TIME(0),            // DECIMAL
                 .BYTE_WRITE_WIDTH_A(WRITE_STROBE_WIDTH),        // DECIMAL
                 .BYTE_WRITE_WIDTH_B(WRITE_STROBE_WIDTH),        // DECIMAL
@@ -61,7 +60,7 @@ module TrueDualPortRam #(
                 .MEMORY_INIT_PARAM("0"),        // String
                 .MEMORY_OPTIMIZATION("true"),   // String
                 .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE),      // String
-                .MEMORY_SIZE((2**MEM_SIZE) * WRITE_STROBE_WIDTH),             // DECIMAL
+                .MEMORY_SIZE((2**ADDR_WIDTH) * WRITE_STROBE_WIDTH),             // DECIMAL
                 .MESSAGE_CONTROL(0),            // DECIMAL
                 .READ_DATA_WIDTH_A(WRITE_STROBE_WIDTH),         // DECIMAL
                 .READ_DATA_WIDTH_B(WRITE_STROBE_WIDTH),         // DECIMAL
@@ -162,7 +161,7 @@ module TrueDualPortRam #(
         end
     endgenerate
 `else
-    reg [MEM_WIDTH  - 1 : 0]    mem [(1 << MEM_SIZE) - 1 : 0];
+    reg [MEM_WIDTH  - 1 : 0]    mem [(1 << ADDR_WIDTH) - 1 : 0];
     reg [MEM_WIDTH - 1 : 0]     memOut;
     reg [MEM_WIDTH - 1 : 0]     writeMemOut;
     assign readData = memOut;

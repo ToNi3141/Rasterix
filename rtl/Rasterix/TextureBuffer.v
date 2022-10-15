@@ -84,7 +84,7 @@ module TextureBuffer #(
     wire [PIXEL_WIDTH - 1 : 0]      texelSelect11;
 
     TrueDualPortRam #(
-        .MEM_SIZE_BYTES(SIZE - 1),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")
@@ -104,7 +104,7 @@ module TextureBuffer #(
     );
 
     TrueDualPortRam #(
-        .MEM_SIZE_BYTES(SIZE - 1),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH)
         //.MEMORY_PRIMITIVE("distributed")

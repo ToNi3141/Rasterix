@@ -65,8 +65,7 @@ module FrameBuffer
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam MEM_SIZE = $clog2(FRAME_SIZE_IN_PX * (PIXEL_WIDTH / 8)), // The size of the frame buffer as bytes in power of two
-    localparam ADDR_WIDTH = MEM_SIZE - 1 // Convert MEM_SIZE from 8 bit bytes to 16 bit pixels
+    localparam ADDR_WIDTH = $clog2(FRAME_SIZE_IN_PX)
 )
 (
     input   wire                            clk,
@@ -217,7 +216,7 @@ module FrameBuffer
         .readData(memBusDataOut),
         .readAddr(memBusAddrRead)
     );
-    defparam ramTile.MEM_SIZE_BYTES = MEM_SIZE;
+    defparam ramTile.ADDR_WIDTH = MEM_ADDR_WIDTH;
     defparam ramTile.MEM_WIDTH = MEM_WIDTH;
     defparam ramTile.WRITE_STROBE_WIDTH = SUB_PIXEL_WIDTH_INTERNAL;
 
