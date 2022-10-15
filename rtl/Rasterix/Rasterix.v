@@ -24,6 +24,13 @@ module Rasterix #(
     // The resolution of a subpart of the screen. The whole screen is constructed of 1 to n subparts.
     parameter Y_LINE_RESOLUTION = Y_RESOLUTION,
 
+    // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
+    // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
+    // Lower depth will result in color banding.
+    parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
+    // This enables the alpha channel of the framebuffer. Requires additional memory.
+    parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+    
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
@@ -45,7 +52,7 @@ module Rasterix #(
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
     // Framebuffer output
-    // AXI Stream master interface
+    // AXI Stream master interface (RGB565)
     output wire         m_framebuffer_axis_tvalid,
     input  wire         m_framebuffer_axis_tready,
     output wire         m_framebuffer_axis_tlast,
@@ -58,8 +65,8 @@ module Rasterix #(
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
+    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4;
 
-    localparam MEMORY_SUB_PIXEL_WIDTH = 4;
     localparam TEX_ADDR_WIDTH = 16;
 
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
@@ -68,9 +75,9 @@ module Rasterix #(
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-    `Expand(Expand, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
-    `Reduce(Reduce, MEMORY_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
-
+    localparam TEXTURE_SUB_PIXEL_WIDTH = 4;
+    `Expand(Expand, TEXTURE_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
+    
     ///////////////////////////
     // Regs and wires
     ///////////////////////////
@@ -88,7 +95,7 @@ module Rasterix #(
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
     wire            colorWriteEnable;
-    wire [15 : 0]   colorIn;
+    wire [31 : 0]   colorIn;
     wire [31 : 0]   colorOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosY;
@@ -270,6 +277,7 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
+        .confClearColor(confDepthBufferClearDepth),
         .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
         .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
         .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
@@ -294,12 +302,12 @@ module Rasterix #(
         .m_axis_tvalid(),
         .m_axis_tready(1'b1),
         .m_axis_tlast(),
-        .m_axis_tdata(),
-
-        .clearColor(confDepthBufferClearDepth)
+        .m_axis_tdata()
     );
     defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
+    defparam depthBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = 1;
+    defparam depthBuffer.SUB_PIXEL_WIDTH_INTERNAL = 16;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
     defparam depthBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
     defparam depthBuffer.X_RESOLUTION = X_RESOLUTION;
@@ -316,11 +324,12 @@ module Rasterix #(
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
         .confYOffset(confYOffset),
+        .confClearColor(confColorBufferClearColor),
 
         .fragIndexRead(colorIndexRead),
         .fragOut(colorIn),
         .fragIndexWrite(colorIndexWrite),
-        .fragIn(Reduce(colorOut)),
+        .fragIn(colorOut),
         .fragWriteEnable(colorWriteEnable),
         .fragMask({ confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
@@ -333,7 +342,6 @@ module Rasterix #(
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
-        .clearColor(Reduce(confColorBufferClearColor)),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
@@ -342,7 +350,9 @@ module Rasterix #(
     );
     defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
-    defparam colorBuffer.SUB_PIXEL_WIDTH = MEMORY_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
+    defparam colorBuffer.SUB_PIXEL_WIDTH_INTERNAL = FRAMEBUFFER_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam colorBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
     defparam colorBuffer.X_RESOLUTION = X_RESOLUTION;
     defparam colorBuffer.Y_RESOLUTION = Y_RESOLUTION;
@@ -456,7 +466,7 @@ module Rasterix #(
         .texelInput11(Expand(texelInput11)),
 
         .colorIndexRead(colorIndexRead),
-        .colorIn(Expand(colorIn)),
+        .colorIn(colorIn),
         .colorIndexWrite(colorIndexWrite),
         .colorWriteEnable(colorWriteEnable),
         .colorOut(colorOut),

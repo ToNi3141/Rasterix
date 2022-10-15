@@ -18,11 +18,11 @@
 `ifndef PIXEL_UTIL_VH
 `define PIXEL_UTIL_VH
 
-`define Saturate(FuncName, SubPixelWidth) \
-    function [SubPixelWidth - 1 : 0] FuncName; \
-        input [SubPixelWidth * 2 : 0] subpixel; \
-        FuncName = (subpixel[SubPixelWidth * 2])    ? {SubPixelWidth{1'b1}} \
-                                                    : subpixel[(SubPixelWidth * 2) - 1 : SubPixelWidth]; \
+`define Saturate(FuncName, ElementWidth) \
+    function [ElementWidth - 1 : 0] FuncName; \
+        input [ElementWidth * 2 : 0] subpixel; \
+        FuncName = (subpixel[ElementWidth * 2]) ? {ElementWidth{1'b1}} \
+                                                : subpixel[(ElementWidth * 2) - 1 : ElementWidth]; \
     endfunction
 
 // Gets an signed integer S1.X and clamps and satureates it to a S0.Y number.
@@ -69,49 +69,138 @@
         end \
     endfunction
 
-`define Expand(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
-    function [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] FuncName; \
-        input [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
-        localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
-        localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \
+`define Expand(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
+    function [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
+        input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
+        localparam PIXEL_WIDTH = ElementWidth * NumberOfElements; \
+        localparam DIFF_SUB_PIXEL_WIDTH = NewElementWidth - ElementWidth; \
         integer i; \
-        if (SubPixelWidth == ConvSubPixelWidth) \
+        if (ElementWidth == NewElementWidth) \
         begin \
             FuncName[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH];  \
         end \
         else \
         begin \
-            for (i = 0; i < NumberOfSubPixels; i = i + 1) \
+            for (i = 0; i < NumberOfElements; i = i + 1) \
             begin \
-                FuncName[i * ConvSubPixelWidth +: ConvSubPixelWidth] = {  \
-                    pixel[i * SubPixelWidth +: SubPixelWidth],  \
+                FuncName[i * NewElementWidth +: NewElementWidth] = {  \
+                    pixel[i * ElementWidth +: ElementWidth],  \
                     // Mirror the subpixel in the reminder. \
                     // Assume, expanded sub pixel width is 6 bit and sub pixel width is 4 bit \
                     // Then the expanded sub pixel width will ec[5 : 0] = { c[3 : 0], c[3 : 2] } \
-                    pixel[(i * SubPixelWidth) + (SubPixelWidth - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] \
+                    pixel[(i * ElementWidth) + (ElementWidth - DIFF_SUB_PIXEL_WIDTH) +: DIFF_SUB_PIXEL_WIDTH] \
                 }; \
             end \
         end \
     endfunction
 
-`define Reduce(FuncName, SubPixelWidth, ConvSubPixelWidth, NumberOfSubPixels) \
-    function [(SubPixelWidth * NumberOfSubPixels) - 1 : 0] FuncName; \
-        input [(ConvSubPixelWidth * NumberOfSubPixels) - 1 : 0] pixel; \
-        localparam PIXEL_WIDTH = SubPixelWidth * NumberOfSubPixels; \
-        localparam DIFF_SUB_PIXEL_WIDTH = ConvSubPixelWidth - SubPixelWidth; \
+`define Reduce(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
+    function [(ElementWidth * NumberOfElements) - 1 : 0] FuncName; \
+        input [(NewElementWidth * NumberOfElements) - 1 : 0] pixel; \
+        localparam PIXEL_WIDTH = ElementWidth * NumberOfElements; \
+        localparam DIFF_SUB_PIXEL_WIDTH = NewElementWidth - ElementWidth; \
         integer i; \
-        if (SubPixelWidth == ConvSubPixelWidth) \
+        if (ElementWidth == NewElementWidth) \
         begin \
             FuncName[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH];  \
         end \
         else \
         begin \
-            for (i = 0; i < NumberOfSubPixels; i = i + 1) \
+            for (i = 0; i < NumberOfElements; i = i + 1) \
             begin \
-                FuncName[i * SubPixelWidth +: SubPixelWidth] = {  \
-                    pixel[(ConvSubPixelWidth * i) + DIFF_SUB_PIXEL_WIDTH +: SubPixelWidth]  \
+                FuncName[i * ElementWidth +: ElementWidth] = {  \
+                    pixel[(NewElementWidth * i) + DIFF_SUB_PIXEL_WIDTH +: ElementWidth]  \
                 }; \
             end \
+        end \
+    endfunction
+
+// Used to reduce a vector.
+// ElementWidth: The width of a vector element.
+// NumberOfElements: The number of elements the vector contains.
+// Offset: Index of the first element which will be removed. If this is 0, the first element is removed. If it is 1, the second element will be removed.
+// N: Every very n't element will be removed.
+// NewNumberOfElements: The size of the vector after the conversion.
+`define ReduceVec(FuncName, ElementWidth, NumberOfElements, Offset, N, NewNumberOfElements) \
+    function [(ElementWidth * NewNumberOfElements) - 1 : 0] FuncName; \
+        input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
+        integer i, j, k = 0; \
+        for (i = 0; i < NumberOfElements; ) \
+        begin \
+            if (i >= Offset) \
+            begin \
+                for (j = 0; j < N; j = j + 1) \
+                begin \
+                    if (j == 0) \
+                    begin \
+                        i = i + 1; \
+                    end \
+                    else \
+                    begin \
+                        FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                        k = k + 1; \
+                        i = i + 1; \
+                    end \
+                end \
+            end \
+            else \
+            begin \
+                FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                k = k + 1; \
+                i = i + 1; \
+            end \
+        end \
+    endfunction
+
+// Used to expand a vector.
+// ElementWidth: The width of a vector element.
+// NumberOfElements: The number of elements the vector contains.
+// Offset: Index of the first element which will be inserted. If this is 0, the first element is inserted at position 0.
+// N: At every n't position there will be an element inserted.
+// NewNumberOfElements: Size of the vector after all elements have been inserted.
+// value: The value of the inserted element.
+`define ExpandVec(FuncName, ElementWidth, NumberOfElements, Offset, N, NewNumberOfElements) \
+    function [(ElementWidth * NewNumberOfElements) - 1 : 0] FuncName; \
+        input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
+        input [ElementWidth - 1 : 0] value; \
+        integer i, j, k = 0; \
+        for (i = 0; i < NumberOfElements; ) \
+        begin \
+            if (i >= Offset) \
+            begin \
+                for (j = 0; j < N; j = j + 1) \
+                begin \
+                    if (j == 0) \
+                    begin \
+                        FuncName[k * ElementWidth +: ElementWidth] = value; \
+                        k = k + 1; \
+                    end \
+                    else \
+                    begin \
+                        FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                        k = k + 1; \
+                        i = i + 1; \
+                    end \
+                end \
+            end \
+            else \
+            begin \
+                FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                k = k + 1; \
+                i = i + 1; \
+            end \
+        end \
+    endfunction
+
+`define XXX2RGB565(FuncName, ElementWidth, NumberOfPixels) \
+    function [(16 * NumberOfPixels) - 1 : 0] FuncName; \
+        input [(ElementWidth * 3 * NumberOfPixels) - 1 : 0] pixels; \
+        integer i = 0; \
+        for (i = 0; i < NumberOfPixels; i = i + 1) \
+        begin \
+            FuncName[(i * 16) + 0  +: 5] = pixels[(i * ElementWidth * 3) +                      (ElementWidth - 5) +: ElementWidth - (ElementWidth - 5)]; \
+            FuncName[(i * 16) + 5  +: 6] = pixels[(i * ElementWidth * 3) + ElementWidth +       (ElementWidth - 6) +: ElementWidth - (ElementWidth - 6)]; \
+            FuncName[(i * 16) + 11 +: 5] = pixels[(i * ElementWidth * 3) + (ElementWidth * 2) + (ElementWidth - 5) +: ElementWidth - (ElementWidth - 5)]; \
         end \
     endfunction
 

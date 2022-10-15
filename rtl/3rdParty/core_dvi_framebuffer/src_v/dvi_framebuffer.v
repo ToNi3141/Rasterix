@@ -626,25 +626,15 @@ else if (!blanking_w && (h_pos_q[0] || !config_x2_mode_out_w))
 else if (!active_q)
     word_sel_q  <= 1'b0;
 
-// wire [7:0] blue_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-//                        word_sel_q                   ? {pixel_data_w[4+16:0+16],   3'b0} : 
-//                                                       {pixel_data_w[4:0],         3'b0};
-// wire [7:0] green_w  = (config_enable_out_w == 1'b0) ? 8'b0 : 
-//                        word_sel_q                   ? {pixel_data_w[10+16:5+16],  2'b0} : 
-//                                                       {pixel_data_w[10:5],        2'b0};
-// wire [7:0] red_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-//                        word_sel_q                   ? {pixel_data_w[15+16:11+16], 3'b0} : 
-//                                                       {pixel_data_w[15:11],       3'b0};
-
 wire [7:0] blue_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[4 + 16 +: 4],   4'b0} : 
-                                                      {pixel_data_w[4 +: 4],         4'b0};
+                       word_sel_q                   ? {pixel_data_w[4+16:0+16],   3'b0} : 
+                                                      {pixel_data_w[4:0],         3'b0};
 wire [7:0] green_w  = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[8 + 16 +: 4],  4'b0} : 
-                                                      {pixel_data_w[8 +: 4],        4'b0};
+                       word_sel_q                   ? {pixel_data_w[10+16:5+16],  2'b0} : 
+                                                      {pixel_data_w[10:5],        2'b0};
 wire [7:0] red_w   = (config_enable_out_w == 1'b0) ? 8'b0 : 
-                       word_sel_q                   ? {pixel_data_w[12 + 16 +: 4], 4'b0} : 
-                                                      {pixel_data_w[12 +: 4],       4'b0};
+                       word_sel_q                   ? {pixel_data_w[15+16:11+16], 3'b0} : 
+                                                      {pixel_data_w[15:11],       3'b0};
 
 assign pixel_accept_w = ~blanking_w & word_sel_q & (h_pos_q[0] || !config_x2_mode_out_w) & active_q;
 
