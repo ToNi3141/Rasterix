@@ -127,7 +127,7 @@ module DisplayControllerSpi #(
         .readData(memOut),
         .readAddr(memAddr)
     );
-    defparam mem.MEM_SIZE_BYTES = $clog2(PIXEL * 2); // Round size to the next bigger number of two size
+    defparam mem.ADDR_WIDTH = $clog2(PIXEL);
     defparam mem.MEM_WIDTH = 16;
 
     wire bufferClean = pixelCount == PIXEL;

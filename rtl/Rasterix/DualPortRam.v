@@ -16,11 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module DualPortRam #(
-    parameter MEM_SIZE_BYTES = 14, // The memory size in power of two bytes
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
     parameter MEMORY_PRIMITIVE = "block", // "distribute" or "block"
-    localparam MEM_SIZE = MEM_SIZE_BYTES - ($clog2(MEM_WIDTH / 8)),
+    parameter ADDR_WIDTH = 8, // Size of the memory
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
 (
@@ -30,12 +29,12 @@ module DualPortRam #(
     // Write interface
     input  wire [MEM_WIDTH - 1 : 0]         writeData,
     input  wire                             write,
-    input  wire [MEM_SIZE - 1 : 0]          writeAddr,
+    input  wire [ADDR_WIDTH - 1 : 0]        writeAddr,
     input  wire [WRITE_MASK_SIZE - 1 : 0]   writeMask, 
 
     // Read interface
     output wire [MEM_WIDTH - 1 : 0]         readData,
-    input  wire [MEM_SIZE - 1 : 0]          readAddr
+    input  wire [ADDR_WIDTH - 1 : 0]        readAddr
 );
     
 `ifndef UNITTEST
@@ -45,8 +44,8 @@ module DualPortRam #(
         begin
             // Xilinx macro to instantiate simple dual port memory
             xpm_memory_sdpram #(
-                .ADDR_WIDTH_A(MEM_SIZE),
-                .ADDR_WIDTH_B(MEM_SIZE),
+                .ADDR_WIDTH_A(ADDR_WIDTH),
+                .ADDR_WIDTH_B(ADDR_WIDTH),
                 .AUTO_SLEEP_TIME(0),
                 .BYTE_WRITE_WIDTH_A(WRITE_STROBE_WIDTH),
                 .CASCADE_HEIGHT(0),
@@ -56,7 +55,7 @@ module DualPortRam #(
                 .MEMORY_INIT_PARAM("0"),
                 .MEMORY_OPTIMIZATION("true"),
                 .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE),
-                .MEMORY_SIZE((2**MEM_SIZE) * WRITE_STROBE_WIDTH),
+                .MEMORY_SIZE((2**ADDR_WIDTH) * WRITE_STROBE_WIDTH),
                 .MESSAGE_CONTROL(0),
                 .READ_DATA_WIDTH_B(WRITE_STROBE_WIDTH),
                 .READ_LATENCY_B(1), 
@@ -120,7 +119,7 @@ module DualPortRam #(
         end
     endgenerate
 `else
-    reg [MEM_WIDTH  - 1 : 0]    mem [(1 << MEM_SIZE) - 1 : 0];
+    reg [MEM_WIDTH  - 1 : 0]    mem [(1 << ADDR_WIDTH) - 1 : 0];
     reg [MEM_WIDTH - 1 : 0]     memOut;
     assign readData = memOut;
     integer i;
