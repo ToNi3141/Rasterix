@@ -81,6 +81,23 @@ public:
         void setShiftRgb(const uint8_t val) { m_regVal.fields.shiftRgb = val; }
         void setShiftAlpha(const uint8_t val) { m_regVal.fields.shiftAlpha = val; }
 
+        Combine getCombineRgb() const { return m_regVal.fields.combineRgb; }
+        Combine getCombineAlpha() const { return m_regVal.fields.combineAlpha; }
+        SrcReg getSrcRegRgb0() const { return m_regVal.fields.srcRegRgb0; }
+        SrcReg getSrcRegRgb1() const { return m_regVal.fields.srcRegRgb1; }
+        SrcReg getSrcRegRgb2() const { return m_regVal.fields.srcRegRgb2; }
+        SrcReg getSrcRegAlpha0() const { return m_regVal.fields.srcRegAlpha0; }
+        SrcReg getSrcRegAlpha1() const { return m_regVal.fields.srcRegAlpha1; }
+        SrcReg getSrcRegAlpha2() const { return m_regVal.fields.srcRegAlpha2; }
+        Operand getOperandRgb0() const { return m_regVal.fields.operandRgb0; }
+        Operand getOperandRgb1() const { return m_regVal.fields.operandRgb1; }
+        Operand getOperandRgb2() const { return m_regVal.fields.operandRgb2; }
+        Operand getOperandAlpha0() const { return m_regVal.fields.operandAlpha0; }
+        Operand getOperandAlpha1() const { return m_regVal.fields.operandAlpha1; }
+        Operand getOperandAlpha2() const { return m_regVal.fields.operandAlpha2; }
+        uint8_t getShiftRgb() const { return m_regVal.fields.shiftRgb; }
+        uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
+
         uint32_t serialize() const { return m_regVal.data; }
 
     private:
@@ -191,6 +208,17 @@ public:
         void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = val; }
         void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = val; }
 
+        TestFunc getDepthFunc() const { return m_regVal.fields.depthFunc; }
+        TestFunc getAlphaFunc() const { return m_regVal.fields.alphaFunc; }
+        uint8_t getRefAlphaValue() const { return m_regVal.fields.referenceAlphaValue; }
+        bool getDepthMask() const { return m_regVal.fields.depthMask; }
+        bool getColorMaskA() const { return m_regVal.fields.colorMaskA; }
+        bool getColorMaskR() const { return m_regVal.fields.colorMaskR; }
+        bool getColorMaskG() const { return m_regVal.fields.colorMaskG; }
+        bool getColorMaskB() const { return m_regVal.fields.colorMaskB; }
+        BlendFunc getBlendFuncSFactor() const { return m_regVal.fields.blendFuncSFactor; }
+        BlendFunc getBlendFuncDFactor() const { return m_regVal.fields.blendFuncDFactor; }
+
         uint32_t serialize() const { return m_regVal.data; }
 
     private:
@@ -236,6 +264,13 @@ public:
         void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
         void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
         void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
+
+        bool getEnableFog() const { return m_regVal.fields.fog; }
+        bool getEnableBlending() const { return m_regVal.fields.blending; }
+        bool getEnableDepthTest() const { return m_regVal.fields.depthTest; }
+        bool getEnableAlphaTest() const { return m_regVal.fields.alphaTest; }
+        bool getEnableTmu0() const { return m_regVal.fields.tmu0; }
+        bool getEnableScissor() const { return m_regVal.fields.scissor; }
 
         uint32_t serialize() const { return m_regVal.data; }
     private:

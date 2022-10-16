@@ -190,11 +190,22 @@ public:
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
-        // TODO: Check scissor bounding box to avoid unnecessary clears
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
+            const uint16_t currentScreenPositionStart = i * LINE_RESOLUTION;
+            const uint16_t currentScreenPositionEnd = (i + 1) * LINE_RESOLUTION;
+            if (m_scissorEnabled) 
+            {
+                if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
+                {
+                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
+                }
+            }
+            else
+            {
+                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
+            }
         }
         return ret;
     }
@@ -320,6 +331,8 @@ public:
 
     virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) override
     {
+        m_scissorEnabled = featureEnable.getEnableScissor();
+        m_rasterizer.enableScissor(featureEnable.getEnableScissor());
         return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
     }
 
@@ -334,6 +347,12 @@ public:
         };
         ret = ret && writeToReg(ListAssembler::SET_SCISSOR_START_XY, start);
         ret = ret && writeToReg(ListAssembler::SET_SCISSOR_END_XY, end);
+
+        m_scissorYStart = y;
+        m_scissorYEnd = y + height;
+
+        m_rasterizer.setScissorBox(x, y, width, height);
+
         return ret;
     }
 
@@ -364,6 +383,11 @@ private:
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
+
+    // Optimization for the scissor test to filter unecessary clean calls
+    bool m_scissorEnabled { false };
+    int16_t m_scissorYStart { 0 };
+    int16_t m_scissorYEnd { 0 };
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
