@@ -94,18 +94,22 @@ module TextureBuffer #(
 
     function [PIXEL_WIDTH - 1 : 0] RGBA5551TO8888; 
         input [PIXEL_WIDTH_INT - 1 : 0] pixels; 
-        RGBA5551TO8888[0  +: SUB_PIXEL_WIDTH] = { 8 { pixels[0] } }; 
-        RGBA5551TO8888[8  +: SUB_PIXEL_WIDTH] = { pixels[1  +: 5], pixels[2  +: 3] }; 
-        RGBA5551TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[6  +: 5], pixels[7  +: 3] }; 
-        RGBA5551TO8888[24 +: SUB_PIXEL_WIDTH] = { pixels[11 +: 5], pixels[12 +: 3] }; 
+        begin
+            RGBA5551TO8888[0  +: SUB_PIXEL_WIDTH] = { 8 { pixels[0] } }; 
+            RGBA5551TO8888[8  +: SUB_PIXEL_WIDTH] = { pixels[1  +: 5], pixels[2  +: 3] }; 
+            RGBA5551TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[6  +: 5], pixels[7  +: 3] }; 
+            RGBA5551TO8888[24 +: SUB_PIXEL_WIDTH] = { pixels[11 +: 5], pixels[12 +: 3] }; 
+        end
     endfunction
 
     function [PIXEL_WIDTH - 1 : 0] RGB565TO8888; 
         input [PIXEL_WIDTH_INT - 1 : 0] pixels; 
-        RGB565TO8888[0  +: SUB_PIXEL_WIDTH] = 8'hff; 
-        RGB565TO8888[8  +: SUB_PIXEL_WIDTH] = { pixels[0  +: 5], pixels[2  +: 3] }; 
-        RGB565TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[5  +: 6], pixels[8  +: 2] }; 
-        RGB565TO8888[24 +: SUB_PIXEL_WIDTH] = { pixels[11 +: 5], pixels[13 +: 3] }; 
+        begin
+            RGB565TO8888[0  +: SUB_PIXEL_WIDTH] = 8'hff; 
+            RGB565TO8888[8  +: SUB_PIXEL_WIDTH] = { pixels[0  +: 5], pixels[2  +: 3] }; 
+            RGB565TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[5  +: 6], pixels[8  +: 2] }; 
+            RGB565TO8888[24 +: SUB_PIXEL_WIDTH] = { pixels[11 +: 5], pixels[13 +: 3] }; 
+        end
     endfunction
 
     `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
