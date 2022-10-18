@@ -306,9 +306,10 @@ public:
                                const uint16_t texHeight,
                                const TextureWrapMode wrapModeS,
                                const TextureWrapMode wrapModeT,
-                               const bool enableMagFilter) override
+                               const bool enableMagFilter,
+                               const PixelFormat pixelFormat) override
     {
-        return m_textureManager.updateTexture(texId, pixels, texWidth, texHeight, wrapModeS, wrapModeT, enableMagFilter);
+        return m_textureManager.updateTexture(texId, pixels, texWidth, texHeight, wrapModeS, wrapModeT, enableMagFilter, pixelFormat);
     }
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
@@ -318,7 +319,7 @@ public:
         bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size, static_cast<uint8_t>(tex.pixelFormat));
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
         }
         return ret;

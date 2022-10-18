@@ -33,6 +33,7 @@ public:
         uint32_t addr;
         uint32_t size;
         uint32_t tmuConfig;
+        IRenderer::PixelFormat pixelFormat;
     };
 
     TextureMemoryManager()
@@ -68,7 +69,8 @@ public:
                        const uint16_t texHeight,
                        const IRenderer::TextureWrapMode wrapModeS,
                        const IRenderer::TextureWrapMode wrapModeT,
-                       const bool enableMagFilter) 
+                       const bool enableMagFilter,
+                       const IRenderer::PixelFormat pixelFormat) 
     {
         const uint32_t textureSlot = m_textureLut[texId];
 
@@ -97,6 +99,7 @@ public:
             m_textures[newTextureSlot].size = texWidth * texHeight * 2;
             m_textures[newTextureSlot].inUse = true;
             m_textures[newTextureSlot].requiresUpload = true;
+            m_textures[newTextureSlot].pixelFormat = pixelFormat;
             m_textures[newTextureSlot].tmuConfig.reg.wrapModeS = wrapModeS;
             m_textures[newTextureSlot].tmuConfig.reg.wrapModeT = wrapModeT;
             m_textures[newTextureSlot].tmuConfig.reg.enableMagFilter = enableMagFilter;
@@ -114,7 +117,7 @@ public:
         {
             return { false, 0, 0, 0 };
         }
-        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized };
+        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized, tex.pixelFormat };
     }
 
     bool deleteTexture(const uint16_t texId) 
@@ -163,6 +166,7 @@ private:
         bool requiresDelete;
         std::shared_ptr<const uint16_t> gramAddr; // Refactor to another name. gramAddr is miss leading
         uint32_t size;
+        IRenderer::PixelFormat pixelFormat;
         union 
         {
             struct __attribute__ ((__packed__)) TmuTextureConfig

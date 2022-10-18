@@ -74,7 +74,7 @@ public:
 
     // Textures
     // Only RGBA4444 textures are supported
-    bool uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY);
+    bool uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IRenderer::PixelFormat pixelFormat);
     bool useTexture(const TMU& tmu);
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }

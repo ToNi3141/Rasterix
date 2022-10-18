@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
 module Rasterix #(
     // The resolution of the whole screen
     parameter X_RESOLUTION = 128,
@@ -74,9 +72,6 @@ module Rasterix #(
 
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
-
-    localparam TEXTURE_SUB_PIXEL_WIDTH = 4;
-    `Expand(Expand, TEXTURE_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL);
     
     ///////////////////////////
     // Regs and wires
@@ -86,10 +81,10 @@ module Rasterix #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr11;
-    wire [15 : 0]                   texelInput00;
-    wire [15 : 0]                   texelInput01;
-    wire [15 : 0]                   texelInput10;
-    wire [15 : 0]                   texelInput11;
+    wire [31 : 0]                   texelInput00;
+    wire [31 : 0]                   texelInput01;
+    wire [31 : 0]                   texelInput10;
+    wire [31 : 0]                   texelInput11;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -147,15 +142,16 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31 : 0]   confFeatureEnable;
-    wire [31 : 0]   confFragmentPipelineConfig;
-    wire [31 : 0]   confFragmentPipelineFogColor;
-    wire [31 : 0]   confTMU0TexEnvConfig;
-    wire [31 : 0]   confTMU0TextureConfig;
-    wire [31 : 0]   confTMU0TexEnvColor;
-    wire [31 : 0]   confScissorStartXY;
-    wire [31 : 0]   confScissorEndXY;
-    wire [11 : 0]   confYOffset;
+    wire [31 : 0]                                   confFeatureEnable;
+    wire [31 : 0]                                   confFragmentPipelineConfig;
+    wire [31 : 0]                                   confFragmentPipelineFogColor;
+    wire [31 : 0]                                   confTMU0TexEnvConfig;
+    wire [31 : 0]                                   confTMU0TextureConfig;
+    wire [31 : 0]                                   confTMU0TexEnvColor;
+    wire [TEXTURE_STREAM_PIXEL_FORMAT_SIZE - 1: 0]  confTMU0PixelFormat;
+    wire [31 : 0]                                   confScissorStartXY;
+    wire [31 : 0]                                   confScissorEndXY;
+    wire [11 : 0]                                   confYOffset;
 
     // Rasterizer
     wire            m_rasterizer_axis_tvalid;
@@ -198,6 +194,7 @@ module Rasterix #(
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
+        .confTMU0PixelFormat(confTMU0PixelFormat),
         .confScissorStartXY(confScissorStartXY),
         .confScissorEndXY(confScissorEndXY),
         .confYOffset(confYOffset),
@@ -255,6 +252,8 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
+        .confPixelFormat(confTMU0PixelFormat),
+
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
         .texelAddr10(texelAddr10),
@@ -272,6 +271,7 @@ module Rasterix #(
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -460,10 +460,10 @@ module Rasterix #(
         .texelAddr10(texelAddr10),
         .texelAddr11(texelAddr11),
 
-        .texelInput00(Expand(texelInput00)),
-        .texelInput01(Expand(texelInput01)),
-        .texelInput10(Expand(texelInput10)),
-        .texelInput11(Expand(texelInput11)),
+        .texelInput00(texelInput00),
+        .texelInput01(texelInput01),
+        .texelInput10(texelInput10),
+        .texelInput11(texelInput11),
 
         .colorIndexRead(colorIndexRead),
         .colorIn(colorIn),

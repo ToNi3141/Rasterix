@@ -65,9 +65,9 @@ bool PixelPipeline::updatePipeline()
     return ret;
 }
 
-bool PixelPipeline::uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY)
+bool PixelPipeline::uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IRenderer::PixelFormat pixelFormat)
 {
-    bool ret = m_renderer.updateTexture(m_boundTexture, pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter);
+    bool ret = m_renderer.updateTexture(m_boundTexture, pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter, pixelFormat);
             
     // Rebind texture to update the rasterizer with the new texture meta information
     // TODO: Check if this is still required

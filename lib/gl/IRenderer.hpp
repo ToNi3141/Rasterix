@@ -33,6 +33,13 @@ public:
         TMU0
     };
 
+    enum class PixelFormat : uint8_t
+    {
+        RGBA4444,
+        RGBA5551,
+        RGB565
+    };
+
     class TexEnvConf
     {
     public:
@@ -326,12 +333,13 @@ public:
 
     /// @brief This will update the texture data of the texture with the given id
     /// @param texId The texture id which texture has to be updated
-    /// @param pixels The texture as RGBA4444
+    /// @param pixels The texture in the format defined by pixelFormat
     /// @param texWidth The width of the texture
     /// @param texHeight The height of the texture
     /// @param texWrapModeS The wrapping mode of the texture in s direction
     /// @param texWrapModeT The wrapping mode of the texture in t direction
     /// @param enableMagFilter Enables magnification filter of the texture (GL_LINEAR)
+    /// @param pixelFormat The format of the pixels
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool updateTexture(const uint16_t texId, 
                                std::shared_ptr<const uint16_t> pixels, 
@@ -339,7 +347,8 @@ public:
                                const uint16_t texHeight,
                                const TextureWrapMode texWrapModeS,
                                const TextureWrapMode texWrapModeT,
-                               const bool enableMagFilter) = 0;
+                               const bool enableMagFilter, 
+                               const PixelFormat pixelFormat) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param target is used TMU

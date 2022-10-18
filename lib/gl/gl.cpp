@@ -2948,25 +2948,34 @@ GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalforma
 
     if (pixels != nullptr)
     {
-        // Currently only GL_RGB and GL_RGBA is supported
-        const int32_t colorComponents = (format == GL_RGB) ? 3 : 4;
+        IRenderer::PixelFormat pixelFormat { IRenderer::PixelFormat::RGBA4444 };
 
-        // Convert color to RGBA4444
         if (type == GL_UNSIGNED_BYTE)
         {
-            uint16_t tmpColor = 0;
-            uint8_t shift = 12;
-            for (int32_t i = 0; i < width * height * colorComponents; i++)
+            // Currently only GL_RGB and GL_RGBA is supported
+            if (format == GL_RGBA)
             {
-                tmpColor |= (reinterpret_cast<const uint8_t*>(pixels)[i] >> 4) << shift;
-                shift -= 4;
-                if ((i % colorComponents) == (colorComponents - 1))
+                pixelFormat = IRenderer::PixelFormat::RGBA4444;
+                for (int32_t i = 0; i < width * height * 4; i += 4)
                 {
-                    if (colorComponents == 3)
-                        tmpColor |= 0xf; // Set alpha to 0xf to make the texture opaque
-                    texMemShared.get()[i / colorComponents] = tmpColor;
-                    tmpColor = 0;
-                    shift = 12;
+                    uint16_t tmpColor = 0;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 0] >> 4)) << 12;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 1] >> 4)) << 8;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 2] >> 4)) << 4;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 3] >> 4));
+                    texMemShared.get()[i / 4] = tmpColor;
+                }
+            }
+            else
+            {
+                pixelFormat = IRenderer::PixelFormat::RGB565;
+                for (int32_t i = 0; i < width * height * 3; i += 3)
+                {
+                    uint16_t tmpColor = 0;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 0] >> 3)) << 11;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 1] >> 2)) << 5;
+                    tmpColor |= static_cast<uint16_t>((reinterpret_cast<const uint8_t*>(pixels)[i + 2] >> 3));
+                    texMemShared.get()[i / 3] = tmpColor;
                 }
             }
         }
@@ -2974,32 +2983,21 @@ GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalforma
         else if (type == GL_UNSIGNED_SHORT_4_4_4_4)
         {
             memcpy(texMemShared.get(), pixels, width * height * 2);
+            pixelFormat = IRenderer::PixelFormat::RGBA4444;
         }
         // Convert to RGBA4444
         else if (type == GL_UNSIGNED_SHORT_5_5_5_1)
         {
-            for (int32_t i = 0; i < width * height; i++)
-            {
-                uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
-                        | ((tmp << 2) & 0x0f00)
-                        | ((tmp << 3) & 0x00f0)
-                        | ((tmp & 0x1) ? 0xf : 0x0);
-            }
+            memcpy(texMemShared.get(), pixels, width * height * 2);
+            pixelFormat = IRenderer::PixelFormat::RGBA5551;
         }
         else if (type == GL_UNSIGNED_SHORT_5_6_5)
         {
-            for (int32_t i = 0; i < width * height; i++)
-            {
-                uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
-                        | ((tmp << 3) & 0x0f00)
-                        | ((tmp << 4) & 0x00f0)
-                        | 0x0;
-            }
+            memcpy(texMemShared.get(), pixels, width * height * 2);
+            pixelFormat = IRenderer::PixelFormat::RGB565;
         }
 
-        if (!IceGL::getInstance().pixelPipeline().uploadTexture(texMemShared, widthRounded, heightRounded))
+        if (!IceGL::getInstance().pixelPipeline().uploadTexture(texMemShared, widthRounded, heightRounded, pixelFormat))
         {
             IceGL::getInstance().setError(GL_INVALID_VALUE);
             return;
