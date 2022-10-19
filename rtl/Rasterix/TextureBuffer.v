@@ -107,7 +107,7 @@ module TextureBuffer #(
         begin
             RGB565TO8888[0  +: SUB_PIXEL_WIDTH] = 8'hff; 
             RGB565TO8888[8  +: SUB_PIXEL_WIDTH] = { pixels[0  +: 5], pixels[2  +: 3] }; 
-            RGB565TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[5  +: 6], pixels[8  +: 2] }; 
+            RGB565TO8888[16 +: SUB_PIXEL_WIDTH] = { pixels[5  +: 6], pixels[9  +: 2] }; 
             RGB565TO8888[24 +: SUB_PIXEL_WIDTH] = { pixels[11 +: 5], pixels[13 +: 3] }; 
         end
     endfunction
