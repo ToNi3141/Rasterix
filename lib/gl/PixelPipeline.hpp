@@ -44,6 +44,17 @@ public:
         COMBINE
     };
 
+    enum class TargetPixelFormat
+    {
+        ALPHA,
+        LUMINANCE,
+        INTENSITY,
+        LUMINANCE_ALPHA,
+        RGB,
+        RGBA,
+        RGBA1,
+    };
+
     using FragmentPipeline = IRenderer::FragmentPipelineConf;
     using TestFunc = IRenderer::FragmentPipelineConf::TestFunc;
     using BlendFunc = IRenderer::FragmentPipelineConf::BlendFunc;
@@ -82,6 +93,7 @@ public:
     void setTexWrapModeS(const TextureWrapMode mode) { m_texWrapModeS = mode; }
     void setTexWrapModeT(const TextureWrapMode mode) { m_texWrapModeT = mode; }
     void setEnableMagFilter(const bool val) { m_texEnableMagFilter = val; }
+    static uint16_t convertColor(IRenderer::PixelFormat& outFormat, const TargetPixelFormat format, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a);
 
     // Framebuffer
     bool clearFramebuffer(bool frameBuffer, bool zBuffer);
