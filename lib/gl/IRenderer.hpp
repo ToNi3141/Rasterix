@@ -33,13 +33,6 @@ public:
         TMU0
     };
 
-    enum class PixelFormat : uint8_t
-    {
-        RGBA4444,
-        RGBA5551,
-        RGB565
-    };
-
     class TexEnvConf
     {
     public:
@@ -305,10 +298,119 @@ public:
         } m_regVal;
     };
 
-    enum class TextureWrapMode
+    struct TextureObject
     {
-        REPEAT,
-        CLAMP_TO_EDGE
+        enum class TextureWrapMode
+        {
+            REPEAT,
+            CLAMP_TO_EDGE
+        };
+
+        enum class PixelFormat : uint8_t
+        {
+            RGBA4444,
+            RGBA5551,
+            RGB565
+        };
+
+        enum class IntendedInternalPixelFormat
+        {
+            ALPHA,
+            LUMINANCE,
+            INTENSITY,
+            LUMINANCE_ALPHA,
+            RGB,
+            RGBA,
+            RGBA1,
+        };
+
+        uint16_t convertColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) const
+        {
+            uint16_t color {};
+            switch (intendedPixelFormat)
+            {
+                case IntendedInternalPixelFormat::ALPHA: // RGBA4444
+                    color = static_cast<uint16_t>(a >> 4);
+                    break;
+                case IntendedInternalPixelFormat::LUMINANCE: // RGB565
+                    color |= static_cast<uint16_t>(r >> 3) << 11;
+                    color |= static_cast<uint16_t>(r >> 2) << 5;
+                    color |= static_cast<uint16_t>(r >> 3) << 0;
+                    break;
+                case IntendedInternalPixelFormat::INTENSITY: // RGBA4444
+                    color |= static_cast<uint16_t>(r >> 4) << 12;
+                    color |= static_cast<uint16_t>(r >> 4) << 8;
+                    color |= static_cast<uint16_t>(r >> 4) << 4;
+                    color |= static_cast<uint16_t>(r >> 4) << 0;
+                    break;
+                case IntendedInternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
+                    color |= static_cast<uint16_t>(r >> 4) << 12;
+                    color |= static_cast<uint16_t>(r >> 4) << 8;
+                    color |= static_cast<uint16_t>(r >> 4) << 4;
+                    color |= static_cast<uint16_t>(a >> 4) << 0;
+                    break;
+                case IntendedInternalPixelFormat::RGB: // RGB565
+                    color |= static_cast<uint16_t>(r >> 3) << 11;
+                    color |= static_cast<uint16_t>(g >> 2) << 5;
+                    color |= static_cast<uint16_t>(b >> 3) << 0;
+                    break;
+                case IntendedInternalPixelFormat::RGBA: // RGBA4444
+                    color |= static_cast<uint16_t>(r >> 4) << 12;
+                    color |= static_cast<uint16_t>(g >> 4) << 8;
+                    color |= static_cast<uint16_t>(b >> 4) << 4;
+                    color |= static_cast<uint16_t>(a >> 4) << 0;
+                    break;
+                case IntendedInternalPixelFormat::RGBA1: // RGBA5551
+                    color |= static_cast<uint16_t>(r >> 5) << 11;
+                    color |= static_cast<uint16_t>(g >> 5) << 6;
+                    color |= static_cast<uint16_t>(b >> 5) << 1;
+                    color |= static_cast<uint16_t>(a >> 1) << 0;
+                    break;
+                default:
+                break;
+            }
+            return color;
+        }
+
+        PixelFormat getPixelFormat() const
+        {
+            PixelFormat format {};
+            switch (intendedPixelFormat)
+            {
+                case IntendedInternalPixelFormat::ALPHA:
+                    format = PixelFormat::RGBA4444;
+                    break;
+                case IntendedInternalPixelFormat::LUMINANCE:
+                    format = PixelFormat::RGB565;
+                    break;
+                case IntendedInternalPixelFormat::INTENSITY:
+                    format = PixelFormat::RGBA4444;
+                    break;
+                case IntendedInternalPixelFormat::LUMINANCE_ALPHA:
+                    format = PixelFormat::RGBA4444;
+                    break;
+                case IntendedInternalPixelFormat::RGB:
+                    format = PixelFormat::RGB565;
+                    break;
+                case IntendedInternalPixelFormat::RGBA:
+                    format = PixelFormat::RGBA4444;
+                    break;
+                case IntendedInternalPixelFormat::RGBA1:
+                    format = PixelFormat::RGBA5551;
+                    break;
+                default:
+                break;
+            }
+            return format;
+        }
+
+        std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by pixelFormat
+        const uint16_t width {}; ///< The width of the texture
+        const uint16_t height {}; ///< The height of the texture
+        const TextureWrapMode wrapModeS {}; ///< The wrapping mode of the texture in s direction
+        const TextureWrapMode wrapModeT {}; ///< The wrapping mode of the texture in t direction
+        const bool enableMagFilter {}; ///< Enables magnification filter of the texture (GL_LINEAR)
+        const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
     /// @brief Will render a triangle which is constructed with the given parameters
@@ -333,22 +435,14 @@ public:
 
     /// @brief This will update the texture data of the texture with the given id
     /// @param texId The texture id which texture has to be updated
-    /// @param pixels The texture in the format defined by pixelFormat
-    /// @param texWidth The width of the texture
-    /// @param texHeight The height of the texture
-    /// @param texWrapModeS The wrapping mode of the texture in s direction
-    /// @param texWrapModeT The wrapping mode of the texture in t direction
-    /// @param enableMagFilter Enables magnification filter of the texture (GL_LINEAR)
-    /// @param pixelFormat The format of the pixels
+    /// @param textureObject The object which contains the texture and all its meta data
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool updateTexture(const uint16_t texId, 
-                               std::shared_ptr<const uint16_t> pixels, 
-                               const uint16_t texWidth,
-                               const uint16_t texHeight,
-                               const TextureWrapMode texWrapModeS,
-                               const TextureWrapMode texWrapModeT,
-                               const bool enableMagFilter, 
-                               const PixelFormat pixelFormat) = 0;
+    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) = 0;
+
+    /// @brief Returns a texture associated to the texId
+    /// @param texId The texture id of the texture to get the data from
+    /// @return The texture object
+    virtual TextureObject getTexture(const uint16_t texId) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param target is used TMU

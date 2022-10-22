@@ -65,9 +65,14 @@ bool PixelPipeline::updatePipeline()
     return ret;
 }
 
-bool PixelPipeline::uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IRenderer::PixelFormat pixelFormat)
+bool PixelPipeline::uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat)
+{        
+    return uploadTexture({ pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter, intendedPixelFormat });
+}
+
+bool PixelPipeline::uploadTexture(const TextureObject& texObj)
 {
-    bool ret = m_renderer.updateTexture(m_boundTexture, pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter, pixelFormat);
+    bool ret = m_renderer.updateTexture(m_boundTexture, texObj);
             
     // Rebind texture to update the rasterizer with the new texture meta information
     // TODO: Check if this is still required
@@ -259,59 +264,4 @@ bool PixelPipeline::clearFramebuffer(bool frameBuffer, bool zBuffer)
 { 
     bool ret = updatePipeline();
     return ret && m_renderer.clear(frameBuffer, zBuffer); 
-}
-
-uint16_t PixelPipeline::convertColor(IRenderer::PixelFormat& outFormat, const TargetPixelFormat format, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a)
-{
-    uint16_t color {};
-    switch (format)
-    {
-        case TargetPixelFormat::ALPHA:
-            color = static_cast<uint16_t>(a >> 4);
-            outFormat = IRenderer::PixelFormat::RGBA4444;
-            break;
-        case TargetPixelFormat::LUMINANCE:
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(r >> 2) << 5;
-            color |= static_cast<uint16_t>(r >> 3) << 0;
-            outFormat = IRenderer::PixelFormat::RGB565;
-            break;
-        case TargetPixelFormat::INTENSITY:
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(r >> 4) << 0;
-            outFormat = IRenderer::PixelFormat::RGBA4444;
-            break;
-        case TargetPixelFormat::LUMINANCE_ALPHA:
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
-            outFormat = IRenderer::PixelFormat::RGBA4444;
-            break;
-        case TargetPixelFormat::RGB:
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 2) << 5;
-            color |= static_cast<uint16_t>(b >> 3) << 0;
-            outFormat = IRenderer::PixelFormat::RGB565;
-            break;
-        case TargetPixelFormat::RGBA:
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(g >> 4) << 8;
-            color |= static_cast<uint16_t>(b >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
-            outFormat = IRenderer::PixelFormat::RGBA4444;
-            break;
-        case TargetPixelFormat::RGBA1:
-            color |= static_cast<uint16_t>(r >> 5) << 11;
-            color |= static_cast<uint16_t>(g >> 5) << 6;
-            color |= static_cast<uint16_t>(b >> 5) << 1;
-            color |= static_cast<uint16_t>(a >> 1) << 0;
-            outFormat = IRenderer::PixelFormat::RGBA5551;
-            break;
-        default:
-        break;
-    }
-    return color;
 }
