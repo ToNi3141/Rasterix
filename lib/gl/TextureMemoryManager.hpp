@@ -27,12 +27,13 @@ class TextureMemoryManager
 {
 public:
     static constexpr uint32_t MAX_TEXTURE_SIZE = 256 * 256 * 2;
-    struct TextureObject 
+    struct TextureMeta 
     {
-        bool valid;
-        uint32_t addr;
-        uint32_t size;
-        uint32_t tmuConfig;
+        const bool valid;
+        const uint32_t addr;
+        const uint32_t size;
+        const uint32_t tmuConfig;
+        const IRenderer::TextureObject::PixelFormat pixelFormat;
     };
 
     TextureMemoryManager()
@@ -62,59 +63,71 @@ public:
         return {false, 0};
     }
 
-    bool updateTexture(const uint16_t texId, 
-                       std::shared_ptr<const uint16_t> pixels, 
-                       const uint16_t texWidth,
-                       const uint16_t texHeight,
-                       const IRenderer::TextureWrapMode wrapModeS,
-                       const IRenderer::TextureWrapMode wrapModeT,
-                       const bool enableMagFilter) 
+    bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
     {
-        const uint32_t textureSlot = m_textureLut[texId];
+        uint32_t textureSlot = m_textureLut[texId];
 
-        // If the current ID has already a bound texture slot, then we have to mark it for deletion.
-        // We can't just update a texture, because even deleted textures could be used as long as the rasterizer runs.
-        if (textureSlot != 0)
+        // Check if the current texture contains any pixels. If yes, a new texture must be allocated because the current texture
+        // might be used in the display list. If it does not contain any pixels, then this texture will for sure not be used
+        // in a display list and the current object can be safely reused.
+        if (m_textures[textureSlot].pixels)
         {
-            m_textures[textureSlot].requiresDelete = true;
-        }
-
-        uint32_t newTextureSlot = 0;
-        for (uint32_t i = 1; i < m_textures.size(); i++)
-        {
-            if (m_textures[i].inUse == false)
+            // Slot 0 has a special meaning. It will never be used and never be deleted.
+            if (textureSlot != 0)
             {
-                newTextureSlot = i;
-                break;
+                m_textures[textureSlot].requiresDelete = true;
+            }
+            
+            for (uint32_t i = 1; i < m_textures.size(); i++)
+            {
+                if (m_textures[i].inUse == false)
+                {
+                    textureSlot = i;
+                    m_textureLut[texId] = textureSlot;
+                    break;
+                }
             }
         }
 
-        if (newTextureSlot != 0)
-        {
-            m_textureLut[texId] = newTextureSlot;
-
-            m_textures[newTextureSlot].gramAddr = pixels;
-            m_textures[newTextureSlot].size = texWidth * texHeight * 2;
-            m_textures[newTextureSlot].inUse = true;
-            m_textures[newTextureSlot].requiresUpload = true;
-            m_textures[newTextureSlot].tmuConfig.reg.wrapModeS = wrapModeS;
-            m_textures[newTextureSlot].tmuConfig.reg.wrapModeT = wrapModeT;
-            m_textures[newTextureSlot].tmuConfig.reg.enableMagFilter = enableMagFilter;
-            m_textures[newTextureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2(static_cast<float>(texWidth))) - 1));
-            m_textures[newTextureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2(static_cast<float>(texHeight))) - 1));
-            return true;
-        }
-        return false;
+        m_textures[textureSlot].pixels = textureObject.pixels;
+        m_textures[textureSlot].pixelFormat = textureObject.getPixelFormat();
+        m_textures[textureSlot].size = textureObject.width * textureObject.height * 2;
+        m_textures[textureSlot].inUse = true;
+        m_textures[textureSlot].requiresUpload = true;
+        m_textures[textureSlot].requiresDelete = false;
+        m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
+        m_textures[textureSlot].tmuConfig.reg.wrapModeS = textureObject.wrapModeS;
+        m_textures[textureSlot].tmuConfig.reg.wrapModeT = textureObject.wrapModeT;
+        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = textureObject.enableMagFilter;
+        m_textures[textureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.width))) - 1));
+        m_textures[textureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.height))) - 1));
+        return true;
     }
 
-    TextureObject getTexture(const uint16_t texId) 
+    TextureMeta getTextureMeta(const uint16_t texId)
     {
         Texture& tex = m_textures[m_textureLut[texId]];
         if (!tex.inUse || texId == 0)
         {
-            return { false, 0, 0, 0 };
+            return { false, 0, 0, 0, IRenderer::TextureObject::PixelFormat::RGBA4444 };
         }
-        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized };
+        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized, tex.pixelFormat };
+    }
+
+    IRenderer::TextureObject getTexture(const uint16_t texId)
+    {
+        const uint32_t textureSlot = m_textureLut[texId];
+        if (!m_textures[textureSlot].inUse)
+        {
+            return {};
+        }
+        return { m_textures[textureSlot].pixels,
+            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texWidth * 2),
+            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texHeight * 2),
+            m_textures[textureSlot].tmuConfig.reg.wrapModeS,
+            m_textures[textureSlot].tmuConfig.reg.wrapModeT,
+            m_textures[textureSlot].tmuConfig.reg.enableMagFilter,
+            m_textures[textureSlot].intendedPixelFormat };
     }
 
     bool deleteTexture(const uint16_t texId) 
@@ -131,11 +144,10 @@ public:
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
             Texture& texture = m_textures[i];
-            if (texture.requiresUpload && texture.gramAddr)
+            if (texture.requiresUpload && texture.pixels)
             {
-                if (uploader(texture.gramAddr, i * MAX_TEXTURE_SIZE, texture.size)) 
+                if (uploader(texture.pixels, i * MAX_TEXTURE_SIZE, texture.size)) 
                 {
-                    texture.gramAddr = std::shared_ptr<const uint16_t>();
                     texture.requiresUpload = false;
                 }
             }
@@ -149,7 +161,7 @@ public:
             {
                 texture.requiresDelete = false;
                 texture.inUse = false;
-                texture.gramAddr = std::shared_ptr<const uint16_t>(); // Probably not needed anymore, because when the texture is uploaded, it is deleted anyway
+                texture.pixels = std::shared_ptr<const uint16_t>();
             }
         }
         return true;
@@ -161,16 +173,18 @@ private:
         bool inUse;
         bool requiresUpload;
         bool requiresDelete;
-        std::shared_ptr<const uint16_t> gramAddr; // Refactor to another name. gramAddr is miss leading
+        std::shared_ptr<const uint16_t> pixels;
         uint32_t size;
+        IRenderer::TextureObject::PixelFormat pixelFormat;
+        IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
         union 
         {
             struct __attribute__ ((__packed__)) TmuTextureConfig
             {
                 uint8_t texWidth : 8;
                 uint8_t texHeight : 8;
-                IRenderer::TextureWrapMode wrapModeS : 1;
-                IRenderer::TextureWrapMode wrapModeT : 1;
+                IRenderer::TextureObject::TextureWrapMode wrapModeS : 1;
+                IRenderer::TextureObject::TextureWrapMode wrapModeT : 1;
                 bool enableMagFilter : 1;
             } reg;
             uint32_t serialized;

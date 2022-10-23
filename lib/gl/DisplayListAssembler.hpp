@@ -60,8 +60,9 @@ private:
         static constexpr StreamCommandType RR_OP_TEXTURE_STREAM     = 0x5000'0000;
 
         // Immediate values
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS   = 0; // size: 8 bit
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS = 8; // size: 8 bit
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS           = 0; // size: 8 bit
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS         = 8; // size: 8 bit
+        static constexpr StreamCommandType RR_TEXTURE_STREAM_PIXEL_FORMAT_POS   = 16; // size: 4 bit
 
         static constexpr StreamCommandType RR_RENDER_CONFIG_FEATURE_ENABLE              = 0x0000'0000;
         static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0001;
@@ -150,7 +151,8 @@ public:
 
     bool useTexture(const uint8_t tmu,
                     const uint32_t texAddr, 
-                    const uint32_t texSize)
+                    const uint32_t texSize,
+                    const uint8_t pixelFormat)
     {
         (void)tmu;
         bool ret = false;
@@ -172,8 +174,9 @@ public:
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
+                const uint32_t pixelFormatShifted = static_cast<uint32_t>(pixelFormat & 0xf) << StreamCommand::RR_TEXTURE_STREAM_PIXEL_FORMAT_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | pixelFormatShifted;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
@@ -363,8 +366,8 @@ private:
 
     bool closeStreamSection()
     {
-        // Note during open, we write the current size of the displaylist into this command.
-        // Now we just have to substract from the current display list size the last display list size
+        // Note during open, we write the current size of the display list into this command.
+        // Now we just have to subtract from the current display list size the last display list size
         // to know how big our stream section is.
         if (m_streamCommand)
         {

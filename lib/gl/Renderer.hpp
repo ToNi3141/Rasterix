@@ -300,25 +300,24 @@ public:
         return m_textureManager.createTexture();
     }
 
-    virtual bool updateTexture(const uint16_t texId, 
-                               std::shared_ptr<const uint16_t> pixels, 
-                               const uint16_t texWidth,
-                               const uint16_t texHeight,
-                               const TextureWrapMode wrapModeS,
-                               const TextureWrapMode wrapModeT,
-                               const bool enableMagFilter) override
+    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) override
     {
-        return m_textureManager.updateTexture(texId, pixels, texWidth, texHeight, wrapModeS, wrapModeT, enableMagFilter);
+        return m_textureManager.updateTexture(texId, textureObject);
+    }
+
+    virtual TextureObject getTexture(const uint16_t texId) override
+    {
+        return m_textureManager.getTexture(texId);
     }
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
         (void)target;
-        typename TextureManager::TextureObject tex = m_textureManager.getTexture(texId);
+        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
         bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size, static_cast<uint8_t>(tex.pixelFormat));
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
         }
         return ret;

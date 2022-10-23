@@ -2886,46 +2886,21 @@ GLAPI void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalforma
 GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 {
     SPDLOG_DEBUG("glTexImage2D target {} level {} internalformat {} width {} height {} border {} format {} type {} called", target, level, internalformat, width, height, border, format, type);
-    (void)internalformat; // Currently only RGBA4444 is supported, all unsupported formats are converted to RGBA4444
+
+    (void)border;// Border is not supported and is ignored for now. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+
     IceGL::getInstance().setError(GL_NO_ERROR);
-    if (target != GL_TEXTURE_2D
-            || !(format == GL_ALPHA
-                 || format == GL_RGB
-                 || format == GL_RGBA
-                 || format == GL_LUMINANCE
-                 || format == GL_LUMINANCE_ALPHA)
-            || !(type == GL_UNSIGNED_BYTE
-                 || type == GL_UNSIGNED_SHORT_4_4_4_4
-                 || type == GL_UNSIGNED_SHORT_5_5_5_1
-                 || type == GL_UNSIGNED_SHORT_5_6_5))
-    {
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
-        return;
-    }
 
-    if (/*level < 0
-                    || (level > MAX_TEX_SIZE)*/ // Level is right now not supported
-            (width > MAX_TEX_SIZE)
-            || (height > MAX_TEX_SIZE)
-            || border != 0) // In OpenGL ES 1.1 it has to be 0. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    if ((width > MAX_TEX_SIZE)|| (height > MAX_TEX_SIZE))
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_WARN("glTexImage2d texture is too big.");
         return;
     }
 
-    if (((type == GL_UNSIGNED_SHORT_5_6_5) && (format != GL_RGB))
-            || (((type == GL_UNSIGNED_SHORT_4_4_4_4) || (type == GL_UNSIGNED_SHORT_5_5_5_1)) && (format != GL_RGBA)))
+    if (level != 0)
     {
-        IceGL::getInstance().setError(GL_INVALID_OPERATION);
-        return;
-    }
-
-    if (level != 0
-            || format == GL_ALPHA
-            || format == GL_LUMINANCE
-            || format == GL_LUMINANCE_ALPHA)
-    {
-        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_DEBUG("glTexImage2d mip mapping not supported. Only level 0 is used.");
         return;
     }
 
@@ -2933,82 +2908,88 @@ GLAPI void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalforma
     // without crashing the software. But it is likely that it will produce graphical errors.
     const uint16_t widthRounded = powf(2.0f, ceilf(logf(width)/logf(2.0f)));
     const uint16_t heightRounded = powf(2.0f, ceilf(logf(height)/logf(2.0f)));
+
+    PixelPipeline::IntendedInternalPixelFormat intentedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
     
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(widthRounded * heightRounded * 2)], [] (const uint16_t *p) { delete [] p; });
-    if (!texMemShared)
+    switch (internalformat)
     {
-        SPDLOG_ERROR("glTexture2D Out Of Memory");
+        case 1:
+        case GL_COMPRESSED_ALPHA:
+        case GL_ALPHA8:
+        case GL_ALPHA12:
+        case GL_ALPHA16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::ALPHA;
+            break;
+        case GL_COMPRESSED_LUMINANCE:
+        case GL_LUMINANCE:
+        case GL_LUMINANCE4:
+        case GL_LUMINANCE8:
+        case GL_LUMINANCE12:
+        case GL_LUMINANCE16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE;
+            break;
+        case GL_COMPRESSED_INTENSITY:
+        case GL_INTENSITY:
+        case GL_INTENSITY4:
+        case GL_INTENSITY8:
+        case GL_INTENSITY12:
+        case GL_INTENSITY16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::INTENSITY;
+            break;
+        case 2:
+        case GL_COMPRESSED_LUMINANCE_ALPHA:
+        case GL_LUMINANCE_ALPHA:
+        case GL_LUMINANCE4_ALPHA4:
+        case GL_LUMINANCE6_ALPHA2:
+        case GL_LUMINANCE8_ALPHA8:
+        case GL_LUMINANCE12_ALPHA4:
+        case GL_LUMINANCE12_ALPHA12:
+        case GL_LUMINANCE16_ALPHA16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            break;
+        case 3:
+        case GL_COMPRESSED_RGB:
+        case GL_R3_G3_B2:
+        case GL_RGB:
+        case GL_RGB4:
+        case GL_RGB5:
+        case GL_RGB8:
+        case GL_RGB10:
+        case GL_RGB12:
+        case GL_RGB16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGB;
+            break;
+        case 4:
+        case GL_COMPRESSED_RGBA:
+        case GL_RGBA:
+        case GL_RGBA2:
+        case GL_RGBA4:
+        case GL_RGBA8:
+        case GL_RGB10_A2:
+        case GL_RGBA12:
+        case GL_RGBA16:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA;
+            break;
+        case GL_RGB5_A1:
+            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA1;
+            break;
+        case GL_DEPTH_COMPONENT:
+            SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
+            break;
+        default:
+            SPDLOG_WARN("glTexImage2D invalid internalformat");
+            IceGL::getInstance().setError(GL_INVALID_ENUM);
+            return;
+    }
+
+    if (!IceGL::getInstance().pixelPipeline().uploadTexture(std::shared_ptr<const uint16_t>(), widthRounded, heightRounded, intentedInternalPixelFormat))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
         return;
     }
 
-    // Initialize the memory with zero for non power of two textures.
-    // Its probably the most reasonable init, because if the alpha channel is activated,
-    // then the not used area is then just transparent.
-    memset(texMemShared.get(), 0, widthRounded * heightRounded * 2);
-
-    if (pixels != nullptr)
-    {
-        // Currently only GL_RGB and GL_RGBA is supported
-        const int32_t colorComponents = (format == GL_RGB) ? 3 : 4;
-
-        // Convert color to RGBA4444
-        if (type == GL_UNSIGNED_BYTE)
-        {
-            uint16_t tmpColor = 0;
-            uint8_t shift = 12;
-            for (int32_t i = 0; i < width * height * colorComponents; i++)
-            {
-                tmpColor |= (reinterpret_cast<const uint8_t*>(pixels)[i] >> 4) << shift;
-                shift -= 4;
-                if ((i % colorComponents) == (colorComponents - 1))
-                {
-                    if (colorComponents == 3)
-                        tmpColor |= 0xf; // Set alpha to 0xf to make the texture opaque
-                    texMemShared.get()[i / colorComponents] = tmpColor;
-                    tmpColor = 0;
-                    shift = 12;
-                }
-            }
-        }
-        // This is the native format, just memcpy it.
-        else if (type == GL_UNSIGNED_SHORT_4_4_4_4)
-        {
-            memcpy(texMemShared.get(), pixels, width * height * 2);
-        }
-        // Convert to RGBA4444
-        else if (type == GL_UNSIGNED_SHORT_5_5_5_1)
-        {
-            for (int32_t i = 0; i < width * height; i++)
-            {
-                uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
-                        | ((tmp << 2) & 0x0f00)
-                        | ((tmp << 3) & 0x00f0)
-                        | ((tmp & 0x1) ? 0xf : 0x0);
-            }
-        }
-        else if (type == GL_UNSIGNED_SHORT_5_6_5)
-        {
-            for (int32_t i = 0; i < width * height; i++)
-            {
-                uint16_t tmp = reinterpret_cast<const uint16_t*>(pixels)[i];
-                texMemShared.get()[i] = ((tmp << 1) & 0xf000)
-                        | ((tmp << 3) & 0x0f00)
-                        | ((tmp << 4) & 0x00f0)
-                        | 0x0;
-            }
-        }
-
-        if (!IceGL::getInstance().pixelPipeline().uploadTexture(texMemShared, widthRounded, heightRounded))
-        {
-            IceGL::getInstance().setError(GL_INVALID_VALUE);
-            return;
-        }
-    }
-    else
-    {
-       IceGL::getInstance().setError(GL_INVALID_VALUE);
-    }
+    SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
+    glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
 }
 
 GLAPI void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
@@ -3238,7 +3219,7 @@ GLAPI void APIENTRY glVertex4sv(const GLshort *v)
 
 GLAPI void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    SPDLOG_DEBUG("glViewport ({}, {}) width {} heigh {} called");
+    SPDLOG_DEBUG("glViewport ({}, {}) width {} heigh {} called", x, y, width, height);
     // TODO: Generate a GL_INVALID_VALUE if width or height is negative
     // TODO: Reversed mapping is not working right now, for instance if zFar < zNear
     // Note: The screen resolution is width and height. But during view port transformation it is clamped between
@@ -3504,7 +3485,242 @@ GLAPI void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, G
 
 GLAPI void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels)
 {
-    SPDLOG_DEBUG("glTexSubImage2D not implemented");
+    SPDLOG_DEBUG("glTexSubImage2D target {} level {} xoffset {} yoffset {} width {} height {} format {} type {} called", target, level, xoffset, yoffset, width, height, format, type);
+
+    IceGL::getInstance().setError(GL_NO_ERROR);
+
+    PixelPipeline::TextureObject texObj { IceGL::getInstance().pixelPipeline().getTexture() };
+
+    if (level != 0)
+    {
+        SPDLOG_DEBUG("glTexSubImage2D mip mapping not supported. Only level 0 is used.");
+        return;
+    }
+
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
+    if (!texMemShared)
+    {
+        SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
+        return;
+    }
+
+    // In case, the current object contains pixel data, copy the data. Otherwise just initialize the memory.
+    if (texObj.pixels)
+    {
+        memcpy(texMemShared.get(), texObj.pixels.get(), texObj.width * texObj.height * 2);
+    }
+    else
+    {
+        // Initialize the memory with zero for non power of two textures.
+        // Its probably the most reasonable init, because if the alpha channel is activated,
+        // then the not used area is then just transparent.
+        memset(texMemShared.get(), 0, texObj.width * texObj.height * 2);
+    }
+
+    // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
+    if (pixels != nullptr)
+    {
+        int32_t i = 0;
+        for (int32_t y = yoffset; y < height; y++)
+        {
+            for (int32_t x = xoffset; x < width; x++)
+            {
+                const int32_t texPos { (y * width) + x };
+                switch (format)
+                {
+                    case GL_RGB:
+                        switch (type)
+                        {
+                            case GL_UNSIGNED_SHORT_5_6_5:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 11) & 0x1f) << 3, 
+                                        ((color >> 5) & 0x3f) << 2, 
+                                        (color & 0x1f) << 3, 
+                                        0xff);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_BYTE:
+                                texMemShared.get()[texPos] = texObj.convertColor(
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
+                                    0xff);
+                                i += 3;
+                                break;
+                            case GL_BYTE:
+                            case GL_BITMAP:
+                            case GL_UNSIGNED_SHORT:
+                            case GL_UNSIGNED_INT:
+                            case GL_INT:
+                            case GL_FLOAT:
+                            case GL_UNSIGNED_BYTE_3_3_2:
+                            case GL_UNSIGNED_BYTE_2_3_3_REV:
+                            case GL_UNSIGNED_SHORT_5_6_5_REV:
+                                SPDLOG_WARN("glTexSubImage2D unsupported type");
+                                return;
+                            case GL_UNSIGNED_SHORT_5_5_5_1:
+                            case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                            case GL_UNSIGNED_SHORT_4_4_4_4:
+                            case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                            case GL_UNSIGNED_INT_8_8_8_8:
+                            case GL_UNSIGNED_INT_8_8_8_8_REV:
+                            case GL_UNSIGNED_INT_10_10_10_2:
+                            case GL_UNSIGNED_INT_2_10_10_10_REV:
+                                SPDLOG_WARN("glTexSubImage2D invalid operation");
+                                IceGL::getInstance().setError(GL_INVALID_OPERATION);
+                                return;
+                            default:
+                                SPDLOG_WARN("glTexSubImage2D invalid type");
+                                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                                return;
+                        }
+                        break;
+                    case GL_RGBA:
+                        switch (type)
+                        {
+                            case GL_UNSIGNED_SHORT_5_5_5_1:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 11) & 0x1f) << 3, 
+                                        ((color >> 6) & 0x1f) << 3, 
+                                        ((color >> 1) & 0x1f) << 3, 
+                                        (color & 0x1) << 7);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_SHORT_4_4_4_4:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 12) & 0xf) << 4, 
+                                        ((color >> 8) & 0xf) << 4, 
+                                        ((color >> 4) & 0xf) << 4, 
+                                        (color & 0xf) << 4);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_BYTE:
+                                texMemShared.get()[texPos] = texObj.convertColor(
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
+                                    i += 4;
+                                break;
+                            case GL_BYTE:
+                            case GL_BITMAP:
+                            case GL_UNSIGNED_SHORT:
+                            case GL_UNSIGNED_INT:
+                            case GL_INT:
+                            case GL_FLOAT:
+                            case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                            case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                            case GL_UNSIGNED_INT_8_8_8_8:
+                            case GL_UNSIGNED_INT_8_8_8_8_REV:
+                            case GL_UNSIGNED_INT_10_10_10_2:
+                            case GL_UNSIGNED_INT_2_10_10_10_REV:
+                                SPDLOG_WARN("glTexSubImage2D unsupported type");
+                                return;
+                            case GL_UNSIGNED_BYTE_3_3_2:
+                            case GL_UNSIGNED_BYTE_2_3_3_REV:
+                            case GL_UNSIGNED_SHORT_5_6_5:
+                            case GL_UNSIGNED_SHORT_5_6_5_REV:
+                                SPDLOG_WARN("glTexSubImage2D invalid operation");
+                                IceGL::getInstance().setError(GL_INVALID_OPERATION);
+                                return;
+                            default:
+                                SPDLOG_WARN("glTexSubImage2D invalid type");
+                                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                                return;
+                        }
+                        break;
+                    case GL_ALPHA:
+                    case GL_RED:
+                    case GL_GREEN:
+                    case GL_BLUE:
+                    case GL_BGR:
+                    case GL_BGRA:
+                        switch (type)
+                        {
+                            case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 10) & 0x1f) << 3, 
+                                        ((color >> 5) & 0x1f) << 3, 
+                                        ((color >> 0) & 0x1f) << 3,
+                                        ((color >> 15) & 0x1) << 7);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 8) & 0xf) << 4, 
+                                        ((color >> 4) & 0xf) << 4, 
+                                        ((color >> 0) & 0xf) << 4, 
+                                        ((color >> 12) & 0xf) << 4);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_BYTE:
+                                texMemShared.get()[texPos] = texObj.convertColor(
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
+                                    i += 4;
+                                break;
+                            case GL_BYTE:
+                            case GL_BITMAP:
+                            case GL_UNSIGNED_SHORT:
+                            case GL_UNSIGNED_INT:
+                            case GL_INT:
+                            case GL_FLOAT:
+                            case GL_UNSIGNED_SHORT_5_5_5_1:
+                            case GL_UNSIGNED_SHORT_4_4_4_4:
+                            case GL_UNSIGNED_INT_8_8_8_8:
+                            case GL_UNSIGNED_INT_8_8_8_8_REV:
+                            case GL_UNSIGNED_INT_10_10_10_2:
+                            case GL_UNSIGNED_INT_2_10_10_10_REV:
+                                SPDLOG_WARN("glTexSubImage2D unsupported type");
+                                return;
+                            case GL_UNSIGNED_BYTE_3_3_2:
+                            case GL_UNSIGNED_BYTE_2_3_3_REV:
+                            case GL_UNSIGNED_SHORT_5_6_5:
+                            case GL_UNSIGNED_SHORT_5_6_5_REV:
+                                SPDLOG_WARN("glTexSubImage2D invalid operation");
+                                IceGL::getInstance().setError(GL_INVALID_OPERATION);
+                                return;
+                            default:
+                                SPDLOG_WARN("glTexSubImage2D invalid type");
+                                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                                return;
+                        }
+                    case GL_LUMINANCE:
+                    case GL_LUMINANCE_ALPHA:
+                        SPDLOG_WARN("glTexSubImage2D unsupported format");
+                        return;
+                    default:
+                        SPDLOG_WARN("glTexSubImage2D invalid format");
+                        IceGL::getInstance().setError(GL_INVALID_ENUM);
+                        return;
+                }
+            }
+        }
+    }
+
+    texObj.pixels = texMemShared;       
+    if (!IceGL::getInstance().pixelPipeline().uploadTexture(texObj))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
 }
 
 GLAPI void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)

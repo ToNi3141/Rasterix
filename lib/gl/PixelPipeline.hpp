@@ -50,9 +50,12 @@ public:
     using LogicOp = IRenderer::FragmentPipelineConf::LogicOp;
 
     using TMU = IRenderer::TMU;
-    using TextureWrapMode = IRenderer::TextureWrapMode;
+    using TextureWrapMode = IRenderer::TextureObject::TextureWrapMode;
+    using PixelFormat = IRenderer::TextureObject::PixelFormat;
+    using IntendedInternalPixelFormat = IRenderer::TextureObject::IntendedInternalPixelFormat;
     using Combine = IRenderer::TexEnvConf::Combine;
     using TexEnv = IRenderer::TexEnvConf;
+    using TextureObject = IRenderer::TextureObject;
     
     using FeatureEnable = IRenderer::FeatureEnableConf;
 
@@ -73,8 +76,9 @@ public:
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
     // Textures
-    // Only RGBA4444 textures are supported
-    bool uploadTexture(const std::shared_ptr<uint16_t> pixels, uint16_t sizeX, uint16_t sizeY);
+    bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
+    bool uploadTexture(const TextureObject& texObj);
+    TextureObject getTexture() { return m_renderer.getTexture(m_boundTexture); }
     bool useTexture(const TMU& tmu);
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }

@@ -42,6 +42,7 @@ module CommandParser #(
     output wire [31:0]  confTMU0TexEnvConfig,
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
+    output reg  [ 4:0]  confTMU0PixelFormat,
     output wire [31:0]  confScissorStartXY,
     output wire [31:0]  confScissorEndXY,
     output wire [11:0]  confYOffset,
@@ -184,6 +185,7 @@ module CommandParser #(
                     OP_TEXTURE_STREAM:
                     begin
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
+                        confTMU0PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin
