@@ -3644,6 +3644,64 @@ GLAPI void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, G
                     case GL_BLUE:
                     case GL_BGR:
                     case GL_BGRA:
+                        switch (type)
+                        {
+                            case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 10) & 0x1f) << 3, 
+                                        ((color >> 5) & 0x1f) << 3, 
+                                        ((color >> 0) & 0x1f) << 3,
+                                        ((color >> 15) & 0x1) << 7);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+                                {
+                                    const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
+                                    texMemShared.get()[texPos] = texObj.convertColor(
+                                        ((color >> 8) & 0xf) << 4, 
+                                        ((color >> 4) & 0xf) << 4, 
+                                        ((color >> 0) & 0xf) << 4, 
+                                        ((color >> 12) & 0xf) << 4);
+                                    i++;
+                                }
+                                break;
+                            case GL_UNSIGNED_BYTE:
+                                texMemShared.get()[texPos] = texObj.convertColor(
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
+                                    i += 4;
+                                break;
+                            case GL_BYTE:
+                            case GL_BITMAP:
+                            case GL_UNSIGNED_SHORT:
+                            case GL_UNSIGNED_INT:
+                            case GL_INT:
+                            case GL_FLOAT:
+                            case GL_UNSIGNED_SHORT_5_5_5_1:
+                            case GL_UNSIGNED_SHORT_4_4_4_4:
+                            case GL_UNSIGNED_INT_8_8_8_8:
+                            case GL_UNSIGNED_INT_8_8_8_8_REV:
+                            case GL_UNSIGNED_INT_10_10_10_2:
+                            case GL_UNSIGNED_INT_2_10_10_10_REV:
+                                SPDLOG_WARN("glTexSubImage2D unsupported type");
+                                return;
+                            case GL_UNSIGNED_BYTE_3_3_2:
+                            case GL_UNSIGNED_BYTE_2_3_3_REV:
+                            case GL_UNSIGNED_SHORT_5_6_5:
+                            case GL_UNSIGNED_SHORT_5_6_5_REV:
+                                SPDLOG_WARN("glTexSubImage2D invalid operation");
+                                IceGL::getInstance().setError(GL_INVALID_OPERATION);
+                                return;
+                            default:
+                                SPDLOG_WARN("glTexSubImage2D invalid type");
+                                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                                return;
+                        }
                     case GL_LUMINANCE:
                     case GL_LUMINANCE_ALPHA:
                         SPDLOG_WARN("glTexSubImage2D unsupported format");
