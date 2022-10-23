@@ -76,7 +76,6 @@ public:
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
     // Textures
-    // Only RGBA4444 textures are supported
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
     bool uploadTexture(const TextureObject& texObj);
     TextureObject getTexture() { return m_renderer.getTexture(m_boundTexture); }

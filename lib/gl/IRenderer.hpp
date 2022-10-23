@@ -361,9 +361,9 @@ public:
                     color |= static_cast<uint16_t>(a >> 4) << 0;
                     break;
                 case IntendedInternalPixelFormat::RGBA1: // RGBA5551
-                    color |= static_cast<uint16_t>(r >> 5) << 11;
-                    color |= static_cast<uint16_t>(g >> 5) << 6;
-                    color |= static_cast<uint16_t>(b >> 5) << 1;
+                    color |= static_cast<uint16_t>(r >> 3) << 11;
+                    color |= static_cast<uint16_t>(g >> 3) << 6;
+                    color |= static_cast<uint16_t>(b >> 3) << 1;
                     color |= static_cast<uint16_t>(a >> 1) << 0;
                     break;
                 default:

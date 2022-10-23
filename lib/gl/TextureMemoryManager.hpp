@@ -29,11 +29,11 @@ public:
     static constexpr uint32_t MAX_TEXTURE_SIZE = 256 * 256 * 2;
     struct TextureMeta 
     {
-        bool valid;
-        uint32_t addr;
-        uint32_t size;
-        uint32_t tmuConfig;
-        IRenderer::TextureObject::PixelFormat pixelFormat;
+        const bool valid;
+        const uint32_t addr;
+        const uint32_t size;
+        const uint32_t tmuConfig;
+        const IRenderer::TextureObject::PixelFormat pixelFormat;
     };
 
     TextureMemoryManager()

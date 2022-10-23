@@ -3560,7 +3560,7 @@ GLAPI void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, G
                             case GL_UNSIGNED_BYTE_2_3_3_REV:
                             case GL_UNSIGNED_SHORT_5_6_5_REV:
                                 SPDLOG_WARN("glTexSubImage2D unsupported type");
-                                break;
+                                return;
                             case GL_UNSIGNED_SHORT_5_5_5_1:
                             case GL_UNSIGNED_SHORT_1_5_5_5_REV:
                             case GL_UNSIGNED_SHORT_4_4_4_4:
@@ -3624,7 +3624,7 @@ GLAPI void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, G
                             case GL_UNSIGNED_INT_10_10_10_2:
                             case GL_UNSIGNED_INT_2_10_10_10_REV:
                                 SPDLOG_WARN("glTexSubImage2D unsupported type");
-                                break;
+                                return;
                             case GL_UNSIGNED_BYTE_3_3_2:
                             case GL_UNSIGNED_BYTE_2_3_3_REV:
                             case GL_UNSIGNED_SHORT_5_6_5:
@@ -3647,7 +3647,7 @@ GLAPI void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, G
                     case GL_LUMINANCE:
                     case GL_LUMINANCE_ALPHA:
                         SPDLOG_WARN("glTexSubImage2D unsupported format");
-                        break;
+                        return;
                     default:
                         SPDLOG_WARN("glTexSubImage2D invalid format");
                         IceGL::getInstance().setError(GL_INVALID_ENUM);
