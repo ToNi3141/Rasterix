@@ -55,7 +55,7 @@ module TextureMappingUnit
     input  wire [31 : 0]                textureS,
     input  wire [31 : 0]                textureT,
     
-    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // PREVIOUS (currently unused, must be connected to TMUn-1)
+    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // PREVIOUS
     
     // Fragment output
     output wire [PIXEL_WIDTH - 1 : 0]   fragmentColor

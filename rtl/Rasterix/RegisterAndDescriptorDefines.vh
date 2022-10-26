@@ -61,7 +61,10 @@ localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 7;
 localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 8;
 localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 9;
 localparam OP_RENDER_CONFIG_Y_OFFSET = 10;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 11;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV = 11;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR = 12;
+localparam OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG = 13;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 14;
 
 
 
@@ -138,9 +141,9 @@ localparam TEXTURE_STREAM_PIXEL_FORMAT_RGB565 = 2;
 // Description of the different registers:
 
 // OP_RENDER_CONFIG_FEATURE_ENABLE
-//  +---------------------------------------------------------------------------------------------------------------+
-//  | 26'hx reserved | 1'hx Scissor test | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
-//  +---------------------------------------------------------------------------------------------------------------+
+//  +---------------------------------------------------------------------------------------------------------------------------+
+//  | 26'hx reserved | 1'hx TMU1 | 1'hx Scissor test | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
+//  +---------------------------------------------------------------------------------------------------------------------------+
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_POS = 0;
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS = RENDER_CONFIG_FEATURE_ENABLE_FOG_POS + RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE;
@@ -153,6 +156,8 @@ localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS = RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS + RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_SIZE = 1;
 
 // OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
 //  +-----------------------------------+
@@ -368,15 +373,15 @@ localparam TRIANGLE_STREAM_INC_W2_X = 8; // Sn.m (32bit)
 localparam TRIANGLE_STREAM_INC_W0_Y = 9; // Sn.m (32bit)
 localparam TRIANGLE_STREAM_INC_W1_Y = 10; // Sn.m (32bit)
 localparam TRIANGLE_STREAM_INC_W2_Y = 11; // Sn.m (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_S = 12; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_T = 13; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_Q = 14; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_S_X = 15; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_T_X = 16; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_Q_X = 17; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_S_Y = 18; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_T_Y = 19; // float (32bit)
-localparam TRIANGLE_STREAM_INC_TEX_Q_Y = 20; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_S = 12; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_T = 13; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_Q = 14; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_S_X = 15; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_T_X = 16; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_Q_X = 17; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_S_Y = 18; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_T_Y = 19; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX0_Q_Y = 20; // float (32bit)
 localparam TRIANGLE_STREAM_INC_DEPTH_W = 21; // float (32bit)
 localparam TRIANGLE_STREAM_INC_DEPTH_W_X = 22; // float (32bit)
 localparam TRIANGLE_STREAM_INC_DEPTH_W_Y = 23; // float (32bit)
@@ -395,7 +400,16 @@ localparam TRIANGLE_STREAM_INC_COLOR_R_Y = 35; // float (32bit)
 localparam TRIANGLE_STREAM_INC_COLOR_G_Y = 36; // float (32bit)
 localparam TRIANGLE_STREAM_INC_COLOR_B_Y = 37; // float (32bit)
 localparam TRIANGLE_STREAM_INC_COLOR_A_Y = 38; // float (32bit)
-localparam PADDING_1 = TRIANGLE_STREAM_INC_COLOR_A_Y + 2;
+localparam TRIANGLE_STREAM_INC_TEX1_S = 39; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_T = 40; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_Q = 41; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_S_X = 42; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_T_X = 43; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_Q_X = 44; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_S_Y = 45; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_T_Y = 46; // float (32bit)
+localparam TRIANGLE_STREAM_INC_TEX1_Q_Y = 47; // float (32bit)
+localparam PADDING_1 = TRIANGLE_STREAM_INC_TEX1_Q_Y + 1;
 localparam TRIANGLE_DATA_SET_SIZE_128 = PADDING_1; // Max command port width: 128 bit
 localparam TRIANGLE_DATA_SET_SIZE_256 = PADDING_1; // Max command port width: 256 bit
 `define GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(x) (x <= 128 ? TRIANGLE_DATA_SET_SIZE_128 : \

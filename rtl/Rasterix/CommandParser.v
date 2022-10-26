@@ -16,8 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module CommandParser #(
-    parameter CMD_STREAM_WIDTH = 16,
-    parameter TEXTURE_STREAM_WIDTH = 16
+    parameter CMD_STREAM_WIDTH = 32,
+    parameter TEXTURE_STREAM_WIDTH = 32
 ) (
     input  wire         aclk,
     input  wire         resetn,
@@ -43,6 +43,10 @@ module CommandParser #(
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
     output reg  [ 4:0]  confTMU0PixelFormat,
+    output wire [31:0]  confTMU1TexEnvConfig,
+    output wire [31:0]  confTMU1TextureConfig,
+    output wire [31:0]  confTMU1TexEnvColor,
+    output reg  [ 4:0]  confTMU1PixelFormat,
     output wire [31:0]  confScissorStartXY,
     output wire [31:0]  confScissorEndXY,
     output wire [11:0]  confYOffset,
@@ -69,10 +73,16 @@ module CommandParser #(
     output wire [15:0]  confDepthBufferClearDepth,
 
     // Texture stream interface
+    // TMU0
     output reg          m_texture_steam_tmu0_axis_tvalid,
     input  wire         m_texture_steam_tmu0_axis_tready,
     output reg          m_texture_steam_tmu0_axis_tlast,
     output reg  [TEXTURE_STREAM_WIDTH - 1 : 0]  m_texture_steam_tmu0_axis_tdata,
+    // TMU1
+    output reg          m_texture_steam_tmu1_axis_tvalid,
+    input  wire         m_texture_steam_tmu1_axis_tready,
+    output reg          m_texture_steam_tmu1_axis_tlast,
+    output reg  [TEXTURE_STREAM_WIDTH - 1 : 0]  m_texture_steam_tmu1_axis_tdata,
 
     // Debug
     output wire [ 3 : 0]  dbgStreamState
@@ -85,9 +95,9 @@ module CommandParser #(
     localparam WAIT_FOR_IDLE = 5'd0;
     localparam COMMAND_IN = 5'd1;
     localparam EXEC_TRIANGLE_STREAM = 5'd2;
-    localparam EXEC_TEXTURE_STREAM = 5'd3;
-    localparam EXEC_RENDER_CONFIG = 5'd4;
-    localparam EXEC_TEXTURE_STREAM_16 = 5'd5;
+    localparam EXEC_TEXTURE0_STREAM = 5'd3;
+    localparam EXEC_TEXTURE1_STREAM = 5'd4;
+    localparam EXEC_RENDER_CONFIG = 5'd5;
     localparam EXEC_FOG_LUT_STREAM = 5'd6;
 
     // Wait For Rasterizer Statemachine
@@ -120,6 +130,9 @@ module CommandParser #(
     assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
     assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
     assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
+    assign confTMU1TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU1_TEX_ENV];
+    assign confTMU1TextureConfig = configReg[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG];
+    assign confTMU1TexEnvColor = configReg[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR];
     assign confScissorStartXY = configReg[OP_RENDER_CONFIG_SCISSOR_START_XY];
     assign confScissorEndXY = configReg[OP_RENDER_CONFIG_SCISSOR_END_XY];
     assign confYOffset = configReg[OP_RENDER_CONFIG_Y_OFFSET][0 +: 12];
@@ -140,6 +153,9 @@ module CommandParser #(
 
             m_texture_steam_tmu0_axis_tvalid <= 0;
             m_texture_steam_tmu0_axis_tlast <= 0;
+
+            m_texture_steam_tmu1_axis_tvalid <= 0;
+            m_texture_steam_tmu1_axis_tlast <= 0;
             
             m_rasterizer_axis_tvalid <= 0;
             m_rasterizer_axis_tlast <= 0;
@@ -158,6 +174,8 @@ module CommandParser #(
                 m_rasterizer_axis_tvalid <= 0;
                 m_texture_steam_tmu0_axis_tvalid <= 0;
                 m_texture_steam_tmu0_axis_tlast <= 0;
+                m_texture_steam_tmu1_axis_tvalid <= 0;
+                m_texture_steam_tmu1_axis_tlast <= 0;
                 m_fog_lut_axis_tvalid <= 0;
                 m_fog_lut_axis_tlast <= 0;
                 if (rasterizerRunning)
@@ -185,11 +203,25 @@ module CommandParser #(
                     OP_TEXTURE_STREAM:
                     begin
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
-                        confTMU0PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
+                        if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 0)
+                        begin
+                            confTMU0PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
+                        end
+                        if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 1)
+                        begin
+                            confTMU1PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
+                        end
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin
-                            state <= EXEC_TEXTURE_STREAM;
+                            if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 0)
+                            begin
+                                state <= EXEC_TEXTURE0_STREAM;
+                            end
+                            if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 1)
+                            begin
+                                state <= EXEC_TEXTURE1_STREAM;
+                            end
                         end
                         else
                         begin
@@ -248,7 +280,7 @@ module CommandParser #(
                     end
                 end
             end
-            EXEC_TEXTURE_STREAM:
+            EXEC_TEXTURE0_STREAM:
             begin
                 s_cmd_axis_tready <= m_texture_steam_tmu0_axis_tready;
                 if (m_texture_steam_tmu0_axis_tready)
@@ -267,34 +299,20 @@ module CommandParser #(
                     end
                 end
             end
-            EXEC_TEXTURE_STREAM_16:
-            begin : Copy16
-                reg [15:0] lsp;
-
-                if (m_texture_steam_tmu0_axis_tready)
+            EXEC_TEXTURE1_STREAM:
+            begin
+                s_cmd_axis_tready <= m_texture_steam_tmu1_axis_tready;
+                if (m_texture_steam_tmu1_axis_tready)
                 begin
-                    if (wlsp == 0)
+                    m_texture_steam_tmu1_axis_tvalid <= s_cmd_axis_tvalid;
+                    m_texture_steam_tmu1_axis_tdata <= s_cmd_axis_tdata[0 +: TEXTURE_STREAM_WIDTH];
+                    if (s_cmd_axis_tvalid)
                     begin
-                        m_texture_steam_tmu0_axis_tvalid <= s_cmd_axis_tvalid;
-                        m_texture_steam_tmu0_axis_tdata <= s_cmd_axis_tdata[0 +: 16];
-                        lsp <= s_cmd_axis_tdata[16 +: 16];
-                        if (s_cmd_axis_tvalid)
-                        begin
-                            s_cmd_axis_tready <= 0;
-                            wlsp <= 1;
-                        end
-                    end
-                    else 
-                    begin
-                        m_texture_steam_tmu0_axis_tdata <= lsp;
-                        s_cmd_axis_tready <= 1;
-                        wlsp <= 0;
-
                         streamCounter <= streamCounter - 1;
                         if (streamCounter == 1)
                         begin
                             s_cmd_axis_tready <= 0;
-                            m_texture_steam_tmu0_axis_tlast <= 1;
+                            m_texture_steam_tmu1_axis_tlast <= 1;
                             state <= WAIT_FOR_IDLE;
                         end
                     end

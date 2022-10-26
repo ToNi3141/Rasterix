@@ -264,6 +264,7 @@ public:
         void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
         void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
         void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
+        void setEnableTmu1(const bool val) { m_regVal.fields.tmu1 = val; }
 
         bool getEnableFog() const { return m_regVal.fields.fog; }
         bool getEnableBlending() const { return m_regVal.fields.blending; }
@@ -271,6 +272,7 @@ public:
         bool getEnableAlphaTest() const { return m_regVal.fields.alphaTest; }
         bool getEnableTmu0() const { return m_regVal.fields.tmu0; }
         bool getEnableScissor() const { return m_regVal.fields.scissor; }
+        bool getEnableTmu1() const { return m_regVal.fields.tmu1; }
 
         uint32_t serialize() const { return m_regVal.data; }
     private:
@@ -285,6 +287,7 @@ public:
                     , alphaTest(false)
                     , tmu0(false)
                     , scissor(false)
+                    , tmu1(false)
                 { }
 
                 bool fog : 1;
@@ -293,6 +296,7 @@ public:
                 bool alphaTest : 1;
                 bool tmu0 : 1;
                 bool scissor : 1;
+                bool tmu1 : 1;
             } fields {};
             uint32_t data;
         } m_regVal;
