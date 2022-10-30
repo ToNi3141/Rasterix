@@ -4,20 +4,23 @@
 #include "Vec.hpp"
 #include <tuple>
 #include <array>
+#include "IRenderer.hpp"
 
 class Clipper 
 {
 public:
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes
+    using ClipTexCoords = std::array<Vec4, IRenderer::MAX_TMU_COUNT>;
     using ClipVertList = std::array<Vec4, 9>;
+    using ClipTexCoordList = std::array<ClipTexCoords, 9>;
 
     static std::tuple<const uint32_t,
         ClipVertList &, 
-        ClipVertList &, 
+        ClipTexCoordList &,
         ClipVertList &> clip(ClipVertList& vertList,
                              ClipVertList& vertListBuffer,
-                             ClipVertList& texCoordList,
-                             ClipVertList& texCoordListBuffer,
+                             ClipTexCoordList& texCoordList,
+                             ClipTexCoordList& texCoordListBuffer,
                              ClipVertList& colorList,
                              ClipVertList& colorListBuffer);
 
@@ -35,14 +38,15 @@ private:
 
     static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
     static void lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt);
+    static void lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt);
     static OutCode outCode(const Vec4 &v);
     
     static uint32_t clipAgainstPlane(ClipVertList& vertListOut,
-                                     ClipVertList& texCoordListOut,
+                                     ClipTexCoordList& texCoordListOut,
                                      ClipVertList& colorListOut,
                                      const OutCode clipPlane,
                                      const ClipVertList& vertListIn,
-                                     const ClipVertList& texCoordListIn,
+                                     const ClipTexCoordList& texCoordListIn,
                                      const ClipVertList& colorListIn,
                                      const uint32_t listInSize);
 

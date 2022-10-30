@@ -25,6 +25,8 @@
 class PixelPipeline
 {
 public:
+    using Triangle = IRenderer::Triangle;
+
     enum class FogMode
     {
         ONE,
@@ -61,15 +63,7 @@ public:
 
     PixelPipeline(IRenderer& renderer);
 
-    bool drawTriangle(const Vec4& v0,
-                      const Vec4& v1,
-                      const Vec4& v2,
-                      const Vec4& tc0,
-                      const Vec4& tc1,
-                      const Vec4& tc2,
-                      const Vec4& c0,
-                      const Vec4& c1,
-                      const Vec4& c2);
+    bool drawTriangle(const Triangle& triangle);
     bool updatePipeline();
 
     // Feature Enable
@@ -79,7 +73,7 @@ public:
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
     bool uploadTexture(const TextureObject& texObj);
     TextureObject getTexture() { return m_renderer.getTexture(m_boundTexture); }
-    bool useTexture(const TMU& tmu);
+    bool useTexture();
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint32_t val) { m_boundTexture = val; }
@@ -97,8 +91,9 @@ public:
 
     // TMU
     bool setTexEnvMode(const TexEnvMode mode);
-    TexEnv& texEnv() { return m_texEnvConf0; }
+    TexEnv& texEnv() { return m_texEnvConf[m_tmu]; }
     bool setTexEnvColor(const Vec4& color);
+    void activateTmu(const IRenderer::TMU tmu) { m_tmu = tmu; }
 
     // Fog
     void setFogMode(const FogMode val);
@@ -111,6 +106,8 @@ public:
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:
+    static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
+
     bool updateFogLut();
 
     IRenderer& m_renderer;
@@ -126,9 +123,10 @@ private:
     bool m_texEnableMagFilter { true };
 
     // TMU
-    TexEnvMode m_texEnvMode { TexEnvMode::REPLACE };
-    TexEnv m_texEnvConf0 {};
-    TexEnv m_texEnvConfUploaded0 {};
+    std::array<TexEnvMode, MAX_TMU_COUNT> m_texEnvMode { TexEnvMode::REPLACE };
+    std::array<TexEnv, MAX_TMU_COUNT> m_texEnvConf {};
+    std::array<TexEnv, MAX_TMU_COUNT> m_texEnvConfUploaded {};
+    uint8_t m_tmu { 0 };
 
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};

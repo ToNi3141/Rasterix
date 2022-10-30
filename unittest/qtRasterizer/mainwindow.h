@@ -55,6 +55,7 @@ private:
 #endif
 
     GLuint m_textureId = 0;
+    GLuint m_textureId2 = 0;
     int32_t m_fbSel = 0;
     float m_clipPlane = 1;
 

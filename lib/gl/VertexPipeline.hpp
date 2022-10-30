@@ -94,31 +94,32 @@ private:
     static_assert(VERTEX_BUFFER_SIZE % 3 == 0, "VERTEX_BUFFER_SIZE must be dividable through 3 (used for GL_TRIANGLES");
     static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
     using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
+    using TexCoordArray = std::array<Clipper::ClipTexCoords, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
 
     struct Triangle
     {
-        const Vec4& v0;
-        const Vec4& v1;
-        const Vec4& v2;
-        const Vec4& tc0;
-        const Vec4& tc1;
-        const Vec4& tc2;
-        const Vec4& color0;
-        const Vec4& color1;
-        const Vec4& color2;
+        Vec4 v0;
+        Vec4 v1;
+        Vec4 v2;
+        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc0;
+        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc1;
+        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc2;
+        Vec4 color0;
+        Vec4 color1;
+        Vec4 color2;
     };
 
     struct Line
     {
-        const Vec4& v0;
-        const Vec4& v1;
-        const Vec4& tc0;
-        const Vec4& tc1;
-        const Vec4& color0;
-        const Vec4& color1;
+        Vec4 v0;
+        Vec4 v1;
+        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc0;
+        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc1;
+        Vec4 color0;
+        Vec4 color1;
     };
 
     bool drawTriangle(const Triangle& triangle);
@@ -127,27 +128,27 @@ private:
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
     
-    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec4Array& tex, const std::size_t offset, const std::size_t count);
+    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count);
     void transform(
         Vec4Array& transformedVertex, 
         Vec4Array& transformedColor, 
         Vec3Array& transformedNormal, 
-        Vec4Array& transformedTex, 
+        TexCoordArray& transformedTex, 
         const bool enableVertexArray,
         const bool enableColorArray,
         const bool enableNormalArray,
-        const bool enableTexArray,
+        const const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
         const Vec4Array& vertex, 
         const Vec4Array& color, 
         const Vec3Array& normal, 
-        const Vec4Array& tex, 
+        const TexCoordArray& tex, 
         const Vec4& vertexColor,
         const std::size_t count
     );
     bool drawTriangleArray(        
         const Vec4Array& vertex, 
         const Vec4Array& color, 
-        const Vec4Array& tex, 
+        const TexCoordArray& tex, 
         const std::size_t count,
         const RenderObj::DrawMode drawMode,
         const bool lastRound
@@ -191,7 +192,7 @@ private:
 
     PixelPipeline& m_renderer;
     Lighting m_lighting;
-    TexGen m_texGen;
+    TexGen m_texGen; // TODO: Implement for each TMU an own tex gen
 };
 
 #endif // VERTEXPIPELINE_HPP

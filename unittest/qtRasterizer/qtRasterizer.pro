@@ -1,5 +1,5 @@
-#TARGET_BUILD = simulation
-TARGET_BUILD = hardware
+TARGET_BUILD = simulation
+#TARGET_BUILD = hardware
 
 # Set here the path to your local verilator installation
 

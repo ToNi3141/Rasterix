@@ -21,6 +21,14 @@ void Clipper::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float a
 #endif
 }
 
+void Clipper::lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt)
+{
+    for (std::size_t i = 0; i < vOut.size(); i++)
+    {
+        lerpVert(vOut[i], v0[i], v1[i], amt);
+    }
+}
+
 Clipper::OutCode Clipper::outCode(const Vec4& v)
 {
     OutCode c = OutCode::NONE;
@@ -96,11 +104,11 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 
 std::tuple<const uint32_t, 
     Clipper::ClipVertList&, 
-    Clipper::ClipVertList&, 
+    Clipper::ClipTexCoordList&, 
     Clipper::ClipVertList&> Clipper::clip(ClipVertList& vertList,
                                           ClipVertList& vertListBuffer,
-                                          ClipVertList& texCoordList,
-                                          ClipVertList& texCoordListBuffer,
+                                          ClipTexCoordList& texCoordList,
+                                          ClipTexCoordList& texCoordListBuffer,
                                           ClipVertList& colorList,
                                           ClipVertList& colorListBuffer)
 {
@@ -121,8 +129,8 @@ std::tuple<const uint32_t,
 
     ClipVertList* currentVertListBufferIn = &vertList;
     ClipVertList* currentVertListBufferOut = &vertListBuffer;
-    ClipVertList* currentTexCoordListBufferIn = &texCoordList;
-    ClipVertList* currentTexCoordListBufferOut = &texCoordListBuffer;
+    ClipTexCoordList* currentTexCoordListBufferIn = &texCoordList;
+    ClipTexCoordList* currentTexCoordListBufferOut = &texCoordListBuffer;
     ClipVertList* currentColorListBufferIn = &colorList;
     ClipVertList* currentColorListBufferOut = &colorListBuffer;
 
@@ -149,7 +157,7 @@ std::tuple<const uint32_t,
             currentVertListBufferIn = currentVertListBufferOut;
             currentVertListBufferOut = tmpVertIn;
 
-            ClipVertList* tmpTexIn = currentTexCoordListBufferIn;
+            ClipTexCoordList* tmpTexIn = currentTexCoordListBufferIn;
             currentTexCoordListBufferIn = currentTexCoordListBufferOut;
             currentTexCoordListBufferOut = tmpTexIn;
 
@@ -171,11 +179,11 @@ std::tuple<const uint32_t,
 }
 
 uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
-                               ClipVertList& texCoordListOut,
+                               ClipTexCoordList& texCoordListOut,
                                ClipVertList& colorListOut,
                                const OutCode clipPlane,
                                const ClipVertList& vertListIn,
-                               const ClipVertList& texCoordListIn,
+                               const ClipTexCoordList& texCoordListIn,
                                const ClipVertList& colorListIn,
                                const uint32_t listInSize)
 {
@@ -193,7 +201,7 @@ uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
                 float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
                 lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
                 lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpVert(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                lerpTexCoord(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
                 i++;
             }
 
@@ -203,7 +211,7 @@ uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
                 float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
                 lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
                 lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpVert(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                lerpTexCoord(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
                 i++;
             }
         }

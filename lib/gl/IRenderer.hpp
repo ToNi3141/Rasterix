@@ -28,10 +28,9 @@
 class IRenderer
 {
 public:
-    enum class TMU 
-    {
-        TMU0
-    };
+    static constexpr std::size_t MAX_TMU_COUNT { 2 };
+
+    using TMU = uint8_t;
 
     class TexEnvConf
     {
@@ -417,17 +416,22 @@ public:
         const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
+    struct Triangle
+    {
+        const Vec4& vertex0;
+        const Vec4& vertex1;
+        const Vec4& vertex2;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture0;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture1;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture2;
+        const Vec4& color0;
+        const Vec4& color1;
+        const Vec4& color2;
+    };
+
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
-    virtual bool drawTriangle(const Vec4& v0,
-                              const Vec4& v1,
-                              const Vec4& v2,
-                              const Vec4& tc0,
-                              const Vec4& tc1,
-                              const Vec4& tc2,
-                              const Vec4& c0,
-                              const Vec4& c1,
-                              const Vec4& c2) = 0;
+    virtual bool drawTriangle(const Triangle& triangle) = 0;
 
     /// @brief Will send a picture from working buffers, caches or whatever to the buffer which is
     ///    read from the display
@@ -484,9 +488,10 @@ public:
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) = 0;
 
     /// @brief Set a static color for the tex environment
+    /// @param target is used TMU
     /// @param color the color in ABGR
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setTexEnvColor(const Vec4i& color) = 0;
+    virtual bool setTexEnvColor(const TMU target, const Vec4i& color) = 0;
 
     /// @brief Updates the fragment pipeline configuration 
     /// @param pipelineConf The new pipeline configuration 

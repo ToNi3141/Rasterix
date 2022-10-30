@@ -24,10 +24,15 @@ bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
     return getFromArray(vec, m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
-bool RenderObj::getTexCoord(Vec4& vec, const uint32_t index) const
+bool RenderObj::getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) const
 {
     vec.initHomogeneous();
-    return getFromArray(vec, m_texCoordType, m_texCoordPointer, m_texCoordStride, m_texCoordSize, index);
+    const bool ret = getFromArray(vec, m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
+    if (!ret) 
+    {
+        vec = m_texCoord[tmu];
+    }
+    return true;
 }
 
 bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
@@ -52,12 +57,21 @@ bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
             break;
         }
     }
-    return retVal;
+    else
+    {
+        vec = m_vertexColor;
+    }
+    return true;
 }
 
 bool RenderObj::getNormal(Vec3& vec, const uint32_t index) const
 {
-    return getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
+    bool ret = getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
+    if (!ret)
+    {
+        vec = m_normal;
+    }
+    return true;
 }
 
 uint32_t RenderObj::getIndex(const uint32_t index) const
