@@ -103,9 +103,9 @@ localparam OP_FOG_LUT_STREAM = 4;
 
 //---------------------------------------------------------------------------------------------------------
 // Texture Stream
-//  +--------------------------------------------------------------------------------------------------------------------+
-//  | 4'h1 | 8'hx reserved | 4'hx pixel format | 8'hx TMU nr (currently unused) | 8'hx texture stream size in power of 2 |
-//  +--------------------------------------------------------------------------------------------------------------------+
+//  +-------------------------------------------------------------------------------------------------+
+//  | 4'h1 | 8'hx reserved | 4'hx pixel format | 8'hx TMU nr | 8'hx texture stream size in power of 2 |
+//  +-------------------------------------------------------------------------------------------------+
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB. The stream size is not dependent 
 // on the actual texture size. This allows partial texture updates.
 // Steam size n 32bit values.

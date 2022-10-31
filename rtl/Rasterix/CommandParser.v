@@ -205,6 +205,7 @@ module CommandParser #(
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
                         if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 0)
                         begin
+                            // TODO: Move PixelFormat to OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG
                             confTMU0PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
                         end
                         if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 1)

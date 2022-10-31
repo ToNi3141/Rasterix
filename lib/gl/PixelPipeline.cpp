@@ -21,7 +21,10 @@
 PixelPipeline::PixelPipeline(IRenderer& renderer) 
     : m_renderer(renderer)
 {
-    m_renderer.setTexEnv(m_tmu, m_texEnvConf[m_tmu]);
+    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
+    {
+        m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+    }
     m_renderer.setFeatureEnableConfig(m_featureEnable);
     m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
 }
@@ -34,11 +37,15 @@ bool PixelPipeline::drawTriangle(const Triangle& triangle)
 bool PixelPipeline::updatePipeline()
 {
     bool ret { true };
-    if ((m_texEnvMode[m_tmu] == TexEnvMode::COMBINE) && (m_texEnvConfUploaded[m_tmu].serialize() != m_texEnvConf[m_tmu].serialize()))
+    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
     {
-        ret = ret && m_renderer.setTexEnv(m_tmu, m_texEnvConf[m_tmu]);
-        m_texEnvConfUploaded[m_tmu] = m_texEnvConf[m_tmu];
+        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize()))
+        {
+            ret = ret && m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+            m_tmuConf[i].texEnvConfUploaded = m_tmuConf[i].texEnvConf;
+        }
     }
+    
     if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize())
     {
         ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
@@ -59,12 +66,12 @@ bool PixelPipeline::updatePipeline()
 
 bool PixelPipeline::uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat)
 {        
-    return uploadTexture({ pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter, intendedPixelFormat });
+    return uploadTexture({ pixels, sizeX, sizeY, m_tmuConf[m_tmu].texWrapModeS, m_tmuConf[m_tmu].texWrapModeT, m_tmuConf[m_tmu].texEnableMagFilter, intendedPixelFormat });
 }
 
 bool PixelPipeline::uploadTexture(const TextureObject& texObj)
 {
-    bool ret = m_renderer.updateTexture(m_boundTexture, texObj);
+    bool ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, texObj);
             
     // Rebind texture to update the rasterizer with the new texture meta information
     // TODO: Check if this is still required
@@ -161,12 +168,12 @@ bool PixelPipeline::updateFogLut()
 
 bool PixelPipeline::useTexture()
 {
-    return m_renderer.useTexture(m_tmu, m_boundTexture);
+    return m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
 }
 
 bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
 {
-    m_texEnvMode[m_tmu] = mode;
+    m_tmuConf[m_tmu].texEnvMode = mode;
     IRenderer::TexEnvConf texEnvConf {};
     switch (mode) {
     case TexEnvMode::DISABLE:

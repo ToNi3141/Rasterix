@@ -230,9 +230,9 @@ module PixelPipeline
     ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
         step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
         step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
 
     TextureMappingUnit #(

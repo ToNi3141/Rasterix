@@ -70,7 +70,7 @@ public:
         // Check if the current texture contains any pixels. If yes, a new texture must be allocated because the current texture
         // might be used in the display list. If it does not contain any pixels, then this texture will for sure not be used
         // in a display list and the current object can be safely reused.
-        if (m_textures[textureSlot].pixels)
+        if (m_textures[textureSlot].pixels || (textureSlot == 0))
         {
             // Slot 0 has a special meaning. It will never be used and never be deleted.
             if (textureSlot != 0)

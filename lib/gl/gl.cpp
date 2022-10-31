@@ -3762,9 +3762,9 @@ GLAPI void APIENTRY glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffse
 // -------------------------------------------------------
 GLAPI void APIENTRY glActiveTexture(GLenum texture)
 {
-    SPDLOG_DEBUG("glActiveTexture texture {} called", GL_TEXTURE0 - texture);
+    SPDLOG_DEBUG("glActiveTexture texture {} called", texture - GL_TEXTURE0);
     // TODO: Check how many TMUs the hardware actually has
-    IceGL::getInstance().pixelPipeline().activateTmu(GL_TEXTURE0 - texture);
+    IceGL::getInstance().pixelPipeline().activateTmu(texture - GL_TEXTURE0);
 }
 
 GLAPI void APIENTRY glSampleCoverage(GLfloat value, GLboolean invert)

@@ -72,14 +72,14 @@ public:
     // Textures
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
     bool uploadTexture(const TextureObject& texObj);
-    TextureObject getTexture() { return m_renderer.getTexture(m_boundTexture); }
+    TextureObject getTexture() { return m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture); }
     bool useTexture();
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { m_boundTexture = val; }
-    void setTexWrapModeS(const TextureWrapMode mode) { m_texWrapModeS = mode; }
-    void setTexWrapModeT(const TextureWrapMode mode) { m_texWrapModeT = mode; }
-    void setEnableMagFilter(const bool val) { m_texEnableMagFilter = val; }
+    void setBoundTexture(const uint32_t val) { m_tmuConf[m_tmu].boundTexture = val; }
+    void setTexWrapModeS(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeS = mode; }
+    void setTexWrapModeT(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeT = mode; }
+    void setEnableMagFilter(const bool val) { m_tmuConf[m_tmu].texEnableMagFilter = val; }
 
     // Framebuffer
     bool clearFramebuffer(bool frameBuffer, bool zBuffer);
@@ -91,7 +91,7 @@ public:
 
     // TMU
     bool setTexEnvMode(const TexEnvMode mode);
-    TexEnv& texEnv() { return m_texEnvConf[m_tmu]; }
+    TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
     void activateTmu(const IRenderer::TMU tmu) { m_tmu = tmu; }
 
@@ -108,6 +108,20 @@ public:
 private:
     static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
 
+    struct TmuConfig
+    {
+        // Textures
+        uint32_t boundTexture { 0 };
+        TextureWrapMode texWrapModeS { TextureWrapMode::REPEAT };
+        TextureWrapMode texWrapModeT { TextureWrapMode::REPEAT };
+        bool texEnableMagFilter { true };
+
+        // TMU
+       TexEnvMode texEnvMode { TexEnvMode::REPLACE };
+       TexEnv texEnvConf {};
+       TexEnv texEnvConfUploaded {};
+    };
+
     bool updateFogLut();
 
     IRenderer& m_renderer;
@@ -116,16 +130,8 @@ private:
     FeatureEnable m_featureEnable {};
     FeatureEnable m_featureEnableUploaded {};
 
-    // Textures
-    uint32_t m_boundTexture { 0 };
-    TextureWrapMode m_texWrapModeS { TextureWrapMode::REPEAT };
-    TextureWrapMode m_texWrapModeT { TextureWrapMode::REPEAT };
-    bool m_texEnableMagFilter { true };
-
     // TMU
-    std::array<TexEnvMode, MAX_TMU_COUNT> m_texEnvMode { TexEnvMode::REPLACE };
-    std::array<TexEnv, MAX_TMU_COUNT> m_texEnvConf {};
-    std::array<TexEnv, MAX_TMU_COUNT> m_texEnvConfUploaded {};
+    std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
     uint8_t m_tmu { 0 };
 
     // Current fragment pipeline configuration 

@@ -158,6 +158,7 @@ public:
         bool ret = false;
         if (openNewStreamSection())
         {
+            m_wasLastCommandATextureCommand = false; // TODO: Fix this optimization
             // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
             // with the recent texture, then we can just overwrite this texture with the current one and avoiding
             // with that mechanism unnecessary texture loads.
