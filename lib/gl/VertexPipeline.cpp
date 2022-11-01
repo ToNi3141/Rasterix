@@ -165,7 +165,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
             obj.vertexArrayEnabled(),
             obj.colorArrayEnabled(),
             obj.normalArrayEnabled(),
-            obj.texCoordArrayEnabled(0), // TODO: Use current TMU
+            obj.texCoordArrayEnabled(),
             vertex,
             color,
             normal,
@@ -334,7 +334,7 @@ void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec
         }
         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
-            if (obj.texCoordArrayEnabled(j))
+            if (obj.texCoordArrayEnabled()[j])
             {
                 obj.getTexCoord(j, tex[i][j], index);
             }

@@ -54,7 +54,7 @@ public:
 
     bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     bool getVertex(Vec4& vec, const uint32_t index) const;
-    bool texCoordArrayEnabled(const uint8_t tmu) const { return m_texCoordArrayEnabled[tmu]; }
+    std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     bool getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) const;
     bool colorArrayEnabled() const { return m_colorArrayEnabled; }
     bool getColor(Vec4& vec, const uint32_t index) const;
