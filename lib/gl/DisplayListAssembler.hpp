@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <array>
+#include <bitset>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 
@@ -28,6 +29,7 @@ class DisplayListAssembler {
 public:
         using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 private:
+    static constexpr std::size_t TMU_COUNT { 2 };
     struct StreamCommand
     {
         // Anathomy of a command:
@@ -107,7 +109,7 @@ public:
     {
         m_displayList.clear();
         m_streamCommand = nullptr;
-        m_wasLastCommandATextureCommand = false;
+        m_wasLastCommandATextureCommand.reset();
     }
 
     bool commit()
@@ -131,7 +133,7 @@ public:
     {
         if (openNewStreamSection())
         {
-            m_wasLastCommandATextureCommand = false;
+            m_wasLastCommandATextureCommand.reset();
             return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
         }
         return nullptr;
@@ -158,11 +160,10 @@ public:
         bool ret = false;
         if (openNewStreamSection())
         {
-            m_wasLastCommandATextureCommand = false; // TODO: Fix this optimization
             // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
             // with the recent texture, then we can just overwrite this texture with the current one and avoiding
             // with that mechanism unnecessary texture loads.
-            if (!m_wasLastCommandATextureCommand)
+            if (!m_wasLastCommandATextureCommand[tmu])
             {
                 m_texStreamOp = m_displayList.template create<SCT>();
                 if (m_texStreamOp)
@@ -182,12 +183,12 @@ public:
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
-                m_wasLastCommandATextureCommand = true;
+                m_wasLastCommandATextureCommand.set(tmu);
                 ret = true;
             }
             else
             {
-                if (!m_wasLastCommandATextureCommand)
+                if (!m_wasLastCommandATextureCommand[tmu])
                 {
                     if (m_texStreamOp)
                     {
@@ -382,13 +383,13 @@ private:
 
     List m_displayList __attribute__ ((aligned (8)));
 
-    SCT *m_streamCommand{nullptr};
+    SCT *m_streamCommand { nullptr };
 
     // Helper variables to optimize the texture loading
-    bool m_wasLastCommandATextureCommand{false};
-    SCT *m_texStreamOp{nullptr};
-    SCT *m_texLoad{nullptr};
-    uint32_t *m_texLoadAddr{nullptr};
+    std::bitset<TMU_COUNT> m_wasLastCommandATextureCommand {};
+    SCT *m_texStreamOp { nullptr };
+    SCT *m_texLoad { nullptr };
+    uint32_t *m_texLoadAddr { nullptr };
 };
 
 
