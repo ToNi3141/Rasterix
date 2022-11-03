@@ -403,13 +403,13 @@ void VertexPipeline::transform(
         {
             if (enableTexArray[j])
             {
-                transformedTex[i] = tex[i];
+                transformedTex[i][j] = tex[i][j];
             }
             else
             {
                 transformedTex[i][j].initHomogeneous();
             }
-            m_texGen.calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
+            m_texGen.calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]); // TODO: Use different texGen instances for the different TMUs
         }
     }
 
