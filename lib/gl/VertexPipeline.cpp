@@ -409,7 +409,7 @@ void VertexPipeline::transform(
             {
                 transformedTex[i][j].initHomogeneous();
             }
-            m_texGen.calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]); // TODO: Use different texGen instances for the different TMUs
+            m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
         }
     }
 
@@ -813,7 +813,7 @@ Lighting& VertexPipeline::getLighting()
 
 TexGen& VertexPipeline::getTexGen()
 {
-    return m_texGen;
+    return m_texGen[m_tmu];
 }
 
 void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)

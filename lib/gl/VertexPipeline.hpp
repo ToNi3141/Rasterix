@@ -25,6 +25,7 @@
 #include "Lighting.hpp"
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
+#include "IRenderer.hpp"
 
 class VertexPipeline
 {
@@ -82,6 +83,8 @@ public:
     void enableColorMaterial(const bool enable);
     
     void setLineWidth(const float width);
+
+    void activateTmu(const uint8_t tmu) { m_tmu = tmu; }
 
     Lighting& getLighting();
     TexGen& getTexGen();
@@ -190,9 +193,12 @@ private:
     // Line width
     float m_lineWidth { 1.0f };
 
+    // Current active TMU
+    uint8_t m_tmu {};
+
     PixelPipeline& m_renderer;
     Lighting m_lighting;
-    TexGen m_texGen; // TODO: Implement for each TMU an own tex gen
+    std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 
 #endif // VERTEXPIPELINE_HPP
