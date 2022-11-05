@@ -67,7 +67,18 @@ public:
     bool updatePipeline();
 
     // Feature Enable
-    FeatureEnable& featureEnable() { return m_featureEnable; }
+    void setEnableTmu(const bool enable) { m_featureEnable.setEnableTmu(m_tmu, enable); }
+    void setEnableAlphaTest(const bool enable) { m_featureEnable.setEnableAlphaTest(enable); }
+    void setEnableDepthTest(const bool enable) { m_featureEnable.setEnableDepthTest(enable); }
+    void setEnableBlending(const bool enable) { m_featureEnable.setEnableBlending(enable); }
+    void setEnableFog(const bool enable) { m_featureEnable.setEnableFog(enable); }
+    void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
+    bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_tmu); }
+    bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
+    bool getEnableDepthTest() const { return m_featureEnable.getEnableDepthTest(); }
+    bool getEnableBlending() const { return m_featureEnable.getEnableBlending(); }
+    bool getEnableFog() const { return m_featureEnable.getEnableFog(); }
+    bool getEnableScissor() const { return m_featureEnable.getEnableScissor(); }
 
     // Textures
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);

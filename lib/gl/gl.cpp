@@ -899,23 +899,22 @@ GLAPI void APIENTRY glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu0(false);
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu1(false); // TODO: Disable only the current TMU
+        IceGL::getInstance().pixelPipeline().setEnableTmu(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(false);
+        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(false);
+        IceGL::getInstance().pixelPipeline().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(false);
+        IceGL::getInstance().pixelPipeline().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
@@ -944,10 +943,10 @@ GLAPI void APIENTRY glDisable(GLenum cap)
         IceGL::getInstance().vertexPipeline().enableColorMaterial(false);
         break;
     case GL_FOG:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
+        IceGL::getInstance().pixelPipeline().setEnableFog(false);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(false);
+        IceGL::getInstance().pixelPipeline().setEnableScissor(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap {} not supported", cap);
@@ -983,17 +982,16 @@ GLAPI void APIENTRY glEnable(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu0(true);
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu1(true); // TODO: Enable only the current TMU...
+        IceGL::getInstance().pixelPipeline().setEnableTmu(true);
         break;
     case GL_ALPHA_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(true);
+        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(true);
+        IceGL::getInstance().pixelPipeline().setEnableDepthTest(true);
         break;
     case GL_BLEND:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(true);
+        IceGL::getInstance().pixelPipeline().setEnableBlending(true);
         break;
     case GL_LIGHTING:
         IceGL::getInstance().vertexPipeline().getLighting().enableLighting(true);
@@ -1021,10 +1019,10 @@ GLAPI void APIENTRY glEnable(GLenum cap)
         IceGL::getInstance().vertexPipeline().enableColorMaterial(true);
         break;
     case GL_FOG:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
+        IceGL::getInstance().pixelPipeline().setEnableFog(true);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(true);
+        IceGL::getInstance().pixelPipeline().setEnableScissor(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap {} not supported", cap);
@@ -2784,7 +2782,7 @@ GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             case GL_Q:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             default:
@@ -2805,7 +2803,7 @@ GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             case GL_Q:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             default:
