@@ -140,7 +140,7 @@ private:
         const bool enableVertexArray,
         const bool enableColorArray,
         const bool enableNormalArray,
-        const const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
+        const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
         const Vec4Array& vertex, 
         const Vec4Array& color, 
         const Vec3Array& normal, 
