@@ -34,10 +34,7 @@ public:
     void begin(const DrawMode drawMode)
     {
         m_beginMode = drawMode;
-        for (uint8_t i = 0; i < m_textureVertexBuffer.size(); i++)
-        {
-            m_textureVertexBuffer[i].clear();
-        }
+        m_textureVertexBuffer.clear();
         m_vertexBuffer.clear();
         m_normalVertexBuffer.clear();
         m_colorVertexBuffer.clear();
@@ -46,10 +43,7 @@ public:
     {
         m_vertexBuffer.push_back(vertex);
         m_normalVertexBuffer.push_back(m_normal);
-        for (uint8_t i = 0; i < m_textureVertexBuffer.size(); i++)
-        {
-            m_textureVertexBuffer[i].push_back(m_textureCoord[i]);
-        }
+        m_textureVertexBuffer.push_back(m_textureCoord);
         m_colorVertexBuffer.push_back(m_vertexColor);
     }
     void setColor(const Vec4& color) { m_vertexColor = color; m_objPtr.setVertexColor(color); }
@@ -66,11 +60,11 @@ public:
 
         for (uint8_t i = 0; i < RenderObj::MAX_TMU_COUNT; i++)
         {
-            m_objBeginEnd.enableTexCoordArray(i, !m_textureVertexBuffer[i].empty());
+            m_objBeginEnd.enableTexCoordArray(i, !m_textureVertexBuffer.empty());
             m_objBeginEnd.setTexCoordSize(i, 4);
             m_objBeginEnd.setTexCoordType(i, RenderObj::Type::FLOAT);
-            m_objBeginEnd.setTexCoordStride(i, 0);
-            m_objBeginEnd.setTexCoordPointer(i, m_textureVertexBuffer[i].data());
+            m_objBeginEnd.setTexCoordStride(i, RenderObj::MAX_TMU_COUNT * sizeof(Vec4));
+            m_objBeginEnd.setTexCoordPointer(i, m_textureVertexBuffer.data() + i);
         }
 
         m_objBeginEnd.enableNormalArray(!m_normalVertexBuffer.empty());
@@ -129,7 +123,7 @@ public:
 private:
     // Buffer
     std::vector<Vec4> m_vertexBuffer;
-    std::array<std::vector<Vec4>, RenderObj::MAX_TMU_COUNT> m_textureVertexBuffer;
+    std::vector<std::array<Vec4, RenderObj::MAX_TMU_COUNT>> m_textureVertexBuffer;
     std::vector<Vec3> m_normalVertexBuffer;
     std::vector<Vec4> m_colorVertexBuffer;
 
