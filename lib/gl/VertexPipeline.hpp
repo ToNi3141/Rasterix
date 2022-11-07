@@ -104,25 +104,25 @@ private:
 
     struct Triangle
     {
-        Vec4 v0;
-        Vec4 v1;
-        Vec4 v2;
-        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc0;
-        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc1;
-        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc2;
-        Vec4 color0;
-        Vec4 color1;
-        Vec4 color2;
+        const Vec4& v0;
+        const Vec4& v1;
+        const Vec4& v2;
+        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc0;
+        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc1;
+        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc2;
+        const Vec4& color0;
+        const Vec4& color1;
+        const Vec4& color2;
     };
 
     struct Line
     {
-        Vec4 v0;
-        Vec4 v1;
-        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc0;
-        std::array<Vec4, IRenderer::MAX_TMU_COUNT> tc1;
-        Vec4 color0;
-        Vec4 color1;
+        const Vec4& v0;
+        const Vec4& v1;
+        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc0;
+        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc1;
+        const Vec4& color0;
+        const Vec4& color1;
     };
 
     bool drawTriangle(const Triangle& triangle);

@@ -252,10 +252,11 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
     {
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan
+        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
         const bool success = m_renderer.drawTriangle( { vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
-                { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } }, // TODO: Make this dynamic with the TMU size
+                { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } },
                 { { &texCoordListClipped[i - 2][0], &texCoordListClipped[i - 2][1] } },
                 { { &texCoordListClipped[i - 1][0], &texCoordListClipped[i - 1][1] } },
                 colorListClipped[0],
@@ -525,14 +526,16 @@ bool VertexPipeline::drawTriangleArray(
 
         if (isTriangle)
         {
-            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], tex[i0], tex[i1], tex[i2], color[i0], color[i1], color[i2] }))
+            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] }))
             {
                 return false;
             }
         }
         else
         {
-            if (!drawLine({ vertex[i0], vertex[i1], tex[i0], tex[i1], color[i0], color[i1] }))
+            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+            if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] }))
             {
                 return false;
             }
