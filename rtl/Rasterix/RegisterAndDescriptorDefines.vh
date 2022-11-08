@@ -103,9 +103,9 @@ localparam OP_FOG_LUT_STREAM = 4;
 
 //---------------------------------------------------------------------------------------------------------
 // Texture Stream
-//  +-------------------------------------------------------------------------------------------------+
-//  | 4'h1 | 8'hx reserved | 4'hx pixel format | 8'hx TMU nr | 8'hx texture stream size in power of 2 |
-//  +-------------------------------------------------------------------------------------------------+
+//  +------------------------------------------------------------------------------+
+//  | 4'h1 | 12'hx reserved | 8'hx TMU nr | 8'hx texture stream size in power of 2 |
+//  +------------------------------------------------------------------------------+
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB. The stream size is not dependent 
 // on the actual texture size. This allows partial texture updates.
 // Steam size n 32bit values.
@@ -114,12 +114,6 @@ localparam TEXTURE_STREAM_SIZE_POS = 0;
 localparam TEXTURE_STREAM_SIZE_SIZE = 8;
 localparam TEXTURE_STREAM_TMU_NR_POS = TEXTURE_STREAM_SIZE_POS + TEXTURE_STREAM_SIZE_SIZE;
 localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
-localparam TEXTURE_STREAM_PIXEL_FORMAT_POS = TEXTURE_STREAM_TMU_NR_POS + TEXTURE_STREAM_TMU_NR_SIZE;
-localparam TEXTURE_STREAM_PIXEL_FORMAT_SIZE = 4;
-
-localparam TEXTURE_STREAM_PIXEL_FORMAT_RGBA4444 = 0;
-localparam TEXTURE_STREAM_PIXEL_FORMAT_RGBA5551 = 1;
-localparam TEXTURE_STREAM_PIXEL_FORMAT_RGB565 = 2;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Operation Arguments
@@ -239,9 +233,9 @@ localparam RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_POS = RENDER_CONFIG_TMU_TEX_ENV
 localparam RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_SIZE = 2;
 
 // OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG
-//  +-------------------------------------------------------------------------------------------+
-//  | 13'hx reserved | 1'hx mag filter | 1'hx clamp t | 1'hx clamp s | 8'hx height | 8'hx width |
-//  +-------------------------------------------------------------------------------------------+
+//  +--------------------------------------------------------------------------------------------------------------+
+//  | 9'hx reserved | 4'hx pixel format | 1'hx mag filter | 1'hx clamp t | 1'hx clamp s | 8'hx height | 8'hx width |
+//  +--------------------------------------------------------------------------------------------------------------+
 // Texture hight and width are in power of two minus one, means: 8'b0 = 1px, 8'b1 = 2px, 8'b100 = 8px ...
 localparam RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS = 0;
 localparam RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE = 8;
@@ -253,6 +247,12 @@ localparam RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS = RENDER_CONFIG_TMU_TEXTURE_CLA
 localparam RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE = 1;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS = RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS + RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE = 1;
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS = RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS + RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE;
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE = 4;
+
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA4444 = 0;
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551 = 1;
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565 = 2;
 
 // OP_RENDER_CONFIG_SCISSOR_START_XY
 //  +---------------------------------------------+

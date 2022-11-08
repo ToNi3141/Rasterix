@@ -85,9 +85,9 @@ module TextureBuffer #(
             $error("The COLOR_A_POS is expected to be at position 0. Otherwise the conversions from the internal format to the external will not work.");
             $finish;
         end
-        if (TEXTURE_STREAM_PIXEL_FORMAT_SIZE != 4)
+        if (RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE != 4)
         begin
-            $error("TEXTURE_STREAM_PIXEL_FORMAT_SIZE must be 4. If not, adapt confPixelFormat.");
+            $error("RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE must be 4. If not, adapt confPixelFormat.");
             $finish;
         end
     end
@@ -236,17 +236,17 @@ module TextureBuffer #(
         end
     endgenerate
 
-    assign texelOutput00 = (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect00)
-                                                                                    : (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect00) 
+    assign texelOutput00 = (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect00)
+                                                                                    : (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect00) 
                                                                                                                                                 : Expand(texelSelect00);
-    assign texelOutput01 = (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect01)
-                                                                                    : (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect01) 
+    assign texelOutput01 = (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect01)
+                                                                                    : (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect01) 
                                                                                                                                                 : Expand(texelSelect01);
-    assign texelOutput10 = (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect10)
-                                                                                    : (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect10) 
+    assign texelOutput10 = (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect10)
+                                                                                    : (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect10) 
                                                                                                                                                 : Expand(texelSelect10);
-    assign texelOutput11 = (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect11)
-                                                                                    : (confPixelFormat == TEXTURE_STREAM_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect11) 
+    assign texelOutput11 = (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565)  ? RGB565TO8888(texelSelect11)
+                                                                                    : (confPixelFormat == RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551) ? RGBA5551TO8888(texelSelect11) 
                                                                                                                                                 : Expand(texelSelect11);
 
     //////////////////////////////////////////////

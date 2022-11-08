@@ -64,7 +64,6 @@ private:
         // Immediate values
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS           = 0; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS         = 8; // size: 8 bit
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_PIXEL_FORMAT_POS   = 16; // size: 4 bit
 
         static constexpr StreamCommandType RR_RENDER_CONFIG_FEATURE_ENABLE              = 0x0000'0000;
         static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0001;
@@ -154,8 +153,7 @@ public:
 
     bool useTexture(const uint8_t tmu,
                     const uint32_t texAddr, 
-                    const uint32_t texSize,
-                    const uint8_t pixelFormat)
+                    const uint32_t texSize)
     {
         bool ret = false;
         if (openNewStreamSection())
@@ -176,10 +174,9 @@ public:
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
-                const uint32_t pixelFormatShifted = static_cast<uint32_t>(pixelFormat & 0xf) << StreamCommand::RR_TEXTURE_STREAM_PIXEL_FORMAT_POS;
                 const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | pixelFormatShifted | tmuShifted;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | tmuShifted;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;

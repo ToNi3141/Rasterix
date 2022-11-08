@@ -33,7 +33,6 @@ public:
         const uint32_t addr;
         const uint32_t size;
         const uint32_t tmuConfig;
-        const IRenderer::TextureObject::PixelFormat pixelFormat;
     };
 
     TextureMemoryManager()
@@ -90,12 +89,12 @@ public:
         }
 
         m_textures[textureSlot].pixels = textureObject.pixels;
-        m_textures[textureSlot].pixelFormat = textureObject.getPixelFormat();
         m_textures[textureSlot].size = textureObject.width * textureObject.height * 2;
         m_textures[textureSlot].inUse = true;
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;
         m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
+        m_textures[textureSlot].tmuConfig.reg.pixelFormat = textureObject.getPixelFormat();
         m_textures[textureSlot].tmuConfig.reg.wrapModeS = textureObject.wrapModeS;
         m_textures[textureSlot].tmuConfig.reg.wrapModeT = textureObject.wrapModeT;
         m_textures[textureSlot].tmuConfig.reg.enableMagFilter = textureObject.enableMagFilter;
@@ -109,9 +108,9 @@ public:
         Texture& tex = m_textures[m_textureLut[texId]];
         if (!tex.inUse || texId == 0)
         {
-            return { false, 0, 0, 0, IRenderer::TextureObject::PixelFormat::RGBA4444 };
+            return { false, 0, 0, 0 };
         }
-        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized, tex.pixelFormat };
+        return { true, MAX_TEXTURE_SIZE * m_textureLut[texId], tex.size, tex.tmuConfig.serialized };
     }
 
     IRenderer::TextureObject getTexture(const uint16_t texId)
@@ -175,7 +174,6 @@ private:
         bool requiresDelete;
         std::shared_ptr<const uint16_t> pixels;
         uint32_t size;
-        IRenderer::TextureObject::PixelFormat pixelFormat;
         IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
         union 
         {
@@ -186,6 +184,7 @@ private:
                 IRenderer::TextureObject::TextureWrapMode wrapModeS : 1;
                 IRenderer::TextureObject::TextureWrapMode wrapModeT : 1;
                 bool enableMagFilter : 1;
+                IRenderer::TextureObject::PixelFormat pixelFormat : 4;
             } reg;
             uint32_t serialized;
         } tmuConfig;

@@ -307,7 +307,7 @@ public:
         bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size, static_cast<uint8_t>(tex.pixelFormat));
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), tex.tmuConfig);
         }
         return ret;

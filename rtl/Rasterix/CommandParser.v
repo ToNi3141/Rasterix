@@ -42,11 +42,9 @@ module CommandParser #(
     output wire [31:0]  confTMU0TexEnvConfig,
     output wire [31:0]  confTMU0TextureConfig,
     output wire [31:0]  confTMU0TexEnvColor,
-    output reg  [ 4:0]  confTMU0PixelFormat,
     output wire [31:0]  confTMU1TexEnvConfig,
     output wire [31:0]  confTMU1TextureConfig,
     output wire [31:0]  confTMU1TexEnvColor,
-    output reg  [ 4:0]  confTMU1PixelFormat,
     output wire [31:0]  confScissorStartXY,
     output wire [31:0]  confScissorEndXY,
     output wire [11:0]  confYOffset,
@@ -203,15 +201,6 @@ module CommandParser #(
                     OP_TEXTURE_STREAM:
                     begin
                         streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
-                        if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 0)
-                        begin
-                            // TODO: Move PixelFormat to OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG
-                            confTMU0PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
-                        end
-                        if (s_cmd_axis_tdata[TEXTURE_STREAM_TMU_NR_POS +: TEXTURE_STREAM_TMU_NR_SIZE] == 1)
-                        begin
-                            confTMU1PixelFormat <= s_cmd_axis_tdata[TEXTURE_STREAM_PIXEL_FORMAT_POS +: TEXTURE_STREAM_PIXEL_FORMAT_SIZE];
-                        end
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin

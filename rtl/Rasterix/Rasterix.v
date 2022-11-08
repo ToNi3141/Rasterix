@@ -157,20 +157,18 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31 : 0]                                   confFeatureEnable;
-    wire [31 : 0]                                   confFragmentPipelineConfig;
-    wire [31 : 0]                                   confFragmentPipelineFogColor;
-    wire [31 : 0]                                   confTMU0TexEnvConfig;
-    wire [31 : 0]                                   confTMU0TextureConfig;
-    wire [31 : 0]                                   confTMU0TexEnvColor;
-    wire [TEXTURE_STREAM_PIXEL_FORMAT_SIZE - 1: 0]  confTMU0PixelFormat;
-    wire [31 : 0]                                   confScissorStartXY;
-    wire [31 : 0]                                   confScissorEndXY;
-    wire [11 : 0]                                   confYOffset;
-    wire [31 : 0]                                   confTMU1TexEnvConfig;
-    wire [31 : 0]                                   confTMU1TextureConfig;
-    wire [31 : 0]                                   confTMU1TexEnvColor;
-    wire [TEXTURE_STREAM_PIXEL_FORMAT_SIZE - 1: 0]  confTMU1PixelFormat;
+    wire [31 : 0]   confFeatureEnable;
+    wire [31 : 0]   confFragmentPipelineConfig;
+    wire [31 : 0]   confFragmentPipelineFogColor;
+    wire [31 : 0]   confTMU0TexEnvConfig;
+    wire [31 : 0]   confTMU0TextureConfig;
+    wire [31 : 0]   confTMU0TexEnvColor;
+    wire [31 : 0]   confScissorStartXY;
+    wire [31 : 0]   confScissorEndXY;
+    wire [11 : 0]   confYOffset;
+    wire [31 : 0]   confTMU1TexEnvConfig;
+    wire [31 : 0]   confTMU1TextureConfig;
+    wire [31 : 0]   confTMU1TexEnvColor;
 
     // Rasterizer
     wire            m_rasterizer_axis_tvalid;
@@ -213,11 +211,9 @@ module Rasterix #(
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
-        .confTMU0PixelFormat(confTMU0PixelFormat),
         .confTMU1TexEnvConfig(confTMU1TexEnvConfig),
         .confTMU1TextureConfig(confTMU1TextureConfig),
         .confTMU1TexEnvColor(confTMU1TexEnvColor),
-        .confTMU1PixelFormat(confTMU1PixelFormat),
         .confScissorStartXY(confScissorStartXY),
         .confScissorEndXY(confScissorEndXY),
         .confYOffset(confYOffset),
@@ -281,7 +277,7 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .confPixelFormat(confTMU0PixelFormat),
+        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
         .texelAddr00(texel0Addr00),
         .texelAddr01(texel0Addr01),
@@ -306,7 +302,7 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .confPixelFormat(confTMU1PixelFormat),
+        .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
         .texelAddr00(texel1Addr00),
         .texelAddr01(texel1Addr01),
