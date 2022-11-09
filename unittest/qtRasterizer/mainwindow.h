@@ -31,6 +31,10 @@ public slots:
     void newFrame();
 
 private:
+    static constexpr bool ENABLE_LIGHT = true;
+    static constexpr bool ENABLE_BLACK_WHITE = false;
+    static constexpr bool ENABLE_MULTI_TEXTURE = true;
+
     GLuint loadTexture(const char *tex);
 
 #if USE_SIMULATION
@@ -55,7 +59,7 @@ private:
 #endif
 
     GLuint m_textureId = 0;
-    GLuint m_textureId2 = 0;
+    GLuint m_multiTextureId = 0;
     int32_t m_fbSel = 0;
     float m_clipPlane = 1;
 
