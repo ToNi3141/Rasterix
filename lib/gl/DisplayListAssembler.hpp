@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <array>
+#include <bitset>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 
@@ -28,6 +29,7 @@ class DisplayListAssembler {
 public:
         using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 private:
+    static constexpr std::size_t TMU_COUNT { 2 };
     struct StreamCommand
     {
         // Anathomy of a command:
@@ -62,19 +64,19 @@ private:
         // Immediate values
         static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS           = 0; // size: 8 bit
         static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS         = 8; // size: 8 bit
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_PIXEL_FORMAT_POS   = 16; // size: 4 bit
 
         static constexpr StreamCommandType RR_RENDER_CONFIG_FEATURE_ENABLE              = 0x0000'0000;
         static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0001;
         static constexpr StreamCommandType RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH    = 0x0000'0002;
         static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_PIPELINE           = 0x0000'0003;
         static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR          = 0x0000'0004;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV                = 0x0000'0005;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR          = 0x0000'0006;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG         = 0x0000'0007;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG     = 0x0000'0008;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG       = 0x0000'0009;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_Y_OFFSET                    = 0x0000'000A;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG     = 0x0000'0005;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG       = 0x0000'0006;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_Y_OFFSET                    = 0x0000'0007;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV          = 0x0000'0008;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV_COLOR    = 0x0000'0009;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEXTURE_CONFIG   = 0x0000'000A;
+        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_STRIDE                  = 0x0000'0003;
 
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
@@ -93,12 +95,12 @@ public:
     static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR  = StreamCommand::RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR;
     static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH  = StreamCommand::RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH;
     static constexpr uint32_t SET_FRAGMENT_PIPELINE_CONFIG  = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_PIPELINE;
-    static constexpr uint32_t SET_TMU0_TEX_ENV              = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV;
-    static constexpr uint32_t SET_TMU0_TEXTURE_CONFIG       = StreamCommand::RR_RENDER_CONFIG_TMU0_TEXTURE_CONFIG;
-    static constexpr uint32_t SET_TMU0_TEX_ENV_COLOR        = StreamCommand::RR_RENDER_CONFIG_TMU0_TEX_ENV_COLOR;
     static constexpr uint32_t SET_SCISSOR_START_XY          = StreamCommand::RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG;
     static constexpr uint32_t SET_SCISSOR_END_XY            = StreamCommand::RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG;
     static constexpr uint32_t SET_FOG_COLOR                 = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR;
+    static constexpr uint32_t SET_TMU_TEX_ENV(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
+    static constexpr uint32_t SET_TMU_TEXTURE_CONFIG(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEXTURE_CONFIG + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
+    static constexpr uint32_t SET_TMU_TEX_ENV_COLOR(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV_COLOR + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
 
     static constexpr uint32_t SET_FOG_LUT                   = StreamCommand::RR_OP_FOG_LUT_STREAM;
 
@@ -106,7 +108,7 @@ public:
     {
         m_displayList.clear();
         m_streamCommand = nullptr;
-        m_wasLastCommandATextureCommand = false;
+        m_wasLastCommandATextureCommand.reset();
     }
 
     bool commit()
@@ -130,7 +132,7 @@ public:
     {
         if (openNewStreamSection())
         {
-            m_wasLastCommandATextureCommand = false;
+            m_wasLastCommandATextureCommand.reset();
             return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
         }
         return nullptr;
@@ -151,17 +153,15 @@ public:
 
     bool useTexture(const uint8_t tmu,
                     const uint32_t texAddr, 
-                    const uint32_t texSize,
-                    const uint8_t pixelFormat)
+                    const uint32_t texSize)
     {
-        (void)tmu;
         bool ret = false;
         if (openNewStreamSection())
         {
             // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
             // with the recent texture, then we can just overwrite this texture with the current one and avoiding
             // with that mechanism unnecessary texture loads.
-            if (!m_wasLastCommandATextureCommand)
+            if (!m_wasLastCommandATextureCommand[tmu])
             {
                 m_texStreamOp = m_displayList.template create<SCT>();
                 if (m_texStreamOp)
@@ -174,18 +174,18 @@ public:
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
-                const uint32_t pixelFormatShifted = static_cast<uint32_t>(pixelFormat & 0xf) << StreamCommand::RR_TEXTURE_STREAM_PIXEL_FORMAT_POS;
+                const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | pixelFormatShifted;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | tmuShifted;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSize;
                 *m_texLoadAddr = texAddr;
-                m_wasLastCommandATextureCommand = true;
+                m_wasLastCommandATextureCommand.set(tmu);
                 ret = true;
             }
             else
             {
-                if (!m_wasLastCommandATextureCommand)
+                if (!m_wasLastCommandATextureCommand[tmu])
                 {
                     if (m_texStreamOp)
                     {
@@ -380,13 +380,13 @@ private:
 
     List m_displayList __attribute__ ((aligned (8)));
 
-    SCT *m_streamCommand{nullptr};
+    SCT *m_streamCommand { nullptr };
 
     // Helper variables to optimize the texture loading
-    bool m_wasLastCommandATextureCommand{false};
-    SCT *m_texStreamOp{nullptr};
-    SCT *m_texLoad{nullptr};
-    uint32_t *m_texLoadAddr{nullptr};
+    std::bitset<TMU_COUNT> m_wasLastCommandATextureCommand {};
+    SCT *m_texStreamOp { nullptr };
+    SCT *m_texLoad { nullptr };
+    uint32_t *m_texLoadAddr { nullptr };
 };
 
 

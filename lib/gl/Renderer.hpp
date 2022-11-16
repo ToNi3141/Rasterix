@@ -75,7 +75,7 @@ public:
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
         }
 
-        setTexEnvColor({{0, 0, 0, 0}});
+        setTexEnvColor(0, {{0, 0, 0, 0}});
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
         setFogColor({{255, 255, 255, 255}});
@@ -89,19 +89,11 @@ public:
         });
     }
 
-    virtual bool drawTriangle(const Vec4& v0,
-                              const Vec4& v1,
-                              const Vec4& v2,
-                              const Vec4& tc0,
-                              const Vec4& tc1,
-                              const Vec4& tc2,
-                              const Vec4& c0,
-                              const Vec4& c1,
-                              const Vec4& c2) override
+    virtual bool drawTriangle(const Triangle& triangle) override
     {
         Rasterizer::RasterizedTriangle triangleConf;
 
-        if (!m_rasterizer.rasterize(triangleConf, v0, tc0, c0, v1, tc1, c1, v2, tc2, c2))
+        if (!m_rasterizer.rasterize(triangleConf, triangle))
         {
             // Triangle is not visible
             return true;
@@ -227,13 +219,12 @@ public:
 
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
     {
-        (void)target; // Only TMU0 is supported
-        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV, texEnvConfig.serialize());
+        return writeToReg(ListAssembler::SET_TMU_TEX_ENV(target), texEnvConfig.serialize());
     }
 
-    virtual bool setTexEnvColor(const Vec4i& color) override
+    virtual bool setTexEnvColor(const TMU target, const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_TMU0_TEX_ENV_COLOR, convertColor(color));
+        return writeToReg(ListAssembler::SET_TMU_TEX_ENV_COLOR(target), convertColor(color));
     }
 
     virtual bool setFogColor(const Vec4i& color) override
@@ -312,13 +303,12 @@ public:
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        (void)target;
         typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
         bool ret = tex.valid;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(0, tex.addr, tex.size, static_cast<uint8_t>(tex.pixelFormat));
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU0_TEXTURE_CONFIG, tex.tmuConfig);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), tex.tmuConfig);
         }
         return ret;
     }

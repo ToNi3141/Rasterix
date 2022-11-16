@@ -26,6 +26,13 @@ class Rasterizer
 public:  
     struct __attribute__ ((__packed__)) RasterizedTriangle
     {
+        struct Texture
+        {
+            Vec3 texStq;
+            Vec3 texStqXInc;
+            Vec3 texStqYInc;
+        };
+
         uint32_t reserved;
         uint16_t bbStartX;
         uint16_t bbStartY;
@@ -34,32 +41,20 @@ public:
         Vec3i wInit;
         Vec3i wXInc;
         Vec3i wYInc;
-        // TODO: Maybe rearrange the vertex attributes in the hardware to avoid copying of data in the software
-        Vec3 texStq;
-        Vec3 texStqXInc;
-        Vec3 texStqYInc;
+        Vec4 color;
+        Vec4 colorXInc;
+        Vec4 colorYInc;
         float depthW;
         float depthWXInc;
         float depthWYInc;
         float depthZ;
         float depthZXInc;
         float depthZYInc;
-        Vec4 color;
-        Vec4 colorXInc;
-        Vec4 colorYInc;
+        std::array<Texture, IRenderer::MAX_TMU_COUNT> texture;
     };
 
     Rasterizer();
-    bool rasterize(RasterizedTriangle& rasterizedTriangle,
-                   const Vec4& v0f,
-                   const Vec4& tc0f,
-                   const Vec4& c0f,
-                   const Vec4& v1f,
-                   const Vec4& tc1f,
-                   const Vec4& c1f,
-                   const Vec4& v2f,
-                   const Vec4& tc2f,
-                   const Vec4& c2f);
+    bool rasterize(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle);
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable);
@@ -71,16 +66,7 @@ public:
                                                  const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
-    inline bool rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle,
-                                         const Vec4& v0f,
-                                         const Vec4& tc0f,
-                                         const Vec4& c0f,
-                                         const Vec4& v1f,
-                                         const Vec4& tc1f,
-                                         const Vec4& c1f,
-                                         const Vec4& v2f,
-                                         const Vec4& tc2f,
-                                         const Vec4& c2f);
+    inline bool rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle);
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
     inline static VecInt calcRecip(VecInt val);
 

@@ -21,32 +21,31 @@
 PixelPipeline::PixelPipeline(IRenderer& renderer) 
     : m_renderer(renderer)
 {
-    m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0);
+    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
+    {
+        m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+    }
     m_renderer.setFeatureEnableConfig(m_featureEnable);
     m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
 }
 
-bool PixelPipeline::drawTriangle(const Vec4& v0,
-                                 const Vec4& v1,
-                                 const Vec4& v2,
-                                 const Vec4& tc0,
-                                 const Vec4& tc1,
-                                 const Vec4& tc2,
-                                 const Vec4& c0,
-                                 const Vec4& c1,
-                                 const Vec4& c2) 
+bool PixelPipeline::drawTriangle(const Triangle& triangle) 
 {
-    return m_renderer.drawTriangle(v0, v1, v2, tc0, tc1, tc2, c0, c1, c2);
+    return m_renderer.drawTriangle(triangle);
 }
 
 bool PixelPipeline::updatePipeline()
 {
     bool ret { true };
-    if ((m_texEnvMode == TexEnvMode::COMBINE) && (m_texEnvConfUploaded0.serialize() != m_texEnvConf0.serialize()))
+    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
     {
-        ret = ret && m_renderer.setTexEnv(IRenderer::TMU::TMU0, m_texEnvConf0);
-        m_texEnvConfUploaded0 = m_texEnvConf0;
+        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize()))
+        {
+            ret = ret && m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+            m_tmuConf[i].texEnvConfUploaded = m_tmuConf[i].texEnvConf;
+        }
     }
+    
     if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize())
     {
         ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
@@ -67,16 +66,16 @@ bool PixelPipeline::updatePipeline()
 
 bool PixelPipeline::uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat)
 {        
-    return uploadTexture({ pixels, sizeX, sizeY, m_texWrapModeS, m_texWrapModeT, m_texEnableMagFilter, intendedPixelFormat });
+    return uploadTexture({ pixels, sizeX, sizeY, m_tmuConf[m_tmu].texWrapModeS, m_tmuConf[m_tmu].texWrapModeT, m_tmuConf[m_tmu].texEnableMagFilter, intendedPixelFormat });
 }
 
 bool PixelPipeline::uploadTexture(const TextureObject& texObj)
 {
-    bool ret = m_renderer.updateTexture(m_boundTexture, texObj);
+    bool ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, texObj);
             
     // Rebind texture to update the rasterizer with the new texture meta information
     // TODO: Check if this is still required
-    ret = ret && useTexture(TMU::TMU0);
+    ret = ret && useTexture();
     return ret;
 }
 
@@ -167,14 +166,14 @@ bool PixelPipeline::updateFogLut()
     return m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
 }
 
-bool PixelPipeline::useTexture(const TMU& tmu)
+bool PixelPipeline::useTexture()
 {
-    return m_renderer.useTexture(tmu, m_boundTexture);
+    return m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
 }
 
 bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
 {
-    m_texEnvMode = mode;
+    m_tmuConf[m_tmu].texEnvMode = mode;
     IRenderer::TexEnvConf texEnvConf {};
     switch (mode) {
     case TexEnvMode::DISABLE:
@@ -232,17 +231,17 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
     }
     if (mode != TexEnvMode::COMBINE)
     {
-        return m_renderer.setTexEnv(IRenderer::TMU::TMU0, texEnvConf);
+        return m_renderer.setTexEnv(m_tmu, texEnvConf);
     }
     return true;
 }
 
 bool PixelPipeline::setTexEnvColor(const Vec4& color)
 {
-    return m_renderer.setTexEnvColor({ { static_cast<uint8_t>(color[0] * 255.0f),
-                                         static_cast<uint8_t>(color[1] * 255.0f),
-                                         static_cast<uint8_t>(color[2] * 255.0f),
-                                         static_cast<uint8_t>(color[3] * 255.0f) } });
+    return m_renderer.setTexEnvColor(m_tmu, { { static_cast<uint8_t>(color[0] * 255.0f),
+                                                static_cast<uint8_t>(color[1] * 255.0f),
+                                                static_cast<uint8_t>(color[2] * 255.0f),
+                                                static_cast<uint8_t>(color[3] * 255.0f) } });
 }
 
 bool PixelPipeline::setClearColor(const Vec4& color)

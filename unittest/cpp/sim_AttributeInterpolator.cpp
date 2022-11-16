@@ -33,11 +33,13 @@ static constexpr uint32_t RASTERIZER_M_AXIS_G = 1;
 static constexpr uint32_t RASTERIZER_M_AXIS_B = 2;
 static constexpr uint32_t RASTERIZER_M_AXIS_A = 3;
 static constexpr uint32_t RASTERIZER_M_AXIS_Z = 4;
-static constexpr uint32_t RASTERIZER_M_AXIS_S = 5;
-static constexpr uint32_t RASTERIZER_M_AXIS_T = 6;
-static constexpr uint32_t RASTERIZER_M_AXIS_W = 7;
-static constexpr uint32_t RASTERIZER_M_AXIS_SCREEN_XY_POS = 8;
-static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 9;
+static constexpr uint32_t RASTERIZER_M_AXIS_TEX1_S = 5;
+static constexpr uint32_t RASTERIZER_M_AXIS_TEX1_T = 6;
+static constexpr uint32_t RASTERIZER_M_AXIS_TEX0_S = 7;
+static constexpr uint32_t RASTERIZER_M_AXIS_TEX0_T = 8;
+static constexpr uint32_t RASTERIZER_M_AXIS_W = 9;
+static constexpr uint32_t RASTERIZER_M_AXIS_SCREEN_XY_POS = 10;
+static constexpr uint32_t RASTERIZER_M_AXIS_FRAMEBUFFER_INDEX = 11;
 
 union ScreenPos {
     uint32_t u32;
@@ -57,15 +59,24 @@ void clk(VAttributeInterpolator* t)
 
 struct Attributes 
 {
-    float sb = 0.0f;
-    float sx = 0.0f;
-    float sy = 0.0f;
-    float tb = 0.0f;
-    float tx = 0.0f;
-    float ty = 0.0f;
-    float qb = 0.0f;
-    float qx = 0.0f;
-    float qy = 0.0f;
+    float sb0 = 0.0f;
+    float sx0 = 0.0f;
+    float sy0 = 0.0f;
+    float tb0 = 0.0f;
+    float tx0 = 0.0f;
+    float ty0 = 0.0f;
+    float qb0 = 0.0f;
+    float qx0 = 0.0f;
+    float qy0 = 0.0f;
+    float sb1 = 0.0f;
+    float sx1 = 0.0f;
+    float sy1 = 0.0f;
+    float tb1 = 0.0f;
+    float tx1 = 0.0f;
+    float ty1 = 0.0f;
+    float qb1 = 0.0f;
+    float qx1 = 0.0f;
+    float qy1 = 0.0f;
     float wb = 0.0f;
     float wx = 0.0f;
     float wy = 0.0f;
@@ -88,9 +99,12 @@ struct Attributes
 
 struct AttributesResult
 {
-    float s = 0.0f;
-    float t = 0.0f;
-    float q = 0.0f;
+    float s0 = 0.0f;
+    float t0 = 0.0f;
+    float q0 = 0.0f;
+    float s1 = 0.0f;
+    float t1 = 0.0f;
+    float q1 = 0.0f;
     float w = 0.0f;
     float z = 0.0f;
     float r = 0.0f;
@@ -103,12 +117,18 @@ void calculateVertexAttributes(Attributes attr,
                                uint16_t x, uint16_t y, 
                                AttributesResult& res)
 {
-    attr.sx *= x;
-    attr.sy *= y;
-    attr.tx *= x;
-    attr.ty *= y;
-    attr.qx *= x;
-    attr.qy *= y;
+    attr.sx0 *= x;
+    attr.sy0 *= y;
+    attr.tx0 *= x;
+    attr.ty0 *= y;
+    attr.qx0 *= x;
+    attr.qy0 *= y;
+    attr.sx1 *= x;
+    attr.sy1 *= y;
+    attr.tx1 *= x;
+    attr.ty1 *= y;
+    attr.qx1 *= x;
+    attr.qy1 *= y;
     attr.wx *= x;
     attr.wy *= y;
     attr.zx *= x;
@@ -123,9 +143,12 @@ void calculateVertexAttributes(Attributes attr,
     attr.ay *= y;
 
     res.w = attr.wb + (attr.wx + attr.wy);
-    res.s = attr.sb + (attr.sx + attr.sy);
-    res.t = attr.tb + (attr.tx + attr.ty);
-    res.q = attr.qb + (attr.qx + attr.qy);
+    res.s0 = attr.sb0 + (attr.sx0 + attr.sy0);
+    res.t0 = attr.tb0 + (attr.tx0 + attr.ty0);
+    res.q0 = attr.qb0 + (attr.qx0 + attr.qy0);
+    res.s1 = attr.sb1 + (attr.sx1 + attr.sy1);
+    res.t1 = attr.tb1 + (attr.tx1 + attr.ty1);
+    res.q1 = attr.qb1 + (attr.qx1 + attr.qy1);
     res.z = attr.zb + (attr.zx + attr.zy);
     res.r = attr.rb + (attr.rx + attr.ry);
     res.g = attr.gb + (attr.gx + attr.gy);
@@ -133,11 +156,16 @@ void calculateVertexAttributes(Attributes attr,
     res.a = attr.ab + (attr.ax + attr.ay);
 
     res.w = 1.0f / res.w;
-    res.q = 1.0f / res.q;
+    res.q0 = 1.0f / res.q0;
+    res.q1 = 1.0f / res.q1;
 
-    res.s *= res.q;
-    res.t *= res.q;
-    res.q *= res.q;
+    res.s0 *= res.q0;
+    res.t0 *= res.q0;
+    res.q0 *= res.q0;
+
+    res.s1 *= res.q1;
+    res.t1 *= res.q1;
+    res.q1 *= res.q1;
 
     // Perspective correction for colors is currently disabled
     // res.r *= res.w;
@@ -163,15 +191,15 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     // Reset the pipeline
     for (int i = 0; i < CLOCK_DELAY; i++)
     {
-        top->tex_s = 0;
-        top->tex_s_inc_x = 0;
-        top->tex_s_inc_y = 0;
-        top->tex_t = 0;
-        top->tex_t_inc_x = 0;
-        top->tex_t_inc_y = 0;
-        top->tex_q = 0;
-        top->tex_q_inc_x = 0;
-        top->tex_q_inc_y = 0;
+        top->tex0_s = 0;
+        top->tex0_s_inc_x = 0;
+        top->tex0_s_inc_y = 0;
+        top->tex0_t = 0;
+        top->tex0_t_inc_x = 0;
+        top->tex0_t_inc_y = 0;
+        top->tex0_q = 0;
+        top->tex0_q_inc_x = 0;
+        top->tex0_q_inc_y = 0;
         top->depth_w = 0;
         top->depth_w_inc_x = 0;
         top->depth_w_inc_y = 0;
@@ -198,8 +226,8 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         top->s_axis_tvalid = 0;
         top->s_axis_tlast = 0;
     }
-    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_S] == 0);
-    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_T] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_S] == 0);
+    REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_T] == 0);
     REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_W] == 0);
     REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_Z] == 0);
     REQUIRE(top->m_axis_tdata[RASTERIZER_M_AXIS_R] == 0);
@@ -220,15 +248,24 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
     Attributes attr;
 
-    attr.sb = 3.0;
-    attr.sx = 0.50;
-    attr.sy = 0.25;
-    attr.tb = 4.0;
-    attr.tx = 0.20;
-    attr.ty = 0.10;
-    attr.qb = 0.06754551082849503;
-    attr.qx = -1.5070709196152166e-05;
-    attr.qy = 3.105480573140085e-05;
+    attr.sb0 = 3.0;
+    attr.sx0 = 0.50;
+    attr.sy0 = 0.25;
+    attr.tb0 = 4.0;
+    attr.tx0 = 0.20;
+    attr.ty0 = 0.10;
+    attr.qb0 = 0.06754551082849503;
+    attr.qx0 = -1.5070709196152166e-05;
+    attr.qy0 = 3.105480573140085e-05;
+    attr.sb1 = 1.0;
+    attr.sx1 = 2.50;
+    attr.sy1 = 3.25;
+    attr.tb1 = 3.0;
+    attr.tx1 = 2.20;
+    attr.ty1 = 1.10;
+    attr.qb1 = 1.06754551082849503;
+    attr.qx1 = -2.5070709196152166e-05;
+    attr.qy1 = 0.105480573140085e-05;
     attr.wb = 5.06754551082849503;
     attr.wx = -3.5070709196152166e-02;
     attr.wy = 9.105480573140085e-03;
@@ -249,15 +286,24 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     attr.ay = 0.2;
 
     // Set the vertex attributes
-    top->tex_s = *(uint32_t*)&attr.sb;
-    top->tex_s_inc_x = *(uint32_t*)&attr.sx;
-    top->tex_s_inc_y = *(uint32_t*)&attr.sy;
-    top->tex_t = *(uint32_t*)&attr.tb;
-    top->tex_t_inc_x = *(uint32_t*)&attr.tx;
-    top->tex_t_inc_y = *(uint32_t*)&attr.ty;
-    top->tex_q = *(uint32_t*)&attr.qb;
-    top->tex_q_inc_x = *(uint32_t*)&attr.qx;
-    top->tex_q_inc_y = *(uint32_t*)&attr.qy;
+    top->tex0_s = *(uint32_t*)&attr.sb0;
+    top->tex0_s_inc_x = *(uint32_t*)&attr.sx0;
+    top->tex0_s_inc_y = *(uint32_t*)&attr.sy0;
+    top->tex0_t = *(uint32_t*)&attr.tb0;
+    top->tex0_t_inc_x = *(uint32_t*)&attr.tx0;
+    top->tex0_t_inc_y = *(uint32_t*)&attr.ty0;
+    top->tex0_q = *(uint32_t*)&attr.qb0;
+    top->tex0_q_inc_x = *(uint32_t*)&attr.qx0;
+    top->tex0_q_inc_y = *(uint32_t*)&attr.qy0;
+    top->tex1_s = *(uint32_t*)&attr.sb1;
+    top->tex1_s_inc_x = *(uint32_t*)&attr.sx1;
+    top->tex1_s_inc_y = *(uint32_t*)&attr.sy1;
+    top->tex1_t = *(uint32_t*)&attr.tb1;
+    top->tex1_t_inc_x = *(uint32_t*)&attr.tx1;
+    top->tex1_t_inc_y = *(uint32_t*)&attr.ty1;
+    top->tex1_q = *(uint32_t*)&attr.qb1;
+    top->tex1_q_inc_x = *(uint32_t*)&attr.qx1;
+    top->tex1_q_inc_y = *(uint32_t*)&attr.qy1;
     top->depth_w = *(uint32_t*)&attr.wb;
     top->depth_w_inc_x = *(uint32_t*)&attr.wx;
     top->depth_w_inc_y = *(uint32_t*)&attr.wy;
@@ -298,8 +344,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             REQUIRE(sp.val.x == (400 + static_cast<uint16_t>(i - CLOCK_DELAY)));
             REQUIRE(sp.val.y == (200 + static_cast<uint16_t>(i - CLOCK_DELAY)));
 
-            float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
-            float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
+            float s0 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_S]);
+            float t0 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_T]);
+            float s1 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX1_S]);
+            float t1 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX1_T]);
             float w = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_W]);
             float z = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_Z]);
             float r = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_R]);
@@ -315,8 +363,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             
             //printf("%d %f %f %f %f %f %f\n", i, s, sr, t, tr, w, wr);
             
-            REQUIRE(Approx(s).epsilon(0.01) == expectedResult.s);
-            REQUIRE(Approx(t).epsilon(0.01) == expectedResult.t);
+            REQUIRE(Approx(s0).epsilon(0.01) == expectedResult.s0);
+            REQUIRE(Approx(t0).epsilon(0.01) == expectedResult.t0);
+            REQUIRE(Approx(s1).epsilon(0.01) == expectedResult.s1);
+            REQUIRE(Approx(t1).epsilon(0.01) == expectedResult.t1);
             REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
             REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
             REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);
@@ -359,8 +409,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(sp.val.x == (400 + static_cast<uint16_t>(i)));
         REQUIRE(sp.val.y == (200 + static_cast<uint16_t>(i)));
 
-        float s = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_S]);
-        float t = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_T]);
+        float s0 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_S]);
+        float t0 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX0_T]);
+        float s1 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX1_S]);
+        float t1 = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_TEX1_T]);
         float w = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_W]);
         float z = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_Z]);
         float r = *(float*)&(top->m_axis_tdata[RASTERIZER_M_AXIS_R]);
@@ -374,8 +426,10 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
                                   bb.val.x, bb.val.y, 
                                   expectedResult);
         
-        REQUIRE(Approx(s).epsilon(0.01) == expectedResult.s);
-        REQUIRE(Approx(t).epsilon(0.01) == expectedResult.t);
+        REQUIRE(Approx(s0).epsilon(0.01) == expectedResult.s0);
+        REQUIRE(Approx(t0).epsilon(0.01) == expectedResult.t0);
+        REQUIRE(Approx(s1).epsilon(0.01) == expectedResult.s1);
+        REQUIRE(Approx(t1).epsilon(0.01) == expectedResult.t1);
         REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
         REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
         REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);

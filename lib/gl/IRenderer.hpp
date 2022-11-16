@@ -28,10 +28,9 @@
 class IRenderer
 {
 public:
-    enum class TMU 
-    {
-        TMU0
-    };
+    static constexpr std::size_t MAX_TMU_COUNT { 2 };
+
+    using TMU = uint8_t;
 
     class TexEnvConf
     {
@@ -262,14 +261,14 @@ public:
         void setEnableBlending(const bool val) { m_regVal.fields.blending = val; }
         void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
         void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
-        void setEnableTmu0(const bool val) { m_regVal.fields.tmu0 = val; }
+        void setEnableTmu(const uint8_t tmu, const bool val) { if (tmu == 0) m_regVal.fields.tmu0 = val; else m_regVal.fields.tmu1 = val; }
         void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
 
         bool getEnableFog() const { return m_regVal.fields.fog; }
         bool getEnableBlending() const { return m_regVal.fields.blending; }
         bool getEnableDepthTest() const { return m_regVal.fields.depthTest; }
         bool getEnableAlphaTest() const { return m_regVal.fields.alphaTest; }
-        bool getEnableTmu0() const { return m_regVal.fields.tmu0; }
+        bool getEnableTmu(const uint8_t tmu) const { return (tmu == 0) ? m_regVal.fields.tmu0 : m_regVal.fields.tmu1; }
         bool getEnableScissor() const { return m_regVal.fields.scissor; }
 
         uint32_t serialize() const { return m_regVal.data; }
@@ -285,6 +284,7 @@ public:
                     , alphaTest(false)
                     , tmu0(false)
                     , scissor(false)
+                    , tmu1(false)
                 { }
 
                 bool fog : 1;
@@ -293,6 +293,7 @@ public:
                 bool alphaTest : 1;
                 bool tmu0 : 1;
                 bool scissor : 1;
+                bool tmu1 : 1;
             } fields {};
             uint32_t data;
         } m_regVal;
@@ -413,17 +414,22 @@ public:
         const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
+    struct Triangle
+    {
+        const Vec4& vertex0;
+        const Vec4& vertex1;
+        const Vec4& vertex2;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture0;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture1;
+        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture2;
+        const Vec4& color0;
+        const Vec4& color1;
+        const Vec4& color2;
+    };
+
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
-    virtual bool drawTriangle(const Vec4& v0,
-                              const Vec4& v1,
-                              const Vec4& v2,
-                              const Vec4& tc0,
-                              const Vec4& tc1,
-                              const Vec4& tc2,
-                              const Vec4& c0,
-                              const Vec4& c1,
-                              const Vec4& c2) = 0;
+    virtual bool drawTriangle(const Triangle& triangle) = 0;
 
     /// @brief Will send a picture from working buffers, caches or whatever to the buffer which is
     ///    read from the display
@@ -480,9 +486,10 @@ public:
     virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) = 0;
 
     /// @brief Set a static color for the tex environment
+    /// @param target is used TMU
     /// @param color the color in ABGR
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setTexEnvColor(const Vec4i& color) = 0;
+    virtual bool setTexEnvColor(const TMU target, const Vec4i& color) = 0;
 
     /// @brief Updates the fragment pipeline configuration 
     /// @param pipelineConf The new pipeline configuration 

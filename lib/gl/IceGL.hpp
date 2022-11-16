@@ -44,7 +44,6 @@ public:
 
     VertexPipeline& vertexPipeline() { return m_vertexPipeline; }
     PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
-    RenderObj& renderObj() { return m_renderObj; }
     VertexQueue& vertexQueue() { return m_vertexQueue; }
     void commit();
 
@@ -53,7 +52,6 @@ private:
     IRenderer& m_renderer;
     PixelPipeline m_pixelPipeline;
     VertexPipeline m_vertexPipeline;
-    RenderObj m_renderObj;
     VertexQueue m_vertexQueue {};
 
     // Errors

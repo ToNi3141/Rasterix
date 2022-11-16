@@ -76,15 +76,24 @@ module Rasterix #(
     ///////////////////////////
     // Regs and wires
     ///////////////////////////
-    // Texture access
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr11;
-    wire [31 : 0]                   texelInput00;
-    wire [31 : 0]                   texelInput01;
-    wire [31 : 0]                   texelInput10;
-    wire [31 : 0]                   texelInput11;
+    // Texture access TMU0
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
+    wire [31 : 0]                   texel0Input00;
+    wire [31 : 0]                   texel0Input01;
+    wire [31 : 0]                   texel0Input10;
+    wire [31 : 0]                   texel0Input11;
+    // Texture access TMU1
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
+    wire [31 : 0]                   texel1Input00;
+    wire [31 : 0]                   texel1Input01;
+    wire [31 : 0]                   texel1Input10;
+    wire [31 : 0]                   texel1Input11;
 
     // Color buffer access
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
@@ -130,10 +139,16 @@ module Rasterix #(
     wire [15 : 0]   confDepthBufferClearDepth;
 
     // Texture memory AXIS
+    // TMU0 Texture Stream
     wire            s_texture_steam_tmu0_axis_tvalid;
     wire            s_texture_steam_tmu0_axis_tready;
     wire            s_texture_steam_tmu0_axis_tlast;
     wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu0_axis_tdata;
+    // TMU1 Texture Stream
+    wire            s_texture_steam_tmu1_axis_tvalid;
+    wire            s_texture_steam_tmu1_axis_tready;
+    wire            s_texture_steam_tmu1_axis_tlast;
+    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu1_axis_tdata;
 
     // Attribute interpolator
     wire            m_attr_inter_axis_tvalid;
@@ -142,16 +157,18 @@ module Rasterix #(
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Configs
-    wire [31 : 0]                                   confFeatureEnable;
-    wire [31 : 0]                                   confFragmentPipelineConfig;
-    wire [31 : 0]                                   confFragmentPipelineFogColor;
-    wire [31 : 0]                                   confTMU0TexEnvConfig;
-    wire [31 : 0]                                   confTMU0TextureConfig;
-    wire [31 : 0]                                   confTMU0TexEnvColor;
-    wire [TEXTURE_STREAM_PIXEL_FORMAT_SIZE - 1: 0]  confTMU0PixelFormat;
-    wire [31 : 0]                                   confScissorStartXY;
-    wire [31 : 0]                                   confScissorEndXY;
-    wire [11 : 0]                                   confYOffset;
+    wire [31 : 0]   confFeatureEnable;
+    wire [31 : 0]   confFragmentPipelineConfig;
+    wire [31 : 0]   confFragmentPipelineFogColor;
+    wire [31 : 0]   confTMU0TexEnvConfig;
+    wire [31 : 0]   confTMU0TextureConfig;
+    wire [31 : 0]   confTMU0TexEnvColor;
+    wire [31 : 0]   confScissorStartXY;
+    wire [31 : 0]   confScissorEndXY;
+    wire [11 : 0]   confYOffset;
+    wire [31 : 0]   confTMU1TexEnvConfig;
+    wire [31 : 0]   confTMU1TextureConfig;
+    wire [31 : 0]   confTMU1TexEnvColor;
 
     // Rasterizer
     wire            m_rasterizer_axis_tvalid;
@@ -194,7 +211,9 @@ module Rasterix #(
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
-        .confTMU0PixelFormat(confTMU0PixelFormat),
+        .confTMU1TexEnvConfig(confTMU1TexEnvConfig),
+        .confTMU1TextureConfig(confTMU1TextureConfig),
+        .confTMU1TexEnvColor(confTMU1TexEnvColor),
         .confScissorStartXY(confScissorStartXY),
         .confScissorEndXY(confScissorEndXY),
         .confYOffset(confYOffset),
@@ -220,10 +239,16 @@ module Rasterix #(
         .confDepthBufferClearDepth(confDepthBufferClearDepth),
 
         // Texture AXIS interface
+        // TMU0
         .m_texture_steam_tmu0_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
         .m_texture_steam_tmu0_axis_tready(s_texture_steam_tmu0_axis_tready),
         .m_texture_steam_tmu0_axis_tlast(s_texture_steam_tmu0_axis_tlast),
         .m_texture_steam_tmu0_axis_tdata(s_texture_steam_tmu0_axis_tdata),
+        // TMU1
+        .m_texture_steam_tmu1_axis_tvalid(s_texture_steam_tmu1_axis_tvalid),
+        .m_texture_steam_tmu1_axis_tready(s_texture_steam_tmu1_axis_tready),
+        .m_texture_steam_tmu1_axis_tlast(s_texture_steam_tmu1_axis_tlast),
+        .m_texture_steam_tmu1_axis_tdata(s_texture_steam_tmu1_axis_tdata),
 
         // Debug
         .dbgStreamState(dbgStreamState)
@@ -252,17 +277,17 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .confPixelFormat(confTMU0PixelFormat),
+        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
-        .texelAddr00(texelAddr00),
-        .texelAddr01(texelAddr01),
-        .texelAddr10(texelAddr10),
-        .texelAddr11(texelAddr11),
+        .texelAddr00(texel0Addr00),
+        .texelAddr01(texel0Addr01),
+        .texelAddr10(texel0Addr10),
+        .texelAddr11(texel0Addr11),
 
-        .texelOutput00(texelInput00),
-        .texelOutput01(texelInput01),
-        .texelOutput10(texelInput10),
-        .texelOutput11(texelInput11),
+        .texelOutput00(texel0Input00),
+        .texelOutput01(texel0Input01),
+        .texelOutput10(texel0Input10),
+        .texelOutput11(texel0Input11),
 
         .s_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
         .s_axis_tready(s_texture_steam_tmu0_axis_tready),
@@ -272,6 +297,31 @@ module Rasterix #(
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+
+    TextureBuffer textureBufferTMU1 (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+
+        .texelAddr00(texel1Addr00),
+        .texelAddr01(texel1Addr01),
+        .texelAddr10(texel1Addr10),
+        .texelAddr11(texel1Addr11),
+
+        .texelOutput00(texel1Input00),
+        .texelOutput01(texel1Input01),
+        .texelOutput10(texel1Input10),
+        .texelOutput11(texel1Input11),
+
+        .s_axis_tvalid(s_texture_steam_tmu1_axis_tvalid),
+        .s_axis_tready(s_texture_steam_tmu1_axis_tready),
+        .s_axis_tlast(s_texture_steam_tmu1_axis_tlast),
+        .s_axis_tdata(s_texture_steam_tmu1_axis_tdata)
+    );
+    defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+    defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -404,15 +454,24 @@ module Rasterix #(
         .m_axis_tlast(m_attr_inter_axis_tlast),
         .m_axis_tdata(m_attr_inter_axis_tdata),
 
-        .tex_s(triangleParams[TRIANGLE_STREAM_INC_TEX_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_t(triangleParams[TRIANGLE_STREAM_INC_TEX_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_q(triangleParams[TRIANGLE_STREAM_INC_TEX_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_q(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex0_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_s(triangleParams[TRIANGLE_STREAM_INC_TEX1_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_t(triangleParams[TRIANGLE_STREAM_INC_TEX1_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_q(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+        .tex1_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -449,21 +508,34 @@ module Rasterix #(
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
+        .confTMU1TexEnvConfig(confTMU1TexEnvConfig),
+        .confTMU1TextureConfig(confTMU1TextureConfig),
+        .confTMU1TexEnvColor(confTMU1TexEnvColor),
 
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),
         .s_axis_tlast(m_attr_inter_axis_tlast),
         .s_axis_tdata(m_attr_inter_axis_tdata),
 
-        .texelAddr00(texelAddr00),
-        .texelAddr01(texelAddr01),
-        .texelAddr10(texelAddr10),
-        .texelAddr11(texelAddr11),
+        .texel0Addr00(texel0Addr00),
+        .texel0Addr01(texel0Addr01),
+        .texel0Addr10(texel0Addr10),
+        .texel0Addr11(texel0Addr11),
 
-        .texelInput00(texelInput00),
-        .texelInput01(texelInput01),
-        .texelInput10(texelInput10),
-        .texelInput11(texelInput11),
+        .texel0Input00(texel0Input00),
+        .texel0Input01(texel0Input01),
+        .texel0Input10(texel0Input10),
+        .texel0Input11(texel0Input11),
+
+        .texel1Addr00(texel1Addr00),
+        .texel1Addr01(texel1Addr01),
+        .texel1Addr10(texel1Addr10),
+        .texel1Addr11(texel1Addr11),
+
+        .texel1Input00(texel1Input00),
+        .texel1Input01(texel1Input01),
+        .texel1Input10(texel1Input10),
+        .texel1Input11(texel1Input11),
 
         .colorIndexRead(colorIndexRead),
         .colorIn(colorIn),

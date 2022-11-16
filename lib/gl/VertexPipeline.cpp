@@ -147,12 +147,12 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 
         Vec4Array vertex;
         Vec4Array color;
-        Vec4Array texCoord;
+        TexCoordArray texCoord;
         Vec3Array normal;
 
         Vec4Array transformedVertex;
         Vec4Array transformedColor;
-        Vec4Array transformedTexCoord;
+        TexCoordArray transformedTexCoord;
         Vec3Array transformedNormal;
 
         loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
@@ -193,25 +193,28 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 bool VertexPipeline::drawTriangle(const Triangle& triangle)
 {
     Clipper::ClipVertList vertList;
-    Clipper::ClipVertList texCoordList;
+    Clipper::ClipTexCoordList texCoordList;
     Clipper::ClipVertList colorList;
     Clipper::ClipVertList vertListBuffer;
-    Clipper::ClipVertList texCoordListBuffer;
+    Clipper::ClipTexCoordList texCoordListBuffer;
     Clipper::ClipVertList colorListBuffer;
 
     vertList[0] = triangle.v0;
     vertList[1] = triangle.v1;
     vertList[2] = triangle.v2;
 
-    texCoordList[0] = triangle.tc0;
-    texCoordList[1] = triangle.tc1;
-    texCoordList[2] = triangle.tc2;
+    for (uint8_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
+    {
+        texCoordList[0][i] = triangle.tc0[i];
+        texCoordList[1][i] = triangle.tc1[i];
+        texCoordList[2][i] = triangle.tc2[i];
+    }
+
 
     colorList[0] = triangle.color0;
     colorList[1] = triangle.color1;
     colorList[2] = triangle.color2;
 
-    // Because if flat shading, the color doesn't have to be interpolated during clipping, so it can be ignored for now...
     auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
@@ -220,11 +223,14 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // Perspective division
         vertListClipped[i].perspectiveDivide();
 
-        // Perspective correction of the texture coordinates
-        texCoordListClipped[i].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
-        // TODO: Perspective correction of the color 
-        // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
-        // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
+        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
+        {
+            // Perspective correction of the texture coordinates
+            texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+            // TODO: Perspective correction of the color 
+            // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
+            // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
+        }
 
         // Viewport transformation of the vertex
         viewportTransform(vertListClipped[i]);
@@ -246,15 +252,16 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
     {
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan
-        const bool success = m_renderer.drawTriangle(vertListClipped[0],
+        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+        const bool success = m_renderer.drawTriangle( { vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
-                texCoordListClipped[0],
-                texCoordListClipped[i - 2],
-                texCoordListClipped[i - 1],
+                { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } },
+                { { &texCoordListClipped[i - 2][0], &texCoordListClipped[i - 2][1] } },
+                { { &texCoordListClipped[i - 1][0], &texCoordListClipped[i - 1][1] } },
                 colorListClipped[0],
                 colorListClipped[i - 2],
-                colorListClipped[i - 1]);
+                colorListClipped[i - 1] });
         if (!success)
         {
             return false;
@@ -309,7 +316,7 @@ bool VertexPipeline::drawLine(const Line& line)
     return true;
 }
 
-void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, Vec4Array& tex, const std::size_t offset, const std::size_t count)
+void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count)
 {
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
@@ -326,9 +333,12 @@ void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec
         {
             obj.getNormal(normal[i], index);
         }
-        if (obj.texCoordArrayEnabled())
+        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
-            obj.getTexCoord(tex[i], index);
+            if (obj.texCoordArrayEnabled()[j])
+            {
+                obj.getTexCoord(j, tex[i][j], index);
+            }
         }
     }
 }
@@ -337,15 +347,15 @@ void VertexPipeline::transform(
     Vec4Array& transformedVertex, 
     Vec4Array& transformedColor, 
     Vec3Array& transformedNormal, 
-    Vec4Array& transformedTex, 
+    TexCoordArray& transformedTex, 
     const bool enableVertexArray,
     const bool enableColorArray,
     const bool enableNormalArray,
-    const bool enableTexArray,
+    const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
     const Vec4Array& vertex, 
     const Vec4Array& color, 
     const Vec3Array& normal, 
-    const Vec4Array& tex,
+    const TexCoordArray& tex,
     const Vec4& vertexColor,
     const std::size_t count)
 {
@@ -390,15 +400,18 @@ void VertexPipeline::transform(
 
     for (std::size_t i = 0; i < count; i++)
     {
-        if (enableTexArray)
+        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
-            transformedTex[i] = tex[i];
+            if (enableTexArray[j])
+            {
+                transformedTex[i][j] = tex[i][j];
+            }
+            else
+            {
+                transformedTex[i][j].initHomogeneous();
+            }
+            m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
         }
-        else
-        {
-            transformedTex[i].initHomogeneous();
-        }
-        m_texGen.calculateTexGenCoords(m_m, transformedTex[i], vertex[i]);
     }
 
     if (enableVertexArray)
@@ -408,7 +421,7 @@ void VertexPipeline::transform(
 bool VertexPipeline::drawTriangleArray(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
-    const Vec4Array& tex, 
+    const TexCoordArray& tex, 
     const std::size_t count, 
     const RenderObj::DrawMode drawMode,
     const bool lastRound)
@@ -513,14 +526,16 @@ bool VertexPipeline::drawTriangleArray(
 
         if (isTriangle)
         {
-            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], tex[i0], tex[i1], tex[i2], color[i0], color[i1], color[i2] }))
+            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] }))
             {
                 return false;
             }
         }
         else
         {
-            if (!drawLine({ vertex[i0], vertex[i1], tex[i0], tex[i1], color[i0], color[i1] }))
+            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+            if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] }))
             {
                 return false;
             }
@@ -801,7 +816,7 @@ Lighting& VertexPipeline::getLighting()
 
 TexGen& VertexPipeline::getTexGen()
 {
-    return m_texGen;
+    return m_texGen[m_tmu];
 }
 
 void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)

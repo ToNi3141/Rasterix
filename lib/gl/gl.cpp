@@ -206,16 +206,16 @@ void setClientState(const GLenum array, bool enable)
 {
     switch (array) {
     case GL_COLOR_ARRAY:
-        IceGL::getInstance().renderObj().enableColorArray(enable);
+        IceGL::getInstance().vertexQueue().enableColorArray(enable);
         break;
     case GL_NORMAL_ARRAY:
-        IceGL::getInstance().renderObj().enableNormalArray(enable);
+        IceGL::getInstance().vertexQueue().enableNormalArray(enable);
         break;
     case GL_TEXTURE_COORD_ARRAY:
-        IceGL::getInstance().renderObj().enableTexCoordArray(enable);
+        IceGL::getInstance().vertexQueue().enableTexCoordArray(enable);
         break;
     case GL_VERTEX_ARRAY:
-        IceGL::getInstance().renderObj().enableVertexArray(enable);
+        IceGL::getInstance().vertexQueue().enableVertexArray(enable);
         break;
     default:
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -899,22 +899,22 @@ GLAPI void APIENTRY glDisable(GLenum cap)
     {
     case GL_TEXTURE_2D:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu0(false);
+        IceGL::getInstance().pixelPipeline().setEnableTmu(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(false);
+        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(false);
+        IceGL::getInstance().pixelPipeline().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(false);
+        IceGL::getInstance().pixelPipeline().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
@@ -943,10 +943,10 @@ GLAPI void APIENTRY glDisable(GLenum cap)
         IceGL::getInstance().vertexPipeline().enableColorMaterial(false);
         break;
     case GL_FOG:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
+        IceGL::getInstance().pixelPipeline().setEnableFog(false);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(false);
+        IceGL::getInstance().pixelPipeline().setEnableScissor(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap {} not supported", cap);
@@ -982,16 +982,16 @@ GLAPI void APIENTRY glEnable(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu0(true);
+        IceGL::getInstance().pixelPipeline().setEnableTmu(true);
         break;
     case GL_ALPHA_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(true);
+        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(true);
+        IceGL::getInstance().pixelPipeline().setEnableDepthTest(true);
         break;
     case GL_BLEND:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(true);
+        IceGL::getInstance().pixelPipeline().setEnableBlending(true);
         break;
     case GL_LIGHTING:
         IceGL::getInstance().vertexPipeline().getLighting().enableLighting(true);
@@ -1019,10 +1019,10 @@ GLAPI void APIENTRY glEnable(GLenum cap)
         IceGL::getInstance().vertexPipeline().enableColorMaterial(true);
         break;
     case GL_FOG:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
+        IceGL::getInstance().pixelPipeline().setEnableFog(true);
         break;
     case GL_SCISSOR_TEST:
-        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(true);
+        IceGL::getInstance().pixelPipeline().setEnableScissor(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap {} not supported", cap);
@@ -1034,8 +1034,7 @@ GLAPI void APIENTRY glEnable(GLenum cap)
 GLAPI void APIENTRY glEnd(void)
 {
     SPDLOG_DEBUG("glEnd called");
-    IceGL::getInstance().vertexQueue().end();
-    IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().vertexQueue().renderObj());
+    IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().vertexQueue().end());
 }
 
 GLAPI void APIENTRY glEndList(void)
@@ -2783,7 +2782,7 @@ GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             case GL_Q:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             default:
@@ -2804,7 +2803,7 @@ GLAPI void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             case GL_Q:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
+                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             default:
@@ -3259,7 +3258,7 @@ GLAPI void APIENTRY glBindTexture(GLenum target, GLuint texture)
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().pixelPipeline().useTexture(PixelPipeline::TMU::TMU0);
+        IceGL::getInstance().pixelPipeline().useTexture();
     }
     else 
     {
@@ -3273,10 +3272,10 @@ GLAPI void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, cons
 {
     SPDLOG_DEBUG("glColorPointer size {} type {} stride {} called", size, type, stride);
 
-    IceGL::getInstance().renderObj().setColorSize(size);
-    IceGL::getInstance().renderObj().setColorType(convertType(type));
-    IceGL::getInstance().renderObj().setColorStride(stride);
-    IceGL::getInstance().renderObj().setColorPointer(pointer);
+    IceGL::getInstance().vertexQueue().setColorSize(size);
+    IceGL::getInstance().vertexQueue().setColorType(convertType(type));
+    IceGL::getInstance().vertexQueue().setColorStride(stride);
+    IceGL::getInstance().vertexQueue().setColorPointer(pointer);
 }
 
 GLAPI void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border)
@@ -3331,13 +3330,12 @@ GLAPI void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
     SPDLOG_DEBUG("glDrawArrays mode {} first {} count {} called", mode, first, count);
 
-    IceGL::getInstance().renderObj().setCount(count);
-    IceGL::getInstance().renderObj().setArrayOffset(first);
-    IceGL::getInstance().renderObj().setDrawMode(convertDrawMode(mode));
-    IceGL::getInstance().renderObj().enableIndices(false);
-    IceGL::getInstance().renderObj().setVertexColor(IceGL::getInstance().vertexQueue().color());
+    IceGL::getInstance().vertexQueue().setCount(count);
+    IceGL::getInstance().vertexQueue().setArrayOffset(first);
+    IceGL::getInstance().vertexQueue().setDrawMode(convertDrawMode(mode));
+    IceGL::getInstance().vertexQueue().enableIndices(false);
 
-    IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().renderObj());
+    IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().vertexQueue().renderObj());
 }
 
 GLAPI void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
@@ -3346,28 +3344,27 @@ GLAPI void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, cons
     IceGL::getInstance().setError(GL_NO_ERROR);
     switch (type) {
     case GL_UNSIGNED_BYTE:
-        IceGL::getInstance().renderObj().setIndicesType(RenderObj::Type::BYTE);
+        IceGL::getInstance().vertexQueue().setIndicesType(RenderObj::Type::BYTE);
         break;
     case GL_UNSIGNED_SHORT:
-        IceGL::getInstance().renderObj().setIndicesType(RenderObj::Type::SHORT);
+        IceGL::getInstance().vertexQueue().setIndicesType(RenderObj::Type::SHORT);
         break;
     case GL_UNSIGNED_INT:
-        IceGL::getInstance().renderObj().setIndicesType(RenderObj::Type::UNSIGNED_INT);
+        IceGL::getInstance().vertexQueue().setIndicesType(RenderObj::Type::UNSIGNED_INT);
         break;
     default:
         IceGL::getInstance().setError(GL_INVALID_ENUM);
         return;
     }
 
-    IceGL::getInstance().renderObj().setCount(count);
-    IceGL::getInstance().renderObj().setDrawMode(convertDrawMode(mode));
-    IceGL::getInstance().renderObj().setIndicesPointer(indices);
-    IceGL::getInstance().renderObj().enableIndices(true);
-    IceGL::getInstance().renderObj().setVertexColor(IceGL::getInstance().vertexQueue().color());
+    IceGL::getInstance().vertexQueue().setCount(count);
+    IceGL::getInstance().vertexQueue().setDrawMode(convertDrawMode(mode));
+    IceGL::getInstance().vertexQueue().setIndicesPointer(indices);
+    IceGL::getInstance().vertexQueue().enableIndices(true);
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().renderObj());
+        IceGL::getInstance().vertexPipeline().drawObj(IceGL::getInstance().vertexQueue().renderObj());
     }
 }
 
@@ -3443,9 +3440,9 @@ GLAPI void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const GLvoid *p
 {
     SPDLOG_DEBUG("glNormalPointer type {} stride {} called", type, stride);
 
-    IceGL::getInstance().renderObj().setNormalType(convertType(type));
-    IceGL::getInstance().renderObj().setNormalStride(stride);
-    IceGL::getInstance().renderObj().setNormalPointer(pointer);
+    IceGL::getInstance().vertexQueue().setNormalType(convertType(type));
+    IceGL::getInstance().vertexQueue().setNormalStride(stride);
+    IceGL::getInstance().vertexQueue().setNormalPointer(pointer);
 }
 
 GLAPI void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
@@ -3472,10 +3469,10 @@ GLAPI void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, c
 {
     SPDLOG_DEBUG("glTexCoordPointer size {} type {} stride {} called", size, type, stride);
 
-    IceGL::getInstance().renderObj().setTexCoordSize(size);
-    IceGL::getInstance().renderObj().setTexCoordType(convertType(type));
-    IceGL::getInstance().renderObj().setTexCoordStride(stride);
-    IceGL::getInstance().renderObj().setTexCoordPointer(pointer);
+    IceGL::getInstance().vertexQueue().setTexCoordSize(size);
+    IceGL::getInstance().vertexQueue().setTexCoordType(convertType(type));
+    IceGL::getInstance().vertexQueue().setTexCoordStride(stride);
+    IceGL::getInstance().vertexQueue().setTexCoordPointer(pointer);
 }
 
 GLAPI void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels)
@@ -3727,10 +3724,10 @@ GLAPI void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, con
 {
     SPDLOG_DEBUG("glVertexPointer size {} type {} stride {} called", size, type, stride);
 
-    IceGL::getInstance().renderObj().setVertexSize(size);
-    IceGL::getInstance().renderObj().setVertexType(convertType(type));
-    IceGL::getInstance().renderObj().setVertexStride(stride);
-    IceGL::getInstance().renderObj().setVertexPointer(pointer);
+    IceGL::getInstance().vertexQueue().setVertexSize(size);
+    IceGL::getInstance().vertexQueue().setVertexType(convertType(type));
+    IceGL::getInstance().vertexQueue().setVertexStride(stride);
+    IceGL::getInstance().vertexQueue().setVertexPointer(pointer);
 }
 
 // -------------------------------------------------------
@@ -3763,7 +3760,10 @@ GLAPI void APIENTRY glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffse
 // -------------------------------------------------------
 GLAPI void APIENTRY glActiveTexture(GLenum texture)
 {
-    SPDLOG_DEBUG("glActiveTexture not implemented");
+    SPDLOG_DEBUG("glActiveTexture texture {} called", texture - GL_TEXTURE0);
+    // TODO: Check how many TMUs the hardware actually has
+    IceGL::getInstance().pixelPipeline().activateTmu(texture - GL_TEXTURE0);
+    IceGL::getInstance().vertexPipeline().activateTmu(texture - GL_TEXTURE0);
 }
 
 GLAPI void APIENTRY glSampleCoverage(GLfloat value, GLboolean invert)
@@ -3808,167 +3808,201 @@ GLAPI void APIENTRY glGetCompressedTexImage(GLenum target, GLint level, GLvoid *
 
 GLAPI void APIENTRY glClientActiveTexture(GLenum texture)
 {
-    SPDLOG_DEBUG("glClientActiveTexture not implemented");
+    SPDLOG_DEBUG("glClientActiveTexture texture {} called", texture - GL_TEXTURE0);
+    IceGL::getInstance().vertexQueue().setActiveTexture(texture - GL_TEXTURE0);
 }
 
 GLAPI void APIENTRY glMultiTexCoord1d(GLenum target, GLdouble s)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1d not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1d {} ({}) called", target - GL_TEXTURE0, static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
+
 }
 
 GLAPI void APIENTRY glMultiTexCoord1dv(GLenum target, const GLdouble *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1dv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1dv {} ({}) called", target - GL_TEXTURE0, static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1f(GLenum target, GLfloat s)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1f not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1f {} ({}) called", target - GL_TEXTURE0, s);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { s, 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1fv(GLenum target, const GLfloat *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1fv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1fv {} ({}) called", target - GL_TEXTURE0, v[0]);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { v[0], 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1i(GLenum target, GLint s)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1i not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1i {} ({}) called", target - GL_TEXTURE0, static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1iv(GLenum target, const GLint *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1iv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1iv {} ({}) called", target - GL_TEXTURE0, static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1s(GLenum target, GLshort s)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1s not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1s {} ({}) called", target - GL_TEXTURE0, static_cast<float>(s));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord1sv(GLenum target, const GLshort *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord1sv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord1sv {} ({}) called", target - GL_TEXTURE0, static_cast<float>(v[0]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), 0.0f, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2d(GLenum target, GLdouble s, GLdouble t)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2d not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2d {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2dv(GLenum target, const GLdouble *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2dv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2dv {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2f not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2f {} ({}, {}) called", target - GL_TEXTURE0, s, t);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { s, t, 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2fv(GLenum target, const GLfloat *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2fv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2fv {} ({}, {}) called", target - GL_TEXTURE0, v[0], v[1]);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { v[0], v[1], 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2i(GLenum target, GLint s, GLint t)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2i not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2i {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2iv(GLenum target, const GLint *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2iv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2iv {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2s(GLenum target, GLshort s, GLshort t)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2s not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2s {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord2sv(GLenum target, const GLshort *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord2sv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord2sv {} ({}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), 0.0f, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3d(GLenum target, GLdouble s, GLdouble t, GLdouble r)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3d not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3d {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3dv(GLenum target, const GLdouble *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3dv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3dv {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3f(GLenum target, GLfloat s, GLfloat t, GLfloat r)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3f not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3f {} ({}, {}, {}) called", target - GL_TEXTURE0, s, t, r);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { s, t, r, 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3fv(GLenum target, const GLfloat *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3fv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3fv {} ({}, {}, {}) called", target - GL_TEXTURE0, v[0], v[1], v[2]);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { v[0], v[1], v[2], 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3i(GLenum target, GLint s, GLint t, GLint r)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3i not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3i {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3iv(GLenum target, const GLint *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3iv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3iv {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3s(GLenum target, GLshort s, GLshort t, GLshort r)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3s not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3s {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord3sv(GLenum target, const GLshort *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord3sv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord3sv {} ({}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), 1.0f } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4d(GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4d not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4d {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4dv(GLenum target, const GLdouble *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4dv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4dv {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4f(GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4f not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4f {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, s, t, r, q);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { s, t, r, q } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4fv(GLenum target, const GLfloat *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4fv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4fv {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, v[0], v[1], v[2], v[3]);
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { v[0], v[1], v[2], v[3] } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4i(GLenum target, GLint s, GLint t, GLint r, GLint q)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4i not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4i {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4iv(GLenum target, const GLint *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4iv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4iv {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4s(GLenum target, GLshort s, GLshort t, GLshort r, GLshort q)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4s not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4s {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(s), static_cast<float>(t), static_cast<float>(r), static_cast<float>(q) } });
 }
 
 GLAPI void APIENTRY glMultiTexCoord4sv(GLenum target, const GLshort *v)
 {
-    SPDLOG_DEBUG("glMultiTexCoord4sv not implemented");
+    SPDLOG_DEBUG("glMultiTexCoord4sv {} ({}, {}, {}, {}) called", target - GL_TEXTURE0, static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
+    IceGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, { { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) } });
 }
 
 GLAPI void APIENTRY glLoadTransposeMatrixf(const GLfloat *m)

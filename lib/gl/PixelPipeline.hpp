@@ -25,6 +25,8 @@
 class PixelPipeline
 {
 public:
+    using Triangle = IRenderer::Triangle;
+
     enum class FogMode
     {
         ONE,
@@ -61,31 +63,34 @@ public:
 
     PixelPipeline(IRenderer& renderer);
 
-    bool drawTriangle(const Vec4& v0,
-                      const Vec4& v1,
-                      const Vec4& v2,
-                      const Vec4& tc0,
-                      const Vec4& tc1,
-                      const Vec4& tc2,
-                      const Vec4& c0,
-                      const Vec4& c1,
-                      const Vec4& c2);
+    bool drawTriangle(const Triangle& triangle);
     bool updatePipeline();
 
     // Feature Enable
-    FeatureEnable& featureEnable() { return m_featureEnable; }
+    void setEnableTmu(const bool enable) { m_featureEnable.setEnableTmu(m_tmu, enable); }
+    void setEnableAlphaTest(const bool enable) { m_featureEnable.setEnableAlphaTest(enable); }
+    void setEnableDepthTest(const bool enable) { m_featureEnable.setEnableDepthTest(enable); }
+    void setEnableBlending(const bool enable) { m_featureEnable.setEnableBlending(enable); }
+    void setEnableFog(const bool enable) { m_featureEnable.setEnableFog(enable); }
+    void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
+    bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_tmu); }
+    bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
+    bool getEnableDepthTest() const { return m_featureEnable.getEnableDepthTest(); }
+    bool getEnableBlending() const { return m_featureEnable.getEnableBlending(); }
+    bool getEnableFog() const { return m_featureEnable.getEnableFog(); }
+    bool getEnableScissor() const { return m_featureEnable.getEnableScissor(); }
 
     // Textures
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
     bool uploadTexture(const TextureObject& texObj);
-    TextureObject getTexture() { return m_renderer.getTexture(m_boundTexture); }
-    bool useTexture(const TMU& tmu);
+    TextureObject getTexture() { return m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture); }
+    bool useTexture();
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { m_boundTexture = val; }
-    void setTexWrapModeS(const TextureWrapMode mode) { m_texWrapModeS = mode; }
-    void setTexWrapModeT(const TextureWrapMode mode) { m_texWrapModeT = mode; }
-    void setEnableMagFilter(const bool val) { m_texEnableMagFilter = val; }
+    void setBoundTexture(const uint32_t val) { m_tmuConf[m_tmu].boundTexture = val; }
+    void setTexWrapModeS(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeS = mode; }
+    void setTexWrapModeT(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeT = mode; }
+    void setEnableMagFilter(const bool val) { m_tmuConf[m_tmu].texEnableMagFilter = val; }
 
     // Framebuffer
     bool clearFramebuffer(bool frameBuffer, bool zBuffer);
@@ -97,8 +102,9 @@ public:
 
     // TMU
     bool setTexEnvMode(const TexEnvMode mode);
-    TexEnv& texEnv() { return m_texEnvConf0; }
+    TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
+    void activateTmu(const IRenderer::TMU tmu) { m_tmu = tmu; }
 
     // Fog
     void setFogMode(const FogMode val);
@@ -111,6 +117,22 @@ public:
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:
+    static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
+
+    struct TmuConfig
+    {
+        // Textures
+        uint32_t boundTexture { 0 };
+        TextureWrapMode texWrapModeS { TextureWrapMode::REPEAT };
+        TextureWrapMode texWrapModeT { TextureWrapMode::REPEAT };
+        bool texEnableMagFilter { true };
+
+        // TMU
+       TexEnvMode texEnvMode { TexEnvMode::REPLACE };
+       TexEnv texEnvConf {};
+       TexEnv texEnvConfUploaded {};
+    };
+
     bool updateFogLut();
 
     IRenderer& m_renderer;
@@ -119,16 +141,9 @@ private:
     FeatureEnable m_featureEnable {};
     FeatureEnable m_featureEnableUploaded {};
 
-    // Textures
-    uint32_t m_boundTexture { 0 };
-    TextureWrapMode m_texWrapModeS { TextureWrapMode::REPEAT };
-    TextureWrapMode m_texWrapModeT { TextureWrapMode::REPEAT };
-    bool m_texEnableMagFilter { true };
-
     // TMU
-    TexEnvMode m_texEnvMode { TexEnvMode::REPLACE };
-    TexEnv m_texEnvConf0 {};
-    TexEnv m_texEnvConfUploaded0 {};
+    std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
+    uint8_t m_tmu { 0 };
 
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};
