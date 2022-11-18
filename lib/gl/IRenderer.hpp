@@ -102,7 +102,8 @@ public:
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent() :
                     combineRgb(Combine::MODULATE),
@@ -141,6 +142,7 @@ public:
                 uint8_t shiftAlpha : 2;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 
@@ -223,7 +225,8 @@ public:
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent() :
                     depthFunc(TestFunc::LESS),
@@ -250,6 +253,7 @@ public:
                 BlendFunc blendFuncDFactor : 4;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 
@@ -275,7 +279,8 @@ public:
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent()
                     : fog(false)
@@ -296,6 +301,7 @@ public:
                 bool tmu1 : 1;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 

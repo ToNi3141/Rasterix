@@ -19,6 +19,8 @@
 #define VEC_HPP
 #include <array>
 #include <math.h>
+#include <cstdint>
+#include <functional>
 
 template <uint8_t VecSize>
 class Vec
@@ -40,7 +42,7 @@ public:
     template <typename T>
     void fromArray(const T* arr, const uint8_t size)
     {
-        const uint32_t len = std::min(size, VecSize);
+        const uint32_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
         for (uint8_t i = 0; i < len; i++)
             vec[i] = arr[i];
     }

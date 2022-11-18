@@ -177,7 +177,8 @@ private:
         IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
         union 
         {
-            struct __attribute__ ((__packed__)) TmuTextureConfig
+            #pragma pack(push, 1)
+            struct TmuTextureConfig
             {
                 uint8_t texWidth : 8;
                 uint8_t texHeight : 8;
@@ -187,6 +188,7 @@ private:
                 IRenderer::TextureObject::PixelFormat pixelFormat : 4;
             } reg;
             uint32_t serialized;
+            #pragma pack(pop)
         } tmuConfig;
     };
 

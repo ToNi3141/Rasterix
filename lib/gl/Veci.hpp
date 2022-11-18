@@ -18,6 +18,7 @@
 #ifndef VECI_HPP
 #define VECI_HPP
 #include <array>
+#include <cstdint>
 
 // This is a configurable fixed point vector class
 template <typename T, uint8_t VecSize>

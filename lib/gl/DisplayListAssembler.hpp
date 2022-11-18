@@ -378,7 +378,9 @@ private:
         return false;
     }
 
-    List m_displayList __attribute__ ((aligned (8)));
+    #pragma pack(push, 8)
+    List m_displayList;
+    #pragma pack(pop)
 
     SCT *m_streamCommand { nullptr };
 
