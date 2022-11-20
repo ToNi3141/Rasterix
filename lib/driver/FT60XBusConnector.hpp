@@ -29,7 +29,8 @@ public:
         }
 
         ftStatus = FT_EnableGPIO(fthandle, 0x3, 0x3); //bit 0 and 1 both set.
-        ftStatus = FT_SetGPIOPull(fthandle, 0x3, GPIO_PULL_50K_PU);
+        //ftStatus = FT_SetGPIOPull(fthandle, 0x3, GPIO_PULL_50K_PU); // Windows does not have GPIO_PULL_50K_PU constant?
+        ftStatus = FT_SetGPIOPull(fthandle, 0x3, 0x2);
 
         ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x3);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -42,7 +43,7 @@ public:
     virtual void writeData(const uint8_t* data, const uint32_t bytes) override
     {
         ULONG transfered;
-        FT_WritePipeEx(fthandle, 0x0, (PUCHAR)data, bytes, &transfered, 100);
+        FT_WritePipe(fthandle, 0x2, (PUCHAR)data, bytes, &transfered, NULL);
     }
 
     virtual bool clearToSend() override

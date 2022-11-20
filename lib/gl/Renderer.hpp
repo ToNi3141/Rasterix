@@ -30,6 +30,7 @@
 #include <future>
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
+#include <limits>
 
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
@@ -81,7 +82,7 @@ public:
         setFogColor({{255, 255, 255, 255}});
         std::array<float, 33> fogLut{};
         std::fill(fogLut.begin(), fogLut.end(), 1.0f);
-        setFogLut(fogLut, 0.0f, std::numeric_limits<float>::max());
+        setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
 
         // Initialize the render thread by running it once
         m_renderThread = std::async([&](){

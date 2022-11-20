@@ -444,8 +444,6 @@ void draw()
 
     // Draw the cube
     glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
-
-    IceGL::getInstance().commit();
 }
 
 
@@ -456,6 +454,7 @@ int main()
     while (1)
     {
         draw();
+        IceGL::getInstance().commit();
     }
     return 0;
 }
