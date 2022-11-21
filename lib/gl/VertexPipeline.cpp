@@ -617,6 +617,11 @@ void VertexPipeline::setModelMatrix(const Mat44 &m)
     m_m = m;
 }
 
+void VertexPipeline::setProjectionMatrix(const Mat44 &m)
+{
+    m_p = m;
+}
+
 void VertexPipeline::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
@@ -797,6 +802,23 @@ void VertexPipeline::recalculateMatrices()
 void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
 {
     m_matrixMode = matrixMode;
+}
+
+bool VertexPipeline::loadMatrix(const Mat44& m)
+{
+    m_matricesOutdated = true;
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        setModelMatrix(m);
+        return true;
+    case MatrixMode::PROJECTION:
+        setProjectionMatrix(m);
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
 uint8_t VertexPipeline::getModelMatrixStackDepth()

@@ -61,6 +61,7 @@ public:
     void setModelProjectionMatrix(const Mat44& m);
     void setModelMatrix(const Mat44& m);
     void setNormalMatrix(const Mat44& m);
+    void setProjectionMatrix(const Mat44& m);
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
@@ -78,6 +79,7 @@ public:
     const Mat44& getProjectionMatrix() const;
 
     void setMatrixMode(const MatrixMode matrixMode);
+    bool loadMatrix(const Mat44& m);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);

@@ -20,6 +20,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <spdlog/spdlog.h>
+#include "spdlog/sinks/basic_file_sink.h"
 
 IceGL* instance { nullptr };
 
@@ -45,9 +47,19 @@ IceGL::IceGL(IRenderer &renderer)
 {
     // Preallocate the first texture. This is the default texture which also can't be deleted.
     m_renderer.createTexture();
+    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("basic_logger", "basic-log.txt");
+    file_sink->set_level(spdlog::level::trace);
+    auto logger = std::make_shared<spdlog::logger>("basic_logger", file_sink);
+    logger->set_level(spdlog::level::trace);
+    logger->info("IceGL started");
+
+    // or you can even set multi_sink logger as default logger
+    spdlog::set_default_logger(logger);
+
 }
 
 void IceGL::commit()
 {
+    SPDLOG_INFO("Commit called");
     m_renderer.commit();
 }
