@@ -1841,6 +1841,10 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     {
         IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
     }
+    else if (mode == GL_TEXTURE)
+    {
+        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::TEXTURE);
+    }
     else
     {
         SPDLOG_WARN("glMatrixMode {} not supported", mode);

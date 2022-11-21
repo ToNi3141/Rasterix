@@ -37,6 +37,10 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     m_m.identity();
     m_p.identity();
     m_n.identity();
+    for (auto& mat : m_tm)
+    {
+        mat.identity();
+    }
 }
 
 // Might be a faster version than the other implementation.
@@ -411,6 +415,7 @@ void VertexPipeline::transform(
                 transformedTex[i][j].initHomogeneous();
             }
             m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
+            m_tm[j].transform(transformedTex[i][j], transformedTex[i][j]); // Calculate this in one batch to improve performance
         }
     }
 
@@ -622,6 +627,11 @@ void VertexPipeline::setProjectionMatrix(const Mat44 &m)
     m_p = m;
 }
 
+void VertexPipeline::setTextureMatrix(const Mat44& m)
+{
+    m_tm[m_tmu] = m;
+}
+
 void VertexPipeline::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
@@ -734,6 +744,14 @@ bool VertexPipeline::pushMatrix()
             return false;
         }
     }
+    else if (m_matrixMode == MatrixMode::TEXTURE)
+    {
+        if (m_tmStackIndex[m_tmu] < TEXTURE_MATRIX_STACK_DEPTH)
+        {
+            m_tmStack[m_tmStackIndex[m_tmu]][m_tmu] = m_tm[m_tmu];
+            m_tmStackIndex[m_tmu]++;
+        }
+    }
     return true;
 }
 
@@ -759,6 +777,18 @@ bool VertexPipeline::popMatrix()
             m_pStackIndex--;
             m_p = m_pStack[m_pStackIndex];
             m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (m_matrixMode == MatrixMode::TEXTURE)
+    {
+        if (m_tmStackIndex[m_tmu] > 0)
+        {
+            m_tmStackIndex[m_tmu]--;
+            m_tm[m_tmu] = m_tmStack[m_tmStackIndex[m_tmu]][m_tmu];
         }
         else
         {
@@ -814,6 +844,9 @@ bool VertexPipeline::loadMatrix(const Mat44& m)
         return true;
     case MatrixMode::PROJECTION:
         setProjectionMatrix(m);
+        return true;
+    case MatrixMode::TEXTURE:
+        setTextureMatrix(m);
         return true;
     default:
         break;

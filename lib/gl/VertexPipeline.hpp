@@ -33,7 +33,8 @@ public:
     enum MatrixMode
     {
         MODELVIEW,
-        PROJECTION
+        PROJECTION,
+        TEXTURE
     };
 
     enum class ColorMaterialTracking
@@ -62,6 +63,7 @@ public:
     void setModelMatrix(const Mat44& m);
     void setNormalMatrix(const Mat44& m);
     void setProjectionMatrix(const Mat44& m);
+    void setTextureMatrix(const Mat44& m);
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
@@ -102,6 +104,7 @@ private:
     using TexCoordArray = std::array<Clipper::ClipTexCoords, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
+    static constexpr uint8_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
 
     struct Triangle
@@ -179,12 +182,15 @@ private:
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
     Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH] {};
     Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH] {};
+    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tmStack[TEXTURE_MATRIX_STACK_DEPTH] {};
     uint8_t m_mStackIndex{ 0 };
     uint8_t m_pStackIndex{ 0 };
+    std::array<uint8_t, IRenderer::MAX_TMU_COUNT> m_tmStackIndex{ 0 };
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal
+    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
     bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
 
     // Color material
