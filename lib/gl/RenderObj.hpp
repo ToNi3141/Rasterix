@@ -52,6 +52,8 @@ public:
         UNSIGNED_INT
     };
 
+    void logCurrentConfig() const;
+
     bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     bool getVertex(Vec4& vec, const uint32_t index) const;
     std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
@@ -161,6 +163,9 @@ private:
         }
         return false;
     }
+
+    const char* drawModeToString(const DrawMode drawMode) const;
+    const char* typeToString(const Type type) const;
 
     DrawMode m_drawMode;
     std::size_t m_count;

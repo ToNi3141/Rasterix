@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "Rasterizer.hpp"
 #include <cmath>
+#include <spdlog/spdlog.h>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max
@@ -133,8 +134,11 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     recalculateMatrices();
     if (!m_renderer.updatePipeline()) 
     {
+        SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
     }
+
+    obj.logCurrentConfig();
 
     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
@@ -188,6 +192,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         );
         if (!ret)
         {
+            SPDLOG_ERROR("drawObj(): Cannot draw triangle array");
             return false;
         }
     }
