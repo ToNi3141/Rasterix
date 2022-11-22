@@ -1315,6 +1315,9 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint *params)
     case GL_MAX_TEXTURE_SIZE:
         *params = IceGL::MAX_TEX_SIZE;
         break;
+    case GL_MAX_TEXTURE_UNITS:
+        *params = IceGL::MAX_TEXTURE_UNITS;
+        break;
     case GL_DOUBLEBUFFER:
         *params = 1;
         break;
@@ -1403,7 +1406,7 @@ GLAPI const GLubyte * APIENTRY impl_glGetString(GLenum name)
     case GL_VERSION:
         return reinterpret_cast<const GLubyte*>("1.3");
     case GL_EXTENSIONS:
-        return reinterpret_cast<const GLubyte*>("");
+        return reinterpret_cast<const GLubyte*>(IceGL::getInstance().getLibExtensions());
     default:
         SPDLOG_WARN("glGetString 0x{:X} not supported", name);
         break;

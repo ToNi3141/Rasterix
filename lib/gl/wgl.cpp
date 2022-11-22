@@ -97,8 +97,9 @@ GLAPI int APIENTRY impl_wglGetPixelFormat(HDC hdc)
 
 GLAPI PROC APIENTRY impl_wglGetProcAddress(LPCSTR s)
 {
-    SPDLOG_WARN("wglGetProcAddress {} not implemented", s);
-    return reinterpret_cast<PROC>(0);
+    SPDLOG_INFO("wglGetProcAddress {} called", s);
+
+    return reinterpret_cast<PROC>(IceGL::getInstance().getLibProcedure(s));
 }
 
 GLAPI BOOL APIENTRY impl_wglMakeCurrent(HDC hdc, HGLRC hglrc)
