@@ -49,10 +49,10 @@ IceGL::IceGL(IRenderer &renderer)
 {
     // Preallocate the first texture. This is the default texture which also can't be deleted.
     m_renderer.createTexture();
-    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("basic_logger", "basic-log.txt");
-    file_sink->set_level(spdlog::level::trace);
+    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("IceGL.log", "basic-log.txt");
+    file_sink->set_level(spdlog::level::warn);
     auto logger = std::make_shared<spdlog::logger>("basic_logger", file_sink);
-    logger->set_level(spdlog::level::trace);
+    logger->set_level(spdlog::level::warn);
     logger->info("IceGL started");
 
     // or you can even set multi_sink logger as default logger

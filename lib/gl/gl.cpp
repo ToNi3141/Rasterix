@@ -1009,7 +1009,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         IceGL::getInstance().pixelPipeline().setEnableTmu(true);
         break;
     case GL_ALPHA_TEST:
-        SPDLOG_DEBUG("glEnable SPDLOG_DEBUG called");
+        SPDLOG_DEBUG("glEnable GL_ALPHA_TEST called");
         IceGL::getInstance().pixelPipeline().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:

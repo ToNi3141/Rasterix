@@ -371,7 +371,7 @@ public:
                     color |= static_cast<uint16_t>(r >> 3) << 11;
                     color |= static_cast<uint16_t>(g >> 3) << 6;
                     color |= static_cast<uint16_t>(b >> 3) << 1;
-                    color |= static_cast<uint16_t>(a >> 1) << 0;
+                    color |= static_cast<uint16_t>(a >> 7) << 0;
                     break;
                 default:
                 break;
