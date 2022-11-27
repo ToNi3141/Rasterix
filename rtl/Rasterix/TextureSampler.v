@@ -32,6 +32,7 @@ module TextureSampler #(
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 7 : 0]                textureSizeWidth, 
     input  wire [ 7 : 0]                textureSizeHeight,
+    input  wire                         enableHalfPixelOffset,
 
     // Texture memory access of a texel quad
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr00,
@@ -98,6 +99,23 @@ module TextureSampler #(
         };
     endfunction
 
+    function [15 : 0] convertToOnePointZero;
+        input [7 : 0] texSize;
+        convertToOnePointZero = 
+        {
+            1'h0,
+            texSize[0],
+            texSize[1],
+            texSize[2],
+            texSize[3],
+            texSize[4],
+            texSize[5],
+            texSize[6],
+            texSize[7],
+            7'h0
+        };
+    endfunction
+
     //////////////////////////////////////////////
     // STEP 0
     // Build RAM adresses
@@ -120,17 +138,33 @@ module TextureSampler #(
         reg [ 7 : 0] addrT1;
         reg [15 : 0] texelSClamped;
         reg [15 : 0] texelTClamped;
-
-        // texelSClamped = clampTexture(texelS, clampS);
-        // texelTClamped = clampTexture(texelT, clampT);
+        reg [31 : 0] texelS0WithOffset;
+        reg [31 : 0] texelS1WithOffset;
+        reg [31 : 0] texelT0WithOffset;
+        reg [31 : 0] texelT1WithOffset;
 
         step0_clampS <= clampS;
         step0_clampT <= clampT;
 
-        step0_texelT0 = clampTexture(texelT - convertToZeroPointFive(textureSizeHeight), clampT);
-        step0_texelS0 = clampTexture(texelS - convertToZeroPointFive(textureSizeWidth), clampS);
-        step0_texelT1 = clampTexture(texelT + convertToZeroPointFive(textureSizeHeight), clampT);
-        step0_texelS1 = clampTexture(texelS + convertToZeroPointFive(textureSizeWidth), clampS);
+        if (enableHalfPixelOffset)
+        begin
+            texelS0WithOffset = texelS - convertToZeroPointFive(textureSizeWidth);
+            texelS1WithOffset = texelS + convertToZeroPointFive(textureSizeWidth);
+            texelT0WithOffset = texelT - convertToZeroPointFive(textureSizeHeight);
+            texelT1WithOffset = texelT + convertToZeroPointFive(textureSizeHeight);
+        end
+        else
+        begin
+            texelS0WithOffset = texelS;
+            texelS1WithOffset = texelS + convertToOnePointZero(textureSizeWidth);
+            texelT0WithOffset = texelT;
+            texelT1WithOffset = texelT + convertToOnePointZero(textureSizeHeight);
+        end
+
+        step0_texelT0 = clampTexture(texelT0WithOffset, clampT);
+        step0_texelS0 = clampTexture(texelS0WithOffset, clampS);
+        step0_texelT1 = clampTexture(texelT1WithOffset, clampT);
+        step0_texelS1 = clampTexture(texelS1WithOffset, clampS);
 
         // Select Y coordinate
         case (textureSizeHeight)
