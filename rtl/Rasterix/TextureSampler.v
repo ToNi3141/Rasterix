@@ -81,6 +81,23 @@ module TextureSampler #(
         end
     endfunction
 
+    function [15 : 0] convertToZeroPointFive;
+        input [7 : 0] texSize;
+        convertToZeroPointFive = 
+        {
+            2'h0,
+            texSize[0],
+            texSize[1],
+            texSize[2],
+            texSize[3],
+            texSize[4],
+            texSize[5],
+            texSize[6],
+            texSize[7],
+            6'h0
+        };
+    endfunction
+
     //////////////////////////////////////////////
     // STEP 0
     // Build RAM adresses
@@ -104,76 +121,70 @@ module TextureSampler #(
         reg [15 : 0] texelSClamped;
         reg [15 : 0] texelTClamped;
 
-        texelSClamped = clampTexture(texelS, clampS);
-        texelTClamped = clampTexture(texelT, clampT);
+        // texelSClamped = clampTexture(texelS, clampS);
+        // texelTClamped = clampTexture(texelT, clampT);
 
         step0_clampS <= clampS;
         step0_clampT <= clampT;
 
-        step0_texelT0 = texelTClamped;
-        step0_texelS0 = texelSClamped;
+        step0_texelT0 = clampTexture(texelT - convertToZeroPointFive(textureSizeHeight), clampT);
+        step0_texelS0 = clampTexture(texelS - convertToZeroPointFive(textureSizeWidth), clampS);
+        step0_texelT1 = clampTexture(texelT + convertToZeroPointFive(textureSizeHeight), clampT);
+        step0_texelS1 = clampTexture(texelS + convertToZeroPointFive(textureSizeWidth), clampS);
 
         // Select Y coordinate
         case (textureSizeHeight)
             8'b00000001: // 2px
             begin
-                step0_texelT1 = texelTClamped + (1 << 14);
                 addrT0 = {7'h0, step0_texelT0[14 +: 1]};
                 addrT1 = {7'h0, step0_texelT1[14 +: 1]};
                 step0_subCoordT <= {step0_texelT0[0 +: 14], 2'h0};
             end
             8'b00000010: // 4px
             begin
-                step0_texelT1 = texelTClamped + (1 << 13);
                 addrT0 = {6'h0, step0_texelT0[13 +: 2]};
                 addrT1 = {6'h0, step0_texelT1[13 +: 2]};
                 step0_subCoordT <= {step0_texelT0[0 +: 13], 3'h0};
             end
             8'b00000100: // 8px
             begin
-                step0_texelT1 = texelTClamped + (1 << 12);
                 addrT0 = {5'h0, step0_texelT0[12 +: 3]};
                 addrT1 = {5'h0, step0_texelT1[12 +: 3]};
                 step0_subCoordT <= {step0_texelT0[0 +: 12], 4'h0};
             end
             8'b00001000: // 16px
             begin
-                step0_texelT1 = texelTClamped + (1 << 11);
                 addrT0 = {4'h0, step0_texelT0[11 +: 4]};
                 addrT1 = {4'h0, step0_texelT1[11 +: 4]};
                 step0_subCoordT <= {step0_texelT0[0 +: 11], 5'h0};
             end
             8'b00010000: // 32px
-            begin   
-                step0_texelT1 = texelTClamped + (1 << 10);
+            begin  
                 addrT0 = {3'h0, step0_texelT0[10 +: 5]};
                 addrT1 = {3'h0, step0_texelT1[10 +: 5]};
                 step0_subCoordT <= {step0_texelT0[0 +: 10], 6'h0};
             end
             8'b00100000: // 64px
-            begin   
-                step0_texelT1 = texelTClamped + (1 << 9);
+            begin
                 addrT0 = {2'h0, step0_texelT0[9 +: 6]};
                 addrT1 = {2'h0, step0_texelT1[9 +: 6]};
                 step0_subCoordT <= {step0_texelT0[0 +:  9], 7'h0};
             end
             8'b01000000: // 128px
-            begin 
-                step0_texelT1 = texelTClamped + (1 << 8);
+            begin
                 addrT0 = {1'h0, step0_texelT0[ 8 +: 7]};
                 addrT1 = {1'h0, step0_texelT1[ 8 +: 7]};
                 step0_subCoordT <= {step0_texelT0[0 +:  8], 8'h0};
             end
             8'b10000000: // 256px
             begin
-                step0_texelT1 = texelTClamped + (1 << 7);
                 addrT0 = {      step0_texelT0[ 7 +: 8]};
                 addrT1 = {      step0_texelT1[ 7 +: 8]};
                 step0_subCoordT <= {step0_texelT0[0 +:  7], 9'h0};
             end
             default: // 1px
             begin   
-                step0_texelT1 = texelTClamped;
+                step0_texelT1 = step0_texelT0;
                 addrT0 = 0;
                 addrT1 = 0;
                 step0_subCoordT <= 16'h0;
@@ -184,7 +195,6 @@ module TextureSampler #(
         case (textureSizeWidth)
             8'b00000001: // 2px
             begin
-                step0_texelS1 = texelSClamped + (1 << 14);
                 texelAddr00 <= {7'h0, addrT0, step0_texelS0[14 +: 1]};
                 texelAddr01 <= {7'h0, addrT0, step0_texelS1[14 +: 1]};
                 texelAddr10 <= {7'h0, addrT1, step0_texelS0[14 +: 1]};
@@ -193,7 +203,6 @@ module TextureSampler #(
             end
             8'b00000010: // 4px
             begin
-                step0_texelS1 = texelSClamped + (1 << 13);
                 texelAddr00 <= {6'h0, addrT0, step0_texelS0[13 +: 2]};
                 texelAddr01 <= {6'h0, addrT0, step0_texelS1[13 +: 2]};
                 texelAddr10 <= {6'h0, addrT1, step0_texelS0[13 +: 2]};
@@ -202,7 +211,6 @@ module TextureSampler #(
             end
             8'b00000100: // 8px
             begin
-                step0_texelS1 = texelSClamped + (1 << 12);
                 texelAddr00 <= {5'h0, addrT0, step0_texelS0[12 +: 3]};
                 texelAddr01 <= {5'h0, addrT0, step0_texelS1[12 +: 3]};
                 texelAddr10 <= {5'h0, addrT1, step0_texelS0[12 +: 3]};
@@ -211,7 +219,6 @@ module TextureSampler #(
             end
             8'b00001000: // 16px
             begin
-                step0_texelS1 = texelSClamped + (1 << 11);
                 texelAddr00 <= {4'h0, addrT0, step0_texelS0[11 +: 4]};
                 texelAddr01 <= {4'h0, addrT0, step0_texelS1[11 +: 4]};
                 texelAddr10 <= {4'h0, addrT1, step0_texelS0[11 +: 4]};
@@ -220,7 +227,6 @@ module TextureSampler #(
             end
             8'b00010000: // 32px
             begin
-                step0_texelS1 = texelSClamped + (1 << 10);
                 texelAddr00 <= {3'h0, addrT0, step0_texelS0[10 +: 5]};
                 texelAddr01 <= {3'h0, addrT0, step0_texelS1[10 +: 5]};
                 texelAddr10 <= {3'h0, addrT1, step0_texelS0[10 +: 5]};
@@ -229,7 +235,6 @@ module TextureSampler #(
             end
             8'b00100000: // 64px
             begin
-                step0_texelS1 = texelSClamped + (1 << 9);
                 texelAddr00 <= {2'h0, addrT0, step0_texelS0[ 9 +: 6]};
                 texelAddr01 <= {2'h0, addrT0, step0_texelS1[ 9 +: 6]};
                 texelAddr10 <= {2'h0, addrT1, step0_texelS0[ 9 +: 6]};
@@ -238,7 +243,6 @@ module TextureSampler #(
             end
             8'b01000000: // 128px
             begin
-                step0_texelS1 = texelSClamped + (1 << 8);
                 texelAddr00 <= {1'h0, addrT0, step0_texelS0[ 8 +: 7]};
                 texelAddr01 <= {1'h0, addrT0, step0_texelS1[ 8 +: 7]};
                 texelAddr10 <= {1'h0, addrT1, step0_texelS0[ 8 +: 7]};
@@ -247,7 +251,6 @@ module TextureSampler #(
             end
             8'b10000000: // 256px
             begin
-                step0_texelS1 = texelSClamped + (1 << 7);
                 texelAddr00 <= {      addrT0, step0_texelS0[ 7 +: 8]};
                 texelAddr01 <= {      addrT0, step0_texelS1[ 7 +: 8]};
                 texelAddr10 <= {      addrT1, step0_texelS0[ 7 +: 8]};
@@ -256,7 +259,7 @@ module TextureSampler #(
             end
             default: // 1px
             begin
-                step0_texelS1 = texelSClamped;
+                step0_texelS1 = step0_texelS0;
                 texelAddr00 <= {8'h0, addrT0};
                 texelAddr01 <= {8'h0, addrT0};
                 texelAddr10 <= {8'h0, addrT1};
