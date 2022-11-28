@@ -89,7 +89,7 @@ public:
         }
 
         m_textures[textureSlot].pixels = textureObject.pixels;
-        m_textures[textureSlot].size = max((textureObject.width * textureObject.height * 2), 512);
+        m_textures[textureSlot].size = std::max((textureObject.width * textureObject.height * 2), 512);
         m_textures[textureSlot].inUse = true;
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;
