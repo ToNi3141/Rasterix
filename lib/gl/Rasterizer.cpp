@@ -90,6 +90,9 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
     bbEndX = (bbEndX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
     bbEndY = (bbEndY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
 
+    ++bbEndX; // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
+    ++bbEndY;
+
     if (m_enableScissor)
     {
         bbStartX = max(bbStartX, static_cast<int32_t>(m_scissorX));
@@ -116,9 +119,6 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
 //     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
-    ++bbEndX; // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-    ++bbEndY;
-
 
     rasterizedTriangle.bbStartX = bbStartX;
     rasterizedTriangle.bbStartY = bbStartY;
