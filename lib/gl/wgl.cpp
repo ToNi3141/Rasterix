@@ -7,7 +7,7 @@
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 FT60XBusConnector m_busConnector;
-Renderer<16*1024*1024, 5, RESOLUTION_H / 5, 128, 1024> m_renderer{m_busConnector};
+Renderer<16*1024*1024, 5, RESOLUTION_H / 5, 128, 2048> m_renderer{m_busConnector};
 
 // Wiggle API
 // -------------------------------------------------------
