@@ -21,6 +21,7 @@
 #include <array>
 #include "IRenderer.hpp"
 #include <functional>
+#include <spdlog/spdlog.h>
 
 template <uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class TextureMemoryManager 
@@ -83,13 +84,14 @@ public:
                 {
                     textureSlot = i;
                     m_textureLut[texId] = textureSlot;
+                    SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
                     break;
                 }
             }
         }
 
         m_textures[textureSlot].pixels = textureObject.pixels;
-        m_textures[textureSlot].size = std::max((textureObject.width * textureObject.height * 2), 512);
+        m_textures[textureSlot].size = (std::max)((textureObject.width * textureObject.height * 2), 512);
         m_textures[textureSlot].inUse = true;
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;

@@ -27,9 +27,12 @@ bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
 
 bool RenderObj::getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) const
 {
-    vec.initHomogeneous();
-    const bool ret = getFromArray(vec, m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
-    if (!ret) 
+    if (texCoordArrayEnabled()[tmu])
+    {
+        vec.initHomogeneous();
+        return getFromArray(vec, m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
+    }
+    else
     {
         vec = m_texCoord[tmu];
     }
@@ -38,26 +41,31 @@ bool RenderObj::getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) 
 
 bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
 {
-    bool retVal = getFromArray(vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
-    if (retVal)
+    if (colorArrayEnabled())
     {
-        switch (m_colorType) {
-        case Type::UNSIGNED_BYTE:
-        case Type::UNSIGNED_SHORT:
-        case Type::UNSIGNED_INT:
-            // Map unsigned values to 0.0 .. 1.0
-            vec *= 1.0f / 255.0f;
-            break;
-        case Type::BYTE:
-        case Type::SHORT:
-            // Map signed values to -1.0 .. 1.0
-            vec *= 1.0f / 127.0f;
-            break;
-        default:
-            // Other types like floats can be used as they are
-            break;
+        bool retVal = getFromArray(vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
+        if (retVal)
+        {
+            switch (m_colorType) {
+            case Type::UNSIGNED_BYTE:
+            case Type::UNSIGNED_SHORT:
+            case Type::UNSIGNED_INT:
+                // Map unsigned values to 0.0 .. 1.0
+                vec *= 1.0f / 255.0f;
+                break;
+            case Type::BYTE:
+            case Type::SHORT:
+                // Map signed values to -1.0 .. 1.0
+                vec *= 1.0f / 127.0f;
+                break;
+            default:
+                // Other types like floats can be used as they are
+                break;
+            }
         }
+        return retVal;
     }
+    
     else
     {
         vec = m_vertexColor;
@@ -67,8 +75,11 @@ bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
 
 bool RenderObj::getNormal(Vec3& vec, const uint32_t index) const
 {
-    bool ret = getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
-    if (!ret)
+    if (normalArrayEnabled())
+    {
+        return getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
+    }
+    else
     {
         vec = m_normal;
     }

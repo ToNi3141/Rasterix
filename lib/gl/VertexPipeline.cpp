@@ -83,7 +83,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //             if (obj.texCoordArrayEnabled())
 //             {
 //                 obj.getTexCoord(transformedTexCoord[i], index);
-//             }
+//             } // TODO: Query texCoord also when it is disabled to get the default texCoord
 //             m_texGen.calculateTexGenCoords(m_m, transformedTexCoord[i], v);
 
 
@@ -99,7 +99,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //                     // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
 //                     // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
 //                     nl.normalize();
-//                 }
+//                 } // TODO: Query the normal also when it is disabled to get the default normal
 //                 if (obj.vertexArrayEnabled())
 //                 {
 //                     m_m.transform(vl, v);
@@ -330,24 +330,15 @@ void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
         const uint32_t index = obj.getIndex(o);
-        if (obj.colorArrayEnabled())
-        {
-            obj.getColor(color[i], index);
-        }
+        obj.getColor(color[i], index);
         if (obj.vertexArrayEnabled())
         {
             obj.getVertex(vertex[i], index);
         }
-        if (obj.normalArrayEnabled())
-        {
-            obj.getNormal(normal[i], index);
-        }
+        obj.getNormal(normal[i], index);
         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
-            if (obj.texCoordArrayEnabled()[j])
-            {
-                obj.getTexCoord(j, tex[i][j], index);
-            }
+            obj.getTexCoord(j, tex[i][j], index);
         }
     }
 }
@@ -372,9 +363,10 @@ void VertexPipeline::transform(
     {
         if (enableVertexArray)
             m_m.transform(transformedVertex.data(), vertex.data(), count);
-        if (enableNormalArray)
-            m_n.transform(transformedNormal.data(), normal.data(), count);
-        
+
+        // TODO: Increase the performance by only transform one normal when enableNormalArray is false.
+        m_n.transform(transformedNormal.data(), normal.data(), count);
+
         for (std::size_t i = 0; i < count; i++)
         {
             Vec4 c;
@@ -387,7 +379,7 @@ void VertexPipeline::transform(
                 c = vertexColor;
             }
 
-            if (enableNormalArray)
+            if (m_enableNormalizing)
                 transformedNormal[i].normalize();
             m_lighting.calculateLights(transformedColor[i], c, transformedVertex[i], transformedNormal[i]);
         }

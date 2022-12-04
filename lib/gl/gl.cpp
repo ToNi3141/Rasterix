@@ -770,48 +770,48 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
 {
     SPDLOG_DEBUG("glColorMaterial face 0x{:X} mode 0x{:X} called", face, mode);
     IceGL::getInstance().setError(GL_NO_ERROR);
-    if (face == GL_FRONT_AND_BACK)
-    {
-        VertexPipeline::Face faceConverted {};
-        switch (face) {
-            case GL_FRONT:
-                faceConverted = VertexPipeline::Face::FRONT;
-                break;
-            case GL_BACK:
-                faceConverted = VertexPipeline::Face::BACK;
-                break;
-            case GL_FRONT_AND_BACK:
-                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
-                break;
-            default:
-                faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                break;
-        }
 
-        if (IceGL::getInstance().getError() != GL_INVALID_ENUM)
-        {
-            switch (mode) {
-            case GL_AMBIENT:
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
-                break;
-            case GL_DIFFUSE:
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
-                break;
-            case GL_AMBIENT_AND_DIFFUSE:
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
-                break;
-            case GL_SPECULAR:
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
-                break;
-            case GL_EMISSION:
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
-                break;
-            default:
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
-                IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
-                break;
-            }
+    VertexPipeline::Face faceConverted {};
+    switch (face) {
+        case GL_FRONT:
+            faceConverted = VertexPipeline::Face::FRONT;
+            break;
+        case GL_BACK:
+            faceConverted = VertexPipeline::Face::BACK;
+            break;
+        case GL_FRONT_AND_BACK:
+            faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+            break;
+        default:
+            SPDLOG_WARN("glColorMaterial face 0x{:X} not supported", face);
+            faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+            IceGL::getInstance().setError(GL_INVALID_ENUM);
+            break;
+    }
+
+    if (IceGL::getInstance().getError() != GL_INVALID_ENUM)
+    {
+        switch (mode) {
+        case GL_AMBIENT:
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
+            break;
+        case GL_DIFFUSE:
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
+            break;
+        case GL_AMBIENT_AND_DIFFUSE:
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            break;
+        case GL_SPECULAR:
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
+            break;
+        case GL_EMISSION:
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
+            break;
+        default:
+            SPDLOG_WARN("glColorMaterial mode 0x{:X} not supported", mode);
+            IceGL::getInstance().setError(GL_INVALID_ENUM);
+            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            break;
         }
     }
 }
@@ -973,6 +973,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_SCISSOR_TEST called");
         IceGL::getInstance().pixelPipeline().setEnableScissor(false);
         break;
+    case GL_NORMALIZE:
+        SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
+        IceGL::getInstance().vertexPipeline().setEnableNormalizing(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1058,6 +1062,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_SCISSOR_TEST:
         SPDLOG_DEBUG("glEnable GL_SCISSOR_TEST called");
         IceGL::getInstance().pixelPipeline().setEnableScissor(true);
+        break;
+    case GL_NORMALIZE:
+        SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
+        IceGL::getInstance().vertexPipeline().setEnableNormalizing(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -1810,11 +1818,13 @@ GLAPI void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param)
         }
         else 
         {
+            SPDLOG_WARN("glMaterialf not supported");
             IceGL::getInstance().setError(GL_INVALID_ENUM);
         }
     }
     else 
     {
+        SPDLOG_WARN("impl_glMaterialf face 0x{:X} not supported", face);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
     }
 }
@@ -1849,6 +1859,7 @@ GLAPI void APIENTRY impl_glMaterialfv(GLenum face, GLenum pname, const GLfloat *
     }
     else
     {
+        SPDLOG_WARN("glMaterialfv face 0x{:X} not supported", face);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
     }
 }

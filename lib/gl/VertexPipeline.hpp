@@ -64,6 +64,7 @@ public:
     void setNormalMatrix(const Mat44& m);
     void setProjectionMatrix(const Mat44& m);
     void setTextureMatrix(const Mat44& m);
+    void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
@@ -177,6 +178,8 @@ private:
 
     bool m_enableCulling{ false };
     Face m_cullMode{ Face::BACK };
+
+    bool m_enableNormalizing { true };
 
     // Matrix modes
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };

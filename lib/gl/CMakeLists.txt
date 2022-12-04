@@ -13,5 +13,5 @@ add_library(gl SHARED
     gl.def
 )
 SET(CMAKE_LINK_DEF_FILE_FLAG "/DEF:gl.def")
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=0)
+add_definitions(-DSPDLOG_ACTIVE_LEVEL=3) 
 target_link_libraries(gl PRIVATE spdlog::spdlog "${CMAKE_BINARY_DIR}/FTD3XX.lib") #  "${CMAKE_BINARY_DIR}/FTD3XX.lib" # TODO: Remove Windows Dependency
