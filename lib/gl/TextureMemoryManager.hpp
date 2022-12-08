@@ -97,12 +97,27 @@ public:
         m_textures[textureSlot].requiresDelete = false;
         m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
         m_textures[textureSlot].tmuConfig.reg.pixelFormat = static_cast<uint32_t>(textureObject.getPixelFormat());
-        m_textures[textureSlot].tmuConfig.reg.wrapModeS = static_cast<uint32_t>(textureObject.wrapModeS);
-        m_textures[textureSlot].tmuConfig.reg.wrapModeT = static_cast<uint32_t>(textureObject.wrapModeT);
-        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = textureObject.enableMagFilter;
         m_textures[textureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.width))) - 1));
         m_textures[textureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.height))) - 1));
         return true;
+    }
+
+    void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.wrapModeS = static_cast<uint32_t>(mode);
+    }
+
+    void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.wrapModeT = static_cast<uint32_t>(mode);
+    }
+
+    void enableTextureMagFiltering(const uint16_t texId, bool filter)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.enableMagFilter = filter;
     }
 
     TextureMeta getTextureMeta(const uint16_t texId)
@@ -125,9 +140,6 @@ public:
         return { m_textures[textureSlot].pixels,
             static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texWidth * 2),
             static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texHeight * 2),
-            static_cast<IRenderer::TextureObject::TextureWrapMode>(m_textures[textureSlot].tmuConfig.reg.wrapModeS),
-            static_cast<IRenderer::TextureObject::TextureWrapMode>(m_textures[textureSlot].tmuConfig.reg.wrapModeT),
-            static_cast<bool>(m_textures[textureSlot].tmuConfig.reg.enableMagFilter),
             static_cast<IRenderer::TextureObject::IntendedInternalPixelFormat>(m_textures[textureSlot].intendedPixelFormat) };
     }
 

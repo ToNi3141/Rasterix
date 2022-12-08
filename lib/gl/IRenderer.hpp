@@ -305,14 +305,14 @@ public:
         } m_regVal;
     };
 
+    enum class TextureWrapMode
+    {
+        REPEAT,
+        CLAMP_TO_EDGE
+    };
+    
     struct TextureObject
     {
-        enum class TextureWrapMode
-        {
-            REPEAT,
-            CLAMP_TO_EDGE
-        };
-
         enum class PixelFormat : uint8_t
         {
             RGBA4444,
@@ -414,9 +414,6 @@ public:
         std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by pixelFormat
         const uint16_t width {}; ///< The width of the texture
         const uint16_t height {}; ///< The height of the texture
-        const TextureWrapMode wrapModeS {}; ///< The wrapping mode of the texture in s direction
-        const TextureWrapMode wrapModeT {}; ///< The wrapping mode of the texture in t direction
-        const bool enableMagFilter {}; ///< Enables magnification filter of the texture (GL_LINEAR)
         const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
@@ -457,10 +454,28 @@ public:
     virtual TextureObject getTexture(const uint16_t texId) = 0;
     
     /// @brief Activates a texture which then is used for rendering
-    /// @param target is used TMU
+    /// @param target The used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool useTexture(const TMU target, const uint16_t texId) = 0; 
+
+    /// @brief The wrapping mode of the texture in s direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) = 0;
+
+    /// @brief The wrapping mode of the texture in t direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) = 0;
+
+    /// @brief Enables the texture filtering
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) = 0;
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete

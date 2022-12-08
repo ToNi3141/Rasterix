@@ -306,6 +306,7 @@ public:
     {
         typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
         bool ret = tex.valid;
+        m_boundTextures[target] = texId;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size);
@@ -346,6 +347,27 @@ public:
         return ret;
     }
 
+    virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) override
+    {
+        m_textureManager.setTextureWrapModeS(texId, mode);
+        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
+        return writeToTextureConfig(texId, tex.tmuConfig);
+    }
+
+    virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) override
+    {
+        m_textureManager.setTextureWrapModeT(texId, mode);
+        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
+        return writeToTextureConfig(texId, tex.tmuConfig); 
+    }
+
+    virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) override
+    {
+        m_textureManager.enableTextureMagFiltering(texId, filter);
+        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
+        return writeToTextureConfig(texId, tex.tmuConfig);  
+    }
+
 private:
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
@@ -370,6 +392,20 @@ private:
         return ret;
     }
 
+    bool writeToTextureConfig(const uint16_t texId, const uint32_t tmuConfig)
+    {
+        // Find the TMU by searching through the bound textures, if the current texture ID is currently used.
+        // If not, just ignore it because then the currently used texture must not be changed.
+        for (uint8_t tmu = 0; tmu < IRenderer::MAX_TMU_COUNT; tmu++)
+        {
+            if (m_boundTextures[tmu] == texId)
+            {
+                return writeToReg(ListAssembler::SET_TMU_TEXTURE_CONFIG(tmu), tmuConfig);  
+            }
+        }
+        return true;
+    }
+
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
@@ -383,6 +419,9 @@ private:
     TextureManager m_textureManager;
     Rasterizer m_rasterizer;
     std::future<bool> m_renderThread;
+
+    // Mapping of texture id and TMU
+    std::array<uint16_t, MAX_TMU_COUNT> m_boundTextures {};
 };
 
 #endif // RENDERER_HPP

@@ -52,7 +52,7 @@ public:
     using LogicOp = IRenderer::FragmentPipelineConf::LogicOp;
 
     using TMU = IRenderer::TMU;
-    using TextureWrapMode = IRenderer::TextureObject::TextureWrapMode;
+    using TextureWrapMode = IRenderer::TextureWrapMode;
     using PixelFormat = IRenderer::TextureObject::PixelFormat;
     using IntendedInternalPixelFormat = IRenderer::TextureObject::IntendedInternalPixelFormat;
     using Combine = IRenderer::TexEnvConf::Combine;
@@ -88,9 +88,9 @@ public:
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint32_t val) { m_tmuConf[m_tmu].boundTexture = val; }
-    void setTexWrapModeS(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeS = mode; }
-    void setTexWrapModeT(const TextureWrapMode mode) { m_tmuConf[m_tmu].texWrapModeT = mode; }
-    void setEnableMagFilter(const bool val) { m_tmuConf[m_tmu].texEnableMagFilter = val; }
+    void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
+    void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
+    void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
 
     // Framebuffer
     bool clearFramebuffer(bool frameBuffer, bool zBuffer);
@@ -123,9 +123,6 @@ private:
     {
         // Textures
         uint32_t boundTexture { 0 };
-        TextureWrapMode texWrapModeS { TextureWrapMode::REPEAT };
-        TextureWrapMode texWrapModeT { TextureWrapMode::REPEAT };
-        bool texEnableMagFilter { true };
 
         // TMU
        TexEnvMode texEnvMode { TexEnvMode::REPLACE };

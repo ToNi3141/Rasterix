@@ -66,7 +66,7 @@ bool PixelPipeline::updatePipeline()
 
 bool PixelPipeline::uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat)
 {        
-    return uploadTexture({ pixels, sizeX, sizeY, m_tmuConf[m_tmu].texWrapModeS, m_tmuConf[m_tmu].texWrapModeT, m_tmuConf[m_tmu].texEnableMagFilter, intendedPixelFormat });
+    return uploadTexture({ pixels, sizeX, sizeY, intendedPixelFormat });
 }
 
 bool PixelPipeline::uploadTexture(const TextureObject& texObj)
