@@ -57,6 +57,9 @@ public:
         {
             if (m_textureLut[i] == 0)
             {
+                setTextureWrapModeS(i, IRenderer::TextureWrapMode::REPEAT);
+                setTextureWrapModeT(i, IRenderer::TextureWrapMode::REPEAT);
+                enableTextureMagFiltering(i, true);
                 return {true, i};
             }
         }
@@ -66,6 +69,7 @@ public:
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
     {
         uint32_t textureSlot = m_textureLut[texId];
+        const uint32_t textureSlotOld = m_textureLut[texId];
 
         // Check if the current texture contains any pixels. If yes, a new texture must be allocated because the current texture
         // might be used in the display list. If it does not contain any pixels, then this texture will for sure not be used
@@ -89,6 +93,9 @@ public:
                 }
             }
         }
+        m_textures[textureSlot].tmuConfig.reg.wrapModeS = m_textures[textureSlotOld].tmuConfig.reg.wrapModeS;
+        m_textures[textureSlot].tmuConfig.reg.wrapModeT = m_textures[textureSlotOld].tmuConfig.reg.wrapModeT;
+        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = m_textures[textureSlotOld].tmuConfig.reg.enableMagFilter;
 
         m_textures[textureSlot].pixels = textureObject.pixels;
         m_textures[textureSlot].size = (std::max)((textureObject.width * textureObject.height * 2), 512);
