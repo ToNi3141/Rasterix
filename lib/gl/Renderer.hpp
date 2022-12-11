@@ -153,7 +153,7 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](std::shared_ptr<const uint16_t> texAddr, uint32_t gramAddr, uint32_t texSize)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE = TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize();
+            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 

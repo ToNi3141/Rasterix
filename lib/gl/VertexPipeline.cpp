@@ -42,6 +42,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     {
         mat.identity();
     }
+    m_c.identity();
 }
 
 // Might be a faster version than the other implementation.
@@ -396,6 +397,8 @@ void VertexPipeline::transform(
             {
                 transformedColor[i] = vertexColor;
             }
+            // TODO: Check if this required? The standard requires but is it really used?
+            //m_c[j].transform(transformedColor[i], transformedColor[i]); // Calculate this in one batch to improve performance
         }
     }
 
@@ -624,6 +627,11 @@ void VertexPipeline::setProjectionMatrix(const Mat44 &m)
     m_p = m;
 }
 
+void VertexPipeline::setColorMatrix(const Mat44& m)
+{
+    m_c = m;
+}
+
 void VertexPipeline::setTextureMatrix(const Mat44& m)
 {
     m_tm[m_tmu] = m;
@@ -646,13 +654,22 @@ void VertexPipeline::enableCulling(const bool enable)
 
 void VertexPipeline::multiply(const Mat44& mat)
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        m_m = mat * m_m;
-    }
-    else
-    {
-        m_p = mat * m_p;
+        case MatrixMode::MODELVIEW:
+            m_m = mat * m_m;
+            break;
+        case MatrixMode::PROJECTION:
+            m_p = mat * m_p;
+            break;
+        case MatrixMode::TEXTURE:
+            m_tm[m_tmu] = mat * m_tm[m_tmu];
+            break;
+        case MatrixMode::COLOR:
+            m_c = mat * m_c;
+            break;
+        default:
+            break;
     }
 
     m_matricesOutdated = true;
@@ -702,13 +719,22 @@ void VertexPipeline::rotate(const float angle, const float x, const float y, con
 
 void VertexPipeline::loadIdentity()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        m_m.identity();
-    }
-    else
-    {
-        m_p.identity();
+        case MatrixMode::MODELVIEW:
+            m_m.identity();
+            break;
+        case MatrixMode::PROJECTION:
+            m_p.identity();
+            break;
+        case MatrixMode::TEXTURE:
+            m_tm[m_tmu].identity();
+            break;
+        case MatrixMode::COLOR:
+            m_c.identity();
+            break;
+        default:
+            break;
     }
     m_matricesOutdated = true;
 }
@@ -727,6 +753,7 @@ bool VertexPipeline::pushMatrix()
         {
             return false;
         }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::PROJECTION)
     {
@@ -740,6 +767,21 @@ bool VertexPipeline::pushMatrix()
         {
             return false;
         }
+        return true;
+    }
+    else if (m_matrixMode == MatrixMode::COLOR)
+    {
+        if (m_cStackIndex < COLOR_MATRIX_STACK_DEPTH)
+        {
+            m_cStack[m_cStackIndex] = m_c;
+            m_cStackIndex++;
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::TEXTURE)
     {
@@ -748,8 +790,13 @@ bool VertexPipeline::pushMatrix()
             m_tmStack[m_tmStackIndex[m_tmu]][m_tmu] = m_tm[m_tmu];
             m_tmStackIndex[m_tmu]++;
         }
+        else
+        {
+            return false;
+        }
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool VertexPipeline::popMatrix()
@@ -766,6 +813,7 @@ bool VertexPipeline::popMatrix()
         {
             return false;
         }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::PROJECTION)
     {
@@ -779,6 +827,21 @@ bool VertexPipeline::popMatrix()
         {
             return false;
         }
+        return true;
+    }
+    else if (m_matrixMode == MatrixMode::COLOR)
+    {
+        if (m_cStackIndex > 0)
+        {
+            m_cStackIndex--;
+            m_c = m_cStack[m_cStackIndex];
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::TEXTURE)
     {
@@ -791,9 +854,10 @@ bool VertexPipeline::popMatrix()
         {
             return false;
         }
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 const Mat44& VertexPipeline::getModelMatrix() const
@@ -844,6 +908,9 @@ bool VertexPipeline::loadMatrix(const Mat44& m)
         return true;
     case MatrixMode::TEXTURE:
         setTextureMatrix(m);
+        return true;
+    case MatrixMode::COLOR:
+        setColorMatrix(m);
         return true;
     default:
         break;

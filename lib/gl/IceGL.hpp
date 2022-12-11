@@ -51,7 +51,7 @@ public:
     const char *getLibExtensions() const;
     const void *getLibProcedure(std::string name) const;
 
-    static constexpr uint16_t MAX_TEX_SIZE { 256 }; // TODO: Query this from the renderer
+    static constexpr uint16_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
     static constexpr uint16_t MAX_TEXTURE_UNITS { IRenderer::MAX_TMU_COUNT };
 private:
     IRenderer& m_renderer;

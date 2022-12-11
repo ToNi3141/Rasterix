@@ -29,6 +29,7 @@ class IRenderer
 {
 public:
     static constexpr std::size_t MAX_TMU_COUNT { 2 };
+    static constexpr std::size_t MAX_TEXTURE_SIZE_PX { 256 };
 
     using TMU = uint8_t;
 

@@ -51,7 +51,7 @@ IceGL::IceGL(IRenderer &renderer)
     m_renderer.createTexture();
     static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("IceGL.log", "basic-log.txt");
     file_sink->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    auto logger = std::make_shared<spdlog::logger>("basic_logger", file_sink);
+    auto logger = std::make_shared<spdlog::logger>("IceGL", file_sink);
     logger->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
     logger->info("IceGL started");
 

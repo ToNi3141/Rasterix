@@ -21,15 +21,18 @@
 #include <stdint.h>
 #include <array>
 #include <bitset>
+#include <algorithm>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
+#include "IRenderer.hpp"
 
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayListAssembler {
 public:
         using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 private:
-    static constexpr std::size_t TMU_COUNT { 2 };
+    static constexpr std::size_t TMU_COUNT { IRenderer::MAX_TMU_COUNT };
+    static constexpr uint32_t DEVICE_MEMORY_PAGE_SIZE { 512 };
     struct StreamCommand
     {
         // Anathomy of a command:
@@ -141,8 +144,9 @@ public:
     bool updateTexture(const uint32_t addr, std::shared_ptr<const uint16_t> pixels, const uint32_t texSize)
     {
         closeStreamSection();
-        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSize, addr);
-        void *dest = m_displayList.alloc(texSize);
+        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MEMORY_PAGE_SIZE) };
+        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSizeOnDevice, addr);
+        void *dest = m_displayList.alloc(texSizeOnDevice);
         if (ret && dest)
         {
             memcpy(dest, pixels.get(), texSize);

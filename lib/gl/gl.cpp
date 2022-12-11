@@ -1897,6 +1897,11 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
         IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::TEXTURE);
     }
+    else if (mode == GL_COLOR)
+    {
+        SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
+        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::COLOR);
+    }
     else
     {
         SPDLOG_WARN("glMatrixMode 0x{:X} not supported", mode);

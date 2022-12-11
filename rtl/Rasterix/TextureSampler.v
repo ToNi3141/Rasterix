@@ -82,11 +82,18 @@ module TextureSampler #(
         end
     endfunction
 
+    // Convert the configured texture size into a 0.5.
+    // The texture size comes as a integer value which is intepreted as a normalized 1.0.
+    // Assuming a texture size of 4px (16'h100). To normalize this, the point (imaginary) must be moved to the diget bevore the 1.
+    // But a 1.0 is different on a 4px texture and on a texture on another size like 16px (16'h10000). Therefore also the 
+    // representation of 0.5 changes from 16'h010 to 16'h01000. This is what this function is intended for, to get a normalized
+    // 0.5 depending on the size of the texture.
     function [15 : 0] convertToZeroPointFive;
         input [7 : 0] texSize;
         convertToZeroPointFive = 
         {
-            2'h0,
+            1'h0, // sign
+            1'h0,
             texSize[0],
             texSize[1],
             texSize[2],
@@ -99,11 +106,12 @@ module TextureSampler #(
         };
     endfunction
 
+    // See convertToZeroPointFive. It is basically the same just for 1.0
     function [15 : 0] convertToOnePointZero;
         input [7 : 0] texSize;
         convertToOnePointZero = 
         {
-            1'h0,
+            1'h0, // sign
             texSize[0],
             texSize[1],
             texSize[2],
@@ -136,8 +144,6 @@ module TextureSampler #(
     begin : TexAddrCalc
         reg [ 7 : 0] addrT0;
         reg [ 7 : 0] addrT1;
-        reg [15 : 0] texelSClamped;
-        reg [15 : 0] texelTClamped;
         reg [31 : 0] texelS0WithOffset;
         reg [31 : 0] texelS1WithOffset;
         reg [31 : 0] texelT0WithOffset;

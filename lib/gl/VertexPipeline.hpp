@@ -34,7 +34,8 @@ public:
     {
         MODELVIEW,
         PROJECTION,
-        TEXTURE
+        TEXTURE,
+        COLOR
     };
 
     enum class ColorMaterialTracking
@@ -64,6 +65,7 @@ public:
     void setNormalMatrix(const Mat44& m);
     void setProjectionMatrix(const Mat44& m);
     void setTextureMatrix(const Mat44& m);
+    void setColorMatrix(const Mat44& m);
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
 
     void enableCulling(const bool enable);
@@ -107,6 +109,7 @@ private:
     static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
     static constexpr uint8_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
     static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
+    static constexpr uint8_t COLOR_MATRIX_STACK_DEPTH { 16 };
 
     struct Triangle
     {
@@ -186,14 +189,17 @@ private:
     Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH] {};
     Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH] {};
     std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tmStack[TEXTURE_MATRIX_STACK_DEPTH] {};
+    Mat44 m_cStack[COLOR_MATRIX_STACK_DEPTH] {};
     uint8_t m_mStackIndex{ 0 };
     uint8_t m_pStackIndex{ 0 };
     std::array<uint8_t, IRenderer::MAX_TMU_COUNT> m_tmStackIndex{ 0 };
+    uint8_t m_cStackIndex{ 0 };
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal
     std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
+    Mat44 m_c {}; // Color
     bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
 
     // Color material

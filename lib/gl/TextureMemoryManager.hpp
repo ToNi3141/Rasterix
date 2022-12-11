@@ -27,7 +27,7 @@ template <uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE = 256 * 256 * 2;
+    static constexpr uint32_t MAX_TEXTURE_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX * IRenderer::MAX_TEXTURE_SIZE_PX * 2 };
     struct TextureMeta 
     {
         const bool valid;
@@ -98,7 +98,7 @@ public:
         m_textures[textureSlot].tmuConfig.reg.enableMagFilter = m_textures[textureSlotOld].tmuConfig.reg.enableMagFilter;
 
         m_textures[textureSlot].pixels = textureObject.pixels;
-        m_textures[textureSlot].size = (std::max)((textureObject.width * textureObject.height * 2), 512);
+        m_textures[textureSlot].size = textureObject.width * textureObject.height * 2;
         m_textures[textureSlot].inUse = true;
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;
