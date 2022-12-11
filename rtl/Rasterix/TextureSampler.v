@@ -88,11 +88,12 @@ module TextureSampler #(
     // But a 1.0 is different on a 4px texture and on a texture on another size like 16px (16'h10000). Therefore also the 
     // representation of 0.5 changes from 16'h010 to 16'h01000. This is what this function is intended for, to get a normalized
     // 0.5 depending on the size of the texture.
-    function [15 : 0] convertToZeroPointFive;
+    function [31 : 0] convertToZeroPointFive;
         input [7 : 0] texSize;
         convertToZeroPointFive = 
         {
             1'h0, // sign
+            16'h0, // integer part
             1'h0,
             texSize[0],
             texSize[1],
@@ -107,11 +108,12 @@ module TextureSampler #(
     endfunction
 
     // See convertToZeroPointFive. It is basically the same just for 1.0
-    function [15 : 0] convertToOnePointZero;
+    function [31 : 0] convertToOnePointZero;
         input [7 : 0] texSize;
         convertToOnePointZero = 
         {
             1'h0, // sign
+            16'h0, // integer part
             texSize[0],
             texSize[1],
             texSize[2],
