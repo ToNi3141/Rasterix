@@ -1297,7 +1297,6 @@ GLAPI void APIENTRY impl_glUnlockArrays();
 // -------------------------------------------------------
 
 
-#if !defined(_WIN32)
 // Wrapper Functions
 // Open GL 1.0
 // -------------------------------------------------------
@@ -1706,7 +1705,7 @@ GLAPI_WRAPPER void APIENTRY glMultTransposeMatrixd(const GLdouble *m);
 GLAPI_WRAPPER void APIENTRY glLockArrays(GLint first, GLsizei count);
 GLAPI_WRAPPER void APIENTRY glUnlockArrays();
 // -------------------------------------------------------
-#endif // defined(_WIN32)
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,6 @@
-add_library(gl SHARED 
+# add_definitions(-DSPDLOG_ACTIVE_LEVEL=3) 
+
+add_library(gl STATIC
     Clipper.cpp
     gl.cpp
     glu.cpp
@@ -9,9 +11,6 @@ add_library(gl SHARED
     RenderObj.cpp
     TexGen.cpp
     VertexPipeline.cpp
-    wgl.cpp
-    gl.def
 )
-SET(CMAKE_LINK_DEF_FILE_FLAG "/DEF:gl.def")
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=3) 
-target_link_libraries(gl PRIVATE spdlog::spdlog "${CMAKE_BINARY_DIR}/FTD3XX.lib") #  "${CMAKE_BINARY_DIR}/FTD3XX.lib" # TODO: Remove Windows Dependency
+
+target_link_libraries(gl PRIVATE spdlog::spdlog)

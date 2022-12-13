@@ -4116,7 +4116,6 @@ GLAPI void APIENTRY impl_glUnlockArrays()
     SPDLOG_WARN("glUnlockArrays not implemented");
 }
 
-#if !defined(_WIN32)
 // Wrapper
 // Open GL 1.0
 // -------------------------------------------------------
@@ -4430,7 +4429,7 @@ GLAPI_WRAPPER void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei 
 
 // Open GL 1.1
 // -------------------------------------------------------
-GLAPI_WRAPPER GLboolean APIENTRY glAreTexturesResident(GLsizei n, const GLuint *textures, GLboolean *residences){ impl_glAreTexturesResident(n, textures, residences); }
+GLAPI_WRAPPER GLboolean APIENTRY glAreTexturesResident(GLsizei n, const GLuint *textures, GLboolean *residences){ return impl_glAreTexturesResident(n, textures, residences); }
 GLAPI_WRAPPER void APIENTRY glArrayElement(GLint i){ impl_glArrayElement(i); }
 GLAPI_WRAPPER void APIENTRY glBindTexture(GLenum target, GLuint texture){ impl_glBindTexture(target, texture); }
 GLAPI_WRAPPER void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer){ impl_glColorPointer(size, type, stride, pointer); }
@@ -4446,7 +4445,7 @@ GLAPI_WRAPPER void APIENTRY glEdgeFlagPointer(GLsizei stride, const GLvoid *poin
 GLAPI_WRAPPER void APIENTRY glEnableClientState(GLenum cap){ impl_glEnableClientState(cap); }
 GLAPI_WRAPPER void APIENTRY glGenTextures(GLsizei n, GLuint *textures){ impl_glGenTextures(n, textures); }
 GLAPI_WRAPPER void APIENTRY glGetPointerv(GLenum pname, GLvoid **params){ impl_glGetPointerv(pname, params); }
-GLAPI_WRAPPER GLboolean APIENTRY glIsTexture(GLuint texture){ impl_glIsTexture(texture); }
+GLAPI_WRAPPER GLboolean APIENTRY glIsTexture(GLuint texture){ return impl_glIsTexture(texture); }
 GLAPI_WRAPPER void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const GLvoid *pointer){ impl_glIndexPointer(type, stride, pointer); }
 GLAPI_WRAPPER void APIENTRY glIndexub(GLubyte c){ impl_glIndexub(c); }
 GLAPI_WRAPPER void APIENTRY glIndexubv(const GLubyte *c){ impl_glIndexubv(c); }
@@ -4523,4 +4522,3 @@ GLAPI_WRAPPER void APIENTRY glMultTransposeMatrixd(const GLdouble *m){ impl_glMu
 GLAPI_WRAPPER void APIENTRY glLockArrays(GLint first, GLsizei count){ impl_glLockArrays(first, count); }
 GLAPI_WRAPPER void APIENTRY glUnlockArrays(){ impl_glUnlockArrays(); }
 // -------------------------------------------------------
-#endif // defined(_WIN32)

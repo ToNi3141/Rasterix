@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <Windows.h>
+
 #include "gl.h"
 
 // Wiggle API
