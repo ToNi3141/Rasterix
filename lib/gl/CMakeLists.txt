@@ -14,3 +14,4 @@ add_library(gl STATIC
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
+target_include_directories(gl PUBLIC .)
