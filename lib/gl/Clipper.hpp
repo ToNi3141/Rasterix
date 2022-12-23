@@ -27,13 +27,13 @@ public:
 private:
     enum OutCode
     {
-        NONE    = 0x00,
-        NEAR    = 0x01,
-        FAR     = 0x02,
-        TOP     = 0x04,
-        BOTTOM  = 0x08,
-        LEFT    = 0x10,
-        RIGHT   = 0x20
+        OC_NONE    = 0x00,
+        OC_NEAR    = 0x01,
+        OC_FAR     = 0x02,
+        OC_TOP     = 0x04,
+        OC_BOTTOM  = 0x08,
+        OC_LEFT    = 0x10,
+        OC_RIGHT   = 0x20
     };
 
     static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);

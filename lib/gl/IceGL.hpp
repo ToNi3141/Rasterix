@@ -30,6 +30,7 @@
 #include "PixelPipeline.hpp"
 #include "VertexQueue.hpp"
 #include "gl.h"
+#include <map>
 
 class IceGL
 {
@@ -47,7 +48,11 @@ public:
     VertexQueue& vertexQueue() { return m_vertexQueue; }
     void commit();
 
-    static constexpr uint16_t MAX_TEX_SIZE { 256 }; // TODO: Query this from the renderer
+    const char *getLibExtensions() const;
+    const void *getLibProcedure(std::string name) const;
+
+    static constexpr uint16_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
+    static constexpr uint16_t MAX_TEXTURE_UNITS { IRenderer::MAX_TMU_COUNT };
 private:
     IRenderer& m_renderer;
     PixelPipeline m_pixelPipeline;
@@ -56,6 +61,12 @@ private:
 
     // Errors
     uint32_t m_error { 0 };
+
+    // OpenGL extensions 
+    void addProcedure(std::string name, const void *address);
+    void addExtension(std::string extension);
+    std::map<std::string, const void *> m_glProcedures;
+    std::string m_glExtensions;
 };
 
 #endif // ICEGL_HPP

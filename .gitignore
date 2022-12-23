@@ -4,3 +4,4 @@ rtl/top/Verilator/obj_dir
 build-*
 unittest/obj_dir
 .DS_Store
+build/

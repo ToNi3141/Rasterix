@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "Rasterizer.hpp"
 #include <cmath>
+#include <spdlog/spdlog.h>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max
@@ -37,6 +38,11 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     m_m.identity();
     m_p.identity();
     m_n.identity();
+    for (auto& mat : m_tm)
+    {
+        mat.identity();
+    }
+    m_c.identity();
 }
 
 // Might be a faster version than the other implementation.
@@ -78,7 +84,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //             if (obj.texCoordArrayEnabled())
 //             {
 //                 obj.getTexCoord(transformedTexCoord[i], index);
-//             }
+//             } // TODO: Query texCoord also when it is disabled to get the default texCoord
 //             m_texGen.calculateTexGenCoords(m_m, transformedTexCoord[i], v);
 
 
@@ -94,7 +100,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 //                     // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
 //                     // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
 //                     nl.normalize();
-//                 }
+//                 } // TODO: Query the normal also when it is disabled to get the default normal
 //                 if (obj.vertexArrayEnabled())
 //                 {
 //                     m_m.transform(vl, v);
@@ -129,8 +135,11 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     recalculateMatrices();
     if (!m_renderer.updatePipeline()) 
     {
+        SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
     }
+
+    obj.logCurrentConfig();
 
     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
@@ -184,6 +193,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         );
         if (!ret)
         {
+            SPDLOG_ERROR("drawObj(): Cannot draw triangle array");
             return false;
         }
     }
@@ -321,24 +331,15 @@ void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec
     for (uint32_t o = offset, i = 0; i < count; o++, i++)
     {
         const uint32_t index = obj.getIndex(o);
-        if (obj.colorArrayEnabled())
-        {
-            obj.getColor(color[i], index);
-        }
+        obj.getColor(color[i], index);
         if (obj.vertexArrayEnabled())
         {
             obj.getVertex(vertex[i], index);
         }
-        if (obj.normalArrayEnabled())
-        {
-            obj.getNormal(normal[i], index);
-        }
+        obj.getNormal(normal[i], index);
         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
-            if (obj.texCoordArrayEnabled()[j])
-            {
-                obj.getTexCoord(j, tex[i][j], index);
-            }
+            obj.getTexCoord(j, tex[i][j], index);
         }
     }
 }
@@ -363,9 +364,10 @@ void VertexPipeline::transform(
     {
         if (enableVertexArray)
             m_m.transform(transformedVertex.data(), vertex.data(), count);
-        if (enableNormalArray)
-            m_n.transform(transformedNormal.data(), normal.data(), count);
-        
+
+        // TODO: Increase the performance by only transform one normal when enableNormalArray is false.
+        m_n.transform(transformedNormal.data(), normal.data(), count);
+
         for (std::size_t i = 0; i < count; i++)
         {
             Vec4 c;
@@ -378,7 +380,7 @@ void VertexPipeline::transform(
                 c = vertexColor;
             }
 
-            if (enableNormalArray)
+            if (m_enableNormalizing)
                 transformedNormal[i].normalize();
             m_lighting.calculateLights(transformedColor[i], c, transformedVertex[i], transformedNormal[i]);
         }
@@ -395,6 +397,8 @@ void VertexPipeline::transform(
             {
                 transformedColor[i] = vertexColor;
             }
+            // TODO: Check if this required? The standard requires but is it really used?
+            //m_c[j].transform(transformedColor[i], transformedColor[i]); // Calculate this in one batch to improve performance
         }
     }
 
@@ -411,6 +415,7 @@ void VertexPipeline::transform(
                 transformedTex[i][j].initHomogeneous();
             }
             m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
+            m_tm[j].transform(transformedTex[i][j], transformedTex[i][j]); // Calculate this in one batch to improve performance
         }
     }
 
@@ -617,6 +622,21 @@ void VertexPipeline::setModelMatrix(const Mat44 &m)
     m_m = m;
 }
 
+void VertexPipeline::setProjectionMatrix(const Mat44 &m)
+{
+    m_p = m;
+}
+
+void VertexPipeline::setColorMatrix(const Mat44& m)
+{
+    m_c = m;
+}
+
+void VertexPipeline::setTextureMatrix(const Mat44& m)
+{
+    m_tm[m_tmu] = m;
+}
+
 void VertexPipeline::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
@@ -634,13 +654,22 @@ void VertexPipeline::enableCulling(const bool enable)
 
 void VertexPipeline::multiply(const Mat44& mat)
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        m_m = mat * m_m;
-    }
-    else
-    {
-        m_p = mat * m_p;
+        case MatrixMode::MODELVIEW:
+            m_m = mat * m_m;
+            break;
+        case MatrixMode::PROJECTION:
+            m_p = mat * m_p;
+            break;
+        case MatrixMode::TEXTURE:
+            m_tm[m_tmu] = mat * m_tm[m_tmu];
+            break;
+        case MatrixMode::COLOR:
+            m_c = mat * m_c;
+            break;
+        default:
+            break;
     }
 
     m_matricesOutdated = true;
@@ -690,13 +719,22 @@ void VertexPipeline::rotate(const float angle, const float x, const float y, con
 
 void VertexPipeline::loadIdentity()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        m_m.identity();
-    }
-    else
-    {
-        m_p.identity();
+        case MatrixMode::MODELVIEW:
+            m_m.identity();
+            break;
+        case MatrixMode::PROJECTION:
+            m_p.identity();
+            break;
+        case MatrixMode::TEXTURE:
+            m_tm[m_tmu].identity();
+            break;
+        case MatrixMode::COLOR:
+            m_c.identity();
+            break;
+        default:
+            break;
     }
     m_matricesOutdated = true;
 }
@@ -715,6 +753,7 @@ bool VertexPipeline::pushMatrix()
         {
             return false;
         }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::PROJECTION)
     {
@@ -728,8 +767,36 @@ bool VertexPipeline::pushMatrix()
         {
             return false;
         }
+        return true;
     }
-    return true;
+    else if (m_matrixMode == MatrixMode::COLOR)
+    {
+        if (m_cStackIndex < COLOR_MATRIX_STACK_DEPTH)
+        {
+            m_cStack[m_cStackIndex] = m_c;
+            m_cStackIndex++;
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+        return true;
+    }
+    else if (m_matrixMode == MatrixMode::TEXTURE)
+    {
+        if (m_tmStackIndex[m_tmu] < TEXTURE_MATRIX_STACK_DEPTH)
+        {
+            m_tmStack[m_tmStackIndex[m_tmu]][m_tmu] = m_tm[m_tmu];
+            m_tmStackIndex[m_tmu]++;
+        }
+        else
+        {
+            return false;
+        }
+        return true;
+    }
+    return false;
 }
 
 bool VertexPipeline::popMatrix()
@@ -746,6 +813,7 @@ bool VertexPipeline::popMatrix()
         {
             return false;
         }
+        return true;
     }
     else if (m_matrixMode == MatrixMode::PROJECTION)
     {
@@ -759,9 +827,37 @@ bool VertexPipeline::popMatrix()
         {
             return false;
         }
+        return true;
+    }
+    else if (m_matrixMode == MatrixMode::COLOR)
+    {
+        if (m_cStackIndex > 0)
+        {
+            m_cStackIndex--;
+            m_c = m_cStack[m_cStackIndex];
+            m_matricesOutdated = true;
+        }
+        else
+        {
+            return false;
+        }
+        return true;
+    }
+    else if (m_matrixMode == MatrixMode::TEXTURE)
+    {
+        if (m_tmStackIndex[m_tmu] > 0)
+        {
+            m_tmStackIndex[m_tmu]--;
+            m_tm[m_tmu] = m_tmStack[m_tmStackIndex[m_tmu]][m_tmu];
+        }
+        else
+        {
+            return false;
+        }
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 const Mat44& VertexPipeline::getModelMatrix() const
@@ -797,6 +893,29 @@ void VertexPipeline::recalculateMatrices()
 void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
 {
     m_matrixMode = matrixMode;
+}
+
+bool VertexPipeline::loadMatrix(const Mat44& m)
+{
+    m_matricesOutdated = true;
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        setModelMatrix(m);
+        return true;
+    case MatrixMode::PROJECTION:
+        setProjectionMatrix(m);
+        return true;
+    case MatrixMode::TEXTURE:
+        setTextureMatrix(m);
+        return true;
+    case MatrixMode::COLOR:
+        setColorMatrix(m);
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
 uint8_t VertexPipeline::getModelMatrixStackDepth()

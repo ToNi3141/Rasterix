@@ -34,9 +34,9 @@ module TexEnv
     
     input  wire [31 : 0]                conf,
 
-    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor,
+    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
     input  wire [PIXEL_WIDTH - 1 : 0]   texSrcColor, // Cs 
-    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
+    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf
     input  wire [PIXEL_WIDTH - 1 : 0]   envColor, // Cc
 
     output reg  [PIXEL_WIDTH - 1 : 0]   color
@@ -619,7 +619,7 @@ module TexEnv
         bc = $signed(step1_color[COLOR_B_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
         ac = $signed(step1_color[COLOR_A_SIGNED_POS +: SUB_PIXEL_WIDTH_SIGNED]);
 
-        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc));
+        dotSum = (ExpandSigned(rc) + ExpandSigned(gc) + ExpandSigned(bc)) <<< 2;
 
         dot = ReduceAndSaturateSigned(dotSum);
 

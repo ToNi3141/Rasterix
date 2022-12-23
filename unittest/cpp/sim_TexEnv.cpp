@@ -573,16 +573,15 @@ TEST_CASE("Check DOT3_RGB", "[TexEnv]")
     VTexEnv* top = new VTexEnv();
     reset(top);
 
-    top->previousColor = 0x11000001;
-    top->texSrcColor = 0x00669902; // 0x66 = 0.4
-    top->primaryColor = 0x00000003; // 0x99 = 0.6
+    top->previousColor = 0x11000001; // 0x11 = 0.066
+    top->texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
+    top->primaryColor = 0x00000003;
     top->envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
-    // g = (0.4 - 0.5) * (0 - 0.5) = 0.05
-    // b = (0.6 - 0.5) * (0 - 0.5) = -0.05
-    // rgb = 0.25 + 0.05 + -0.05 = 0.25 (0x40)
-    // In reality it is 0x41 because of rounding issues
+    // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
+    // b = (0.66667 - 0.5) * (0 - 0.5) = -0.083333
+    // rgb = 0.25 + -0.15 + -0.083333 = 0,01667 -> 0x4 (rounded up to 0x5) * 4 = 0x14
 
     Conf conf;
     initConf(conf);
@@ -596,7 +595,7 @@ TEST_CASE("Check DOT3_RGB", "[TexEnv]")
     clk(top);
     clk(top);
     clk(top);
-    REQUIRE(top->color == 0x41414102);
+    REQUIRE(top->color == 0x14141402);
 
     // Destroy model
     delete top;
@@ -607,16 +606,15 @@ TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
     VTexEnv* top = new VTexEnv();
     reset(top);
 
-    top->previousColor = 0x11000001;
-    top->texSrcColor = 0x00669902; // 0x66 = 0.4
-    top->primaryColor = 0x00000003; // 0x99 = 0.6
+    top->previousColor = 0x11000001; // 0x11 = 0.066
+    top->texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
+    top->primaryColor = 0x00000003;
     top->envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
-    // g = (0.4 - 0.5) * (0 - 0.5) = 0.05
-    // b = (0.6 - 0.5) * (0 - 0.5) = -0.05
-    // rgb = 0.25 + 0.05 + -0.05 = 0.25 (0x40)
-    // In reality it is 0x41 because of rounding issues
+    // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
+    // b = (0.66667 - 0.5) * (0 - 0.5) = -0.083333
+    // rgb = 0.25 + -0.15 + -0.083333 = 0,01667 -> 0x4 (rounded up to 0x5) * 4 = 0x14
 
     Conf conf;
     initConf(conf);
@@ -630,7 +628,7 @@ TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
     clk(top);
     clk(top);
     clk(top);
-    REQUIRE(top->color == 0x41414141);
+    REQUIRE(top->color == 0x14141414);
 
     // Destroy model
     delete top;
@@ -869,16 +867,15 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
     VTexEnv* top = new VTexEnv();
     reset(top);
 
-    top->previousColor = 0x11000001;
-    top->texSrcColor = 0x00669902; // 0x66 = 0.4
-    top->primaryColor = 0x00000003; // 0x99 = 0.6
+    top->previousColor = 0x11000001; // 0x11 = 0.066
+    top->texSrcColor = 0x00CC8802; // 0xCC = 0.8, 0x88 = 0.533334
+    top->primaryColor = 0x00000003;
     top->envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
-    // g = (0.4 - 0.5) * (0 - 0.5) = 0.05
-    // b = (0.6 - 0.5) * (0 - 0.5) = -0.05
-    // rgb = 0.25 + 0.05 + -0.05 = 0.25 (0x40)
-    // In reality it is 0x41 because of rounding issues
+    // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
+    // b = (0.533334 - 0.5) * (0 - 0.5) = -0.016665
+    // rgb = 0.25 + -0.15 + -0.016665 = 0.083333 -> 0x15 (rounded up to 0x16) * 4 = 0x58
 
     Conf conf;
     initConf(conf);
@@ -895,7 +892,7 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
     clk(top);
     clk(top);
     clk(top);
-    REQUIRE(top->color == 0x82828202);
+    REQUIRE(top->color == 0xB0B0B002);
 
     // Scale of 2
     conf.conf.shiftRgb = 2;

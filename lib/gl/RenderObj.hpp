@@ -52,6 +52,8 @@ public:
         UNSIGNED_INT
     };
 
+    void logCurrentConfig() const;
+
     bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     bool getVertex(Vec4& vec, const uint32_t index) const;
     std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
@@ -162,6 +164,9 @@ private:
         return false;
     }
 
+    const char* drawModeToString(const DrawMode drawMode) const;
+    const char* typeToString(const Type type) const;
+
     DrawMode m_drawMode;
     std::size_t m_count;
 
@@ -176,20 +181,20 @@ private:
     std::array<Type, MAX_TMU_COUNT> m_texCoordType;
     std::array<uint32_t, MAX_TMU_COUNT> m_texCoordStride;
     std::array<const void*, MAX_TMU_COUNT> m_texCoordPointer;
-    std::array<Vec4, MAX_TMU_COUNT> m_texCoord;
+    std::array<Vec4, MAX_TMU_COUNT> m_texCoord {{{{ 0.0f, 0.0f, 0.0f, 1.0f }}, {{ 0.0f, 0.0f, 0.0f, 1.0f }}}}; // TODO: Make it variable.
 
     bool m_normalArrayEnabled;
     Type m_normalType;
     uint32_t m_normalStride;
     const void* m_normalPointer;
-    Vec3 m_normal;
+    Vec3 m_normal {{ 0.0f, 0.0f, 1.0f }};
 
     bool m_colorArrayEnabled;
     uint8_t m_colorSize;
     Type m_colorType;
     uint32_t m_colorStride;
     const void* m_colorPointer;
-    Vec4 m_vertexColor;
+    Vec4 m_vertexColor {{ 1.0f, 1.0f, 1.0f, 1.0f }};
 
     bool m_indicesEnabled;
     Type m_indicesType;

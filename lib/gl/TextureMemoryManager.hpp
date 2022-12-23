@@ -21,12 +21,13 @@
 #include <array>
 #include "IRenderer.hpp"
 #include <functional>
+#include <spdlog/spdlog.h>
 
 template <uint16_t MAX_NUMBER_OF_TEXTURES = 64>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE = 256 * 256 * 2;
+    static constexpr uint32_t MAX_TEXTURE_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX * IRenderer::MAX_TEXTURE_SIZE_PX * 2 };
     struct TextureMeta 
     {
         const bool valid;
@@ -56,6 +57,9 @@ public:
         {
             if (m_textureLut[i] == 0)
             {
+                setTextureWrapModeS(i, IRenderer::TextureWrapMode::REPEAT);
+                setTextureWrapModeT(i, IRenderer::TextureWrapMode::REPEAT);
+                enableTextureMagFiltering(i, true);
                 return {true, i};
             }
         }
@@ -65,6 +69,7 @@ public:
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
     {
         uint32_t textureSlot = m_textureLut[texId];
+        const uint32_t textureSlotOld = m_textureLut[texId];
 
         // Check if the current texture contains any pixels. If yes, a new texture must be allocated because the current texture
         // might be used in the display list. If it does not contain any pixels, then this texture will for sure not be used
@@ -83,10 +88,14 @@ public:
                 {
                     textureSlot = i;
                     m_textureLut[texId] = textureSlot;
+                    SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
                     break;
                 }
             }
         }
+        m_textures[textureSlot].tmuConfig.reg.wrapModeS = m_textures[textureSlotOld].tmuConfig.reg.wrapModeS;
+        m_textures[textureSlot].tmuConfig.reg.wrapModeT = m_textures[textureSlotOld].tmuConfig.reg.wrapModeT;
+        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = m_textures[textureSlotOld].tmuConfig.reg.enableMagFilter;
 
         m_textures[textureSlot].pixels = textureObject.pixels;
         m_textures[textureSlot].size = textureObject.width * textureObject.height * 2;
@@ -94,13 +103,28 @@ public:
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;
         m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
-        m_textures[textureSlot].tmuConfig.reg.pixelFormat = textureObject.getPixelFormat();
-        m_textures[textureSlot].tmuConfig.reg.wrapModeS = textureObject.wrapModeS;
-        m_textures[textureSlot].tmuConfig.reg.wrapModeT = textureObject.wrapModeT;
-        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = textureObject.enableMagFilter;
+        m_textures[textureSlot].tmuConfig.reg.pixelFormat = static_cast<uint32_t>(textureObject.getPixelFormat());
         m_textures[textureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.width))) - 1));
         m_textures[textureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.height))) - 1));
         return true;
+    }
+
+    void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.wrapModeS = static_cast<uint32_t>(mode);
+    }
+
+    void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.wrapModeT = static_cast<uint32_t>(mode);
+    }
+
+    void enableTextureMagFiltering(const uint16_t texId, bool filter)
+    {
+        Texture& tex = m_textures[m_textureLut[texId]];
+        tex.tmuConfig.reg.enableMagFilter = filter;
     }
 
     TextureMeta getTextureMeta(const uint16_t texId)
@@ -123,10 +147,7 @@ public:
         return { m_textures[textureSlot].pixels,
             static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texWidth * 2),
             static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texHeight * 2),
-            m_textures[textureSlot].tmuConfig.reg.wrapModeS,
-            m_textures[textureSlot].tmuConfig.reg.wrapModeT,
-            m_textures[textureSlot].tmuConfig.reg.enableMagFilter,
-            m_textures[textureSlot].intendedPixelFormat };
+            static_cast<IRenderer::TextureObject::IntendedInternalPixelFormat>(m_textures[textureSlot].intendedPixelFormat) };
     }
 
     bool deleteTexture(const uint16_t texId) 
@@ -177,16 +198,18 @@ private:
         IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
         union 
         {
-            struct __attribute__ ((__packed__)) TmuTextureConfig
+            #pragma pack(push, 1)
+            struct TmuTextureConfig
             {
-                uint8_t texWidth : 8;
-                uint8_t texHeight : 8;
-                IRenderer::TextureObject::TextureWrapMode wrapModeS : 1;
-                IRenderer::TextureObject::TextureWrapMode wrapModeT : 1;
-                bool enableMagFilter : 1;
-                IRenderer::TextureObject::PixelFormat pixelFormat : 4;
+                uint32_t texWidth : 8;
+                uint32_t texHeight : 8;
+                uint32_t wrapModeS : 1;
+                uint32_t wrapModeT : 1;
+                uint32_t enableMagFilter : 1;
+                uint32_t pixelFormat : 4;
             } reg;
             uint32_t serialized;
+            #pragma pack(pop)
         } tmuConfig;
     };
 

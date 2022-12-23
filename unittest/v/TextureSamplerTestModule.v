@@ -21,7 +21,7 @@ module TextureSamplerTestModule #(
     parameter STREAM_WIDTH = 32,
 
     localparam TEX_ADDR_WIDTH = 16,
-    localparam PIXEL_WIDTH = 16
+    localparam PIXEL_WIDTH = 32
 ) 
 (
     input  wire                         aclk,
@@ -31,6 +31,8 @@ module TextureSamplerTestModule #(
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 7 : 0]                textureSizeWidth, 
     input  wire [ 7 : 0]                textureSizeHeight,
+    input  wire                         enableHalfPixelOffset,
+    input  wire [ 3 : 0]                confPixelFormat,
 
     input  wire [31 : 0]                texelS, // S16.15
     input  wire [31 : 0]                texelT, // S16.15
@@ -59,14 +61,18 @@ module TextureSamplerTestModule #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr11;
-    wire [15 : 0]                   texelInput00;
-    wire [15 : 0]                   texelInput01;
-    wire [15 : 0]                   texelInput10;
-    wire [15 : 0]                   texelInput11;
+    wire [PIXEL_WIDTH - 1 : 0]      texelInput00;
+    wire [PIXEL_WIDTH - 1 : 0]      texelInput01;
+    wire [PIXEL_WIDTH - 1 : 0]      texelInput10;
+    wire [PIXEL_WIDTH - 1 : 0]      texelInput11;
 
-    TextureBuffer texCache (
+    TextureBuffer #(
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) texCache (
         .aclk(aclk),
         .resetn(resetn),
+
+        .confPixelFormat(confPixelFormat),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -92,6 +98,7 @@ module TextureSamplerTestModule #(
 
         .textureSizeWidth(textureSizeWidth),
         .textureSizeHeight(textureSizeHeight),
+        .enableHalfPixelOffset(enableHalfPixelOffset),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),

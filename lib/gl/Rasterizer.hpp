@@ -24,7 +24,8 @@
 class Rasterizer
 {
 public:  
-    struct __attribute__ ((__packed__)) RasterizedTriangle
+    #pragma pack(push, 4)
+    struct RasterizedTriangle
     {
         struct Texture
         {
@@ -52,6 +53,7 @@ public:
         float depthZYInc;
         std::array<Texture, IRenderer::MAX_TMU_COUNT> texture;
     };
+    #pragma pack(pop)
 
     Rasterizer();
     bool rasterize(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle);

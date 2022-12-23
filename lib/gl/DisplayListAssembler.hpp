@@ -21,15 +21,18 @@
 #include <stdint.h>
 #include <array>
 #include <bitset>
+#include <algorithm>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
+#include "IRenderer.hpp"
 
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayListAssembler {
 public:
         using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 private:
-    static constexpr std::size_t TMU_COUNT { 2 };
+    static constexpr std::size_t TMU_COUNT { IRenderer::MAX_TMU_COUNT };
+    static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size. The alignment is not important.
     struct StreamCommand
     {
         // Anathomy of a command:
@@ -141,8 +144,9 @@ public:
     bool updateTexture(const uint32_t addr, std::shared_ptr<const uint16_t> pixels, const uint32_t texSize)
     {
         closeStreamSection();
-        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSize, addr);
-        void *dest = m_displayList.alloc(texSize);
+        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
+        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSizeOnDevice, addr);
+        void *dest = m_displayList.alloc(texSizeOnDevice);
         if (ret && dest)
         {
             memcpy(dest, pixels.get(), texSize);
@@ -156,6 +160,7 @@ public:
                     const uint32_t texSize)
     {
         bool ret = false;
+        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         if (openNewStreamSection())
         {
             // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
@@ -173,12 +178,12 @@ public:
             }
             if (m_texStreamOp && m_texLoad && m_texLoadAddr)
             {
-                const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSize))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
+                const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSizeOnDevice))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
                 const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
 
                 *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | tmuShifted;
 
-                *m_texLoad = StreamCommand::DSE_LOAD | texSize;
+                *m_texLoad = StreamCommand::DSE_LOAD | texSizeOnDevice;
                 *m_texLoadAddr = texAddr;
                 m_wasLastCommandATextureCommand.set(tmu);
                 ret = true;
@@ -378,7 +383,9 @@ private:
         return false;
     }
 
-    List m_displayList __attribute__ ((aligned (8)));
+    #pragma pack(push, 8)
+    List m_displayList;
+    #pragma pack(pop)
 
     SCT *m_streamCommand { nullptr };
 

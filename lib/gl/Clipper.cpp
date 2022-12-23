@@ -31,21 +31,21 @@ void Clipper::lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const C
 
 Clipper::OutCode Clipper::outCode(const Vec4& v)
 {
-    OutCode c = OutCode::NONE;
+    OutCode c = OutCode::OC_NONE;
     const float w = v[3];
 
     if (v[0] < -w)
-        c |= OutCode::LEFT;
+        c |= OutCode::OC_LEFT;
     if (v[0] > w)
-        c |= OutCode::RIGHT;
+        c |= OutCode::OC_RIGHT;
     if (v[1] < -w)
-        c |= OutCode::BOTTOM;
+        c |= OutCode::OC_BOTTOM;
     if (v[1] > w)
-        c |= OutCode::TOP;
+        c |= OutCode::OC_TOP;
     if (v[2] < -w)
-        c |= OutCode::NEAR;
+        c |= OutCode::OC_NEAR;
     if (v[2] > w)
-        c |= OutCode::FAR;
+        c |= OutCode::OC_FAR;
 
     return c;
 }
@@ -72,27 +72,27 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 
     switch (plane)
     {
-    case OutCode::RIGHT: // v.dot(1,0,0,-1)
+    case OutCode::OC_RIGHT: // v.dot(1,0,0,-1)
         zDot0 = v0[0] - v0[3];
         zDot1 = v1[0] - v1[3];
         break;
-    case OutCode::LEFT: // v.dot(1,0,0,1)
+    case OutCode::OC_LEFT: // v.dot(1,0,0,1)
         zDot0 = v0[0] + v0[3];
         zDot1 = v1[0] + v1[3];
         break;
-    case OutCode::TOP: // v.dot(0,1,0,-1)
+    case OutCode::OC_TOP: // v.dot(0,1,0,-1)
         zDot0 = v0[1] - v0[3];
         zDot1 = v1[1] - v1[3];
         break;
-    case OutCode::BOTTOM: // v.dot(0,1,0,1)
+    case OutCode::OC_BOTTOM: // v.dot(0,1,0,1)
         zDot0 = v0[1] + v0[3];
         zDot1 = v1[1] + v1[3];
         break;
-    case OutCode::NEAR: // v.dot(0,0,1,1)
+    case OutCode::OC_NEAR: // v.dot(0,0,1,1)
         zDot0 = v0[2] + v0[3];
         zDot1 = v1[2] + v1[3];
         break;
-    case OutCode::FAR: // v.dot(0,0,1,-1)
+    case OutCode::OC_FAR: // v.dot(0,0,1,-1)
     default:
         zDot0 = v0[2] - v0[3];
         zDot1 = v1[2] - v1[3];
@@ -122,7 +122,7 @@ std::tuple<const uint32_t,
     }
 
     // Checking if the triangle is completely inside by checking, if no vertex has an outcode
-    if ((oc0 | oc1 | oc2) == OutCode::NONE)
+    if ((oc0 | oc1 | oc2) == OutCode::OC_NONE)
     {
         return {3u, vertList, texCoordList, colorList};
     }
@@ -137,7 +137,7 @@ std::tuple<const uint32_t,
     int8_t numberOfVerts = 3; // Initial the list contains 3 vertecies
     int8_t numberOfVertsCurrentPlane = 0;
 
-    for (auto oc : {OutCode::NEAR, OutCode::FAR, OutCode::LEFT, OutCode::RIGHT, OutCode::TOP, OutCode::BOTTOM})
+    for (auto oc : {OutCode::OC_NEAR, OutCode::OC_FAR, OutCode::OC_LEFT, OutCode::OC_RIGHT, OutCode::OC_TOP, OutCode::OC_BOTTOM})
     {
         // Optimization hint: If no vertex has an outcode given from oc, then it can just be
         // ignored. We just have to avoid that the swapping of the buffers is executed.

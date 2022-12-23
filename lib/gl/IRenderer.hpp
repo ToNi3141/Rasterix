@@ -29,6 +29,7 @@ class IRenderer
 {
 public:
     static constexpr std::size_t MAX_TMU_COUNT { 2 };
+    static constexpr std::size_t MAX_TEXTURE_SIZE_PX { 256 };
 
     using TMU = uint8_t;
 
@@ -63,37 +64,37 @@ public:
 
         TexEnvConf() = default;
 
-        void setCombineRgb(const Combine val) { m_regVal.fields.combineRgb = val; }
-        void setCombineAlpha(const Combine val) { m_regVal.fields.combineAlpha = val; }
-        void setSrcRegRgb0(const SrcReg val) { m_regVal.fields.srcRegRgb0 = val; }
-        void setSrcRegRgb1(const SrcReg val) { m_regVal.fields.srcRegRgb1 = val; }
-        void setSrcRegRgb2(const SrcReg val) { m_regVal.fields.srcRegRgb2 = val; }
-        void setSrcRegAlpha0(const SrcReg val) { m_regVal.fields.srcRegAlpha0 = val; }
-        void setSrcRegAlpha1(const SrcReg val) { m_regVal.fields.srcRegAlpha1 = val; }
-        void setSrcRegAlpha2(const SrcReg val) { m_regVal.fields.srcRegAlpha2 = val; }
-        void setOperandRgb0(const Operand val) { m_regVal.fields.operandRgb0 = val; }
-        void setOperandRgb1(const Operand val) { m_regVal.fields.operandRgb1 = val; }
-        void setOperandRgb2(const Operand val) { m_regVal.fields.operandRgb2 = val; }
-        void setOperandAlpha0(const Operand val) { m_regVal.fields.operandAlpha0 = val; }
-        void setOperandAlpha1(const Operand val) { m_regVal.fields.operandAlpha1 = val; }
-        void setOperandAlpha2(const Operand val) { m_regVal.fields.operandAlpha2 = val; }
+        void setCombineRgb(const Combine val) { m_regVal.fields.combineRgb = static_cast<uint32_t>(val); }
+        void setCombineAlpha(const Combine val) { m_regVal.fields.combineAlpha = static_cast<uint32_t>(val); }
+        void setSrcRegRgb0(const SrcReg val) { m_regVal.fields.srcRegRgb0 = static_cast<uint32_t>(val); }
+        void setSrcRegRgb1(const SrcReg val) { m_regVal.fields.srcRegRgb1 = static_cast<uint32_t>(val); }
+        void setSrcRegRgb2(const SrcReg val) { m_regVal.fields.srcRegRgb2 = static_cast<uint32_t>(val); }
+        void setSrcRegAlpha0(const SrcReg val) { m_regVal.fields.srcRegAlpha0 = static_cast<uint32_t>(val); }
+        void setSrcRegAlpha1(const SrcReg val) { m_regVal.fields.srcRegAlpha1 = static_cast<uint32_t>(val); }
+        void setSrcRegAlpha2(const SrcReg val) { m_regVal.fields.srcRegAlpha2 = static_cast<uint32_t>(val); }
+        void setOperandRgb0(const Operand val) { m_regVal.fields.operandRgb0 = static_cast<uint32_t>(val); }
+        void setOperandRgb1(const Operand val) { m_regVal.fields.operandRgb1 = static_cast<uint32_t>(val); }
+        void setOperandRgb2(const Operand val) { m_regVal.fields.operandRgb2 = static_cast<uint32_t>(val); }
+        void setOperandAlpha0(const Operand val) { m_regVal.fields.operandAlpha0 = static_cast<uint32_t>(val); }
+        void setOperandAlpha1(const Operand val) { m_regVal.fields.operandAlpha1 = static_cast<uint32_t>(val); }
+        void setOperandAlpha2(const Operand val) { m_regVal.fields.operandAlpha2 = static_cast<uint32_t>(val); }
         void setShiftRgb(const uint8_t val) { m_regVal.fields.shiftRgb = val; }
         void setShiftAlpha(const uint8_t val) { m_regVal.fields.shiftAlpha = val; }
 
-        Combine getCombineRgb() const { return m_regVal.fields.combineRgb; }
-        Combine getCombineAlpha() const { return m_regVal.fields.combineAlpha; }
-        SrcReg getSrcRegRgb0() const { return m_regVal.fields.srcRegRgb0; }
-        SrcReg getSrcRegRgb1() const { return m_regVal.fields.srcRegRgb1; }
-        SrcReg getSrcRegRgb2() const { return m_regVal.fields.srcRegRgb2; }
-        SrcReg getSrcRegAlpha0() const { return m_regVal.fields.srcRegAlpha0; }
-        SrcReg getSrcRegAlpha1() const { return m_regVal.fields.srcRegAlpha1; }
-        SrcReg getSrcRegAlpha2() const { return m_regVal.fields.srcRegAlpha2; }
-        Operand getOperandRgb0() const { return m_regVal.fields.operandRgb0; }
-        Operand getOperandRgb1() const { return m_regVal.fields.operandRgb1; }
-        Operand getOperandRgb2() const { return m_regVal.fields.operandRgb2; }
-        Operand getOperandAlpha0() const { return m_regVal.fields.operandAlpha0; }
-        Operand getOperandAlpha1() const { return m_regVal.fields.operandAlpha1; }
-        Operand getOperandAlpha2() const { return m_regVal.fields.operandAlpha2; }
+        Combine getCombineRgb() const { return static_cast<Combine>(m_regVal.fields.combineRgb); }
+        Combine getCombineAlpha() const { return static_cast<Combine>(m_regVal.fields.combineAlpha); }
+        SrcReg getSrcRegRgb0() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb0); }
+        SrcReg getSrcRegRgb1() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb1); }
+        SrcReg getSrcRegRgb2() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb2); }
+        SrcReg getSrcRegAlpha0() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha0); }
+        SrcReg getSrcRegAlpha1() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha1); }
+        SrcReg getSrcRegAlpha2() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha2); }
+        Operand getOperandRgb0() const { return static_cast<Operand>(m_regVal.fields.operandRgb0); }
+        Operand getOperandRgb1() const { return static_cast<Operand>(m_regVal.fields.operandRgb1); }
+        Operand getOperandRgb2() const { return static_cast<Operand>(m_regVal.fields.operandRgb2); }
+        Operand getOperandAlpha0() const { return static_cast<Operand>(m_regVal.fields.operandAlpha0); }
+        Operand getOperandAlpha1() const { return static_cast<Operand>(m_regVal.fields.operandAlpha1); }
+        Operand getOperandAlpha2() const { return static_cast<Operand>(m_regVal.fields.operandAlpha2); }
         uint8_t getShiftRgb() const { return m_regVal.fields.shiftRgb; }
         uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
 
@@ -102,45 +103,47 @@ public:
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent() :
-                    combineRgb(Combine::MODULATE),
-                    combineAlpha(Combine::MODULATE),
-                    srcRegRgb0(SrcReg::TEXTURE),
-                    srcRegRgb1(SrcReg::PREVIOUS),
-                    srcRegRgb2(SrcReg::CONSTANT),
-                    srcRegAlpha0(SrcReg::TEXTURE),
-                    srcRegAlpha1(SrcReg::PREVIOUS),
-                    srcRegAlpha2(SrcReg::CONSTANT),
-                    operandRgb0(Operand::SRC_COLOR),
-                    operandRgb1(Operand::SRC_COLOR),
-                    operandRgb2(Operand::SRC_COLOR),
-                    operandAlpha0(Operand::SRC_ALPHA),
-                    operandAlpha1(Operand::SRC_ALPHA),
-                    operandAlpha2(Operand::SRC_ALPHA),
+                    combineRgb(static_cast<uint32_t>(Combine::MODULATE)),
+                    combineAlpha(static_cast<uint32_t>(Combine::MODULATE)),
+                    srcRegRgb0(static_cast<uint32_t>(SrcReg::TEXTURE)),
+                    srcRegRgb1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
+                    srcRegRgb2(static_cast<uint32_t>(SrcReg::CONSTANT)),
+                    srcRegAlpha0(static_cast<uint32_t>(SrcReg::TEXTURE)),
+                    srcRegAlpha1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
+                    srcRegAlpha2(static_cast<uint32_t>(SrcReg::CONSTANT)),
+                    operandRgb0(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                    operandRgb1(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                    operandRgb2(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                    operandAlpha0(static_cast<uint32_t>(Operand::SRC_ALPHA)),
+                    operandAlpha1(static_cast<uint32_t>(Operand::SRC_ALPHA)),
+                    operandAlpha2(static_cast<uint32_t>(Operand::SRC_ALPHA)),
                     shiftRgb(0),
                     shiftAlpha(0)
                 { }
 
-                Combine combineRgb : 3;
-                Combine combineAlpha : 3;
-                SrcReg srcRegRgb0 : 2;
-                SrcReg srcRegRgb1 : 2;
-                SrcReg srcRegRgb2 : 2;
-                SrcReg srcRegAlpha0 : 2;
-                SrcReg srcRegAlpha1 : 2;
-                SrcReg srcRegAlpha2 : 2;
-                Operand operandRgb0 : 2;
-                Operand operandRgb1 : 2;
-                Operand operandRgb2 : 2;
-                Operand operandAlpha0 : 1;
-                Operand operandAlpha1 : 1;
-                Operand operandAlpha2 : 1;
-                uint8_t shiftRgb : 2;
-                uint8_t shiftAlpha : 2;
+                uint32_t combineRgb : 3;
+                uint32_t combineAlpha : 3;
+                uint32_t srcRegRgb0 : 2;
+                uint32_t srcRegRgb1 : 2;
+                uint32_t srcRegRgb2 : 2;
+                uint32_t srcRegAlpha0 : 2;
+                uint32_t srcRegAlpha1 : 2;
+                uint32_t srcRegAlpha2 : 2;
+                uint32_t operandRgb0 : 2;
+                uint32_t operandRgb1 : 2;
+                uint32_t operandRgb2 : 2;
+                uint32_t operandAlpha0 : 1;
+                uint32_t operandAlpha1 : 1;
+                uint32_t operandAlpha2 : 1;
+                uint32_t shiftRgb : 2;
+                uint32_t shiftAlpha : 2;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 
@@ -196,60 +199,62 @@ public:
 
         FragmentPipelineConf() = default;
 
-        void setDepthFunc(const TestFunc val) { m_regVal.fields.depthFunc = val; }
-        void setAlphaFunc(const TestFunc val) { m_regVal.fields.alphaFunc = val; }
+        void setDepthFunc(const TestFunc val) { m_regVal.fields.depthFunc = static_cast<uint32_t>(val); }
+        void setAlphaFunc(const TestFunc val) { m_regVal.fields.alphaFunc = static_cast<uint32_t>(val); }
         void setRefAlphaValue(const uint8_t val) { m_regVal.fields.referenceAlphaValue = val; }
         void setDepthMask(const bool val) { m_regVal.fields.depthMask = val; }
         void setColorMaskA(const bool val) { m_regVal.fields.colorMaskA  = val; }
         void setColorMaskR(const bool val) { m_regVal.fields.colorMaskR  = val; }
         void setColorMaskG(const bool val) { m_regVal.fields.colorMaskG  = val; }
         void setColorMaskB(const bool val) { m_regVal.fields.colorMaskB  = val; }
-        void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = val; }
-        void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = val; }
+        void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = static_cast<uint32_t>(val); }
+        void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = static_cast<uint32_t>(val); }
 
-        TestFunc getDepthFunc() const { return m_regVal.fields.depthFunc; }
-        TestFunc getAlphaFunc() const { return m_regVal.fields.alphaFunc; }
+        TestFunc getDepthFunc() const { return static_cast<TestFunc>(m_regVal.fields.depthFunc); }
+        TestFunc getAlphaFunc() const { return static_cast<TestFunc>(m_regVal.fields.alphaFunc); }
         uint8_t getRefAlphaValue() const { return m_regVal.fields.referenceAlphaValue; }
         bool getDepthMask() const { return m_regVal.fields.depthMask; }
         bool getColorMaskA() const { return m_regVal.fields.colorMaskA; }
         bool getColorMaskR() const { return m_regVal.fields.colorMaskR; }
         bool getColorMaskG() const { return m_regVal.fields.colorMaskG; }
         bool getColorMaskB() const { return m_regVal.fields.colorMaskB; }
-        BlendFunc getBlendFuncSFactor() const { return m_regVal.fields.blendFuncSFactor; }
-        BlendFunc getBlendFuncDFactor() const { return m_regVal.fields.blendFuncDFactor; }
+        BlendFunc getBlendFuncSFactor() const { return static_cast<BlendFunc>(m_regVal.fields.blendFuncSFactor); }
+        BlendFunc getBlendFuncDFactor() const { return static_cast<BlendFunc>(m_regVal.fields.blendFuncDFactor); }
 
         uint32_t serialize() const { return m_regVal.data; }
 
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent() :
-                    depthFunc(TestFunc::LESS),
-                    alphaFunc(TestFunc::ALWAYS),
+                    depthFunc(static_cast<uint32_t>(TestFunc::LESS)),
+                    alphaFunc(static_cast<uint32_t>(TestFunc::ALWAYS)),
                     referenceAlphaValue(0xff),
                     depthMask(false),
                     colorMaskA(true),
                     colorMaskB(true),
                     colorMaskG(true),
                     colorMaskR(true),
-                    blendFuncSFactor(BlendFunc::ONE),
-                    blendFuncDFactor(BlendFunc::ZERO)
+                    blendFuncSFactor(static_cast<uint32_t>(BlendFunc::ONE)),
+                    blendFuncDFactor(static_cast<uint32_t>(BlendFunc::ZERO))
                 { }
 
-                TestFunc depthFunc : 3;
-                TestFunc alphaFunc : 3;
-                uint8_t referenceAlphaValue : 8;
-                bool depthMask : 1;
-                bool colorMaskA : 1;
-                bool colorMaskB : 1;
-                bool colorMaskG : 1;
-                bool colorMaskR : 1;
-                BlendFunc blendFuncSFactor : 4;
-                BlendFunc blendFuncDFactor : 4;
+                uint32_t depthFunc : 3;
+                uint32_t alphaFunc : 3;
+                uint32_t referenceAlphaValue : 8;
+                uint32_t depthMask : 1;
+                uint32_t colorMaskA : 1;
+                uint32_t colorMaskB : 1;
+                uint32_t colorMaskG : 1;
+                uint32_t colorMaskR : 1;
+                uint32_t blendFuncSFactor : 4;
+                uint32_t blendFuncDFactor : 4;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 
@@ -275,7 +280,8 @@ public:
     private:
         union RegVal
         {
-            struct __attribute__ ((__packed__)) RegContent
+            #pragma pack(push, 1)
+            struct RegContent
             {
                 RegContent()
                     : fog(false)
@@ -287,26 +293,27 @@ public:
                     , tmu1(false)
                 { }
 
-                bool fog : 1;
-                bool blending : 1;
-                bool depthTest : 1;
-                bool alphaTest : 1;
-                bool tmu0 : 1;
-                bool scissor : 1;
-                bool tmu1 : 1;
+                uint32_t fog : 1;
+                uint32_t blending : 1;
+                uint32_t depthTest : 1;
+                uint32_t alphaTest : 1;
+                uint32_t tmu0 : 1;
+                uint32_t scissor : 1;
+                uint32_t tmu1 : 1;
             } fields {};
             uint32_t data;
+            #pragma pack(pop)
         } m_regVal;
     };
 
+    enum class TextureWrapMode
+    {
+        REPEAT,
+        CLAMP_TO_EDGE
+    };
+    
     struct TextureObject
     {
-        enum class TextureWrapMode
-        {
-            REPEAT,
-            CLAMP_TO_EDGE
-        };
-
         enum class PixelFormat : uint8_t
         {
             RGBA4444,
@@ -365,7 +372,7 @@ public:
                     color |= static_cast<uint16_t>(r >> 3) << 11;
                     color |= static_cast<uint16_t>(g >> 3) << 6;
                     color |= static_cast<uint16_t>(b >> 3) << 1;
-                    color |= static_cast<uint16_t>(a >> 1) << 0;
+                    color |= static_cast<uint16_t>(a >> 7) << 0;
                     break;
                 default:
                 break;
@@ -408,9 +415,6 @@ public:
         std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by pixelFormat
         const uint16_t width {}; ///< The width of the texture
         const uint16_t height {}; ///< The height of the texture
-        const TextureWrapMode wrapModeS {}; ///< The wrapping mode of the texture in s direction
-        const TextureWrapMode wrapModeT {}; ///< The wrapping mode of the texture in t direction
-        const bool enableMagFilter {}; ///< Enables magnification filter of the texture (GL_LINEAR)
         const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
@@ -451,10 +455,28 @@ public:
     virtual TextureObject getTexture(const uint16_t texId) = 0;
     
     /// @brief Activates a texture which then is used for rendering
-    /// @param target is used TMU
+    /// @param target The used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool useTexture(const TMU target, const uint16_t texId) = 0; 
+
+    /// @brief The wrapping mode of the texture in s direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) = 0;
+
+    /// @brief The wrapping mode of the texture in t direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) = 0;
+
+    /// @brief Enables the texture filtering
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) = 0;
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete

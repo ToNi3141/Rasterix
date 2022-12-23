@@ -1,0 +1,1 @@
+add_subdirectory(spdlog-1.10.0)
