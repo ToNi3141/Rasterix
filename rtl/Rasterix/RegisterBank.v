@@ -16,20 +16,23 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module deserializes an AXIS parameter stream into dedicated registers.
-// It is not possible in the stream to set a specific register. The stream 
-// must always contain the data of the whole register set.
-// For instance, we assume BANK_REG_SIZE is 32 bit and CMD_STREAM_WIDTH is 32 bit.
-// Beat 0 will set register 0, beat 1 register 1, beat n register n.
+// It uses tuser as an address offset and can set several registers in one stream.
+// For instance, assume a BANK_REG_WIDTH of 32 bit and CMD_STREAM_WIDTH of 32 bit.
+// Beat 0 will set register 0 + tuser, beat 1 register 1 + tuser, beat n register n + tuser.
 module RegisterBank
 #(
-    // Bank size in multiple of BANK_REG_SIZE bit
+    // Bank size in multiple of BANK_REG_WIDTH bit
     parameter BANK_SIZE = 8,
 
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256
     parameter CMD_STREAM_WIDTH = 32,
 
+    parameter COMPRESSED = 1,
+
     // Bank register size
-    localparam BANK_REG_SIZE = 32
+    localparam BANK_REG_WIDTH = 32,
+
+    localparam INDEX_WIDTH = $clog2(BANK_SIZE)
 )
 (
     input wire                              aclk,
@@ -40,14 +43,15 @@ module RegisterBank
     output reg                              s_axis_tready,
     input  wire                             s_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_axis_tdata,
+    input  wire [INDEX_WIDTH - 1 : 0]       s_axis_tuser,
 
     // Register bank
-    output wire [(BANK_SIZE * BANK_REG_SIZE) - 1 : 0] registers
+    output wire [(BANK_SIZE * BANK_REG_WIDTH) - 1 : 0] registers
 );
-    localparam INDEX_WIDTH = $clog2(BANK_SIZE);
-    localparam REGISTERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / BANK_REG_SIZE;
+    
+    localparam REGISTERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / BANK_REG_WIDTH;
 
-    reg [BANK_REG_SIZE - 1 : 0] registerMem [0 : BANK_SIZE - 1];
+    reg [BANK_REG_WIDTH - 1 : 0] registerMem [0 : BANK_SIZE - 1];
     reg [INDEX_WIDTH - 1 : 0] registerIndex;
 
     always @(posedge aclk)
@@ -61,11 +65,19 @@ module RegisterBank
             integer i;
             if (s_axis_tvalid)
             begin
-                for (i = 0; i < REGISTERS_PER_STREAM_BEAT; i = i + 1)
+                if (COMPRESSED)
                 begin
-                    registerMem[registerIndex + i[0 +: INDEX_WIDTH]] <= s_axis_tdata[BANK_REG_SIZE * i +: BANK_REG_SIZE];
+                    for (i = 0; i < REGISTERS_PER_STREAM_BEAT; i = i + 1)
+                    begin
+                        registerMem[registerIndex + s_axis_tuser + i[0 +: INDEX_WIDTH]] <= s_axis_tdata[BANK_REG_WIDTH * i +: BANK_REG_WIDTH];
+                    end
+                    registerIndex <= registerIndex + REGISTERS_PER_STREAM_BEAT[0 +: INDEX_WIDTH];
                 end
-                registerIndex <= registerIndex + REGISTERS_PER_STREAM_BEAT[0 +: INDEX_WIDTH];
+                else
+                begin
+                    registerMem[registerIndex + s_axis_tuser] <= s_axis_tdata[0 +: BANK_REG_WIDTH];
+                    registerIndex <= registerIndex + 1;
+                end
 
                 if (s_axis_tlast)
                 begin
@@ -79,7 +91,7 @@ module RegisterBank
         genvar i;
         for(i = 0; i < BANK_SIZE; i = i + 1)
         begin
-            assign registers[i * BANK_REG_SIZE +: BANK_REG_SIZE] = registerMem[i]; 
+            assign registers[i * BANK_REG_WIDTH +: BANK_REG_WIDTH] = registerMem[i]; 
         end
     endgenerate
 endmodule

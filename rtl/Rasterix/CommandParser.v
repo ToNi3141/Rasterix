@@ -34,21 +34,6 @@ module CommandParser #(
     output reg         m_fog_lut_axis_tlast,
     output reg  [CMD_STREAM_WIDTH - 1 : 0] m_fog_lut_axis_tdata,
 
-    // Rasterizer
-    // Configs
-    output wire [31:0]  confFeatureEnable,
-    output wire [31:0]  confFragmentPipelineConfig,
-    output wire [31:0]  confFragmentPipelineFogColor,
-    output wire [31:0]  confTMU0TexEnvConfig,
-    output wire [31:0]  confTMU0TextureConfig,
-    output wire [31:0]  confTMU0TexEnvColor,
-    output wire [31:0]  confTMU1TexEnvConfig,
-    output wire [31:0]  confTMU1TextureConfig,
-    output wire [31:0]  confTMU1TexEnvColor,
-    output wire [31:0]  confScissorStartXY,
-    output wire [31:0]  confScissorEndXY,
-    output wire [11:0]  confYOffset,
-
     // Control
     input  wire         rasterizerRunning,
     output reg          startRendering,
@@ -63,12 +48,10 @@ module CommandParser #(
     input  wire         colorBufferApplied,
     output reg          colorBufferCmdCommit,
     output reg          colorBufferCmdMemset,
-    output wire [31:0]  confColorBufferClearColor,
     output reg          depthBufferApply,
     input  wire         depthBufferApplied,
     output reg          depthBufferCmdCommit,
     output reg          depthBufferCmdMemset,
-    output wire [15:0]  confDepthBufferClearDepth,
 
     // Texture stream interface
     // TMU0
@@ -81,6 +64,13 @@ module CommandParser #(
     input  wire         m_texture_steam_tmu1_axis_tready,
     output reg          m_texture_steam_tmu1_axis_tlast,
     output reg  [TEXTURE_STREAM_WIDTH - 1 : 0]  m_texture_steam_tmu1_axis_tdata,
+
+    // Render Config
+    output reg          m_renderer_config_axis_tvalid,
+    input  wire         m_renderer_config_axis_tready,
+    output reg          m_renderer_config_axis_tlast,
+    output reg  [CMD_STREAM_WIDTH - 1 : 0] m_renderer_config_axis_tdata,
+    output reg  [ 3 : 0] m_renderer_config_axis_tuser,   
 
     // Debug
     output wire [ 3 : 0]  dbgStreamState
@@ -107,7 +97,6 @@ module CommandParser #(
     localparam FB_CONTROL_WAITFOREND = 1;
 
     // Command Unit Variables
-    reg  [31 : 0]   configReg[0 : OP_RENDER_CONFIG_NUMBER_OR_REGS - 1];
     reg             apply;
     wire            applied;
     reg  [18 : 0]   streamCounter;
@@ -120,20 +109,6 @@ module CommandParser #(
     reg             wlsp = 0;
 
     assign applied = colorBufferApplied & depthBufferApplied;
-    assign confFeatureEnable = configReg[OP_RENDER_CONFIG_FEATURE_ENABLE];
-    assign confColorBufferClearColor = configReg[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR];
-    assign confDepthBufferClearDepth = configReg[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH][15 : 0];
-    assign confFragmentPipelineConfig = configReg[OP_RENDER_CONFIG_FRAGMENT_PIPELINE];
-    assign confFragmentPipelineFogColor = configReg[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR];
-    assign confTMU0TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV];
-    assign confTMU0TextureConfig = configReg[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG];
-    assign confTMU0TexEnvColor = configReg[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR];
-    assign confTMU1TexEnvConfig = configReg[OP_RENDER_CONFIG_TMU1_TEX_ENV];
-    assign confTMU1TextureConfig = configReg[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG];
-    assign confTMU1TexEnvColor = configReg[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR];
-    assign confScissorStartXY = configReg[OP_RENDER_CONFIG_SCISSOR_START_XY];
-    assign confScissorEndXY = configReg[OP_RENDER_CONFIG_SCISSOR_END_XY];
-    assign confYOffset = configReg[OP_RENDER_CONFIG_Y_OFFSET][0 +: 12];
 
     assign dbgStreamState = state[3:0];
 
@@ -161,6 +136,9 @@ module CommandParser #(
             m_fog_lut_axis_tvalid <= 0;
             m_fog_lut_axis_tlast <= 0;
 
+            m_renderer_config_axis_tvalid <= 0;
+            m_renderer_config_axis_tlast <= 0;
+
             startRendering <= 0;
         end
         else 
@@ -176,6 +154,8 @@ module CommandParser #(
                 m_texture_steam_tmu1_axis_tlast <= 0;
                 m_fog_lut_axis_tvalid <= 0;
                 m_fog_lut_axis_tlast <= 0;
+                m_renderer_config_axis_tvalid <= 0;
+                m_renderer_config_axis_tlast <= 0;
                 if (rasterizerRunning)
                     startRendering <= 0;
                 if (m_rasterizer_axis_tready && !m_rasterizer_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning && !startRendering)
@@ -226,7 +206,8 @@ module CommandParser #(
                     end
                     OP_RENDER_CONFIG:
                     begin
-                        streamCounter <= s_cmd_axis_tdata[0 +: 14];
+                        streamCounter <= 1;
+                        m_renderer_config_axis_tuser <= s_cmd_axis_tdata[0 +: 4];
                         state <= EXEC_RENDER_CONFIG;
                     end
                     OP_FRAMEBUFFER:
@@ -329,11 +310,21 @@ module CommandParser #(
             end
             EXEC_RENDER_CONFIG:
             begin
-                if (s_cmd_axis_tvalid)
+                s_cmd_axis_tready <= m_renderer_config_axis_tready;
+                if (m_renderer_config_axis_tready)
                 begin
-                    configReg[streamCounter[0 +: 4]] <= s_cmd_axis_tdata[0 +: 32];
-                    s_cmd_axis_tready <= 0;
-                    state <= WAIT_FOR_IDLE;
+                    m_renderer_config_axis_tvalid <= s_cmd_axis_tvalid;
+                    m_renderer_config_axis_tdata <= s_cmd_axis_tdata;
+                    if (s_cmd_axis_tvalid)
+                    begin
+                        streamCounter <= streamCounter - 1;
+                        if (streamCounter == 1)
+                        begin
+                            s_cmd_axis_tready <= 0;
+                            m_renderer_config_axis_tlast <= 1;
+                            state <= WAIT_FOR_IDLE;
+                        end
+                    end
                 end
             end
             default:
