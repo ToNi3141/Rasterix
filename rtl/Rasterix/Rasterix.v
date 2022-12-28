@@ -150,16 +150,16 @@ module Rasterix #(
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
     wire [ 3 : 0]    s_cmd_xxx_axis_tuser;
     wire             s_cmd_xxx_axis_tlast;
-    wire             s_cmd_fog_tvalid;
-    wire             s_cmd_rasterizer_tvalid;
-    wire             s_cmd_tmu0_tvalid;
-    wire             s_cmd_tmu1_tvalid;
-    wire             s_cmd_config_tvalid;
-    wire             s_cmd_fog_tready;
-    wire             s_cmd_rasterizer_tready;
-    wire             s_cmd_tmu0_tready;
-    wire             s_cmd_tmu1_tready;
-    wire             s_cmd_config_tready;
+    wire             s_cmd_fog_axis_tvalid;
+    wire             s_cmd_rasterizer_axis_tvalid;
+    wire             s_cmd_tmu0_axis_tvalid;
+    wire             s_cmd_tmu1_axis_tvalid;
+    wire             s_cmd_config_axis_tvalid;
+    wire             s_cmd_fog_axis_tready;
+    wire             s_cmd_rasterizer_axis_tready;
+    wire             s_cmd_tmu0_axis_tready;
+    wire             s_cmd_tmu1_axis_tready;
+    wire             s_cmd_config_axis_tready;
 
 
     // Register bank
@@ -210,16 +210,16 @@ module Rasterix #(
         .m_cmd_xxx_axis_tdata(s_cmd_xxx_axis_tdata),
         .m_cmd_xxx_axis_tuser(s_cmd_xxx_axis_tuser),
         .m_cmd_xxx_axis_tlast(s_cmd_xxx_axis_tlast),
-        .m_cmd_fog_tvalid(s_cmd_fog_tvalid),
-        .m_cmd_rasterizer_tvalid(s_cmd_rasterizer_tvalid),
-        .m_cmd_tmu0_tvalid(s_cmd_tmu0_tvalid),
-        .m_cmd_tmu1_tvalid(s_cmd_tmu1_tvalid),
-        .m_cmd_config_tvalid(s_cmd_config_tvalid),
-        .m_cmd_fog_tready(s_cmd_fog_tready),
-        .m_cmd_rasterizer_tready(s_cmd_rasterizer_tready),
-        .m_cmd_tmu0_tready(s_cmd_tmu0_tready),
-        .m_cmd_tmu1_tready(s_cmd_tmu1_tready),
-        .m_cmd_config_tready(s_cmd_config_tready),
+        .m_cmd_fog_axis_tvalid(s_cmd_fog_axis_tvalid),
+        .m_cmd_rasterizer_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
+        .m_cmd_tmu0_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+        .m_cmd_tmu1_axis_tvalid(s_cmd_tmu1_axis_tvalid),
+        .m_cmd_config_axis_tvalid(s_cmd_config_axis_tvalid),
+        .m_cmd_fog_axis_tready(s_cmd_fog_axis_tready),
+        .m_cmd_rasterizer_axis_tready(s_cmd_rasterizer_axis_tready),
+        .m_cmd_tmu0_axis_tready(s_cmd_tmu0_axis_tready),
+        .m_cmd_tmu1_axis_tready(s_cmd_tmu1_axis_tready),
+        .m_cmd_config_axis_tready(s_cmd_config_axis_tready),
 
         // Rasterizer
         // Control
@@ -250,8 +250,8 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_axis_tvalid(s_cmd_rasterizer_tvalid),
-        .s_axis_tready(s_cmd_rasterizer_tready),
+        .s_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
+        .s_axis_tready(s_cmd_rasterizer_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_axis_tdata(s_cmd_xxx_axis_tdata),
         .s_axis_tuser(0),
@@ -265,8 +265,8 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_axis_tvalid(s_cmd_config_tvalid),
-        .s_axis_tready(s_cmd_config_tready),
+        .s_axis_tvalid(s_cmd_config_axis_tvalid),
+        .s_axis_tready(s_cmd_config_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_axis_tdata(s_cmd_xxx_axis_tdata),
         .s_axis_tuser(s_cmd_xxx_axis_tuser),
@@ -293,8 +293,8 @@ module Rasterix #(
         .texelOutput10(texel0Input10),
         .texelOutput11(texel0Input11),
 
-        .s_axis_tvalid(s_cmd_tmu0_tvalid),
-        .s_axis_tready(s_cmd_tmu0_tready),
+        .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+        .s_axis_tready(s_cmd_tmu0_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_axis_tdata(s_cmd_xxx_axis_tdata)
     );
@@ -318,8 +318,8 @@ module Rasterix #(
         .texelOutput10(texel1Input10),
         .texelOutput11(texel1Input11),
 
-        .s_axis_tvalid(s_cmd_tmu1_tvalid),
-        .s_axis_tready(s_cmd_tmu1_tready),
+        .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
+        .s_axis_tready(s_cmd_tmu1_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_axis_tdata(s_cmd_xxx_axis_tdata)
     );
@@ -501,8 +501,8 @@ module Rasterix #(
         .resetn(resetn),
         .pixelInPipeline(pixelInPipelineShader),
 
-        .s_fog_lut_axis_tvalid(s_cmd_fog_tvalid),
-        .s_fog_lut_axis_tready(s_cmd_fog_tready),
+        .s_fog_lut_axis_tvalid(s_cmd_fog_axis_tvalid),
+        .s_fog_lut_axis_tready(s_cmd_fog_axis_tready),
         .s_fog_lut_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_fog_lut_axis_tdata(s_cmd_xxx_axis_tdata),
 

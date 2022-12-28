@@ -31,16 +31,16 @@ module CommandParser #(
     output reg  [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_xxx_axis_tdata,
     output reg  [ 3 : 0]    m_cmd_xxx_axis_tuser,
     output reg              m_cmd_xxx_axis_tlast,
-    output wire             m_cmd_fog_tvalid,
-    output wire             m_cmd_rasterizer_tvalid,
-    output wire             m_cmd_tmu0_tvalid,
-    output wire             m_cmd_tmu1_tvalid,
-    output wire             m_cmd_config_tvalid,
-    input  wire             m_cmd_fog_tready,
-    input  wire             m_cmd_rasterizer_tready,
-    input  wire             m_cmd_tmu0_tready,
-    input  wire             m_cmd_tmu1_tready,
-    input  wire             m_cmd_config_tready,
+    output wire             m_cmd_fog_axis_tvalid,
+    output wire             m_cmd_rasterizer_axis_tvalid,
+    output wire             m_cmd_tmu0_axis_tvalid,
+    output wire             m_cmd_tmu1_axis_tvalid,
+    output wire             m_cmd_config_axis_tvalid,
+    input  wire             m_cmd_fog_axis_tready,
+    input  wire             m_cmd_rasterizer_axis_tready,
+    input  wire             m_cmd_tmu0_axis_tready,
+    input  wire             m_cmd_tmu1_axis_tready,
+    input  wire             m_cmd_config_axis_tready,
 
     // Control
     input  wire         rasterizerRunning,
@@ -98,11 +98,11 @@ module CommandParser #(
     reg  [ 1 : 0]   fbControlState;
     reg             wlsp = 0;
 
-    assign m_cmd_fog_tvalid         = (mux == MUX_FOG_LUT_STREAM) ? tvalid : 0;
-    assign m_cmd_rasterizer_tvalid  = (mux == MUX_TRIANGLE_STREAM) ? tvalid : 0;
-    assign m_cmd_tmu0_tvalid        = (mux == MUX_TEXTURE0_STREAM) ? tvalid : 0;
-    assign m_cmd_tmu1_tvalid        = (mux == MUX_TEXTURE1_STREAM) ? tvalid : 0;
-    assign m_cmd_config_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
+    assign m_cmd_fog_axis_tvalid         = (mux == MUX_FOG_LUT_STREAM) ? tvalid : 0;
+    assign m_cmd_rasterizer_axis_tvalid  = (mux == MUX_TRIANGLE_STREAM) ? tvalid : 0;
+    assign m_cmd_tmu0_axis_tvalid        = (mux == MUX_TEXTURE0_STREAM) ? tvalid : 0;
+    assign m_cmd_tmu1_axis_tvalid        = (mux == MUX_TEXTURE1_STREAM) ? tvalid : 0;
+    assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
     assign applied = colorBufferApplied & depthBufferApplied;
 
@@ -217,11 +217,11 @@ module CommandParser #(
             begin : Stream
                 reg tready;
                 case (mux)
-                    MUX_FOG_LUT_STREAM: tready = m_cmd_fog_tready;
-                    MUX_RENDER_CONFIG: tready = m_cmd_config_tready;
-                    MUX_TEXTURE0_STREAM: tready = m_cmd_tmu0_tready;
-                    MUX_TEXTURE1_STREAM: tready = m_cmd_tmu1_tready;
-                    MUX_TRIANGLE_STREAM: tready = m_cmd_config_tready;
+                    MUX_FOG_LUT_STREAM: tready = m_cmd_fog_axis_tready;
+                    MUX_RENDER_CONFIG: tready = m_cmd_config_axis_tready;
+                    MUX_TEXTURE0_STREAM: tready = m_cmd_tmu0_axis_tready;
+                    MUX_TEXTURE1_STREAM: tready = m_cmd_tmu1_axis_tready;
+                    MUX_TRIANGLE_STREAM: tready = m_cmd_config_axis_tready;
                 endcase 
 
                 s_cmd_axis_tready <= tready;
