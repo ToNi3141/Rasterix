@@ -121,10 +121,6 @@ module Rasterix #(
    
     // Control
     wire            rasterizerRunning;
-    wire            s_rasterizer_axis_tvalid;
-    wire            s_rasterizer_axis_tready;
-    wire            s_rasterizer_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0] s_rasterizer_axis_tdata;
 
     // Memory
     wire            colorBufferApply;
@@ -136,25 +132,39 @@ module Rasterix #(
     wire            depthBufferApplied;
     wire            depthBufferCmdCommit;
     wire            depthBufferCmdMemset;
-    wire [15 : 0]   confDepthBufferClearDepth;
-
-    // Texture memory AXIS
-    // TMU0 Texture Stream
-    wire            s_texture_steam_tmu0_axis_tvalid;
-    wire            s_texture_steam_tmu0_axis_tready;
-    wire            s_texture_steam_tmu0_axis_tlast;
-    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu0_axis_tdata;
-    // TMU1 Texture Stream
-    wire            s_texture_steam_tmu1_axis_tvalid;
-    wire            s_texture_steam_tmu1_axis_tready;
-    wire            s_texture_steam_tmu1_axis_tlast;
-    wire [TEXTURE_STREAM_WIDTH - 1 : 0] s_texture_steam_tmu1_axis_tdata;
+    wire [31 : 0]   confDepthBufferClearDepth;
 
     // Attribute interpolator
     wire            m_attr_inter_axis_tvalid;
     wire            m_attr_inter_axis_tready;
     wire            m_attr_inter_axis_tlast;
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
+
+    // Rasterizer
+    wire            m_rasterizer_axis_tvalid;
+    wire            m_rasterizer_axis_tready;
+    wire            m_rasterizer_axis_tlast;
+    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
+
+    // Steams
+    wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
+    wire [ 3 : 0]    s_cmd_xxx_axis_tuser;
+    wire             s_cmd_xxx_axis_tlast;
+    wire             s_cmd_fog_axis_tvalid;
+    wire             s_cmd_rasterizer_axis_tvalid;
+    wire             s_cmd_tmu0_axis_tvalid;
+    wire             s_cmd_tmu1_axis_tvalid;
+    wire             s_cmd_config_axis_tvalid;
+    wire             s_cmd_fog_axis_tready;
+    wire             s_cmd_rasterizer_axis_tready;
+    wire             s_cmd_tmu0_axis_tready;
+    wire             s_cmd_tmu1_axis_tready;
+    wire             s_cmd_config_axis_tready;
+
+
+    // Register bank
+    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
+    wire [(OP_RENDER_CONFIG_REG_WIDTH * OP_RENDER_CONFIG_NUMBER_OR_REGS) - 1 : 0] rendererConfigs;
 
     // Configs
     wire [31 : 0]   confFeatureEnable;
@@ -170,20 +180,20 @@ module Rasterix #(
     wire [31 : 0]   confTMU1TextureConfig;
     wire [31 : 0]   confTMU1TexEnvColor;
 
-    // Rasterizer
-    wire            m_rasterizer_axis_tvalid;
-    wire            m_rasterizer_axis_tready;
-    wire            m_rasterizer_axis_tlast;
-    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
-
-    // Fog LUT
-    wire            s_fog_lut_axis_tvalid;
-    wire            s_fog_lut_axis_tready;
-    wire            s_fog_lut_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata;
-
-    // Register bank
-    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
+    assign confFeatureEnable = rendererConfigs[OP_RENDER_CONFIG_FEATURE_ENABLE +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confColorBufferClearColor = rendererConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confDepthBufferClearDepth = rendererConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFragmentPipelineConfig = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_PIPELINE +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFragmentPipelineFogColor = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confScissorStartXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_START_XY +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confScissorEndXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confYOffset = rendererConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -197,58 +207,35 @@ module Rasterix #(
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
-        // Fog LUT
-        .m_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
-        .m_fog_lut_axis_tready(s_fog_lut_axis_tready),
-        .m_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
-        .m_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+        .m_cmd_xxx_axis_tdata(s_cmd_xxx_axis_tdata),
+        .m_cmd_xxx_axis_tuser(s_cmd_xxx_axis_tuser),
+        .m_cmd_xxx_axis_tlast(s_cmd_xxx_axis_tlast),
+        .m_cmd_fog_axis_tvalid(s_cmd_fog_axis_tvalid),
+        .m_cmd_rasterizer_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
+        .m_cmd_tmu0_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+        .m_cmd_tmu1_axis_tvalid(s_cmd_tmu1_axis_tvalid),
+        .m_cmd_config_axis_tvalid(s_cmd_config_axis_tvalid),
+        .m_cmd_fog_axis_tready(s_cmd_fog_axis_tready),
+        .m_cmd_rasterizer_axis_tready(s_cmd_rasterizer_axis_tready),
+        .m_cmd_tmu0_axis_tready(s_cmd_tmu0_axis_tready),
+        .m_cmd_tmu1_axis_tready(s_cmd_tmu1_axis_tready),
+        .m_cmd_config_axis_tready(s_cmd_config_axis_tready),
 
         // Rasterizer
-        // Configs
-        .confFeatureEnable(confFeatureEnable),
-        .confFragmentPipelineConfig(confFragmentPipelineConfig),
-        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
-        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
-        .confTMU0TextureConfig(confTMU0TextureConfig),
-        .confTMU0TexEnvColor(confTMU0TexEnvColor),
-        .confTMU1TexEnvConfig(confTMU1TexEnvConfig),
-        .confTMU1TextureConfig(confTMU1TextureConfig),
-        .confTMU1TexEnvColor(confTMU1TexEnvColor),
-        .confScissorStartXY(confScissorStartXY),
-        .confScissorEndXY(confScissorEndXY),
-        .confYOffset(confYOffset),
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
         .pixelInPipeline(pixelInPipeline),
-        .m_rasterizer_axis_tvalid(s_rasterizer_axis_tvalid),
-        .m_rasterizer_axis_tready(s_rasterizer_axis_tready),
-        .m_rasterizer_axis_tlast(s_rasterizer_axis_tlast),
-        .m_rasterizer_axis_tdata(s_rasterizer_axis_tdata),
 
         // applied
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
-        .confColorBufferClearColor(confColorBufferClearColor),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
-        .confDepthBufferClearDepth(confDepthBufferClearDepth),
-
-        // Texture AXIS interface
-        // TMU0
-        .m_texture_steam_tmu0_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
-        .m_texture_steam_tmu0_axis_tready(s_texture_steam_tmu0_axis_tready),
-        .m_texture_steam_tmu0_axis_tlast(s_texture_steam_tmu0_axis_tlast),
-        .m_texture_steam_tmu0_axis_tdata(s_texture_steam_tmu0_axis_tdata),
-        // TMU1
-        .m_texture_steam_tmu1_axis_tvalid(s_texture_steam_tmu1_axis_tvalid),
-        .m_texture_steam_tmu1_axis_tready(s_texture_steam_tmu1_axis_tready),
-        .m_texture_steam_tmu1_axis_tlast(s_texture_steam_tmu1_axis_tlast),
-        .m_texture_steam_tmu1_axis_tdata(s_texture_steam_tmu1_axis_tdata),
 
         // Debug
         .dbgStreamState(dbgStreamState)
@@ -259,19 +246,36 @@ module Rasterix #(
     ///////////////////////////
     // Modul Instantiation and wiring
     ///////////////////////////
-    RegisterBank regBank (
+    RegisterBank triangleParameters (
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_axis_tvalid(s_rasterizer_axis_tvalid),
-        .s_axis_tready(s_rasterizer_axis_tready),
-        .s_axis_tlast(s_rasterizer_axis_tlast),
-        .s_axis_tdata(s_rasterizer_axis_tdata),
+        .s_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
+        .s_axis_tready(s_cmd_rasterizer_axis_tready),
+        .s_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_axis_tdata(s_cmd_xxx_axis_tdata),
+        .s_axis_tuser(0),
 
         .registers(triangleParams)
     );
-    defparam regBank.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
-    defparam regBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam triangleParameters.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
+    defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+
+    RegisterBank rendererConfigsRegBank (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_axis_tvalid(s_cmd_config_axis_tvalid),
+        .s_axis_tready(s_cmd_config_axis_tready),
+        .s_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_axis_tdata(s_cmd_xxx_axis_tdata),
+        .s_axis_tuser(s_cmd_xxx_axis_tuser),
+
+        .registers(rendererConfigs)
+    );
+    defparam rendererConfigsRegBank.BANK_SIZE = OP_RENDER_CONFIG_NUMBER_OR_REGS;
+    defparam rendererConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam rendererConfigsRegBank.COMPRESSED = 0;
 
     TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
@@ -289,10 +293,10 @@ module Rasterix #(
         .texelOutput10(texel0Input10),
         .texelOutput11(texel0Input11),
 
-        .s_axis_tvalid(s_texture_steam_tmu0_axis_tvalid),
-        .s_axis_tready(s_texture_steam_tmu0_axis_tready),
-        .s_axis_tlast(s_texture_steam_tmu0_axis_tlast),
-        .s_axis_tdata(s_texture_steam_tmu0_axis_tdata)
+        .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+        .s_axis_tready(s_cmd_tmu0_axis_tready),
+        .s_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_axis_tdata(s_cmd_xxx_axis_tdata)
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
@@ -314,10 +318,10 @@ module Rasterix #(
         .texelOutput10(texel1Input10),
         .texelOutput11(texel1Input11),
 
-        .s_axis_tvalid(s_texture_steam_tmu1_axis_tvalid),
-        .s_axis_tready(s_texture_steam_tmu1_axis_tready),
-        .s_axis_tlast(s_texture_steam_tmu1_axis_tlast),
-        .s_axis_tdata(s_texture_steam_tmu1_axis_tdata)
+        .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
+        .s_axis_tready(s_cmd_tmu1_axis_tready),
+        .s_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_axis_tdata(s_cmd_xxx_axis_tdata)
     );
     defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
@@ -327,13 +331,13 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
-        .confClearColor(confDepthBufferClearDepth),
+        .confClearColor(confDepthBufferClearDepth[15 : 0]),
         .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
         .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
         .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
-        .confYOffset(confYOffset),
+        .confYOffset(confYOffset[0 +: 12]),
 
         .fragIndexRead(depthIndexRead),
         .fragOut(depthIn),
@@ -373,7 +377,7 @@ module Rasterix #(
         .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
-        .confYOffset(confYOffset),
+        .confYOffset(confYOffset[0 +: 12]),
         .confClearColor(confColorBufferClearColor),
 
         .fragIndexRead(colorIndexRead),
@@ -414,7 +418,7 @@ module Rasterix #(
 
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
-        .yOffset(confYOffset),
+        .yOffset(confYOffset[0 +: 12]),
 
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),
@@ -497,10 +501,10 @@ module Rasterix #(
         .resetn(resetn),
         .pixelInPipeline(pixelInPipelineShader),
 
-        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
-        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
-        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
-        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+        .s_fog_lut_axis_tvalid(s_cmd_fog_axis_tvalid),
+        .s_fog_lut_axis_tready(s_cmd_fog_axis_tready),
+        .s_fog_lut_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_fog_lut_axis_tdata(s_cmd_xxx_axis_tdata),
 
         .confFeatureEnable(confFeatureEnable),
         .confFragmentPipelineConfig(confFragmentPipelineConfig),

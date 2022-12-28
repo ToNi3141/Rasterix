@@ -81,7 +81,7 @@ equals(TARGET_BUILD, "hardware") {
 }
 equals(TARGET_BUILD, "simulation") {
     VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
-    VERILATOR_BUS_CONNECTOR_PATH = ../../lib/driver
+    VERILATOR_BUS_CONNECTOR_PATH = ../../lib/driver/verilator
     VERILATOR_CODE_GEN_PATH = ../../rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION
