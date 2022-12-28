@@ -40,7 +40,7 @@ module RegisterBank
 
     // Register content stream
     input  wire                             s_axis_tvalid,
-    output reg                              s_axis_tready,
+    output wire                             s_axis_tready,
     input  wire                             s_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_axis_tdata,
     input  wire [INDEX_WIDTH - 1 : 0]       s_axis_tuser,
@@ -54,35 +54,35 @@ module RegisterBank
     reg [BANK_REG_WIDTH - 1 : 0] registerMem [0 : BANK_SIZE - 1];
     reg [INDEX_WIDTH - 1 : 0] registerIndex;
 
+    assign s_axis_tready = 1;
+
     always @(posedge aclk)
-    begin
+    begin : Copy
+        integer i;
         if (!resetn)
         begin
-            s_axis_tready <= 1;
+            registerIndex <= 0;
         end
-        else
-        begin : Copy
-            integer i;
-            if (s_axis_tvalid)
+        
+        if (s_axis_tvalid)
+        begin
+            if (COMPRESSED)
             begin
-                if (COMPRESSED)
+                for (i = 0; i < REGISTERS_PER_STREAM_BEAT; i = i + 1)
                 begin
-                    for (i = 0; i < REGISTERS_PER_STREAM_BEAT; i = i + 1)
-                    begin
-                        registerMem[registerIndex + s_axis_tuser + i[0 +: INDEX_WIDTH]] <= s_axis_tdata[BANK_REG_WIDTH * i +: BANK_REG_WIDTH];
-                    end
-                    registerIndex <= registerIndex + REGISTERS_PER_STREAM_BEAT[0 +: INDEX_WIDTH];
+                    registerMem[registerIndex + s_axis_tuser + i[0 +: INDEX_WIDTH]] <= s_axis_tdata[BANK_REG_WIDTH * i +: BANK_REG_WIDTH];
                 end
-                else
-                begin
-                    registerMem[registerIndex + s_axis_tuser] <= s_axis_tdata[0 +: BANK_REG_WIDTH];
-                    registerIndex <= registerIndex + 1;
-                end
+                registerIndex <= registerIndex + REGISTERS_PER_STREAM_BEAT[0 +: INDEX_WIDTH];
+            end
+            else
+            begin
+                registerMem[registerIndex + s_axis_tuser] <= s_axis_tdata[0 +: BANK_REG_WIDTH];
+                registerIndex <= registerIndex + 1;
+            end
 
-                if (s_axis_tlast)
-                begin
-                    registerIndex <= 0;
-                end
+            if (s_axis_tlast)
+            begin
+                registerIndex <= 0;
             end
         end
     end
