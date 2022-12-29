@@ -104,16 +104,18 @@ localparam OP_FOG_LUT_STREAM = 4;
 
 //---------------------------------------------------------------------------------------------------------
 // Texture Stream
-//  +------------------------------------------------------------------------------+
-//  | 4'h1 | 12'hx reserved | 8'hx TMU nr | 8'hx texture stream size in power of 2 |
-//  +------------------------------------------------------------------------------+
+//  +------------------------------------------------------------------------------------------+
+//  | 4'h1 | 4'hx | 8'hx TMU nr | 8'hx address offset | 8'hx texture stream size in power of 2 |
+//  +------------------------------------------------------------------------------------------+
 // Texture size is in power of two bytes, means 8'h0b = 2kB, 8'h11 = 128kB. The stream size is not dependent 
 // on the actual texture size. This allows partial texture updates.
 // Steam size n 32bit values.
 localparam OP_TEXTURE_STREAM = 5;
 localparam TEXTURE_STREAM_SIZE_POS = 0;
 localparam TEXTURE_STREAM_SIZE_SIZE = 8;
-localparam TEXTURE_STREAM_TMU_NR_POS = TEXTURE_STREAM_SIZE_POS + TEXTURE_STREAM_SIZE_SIZE;
+localparam TEXTURE_STREAM_OFFSET_POS = TEXTURE_STREAM_SIZE_POS + TEXTURE_STREAM_SIZE_SIZE;
+localparam TEXTURE_STREAM_OFFSET_SIZE = 8;
+localparam TEXTURE_STREAM_TMU_NR_POS = TEXTURE_STREAM_OFFSET_POS + TEXTURE_STREAM_OFFSET_SIZE;
 localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////

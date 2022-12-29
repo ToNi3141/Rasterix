@@ -65,7 +65,8 @@ module TextureBuffer #(
     input  wire                             s_axis_tvalid,
     output reg                              s_axis_tready,
     input  wire                             s_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata
+    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
+    input  wire [ 7 : 0]                    s_axis_tuser
 );
 `include "RegisterAndDescriptorDefines.vh"
     initial 
@@ -114,7 +115,7 @@ module TextureBuffer #(
 
     `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
 
-    reg  [ADDR_WIDTH - 1 : 0]           memWriteAddr = 0;
+    reg  [ADDR_WIDTH - 1 : 0]           memWriteCounter = 0;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding00;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding01;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding10;
@@ -150,7 +151,7 @@ module TextureBuffer #(
 
         .writeData(tdataEvenS),
         .write(s_axis_tvalid),
-        .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrEven1),
+        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser) : memReadAddrEven1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
         .writeDataOut(memReadDataEven1),
 
@@ -170,7 +171,7 @@ module TextureBuffer #(
 
         .writeData(tdataOddS),
         .write(s_axis_tvalid),
-        .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrOdd1),
+        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser) : memReadAddrOdd1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
         .writeDataOut(memReadDataOdd1),
 
@@ -257,7 +258,7 @@ module TextureBuffer #(
     begin
         if (!resetn)
         begin
-            memWriteAddr <= 0;
+            memWriteCounter <= 0;
             s_axis_tready <= 1;
         end
         else
@@ -266,11 +267,11 @@ module TextureBuffer #(
             begin
                 if (s_axis_tlast)
                 begin
-                    memWriteAddr <= 0;
+                    memWriteCounter <= 0;
                 end
                 else
                 begin
-                    memWriteAddr <= memWriteAddr + 1;
+                    memWriteCounter <= memWriteCounter + 1;
                 end
             end
         end

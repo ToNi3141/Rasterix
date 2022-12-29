@@ -29,7 +29,7 @@ module CommandParser #(
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
     output reg  [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_xxx_axis_tdata,
-    output reg  [ 3 : 0]    m_cmd_xxx_axis_tuser,
+    output reg  [ 7 : 0]    m_cmd_xxx_axis_tuser,
     output reg              m_cmd_xxx_axis_tlast,
     output wire             m_cmd_fog_axis_tvalid,
     output wire             m_cmd_rasterizer_axis_tvalid,
@@ -171,6 +171,7 @@ module CommandParser #(
                             begin
                                 mux <= MUX_TEXTURE1_STREAM;
                             end
+                            m_cmd_xxx_axis_tuser <= s_cmd_axis_tdata[TEXTURE_STREAM_OFFSET_POS +: TEXTURE_STREAM_OFFSET_SIZE];
                             state <= EXEC_STREAM;
                         end
                         else
@@ -188,7 +189,7 @@ module CommandParser #(
                     OP_RENDER_CONFIG:
                     begin
                         streamCounter <= 1;
-                        m_cmd_xxx_axis_tuser <= s_cmd_axis_tdata[0 +: 4];
+                        m_cmd_xxx_axis_tuser <= { 4'h0, s_cmd_axis_tdata[0 +: 4] };
                         mux <= MUX_RENDER_CONFIG;
                         state <= EXEC_STREAM;
                     end

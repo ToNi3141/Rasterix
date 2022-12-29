@@ -148,7 +148,7 @@ module Rasterix #(
 
     // Steams
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
-    wire [ 3 : 0]    s_cmd_xxx_axis_tuser;
+    wire [ 7 : 0]    s_cmd_xxx_axis_tuser;
     wire             s_cmd_xxx_axis_tlast;
     wire             s_cmd_fog_axis_tvalid;
     wire             s_cmd_rasterizer_axis_tvalid;
@@ -269,7 +269,7 @@ module Rasterix #(
         .s_axis_tready(s_cmd_config_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
         .s_axis_tdata(s_cmd_xxx_axis_tdata),
-        .s_axis_tuser(s_cmd_xxx_axis_tuser),
+        .s_axis_tuser(s_cmd_xxx_axis_tuser[0 +: 4]),
 
         .registers(rendererConfigs)
     );
@@ -296,7 +296,8 @@ module Rasterix #(
         .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
         .s_axis_tready(s_cmd_tmu0_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
+        .s_axis_tdata(s_cmd_xxx_axis_tdata),
+        .s_axis_tuser(s_cmd_xxx_axis_tuser)
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
@@ -321,7 +322,8 @@ module Rasterix #(
         .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
         .s_axis_tready(s_cmd_tmu1_axis_tready),
         .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
+        .s_axis_tdata(s_cmd_xxx_axis_tdata),
+        .s_axis_tuser(s_cmd_xxx_axis_tuser)
     );
     defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
