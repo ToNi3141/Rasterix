@@ -151,7 +151,7 @@ public:
         }
 
         // Upload textures
-        m_textureManager.uploadTextures([&](std::shared_ptr<const uint16_t> texAddr, uint32_t gramAddr, uint32_t texSize)
+        m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
@@ -304,8 +304,7 @@ public:
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        bool ret = tex.valid;
+        bool ret { true };
         m_boundTextures[target] = texId;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
@@ -350,22 +349,19 @@ public:
     virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeS(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
     }
 
     virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeT(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig); 
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId)); 
     }
 
     virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) override
     {
         m_textureManager.enableTextureMagFiltering(texId, filter);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);  
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
 private:
