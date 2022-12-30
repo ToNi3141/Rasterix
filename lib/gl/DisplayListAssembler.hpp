@@ -87,9 +87,6 @@ private:
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0010;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0020;
 
-        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU0    = RR_OP_TEXTURE_STREAM | 0x0000;
-        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM_TMU1    = RR_OP_TEXTURE_STREAM | 0x0100;
-
         static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
@@ -142,7 +139,7 @@ public:
         return nullptr;
     }
 
-    bool updateTexture(const uint32_t addr, std::shared_ptr<const uint16_t> pixels, const uint32_t texSize)
+    bool updateTexture(const uint32_t addr, const uint16_t* pixels, const uint32_t texSize)
     {
         closeStreamSection();
         const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
@@ -150,14 +147,14 @@ public:
         void *dest = m_displayList.alloc(texSizeOnDevice);
         if (ret && dest)
         {
-            memcpy(dest, pixels.get(), texSize);
+            memcpy(dest, pixels, texSize);
             return true;
         }
         return false;
     }
 
     bool useTexture(const uint8_t tmu,
-                    const uint8_t offset,
+                    const uint32_t offset,
                     const uint32_t texAddr, 
                     const uint32_t texSize)
     {
@@ -182,13 +179,13 @@ public:
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSizeOnDevice))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
                 const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
-                const uint32_t offsetShifted = static_cast<uint32_t>(offset) << StreamCommand::RR_TEXTURE_STREAM_OFFSET_POS;
+                const uint32_t offsetShifted = (offset >> 10) << StreamCommand::RR_TEXTURE_STREAM_OFFSET_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM_TMU0 | texSizeLog2 | tmuShifted | offsetShifted;
+                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted | offsetShifted;
 
                 *m_texLoad = StreamCommand::DSE_LOAD | texSizeOnDevice;
                 *m_texLoadAddr = texAddr;
-                m_wasLastCommandATextureCommand.set(tmu);
+                //m_wasLastCommandATextureCommand.set(tmu); // TODO: How to enable this optimization again?
                 ret = true;
             }
             else

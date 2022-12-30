@@ -148,7 +148,7 @@ module Rasterix #(
 
     // Steams
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
-    wire [ 7 : 0]    s_cmd_xxx_axis_tuser;
+    wire [31 : 0]    s_cmd_xxx_axis_tuser;
     wire             s_cmd_xxx_axis_tlast;
     wire             s_cmd_fog_axis_tvalid;
     wire             s_cmd_rasterizer_axis_tvalid;

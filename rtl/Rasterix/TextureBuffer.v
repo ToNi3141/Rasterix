@@ -66,7 +66,7 @@ module TextureBuffer #(
     output reg                              s_axis_tready,
     input  wire                             s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
-    input  wire [ 7 : 0]                    s_axis_tuser
+    input  wire [31 : 0]                    s_axis_tuser
 );
 `include "RegisterAndDescriptorDefines.vh"
     initial 
@@ -151,7 +151,7 @@ module TextureBuffer #(
 
         .writeData(tdataEvenS),
         .write(s_axis_tvalid),
-        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser) : memReadAddrEven1),
+        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser[ADDR_WIDTH_DIFF + 1 +: ADDR_WIDTH]) : memReadAddrEven1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
         .writeDataOut(memReadDataEven1),
 
@@ -171,7 +171,7 @@ module TextureBuffer #(
 
         .writeData(tdataOddS),
         .write(s_axis_tvalid),
-        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser) : memReadAddrOdd1),
+        .writeAddr((s_axis_tvalid) ? (memWriteCounter + s_axis_tuser[ADDR_WIDTH_DIFF + 1 +: ADDR_WIDTH]) : memReadAddrOdd1),
         .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
         .writeDataOut(memReadDataOdd1),
 

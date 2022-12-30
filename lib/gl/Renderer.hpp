@@ -151,7 +151,7 @@ public:
         }
 
         // Upload textures
-        m_textureManager.uploadTextures([&](std::shared_ptr<const uint16_t> texAddr, uint32_t gramAddr, uint32_t texSize)
+        m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
@@ -304,13 +304,15 @@ public:
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        bool ret = tex.valid;
+        bool ret { true };
         m_boundTextures[target] = texId;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, 0, tex.addr, tex.size);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), tex.tmuConfig);
+            ret = ret && m_textureManager.useTexture(texId, [&](const uint32_t bufferIndex, const uint32_t addr, const uint32_t size)
+            {
+                return m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, bufferIndex, addr, size);
+            });
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
         }
         return ret;
     }
@@ -350,22 +352,19 @@ public:
     virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeS(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
     }
 
     virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeT(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig); 
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId)); 
     }
 
     virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) override
     {
         m_textureManager.enableTextureMagFiltering(texId, filter);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);  
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
 private:
