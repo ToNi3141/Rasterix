@@ -87,7 +87,7 @@ public:
                     SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
 
                     // Allocate memory pages
-                    const uint32_t texturePages = (std::max)(1UL, (textureSizeInBytes / PAGE_SIZE));
+                    const uint32_t texturePages = (std::max)(static_cast<uint32_t>(1), (textureSizeInBytes / TEXTURE_PAGE_SIZE));
                     SPDLOG_DEBUG("Use number of pages: {}", texturePages);
                     std::size_t cp = 0;
                     for (std::size_t p = 0; p < m_pageTable.size(); p++)
@@ -102,14 +102,22 @@ public:
                             {
                                 break;
                             }
+                            if (cp >= m_textures[textureSlot].pageTable.size())
+                            {
+                                SPDLOG_ERROR("Texture specific page table overflown");
+                            }
                         }
                     }
                     if (cp != texturePages)
                     {
                         SPDLOG_ERROR("Run out of memory during page allocation");
+                        // TODO: Release already allocated pages.
+                        m_textures[textureSlot].pages = 0;
                     }
-                    m_textures[textureSlot].pages = texturePages;
-                    
+                    else
+                    {
+                        m_textures[textureSlot].pages = texturePages;
+                    }
                     break;
                 }
             }
@@ -152,13 +160,13 @@ public:
     bool textureValid(const uint16_t texId) const 
     {
         const Texture& tex = m_textures[m_textureLut[texId]];
-        return tex.inUse || (texId == 0);
+        return  (texId != 0) && tex.inUse;
     }
 
     uint32_t getTmuConfig(const uint16_t texId) const
     {
         const Texture& tex = m_textures[m_textureLut[texId]];
-        return tex.size, tex.tmuConfig.serialized;
+        return tex.tmuConfig.serialized;
     }
 
     bool useTexture(const uint16_t texId, const std::function<bool(const uint32_t bufferIndex, const uint32_t addr, const uint32_t size)> appendToDisplayList)
@@ -168,7 +176,7 @@ public:
         const uint32_t texSize { (std::min)(TEXTURE_PAGE_SIZE, tex.size) }; // In case it is just a small texture, just upload a part of the page.
         for (uint32_t i = 0; i < tex.pages; i++)
         {
-            ret = ret && appendToDisplayList(i * PAGE_SIZE, tex.pageTable[i] * PAGE_SIZE, texSize); 
+            ret = ret && appendToDisplayList(i * TEXTURE_PAGE_SIZE, tex.pageTable[i] * TEXTURE_PAGE_SIZE, texSize); 
         }
         return ret;
     }
@@ -203,9 +211,10 @@ public:
             if (texture.requiresUpload && texture.pixels)
             {
                 bool ret { true };
+                const uint32_t texturePageSize = (std::min)(texture.size, TEXTURE_PAGE_SIZE);
                 for (std::size_t j = 0; j < texture.pages; j++)
                 {
-                    ret = ret && uploader(texture.pixels.get() + (j * (PAGE_SIZE / 2)), static_cast<uint32_t>(texture.pageTable[j]) * PAGE_SIZE, PAGE_SIZE);
+                    ret = ret && uploader(texture.pixels.get() + (j * (TEXTURE_PAGE_SIZE / 2)), static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, texturePageSize);
                 }
                 texture.requiresUpload = !ret;
             }
@@ -224,6 +233,7 @@ public:
                 {
                     m_pageTable[texture.pageTable[j]].inUse = false;
                 }
+                texture.pages = 0;
             }
         }
         return true;
