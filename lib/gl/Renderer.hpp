@@ -153,7 +153,7 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize() };
+            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 
@@ -365,8 +365,11 @@ public:
     }
 
 private:
+    static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
+    static constexpr std::size_t TEXTURE_NUMBER_OF_PAGES { MAX_NUMBER_OF_TEXTURES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
+    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, TEXTURE_NUMBER_OF_PAGES>; 
 
     static uint32_t convertColor(const Vec4i color)
     {
