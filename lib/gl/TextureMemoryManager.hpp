@@ -22,6 +22,7 @@
 #include "IRenderer.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
+#include <tcb/span.hpp>
 
 template <uint16_t MAX_NUMBER_OF_TEXTURES = 64, std::size_t PAGE_SIZE = 4096, std::size_t NUMBER_OF_PAGES = 7680>
 class TextureMemoryManager 
@@ -160,7 +161,7 @@ public:
     bool textureValid(const uint16_t texId) const 
     {
         const Texture& tex = m_textures[m_textureLut[texId]];
-        return  (texId != 0) && tex.inUse;
+        return (texId != 0) && tex.inUse;
     }
 
     uint32_t getTmuConfig(const uint16_t texId) const
@@ -179,6 +180,26 @@ public:
             ret = ret && appendToDisplayList(i * TEXTURE_PAGE_SIZE, tex.pageTable[i] * TEXTURE_PAGE_SIZE, texSize); 
         }
         return ret;
+    }
+
+    tcb::span<const uint16_t> getPages(const uint16_t texId) const
+    {
+        if (textureValid(texId))
+        {
+            const Texture& tex = m_textures[m_textureLut[texId]];
+            return { tex.pageTable.data(), tex.pages };
+        }
+        return {};
+    }
+
+    uint32_t getTextureDataSize(const uint16_t texId) const
+    {
+        if (textureValid(texId))
+        {
+            const Texture& tex = m_textures[m_textureLut[texId]];
+            return tex.size;
+        }
+        return 0;
     }
 
     IRenderer::TextureObject getTexture(const uint16_t texId)

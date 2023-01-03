@@ -304,12 +304,18 @@ public:
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        bool ret { true };
         m_boundTextures[target] = texId;
+        if (!m_textureManager.textureValid(texId))
+        {
+            return false;
+        }
+        bool ret { true };
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), tex.tmuConfig);
+            const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
+            const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
         }
         return ret;
     }

@@ -22,6 +22,7 @@
 #include <array>
 #include <bitset>
 #include <algorithm>
+#include <tcb/span.hpp>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
@@ -153,56 +154,55 @@ public:
     }
 
     bool useTexture(const uint8_t tmu,
-                    const uint32_t texAddr, 
+                    const tcb::span<const uint16_t> pages,
+                    const uint32_t pageSize,
                     const uint32_t texSize)
     {
         bool ret = false;
         const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
+        const std::size_t ps { (texSizeOnDevice > pageSize) ? pageSize : texSizeOnDevice };
+        closeStreamSection();
+        if (m_wasLastCommandATextureCommand[tmu])
+        {
+            m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
+        }
+
+        m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
         if (openNewStreamSection())
         {
-            // Check if the last command was a texture command and not a triangle. If no triangle has to be drawn
-            // with the recent texture, then we can just overwrite this texture with the current one and avoiding
-            // with that mechanism unnecessary texture loads.
-            if (!m_wasLastCommandATextureCommand[tmu])
-            {
-                m_texStreamOp = m_displayList.template create<SCT>();
-                if (m_texStreamOp)
-                {
-                    closeStreamSection();
-                    m_texLoad = m_displayList.template create<SCT>();
-                    m_texLoadAddr = m_displayList.template create<uint32_t>();
-                }
-            }
-            if (m_texStreamOp && m_texLoad && m_texLoadAddr)
+            SCT *texStreamOp { nullptr };
+            SCT *texLoad { nullptr };
+            uint32_t *texLoadAddr { nullptr };
+            texStreamOp = m_displayList.template create<SCT>();
+            if (texStreamOp)
             {
                 const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSizeOnDevice))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
                 const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
 
-                *m_texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
-
-                *m_texLoad = StreamCommand::DSE_LOAD | texSizeOnDevice;
-                *m_texLoadAddr = texAddr;
-                //m_wasLastCommandATextureCommand.set(tmu); // TODO: How to enable this optimization again?
-                ret = true;
+                *texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
+                closeStreamSection();
             }
             else
             {
-                if (!m_wasLastCommandATextureCommand[tmu])
+                return false;
+            }
+            m_wasLastCommandATextureCommand.set(tmu);
+            for (const uint16_t p : pages)
+            {
+                texLoad = m_displayList.template create<SCT>();
+                texLoadAddr = m_displayList.template create<uint32_t>();
+                if (texLoad && texLoadAddr)
                 {
-                    if (m_texStreamOp)
-                    {
-                        *m_texStreamOp = StreamCommand::DSE_NOP;
-                    }
-                    if (m_texLoad)
-                    {
-                        m_displayList.template remove<SCT>();
-                    }
-                    if (m_texLoadAddr)
-                    {
-                        m_displayList.template remove<uint32_t>();
-                    }
+                    *texLoad = StreamCommand::DSE_LOAD | ps;
+                    *texLoadAddr = p * pageSize;
+                    ret = true;
+                }
+                else
+                {
+                    m_displayList.initArea(m_texPosInDisplayList[tmu], m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu]);
                 }
             }
+            m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
         }
 
         return ret;
@@ -388,9 +388,8 @@ private:
 
     // Helper variables to optimize the texture loading
     std::bitset<TMU_COUNT> m_wasLastCommandATextureCommand {};
-    SCT *m_texStreamOp { nullptr };
-    SCT *m_texLoad { nullptr };
-    uint32_t *m_texLoadAddr { nullptr };
+    std::array<uint32_t, TMU_COUNT> m_texPosInDisplayList {};
+    std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
 };
 
 
