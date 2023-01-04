@@ -310,10 +310,10 @@ public:
             return false;
         }
         bool ret { true };
+        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
-            const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
         }

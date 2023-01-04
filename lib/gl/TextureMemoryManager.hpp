@@ -63,6 +63,7 @@ public:
 
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
     {
+        bool ret = false;
         uint32_t textureSlot = m_textureLut[texId];
         const uint32_t textureSlotOld = m_textureLut[texId];
         const uint32_t textureSizeInBytes = textureObject.width * textureObject.height * 2;
@@ -90,39 +91,19 @@ public:
                     // Allocate memory pages
                     const uint32_t texturePages = (std::max)(static_cast<uint32_t>(1), (textureSizeInBytes / TEXTURE_PAGE_SIZE));
                     SPDLOG_DEBUG("Use number of pages: {}", texturePages);
-                    std::size_t cp = 0;
-                    for (std::size_t p = 0; p < m_pageTable.size(); p++)
-                    {
-                        if (m_pageTable[p].inUse == false)
-                        {
-                            m_textures[textureSlot].pageTable[cp] = p;
-                            m_pageTable[p].inUse = true;
-                            SPDLOG_DEBUG("Use page: {}", p);
-                            cp++;
-                            if (cp == texturePages)
-                            {
-                                break;
-                            }
-                            if (cp >= m_textures[textureSlot].pageTable.size())
-                            {
-                                SPDLOG_ERROR("Texture specific page table overflown");
-                            }
-                        }
-                    }
-                    if (cp != texturePages)
+                    ret = allocPages(m_textures[textureSlot], texturePages);
+                    if (!ret)
                     {
                         SPDLOG_ERROR("Run out of memory during page allocation");
-                        // TODO: Release already allocated pages.
-                        m_textures[textureSlot].pages = 0;
-                    }
-                    else
-                    {
-                        m_textures[textureSlot].pages = texturePages;
+                        deallocPages(m_textures[textureSlot]);
                     }
                     break;
                 }
             }
-            // TODO: Print when no texture was allocated there
+            if (!ret)
+            {
+                SPDLOG_ERROR("Run out of memory during texture allocation");
+            }
         }
         m_textures[textureSlot].tmuConfig.reg.wrapModeS = m_textures[textureSlotOld].tmuConfig.reg.wrapModeS;
         m_textures[textureSlot].tmuConfig.reg.wrapModeT = m_textures[textureSlotOld].tmuConfig.reg.wrapModeT;
@@ -137,7 +118,7 @@ public:
         m_textures[textureSlot].tmuConfig.reg.pixelFormat = static_cast<uint32_t>(textureObject.getPixelFormat());
         m_textures[textureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.width))) - 1));
         m_textures[textureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.height))) - 1));
-        return true;
+        return ret;
     }
 
     void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
@@ -250,11 +231,7 @@ public:
                 texture.requiresDelete = false;
                 texture.inUse = false;
                 texture.pixels = std::shared_ptr<const uint16_t>();
-                for (std::size_t j = 0; j < texture.pages; j++)
-                {
-                    m_pageTable[texture.pageTable[j]].inUse = false;
-                }
-                texture.pages = 0;
+                deallocPages(texture);
             }
         }
         return true;
@@ -293,6 +270,41 @@ private:
             #pragma pack(pop)
         } tmuConfig;
     };
+
+    bool allocPages(Texture& tex, const uint32_t numberOfPages)
+    {
+        std::size_t cp = 0;
+        for (std::size_t p = 0; p < m_pageTable.size(); p++)
+        {
+            if (m_pageTable[p].inUse == false)
+            {
+                tex.pageTable[cp] = p;
+                m_pageTable[p].inUse = true;
+                SPDLOG_DEBUG("Use page: {}", p);
+                cp++;
+                tex.pages = cp;
+                if (cp == numberOfPages)
+                {
+                    break;
+                }
+                if (cp >= tex.pageTable.size())
+                {
+                    SPDLOG_ERROR("Texture specific page table overflown");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    void deallocPages(Texture& tex)
+    {
+        for (std::size_t j = 0; j < tex.pages; j++)
+        {
+            m_pageTable[tex.pageTable[j]].inUse = false;
+        }
+        tex.pages = 0;
+    }
 
     // Texture memory allocator
     std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
