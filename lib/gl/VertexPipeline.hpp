@@ -99,7 +99,7 @@ public:
     static uint8_t getModelMatrixStackDepth();
     static uint8_t getProjectionMatrixStackDepth();
 private:
-    static constexpr std::size_t VERTEX_BUFFER_SIZE { 252 };
+    static constexpr std::size_t VERTEX_BUFFER_SIZE { 24 };
     static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
     static_assert(VERTEX_BUFFER_SIZE % 3 == 0, "VERTEX_BUFFER_SIZE must be dividable through 3 (used for GL_TRIANGLES");
     static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
@@ -139,7 +139,9 @@ private:
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
-    
+
+    void getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj& obj, const uint32_t index);
+
     void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count);
     void transform(
         Vec4Array& transformedVertex, 
@@ -162,6 +164,13 @@ private:
         const Vec4Array& color, 
         const TexCoordArray& tex, 
         const std::size_t count,
+        const RenderObj::DrawMode drawMode
+    );
+    bool drawLineArray(
+        const Vec4Array& vertex, 
+        const Vec4Array& color, 
+        const TexCoordArray& tex, 
+        const std::size_t count, 
         const RenderObj::DrawMode drawMode,
         const bool lastRound
     );

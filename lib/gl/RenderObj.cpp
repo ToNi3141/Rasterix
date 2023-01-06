@@ -19,6 +19,11 @@
 #include "RenderObj.hpp"
 #include <spdlog/spdlog.h>
 
+bool RenderObj::isLine() const
+{
+    return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
+}
+
 bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
 {
     vec.initHomogeneous();
@@ -65,7 +70,6 @@ bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
         }
         return retVal;
     }
-    
     else
     {
         vec = m_vertexColor;

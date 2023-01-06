@@ -63,6 +63,7 @@ public:
     const Vec4& getVertexColor() const { return m_vertexColor; }
     bool normalArrayEnabled() const { return m_normalArrayEnabled; }
     bool getNormal(Vec3& vec, const uint32_t index) const;
+    bool isLine() const;
 
     uint32_t getIndex(const uint32_t index) const;
     DrawMode getDrawMode() const { return m_drawMode; }
