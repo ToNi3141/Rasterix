@@ -19,6 +19,7 @@
 #define DISPLAYLIST_HPP
 
 #include <stdint.h>
+#include <cstring>
 
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayList {
@@ -27,10 +28,10 @@ public:
 
     void* alloc(const uint32_t size)
     {
-        if ((size + consumedMemory) <= DISPLAY_LIST_SIZE)
+        if ((size + writePos) <= DISPLAY_LIST_SIZE)
         {
-            void* memPlace = &mem[consumedMemory];
-            consumedMemory += size;
+            void* memPlace = &mem[writePos];
+            writePos += size;
             return memPlace;
         }
         return nullptr;
@@ -47,9 +48,9 @@ public:
     void remove()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if (size <= consumedMemory)
+        if (size <= writePos)
         {
-            consumedMemory -= size;
+            writePos -= size;
         }
     }
 
@@ -62,7 +63,7 @@ public:
 
     void clear()
     {
-        consumedMemory = 0;
+        writePos = 0;
     }
 
     const uint8_t* getMemPtr() const
@@ -72,12 +73,22 @@ public:
 
     uint32_t getSize() const
     {
-        return consumedMemory;
+        return writePos;
     }
 
     uint32_t getFreeSpace() const
     {
-        return DISPLAY_LIST_SIZE - consumedMemory;
+        return DISPLAY_LIST_SIZE - writePos;
+    }
+
+    void initArea(const uint32_t start, const uint32_t size)
+    {
+        memset(&mem[start], 0, size);
+    }
+
+    uint32_t getCurrentWritePos() const
+    {
+        return writePos;
     }
 
     // Interface for reading the display list
@@ -86,9 +97,9 @@ public:
     GET_TYPE* lookAhead()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + getPos) <= consumedMemory)
+        if ((size + readPos) <= writePos)
         {
-            return reinterpret_cast<GET_TYPE*>(&mem[getPos]);
+            return reinterpret_cast<GET_TYPE*>(&mem[readPos]);
         }
         return nullptr;
     }
@@ -97,10 +108,10 @@ public:
     GET_TYPE* getNext()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + getPos) <= consumedMemory)
+        if ((size + readPos) <= writePos)
         {
-            void* memPlace = &mem[getPos];
-            getPos += size;
+            void* memPlace = &mem[readPos];
+            readPos += size;
             return reinterpret_cast<GET_TYPE*>(memPlace);
         }
         return nullptr;
@@ -108,18 +119,18 @@ public:
 
     bool atEnd() const
     {
-        return consumedMemory <= getPos;
+        return writePos <= readPos;
     }
 
     void resetGet()
     {
-        getPos = 0;
+        readPos = 0;
     }
 
 private:
     uint8_t mem[DISPLAY_LIST_SIZE];
-    uint32_t consumedMemory = 0;
-    uint32_t getPos = 0;
+    uint32_t writePos { 0 };
+    uint32_t readPos { 0 };
 };
 
 #endif // DISPLAYLIST_HPP

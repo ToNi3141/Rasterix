@@ -151,9 +151,9 @@ public:
         }
 
         // Upload textures
-        m_textureManager.uploadTextures([&](std::shared_ptr<const uint16_t> texAddr, uint32_t gramAddr, uint32_t texSize)
+        m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::MAX_TEXTURE_SIZE + ListAssembler::uploadCommandSize() };
+            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 
@@ -304,13 +304,18 @@ public:
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        bool ret = tex.valid;
         m_boundTextures[target] = texId;
+        if (!m_textureManager.textureValid(texId))
+        {
+            return false;
+        }
+        bool ret { true };
+        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, tex.addr, tex.size);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), tex.tmuConfig);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
         }
         return ret;
     }
@@ -350,27 +355,27 @@ public:
     virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeS(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
     }
 
     virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) override
     {
         m_textureManager.setTextureWrapModeT(texId, mode);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig); 
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId)); 
     }
 
     virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) override
     {
         m_textureManager.enableTextureMagFiltering(texId, filter);
-        typename TextureManager::TextureMeta tex = m_textureManager.getTextureMeta(texId);
-        return writeToTextureConfig(texId, tex.tmuConfig);  
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
 private:
+    static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
+    static constexpr std::size_t TEXTURE_NUMBER_OF_PAGES { MAX_NUMBER_OF_TEXTURES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES>;
+    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, TEXTURE_NUMBER_OF_PAGES>; 
 
     static uint32_t convertColor(const Vec4i color)
     {

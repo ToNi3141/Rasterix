@@ -46,7 +46,7 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    Renderer<1024*1024, 10, RESOLUTION_H / 10, 64> m_renderer{m_busConnector};
+    Renderer<1024*1024, 10, RESOLUTION_H / 10, 64, 256> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE

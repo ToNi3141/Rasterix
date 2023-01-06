@@ -52,21 +52,20 @@ HEADERS  += mainwindow.h\
     $${ICEGL_PATH}/PixelPipeline.hpp \
     $${ICEGL_PATH}/DisplayListAssembler.hpp
 
+QMAKE_CXXFLAGS += -I../../lib/3rdParty/span/include/
+QMAKE_CFLAGS += -I../../lib/3rdParty/span/include/
 
 DEFINES += SPDLOG_ACTIVE_LEVEL=0
 QMAKE_CXXFLAGS += -I../../lib/3rdParty/spdlog-1.10.0/include/
 QMAKE_CFLAGS += -I../../lib/3rdParty/spdlog-1.10.0/include/
-
-QMAKE_CXXFLAGS += -I../3rdParty/spdlog-1.10.0/include/
-QMAKE_CFLAGS += -I../3rdParty/spdlog-1.10.0/include/
 
 
 
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE
 
-    FT60X_BUS_CONNECTOR_PATH = ../../lib/driver
-    FT60X_LIB_PATH = ../../lib/ftd3xx/osx
+    FT60X_BUS_CONNECTOR_PATH = ../../lib/driver/ft60x
+    FT60X_LIB_PATH = ../../lib/driver/ft60x/ftd3xx/osx
 
     LIBS += /usr/local/homebrew/Cellar/libusb/1.0.26/lib/libusb-1.0.dylib
     LIBS += $${FT60X_LIB_PATH}/libftd3xx-static.a
@@ -78,6 +77,7 @@ equals(TARGET_BUILD, "hardware") {
         -I$${FT60X_LIB_PATH}/
 
     HEADERS += $${FT60X_BUS_CONNECTOR_PATH}/FT60XBusConnector.hpp
+    SOURCES += $${FT60X_BUS_CONNECTOR_PATH}/FT60XBusConnector.cpp
 }
 equals(TARGET_BUILD, "simulation") {
     VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
