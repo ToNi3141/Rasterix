@@ -491,7 +491,7 @@ bool VertexPipeline::drawTriangleArray(
             break;
         case RenderObj::DrawMode::POLYGON:
         case RenderObj::DrawMode::TRIANGLE_FAN:
-            i0 = 0;
+            i0 = 0; // BUG: 0 is not the first element, it is the first of the current chunk ...
             i1 = i + 1;
             i2 = i + 2;
             i += 1;
@@ -578,7 +578,7 @@ bool VertexPipeline::drawLineArray(
             i0 = i;
             i1 = i + 1;
             if (lastRound && (i1 >= count))
-                i1 = 0;
+                i1 = 0; // BUG: 0 is not the first element, it is the first of the current chunk ...
             i += 1;
             break;
         case RenderObj::DrawMode::LINE_STRIP:
