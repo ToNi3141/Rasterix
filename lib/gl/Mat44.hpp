@@ -178,11 +178,12 @@ public:
 
     void operator= (const float* m)
     {
+        uint8_t k = 0;
         for (uint8_t i = 0; i < 4; i++)
         {
             for (uint8_t j = 0; j < 4; j++)
             {
-                mat[i][j] = m[(i * 4) + j];
+                mat[i][j] = m[k++];
             }
         }
     }

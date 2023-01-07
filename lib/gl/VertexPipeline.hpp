@@ -176,6 +176,8 @@ private:
     );
 
     void recalculateMatrices();
+    void recalculateModelProjectionMatrix();
+    void recalculateNormalMatrix();
 
     float m_depthRangeZNear { 0.0f };
     float m_depthRangeZFar { 1.0f };
@@ -209,7 +211,8 @@ private:
     Mat44 m_n {}; // Normal
     std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
     Mat44 m_c {}; // Color
-    bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
+    bool m_modelMatrixChanged { true };
+    bool m_projectionMatrixChanged { true };
 
     // Color material
     bool m_enableColorMaterial { false };

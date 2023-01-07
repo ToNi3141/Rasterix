@@ -63,9 +63,12 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
 
     for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {
-        obj.getTexCoord(tu, tex[tu], pos);
-        m_texGen[tu].calculateTexGenCoords(m_m, tex[tu], v);
-        m_tm[tu].transform(tex[tu], tex[tu]); 
+        if (m_renderer.getEnableTmu(tu))
+        {
+            obj.getTexCoord(tu, tex[tu], pos);
+            m_texGen[tu].calculateTexGenCoords(m_m, tex[tu], v);
+            m_tm[tu].transform(tex[tu], tex[tu]); 
+        }
     }
 
     if (m_lighting.lightingEnabled())
@@ -351,9 +354,12 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
 
     for (uint8_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
     {
-        texCoordList[0][i] = triangle.tc0[i];
-        texCoordList[1][i] = triangle.tc1[i];
-        texCoordList[2][i] = triangle.tc2[i];
+        if (m_renderer.getEnableTmu(i))
+        {
+            texCoordList[0][i] = triangle.tc0[i];
+            texCoordList[1][i] = triangle.tc1[i];
+            texCoordList[2][i] = triangle.tc2[i];
+        }
     }
 
 
@@ -372,7 +378,8 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
             // Perspective correction of the texture coordinates
-            texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+            if (m_renderer.getEnableTmu(j))
+                texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
             // TODO: Perspective correction of the color 
             // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
             // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
@@ -663,11 +670,13 @@ void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
 void VertexPipeline::setModelMatrix(const Mat44 &m)
 {
     m_m = m;
+    m_modelMatrixChanged = true;
 }
 
 void VertexPipeline::setProjectionMatrix(const Mat44 &m)
 {
     m_p = m;
+    m_projectionMatrixChanged = true;
 }
 
 void VertexPipeline::setColorMatrix(const Mat44& m)
@@ -700,22 +709,20 @@ void VertexPipeline::multiply(const Mat44& mat)
     switch (m_matrixMode)
     {
         case MatrixMode::MODELVIEW:
-            m_m = mat * m_m;
+            setModelMatrix(mat * m_m);
             break;
         case MatrixMode::PROJECTION:
-            m_p = mat * m_p;
+            setProjectionMatrix(mat * m_p);
             break;
         case MatrixMode::TEXTURE:
-            m_tm[m_tmu] = mat * m_tm[m_tmu];
+            setTextureMatrix(mat * m_tm[m_tmu]);
             break;
         case MatrixMode::COLOR:
-            m_c = mat * m_c;
+            setColorMatrix(mat * m_c);
             break;
         default:
             break;
     }
-
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::translate(const float x, const float y, const float z)
@@ -726,7 +733,6 @@ void VertexPipeline::translate(const float x, const float y, const float z)
     m[3][1] = y;
     m[3][2] = z;
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::scale(const float x, const float y, const float z)
@@ -737,7 +743,6 @@ void VertexPipeline::scale(const float x, const float y, const float z)
     m[1][1] = y;
     m[2][2] = z;
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::rotate(const float angle, const float x, const float y, const float z)
@@ -757,7 +762,6 @@ void VertexPipeline::rotate(const float angle, const float x, const float y, con
     }}};
 
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::loadIdentity()
@@ -766,9 +770,11 @@ void VertexPipeline::loadIdentity()
     {
         case MatrixMode::MODELVIEW:
             m_m.identity();
+            m_modelMatrixChanged = true;
             break;
         case MatrixMode::PROJECTION:
             m_p.identity();
+            m_projectionMatrixChanged = true;
             break;
         case MatrixMode::TEXTURE:
             m_tm[m_tmu].identity();
@@ -779,7 +785,6 @@ void VertexPipeline::loadIdentity()
         default:
             break;
     }
-    m_matricesOutdated = true;
 }
 
 bool VertexPipeline::pushMatrix()
@@ -790,7 +795,6 @@ bool VertexPipeline::pushMatrix()
         {
             m_mStack[m_mStackIndex] = m_m;
             m_mStackIndex++;
-            m_matricesOutdated = true;
         }
         else
         {
@@ -804,7 +808,6 @@ bool VertexPipeline::pushMatrix()
         {
             m_pStack[m_pStackIndex] = m_p;
             m_pStackIndex++;
-            m_matricesOutdated = true;
         }
         else
         {
@@ -818,7 +821,6 @@ bool VertexPipeline::pushMatrix()
         {
             m_cStack[m_cStackIndex] = m_c;
             m_cStackIndex++;
-            m_matricesOutdated = true;
         }
         else
         {
@@ -850,7 +852,7 @@ bool VertexPipeline::popMatrix()
         {
             m_mStackIndex--;
             m_m = m_mStack[m_mStackIndex];
-            m_matricesOutdated = true;
+            m_modelMatrixChanged = true;
         }
         else
         {
@@ -864,7 +866,7 @@ bool VertexPipeline::popMatrix()
         {
             m_pStackIndex--;
             m_p = m_pStack[m_pStackIndex];
-            m_matricesOutdated = true;
+            m_projectionMatrixChanged = true;
         }
         else
         {
@@ -878,7 +880,6 @@ bool VertexPipeline::popMatrix()
         {
             m_cStackIndex--;
             m_c = m_cStack[m_cStackIndex];
-            m_matricesOutdated = true;
         }
         else
         {
@@ -915,22 +916,29 @@ const Mat44& VertexPipeline::getProjectionMatrix() const
 
 void VertexPipeline::recalculateMatrices()
 {
-    if (m_matricesOutdated)
+    if (m_modelMatrixChanged)
     {
-        // Update transformation matrix
-        Mat44 t{m_m};
-        t *= m_p;
-        setModelProjectionMatrix(t);
-        setModelMatrix(m_m);
-
-        Mat44 inv{m_m};
-        inv.invert();
-        inv.transpose();
-        // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
-        setNormalMatrix(inv);
-
-        m_matricesOutdated = false;
+        recalculateNormalMatrix();
     }
+    if (m_modelMatrixChanged || m_projectionMatrixChanged)
+    {
+        recalculateModelProjectionMatrix();
+    }
+    m_modelMatrixChanged = false;
+    m_projectionMatrixChanged = false;
+}
+
+void VertexPipeline::recalculateModelProjectionMatrix()
+{
+    // Update transformation matrix
+    setModelProjectionMatrix(m_m * m_p);
+}
+
+void VertexPipeline::recalculateNormalMatrix()
+{
+    m_n = m_m;
+    m_n.invert();
+    m_n.transpose();
 }
 
 void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
@@ -940,13 +948,14 @@ void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
 
 bool VertexPipeline::loadMatrix(const Mat44& m)
 {
-    m_matricesOutdated = true;
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
+        m_modelMatrixChanged = true;
         setModelMatrix(m);
         return true;
     case MatrixMode::PROJECTION:
+        m_projectionMatrixChanged = true;
         setProjectionMatrix(m);
         return true;
     case MatrixMode::TEXTURE:

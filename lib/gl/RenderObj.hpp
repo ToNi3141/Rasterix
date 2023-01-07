@@ -110,9 +110,9 @@ private:
     {
         if (arr)
         {
-            const uint32_t indexWithStride = (stride == 0) ? index * size : index * stride;
             const int8_t* a = reinterpret_cast<const int8_t*>(arr);
             if (stride == 0) {
+                const uint32_t indexWithStride = index * size;
                 switch (type)
                 {
                 case Type::BYTE:
@@ -137,6 +137,7 @@ private:
             }
             else
             {
+                const uint32_t indexWithStride = index * stride;
                 switch (type)
                 {
                 case Type::BYTE:

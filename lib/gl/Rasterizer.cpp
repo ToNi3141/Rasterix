@@ -172,21 +172,24 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
     // Interpolate texture
     for (uint8_t i = 0; i < rasterizedTriangle.texture.size(); i++)
     {
-        Vec3 texS { { triangle.texture0[i][0][0], triangle.texture1[i][0][0], triangle.texture2[i][0][0] } };
-        Vec3 texT { { triangle.texture0[i][0][1], triangle.texture1[i][0][1], triangle.texture2[i][0][1] } };
-        Vec3 texQ { { triangle.texture0[i][0][3], triangle.texture1[i][0][3], triangle.texture2[i][0][3] } };
+        if (m_tmuEnable[i])
+        {
+            Vec3 texS { { triangle.texture0[i][0][0], triangle.texture1[i][0][0], triangle.texture2[i][0][0] } };
+            Vec3 texT { { triangle.texture0[i][0][1], triangle.texture1[i][0][1], triangle.texture2[i][0][1] } };
+            Vec3 texQ { { triangle.texture0[i][0][3], triangle.texture1[i][0][3], triangle.texture2[i][0][3] } };
 
-        rasterizedTriangle.texture[i].texStq[0] = texS.dot(wNorm);
-        rasterizedTriangle.texture[i].texStq[1] = texT.dot(wNorm);
-        rasterizedTriangle.texture[i].texStq[2] = texQ.dot(wNorm);
+            rasterizedTriangle.texture[i].texStq[0] = texS.dot(wNorm);
+            rasterizedTriangle.texture[i].texStq[1] = texT.dot(wNorm);
+            rasterizedTriangle.texture[i].texStq[2] = texQ.dot(wNorm);
 
-        rasterizedTriangle.texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
-        rasterizedTriangle.texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
-        rasterizedTriangle.texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
+            rasterizedTriangle.texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
+            rasterizedTriangle.texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
+            rasterizedTriangle.texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
 
-        rasterizedTriangle.texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
-        rasterizedTriangle.texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
-        rasterizedTriangle.texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+            rasterizedTriangle.texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
+            rasterizedTriangle.texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
+            rasterizedTriangle.texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+        }
     }
 
     // Interpolate W
@@ -242,9 +245,4 @@ void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t 
     m_scissorY = y;
     m_scissorWidth = width;
     m_scissorHeight = height;
-}
-
-void Rasterizer::enableScissor(const bool enable)
-{
-    m_enableScissor = enable;
 }
