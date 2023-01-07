@@ -789,119 +789,38 @@ void VertexPipeline::loadIdentity()
 
 bool VertexPipeline::pushMatrix()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        if (m_mStackIndex < MODEL_MATRIX_STACK_DEPTH)
-        {
-            m_mStack[m_mStackIndex] = m_m;
-            m_mStackIndex++;
-        }
-        else
-        {
+        case MatrixMode::MODELVIEW:
+            return m_mStack.push(m_m);
+        case MatrixMode::PROJECTION:
+            return m_pStack.push(m_p);
+        case MatrixMode::COLOR:
+            return m_cStack.push(m_c);
+        case MatrixMode::TEXTURE:
+            return m_tmStack[m_tmu].push(m_tm[m_tmu]);
+        default:
             return false;
-        }
-        return true;
     }
-    else if (m_matrixMode == MatrixMode::PROJECTION)
-    {
-        if (m_pStackIndex < PROJECTION_MATRIX_STACK_DEPTH)
-        {
-            m_pStack[m_pStackIndex] = m_p;
-            m_pStackIndex++;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::COLOR)
-    {
-        if (m_cStackIndex < COLOR_MATRIX_STACK_DEPTH)
-        {
-            m_cStack[m_cStackIndex] = m_c;
-            m_cStackIndex++;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::TEXTURE)
-    {
-        if (m_tmStackIndex[m_tmu] < TEXTURE_MATRIX_STACK_DEPTH)
-        {
-            m_tmStack[m_tmStackIndex[m_tmu]][m_tmu] = m_tm[m_tmu];
-            m_tmStackIndex[m_tmu]++;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    return false;
 }
 
 bool VertexPipeline::popMatrix()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        if (m_mStackIndex > 0)
-        {
-            m_mStackIndex--;
-            m_m = m_mStack[m_mStackIndex];
+        case MatrixMode::MODELVIEW:
             m_modelMatrixChanged = true;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::PROJECTION)
-    {
-        if (m_pStackIndex > 0)
-        {
-            m_pStackIndex--;
-            m_p = m_pStack[m_pStackIndex];
+            return m_mStack.pop(m_m);
+        case MatrixMode::PROJECTION:
             m_projectionMatrixChanged = true;
-        }
-        else
-        {
+            return m_pStack.pop(m_p);
+        case MatrixMode::COLOR:
+            return m_cStack.pop(m_c);
+        case MatrixMode::TEXTURE:
+            return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
+        default:
             return false;
-        }
-        return true;
     }
-    else if (m_matrixMode == MatrixMode::COLOR)
-    {
-        if (m_cStackIndex > 0)
-        {
-            m_cStackIndex--;
-            m_c = m_cStack[m_cStackIndex];
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::TEXTURE)
-    {
-        if (m_tmStackIndex[m_tmu] > 0)
-        {
-            m_tmStackIndex[m_tmu]--;
-            m_tm[m_tmu] = m_tmStack[m_tmStackIndex[m_tmu]][m_tmu];
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-
-    return false;
 }
 
 const Mat44& VertexPipeline::getModelMatrix() const

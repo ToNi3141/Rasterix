@@ -26,6 +26,7 @@
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 #include "IRenderer.hpp"
+#include "Stack.hpp"
 
 class VertexPipeline
 {
@@ -197,14 +198,10 @@ private:
 
     // Matrix modes
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
-    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH] {};
-    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH] {};
-    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tmStack[TEXTURE_MATRIX_STACK_DEPTH] {};
-    Mat44 m_cStack[COLOR_MATRIX_STACK_DEPTH] {};
-    uint8_t m_mStackIndex{ 0 };
-    uint8_t m_pStackIndex{ 0 };
-    std::array<uint8_t, IRenderer::MAX_TMU_COUNT> m_tmStackIndex{ 0 };
-    uint8_t m_cStackIndex{ 0 };
+    Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
+    Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
+    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, IRenderer::MAX_TMU_COUNT> m_tmStack {};
+    Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
