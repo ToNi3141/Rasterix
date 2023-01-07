@@ -870,11 +870,9 @@ bool VertexPipeline::loadMatrix(const Mat44& m)
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
-        m_modelMatrixChanged = true;
         setModelMatrix(m);
         return true;
     case MatrixMode::PROJECTION:
-        m_projectionMatrixChanged = true;
         setProjectionMatrix(m);
         return true;
     case MatrixMode::TEXTURE:
