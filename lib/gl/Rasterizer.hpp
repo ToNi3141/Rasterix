@@ -20,6 +20,7 @@
 #include <array>
 #include "Vec.hpp"
 #include "IRenderer.hpp"
+#include <bitset>
 
 class Rasterizer
 {
@@ -59,7 +60,8 @@ public:
     bool rasterize(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle);
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
-    void enableScissor(const bool enable);
+    void enableScissor(const bool enable) { m_enableScissor = enable; }
+    void enableTmu(const uint8_t tmu, const bool enable) { m_tmuEnable[tmu] = enable; }
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
@@ -77,6 +79,7 @@ private:
     uint32_t m_scissorWidth { 0 };
     uint32_t m_scissorHeight { 0 };
     bool m_enableScissor { false };
+    std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
 
 };
 

@@ -63,6 +63,7 @@ public:
     const Vec4& getVertexColor() const { return m_vertexColor; }
     bool normalArrayEnabled() const { return m_normalArrayEnabled; }
     bool getNormal(Vec3& vec, const uint32_t index) const;
+    bool isLine() const;
 
     uint32_t getIndex(const uint32_t index) const;
     DrawMode getDrawMode() const { return m_drawMode; }
@@ -109,9 +110,9 @@ private:
     {
         if (arr)
         {
-            const uint32_t indexWithStride = (stride == 0) ? index * size : index * stride;
             const int8_t* a = reinterpret_cast<const int8_t*>(arr);
             if (stride == 0) {
+                const uint32_t indexWithStride = index * size;
                 switch (type)
                 {
                 case Type::BYTE:
@@ -136,6 +137,7 @@ private:
             }
             else
             {
+                const uint32_t indexWithStride = index * stride;
                 switch (type)
                 {
                 case Type::BYTE:

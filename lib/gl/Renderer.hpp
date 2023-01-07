@@ -329,6 +329,9 @@ public:
     {
         m_scissorEnabled = featureEnable.getEnableScissor();
         m_rasterizer.enableScissor(featureEnable.getEnableScissor());
+        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
+        m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
+        m_rasterizer.enableTmu(1, featureEnable.getEnableTmu(1));
         return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
     }
 

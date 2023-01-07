@@ -26,6 +26,7 @@
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 #include "IRenderer.hpp"
+#include "Stack.hpp"
 
 class VertexPipeline
 {
@@ -99,7 +100,7 @@ public:
     static uint8_t getModelMatrixStackDepth();
     static uint8_t getProjectionMatrixStackDepth();
 private:
-    static constexpr std::size_t VERTEX_BUFFER_SIZE { 252 };
+    static constexpr std::size_t VERTEX_BUFFER_SIZE { 24 };
     static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
     static_assert(VERTEX_BUFFER_SIZE % 3 == 0, "VERTEX_BUFFER_SIZE must be dividable through 3 (used for GL_TRIANGLES");
     static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
@@ -139,7 +140,9 @@ private:
 
     inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
-    
+
+    void getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj& obj, const uint32_t index);
+
     void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count);
     void transform(
         Vec4Array& transformedVertex, 
@@ -162,11 +165,20 @@ private:
         const Vec4Array& color, 
         const TexCoordArray& tex, 
         const std::size_t count,
+        const RenderObj::DrawMode drawMode
+    );
+    bool drawLineArray(
+        const Vec4Array& vertex, 
+        const Vec4Array& color, 
+        const TexCoordArray& tex, 
+        const std::size_t count, 
         const RenderObj::DrawMode drawMode,
         const bool lastRound
     );
 
     void recalculateMatrices();
+    void recalculateModelProjectionMatrix();
+    void recalculateNormalMatrix();
 
     float m_depthRangeZNear { 0.0f };
     float m_depthRangeZFar { 1.0f };
@@ -186,21 +198,18 @@ private:
 
     // Matrix modes
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
-    Mat44 m_mStack[MODEL_MATRIX_STACK_DEPTH] {};
-    Mat44 m_pStack[PROJECTION_MATRIX_STACK_DEPTH] {};
-    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tmStack[TEXTURE_MATRIX_STACK_DEPTH] {};
-    Mat44 m_cStack[COLOR_MATRIX_STACK_DEPTH] {};
-    uint8_t m_mStackIndex{ 0 };
-    uint8_t m_pStackIndex{ 0 };
-    std::array<uint8_t, IRenderer::MAX_TMU_COUNT> m_tmStackIndex{ 0 };
-    uint8_t m_cStackIndex{ 0 };
+    Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
+    Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
+    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, IRenderer::MAX_TMU_COUNT> m_tmStack {};
+    Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal
     std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
     Mat44 m_c {}; // Color
-    bool m_matricesOutdated { true }; // Marks when the model and projection matrices have changed so that the transformation and normal matrices have to be recalculated
+    bool m_modelMatrixChanged { true };
+    bool m_projectionMatrixChanged { true };
 
     // Color material
     bool m_enableColorMaterial { false };

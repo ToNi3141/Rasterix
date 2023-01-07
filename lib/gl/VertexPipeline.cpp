@@ -45,90 +45,58 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     m_c.identity();
 }
 
-// Might be a faster version than the other implementation.
-// Needs to be profiled. Leave it for now as dead code.
-// bool VertexPipeline::drawObj(const RenderObj &obj)
-// {
-//     recalculateMatrices();
-//     for (uint32_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
-//     {
-//         const std::size_t diff = obj.getCount() - it;
-//         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
+void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj &obj, const uint32_t index)
+{
+    const uint32_t pos = obj.getIndex(index);
 
-//         Vec4Array transformedVertex;
-//         Vec4Array transformedColor;
-//         Vec4Array transformedTexCoord;
-//         Vec3Array transformedNormal;
-//         for (uint32_t i = 0, itCnt = it; i < cnt; i++, itCnt++)
-//         {
-//             const uint32_t index = obj.getIndex(itCnt);
+    Vec4 v;
+    Vec4 c;
+    obj.getColor(c, pos);
+    // TODO: Check if this required? The standard requires but is it really used?
+    //m_c[j].transform(c, c); // Calculate this in one batch to improve performance
 
-//             Vec4 v;
-//             Vec4 c;
-//             if (obj.colorArrayEnabled())
-//             {
-//                 obj.getColor(c, index);
-//             }
-//             else
-//             {
-//                 // If no color is defined, use the global color
-//                 c = obj.getVertexColor();
-//             }
+    if (obj.vertexArrayEnabled())
+    {
+        obj.getVertex(v, pos);
+        m_t.transform(vertex, v);
+    }
 
-//             if (obj.vertexArrayEnabled())
-//             {
-//                 obj.getVertex(v, index);
-//                 m_t.transform(transformedVertex[i], v);
-//             }
+    for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
+    {
+        if (m_renderer.getEnableTmu(tu))
+        {
+            obj.getTexCoord(tu, tex[tu], pos);
+            m_texGen[tu].calculateTexGenCoords(m_m, tex[tu], v);
+            m_tm[tu].transform(tex[tu], tex[tu]); 
+        }
+    }
 
-//             if (obj.texCoordArrayEnabled())
-//             {
-//                 obj.getTexCoord(transformedTexCoord[i], index);
-//             } // TODO: Query texCoord also when it is disabled to get the default texCoord
-//             m_texGen.calculateTexGenCoords(m_m, transformedTexCoord[i], v);
+    if (m_lighting.lightingEnabled())
+    {
+        Vec4 vl;
+        Vec3 nl;
+        Vec3 n;
 
+        obj.getNormal(n, pos);
+        m_n.transform(nl, n);
 
-//             if (m_lighting.lightingEnabled())
-//             {
-//                 Vec4 vl;
-//                 Vec3 nl;
-//                 Vec3 n;
-//                 if (obj.normalArrayEnabled())
-//                 {
-//                     obj.getNormal(n, index);
-//                     m_n.transform(nl, n);
-//                     // In OpenGL this step can be turned on and off with GL_NORMALIZE, also there is GL_RESCALE_NORMAL which offers a faster way
-//                     // which only works with uniform scales. For now this is constantly enabled because it is usually what someone want.
-//                     nl.normalize();
-//                 } // TODO: Query the normal also when it is disabled to get the default normal
-//                 if (obj.vertexArrayEnabled())
-//                 {
-//                     m_m.transform(vl, v);
-//                 }
+        if (m_enableNormalizing)
+        {
+            nl.normalize();
+        }
 
-//                 m_lighting.calculateLights(transformedColor[i], c, vl, nl);
-//             }
-//             else
-//             {
-//                 transformedColor[i] = c;
-//             }
-//         }
+        if (obj.vertexArrayEnabled())
+        {
+            m_m.transform(vl, v);
+        }
 
-//         const bool ret = drawTriangleArray(
-//             transformedVertex,
-//             transformedColor,
-//             transformedTexCoord,
-//             cnt,
-//             obj.getDrawMode(),
-//             cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP
-//         );
-//         if (!ret)
-//         {
-//             return false;
-//         }
-//     }
-//     return true;
-// }
+        m_lighting.calculateLights(color, c, vl, nl);
+    }
+    else
+    {
+        color = c;
+    }
+}
 
 bool VertexPipeline::drawObj(const RenderObj &obj)
 {
@@ -138,10 +106,9 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
     }
-
     obj.logCurrentConfig();
-
-    for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
+    const bool lines = obj.isLine();
+    for (uint32_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
     {
         const std::size_t diff = obj.getCount() - it;
         // Add a small overlap. This is convenient when rendering the triangle.
@@ -150,55 +117,227 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         // boundaries, which would normally happen, when there is no overlap.
         // (if the mode is triangles, and the size of the buffer is 10, then
         // the renderer could draw 3 triangles but has to handle somehow the last
-        // vertex, because 11 and 12 are not known jet. with the overlap, vertex
+        // vertex, because 11 and 12 are not known yet. with the overlap, vertex
         // 11 and 12 would be available)
         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
-
-        Vec4Array vertex;
-        Vec4Array color;
-        TexCoordArray texCoord;
-        Vec3Array normal;
 
         Vec4Array transformedVertex;
         Vec4Array transformedColor;
         TexCoordArray transformedTexCoord;
         Vec3Array transformedNormal;
+        for (uint32_t i = 0, itCnt = it; i < cnt; i++, itCnt++)
+        {
+            getTransformed(transformedVertex[i], transformedColor[i], transformedTexCoord[i], obj, itCnt);
+        }
 
-        loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
-
-        transform(
-            transformedVertex,
-            transformedColor,
-            transformedNormal,
-            transformedTexCoord,
-            obj.vertexArrayEnabled(),
-            obj.colorArrayEnabled(),
-            obj.normalArrayEnabled(),
-            obj.texCoordArrayEnabled(),
-            vertex,
-            color,
-            normal,
-            texCoord,
-            obj.getVertexColor(),
-            cnt
-        );
-
-        const bool ret = drawTriangleArray(
-            transformedVertex,
-            transformedColor,
-            transformedTexCoord,
-            cnt,
-            obj.getDrawMode(),
-            cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP
-        );
+        bool ret = false;
+        if (lines)
+        {
+            ret = drawLineArray(
+                transformedVertex,
+                transformedColor,
+                transformedTexCoord,
+                cnt,
+                obj.getDrawMode(),
+                cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP);
+        }
+        else
+        {
+            ret = drawTriangleArray(
+                transformedVertex,
+                transformedColor,
+                transformedTexCoord,
+                cnt,
+                obj.getDrawMode());
+        }
+        
         if (!ret)
         {
-            SPDLOG_ERROR("drawObj(): Cannot draw triangle array");
             return false;
         }
     }
     return true;
 }
+
+// bool VertexPipeline::drawObj(const RenderObj &obj)
+// {
+//     recalculateMatrices();
+//     if (!m_renderer.updatePipeline()) 
+//     {
+//         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
+//         return false;
+//     }
+
+//     obj.logCurrentConfig();
+
+//     const bool lines = obj.isLine();
+//     for (std::size_t it = 0; it < obj.getCount(); it += VERTEX_BUFFER_SIZE)
+//     {
+//         const std::size_t diff = obj.getCount() - it;
+//         // Add a small overlap. This is convenient when rendering the triangle.
+//         // For instance, if a overlap of 2 is used, then it is possible to draw
+//         // the complete triangle and don't have to handle the edge case on the 
+//         // boundaries, which would normally happen, when there is no overlap.
+//         // (if the mode is triangles, and the size of the buffer is 10, then
+//         // the renderer could draw 3 triangles but has to handle somehow the last
+//         // vertex, because 11 and 12 are not known yet. with the overlap, vertex
+//         // 11 and 12 would be available)
+//         const std::size_t cnt = min(VERTEX_BUFFER_SIZE + VERTEX_OVERLAP, diff);
+
+//         Vec4Array vertex;
+//         Vec4Array color;
+//         TexCoordArray texCoord;
+//         Vec3Array normal;
+
+//         Vec4Array transformedVertex;
+//         Vec4Array transformedColor;
+//         TexCoordArray transformedTexCoord;
+//         Vec3Array transformedNormal;
+
+//         loadVertexData(obj, vertex, color, normal, texCoord, it, cnt);
+
+//         transform(
+//             transformedVertex,
+//             transformedColor,
+//             transformedNormal,
+//             transformedTexCoord,
+//             obj.vertexArrayEnabled(),
+//             obj.colorArrayEnabled(),
+//             obj.normalArrayEnabled(),
+//             obj.texCoordArrayEnabled(),
+//             vertex,
+//             color,
+//             normal,
+//             texCoord,
+//             obj.getVertexColor(),
+//             cnt
+//         );
+
+//         bool ret = false;
+//         if (lines)
+//         {
+//             ret = drawLineArray(
+//                 transformedVertex,
+//                 transformedColor,
+//                 transformedTexCoord,
+//                 cnt,
+//                 obj.getDrawMode(),
+//                 cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP);
+//         }
+//         else
+//         {
+//             ret = drawTriangleArray(
+//                 transformedVertex,
+//                 transformedColor,
+//                 transformedTexCoord,
+//                 cnt,
+//                 obj.getDrawMode());
+//         }
+//         if (!ret)
+//         {
+//             SPDLOG_ERROR("drawObj(): Cannot draw triangle array");
+//             return false;
+//         }
+//     }
+//     return true;
+// }
+
+// void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count)
+// {
+//     for (uint32_t o = offset, i = 0; i < count; o++, i++)
+//     {
+//         const uint32_t index = obj.getIndex(o);
+//         obj.getColor(color[i], index);
+//         if (obj.vertexArrayEnabled())
+//         {
+//             obj.getVertex(vertex[i], index);
+//         }
+//         obj.getNormal(normal[i], index);
+//         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
+//         {
+//             obj.getTexCoord(j, tex[i][j], index);
+//         }
+//     }
+// }
+
+// void VertexPipeline::transform(
+//     Vec4Array& transformedVertex, 
+//     Vec4Array& transformedColor, 
+//     Vec3Array& transformedNormal, 
+//     TexCoordArray& transformedTex, 
+//     const bool enableVertexArray,
+//     const bool enableColorArray,
+//     const bool enableNormalArray,
+//     const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
+//     const Vec4Array& vertex, 
+//     const Vec4Array& color, 
+//     const Vec3Array& normal, 
+//     const TexCoordArray& tex,
+//     const Vec4& vertexColor,
+//     const std::size_t count)
+// {
+//     if (m_lighting.lightingEnabled())
+//     {
+//         if (enableVertexArray)
+//             m_m.transform(transformedVertex.data(), vertex.data(), count);
+
+//         // TODO: Increase the performance by only transform one normal when enableNormalArray is false.
+//         m_n.transform(transformedNormal.data(), normal.data(), count);
+
+//         for (std::size_t i = 0; i < count; i++)
+//         {
+//             Vec4 c;
+//             if (enableColorArray)
+//             {
+//                 c = color[i];
+//             }
+//             else
+//             {
+//                 c = vertexColor;
+//             }
+
+//             if (m_enableNormalizing)
+//                 transformedNormal[i].normalize();
+//             m_lighting.calculateLights(transformedColor[i], c, transformedVertex[i], transformedNormal[i]);
+//         }
+//     }
+//     else
+//     {
+//         for (std::size_t i = 0; i < count; i++)
+//         {
+//             if (enableColorArray)
+//             {
+//                 transformedColor[i] = color[i];
+//             }
+//             else
+//             {
+//                 transformedColor[i] = vertexColor;
+//             }
+//             // TODO: Check if this required? The standard requires but is it really used?
+//             //m_c[j].transform(transformedColor[i], transformedColor[i]); // Calculate this in one batch to improve performance
+//         }
+//     }
+
+//     for (std::size_t i = 0; i < count; i++)
+//     {
+//         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
+//         {
+//             if (enableTexArray[j])
+//             {
+//                 transformedTex[i][j] = tex[i][j];
+//             }
+//             else
+//             {
+//                 transformedTex[i][j].initHomogeneous();
+//             }
+//             m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
+//             m_tm[j].transform(transformedTex[i][j], transformedTex[i][j]); // Calculate this in one batch to improve performance
+//         }
+//     }
+
+//     if (enableVertexArray)
+//         m_t.transform(transformedVertex.data(), vertex.data(), count);
+// }
 
 bool VertexPipeline::drawTriangle(const Triangle& triangle)
 {
@@ -215,9 +354,12 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
 
     for (uint8_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
     {
-        texCoordList[0][i] = triangle.tc0[i];
-        texCoordList[1][i] = triangle.tc1[i];
-        texCoordList[2][i] = triangle.tc2[i];
+        if (m_renderer.getEnableTmu(i))
+        {
+            texCoordList[0][i] = triangle.tc0[i];
+            texCoordList[1][i] = triangle.tc1[i];
+            texCoordList[2][i] = triangle.tc2[i];
+        }
     }
 
 
@@ -236,7 +378,8 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
         {
             // Perspective correction of the texture coordinates
-            texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+            if (m_renderer.getEnableTmu(j))
+                texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
             // TODO: Perspective correction of the color 
             // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
             // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
@@ -326,120 +469,21 @@ bool VertexPipeline::drawLine(const Line& line)
     return true;
 }
 
-void VertexPipeline::loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count)
-{
-    for (uint32_t o = offset, i = 0; i < count; o++, i++)
-    {
-        const uint32_t index = obj.getIndex(o);
-        obj.getColor(color[i], index);
-        if (obj.vertexArrayEnabled())
-        {
-            obj.getVertex(vertex[i], index);
-        }
-        obj.getNormal(normal[i], index);
-        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
-        {
-            obj.getTexCoord(j, tex[i][j], index);
-        }
-    }
-}
-
-void VertexPipeline::transform(
-    Vec4Array& transformedVertex, 
-    Vec4Array& transformedColor, 
-    Vec3Array& transformedNormal, 
-    TexCoordArray& transformedTex, 
-    const bool enableVertexArray,
-    const bool enableColorArray,
-    const bool enableNormalArray,
-    const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
-    const Vec4Array& vertex, 
-    const Vec4Array& color, 
-    const Vec3Array& normal, 
-    const TexCoordArray& tex,
-    const Vec4& vertexColor,
-    const std::size_t count)
-{
-    if (m_lighting.lightingEnabled())
-    {
-        if (enableVertexArray)
-            m_m.transform(transformedVertex.data(), vertex.data(), count);
-
-        // TODO: Increase the performance by only transform one normal when enableNormalArray is false.
-        m_n.transform(transformedNormal.data(), normal.data(), count);
-
-        for (std::size_t i = 0; i < count; i++)
-        {
-            Vec4 c;
-            if (enableColorArray)
-            {
-                c = color[i];
-            }
-            else
-            {
-                c = vertexColor;
-            }
-
-            if (m_enableNormalizing)
-                transformedNormal[i].normalize();
-            m_lighting.calculateLights(transformedColor[i], c, transformedVertex[i], transformedNormal[i]);
-        }
-    }
-    else
-    {
-        for (std::size_t i = 0; i < count; i++)
-        {
-            if (enableColorArray)
-            {
-                transformedColor[i] = color[i];
-            }
-            else
-            {
-                transformedColor[i] = vertexColor;
-            }
-            // TODO: Check if this required? The standard requires but is it really used?
-            //m_c[j].transform(transformedColor[i], transformedColor[i]); // Calculate this in one batch to improve performance
-        }
-    }
-
-    for (std::size_t i = 0; i < count; i++)
-    {
-        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
-        {
-            if (enableTexArray[j])
-            {
-                transformedTex[i][j] = tex[i][j];
-            }
-            else
-            {
-                transformedTex[i][j].initHomogeneous();
-            }
-            m_texGen[j].calculateTexGenCoords(m_m, transformedTex[i][j], vertex[i]);
-            m_tm[j].transform(transformedTex[i][j], transformedTex[i][j]); // Calculate this in one batch to improve performance
-        }
-    }
-
-    if (enableVertexArray)
-        m_t.transform(transformedVertex.data(), vertex.data(), count);
-}
-
 bool VertexPipeline::drawTriangleArray(
     const Vec4Array& vertex, 
     const Vec4Array& color, 
     const TexCoordArray& tex, 
     const std::size_t count, 
-    const RenderObj::DrawMode drawMode,
-    const bool lastRound)
+    const RenderObj::DrawMode drawMode)
 {
-    for (uint32_t i = 0; i < count; )
+    const uint32_t c = count - 2;
+    for (uint32_t i = 0; i < c; )
     {
-        bool isTriangle { true };
         uint32_t i0;
         uint32_t i1;
         uint32_t i2;
         switch (drawMode) {
         case RenderObj::DrawMode::TRIANGLES:
-            if ((i + 2) >= count) return true;
             i0 = i;
             i1 = i + 1;
             i2 = i + 2;
@@ -447,14 +491,12 @@ bool VertexPipeline::drawTriangleArray(
             break;
         case RenderObj::DrawMode::POLYGON:
         case RenderObj::DrawMode::TRIANGLE_FAN:
-            if ((i + 2) >= count) return true;
-            i0 = 0;
+            i0 = 0; // BUG: 0 is not the first element, it is the first of the current chunk ...
             i1 = i + 1;
             i2 = i + 2;
             i += 1;
             break;
         case RenderObj::DrawMode::TRIANGLE_STRIP:
-            if ((i + 2) >= count) return true;
             if (i & 0x1)
             {
                 i0 = i + 1;
@@ -470,7 +512,6 @@ bool VertexPipeline::drawTriangleArray(
             i += 1;
             break;
         case RenderObj::DrawMode::QUADS:
-            if ((i + 2) >= count) return true;
             if (i & 0x1)
             {
                 i0 = i + 1;
@@ -487,7 +528,6 @@ bool VertexPipeline::drawTriangleArray(
             }
             break;
         case RenderObj::DrawMode::QUAD_STRIP:
-            if ((i + 2) >= count) return true;
             if (i & 0x2)
             {
                 i0 = i + 1;
@@ -502,48 +542,58 @@ bool VertexPipeline::drawTriangleArray(
             }
             i += 1;
             break;
+        default:
+            return false;
+        }
+
+        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+        if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] }))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool VertexPipeline::drawLineArray(
+    const Vec4Array& vertex, 
+    const Vec4Array& color, 
+    const TexCoordArray& tex, 
+    const std::size_t count, 
+    const RenderObj::DrawMode drawMode,
+    const bool lastRound)
+{
+    const uint32_t c = count - 1;
+    for (uint32_t i = 0; i < c; )
+    {
+        uint32_t i0;
+        uint32_t i1;
+        switch (drawMode) {
         case RenderObj::DrawMode::LINES:
-            if ((i + 1) >= count) return true;
             i0 = i;
             i1 = i + 1;
             i += 2;
-            isTriangle = false;
             break;
         case RenderObj::DrawMode::LINE_LOOP:
-            if ((i + 1) >= count) return true;
             i0 = i;
             i1 = i + 1;
             if (lastRound && (i1 >= count))
-                i1 = 0;
+                i1 = 0; // BUG: 0 is not the first element, it is the first of the current chunk ...
             i += 1;
-            isTriangle = false;
             break;
         case RenderObj::DrawMode::LINE_STRIP:
-            if ((i + 1) >= count) return true;
             i0 = i;
             i1 = i + 1;
             i += 1;
-            isTriangle = false;
             break;
         default:
-            break;
+            return false;
         }
 
-        if (isTriangle)
+        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
+        if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] }))
         {
-            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-            if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] }))
-            {
-                return false;
-            }
-        }
-        else
-        {
-            static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-            if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] }))
-            {
-                return false;
-            }
+            return false;
         }
     }
     return true;
@@ -620,11 +670,13 @@ void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
 void VertexPipeline::setModelMatrix(const Mat44 &m)
 {
     m_m = m;
+    m_modelMatrixChanged = true;
 }
 
 void VertexPipeline::setProjectionMatrix(const Mat44 &m)
 {
     m_p = m;
+    m_projectionMatrixChanged = true;
 }
 
 void VertexPipeline::setColorMatrix(const Mat44& m)
@@ -657,22 +709,20 @@ void VertexPipeline::multiply(const Mat44& mat)
     switch (m_matrixMode)
     {
         case MatrixMode::MODELVIEW:
-            m_m = mat * m_m;
+            setModelMatrix(mat * m_m);
             break;
         case MatrixMode::PROJECTION:
-            m_p = mat * m_p;
+            setProjectionMatrix(mat * m_p);
             break;
         case MatrixMode::TEXTURE:
-            m_tm[m_tmu] = mat * m_tm[m_tmu];
+            setTextureMatrix(mat * m_tm[m_tmu]);
             break;
         case MatrixMode::COLOR:
-            m_c = mat * m_c;
+            setColorMatrix(mat * m_c);
             break;
         default:
             break;
     }
-
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::translate(const float x, const float y, const float z)
@@ -683,7 +733,6 @@ void VertexPipeline::translate(const float x, const float y, const float z)
     m[3][1] = y;
     m[3][2] = z;
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::scale(const float x, const float y, const float z)
@@ -694,7 +743,6 @@ void VertexPipeline::scale(const float x, const float y, const float z)
     m[1][1] = y;
     m[2][2] = z;
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::rotate(const float angle, const float x, const float y, const float z)
@@ -714,7 +762,6 @@ void VertexPipeline::rotate(const float angle, const float x, const float y, con
     }}};
 
     multiply(m);
-    m_matricesOutdated = true;
 }
 
 void VertexPipeline::loadIdentity()
@@ -723,9 +770,11 @@ void VertexPipeline::loadIdentity()
     {
         case MatrixMode::MODELVIEW:
             m_m.identity();
+            m_modelMatrixChanged = true;
             break;
         case MatrixMode::PROJECTION:
             m_p.identity();
+            m_projectionMatrixChanged = true;
             break;
         case MatrixMode::TEXTURE:
             m_tm[m_tmu].identity();
@@ -736,128 +785,42 @@ void VertexPipeline::loadIdentity()
         default:
             break;
     }
-    m_matricesOutdated = true;
 }
 
 bool VertexPipeline::pushMatrix()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        if (m_mStackIndex < MODEL_MATRIX_STACK_DEPTH)
-        {
-            m_mStack[m_mStackIndex] = m_m;
-            m_mStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
+        case MatrixMode::MODELVIEW:
+            return m_mStack.push(m_m);
+        case MatrixMode::PROJECTION:
+            return m_pStack.push(m_p);
+        case MatrixMode::COLOR:
+            return m_cStack.push(m_c);
+        case MatrixMode::TEXTURE:
+            return m_tmStack[m_tmu].push(m_tm[m_tmu]);
+        default:
             return false;
-        }
-        return true;
     }
-    else if (m_matrixMode == MatrixMode::PROJECTION)
-    {
-        if (m_pStackIndex < PROJECTION_MATRIX_STACK_DEPTH)
-        {
-            m_pStack[m_pStackIndex] = m_p;
-            m_pStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::COLOR)
-    {
-        if (m_cStackIndex < COLOR_MATRIX_STACK_DEPTH)
-        {
-            m_cStack[m_cStackIndex] = m_c;
-            m_cStackIndex++;
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::TEXTURE)
-    {
-        if (m_tmStackIndex[m_tmu] < TEXTURE_MATRIX_STACK_DEPTH)
-        {
-            m_tmStack[m_tmStackIndex[m_tmu]][m_tmu] = m_tm[m_tmu];
-            m_tmStackIndex[m_tmu]++;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    return false;
 }
 
 bool VertexPipeline::popMatrix()
 {
-    if (m_matrixMode == MatrixMode::MODELVIEW)
+    switch (m_matrixMode)
     {
-        if (m_mStackIndex > 0)
-        {
-            m_mStackIndex--;
-            m_m = m_mStack[m_mStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
+        case MatrixMode::MODELVIEW:
+            m_modelMatrixChanged = true;
+            return m_mStack.pop(m_m);
+        case MatrixMode::PROJECTION:
+            m_projectionMatrixChanged = true;
+            return m_pStack.pop(m_p);
+        case MatrixMode::COLOR:
+            return m_cStack.pop(m_c);
+        case MatrixMode::TEXTURE:
+            return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
+        default:
             return false;
-        }
-        return true;
     }
-    else if (m_matrixMode == MatrixMode::PROJECTION)
-    {
-        if (m_pStackIndex > 0)
-        {
-            m_pStackIndex--;
-            m_p = m_pStack[m_pStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::COLOR)
-    {
-        if (m_cStackIndex > 0)
-        {
-            m_cStackIndex--;
-            m_c = m_cStack[m_cStackIndex];
-            m_matricesOutdated = true;
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-    else if (m_matrixMode == MatrixMode::TEXTURE)
-    {
-        if (m_tmStackIndex[m_tmu] > 0)
-        {
-            m_tmStackIndex[m_tmu]--;
-            m_tm[m_tmu] = m_tmStack[m_tmStackIndex[m_tmu]][m_tmu];
-        }
-        else
-        {
-            return false;
-        }
-        return true;
-    }
-
-    return false;
 }
 
 const Mat44& VertexPipeline::getModelMatrix() const
@@ -872,22 +835,29 @@ const Mat44& VertexPipeline::getProjectionMatrix() const
 
 void VertexPipeline::recalculateMatrices()
 {
-    if (m_matricesOutdated)
+    if (m_modelMatrixChanged)
     {
-        // Update transformation matrix
-        Mat44 t{m_m};
-        t *= m_p;
-        setModelProjectionMatrix(t);
-        setModelMatrix(m_m);
-
-        Mat44 inv{m_m};
-        inv.invert();
-        inv.transpose();
-        // Use the inverse transpose matrix for the normals. This is the standard way how OpenGL transforms normals
-        setNormalMatrix(inv);
-
-        m_matricesOutdated = false;
+        recalculateNormalMatrix();
     }
+    if (m_modelMatrixChanged || m_projectionMatrixChanged)
+    {
+        recalculateModelProjectionMatrix();
+    }
+    m_modelMatrixChanged = false;
+    m_projectionMatrixChanged = false;
+}
+
+void VertexPipeline::recalculateModelProjectionMatrix()
+{
+    // Update transformation matrix
+    setModelProjectionMatrix(m_m * m_p);
+}
+
+void VertexPipeline::recalculateNormalMatrix()
+{
+    m_n = m_m;
+    m_n.invert();
+    m_n.transpose();
 }
 
 void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
@@ -897,7 +867,6 @@ void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
 
 bool VertexPipeline::loadMatrix(const Mat44& m)
 {
-    m_matricesOutdated = true;
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
