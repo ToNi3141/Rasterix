@@ -18,6 +18,8 @@
 
 #include "Lighting.hpp"
 
+namespace rr
+{
 Lighting::Lighting()
 {
     setEmissiveColorMaterial({{0.0f, 0.0f, 0.0f, 1.0f}});
@@ -280,3 +282,5 @@ void Lighting::setSpecularExponentMaterial(const float val)
 {
     m_material.specularExponent = val;
 }
+
+} // namespace rr

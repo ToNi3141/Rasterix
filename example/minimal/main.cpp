@@ -8,8 +8,8 @@
 
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
-FT60XBusConnector m_busConnector;
-Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
+rr::FT60XBusConnector m_busConnector;
+rr::Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
 
 static constexpr bool ENABLE_LIGHT = true;
 static constexpr bool ENABLE_BLACK_WHITE = false;
@@ -308,7 +308,7 @@ GLuint loadTexture(const char* tex)
 
 void init()
 {
-    IceGL::createInstance(m_renderer);
+    rr::IceGL::createInstance(m_renderer);
 
     m_textureId = loadTexture(cubeTexture);
     m_multiTextureId = loadTexture(cubeMultiTexture);
@@ -454,7 +454,7 @@ int main()
     while (1)
     {
         draw();
-        IceGL::getInstance().commit();
+        rr::IceGL::getInstance().commit();
     }
     return 0;
 }

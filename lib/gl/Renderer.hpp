@@ -32,6 +32,8 @@
 #include "TextureMemoryManager.hpp"
 #include <limits>
 
+namespace rr
+{
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
 // +--------------------------------------------------------+ ^
@@ -432,4 +434,5 @@ private:
     std::array<uint16_t, MAX_TMU_COUNT> m_boundTextures {};
 };
 
+} // namespace rr
 #endif // RENDERER_HPP

@@ -18,6 +18,8 @@
 
 #include "TexGen.hpp"
 
+namespace rr
+{
 void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
 {
     if (m_texGenEnableS || m_texGenEnableT)
@@ -113,3 +115,5 @@ void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4 &val)
 {
     m_texGenVecEyeT = calcTexGenEyePlane(modelMatrix, val);
 }
+
+} // namespace rr

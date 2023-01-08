@@ -22,6 +22,8 @@
 #include "Vec.hpp"
 #include "Mat44.hpp"
 
+namespace rr
+{
 class TexGen
 {
 public:
@@ -55,4 +57,5 @@ private:
     Vec4 m_texGenVecEyeT{{0.0f, 1.0f, 0.0f, 0.0f}};
 };
 
+} // namespace rr
 #endif // TEXGEN_HPP

@@ -45,8 +45,8 @@ public:
 private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
-    VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    Renderer<1024*1024, 10, RESOLUTION_H / 10, 64, 256> m_renderer{m_busConnector};
+    rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+    rr::Renderer<1024*1024, 10, RESOLUTION_H / 10, 64, 256> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -54,8 +54,8 @@ public:
     static const uint32_t RESOLUTION_H = 600;
     static const uint32_t RESOLUTION_W = 1024;
 private:
-    FT60XBusConnector m_busConnector;
-    Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
+    rr::FT60XBusConnector m_busConnector;
+    rr::Renderer<1024*1024, 5, RESOLUTION_H / 5, 128, 256> m_renderer{m_busConnector};
 #endif
 
     GLuint m_textureId = 0;

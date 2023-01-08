@@ -22,6 +22,8 @@
 #include "IRenderer.hpp"
 #include <bitset>
 
+namespace rr
+{
 class Rasterizer
 {
 public:  
@@ -83,4 +85,5 @@ private:
 
 };
 
+} // namespace rr
 #endif // RASTERIZER_HPP

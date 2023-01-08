@@ -5,6 +5,8 @@
 #include "IBusConnector.hpp"
 #include "Vtop.h"
 
+namespace rr
+{
 template <typename FBType>
 class VerilatorBusConnector : public IBusConnector
 {
@@ -80,4 +82,5 @@ private:
     Vtop m_top;
 };
 
+} // namespace rr
 #endif // VERILATORBUSCONNECTOR_H

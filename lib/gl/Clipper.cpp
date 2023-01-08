@@ -1,5 +1,7 @@
 #include "Clipper.hpp"
 
+namespace rr
+{
 
 void Clipper::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt)
 {
@@ -231,3 +233,5 @@ Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs)
 {
     return lhs = static_cast<Clipper::OutCode>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
 }
+
+} // namespace rr

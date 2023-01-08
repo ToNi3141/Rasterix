@@ -28,6 +28,8 @@
 #include "IRenderer.hpp"
 #include "Stack.hpp"
 
+namespace rr
+{
 class VertexPipeline
 {
 public:
@@ -227,4 +229,5 @@ private:
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 
+} // namespace rr
 #endif // VERTEXPIPELINE_HPP

@@ -18,6 +18,8 @@
 
 #include "PixelPipeline.hpp"
 
+namespace rr
+{
 PixelPipeline::PixelPipeline(IRenderer& renderer) 
     : m_renderer(renderer)
 {
@@ -264,3 +266,5 @@ bool PixelPipeline::clearFramebuffer(bool frameBuffer, bool zBuffer)
     bool ret = updatePipeline();
     return ret && m_renderer.clear(frameBuffer, zBuffer); 
 }
+
+} // namespace rr

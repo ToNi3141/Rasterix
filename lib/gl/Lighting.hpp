@@ -20,7 +20,8 @@
 #include <array>
 #include "Vec.hpp"
 
-
+namespace rr
+{
 class Lighting 
 {
 public:
@@ -114,4 +115,5 @@ private:
 
 };
 
+} // namespace rr
 #endif // LIGHTING_HPP

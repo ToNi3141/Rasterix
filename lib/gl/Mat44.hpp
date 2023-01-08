@@ -21,6 +21,8 @@
 #include <math.h>
 #include "Vec.hpp"
 
+namespace rr
+{
 class Mat44
 {
 public:
@@ -220,5 +222,6 @@ inline Mat44 operator* (const Mat44& lhs, const Mat44& rhs)
     return mat;
 }
 
+} // namespace rr
 
 #endif // MAT44_HPP

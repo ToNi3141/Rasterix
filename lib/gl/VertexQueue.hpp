@@ -23,6 +23,8 @@
 #include "RenderObj.hpp"
 #include <vector>
 
+namespace rr
+{
 class VertexQueue 
 {
 public:
@@ -140,4 +142,5 @@ private:
     uint8_t m_tmu { 0 };
 };
 
+} // namespace rr
 #endif // VERTEXQUEUE_HPP_

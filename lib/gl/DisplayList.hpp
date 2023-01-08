@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <cstring>
 
+namespace rr
+{
+
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayList {
 public:
@@ -133,4 +136,5 @@ private:
     uint32_t readPos { 0 };
 };
 
+} // namespace rr
 #endif // DISPLAYLIST_HPP

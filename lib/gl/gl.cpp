@@ -19,10 +19,13 @@
 #include "gl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
+#include "IRenderer.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static constexpr int32_t MAX_TEX_SIZE { 256 };
+using namespace rr;
+
+static constexpr int32_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
 
 GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {

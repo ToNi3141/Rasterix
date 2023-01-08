@@ -24,6 +24,8 @@
 #include <array>
 #include <bitset>
 
+namespace rr
+{
 class RenderObj
 {
 public:
@@ -204,4 +206,5 @@ private:
 
     uint32_t m_arrayOffset;
 };
+} // namespace rr
 #endif // RENDEROBJ_HPP

@@ -18,6 +18,9 @@
 #ifndef IBUSCONNECTOR_HPP
 #define IBUSCONNECTOR_HPP
 #include <stdint.h>
+
+namespace rr
+{
 class IBusConnector
 {
 public:
@@ -37,4 +40,5 @@ public:
     virtual void startColorBufferTransfer(const uint8_t index) = 0;
 };
 
+} // namespace rr
 #endif // IBUSCONNECTOR_HPP

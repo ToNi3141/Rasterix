@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <functional>
 
+namespace rr
+{
 template <uint8_t VecSize>
 class Vec
 {
@@ -202,4 +204,5 @@ using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
 
+} // namespace rr
 #endif // VECI_HPP

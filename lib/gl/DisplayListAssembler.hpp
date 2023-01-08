@@ -27,6 +27,9 @@
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
 
+namespace rr
+{
+
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayListAssembler {
 public:
@@ -392,5 +395,6 @@ private:
     std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
 };
 
+} // namespace rr
 
 #endif // DISPLAYLISTASSEMBLER_HPP

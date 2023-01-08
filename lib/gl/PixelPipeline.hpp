@@ -22,6 +22,8 @@
 #include "IRenderer.hpp"
 #include "Vec.hpp"
 
+namespace rr
+{
 class PixelPipeline
 {
 public:
@@ -155,4 +157,5 @@ private:
     float m_fogDensity { 1.0f };
 };
 
+} // namespace rr
 #endif // PIXELPIPELINE_HPP_

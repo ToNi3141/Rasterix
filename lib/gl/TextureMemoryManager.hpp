@@ -24,6 +24,8 @@
 #include <spdlog/spdlog.h>
 #include <tcb/span.hpp>
 
+namespace rr
+{
 template <uint16_t MAX_NUMBER_OF_TEXTURES = 64, std::size_t PAGE_SIZE = 4096, std::size_t NUMBER_OF_PAGES = 7680>
 class TextureMemoryManager 
 {
@@ -312,4 +314,5 @@ private:
     std::array<PageEntry, NUMBER_OF_PAGES> m_pageTable {};
 };
 
+} // namespace rr
 #endif

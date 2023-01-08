@@ -31,6 +31,8 @@
 
 #define __glPi 3.14159265358979323846f
 
+namespace rr
+{
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
@@ -956,3 +958,5 @@ void VertexPipeline::setLineWidth(const float width)
 {
     m_lineWidth = width;
 }
+
+} // namespace rr

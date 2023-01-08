@@ -32,6 +32,8 @@
 #include "gl.h"
 #include <map>
 
+namespace rr
+{
 class IceGL
 {
 public:
@@ -69,4 +71,5 @@ private:
     std::string m_glExtensions;
 };
 
+} // namespace rr
 #endif // ICEGL_HPP

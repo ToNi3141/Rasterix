@@ -25,6 +25,8 @@
 #include <memory>
 #include "Vec.hpp"
 
+namespace rr
+{
 class IRenderer
 {
 public:
@@ -547,4 +549,5 @@ public:
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) = 0;
 };
 
+} // namespace rr
 #endif // IRENDERER_HPP

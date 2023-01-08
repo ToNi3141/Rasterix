@@ -23,6 +23,8 @@
 #define max std::max
 #define min std::min
 
+namespace rr
+{
 Rasterizer::Rasterizer()
 {
 }
@@ -246,3 +248,5 @@ void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t 
     m_scissorWidth = width;
     m_scissorHeight = height;
 }
+
+} // namespace rr
