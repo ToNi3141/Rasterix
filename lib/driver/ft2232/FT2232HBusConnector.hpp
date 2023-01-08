@@ -8,6 +8,8 @@
 #include "ftd2xx.h"
 #include <stdio.h>
 
+namespace rr
+{
 // Bus connector to use an FT2232H chip configured in the FT245 FIFO mode.
 // Important: Before you use this class, configure the FT2232H in the FT245 FIFO mode with FT_PROG. Otherwise, it will not work.
 // This class utilizes the async FIFO mode.
@@ -97,4 +99,5 @@ private:
     FT_HANDLE fthandlegpio;
 };
 
+} // namespace rr
 #endif // FT2232HBUSCONNECTOR_H

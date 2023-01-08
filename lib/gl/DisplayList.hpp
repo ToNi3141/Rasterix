@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@
 
 #include <stdint.h>
 #include <cstring>
+
+namespace rr
+{
 
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayList {
@@ -133,4 +136,5 @@ private:
     uint32_t readPos { 0 };
 };
 
+} // namespace rr
 #endif // DISPLAYLIST_HPP

@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include "Vec.hpp"
 #include "Mat44.hpp"
 
+namespace rr
+{
 class TexGen
 {
 public:
@@ -55,4 +57,5 @@ private:
     Vec4 m_texGenVecEyeT{{0.0f, 1.0f, 0.0f, 0.0f}};
 };
 
+} // namespace rr
 #endif // TEXGEN_HPP

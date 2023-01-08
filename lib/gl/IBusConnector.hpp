@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
 #ifndef IBUSCONNECTOR_HPP
 #define IBUSCONNECTOR_HPP
 #include <stdint.h>
+
+namespace rr
+{
 class IBusConnector
 {
 public:
@@ -37,4 +40,5 @@ public:
     virtual void startColorBufferTransfer(const uint8_t index) = 0;
 };
 
+} // namespace rr
 #endif // IBUSCONNECTOR_HPP

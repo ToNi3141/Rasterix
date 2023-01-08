@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 #include <array>
 #include <cstdint>
 
+namespace rr
+{
 // This is a configurable fixed point vector class
 template <typename T, uint8_t VecSize>
 class Veci
@@ -120,4 +122,5 @@ using VecInt = int32_t;
 using Vec2i = Veci<VecInt, 2>;
 using Vec3i = Veci<VecInt, 3>;
 using Vec4i = Veci<VecInt, 4>;
+} // namespace rr
 #endif // VECI_HPP

@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
+
+namespace rr
+{
 
 template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
 class DisplayListAssembler {
@@ -392,5 +395,6 @@ private:
     std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
 };
 
+} // namespace rr
 
 #endif // DISPLAYLISTASSEMBLER_HPP

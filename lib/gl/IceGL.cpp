@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
-
+namespace rr
+{
 IceGL* instance { nullptr };
 
 IceGL& IceGL::getInstance()
@@ -213,3 +214,4 @@ void IceGL::addExtension(std::string extension)
     }
     m_glExtensions.append(extension);
 }
+} // namespace rr

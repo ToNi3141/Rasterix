@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
 #include "IRenderer.hpp"
 #include "Stack.hpp"
 
+namespace rr
+{
 class VertexPipeline
 {
 public:
@@ -227,4 +229,5 @@ private:
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 
+} // namespace rr
 #endif // VERTEXPIPELINE_HPP

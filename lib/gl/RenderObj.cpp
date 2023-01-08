@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 #include "RenderObj.hpp"
 #include <spdlog/spdlog.h>
 
+namespace rr
+{
 bool RenderObj::isLine() const
 {
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
@@ -210,3 +212,5 @@ void RenderObj::logCurrentConfig() const
     SPDLOG_DEBUG("      m_normalStride {}", m_normalStride);
     SPDLOG_DEBUG("      m_normal ({}, {}, {})", m_normal[0], m_normal[1], m_normal[2]);
 }
+
+} // namespace rr

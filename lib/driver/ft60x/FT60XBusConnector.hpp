@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+namespace rr
+{
 // Bus connector to use an FT600 chip configured in the FT245 FIFO mode.
 // Important: Before you use this class, configure the FT600 in the FT245 FIFO mode with FT60X Chip Configuration Programmer. Otherwise, it will not work.
 // This class uses GPIO0 to reset the FPGA
@@ -26,4 +28,5 @@ private:
     FT_HANDLE fthandle;
 };
 
+} // namespace rr
 #endif // FT60XBUSCONNECTOR_H

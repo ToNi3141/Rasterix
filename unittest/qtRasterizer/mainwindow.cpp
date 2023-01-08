@@ -261,7 +261,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_image(RESOLUTION_W, RESOLUTION_H, QImage::Format_RGB888)
 {
     ui->setupUi(this);
-    IceGL::createInstance(m_renderer);
+    rr::IceGL::createInstance(m_renderer);
 
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);
     ui->label->setPixmap(QPixmap::fromImage(m_image));
@@ -446,7 +446,7 @@ void MainWindow::newFrame()
     // Draw the cube
     glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
 
-    IceGL::getInstance().commit();
+    rr::IceGL::getInstance().commit();
 
 #if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)

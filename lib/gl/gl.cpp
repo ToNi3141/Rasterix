@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,10 +19,13 @@
 #include "gl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
+#include "IRenderer.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static constexpr int32_t MAX_TEX_SIZE { 256 };
+using namespace rr;
+
+static constexpr int32_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
 
 GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {

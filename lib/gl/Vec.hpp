@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <functional>
 
+namespace rr
+{
 template <uint8_t VecSize>
 class Vec
 {
@@ -202,4 +204,5 @@ using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
 
+} // namespace rr
 #endif // VECI_HPP

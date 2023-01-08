@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 #define max std::max
 #define min std::min
 
+namespace rr
+{
 Rasterizer::Rasterizer()
 {
 }
@@ -246,3 +248,5 @@ void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t 
     m_scissorWidth = width;
     m_scissorHeight = height;
 }
+
+} // namespace rr

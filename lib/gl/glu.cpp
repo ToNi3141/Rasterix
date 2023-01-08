@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
 {
-    Mat44 m;
+    rr::Mat44 m;
     float sine, cotangent, deltaZ;
     float radians = fovy / 2.0f * __glPi / 180.0f;
 
@@ -50,15 +50,15 @@ GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat 
                               GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
                               GLfloat upz)
 {
-    Vec3 forward{{centerx - eyex,
+    rr::Vec3 forward{{centerx - eyex,
                     centery - eyey,
                     centerz - eyez}};
-    Vec3 up{{upx, upy, upz}};
+    rr::Vec3 up{{upx, upy, upz}};
 
-    Mat44 m;
+    rr::Mat44 m;
 
     forward.normalize();
-    Vec3 side{forward};
+    rr::Vec3 side{forward};
 
     /* Side = forward x up */
     side.cross(up);

@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 
 #include "TexGen.hpp"
 
+namespace rr
+{
 void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
 {
     if (m_texGenEnableS || m_texGenEnableT)
@@ -113,3 +115,5 @@ void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4 &val)
 {
     m_texGenVecEyeT = calcTexGenEyePlane(modelMatrix, val);
 }
+
+} // namespace rr

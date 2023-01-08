@@ -1,5 +1,7 @@
 #include "FT60XBusConnector.hpp"
 
+namespace rr
+{
 FT60XBusConnector::~FT60XBusConnector()
 {
     FT_Close(fthandle);
@@ -40,3 +42,5 @@ bool FT60XBusConnector::clearToSend()
 void FT60XBusConnector::startColorBufferTransfer(const uint8_t)
 {
 }
+
+} // namespace rr

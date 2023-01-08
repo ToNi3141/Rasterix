@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@
 #include "TextureMemoryManager.hpp"
 #include <limits>
 
+namespace rr
+{
 // Screen
 // <-----------------X_RESOLUTION--------------------------->
 // +--------------------------------------------------------+ ^
@@ -432,4 +434,5 @@ private:
     std::array<uint16_t, MAX_TMU_COUNT> m_boundTextures {};
 };
 
+} // namespace rr
 #endif // RENDERER_HPP

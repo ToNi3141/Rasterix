@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 #include "RenderObj.hpp"
 #include <vector>
 
+namespace rr
+{
 class VertexQueue 
 {
 public:
@@ -140,4 +142,5 @@ private:
     uint8_t m_tmu { 0 };
 };
 
+} // namespace rr
 #endif // VERTEXQUEUE_HPP_

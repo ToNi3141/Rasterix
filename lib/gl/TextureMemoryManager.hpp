@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2022 ToNi3141
+// Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 #include <spdlog/spdlog.h>
 #include <tcb/span.hpp>
 
+namespace rr
+{
 template <uint16_t MAX_NUMBER_OF_TEXTURES = 64, std::size_t PAGE_SIZE = 4096, std::size_t NUMBER_OF_PAGES = 7680>
 class TextureMemoryManager 
 {
@@ -312,4 +314,5 @@ private:
     std::array<PageEntry, NUMBER_OF_PAGES> m_pageTable {};
 };
 
+} // namespace rr
 #endif

@@ -6,6 +6,9 @@
 #include <array>
 #include "IRenderer.hpp"
 
+namespace rr
+{
+
 class Clipper 
 {
 public:
@@ -54,4 +57,7 @@ private:
 };
 
 Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
+
+} // namespace rr
+
 #endif // CLIPPER_HPP
