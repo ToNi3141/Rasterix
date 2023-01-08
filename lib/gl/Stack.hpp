@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef STACK_HPP
+#define STACK_HPP
+
 #include <array>
 
 namespace rr
@@ -49,3 +52,5 @@ private:
     std::array<T, DEPTH> m_stack {};
 };
 } // namespace rr
+
+#endif // STACK_HPP
