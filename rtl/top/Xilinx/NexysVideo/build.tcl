@@ -97,4 +97,4 @@ report_power -file $REPORT_PATH/post_route_power.rpt
 report_drc -file $REPORT_PATH/post_imp_drc.rpt
 
 # Write bit file 
-write_bitstream rasterix.bit
+write_bitstream -bin_file rasterix.bit
