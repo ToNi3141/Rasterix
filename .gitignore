@@ -1,7 +1,6 @@
 rtl/top/Xilinx/NexysVideo/synth
 rtl/top/Xilinx/NexysVideo/*.log
 rtl/top/Xilinx/NexysVideo/*.jou
-design_1_ooc.xdc
 rtl/top/Verilator/obj_dir
 *.user
 build-*
