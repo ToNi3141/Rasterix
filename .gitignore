@@ -1,4 +1,6 @@
-rtl/top/iCE40up5k/synth
+rtl/top/Xilinx/NexysVideo/synth
+rtl/top/Xilinx/NexysVideo/*.log
+rtl/top/Xilinx/NexysVideo/*.jou
 rtl/top/Verilator/obj_dir
 *.user
 build-*
