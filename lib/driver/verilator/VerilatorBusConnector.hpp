@@ -74,6 +74,14 @@ public:
            m_streamAddr = 0;
        }
     }
+
+    void waitForLastFramebufferChunk()
+    {
+        while (m_streamAddr != 0)
+        {
+            clk();
+        }
+    }
 private:
     const uint16_t m_resolutionW = 128;
     const uint16_t m_resolutionH = 128;

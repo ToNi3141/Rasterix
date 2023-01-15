@@ -38,7 +38,7 @@ namespace rr
 // <-----------------X_RESOLUTION--------------------------->
 // +--------------------------------------------------------+ ^
 // |        ^                                               | |
-// |        | LINE_RESOLUTION        DISPLAY_LINES          | |
+// |        | Y_LINE_RESOLUTION      DISPLAY_LINES          | |
 // |        |                                               | |
 // |        v                                               | |
 // |<------------------------------------------------------>| Y
@@ -60,8 +60,8 @@ namespace rr
 // This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
-// The BUS_WIDTH is used to calculate the alignment in the display list.
-template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t LINE_RESOLUTION = 128, uint16_t BUS_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURES = 64>
+// The CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
+template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t Y_LINE_RESOLUTION = 128, uint16_t CMD_STREAM_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURE_PAGES = 64>
 class Renderer : public IRenderer
 {
 public:
@@ -74,8 +74,8 @@ public:
         }
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * LINE_RESOLUTION);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * Y_LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -104,8 +104,8 @@ public:
 
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            const uint16_t currentScreenPositionStart = i * LINE_RESOLUTION;
-            const uint16_t currentScreenPositionEnd = (i + 1) * LINE_RESOLUTION;
+            const uint16_t currentScreenPositionStart = i * Y_LINE_RESOLUTION;
+            const uint16_t currentScreenPositionEnd = (i + 1) * Y_LINE_RESOLUTION;
             if (Rasterizer::checkIfTriangleIsInBounds(triangleConf,
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
@@ -124,10 +124,15 @@ public:
         return true;
     }
 
+    bool blockTillRenderingFinished()
+    {
+        return m_renderThread.valid() && (m_renderThread.get() != true);
+    }
+
     virtual void commit() override
     {
         // Check if the previous rendering has finished. If not, block till it is finished.
-        if (m_renderThread.valid() && (m_renderThread.get() != true))
+        if (blockTillRenderingFinished())
         {
             // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
             return;
@@ -156,7 +161,7 @@ public:
         m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<TEX_UPLOAD_SIZE, BUS_WIDTH / 8> uploader;
+            DisplayListAssembler<TEX_UPLOAD_SIZE, CMD_STREAM_WIDTH / 8> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 
             while (!m_busConnector.clearToSend())
@@ -176,7 +181,7 @@ public:
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * LINE_RESOLUTION);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
                 }
                 return true;
             });
@@ -188,8 +193,8 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            const uint16_t currentScreenPositionStart = i * LINE_RESOLUTION;
-            const uint16_t currentScreenPositionEnd = (i + 1) * LINE_RESOLUTION;
+            const uint16_t currentScreenPositionStart = i * Y_LINE_RESOLUTION;
+            const uint16_t currentScreenPositionEnd = (i + 1) * Y_LINE_RESOLUTION;
             if (m_scissorEnabled) 
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
@@ -377,10 +382,10 @@ public:
 
 private:
     static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
-    static constexpr std::size_t TEXTURE_NUMBER_OF_PAGES { MAX_NUMBER_OF_TEXTURES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+    static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { MAX_NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, BUS_WIDTH / 8>;
-    using TextureManager = TextureMemoryManager<MAX_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, TEXTURE_NUMBER_OF_PAGES>; 
+    using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, CMD_STREAM_WIDTH / 8>;
+    using TextureManager = TextureMemoryManager<TEXTURE_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, MAX_NUMBER_OF_TEXTURE_PAGES>; 
 
     static uint32_t convertColor(const Vec4i color)
     {
