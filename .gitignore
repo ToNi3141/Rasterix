@@ -7,3 +7,5 @@ build-*
 unittest/obj_dir
 .DS_Store
 build/
+lib/driver/ft60x/ftd3xx/osx/
+lib/driver/ft60x/ftd3xx/win/
