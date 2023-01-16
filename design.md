@@ -4,7 +4,16 @@
   - [FPGA Flow](#fpga-flow)
 
 # Design
-For the s_cmd_axis command specification, please refer ```rtl/Rasterix/RegisterAndDescriptorDefines.vh```
+For the s_cmd_axis command specification, please refer `rtl/Rasterix/RegisterAndDescriptorDefines.vh`.
+
+The renderer uses a stream centric design. That means, the renderer has a few internal buffers:
+- Texture Buffer: A buffer which holds a complete texture. Typically this is 128kB in size to contain a full 256x256x16 texture. Each TMU has their own texture buffer.
+- Frame Buffer: The frame buffer used for rendering. There is a configurable 16bit color 16bit depth buffer.
+
+When a image is rendered, the driver has first to stream the configuration and texture image into the renderer. Afterwards it can stream the triangle parameters to render a (optionally) textured triangle.
+
+Normally the internal frame buffer in the renderer is too small to render a complete high resolution picture. To overcome this limitation, the renderer can render partial images. For instance, assume a screen resolution of 1024x768x16 (1536kB) and a internal frame buffer with the size of 256kB. The driver will then divide the image in 6 different 1024x128x16 parts. It will first render the image {(0, 0), (1023, 127)}, then {(0, 128), (1023, 255)} and so on. It will stream each part to the screen or the frame buffer in the memory. At the end, there is the complete image on the screen / in memory.
+
 ## Software Flow
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
 ![software flow diagram](pictures/softwareFlow.drawio.png)
