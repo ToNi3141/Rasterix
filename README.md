@@ -9,27 +9,28 @@
   - [OS X Build](#os-x-build)
   - [Windows Build](#windows-build)
     - [Run Warcraft 3](#run-warcraft-3)
-- [Design](#design)
-  - [Software Flow](#software-flow)
-  - [FPGA Flow](#fpga-flow)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
 - [Missing features](#missing-features)
-- [Next Steps:](#next-steps)
+- [Next Steps](#next-steps)
 
 # Rasterix
 The Rasterix is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
+
+The hardware is currently able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
 The current implementations lacks several important features like setting the screen resolution via registers, Mip Mapping and so on. It has more the nature of an prototype.
 
 # Working games
 Tested games are tuxracer 
+
 ![race screenshot](screenshots/tuxracerRaceStart.png)
+
 and under Windows Warcraft 3 (with WGL).
 
 # Nexys Video Build
-The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16 bit synchronous FT245 protocol on the Nexys FMC connector.
+The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
 ```
 cd rtl/top/Xilinx/NexysVideo
 /Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
@@ -99,43 +100,6 @@ Only classic Warcraft 3 will run. Reforged does not.
 
 Warcraft 3 runs on low settings with around 20-30 FPS.
 
-# Design
-For the s_cmd_axis command specification, please refer ```rtl/Rasterix/RegisterAndDescriptorDefines.vh```
-## Software Flow
-The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
-![software flow diagram](pictures/softwareFlow.drawio.png)
-
-The driver is build with the following components:
-- `Application`: The application is the user of the library to draw 3D images.
-- `IceGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
-- `VertexPipeline`: Implements the geometry transformation, clipping and lighting.
-- `PixelPipeline`: Controls the pixel pipeline of the hardware.
-- `Renderer`: Implements the IRenderer interface, executes the rasterization, compiles display lists and sends them via the `IBusConnecter` to the Rasterix.
-- `Rasterizer`: This basically is the rasterizer. It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
-- `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the Rasterix.
-- `TextureMemoryManager`: Manager for the texture memory on the device.
-- `BusConnector`: This is an interface from the driver to the renderer. It is used to transfer the data via the defined interface like USB.
-## FPGA Flow
-![fpga flow diagram](pictures/fpgaFlow.drawio.png)
-- `ftdi_245fifo` (3rd party): Implements the ft245 interface.
-- `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
-- `Rasterix`: This is the graphic core. It has an CMD_AXIS port where it receives the commands to render triangles, set render modes, upload textures and so on. It also has an FRAMEBUFFER_AXIS port where it streams out the data from the color buffer. Alternatively both AXIS ports can also be connected to other devices like DMAs, if you want to integrate the renderer in your own project.
-- `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer.
-- `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
-- `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth.
-- `PixelPipeline`: The pipeline which takes the interpolated values and calculates the fragment color (blending, fogging, texturing, ...) and does the depth test.
-- `FragmentPipeline`: Consumes the fragments from the Rasterizer, does perspective correction, depth test, blend and texenv calculations, texture clamping and so on.
-- `TextureMappingUnit`: The texture mapping unit to texture the fragment. 
-  - `TextureSampler`: Samples a texture from the `TextureBuffer`.
-  - `TextureFilter`: Filters the texel from the `TextureSampler`.
-  - `TexEnv`: Calculates the texture environment.
-- `Fog`: Calculates the fog color of the fragment.
-- `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / depth tests.
-  - `ColorBlender`: Implements the color blending modes.
-  - `TestFunc`: Implements the test functions for the alpha and depth test.
-- `TextureBuffer`: Buffer which contains the complete texture.
-- `FrameBuffer`: Contains the depth and color buffer.
-
 # Port to a new platform 
 Please have a look at the minimal example at `example/minimal/main.cpp`.
 ## Port the driver
@@ -161,7 +125,7 @@ The following features are currently missing compared to a real OpenGL implement
 - Mip Mapping
 - ...
 
-# Next Steps:
+# Next Steps
 - Implement dynamic screen resolutions
 - Implement Mip Mapping
 - Implement logic ops
