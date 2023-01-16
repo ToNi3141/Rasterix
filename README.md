@@ -84,21 +84,25 @@ Note: Only WGL is partially supported, therefor only Windows games which using W
 Lets assume, the project is generated in `./build`. 
 
 ## OS X Build
+Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 0.5.21. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
+
 To build under Linux or OS X, change to the `build` directory and type `make`. To test the build, run `./example/minimal/minimal`. It should initialize the Renderer and should draw a rotating cube.
 
 Note: The Linux build probably not succeed, because the FTDI library for linux is missing in the project.
 
 ## Windows Build
-To build the project under Windows, go to the `build` directory, open the Visual Studio project and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32 bit targets because usually games from that area are 32 bit builds.
+Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
+
+To build the project under Windows, go to the `build` directory, open the Visual Studio project and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because usually games from that area are 32bit builds.
 
 ### Run Warcraft 3 
-Only classic Warcraft 3 will run. Reforged does not. 
+Only classic Warcraft 3 will work. Reforged does not. 
 - Prepare Warcraft 3. Set the resolution to something like 800x600 or below and set the texture quality to low (currently the Renderer supports only textures with a maximum size of 256x256).
-- Rename `wgl.dll` into `OpenGL32.dll` and copy it together with the 32 bit version of the `FTD3XX.dll` in the root directory of Warcraft 3. 
+- Rename `wgl.dll` into `OpenGL32.dll` and copy it together with the 32bit version of the `FTD3XX.dll` in the root directory of Warcraft 3. 
 - Add a shortcut to the `war3.exe` on your desktop. Edit the shortcut and write `-opengl` after the path to the exe to start Warcraft 3 in OpenGL mode.
 - Open Warcraft 3 via the shortcut. You should now see the menu on the screen connected to the FPGA.
 
-Warcraft 3 runs on low settings with around 20-30 FPS.
+Warcraft 3 runs on low settings with around 20-30FPS.
 
 # Port to a new platform 
 Please have a look at the minimal example at `example/minimal/main.cpp`.
