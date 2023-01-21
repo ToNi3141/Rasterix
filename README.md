@@ -1,6 +1,7 @@
 
 - [Rasterix](#rasterix)
-- [Working games](#working-games)
+- [Working Games](#working-games)
+- [Checkout Repository](#checkout-repository)
 - [Nexys Video Build](#nexys-video-build)
   - [PC Connection](#pc-connection)
 - [Simulation Build](#simulation-build)
@@ -12,7 +13,7 @@
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
-- [Missing features](#missing-features)
+- [Missing Features](#missing-features)
 - [Next Steps](#next-steps)
 
 # Rasterix
@@ -21,12 +22,22 @@ The renderer is currently able to produce __100MPixel__ and __200MTexel__ at a c
 
 The current implementations lacks several important features like setting the screen resolution via registers, Mip Mapping and so on. It has more the nature of an prototype.
 
-# Working games
-Tested games are tuxracer 
+# Working Games
+Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`)
 
 ![race screenshot](screenshots/tuxracerRaceStart.png)
 
 and under Windows Warcraft 3 (with WGL).
+
+# Checkout Repository
+Use the following commands to checkout the repository:
+
+```
+git clone https://github.com/ToNi3141/Rasterix.git
+cd Rasterix
+git submodule init
+git submodule update
+```
 
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
@@ -129,7 +140,7 @@ Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look 
 7. Add everything in `rtl/Rasterix` and `rtl/Float` to your build system.
 8. Synthesize.
 
-# Missing features
+# Missing Features
 The following features are currently missing compared to a real OpenGL implementation
 - Logic Ops
 - Mip Mapping
