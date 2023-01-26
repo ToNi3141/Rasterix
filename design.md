@@ -31,19 +31,20 @@ The driver is build with the following components:
 ## FPGA Flow
 ![fpga flow diagram](pictures/fpgaFlow.drawio.png)
 - `ftdi_245fifo` (3rd party): Implements the ft245 interface.
-- `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
-- `Rasterix`: This is the graphic core. It has an CMD_AXIS port where it receives the commands to render triangles, set render modes, download textures and so on. It has an dedicated FRAMEBUFFER_AXIS port where it streams out the data from the color buffer.
-- `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer.
-- `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
-- `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
-- `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the depth test, alpha test, blending and texenv calculations, texture clamping and so on.
-  - `TextureMappingUnit`: The texture mapping unit to texture the fragment. 
-    - `TextureSampler`: Samples a texture from the `TextureBuffer`.
-    - `TextureFilter`: Filters the texel from the `TextureSampler`.
-    - `TexEnv`: Calculates the texture environment.
-  - `Fog`: Calculates the fog color of the fragment.
-  - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / depth tests.
-    - `ColorBlender`: Implements the color blending modes.
-    - `TestFunc`: Implements the test functions for the alpha and depth test.
-  - `TextureBuffer`: Buffer which contains the complete texture.
-- `FrameBuffer`: Contains the depth and color buffer.
+- `Rasterix`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs.
+  - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
+  - `RasterixRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
+    - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer.
+    - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
+    - `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
+    - `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the depth test, alpha test, blending and texenv calculations, texture clamping and so on.
+      - `TextureMappingUnit`: The texture mapping unit to texture the fragment. 
+        - `TextureSampler`: Samples a texture from the `TextureBuffer`.
+        - `TextureFilter`: Filters the texel from the `TextureSampler`.
+        - `TexEnv`: Calculates the texture environment.
+      - `Fog`: Calculates the fog color of the fragment.
+      - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / depth tests.
+        - `ColorBlender`: Implements the color blending modes.
+        - `TestFunc`: Implements the test functions for the alpha and depth test.
+      - `TextureBuffer`: Buffer which contains the complete texture.
+    - `FrameBuffer`: Contains the depth and color buffer.

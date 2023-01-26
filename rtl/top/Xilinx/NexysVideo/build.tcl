@@ -38,6 +38,7 @@ read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
 read_verilog ./../../../../Rasterix/Rasterix.v
+read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerDefines.vh
 read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
