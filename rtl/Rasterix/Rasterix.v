@@ -44,7 +44,7 @@ module Rasterix #(
     // Memory ID width
     parameter ID_WIDTH = 8,
     // Memory strobe width
-    localparam STRB_WIDTH = CMD_STREAM_WIDTH / 8
+    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8
 )
 (
     input  wire                             aclk,
@@ -112,7 +112,7 @@ module Rasterix #(
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
-    ) parser (
+    ) dma (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -188,7 +188,7 @@ module Rasterix #(
         .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
         .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
+        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata)
     );
 
 endmodule
