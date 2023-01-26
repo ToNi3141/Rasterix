@@ -40,10 +40,6 @@ module top #(
     parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
     parameter TEXTURE_BUFFER_SIZE = 17;
 
-    wire m_cmd_axis_tvalid;
-    wire m_cmd_axis_tready;
-    wire m_cmd_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0] m_cmd_axis_tdata;
 
     localparam ID_WIDTH = 8;
     localparam ADDR_WIDTH = 24;
@@ -129,22 +125,26 @@ module top #(
         .s_axi_rready(s_axi_rready)
     );
 
-    DmaStreamEngine #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) parser (
+    Rasterix #(
+        .X_RESOLUTION(X_RESOLUTION),
+        .Y_RESOLUTION(Y_RESOLUTION),
+        .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
+        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
+        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
+    ) rasterix (
         .aclk(aclk),
         .resetn(resetn),
-
-        .m_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .m_cmd_axis_tready(m_cmd_axis_tready),
-        .m_cmd_axis_tlast(m_cmd_axis_tlast),
-        .m_cmd_axis_tdata(m_cmd_axis_tdata),
         
         .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
         .s_cmd_axis_tready(s_cmd_axis_tready),
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
+
+        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
+        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
+        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
+        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
         .m_mem_axi_awid(s_axi_awid),
         .m_mem_axi_awaddr(s_axi_awaddr),
@@ -185,29 +185,5 @@ module top #(
         .m_mem_axi_rlast(s_axi_rlast),
         .m_mem_axi_rvalid(s_axi_rvalid),
         .m_mem_axi_rready(s_axi_rready)
-    );
-
-    Rasterix #(.X_RESOLUTION(X_RESOLUTION),
-                 .Y_RESOLUTION(Y_RESOLUTION),
-                 .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
-                 .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-                 .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
-                 .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)) rasteriCEr(
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .s_cmd_axis_tready(m_cmd_axis_tready),
-        .s_cmd_axis_tlast(m_cmd_axis_tlast),
-        .s_cmd_axis_tdata(m_cmd_axis_tdata),
-
-        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
-
-        // Debug
-        .dbgStreamState(),
-        .dbgRasterizerRunning()
     );
 endmodule

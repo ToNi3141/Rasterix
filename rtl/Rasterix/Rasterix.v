@@ -29,7 +29,7 @@ module Rasterix #(
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
     
-    // The bit width of the command stream interface
+    // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
 
@@ -37,528 +37,158 @@ module Rasterix #(
     parameter FRAMEBUFFER_STREAM_WIDTH = 16,
 
     // The size of the texture in bytes in power of two
-    parameter TEXTURE_BUFFER_SIZE = 15
+    parameter TEXTURE_BUFFER_SIZE = 15,
+
+    // Memory address witdth
+    parameter ADDR_WIDTH = 24,
+    // Memory ID width
+    parameter ID_WIDTH = 8,
+    // Memory strobe width
+    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8
 )
 (
-    input  wire         aclk,
-    input  wire         resetn,
+    input  wire                             aclk,
+    input  wire                             resetn,
 
     // AXI Stream command interface
-    input  wire         s_cmd_axis_tvalid,
-    output wire         s_cmd_axis_tready,
-    input  wire         s_cmd_axis_tlast,
+    input  wire                             s_cmd_axis_tvalid,
+    output wire                             s_cmd_axis_tready,
+    input  wire                             s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
     // Framebuffer output
     // AXI Stream master interface (RGB565)
-    output wire         m_framebuffer_axis_tvalid,
-    input  wire         m_framebuffer_axis_tready,
-    output wire         m_framebuffer_axis_tlast,
+    output wire                             m_framebuffer_axis_tvalid,
+    input  wire                             m_framebuffer_axis_tready,
+    output wire                             m_framebuffer_axis_tlast,
     output wire [FRAMEBUFFER_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
-    
-    // Debug
-    output wire [ 3:0]  dbgStreamState,
-    output wire         dbgRasterizerRunning
+
+    // Memory interface
+    output wire [ID_WIDTH - 1 : 0]          m_mem_axi_awid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_mem_axi_awaddr,
+    output wire [ 7 : 0]                    m_mem_axi_awlen, // How many beats are in this transaction
+    output wire [ 2 : 0]                    m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
+    output wire [ 1 : 0]                    m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
+    output wire                             m_mem_axi_awlock,
+    output wire [ 3 : 0]                    m_mem_axi_awcache,
+    output wire [ 2 : 0]                    m_mem_axi_awprot, 
+    output wire                             m_mem_axi_awvalid,
+    input  wire                             m_mem_axi_awready,
+
+    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_mem_axi_wdata,
+    output wire [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
+    output wire                             m_mem_axi_wlast,
+    output wire                             m_mem_axi_wvalid,
+    input  wire                             m_mem_axi_wready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_bid,
+    input  wire [ 1 : 0]                    m_mem_axi_bresp,
+    input  wire                             m_mem_axi_bvalid,
+    output wire                             m_mem_axi_bready,
+
+    output wire [ID_WIDTH - 1 : 0]          m_mem_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_mem_axi_araddr,
+    output wire [ 7 : 0]                    m_mem_axi_arlen,
+    output wire [ 2 : 0]                    m_mem_axi_arsize,
+    output wire [ 1 : 0]                    m_mem_axi_arburst,
+    output wire                             m_mem_axi_arlock,
+    output wire [ 3 : 0]                    m_mem_axi_arcache,
+    output wire [ 2 : 0]                    m_mem_axi_arprot,
+    output wire                             m_mem_axi_arvalid,
+    input  wire                             m_mem_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_rid,
+    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_mem_axi_rdata,
+    input  wire [ 1 : 0]                    m_mem_axi_rresp,
+    input  wire                             m_mem_axi_rlast,
+    input  wire                             m_mem_axi_rvalid,
+    output wire                             m_mem_axi_rready
 );
-`include "RasterizerDefines.vh"
-`include "RegisterAndDescriptorDefines.vh"
-`include "AttributeInterpolatorDefines.vh"
-    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4;
+     wire                             m_cmd_axis_tvalid;
+     wire                             m_cmd_axis_tready;
+     wire                             m_cmd_axis_tlast;
+     wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
 
-    localparam TEX_ADDR_WIDTH = 16;
-
-    // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
-    localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
-
-    // The bit width of the texture stream
-    localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    
-    ///////////////////////////
-    // Regs and wires
-    ///////////////////////////
-    // Texture access TMU0
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
-    wire [31 : 0]                   texel0Input00;
-    wire [31 : 0]                   texel0Input01;
-    wire [31 : 0]                   texel0Input10;
-    wire [31 : 0]                   texel0Input11;
-    // Texture access TMU1
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
-    wire [31 : 0]                   texel1Input00;
-    wire [31 : 0]                   texel1Input01;
-    wire [31 : 0]                   texel1Input10;
-    wire [31 : 0]                   texel1Input11;
-
-    // Color buffer access
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
-    wire            colorWriteEnable;
-    wire [31 : 0]   colorIn;
-    wire [31 : 0]   colorOut;
-    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosX;
-    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosY;
-
-    // Depth buffer access
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead;
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite;
-    wire            depthWriteEnable;
-    wire [15 : 0]   depthIn;
-    wire [15 : 0]   depthOut;
-    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosX;
-    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosY;
-
-    wire pixelInPipelineInterpolator;
-    wire pixelInPipelineShader;
-    wire pixelInPipeline = pixelInPipelineInterpolator || pixelInPipelineShader;
-    wire startRendering;
-
-   
-    // Control
-    wire            rasterizerRunning;
-
-    // Memory
-    wire            colorBufferApply;
-    wire            colorBufferApplied;
-    wire            colorBufferCmdCommit;
-    wire            colorBufferCmdMemset;
-    wire [31 : 0]   confColorBufferClearColor;
-    wire            depthBufferApply;
-    wire            depthBufferApplied;
-    wire            depthBufferCmdCommit;
-    wire            depthBufferCmdMemset;
-    wire [31 : 0]   confDepthBufferClearDepth;
-
-    // Attribute interpolator
-    wire            m_attr_inter_axis_tvalid;
-    wire            m_attr_inter_axis_tready;
-    wire            m_attr_inter_axis_tlast;
-    wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
-
-    // Rasterizer
-    wire            m_rasterizer_axis_tvalid;
-    wire            m_rasterizer_axis_tready;
-    wire            m_rasterizer_axis_tlast;
-    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
-
-    // Steams
-    wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
-    wire [ 3 : 0]    s_cmd_xxx_axis_tuser;
-    wire             s_cmd_xxx_axis_tlast;
-    wire             s_cmd_fog_axis_tvalid;
-    wire             s_cmd_rasterizer_axis_tvalid;
-    wire             s_cmd_tmu0_axis_tvalid;
-    wire             s_cmd_tmu1_axis_tvalid;
-    wire             s_cmd_config_axis_tvalid;
-    wire             s_cmd_fog_axis_tready;
-    wire             s_cmd_rasterizer_axis_tready;
-    wire             s_cmd_tmu0_axis_tready;
-    wire             s_cmd_tmu1_axis_tready;
-    wire             s_cmd_config_axis_tready;
-
-
-    // Register bank
-    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
-    wire [(OP_RENDER_CONFIG_REG_WIDTH * OP_RENDER_CONFIG_NUMBER_OR_REGS) - 1 : 0] rendererConfigs;
-
-    // Configs
-    wire [31 : 0]   confFeatureEnable;
-    wire [31 : 0]   confFragmentPipelineConfig;
-    wire [31 : 0]   confFragmentPipelineFogColor;
-    wire [31 : 0]   confTMU0TexEnvConfig;
-    wire [31 : 0]   confTMU0TextureConfig;
-    wire [31 : 0]   confTMU0TexEnvColor;
-    wire [31 : 0]   confScissorStartXY;
-    wire [31 : 0]   confScissorEndXY;
-    wire [11 : 0]   confYOffset;
-    wire [31 : 0]   confTMU1TexEnvConfig;
-    wire [31 : 0]   confTMU1TextureConfig;
-    wire [31 : 0]   confTMU1TexEnvColor;
-
-    assign confFeatureEnable = rendererConfigs[OP_RENDER_CONFIG_FEATURE_ENABLE +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confColorBufferClearColor = rendererConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confDepthBufferClearDepth = rendererConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confFragmentPipelineConfig = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_PIPELINE +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confFragmentPipelineFogColor = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confScissorStartXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_START_XY +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confScissorEndXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confYOffset = rendererConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
-
-    assign dbgRasterizerRunning = rasterizerRunning;
-
-    CommandParser commandParser(
+    DmaStreamEngine #(
+        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH)
+    ) dma (
         .aclk(aclk),
         .resetn(resetn),
 
-        // AXI Stream command interface
+        .m_cmd_axis_tvalid(m_cmd_axis_tvalid),
+        .m_cmd_axis_tready(m_cmd_axis_tready),
+        .m_cmd_axis_tlast(m_cmd_axis_tlast),
+        .m_cmd_axis_tdata(m_cmd_axis_tdata),
+        
         .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
         .s_cmd_axis_tready(s_cmd_axis_tready),
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
-        .m_cmd_xxx_axis_tdata(s_cmd_xxx_axis_tdata),
-        .m_cmd_xxx_axis_tuser(s_cmd_xxx_axis_tuser),
-        .m_cmd_xxx_axis_tlast(s_cmd_xxx_axis_tlast),
-        .m_cmd_fog_axis_tvalid(s_cmd_fog_axis_tvalid),
-        .m_cmd_rasterizer_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
-        .m_cmd_tmu0_axis_tvalid(s_cmd_tmu0_axis_tvalid),
-        .m_cmd_tmu1_axis_tvalid(s_cmd_tmu1_axis_tvalid),
-        .m_cmd_config_axis_tvalid(s_cmd_config_axis_tvalid),
-        .m_cmd_fog_axis_tready(s_cmd_fog_axis_tready),
-        .m_cmd_rasterizer_axis_tready(s_cmd_rasterizer_axis_tready),
-        .m_cmd_tmu0_axis_tready(s_cmd_tmu0_axis_tready),
-        .m_cmd_tmu1_axis_tready(s_cmd_tmu1_axis_tready),
-        .m_cmd_config_axis_tready(s_cmd_config_axis_tready),
+        .m_mem_axi_awid(m_mem_axi_awid),
+        .m_mem_axi_awaddr(m_mem_axi_awaddr),
+        .m_mem_axi_awlen(m_mem_axi_awlen), 
+        .m_mem_axi_awsize(m_mem_axi_awsize), 
+        .m_mem_axi_awburst(m_mem_axi_awburst), 
+        .m_mem_axi_awlock(m_mem_axi_awlock), 
+        .m_mem_axi_awcache(m_mem_axi_awcache), 
+        .m_mem_axi_awprot(m_mem_axi_awprot), 
+        .m_mem_axi_awvalid(m_mem_axi_awvalid),
+        .m_mem_axi_awready(m_mem_axi_awready),
 
-        // Rasterizer
-        // Control
-        .rasterizerRunning(rasterizerRunning),
-        .startRendering(startRendering),
-        .pixelInPipeline(pixelInPipeline),
+        .m_mem_axi_wdata(m_mem_axi_wdata),
+        .m_mem_axi_wstrb(m_mem_axi_wstrb),
+        .m_mem_axi_wlast(m_mem_axi_wlast),
+        .m_mem_axi_wvalid(m_mem_axi_wvalid),
+        .m_mem_axi_wready(m_mem_axi_wready),
 
-        // applied
-        .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied),
-        .colorBufferCmdCommit(colorBufferCmdCommit),
-        .colorBufferCmdMemset(colorBufferCmdMemset),
-        .depthBufferApply(depthBufferApply),
-        .depthBufferApplied(depthBufferApplied),
-        .depthBufferCmdCommit(depthBufferCmdCommit),
-        .depthBufferCmdMemset(depthBufferCmdMemset),
+        .m_mem_axi_bid(m_mem_axi_bid),
+        .m_mem_axi_bresp(m_mem_axi_bresp),
+        .m_mem_axi_bvalid(m_mem_axi_bvalid),
+        .m_mem_axi_bready(m_mem_axi_bready),
 
-        // Debug
-        .dbgStreamState(dbgStreamState)
+        .m_mem_axi_arid(m_mem_axi_arid),
+        .m_mem_axi_araddr(m_mem_axi_araddr),
+        .m_mem_axi_arlen(m_mem_axi_arlen),
+        .m_mem_axi_arsize(m_mem_axi_arsize),
+        .m_mem_axi_arburst(m_mem_axi_arburst),
+        .m_mem_axi_arlock(m_mem_axi_arlock),
+        .m_mem_axi_arcache(m_mem_axi_arcache),
+        .m_mem_axi_arprot(m_mem_axi_arprot),
+        .m_mem_axi_arvalid(m_mem_axi_arvalid),
+        .m_mem_axi_arready(m_mem_axi_arready),
+
+        .m_mem_axi_rid(m_mem_axi_rid),
+        .m_mem_axi_rdata(m_mem_axi_rdata),
+        .m_mem_axi_rresp(m_mem_axi_rresp),
+        .m_mem_axi_rlast(m_mem_axi_rlast),
+        .m_mem_axi_rvalid(m_mem_axi_rvalid),
+        .m_mem_axi_rready(m_mem_axi_rready)
     );
-    defparam commandParser.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam commandParser.TEXTURE_STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
 
-    ///////////////////////////
-    // Modul Instantiation and wiring
-    ///////////////////////////
-    RegisterBank triangleParameters (
+    RasterixRenderCore #(
+        .X_RESOLUTION(X_RESOLUTION),
+        .Y_RESOLUTION(Y_RESOLUTION),
+        .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
+        .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
+        .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
+        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
+        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
+    ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
-
-        .s_axis_tvalid(s_cmd_rasterizer_axis_tvalid),
-        .s_axis_tready(s_cmd_rasterizer_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata),
-        .s_axis_tuser(0),
-
-        .registers(triangleParams)
-    );
-    defparam triangleParameters.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
-    defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-
-    RegisterBank rendererConfigsRegBank (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_axis_tvalid(s_cmd_config_axis_tvalid),
-        .s_axis_tready(s_cmd_config_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata),
-        .s_axis_tuser(s_cmd_xxx_axis_tuser),
-
-        .registers(rendererConfigs)
-    );
-    defparam rendererConfigsRegBank.BANK_SIZE = OP_RENDER_CONFIG_NUMBER_OR_REGS;
-    defparam rendererConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam rendererConfigsRegBank.COMPRESSED = 0;
-
-    TextureBuffer textureBufferTMU0 (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-
-        .texelAddr00(texel0Addr00),
-        .texelAddr01(texel0Addr01),
-        .texelAddr10(texel0Addr10),
-        .texelAddr11(texel0Addr11),
-
-        .texelOutput00(texel0Input00),
-        .texelOutput01(texel0Input01),
-        .texelOutput10(texel0Input10),
-        .texelOutput11(texel0Input11),
-
-        .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
-        .s_axis_tready(s_cmd_tmu0_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
-    );
-    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
-
-    TextureBuffer textureBufferTMU1 (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-
-        .texelAddr00(texel1Addr00),
-        .texelAddr01(texel1Addr01),
-        .texelAddr10(texel1Addr10),
-        .texelAddr11(texel1Addr11),
-
-        .texelOutput00(texel1Input00),
-        .texelOutput01(texel1Input01),
-        .texelOutput10(texel1Input10),
-        .texelOutput11(texel1Input11),
-
-        .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
-        .s_axis_tready(s_cmd_tmu1_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
-    );
-    defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
-
-    FrameBuffer depthBuffer (  
-        .clk(aclk),
-        .reset(!resetn),
-
-        .confClearColor(confDepthBufferClearDepth[15 : 0]),
-        .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
-        .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
-        .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
-        .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
-        .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
-        .confYOffset(confYOffset[0 +: 12]),
-
-        .fragIndexRead(depthIndexRead),
-        .fragOut(depthIn),
-        .fragIndexWrite(depthIndexWrite),
-        .fragIn(depthOut),
-        .fragWriteEnable(depthWriteEnable),
-        .fragMask(confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE]),
-        .screenPosX(depthOutScreenPosX),
-        .screenPosY(depthOutScreenPosY),
-
-        .apply(depthBufferApply),
-        .applied(depthBufferApplied),
-        .cmdCommit(depthBufferCmdCommit),
-        .cmdMemset(depthBufferCmdMemset),
-
-        .m_axis_tvalid(),
-        .m_axis_tready(1'b1),
-        .m_axis_tlast(),
-        .m_axis_tdata()
-    );
-    defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
-    defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
-    defparam depthBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = 1;
-    defparam depthBuffer.SUB_PIXEL_WIDTH_INTERNAL = 16;
-    defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
-    defparam depthBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
-    defparam depthBuffer.X_RESOLUTION = X_RESOLUTION;
-    defparam depthBuffer.Y_RESOLUTION = Y_RESOLUTION;
-    defparam depthBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
-
-    FrameBuffer colorBuffer (  
-        .clk(aclk),
-        .reset(!resetn),
-
-        .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
-        .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
-        .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
-        .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
-        .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
-        .confYOffset(confYOffset[0 +: 12]),
-        .confClearColor(confColorBufferClearColor),
-
-        .fragIndexRead(colorIndexRead),
-        .fragOut(colorIn),
-        .fragIndexWrite(colorIndexWrite),
-        .fragIn(colorOut),
-        .fragWriteEnable(colorWriteEnable),
-        .fragMask({ confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
-                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
-                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
-                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE]}),
-        .screenPosX(colorOutScreenPosX),
-        .screenPosY(colorOutScreenPosY),
         
-        .apply(colorBufferApply),
-        .applied(colorBufferApplied),
-        .cmdCommit(colorBufferCmdCommit),
-        .cmdMemset(colorBufferCmdMemset),
+        .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
+        .s_cmd_axis_tready(m_cmd_axis_tready),
+        .s_cmd_axis_tlast(m_cmd_axis_tlast),
+        .s_cmd_axis_tdata(m_cmd_axis_tdata),
 
-        .m_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_axis_tready(m_framebuffer_axis_tready),
-        .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(m_framebuffer_axis_tdata)
+        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
+        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
+        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
+        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata)
     );
-    defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
-    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
-    defparam colorBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
-    defparam colorBuffer.SUB_PIXEL_WIDTH_INTERNAL = FRAMEBUFFER_SUB_PIXEL_WIDTH;
-    defparam colorBuffer.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
-    defparam colorBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
-    defparam colorBuffer.X_RESOLUTION = X_RESOLUTION;
-    defparam colorBuffer.Y_RESOLUTION = Y_RESOLUTION;
-    defparam colorBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
-
-    Rasterizer rop (
-        .clk(aclk), 
-        .reset(!resetn), 
-
-        .rasterizerRunning(rasterizerRunning),
-        .startRendering(startRendering),
-        .yOffset(confYOffset[0 +: 12]),
-
-        .m_axis_tvalid(m_rasterizer_axis_tvalid),
-        .m_axis_tready(m_rasterizer_axis_tready),
-        .m_axis_tlast(m_rasterizer_axis_tlast),
-        .m_axis_tdata(m_rasterizer_axis_tdata),
-
-        .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w0(triangleParams[TRIANGLE_STREAM_INC_W0 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w1(triangleParams[TRIANGLE_STREAM_INC_W1 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w2(triangleParams[TRIANGLE_STREAM_INC_W2 * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w0IncX(triangleParams[TRIANGLE_STREAM_INC_W0_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w1IncX(triangleParams[TRIANGLE_STREAM_INC_W1_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w2IncX(triangleParams[TRIANGLE_STREAM_INC_W2_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w0IncY(triangleParams[TRIANGLE_STREAM_INC_W0_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w1IncY(triangleParams[TRIANGLE_STREAM_INC_W1_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
-    );
-    defparam rop.X_RESOLUTION = X_RESOLUTION;
-    defparam rop.Y_RESOLUTION = Y_RESOLUTION;
-    defparam rop.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
-    defparam rop.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
-    defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-
-    AttributeInterpolator attributeInterpolator (
-        .aclk(aclk),
-        .resetn(resetn),
-        .pixelInPipeline(pixelInPipelineInterpolator),
-
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tdata(m_rasterizer_axis_tdata),
-
-        .m_axis_tvalid(m_attr_inter_axis_tvalid),
-        .m_axis_tready(m_attr_inter_axis_tready),
-        .m_axis_tlast(m_attr_inter_axis_tlast),
-        .m_axis_tdata(m_attr_inter_axis_tdata),
-
-        .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s(triangleParams[TRIANGLE_STREAM_INC_TEX1_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t(triangleParams[TRIANGLE_STREAM_INC_TEX1_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
-    );
-
-    PixelPipeline pixelPipeline (    
-        .aclk(aclk),
-        .resetn(resetn),
-        .pixelInPipeline(pixelInPipelineShader),
-
-        .s_fog_lut_axis_tvalid(s_cmd_fog_axis_tvalid),
-        .s_fog_lut_axis_tready(s_cmd_fog_axis_tready),
-        .s_fog_lut_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_fog_lut_axis_tdata(s_cmd_xxx_axis_tdata),
-
-        .confFeatureEnable(confFeatureEnable),
-        .confFragmentPipelineConfig(confFragmentPipelineConfig),
-        .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
-        .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
-        .confTMU0TextureConfig(confTMU0TextureConfig),
-        .confTMU0TexEnvColor(confTMU0TexEnvColor),
-        .confTMU1TexEnvConfig(confTMU1TexEnvConfig),
-        .confTMU1TextureConfig(confTMU1TextureConfig),
-        .confTMU1TexEnvColor(confTMU1TexEnvColor),
-
-        .s_axis_tvalid(m_attr_inter_axis_tvalid),
-        .s_axis_tready(m_attr_inter_axis_tready),
-        .s_axis_tlast(m_attr_inter_axis_tlast),
-        .s_axis_tdata(m_attr_inter_axis_tdata),
-
-        .texel0Addr00(texel0Addr00),
-        .texel0Addr01(texel0Addr01),
-        .texel0Addr10(texel0Addr10),
-        .texel0Addr11(texel0Addr11),
-
-        .texel0Input00(texel0Input00),
-        .texel0Input01(texel0Input01),
-        .texel0Input10(texel0Input10),
-        .texel0Input11(texel0Input11),
-
-        .texel1Addr00(texel1Addr00),
-        .texel1Addr01(texel1Addr01),
-        .texel1Addr10(texel1Addr10),
-        .texel1Addr11(texel1Addr11),
-
-        .texel1Input00(texel1Input00),
-        .texel1Input01(texel1Input01),
-        .texel1Input10(texel1Input10),
-        .texel1Input11(texel1Input11),
-
-        .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
-        .colorIndexWrite(colorIndexWrite),
-        .colorWriteEnable(colorWriteEnable),
-        .colorOut(colorOut),
-        .colorOutScreenPosX(colorOutScreenPosX),
-        .colorOutScreenPosY(colorOutScreenPosY),
-
-        .depthIndexRead(depthIndexRead),
-        .depthIn(depthIn),
-        .depthIndexWrite(depthIndexWrite),
-        .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut),
-        .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY)
-    );
-    defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
-    defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
 
 endmodule
