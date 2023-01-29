@@ -78,8 +78,8 @@ public:
         // Fixes the first two frames
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            m_displayListAssembler[i + (m_displayLines * m_backList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
-            m_displayListAssembler[i + (m_displayLines * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -114,7 +114,7 @@ public:
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (m_displayLines * m_backList)].drawTriangle();
+                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
                 if (triangleConfDl != nullptr)
                 {
                     std::memcpy(triangleConfDl, &triangleConf, sizeof(triangleConf));
@@ -158,7 +158,7 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_frontList)].commit();
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit();
         }
 
         // Upload textures
@@ -182,10 +182,10 @@ public:
                 {
                     while (!m_busConnector.clearToSend())
                         ;
-                    const typename ListAssembler::List *list = m_displayListAssembler[i + (m_displayLines * m_frontList)].getDisplayList();
+                    const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
-                    m_displayListAssembler[i + (m_displayLines * m_frontList)].clearAssembler();
-                    m_displayListAssembler[i + (m_displayLines * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
                 }
                 return true;
             });
@@ -203,12 +203,12 @@ public:
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
                 {
-                    ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].clear(colorBuffer, depthBuffer);
+                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
                 }
             }
             else
             {
-                ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].clear(colorBuffer, depthBuffer);
+                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
             }
         }
         return ret;
@@ -293,7 +293,7 @@ public:
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
         }
         return ret;
     }
@@ -325,8 +325,8 @@ public:
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
         }
         return ret;
     }
@@ -388,8 +388,9 @@ public:
             // More lines required than lines available
             return false;
         }
-        m_displayLines = framebufferLines;
+        
         m_yLineResolution = y / framebufferLines;
+        m_displayLines = framebufferLines;
         return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
     }
 private:
@@ -414,7 +415,7 @@ private:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].writeRegister(regIndex, regVal);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regIndex, regVal);
         }
         return ret;
     }
@@ -424,7 +425,7 @@ private:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (m_displayLines * m_backList)].writeXYRegister(regIndex, x, y);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(regIndex, x, y);
         }
         return ret;
     }
