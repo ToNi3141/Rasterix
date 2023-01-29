@@ -16,12 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module RasterixRenderCore #(
-    // The resolution of the whole screen
-    parameter X_RESOLUTION = 128,
-    parameter Y_RESOLUTION = 128,
-    // The resolution of a subpart of the screen. The whole screen is constructed of 1 to n subparts.
-    parameter Y_LINE_RESOLUTION = Y_RESOLUTION,
-
+    // The size of the internal framebuffer (in power of two)
     parameter FRAMEBUFFER_SIZE_BYTES = 18,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
@@ -69,8 +64,7 @@ module RasterixRenderCore #(
 
     localparam TEX_ADDR_WIDTH = 16;
 
-    // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
-    localparam FRAMEBUFFER_INDEX_WIDTH = RENDER_CONFIG_X_SIZE + RENDER_CONFIG_Y_SIZE;
+    localparam FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_SIZE_BYTES - 1;
 
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
@@ -166,36 +160,38 @@ module RasterixRenderCore #(
 
     // Register bank
     wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
-    wire [(OP_RENDER_CONFIG_REG_WIDTH * OP_RENDER_CONFIG_NUMBER_OR_REGS) - 1 : 0] rendererConfigs;
+    wire [(OP_RENDER_CONFIG_REG_WIDTH * OP_RENDER_CONFIG_NUMBER_OR_REGS) - 1 : 0] renderConfigs;
 
     // Configs
-    wire [31 : 0]   confFeatureEnable;
-    wire [31 : 0]   confFragmentPipelineConfig;
-    wire [31 : 0]   confFragmentPipelineFogColor;
-    wire [31 : 0]   confTMU0TexEnvConfig;
-    wire [31 : 0]   confTMU0TextureConfig;
-    wire [31 : 0]   confTMU0TexEnvColor;
-    wire [31 : 0]   confScissorStartXY;
-    wire [31 : 0]   confScissorEndXY;
-    wire [31 : 0]   confYOffset;
-    wire [31 : 0]   confTMU1TexEnvConfig;
-    wire [31 : 0]   confTMU1TextureConfig;
-    wire [31 : 0]   confTMU1TexEnvColor;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confFeatureEnable;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confFragmentPipelineConfig;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confFragmentPipelineFogColor;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU0TexEnvConfig;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU0TextureConfig;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU0TexEnvColor;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confScissorStartXY;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confScissorEndXY;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confYOffset;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confRenderResolution;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvConfig;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TextureConfig;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvColor;
 
-    assign confFeatureEnable = rendererConfigs[OP_RENDER_CONFIG_FEATURE_ENABLE +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confColorBufferClearColor = rendererConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confDepthBufferClearDepth = rendererConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confFragmentPipelineConfig = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_PIPELINE +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confFragmentPipelineFogColor = rendererConfigs[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU0TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TexEnvConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TextureConfig = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confTMU1TexEnvColor = rendererConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confScissorStartXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_START_XY +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confScissorEndXY = rendererConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign confYOffset = rendererConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFeatureEnable = renderConfigs[OP_RENDER_CONFIG_FEATURE_ENABLE +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confColorBufferClearColor = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confDepthBufferClearDepth = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFragmentPipelineConfig = renderConfigs[OP_RENDER_CONFIG_FRAGMENT_PIPELINE +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFragmentPipelineFogColor = renderConfigs[OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TexEnvConfig = renderConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TextureConfig = renderConfigs[OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU0TexEnvColor = renderConfigs[OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TexEnvConfig = renderConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TextureConfig = renderConfigs[OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confTMU1TexEnvColor = renderConfigs[OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confScissorStartXY = renderConfigs[OP_RENDER_CONFIG_SCISSOR_START_XY +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confScissorEndXY = renderConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confYOffset = renderConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confRenderResolution = renderConfigs[OP_RENDER_CONFIG_RENDER_RESOLUTION +: OP_RENDER_CONFIG_REG_WIDTH];
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -263,7 +259,7 @@ module RasterixRenderCore #(
     defparam triangleParameters.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
     defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-    RegisterBank rendererConfigsRegBank (
+    RegisterBank renderConfigsRegBank (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -273,11 +269,11 @@ module RasterixRenderCore #(
         .s_axis_tdata(s_cmd_xxx_axis_tdata),
         .s_axis_tuser(s_cmd_xxx_axis_tuser),
 
-        .registers(rendererConfigs)
+        .registers(renderConfigs)
     );
-    defparam rendererConfigsRegBank.BANK_SIZE = OP_RENDER_CONFIG_NUMBER_OR_REGS;
-    defparam rendererConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam rendererConfigsRegBank.COMPRESSED = 0;
+    defparam renderConfigsRegBank.BANK_SIZE = OP_RENDER_CONFIG_NUMBER_OR_REGS;
+    defparam renderConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam renderConfigsRegBank.COMPRESSED = 0;
 
     TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
@@ -340,8 +336,8 @@ module RasterixRenderCore #(
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
         .confYOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .confXResolution(X_RESOLUTION[0 +: RENDER_CONFIG_X_SIZE]),
-        .confYResolution(Y_LINE_RESOLUTION[0 +: RENDER_CONFIG_Y_SIZE]),
+        .confXResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+        .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
 
         .fragIndexRead(depthIndexRead),
         .fragOut(depthIn),
@@ -382,8 +378,8 @@ module RasterixRenderCore #(
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
         .confYOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .confXResolution(X_RESOLUTION[0 +: RENDER_CONFIG_X_SIZE]),
-        .confYResolution(Y_LINE_RESOLUTION[0 +: RENDER_CONFIG_Y_SIZE]),
+        .confXResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+        .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
 
         .fragIndexRead(colorIndexRead),
         .fragOut(colorIn),
@@ -424,8 +420,8 @@ module RasterixRenderCore #(
         .startRendering(startRendering),
 
         .yOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .xResolution(X_RESOLUTION[0 +: RENDER_CONFIG_X_SIZE]),
-        .yResolution(Y_LINE_RESOLUTION[0 +: RENDER_CONFIG_Y_SIZE]),
+        .xResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+        .yResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
 
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),

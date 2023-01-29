@@ -35,9 +35,7 @@ module top #(
     output wire         m_framebuffer_axis_tlast,
     output wire [FRAMEBUFFER_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
-    parameter X_RESOLUTION = `X_RESOLUTION;
-    parameter Y_RESOLUTION = `Y_RESOLUTION;
-    parameter Y_LINE_RESOLUTION = `Y_LINE_RESOLUTION;
+    parameter FRAMEBUFFER_SIZE_BYTES = `FRAMEBUFFER_SIZE_BYTES;
     parameter TEXTURE_BUFFER_SIZE = 17;
 
 
@@ -126,9 +124,7 @@ module top #(
     );
 
     Rasterix #(
-        .X_RESOLUTION(X_RESOLUTION),
-        .Y_RESOLUTION(Y_RESOLUTION),
-        .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
+        .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)

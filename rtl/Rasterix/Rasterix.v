@@ -16,11 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module Rasterix #(
-    // The resolution of the whole screen
-    parameter X_RESOLUTION = 128,
-    parameter Y_RESOLUTION = 128,
-    // The resolution of a subpart of the screen. The whole screen is constructed of 1 to n subparts.
-    parameter Y_LINE_RESOLUTION = Y_RESOLUTION,
+    // The size of the internal framebuffer (in power of two)
+    parameter FRAMEBUFFER_SIZE_BYTES = 18,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -168,9 +165,7 @@ module Rasterix #(
     );
 
     RasterixRenderCore #(
-        .X_RESOLUTION(X_RESOLUTION),
-        .Y_RESOLUTION(Y_RESOLUTION),
-        .Y_LINE_RESOLUTION(Y_LINE_RESOLUTION),
+        .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

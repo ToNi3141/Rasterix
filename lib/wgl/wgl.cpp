@@ -9,7 +9,7 @@ using namespace rr;
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 FT60XBusConnector m_busConnector;
-Renderer<16*1024*1024, 5, RESOLUTION_H / 5, 128, 7680> m_renderer{m_busConnector};
+Renderer<16 * 1024 * 1024, 5, 256 * 1024, 128, 7680> m_renderer{m_busConnector};
 
 // Wiggle API
 // -------------------------------------------------------
@@ -28,6 +28,7 @@ GLAPI BOOL APIENTRY impl_wglCopyContext(HGLRC hglrc, HGLRC hglrc2, UINT i)
 GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
 {
     IceGL::createInstance(m_renderer);
+    m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     SPDLOG_DEBUG("wglCreateContext called");
     return reinterpret_cast<HGLRC>(&IceGL::getInstance());
 }

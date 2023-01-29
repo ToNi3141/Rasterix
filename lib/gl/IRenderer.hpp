@@ -547,6 +547,12 @@ public:
     /// @param height Height of the box
     /// @return true if success
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) = 0;
+
+    /// @brief Sets the resolution of the renderer
+    /// @param x X is the width of the produced image
+    /// @param y Y is the height of the produced image
+    /// @return true if success
+    virtual bool setRenderResolution(const uint16_t x, const uint16_t y) = 0;
 };
 
 } // namespace rr

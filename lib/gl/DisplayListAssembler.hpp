@@ -107,6 +107,7 @@ public:
     static constexpr uint32_t SET_SCISSOR_START_XY          = StreamCommand::RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG;
     static constexpr uint32_t SET_SCISSOR_END_XY            = StreamCommand::RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG;
     static constexpr uint32_t SET_Y_OFFSET                  = StreamCommand::RR_RENDER_CONFIG_Y_OFFSET;
+    static constexpr uint32_t SET_RENDER_RESOLUTION         = StreamCommand::RR_RENDER_CONFIG_RENDER_RESOLUTION;
     static constexpr uint32_t SET_FOG_COLOR                 = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR;
     static constexpr uint32_t SET_TMU_TEX_ENV(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
     static constexpr uint32_t SET_TMU_TEXTURE_CONFIG(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEXTURE_CONFIG + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
@@ -303,7 +304,7 @@ public:
         return false;
     }
 
-    bool writeXYRegister(const uint32_t regIndex, const uint16_t y, const uint16_t x)
+    bool writeXYRegister(const uint32_t regIndex, const uint16_t x, const uint16_t y)
     {
         const uint32_t val { (static_cast<uint32_t>(y) << StreamCommand::RR_Y_POS) | (static_cast<uint32_t>(x) << StreamCommand::RR_X_POS) };
         return writeRegister(regIndex, val);

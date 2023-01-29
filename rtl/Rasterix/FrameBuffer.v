@@ -305,7 +305,8 @@ module FrameBuffer
             memAddrReadDelay <= fragIndexRead;
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
-            begin
+            begin : waitForCommand
+                reg [X_BIT_WIDTH + Y_BIT_WIDTH -1 : 0] fbSize;
                 cmdIndex <= 0;
                 cmdMemsetX <= 0;
 
@@ -314,7 +315,8 @@ module FrameBuffer
                 // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
                 cmdMemsetY <= confYOffset + confYResolution - 1;
 
-                cmdFbSizeInBeats <= (confXResolution * confYResolution) >> PIXEL_PER_BEAT_LOG2;
+                fbSize = confYResolution * confXResolution;
+                cmdFbSizeInBeats <= fbSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
                 if (apply)
                 begin
