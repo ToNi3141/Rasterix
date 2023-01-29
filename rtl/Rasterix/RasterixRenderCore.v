@@ -22,6 +22,9 @@ module RasterixRenderCore #(
     // The resolution of a subpart of the screen. The whole screen is constructed of 1 to n subparts.
     parameter Y_LINE_RESOLUTION = Y_RESOLUTION,
 
+    localparam X_MAX_RESOLUTION_WIDTH = $clog2(X_RESOLUTION) + 1,
+    localparam Y_MAX_RESOLUTION_WIDTH = $clog2(Y_RESOLUTION) + 1,
+
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
@@ -68,7 +71,7 @@ module RasterixRenderCore #(
     localparam TEX_ADDR_WIDTH = 16;
 
     // The width of the frame buffer index (it would me nice if we could query the frame buffer instance directly ...)
-    localparam FRAMEBUFFER_INDEX_WIDTH = $clog2(X_RESOLUTION * Y_LINE_RESOLUTION);
+    localparam FRAMEBUFFER_INDEX_WIDTH = X_MAX_RESOLUTION_WIDTH + Y_MAX_RESOLUTION_WIDTH;
 
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
@@ -338,6 +341,8 @@ module RasterixRenderCore #(
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
         .confYOffset(confYOffset[0 +: 12]),
+        .confXResolution(X_RESOLUTION[0 +: X_MAX_RESOLUTION_WIDTH]),
+        .confYResolution(Y_LINE_RESOLUTION[0 +: Y_MAX_RESOLUTION_WIDTH]),
 
         .fragIndexRead(depthIndexRead),
         .fragOut(depthIn),
@@ -363,22 +368,23 @@ module RasterixRenderCore #(
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = 1;
     defparam depthBuffer.SUB_PIXEL_WIDTH_INTERNAL = 16;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
-    defparam depthBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
-    defparam depthBuffer.X_RESOLUTION = X_RESOLUTION;
-    defparam depthBuffer.Y_RESOLUTION = Y_RESOLUTION;
-    defparam depthBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
+    defparam depthBuffer.X_BIT_WIDTH = X_MAX_RESOLUTION_WIDTH;
+    defparam depthBuffer.Y_BIT_WIDTH = Y_MAX_RESOLUTION_WIDTH;
+    defparam depthBuffer.FRAMEBUFFER_SIZE_BYTES = 18;
 
     FrameBuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
+        .confClearColor(confColorBufferClearColor),
         .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
         .confScissorStartX(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_X_POS +: RENDER_CONFIG_SCISSOR_START_X_SIZE]),
         .confScissorStartY(confScissorStartXY[RENDER_CONFIG_SCISSOR_START_Y_POS +: RENDER_CONFIG_SCISSOR_START_Y_SIZE]),
         .confScissorEndX(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_X_POS +: RENDER_CONFIG_SCISSOR_END_X_SIZE]),
         .confScissorEndY(confScissorEndXY[RENDER_CONFIG_SCISSOR_END_Y_POS +: RENDER_CONFIG_SCISSOR_END_Y_SIZE]),
         .confYOffset(confYOffset[0 +: 12]),
-        .confClearColor(confColorBufferClearColor),
+        .confXResolution(X_RESOLUTION[0 +: X_MAX_RESOLUTION_WIDTH]),
+        .confYResolution(Y_LINE_RESOLUTION[0 +: Y_MAX_RESOLUTION_WIDTH]),
 
         .fragIndexRead(colorIndexRead),
         .fragOut(colorIn),
@@ -407,10 +413,9 @@ module RasterixRenderCore #(
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     defparam colorBuffer.SUB_PIXEL_WIDTH_INTERNAL = FRAMEBUFFER_SUB_PIXEL_WIDTH;
     defparam colorBuffer.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
-    defparam colorBuffer.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
-    defparam colorBuffer.X_RESOLUTION = X_RESOLUTION;
-    defparam colorBuffer.Y_RESOLUTION = Y_RESOLUTION;
-    defparam colorBuffer.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
+    defparam colorBuffer.X_BIT_WIDTH = X_MAX_RESOLUTION_WIDTH;
+    defparam colorBuffer.Y_BIT_WIDTH = Y_MAX_RESOLUTION_WIDTH;
+    defparam colorBuffer.FRAMEBUFFER_SIZE_BYTES = 18;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -418,7 +423,10 @@ module RasterixRenderCore #(
 
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
+
         .yOffset(confYOffset[0 +: 12]),
+        .xResolution(X_RESOLUTION[0 +: X_MAX_RESOLUTION_WIDTH]),
+        .yResolution(Y_LINE_RESOLUTION[0 +: Y_MAX_RESOLUTION_WIDTH]),
 
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),
@@ -437,9 +445,8 @@ module RasterixRenderCore #(
         .w1IncY(triangleParams[TRIANGLE_STREAM_INC_W1_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
-    defparam rop.X_RESOLUTION = X_RESOLUTION;
-    defparam rop.Y_RESOLUTION = Y_RESOLUTION;
-    defparam rop.Y_LINE_RESOLUTION = Y_LINE_RESOLUTION;
+    defparam rop.X_BIT_WIDTH = X_MAX_RESOLUTION_WIDTH;
+    defparam rop.Y_BIT_WIDTH = Y_MAX_RESOLUTION_WIDTH;
     defparam rop.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
