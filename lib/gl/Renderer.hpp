@@ -74,8 +74,8 @@ public:
         }
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * Y_LINE_RESOLUTION);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, i * Y_LINE_RESOLUTION, 0);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, i * Y_LINE_RESOLUTION, 0);
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -181,7 +181,7 @@ public:
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, i * Y_LINE_RESOLUTION, 0);
                 }
                 return true;
             });
@@ -345,14 +345,9 @@ public:
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
     {
         bool ret = true;
-        const uint32_t start {
-            (static_cast<uint32_t>(y) << 16) | static_cast<uint32_t>(x)
-        };
-        const uint32_t end {
-            (static_cast<uint32_t>(y + height) << 16) | static_cast<uint32_t>(x + width)
-        };
-        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_START_XY, start);
-        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_END_XY, end);
+
+        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_START_XY, y, x);
+        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_END_XY, y + height, x + width);
 
         m_scissorYStart = y;
         m_scissorYEnd = y + height;
@@ -403,6 +398,16 @@ private:
         for (uint32_t i = 0; i < DISPLAY_LINES; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regIndex, regVal);
+        }
+        return ret;
+    }
+
+    bool writeToRegXY(uint32_t regIndex, const uint16_t y, const uint16_t x)
+    {
+        bool ret = true;
+        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        {
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(regIndex, y, x);
         }
         return ret;
     }
