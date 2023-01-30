@@ -58,13 +58,14 @@ localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 4 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 5 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 6 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_Y_OFFSET = 7 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 8 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 9 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 10 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEX_ENV = 11 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR = 12 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG = 13 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 14;
+localparam OP_RENDER_CONFIG_RENDER_RESOLUTION = 8 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 9 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 10 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 11 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV = 12 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR = 13 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG = 14 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 15;
 localparam OP_RENDER_CONFIG_REG_WIDTH = 32;
 
 
@@ -154,16 +155,6 @@ localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS = RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS + RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_SIZE = 1;
 
-// OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
-//  +-----------------------------------+
-//  | 8'hx R | 8'hx G | 8'hx B | 8'hx A |
-//  +-----------------------------------+
-
-// OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH
-//  +-----------------+
-//  | 16'hx depth val |
-//  +-----------------+
-
 // OP_RENDER_CONFIG_FRAGMENT_PIPELINE
 //  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 //  | 5'hx reserved | 4'hx blend d | 4'hx blend s | 1'hx color mask R | 1'hx color mask G | 1'hx color mask B | 1'hx color mask A | 1'hx depth mask | 8'hx A ref | 3'hx A func | 3'hx depth func |
@@ -190,6 +181,7 @@ localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS = RENDER_CONFIG_FRAGMEN
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE = 4;
 
 // OP_RENDER_CONFIG_TMU0_TEX_ENV
+// OP_RENDER_CONFIG_TMU1_TEX_ENV
 //  +- bit 31 ------------------------------------------------------------------ bit 24 -+
 //  | 1'hx res | 2'hx a shift | 2'hx RGB shift | 1'hx op a 2 | 1'hx op a 1 | 1'hx op a 0 |
 //  +- bit 23 ------------------------------------------------------------------ bit 15 -+
@@ -234,6 +226,7 @@ localparam RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_POS = RENDER_CONFIG_TMU_TEX_ENV
 localparam RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_SIZE = 2;
 
 // OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG
+// OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG
 //  +--------------------------------------------------------------------------------------------------------------+
 //  | 9'hx reserved | 4'hx pixel format | 1'hx mag filter | 1'hx clamp t | 1'hx clamp s | 8'hx height | 8'hx width |
 //  +--------------------------------------------------------------------------------------------------------------+
@@ -255,23 +248,17 @@ localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA4444 = 0;
 localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551 = 1;
 localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565 = 2;
 
+// OP_RENDER_CONFIG_Y_OFFSET
+// OP_RENDER_CONFIG_RENDER_RESOLUTION
 // OP_RENDER_CONFIG_SCISSOR_START_XY
-//  +---------------------------------------------+
-//  | 16'h scissor start y | 16'h scissor start x |
-//  +---------------------------------------------+
-localparam RENDER_CONFIG_SCISSOR_START_X_POS = 0;
-localparam RENDER_CONFIG_SCISSOR_START_X_SIZE = 16;
-localparam RENDER_CONFIG_SCISSOR_START_Y_POS = 16;
-localparam RENDER_CONFIG_SCISSOR_START_Y_SIZE = 16;
-
 // OP_RENDER_CONFIG_SCISSOR_END_XY
-//  +-----------------------------------------+
-//  | 16'h scissor end y | 16'h scissor end x |
-//  +-----------------------------------------+
-localparam RENDER_CONFIG_SCISSOR_END_X_POS = 0;
-localparam RENDER_CONFIG_SCISSOR_END_X_SIZE = 16;
-localparam RENDER_CONFIG_SCISSOR_END_Y_POS = 16;
-localparam RENDER_CONFIG_SCISSOR_END_Y_SIZE = 16;
+//  +-------------------------------------------------+
+//  | 5'hx reserved | 11'h y | 5'hx reserved | 11'h x |
+//  +-------------------------------------------------+
+localparam RENDER_CONFIG_X_POS = 0;
+localparam RENDER_CONFIG_X_SIZE = 11;
+localparam RENDER_CONFIG_Y_POS = 16;
+localparam RENDER_CONFIG_Y_SIZE = 11;
 
 // Depth and Alpha func defines
 localparam ALWAYS = 0;
@@ -342,6 +329,9 @@ localparam REPEAT = 0;
 localparam CLAMP_TO_EDGE = 1;
 
 // OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR
+// OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR
+// OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR
+// OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR
 //  +-----------------------------------+
 //  | 8'hx R | 8'hx G | 8'hx B | 8'hx A |
 //  +-----------------------------------+
@@ -353,6 +343,13 @@ localparam COLOR_R_POS = COLOR_SUB_PIXEL_WIDTH * 3;
 localparam COLOR_G_POS = COLOR_SUB_PIXEL_WIDTH * 2;
 localparam COLOR_B_POS = COLOR_SUB_PIXEL_WIDTH * 1;
 localparam COLOR_A_POS = COLOR_SUB_PIXEL_WIDTH * 0;
+
+// OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH
+//  +----------------------------------+
+//  | 16'hx reserved | 16'hx depth val |
+//  +----------------------------------+
+localparam RENDER_CONFIG_CLEAR_DEPTH_POS = 0;
+localparam RENDER_CONFIG_CLEAR_DEPTH_SIZE = 16;
 
 //---------------------------------------------------------------------------------------------------------
 // OP_FRAMEBUFFER

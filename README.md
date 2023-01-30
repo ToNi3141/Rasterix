@@ -20,7 +20,7 @@
 Rasterix is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is currently able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The current implementations lacks several important features like setting the screen resolution via registers, Mip Mapping and so on. It has more the nature of an prototype.
+The current implementations lacks several important features like Mip Mapping, logic op, stencil buffer and so on. It has more the nature of an prototype.
 
 # Working Games
 Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`)
@@ -134,7 +134,6 @@ Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look 
 1. Add the following directories to your project: `rtl/Rasterix`, `rtl/Util`, and `rtl/Float`.
 2. Instantiate the `Rasterix` module. When configuring the module, make sure that the following parameters are equal to the template parameter from `Renderer.hpp`:
    1. `Renderer::CMD_STREAM_WIDTH` and `Rasterix::CMD_STREAM_WIDTH`. 
-   2. `Renderer::Y_LINE_RESOLUTION` and `Rasterix::Y_LINE_RESOLUTION`.
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory. Make sure to adapt the template parameter from the `Renderer.hpp` `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to the size of the connected memory. One page has 4 kB. If you have a connected memory with 512kB, you should set `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to 128.
 5. Connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a framebuffer or a display for instance).
@@ -148,7 +147,6 @@ The following features are currently missing compared to a real OpenGL implement
 - ...
 
 # Next Steps
-- Implement dynamic screen resolutions
 - Add the possibility to use more than one render context
 - Implement Mip Mapping
 - Implement logic ops

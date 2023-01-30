@@ -38,22 +38,22 @@ namespace rr
 // <-----------------X_RESOLUTION--------------------------->
 // +--------------------------------------------------------+ ^
 // |        ^                                               | |
-// |        | Y_LINE_RESOLUTION      DISPLAY_LINES          | |
+// |        | m_yLineResolution      m_displayLines         | |
 // |        |                                               | |
 // |        v                                               | |
 // |<------------------------------------------------------>| Y
 // |                                                        | _
-// |                                 DISPLAY_LINES          | R
+// |                                 m_displayLines         | R
 // |                                                        | E
 // |                                                        | S
 // |<------------------------------------------------------>| O
 // |                                                        | L
-// |                                 DISPLAY_LINES          | U
+// |                                 m_displayLines         | U
 // |                                                        | T
 // |                                                        | I
 // |<------------------------------------------------------>| O
 // |                                                        | N
-// |                                 DISPLAY_LINES          | |
+// |                                 m_displayLines         | |
 // |                                                        | |
 // |                                                        | |
 // +--------------------------------------------------------+ v
@@ -61,7 +61,7 @@ namespace rr
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
 // The CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
-template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint16_t Y_LINE_RESOLUTION = 128, uint16_t CMD_STREAM_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURE_PAGES = 64>
+template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint32_t INTERNAL_FRAMEBUFFER_SIZE = 64 * 1024, uint16_t CMD_STREAM_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURE_PAGES = 64>
 class Renderer : public IRenderer
 {
 public:
@@ -72,10 +72,14 @@ public:
         {
             entry.clearAssembler();
         }
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+
+        setRenderResolution(640, 480);
+
+        // Fixes the first two frames
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setYOffset(i * Y_LINE_RESOLUTION);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -102,10 +106,10 @@ public:
             return true;
         }
 
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            const uint16_t currentScreenPositionStart = i * Y_LINE_RESOLUTION;
-            const uint16_t currentScreenPositionEnd = (i + 1) * Y_LINE_RESOLUTION;
+            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
+            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
             if (Rasterizer::checkIfTriangleIsInBounds(triangleConf,
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
@@ -152,7 +156,7 @@ public:
 
         // Prepare all display lists
         bool ret = true;
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit();
         }
@@ -174,14 +178,14 @@ public:
         if (ret)
         {
             m_renderThread = std::async([&](){
-                for (int32_t i = DISPLAY_LINES - 1; i >= 0; i--)
+                for (int32_t i = m_displayLines - 1; i >= 0; i--)
                 {
                     while (!m_busConnector.clearToSend())
                         ;
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr(), list->getSize());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setYOffset(i * Y_LINE_RESOLUTION);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
                 }
                 return true;
             });
@@ -191,10 +195,10 @@ public:
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
         bool ret = true;
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            const uint16_t currentScreenPositionStart = i * Y_LINE_RESOLUTION;
-            const uint16_t currentScreenPositionEnd = (i + 1) * Y_LINE_RESOLUTION;
+            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
+            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
             if (m_scissorEnabled) 
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
@@ -287,7 +291,7 @@ public:
         }
 
         // Upload data to the display lists
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
         }
@@ -319,7 +323,7 @@ public:
         bool ret { true };
         const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
@@ -345,14 +349,9 @@ public:
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
     {
         bool ret = true;
-        const uint32_t start {
-            (static_cast<uint32_t>(y) << 16) | static_cast<uint32_t>(x)
-        };
-        const uint32_t end {
-            (static_cast<uint32_t>(y + height) << 16) | static_cast<uint32_t>(x + width)
-        };
-        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_START_XY, start);
-        ret = ret && writeToReg(ListAssembler::SET_SCISSOR_END_XY, end);
+
+        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_START_XY, x, y);
+        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_END_XY, x + width, y + height);
 
         m_scissorYStart = y;
         m_scissorYEnd = y + height;
@@ -380,6 +379,20 @@ public:
         return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
+    virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
+    {
+        const uint32_t framebufferSize = x * y * 2;
+        const uint32_t framebufferLines = (framebufferSize / INTERNAL_FRAMEBUFFER_SIZE) + ((framebufferSize % INTERNAL_FRAMEBUFFER_SIZE) ? 1 : 0);
+        if (framebufferLines > DISPLAY_LINES)
+        {
+            // More lines required than lines available
+            return false;
+        }
+        
+        m_yLineResolution = y / framebufferLines;
+        m_displayLines = framebufferLines;
+        return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
+    }
 private:
     static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { MAX_NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
@@ -400,9 +413,19 @@ private:
     bool writeToReg(uint32_t regIndex, const TArg& regVal)
     {
         bool ret = true;
-        for (uint32_t i = 0; i < DISPLAY_LINES; i++)
+        for (uint32_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regIndex, regVal);
+        }
+        return ret;
+    }
+
+    bool writeToRegXY(uint32_t regIndex, const uint16_t x, const uint16_t y)
+    {
+        bool ret = true;
+        for (uint32_t i = 0; i < m_displayLines; i++)
+        {
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(regIndex, x, y);
         }
         return ret;
     }
@@ -429,6 +452,9 @@ private:
     bool m_scissorEnabled { false };
     int16_t m_scissorYStart { 0 };
     int16_t m_scissorYEnd { 0 };
+
+    uint16_t m_yLineResolution { 128 };
+    uint16_t m_displayLines { DISPLAY_LINES };
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;

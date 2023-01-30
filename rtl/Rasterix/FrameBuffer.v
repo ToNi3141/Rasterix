@@ -52,20 +52,16 @@ module FrameBuffer
     // Internal size of a sub pixel (will be converted if there is a missmatch between SUB_PIXEL_WIDTH)
     parameter SUB_PIXEL_WIDTH_INTERNAL = 4,
 
-    // Resolution of the frame buffer (and the frame buffer lines)
-    parameter X_RESOLUTION = 1024,
-    parameter Y_RESOLUTION = 600,
-    parameter Y_LINE_RESOLUTION = 48,
-    parameter SCREEN_POS_WIDTH = 16,
-
-    // Size of the frame line in pixels
-    localparam FRAME_SIZE_IN_PX = X_RESOLUTION * Y_LINE_RESOLUTION,
+    // The maximum size of the screen in power of two
+    parameter X_BIT_WIDTH = 11,
+    parameter Y_BIT_WIDTH = 11,
+    parameter FRAMEBUFFER_SIZE_BYTES = 18, // Framebuffer size in power of two bytes
 
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam ADDR_WIDTH = $clog2(FRAME_SIZE_IN_PX)
+    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_BYTES - 1
 )
 (
     input   wire                            clk,
@@ -76,11 +72,13 @@ module FrameBuffer
     /////////////////////////
     input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
     input  wire                             confEnableScissor,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorStartX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorStartY,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorEndX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  confScissorEndY,
-    input  wire [11 : 0]                    confYOffset,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confYOffset,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
 
     /////////////////////////
     // Fragment interface
@@ -93,8 +91,8 @@ module FrameBuffer
     input  wire [PIXEL_WIDTH - 1 : 0]       fragIn,
     input  wire                             fragWriteEnable,
     input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  fragMask,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosY,
+    input  wire [X_BIT_WIDTH - 1 : 0]       screenPosX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       screenPosY,
     
     /////////////////////////
     // Control
@@ -116,10 +114,6 @@ module FrameBuffer
     // Number of pixels a AXIS beat or a memory line can contain
     localparam PIXEL_PER_BEAT = STREAM_WIDTH / 16; // The stream will only contain 16 bit colors
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
-
-    // Number of AXIS beats to stream or initialize the internal memory
-    localparam FRAMEBUFFER_FRAME_SIZE_IN_BEATS_TMP = (FRAME_SIZE_IN_PX / PIXEL_PER_BEAT);
-    localparam [MEM_ADDR_WIDTH - 1 : 0] FRAMEBUFFER_FRAME_SIZE_IN_BEATS = FRAMEBUFFER_FRAME_SIZE_IN_BEATS_TMP[MEM_ADDR_WIDTH - 1 : 0];
 
     // Size constrains of the internal memory
     localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS_INTERNAL * SUB_PIXEL_WIDTH_INTERNAL;
@@ -151,13 +145,13 @@ module FrameBuffer
 
     // Scissor function
     function [0 : 0] scissorFunc;
-        input                               enable;
-        input [SCREEN_POS_WIDTH - 1 : 0]    startX;
-        input [SCREEN_POS_WIDTH - 1 : 0]    startY;
-        input [SCREEN_POS_WIDTH - 1 : 0]    endX;
-        input [SCREEN_POS_WIDTH - 1 : 0]    endY;
-        input [SCREEN_POS_WIDTH - 1 : 0]    screenX;
-        input [SCREEN_POS_WIDTH - 1 : 0]    screenY;
+        input                       enable;
+        input [X_BIT_WIDTH - 1 : 0] startX;
+        input [Y_BIT_WIDTH - 1 : 0] startY;
+        input [X_BIT_WIDTH - 1 : 0] endX;
+        input [Y_BIT_WIDTH - 1 : 0] endY;
+        input [X_BIT_WIDTH - 1 : 0] screenX;
+        input [Y_BIT_WIDTH - 1 : 0] screenY;
         begin
             scissorFunc = !enable || ((screenX >= startX) && (screenX < endX) && (screenY >= startY) && (screenY < endY));
         end
@@ -181,16 +175,17 @@ module FrameBuffer
     reg  [5 : 0]                    cmdState;
     reg                             cmdWrite;
     wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { PIXEL_PER_BEAT { ReduceVecMask(fragMask) } };
+    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
 
     // Memcpy address
     wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemcpyAddr = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
     
     // State variables for the memset
     wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemsetAddr = cmdIndex;
-    reg  [SCREEN_POS_WIDTH - 1 : 0] cmdMemsetX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] cmdMemsetXNext = cmdMemsetX + PIXEL_PER_BEAT;
-    reg  [SCREEN_POS_WIDTH - 1 : 0] cmdMemsetY;
-    wire [SCREEN_POS_WIDTH - 1 : 0] cmdMemsetYNext = cmdMemsetY - 1;
+    reg  [X_BIT_WIDTH - 1 : 0]      cmdMemsetX;
+    wire [X_BIT_WIDTH - 1 : 0]      cmdMemsetXNext = cmdMemsetX + PIXEL_PER_BEAT;
+    reg  [Y_BIT_WIDTH - 1 : 0]      cmdMemsetY;
+    wire [Y_BIT_WIDTH - 1 : 0]      cmdMemsetYNext = cmdMemsetY - 1;
     wire [MEM_MASK_WIDTH - 1 : 0]   cmdMemsetScissorMask;
     wire [PIXEL_PER_BEAT - 1 : 0]   cmdMemsetScissor;
     reg                             cmdMemsetPending = 0;
@@ -310,14 +305,18 @@ module FrameBuffer
             memAddrReadDelay <= fragIndexRead;
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
-            begin
+            begin : waitForCommand
+                reg [X_BIT_WIDTH + Y_BIT_WIDTH -1 : 0] fbSize;
                 cmdIndex <= 0;
                 cmdMemsetX <= 0;
 
                 // Here is a missmatch between the RAM adresses and the OpenGL coordiate system.
-                // OpenGL starts at the lower left corner. But this a fairly high address in the RAM.
-                // The cmdIndex starts at zero. This is basically in OpenGL the position (0, Y_LINE_RESOLUTION - 1)
-                cmdMemsetY <= confYOffset + Y_LINE_RESOLUTION - 1;
+                // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
+                // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
+                cmdMemsetY <= confYOffset + confYResolution - 1;
+
+                fbSize = confYResolution * confXResolution;
+                cmdFbSizeInBeats <= fbSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
                 if (apply)
                 begin
@@ -357,13 +356,13 @@ module FrameBuffer
                 begin
                     cmdIndex <= cmdIndexNext;
                 
-                    if (cmdIndexNext == (FRAMEBUFFER_FRAME_SIZE_IN_BEATS - 1))
+                    if (cmdIndexNext == (cmdFbSizeInBeats - 1))
                     begin
                         m_axis_tlast <= 1;
                     end
 
                     // Check if we reached the end of the copy process
-                    if (cmdIndexNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
+                    if (cmdIndexNext == cmdFbSizeInBeats)
                     begin
                         m_axis_tvalid <= 0; 
                         m_axis_tlast <= 0;
@@ -384,14 +383,14 @@ module FrameBuffer
             end
             COMMAND_MEMSET:
             begin
-                if (cmdIndexNext == FRAMEBUFFER_FRAME_SIZE_IN_BEATS)
+                if (cmdIndexNext == cmdFbSizeInBeats)
                 begin
                     cmdWrite <= 0;
                     cmdState <= COMMAND_WAIT_FOR_COMMAND;
                 end
                 cmdIndex <= cmdIndexNext;
 
-                if (cmdMemsetXNext == X_RESOLUTION)
+                if (cmdMemsetXNext == confXResolution)
                 begin
                     cmdMemsetX <= 0;
                     cmdMemsetY <= cmdMemsetYNext;

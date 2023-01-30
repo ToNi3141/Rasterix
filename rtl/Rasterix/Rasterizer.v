@@ -17,12 +17,9 @@
 
 module Rasterizer
 #(
-    // This is the fixed screen resolution. In a more advanced implementation, this could
-    // be set with a register. This will be necessary when this has to be complaint to OpenGL
-    // where it has to render something into a texture
-    parameter X_RESOLUTION = 128,
-    parameter Y_RESOLUTION = 128,
-    parameter Y_LINE_RESOLUTION = Y_RESOLUTION,
+    // The maximum size of the screen in power of two
+    parameter X_BIT_WIDTH = 11,
+    parameter Y_BIT_WIDTH = 11,
 
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
@@ -40,7 +37,11 @@ module Rasterizer
     // Rasterizer Control
     output reg                              rasterizerRunning,
     input  wire                             startRendering,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]    yOffset,
+
+    // Rasterizer config
+    input  wire [Y_BIT_WIDTH - 1 : 0]       yOffset,
+    input  wire [X_BIT_WIDTH - 1 : 0]       xResolution,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       yResolution,
 
     // Fragment Stream
     output reg                              m_axis_tvalid,
@@ -65,8 +66,6 @@ module Rasterizer
     localparam BB_Y_POS = 16;
 
     localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / ATTRIBUTE_SIZE;
-    localparam X_BIT_WIDTH = $clog2(X_RESOLUTION) + 1;
-    localparam Y_BIT_WIDTH = $clog2(Y_RESOLUTION) + 1;
 
     // Rasterizer main state machine
     localparam RASTERIZER_WAITFORCOMMAND = 0;
@@ -81,6 +80,7 @@ module Rasterizer
     localparam RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR = 4;
 
     // Rasterizer variables
+    wire [Y_BIT_WIDTH - 1 : 0] yLineResolution = yResolution;
     reg  [5 : 0] rasterizerState;
     reg  [Y_BIT_WIDTH - 1 : 0] y;
     reg  [Y_BIT_WIDTH - 1 : 0] yScreen;
@@ -118,7 +118,7 @@ module Rasterizer
                 m_axis_tvalid <= 0;
                 if (startRendering)
                 begin
-                    lineBBStart <= yOffset[0 +: Y_BIT_WIDTH] - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                    lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
                     rasterizerRunning <= 1;
                     rasterizerState <= RASTERIZER_INIT;
                     // $display("start rendering");
@@ -126,7 +126,7 @@ module Rasterizer
             end
             RASTERIZER_INIT:
             begin
-                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d, yOffset %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH], yOffset[0 +: 16]);
+                // $display("w0 %d, w1 %d, w2 %d, bbStartX %d, bbStartY %d, yOffset %d", w0, w1, w2, bbStart[BB_X_POS +: X_BIT_WIDTH], bbStart[BB_Y_POS +: Y_BIT_WIDTH], yOffset);
 
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
 
@@ -137,14 +137,14 @@ module Rasterizer
                 // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start possition is in this
                 // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
                 // for this line.
-                if (yOffset[0 +: Y_BIT_WIDTH] <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
+                if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
                 begin
                     regW0 <= w0;
                     regW1 <= w1;
                     regW2 <= w2;
                     
                     yScreen <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
-                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - yOffset[0 +: Y_BIT_WIDTH];
+                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - yOffset;
                 end
                 else
                 begin
@@ -152,15 +152,15 @@ module Rasterizer
                     regW1 <= w1 + ($signed(w1IncY) * lineBBStart);
                     regW2 <= w2 + ($signed(w2IncY) * lineBBStart);
 
-                    yScreen <= yOffset[0 +: Y_BIT_WIDTH];
+                    yScreen <= yOffset;
                     y <= 0;
                 end
                 // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
                 // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
                 // The the condition occures that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
-                if ((yOffset[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
+                if ((yOffset + yLineResolution) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
                 begin
-                    yScreenEnd <= yOffset[0 +: Y_BIT_WIDTH] + Y_LINE_RESOLUTION;
+                    yScreenEnd <= yOffset + yLineResolution;
                 end
                 else
                 begin
@@ -379,7 +379,7 @@ module Rasterizer
                     end
 
                     /* verilator lint_off WIDTH */
-                    fbIndex = (((Y_LINE_RESOLUTION - 1) - y) * X_RESOLUTION) + x;
+                    fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
                     /* verilator lint_on WIDTH */
                     
                     // Arguments for the shader
