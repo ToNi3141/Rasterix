@@ -113,15 +113,15 @@ module Rasterix #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .m_cmd_axis_tready(m_cmd_axis_tready),
-        .m_cmd_axis_tlast(m_cmd_axis_tlast),
-        .m_cmd_axis_tdata(m_cmd_axis_tdata),
+        .m_st1_axis_tvalid(m_cmd_axis_tvalid),
+        .m_st1_axis_tready(m_cmd_axis_tready),
+        .m_st1_axis_tlast(m_cmd_axis_tlast),
+        .m_st1_axis_tdata(m_cmd_axis_tdata),
         
-        .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
-        .s_cmd_axis_tready(s_cmd_axis_tready),
-        .s_cmd_axis_tlast(s_cmd_axis_tlast),
-        .s_cmd_axis_tdata(s_cmd_axis_tdata),
+        .s_st0_axis_tvalid(s_cmd_axis_tvalid),
+        .s_st0_axis_tready(s_cmd_axis_tready),
+        .s_st0_axis_tlast(s_cmd_axis_tlast),
+        .s_st0_axis_tdata(s_cmd_axis_tdata),
 
         .m_mem_axi_awid(m_mem_axi_awid),
         .m_mem_axi_awaddr(m_mem_axi_awaddr),

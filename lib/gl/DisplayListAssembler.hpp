@@ -55,10 +55,9 @@ private:
 
         // OPs for the DMA Stream Engine
         static constexpr StreamCommandType DSE_NOP       = 0x0000'0000;
-        static constexpr StreamCommandType DSE_STORE     = 0x1000'0000;
-        static constexpr StreamCommandType DSE_LOAD      = 0x2000'0000;
-        static constexpr StreamCommandType DSE_MEMSET    = 0x3000'0000;
-        static constexpr StreamCommandType DSE_STREAM    = 0x4000'0000;
+        static constexpr StreamCommandType DSE_STORE     = 0xD000'0000;
+        static constexpr StreamCommandType DSE_LOAD      = 0xB000'0000;
+        static constexpr StreamCommandType DSE_STREAM    = 0x9000'0000;
 
         // OPs for the rasterizer
         static constexpr StreamCommandType RR_OP_NOP                = 0x0000'0000;
@@ -369,6 +368,7 @@ private:
         if (m_streamCommand == nullptr)
         {
             m_streamCommand = m_displayList.template create<SCT>();
+            m_displayList.template create<SCT>(); // Dummy
             if (m_streamCommand)
             {
                 *m_streamCommand = m_displayList.getSize();
