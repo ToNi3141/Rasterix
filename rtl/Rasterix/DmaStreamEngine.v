@@ -17,14 +17,15 @@
 
 
 // This engine is used to store streams into memory, load streams from memory and initialize memory.
-// Padding calculation: padding = STREAM_WIDTH - 32
+// Padding calculation: padding = STREAM_WIDTH - 32.
+// The engine uses for the commands st0_axis.
 //
 // NOP
 // Beat 1:
 // +---------+------+------+------------------------------------+
 // | padding | 2'h0 | 2'h0 | 28'h don't care                    |
 // +---------+------+------+------------------------------------+
-// No operation
+// No operation. Can be used to resynchronize to a stream.
 //
 // Standard operation
 // Beat 1:
