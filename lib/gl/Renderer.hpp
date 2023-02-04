@@ -158,7 +158,8 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2);
+            const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(screenSize, FRAMEBUFFER_ADDR + (screenSize * (m_displayLines - i - 1)));
         }
 
         // Upload textures
@@ -397,6 +398,7 @@ public:
 private:
     static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { MAX_NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+    static constexpr uint32_t FRAMEBUFFER_ADDR { 0x02000000 };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, CMD_STREAM_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<TEXTURE_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, MAX_NUMBER_OF_TEXTURE_PAGES>; 
