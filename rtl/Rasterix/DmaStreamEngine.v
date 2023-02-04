@@ -488,10 +488,7 @@ module DmaStreamEngine #(
             end
             endcase 
         end
-    end
-
-    always @(posedge aclk)
-    begin
+        
         // Optional addr channel
         if (enableAddressChannel)
         begin
