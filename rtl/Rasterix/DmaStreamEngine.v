@@ -72,7 +72,6 @@ module DmaStreamEngine #(
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
-
     // Auto load command. If this is a NOP (0), no autoload is active and the s_st0_axis is used for commands
     // For more specific documentation, refere the documentation of the s_st0_axis.
     parameter AUTO_CH_IN = 0, // beat 1
@@ -563,7 +562,7 @@ module DmaStreamEngineBusTerminate #(
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
 );
-    reg  [STREAM_WIDTH - 1 : 0]      intVal;
+    reg [STREAM_WIDTH - 1 : 0] intVal;
     always @(posedge aclk)
     begin
         if (s_axis_tvalid)

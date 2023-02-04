@@ -158,7 +158,7 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit();
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2);
         }
 
         // Upload textures
@@ -390,6 +390,7 @@ public:
         }
         
         m_yLineResolution = y / framebufferLines;
+        m_xResolution = x;
         m_displayLines = framebufferLines;
         return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
     }
@@ -454,6 +455,7 @@ private:
     int16_t m_scissorYEnd { 0 };
 
     uint16_t m_yLineResolution { 128 };
+    uint16_t m_xResolution { 640 };
     uint16_t m_displayLines { DISPLAY_LINES };
 
     IBusConnector& m_busConnector;

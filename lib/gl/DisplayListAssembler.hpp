@@ -54,10 +54,11 @@ private:
         static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<Rasterizer::RasterizedTriangle>();
 
         // OPs for the DMA Stream Engine
-        static constexpr StreamCommandType DSE_NOP       = 0x0000'0000;
-        static constexpr StreamCommandType DSE_STORE     = 0xD000'0000;
-        static constexpr StreamCommandType DSE_LOAD      = 0xB000'0000;
-        static constexpr StreamCommandType DSE_STREAM    = 0x9000'0000;
+        static constexpr StreamCommandType DSE_NOP              = 0x0000'0000;
+        static constexpr StreamCommandType DSE_STORE            = 0xD000'0000;
+        static constexpr StreamCommandType DSE_LOAD             = 0xB000'0000;
+        static constexpr StreamCommandType DSE_STREAM           = 0x9000'0000;
+        static constexpr StreamCommandType DSE_COMMIT_STREAM    = 0x6000'0000;
 
         // OPs for the rasterizer
         static constexpr StreamCommandType RR_OP_NOP                = 0x0000'0000;
@@ -121,7 +122,7 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool commit()
+    bool commit(const uint32_t size)
     {
         if (openNewStreamSection())
         {
@@ -133,7 +134,11 @@ public:
             }
 
             closeStreamSection();
-            return op != nullptr;
+
+            if (op != nullptr)
+            {
+                return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_STREAM | size, 0);
+            }
         }
         return false;
     }

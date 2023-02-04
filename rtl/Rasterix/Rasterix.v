@@ -30,9 +30,6 @@ module Rasterix #(
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
 
-    // The bit width of the framebuffer stream interface
-    parameter FRAMEBUFFER_STREAM_WIDTH = 16,
-
     // The size of the texture in bytes in power of two
     parameter TEXTURE_BUFFER_SIZE = 15,
 
@@ -58,7 +55,7 @@ module Rasterix #(
     output wire                             m_framebuffer_axis_tvalid,
     input  wire                             m_framebuffer_axis_tready,
     output wire                             m_framebuffer_axis_tlast,
-    output wire [FRAMEBUFFER_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
+    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
 
     // Memory interface
     output wire [ID_WIDTH - 1 : 0]          m_mem_axi_awid,
@@ -101,10 +98,15 @@ module Rasterix #(
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-     wire                             m_cmd_axis_tvalid;
-     wire                             m_cmd_axis_tready;
-     wire                             m_cmd_axis_tlast;
-     wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
+    wire                             m_cmd_axis_tvalid;
+    wire                             m_cmd_axis_tready;
+    wire                             m_cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
+
+    wire                             s_framebuffer_axis_tvalid;
+    wire                             s_framebuffer_axis_tready;
+    wire                             s_framebuffer_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata;
 
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -117,7 +119,17 @@ module Rasterix #(
         .m_st1_axis_tready(m_cmd_axis_tready),
         .m_st1_axis_tlast(m_cmd_axis_tlast),
         .m_st1_axis_tdata(m_cmd_axis_tdata),
-        
+
+        .s_st1_axis_tvalid(s_framebuffer_axis_tvalid),
+        .s_st1_axis_tready(s_framebuffer_axis_tready),
+        .s_st1_axis_tlast(s_framebuffer_axis_tlast),
+        .s_st1_axis_tdata(s_framebuffer_axis_tdata),
+
+        .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
+        .m_st0_axis_tready(m_framebuffer_axis_tready),
+        .m_st0_axis_tlast(m_framebuffer_axis_tlast),
+        .m_st0_axis_tdata(m_framebuffer_axis_tdata),
+
         .s_st0_axis_tvalid(s_cmd_axis_tvalid),
         .s_st0_axis_tready(s_cmd_axis_tready),
         .s_st0_axis_tlast(s_cmd_axis_tlast),
@@ -169,7 +181,7 @@ module Rasterix #(
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
+        .FRAMEBUFFER_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
     ) graphicCore (
         .aclk(aclk),
@@ -180,10 +192,10 @@ module Rasterix #(
         .s_cmd_axis_tlast(m_cmd_axis_tlast),
         .s_cmd_axis_tdata(m_cmd_axis_tdata),
 
-        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata)
+        .m_framebuffer_axis_tvalid(s_framebuffer_axis_tvalid),
+        .m_framebuffer_axis_tready(s_framebuffer_axis_tready),
+        .m_framebuffer_axis_tlast(s_framebuffer_axis_tlast),
+        .m_framebuffer_axis_tdata(s_framebuffer_axis_tdata)
     );
 
 endmodule
