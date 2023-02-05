@@ -159,7 +159,7 @@ public:
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(screenSize, FRAMEBUFFER_ADDR + (screenSize * (m_displayLines - i - 1)));
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
         }
 
         // Upload textures
@@ -395,10 +395,25 @@ public:
         m_displayLines = framebufferLines;
         return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
     }
+
+    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
+    /// @param addr The address of the color buffer.
+    virtual void enableColorBufferInMemory(const uint32_t addr) override
+    {
+        m_colorBufferAddr = addr;
+        m_colorBufferUseMemory = true;
+    }
+
+    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
+    /// The color buffer in memory is disabled.
+    virtual void enableColorBufferStream() override
+    {
+        m_colorBufferUseMemory = false;
+    }
+
 private:
     static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { MAX_NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
-    static constexpr uint32_t FRAMEBUFFER_ADDR { 0x02000000 };
 
     using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, CMD_STREAM_WIDTH / 8>;
     using TextureManager = TextureMemoryManager<TEXTURE_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, MAX_NUMBER_OF_TEXTURE_PAGES>; 
@@ -446,6 +461,9 @@ private:
         }
         return true;
     }
+
+    bool m_colorBufferUseMemory { true };
+    uint32_t m_colorBufferAddr { 0x02000000 };
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
     uint8_t m_frontList = 0;

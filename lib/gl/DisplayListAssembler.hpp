@@ -58,7 +58,7 @@ private:
         static constexpr StreamCommandType DSE_STORE            = 0xD000'0000;
         static constexpr StreamCommandType DSE_LOAD             = 0xB000'0000;
         static constexpr StreamCommandType DSE_STREAM           = 0x9000'0000;
-        static constexpr StreamCommandType DSE_COMMIT_STREAM    = 0x6000'0000;
+        static constexpr StreamCommandType DSE_COMMIT_TO_STREAM = 0x6000'0000;
         static constexpr StreamCommandType DSE_COMMIT_TO_MEMORY = 0xE000'0000;
 
         // OPs for the rasterizer
@@ -123,7 +123,7 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool commit(const uint32_t size, const uint32_t addr)
+    bool commit(const uint32_t size, const uint32_t addr, const bool commitToStream)
     {
         if (openNewStreamSection())
         {
@@ -138,7 +138,14 @@ public:
 
             if (op != nullptr)
             {
-                return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_MEMORY | size, addr);
+                if (commitToStream)
+                {
+                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_STREAM | size, 0);
+                }
+                else
+                {
+                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_MEMORY | size, addr);
+                }
             }
         }
         return false;
