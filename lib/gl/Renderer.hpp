@@ -171,7 +171,7 @@ public:
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr(), uploader.getDisplayList()->getSize());
+            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr());
             return true;
         });
 
@@ -184,7 +184,7 @@ public:
                     while (!m_busConnector.clearToSend())
                         ;
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                    m_busConnector.writeData(list->getMemPtr(), list->getSize());
+                    m_busConnector.writeData(list->getMemPtr());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
                 }

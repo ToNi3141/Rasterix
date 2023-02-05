@@ -21,9 +21,8 @@ public:
 
     FT60XBusConnector();
 
-    virtual void writeData(const uint8_t* data, const uint32_t bytes) override;
+    virtual void writeData(const tcb::span<const uint8_t>& data) override;
     virtual bool clearToSend() override;
-    virtual void startColorBufferTransfer(const uint8_t) override;
 private:
     FT_HANDLE fthandle;
 };

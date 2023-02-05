@@ -26,11 +26,11 @@ public:
         clk();
     }
 
-    virtual void writeData(const uint8_t* data, const uint32_t bytes) override
+    virtual void writeData(const tcb::span<const uint8_t>& data) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint64_t *data64 = reinterpret_cast<const uint64_t*>(data);
-        const uint64_t bytes64 = bytes / 8;
+        const uint64_t *data64 = reinterpret_cast<const uint64_t*>(data.data());
+        const uint64_t bytes64 = data.size() / sizeof(*data64);
         for (uint16_t i = 0; i < bytes64; )
         {
             if (m_top.s_cmd_axis_tready)
@@ -47,10 +47,6 @@ public:
     virtual bool clearToSend() override
     {
         return true;
-    }
-
-    virtual void startColorBufferTransfer(const uint8_t) override
-    {
     }
 
     void clk()

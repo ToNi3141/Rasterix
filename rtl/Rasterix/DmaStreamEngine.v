@@ -332,17 +332,14 @@ module DmaStreamEngine #(
 
                 axisSourceReady <= 1;
 
-                muxIn <= MUX_CHANNEL_ST0;
-                muxOut <= MUX_CHANNEL_INT;
-
-                if (!AUTO_LOAD)
+                if (AUTO_LOAD)
                 begin
-                    muxIn <= MUX_CHANNEL_ST0;
+                    muxIn <= MUX_CHANNEL_INT;
                     muxOut <= MUX_CHANNEL_INT;
                 end
                 else
                 begin
-                    muxIn <= MUX_CHANNEL_INT;
+                    muxIn <= MUX_CHANNEL_ST0;
                     muxOut <= MUX_CHANNEL_INT;
                 end
 
@@ -368,9 +365,14 @@ module DmaStreamEngine #(
                     counter <= counterConverted;
                     
                     if (axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE] == 0 && axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE] == 0)
+                    begin
+                        // NOP
                         state <= COMMAND;
+                    end
                     else
+                    begin
                         state <= ADDR;
+                    end
                 end
             end
             ADDR:
@@ -388,8 +390,8 @@ module DmaStreamEngine #(
                         begin
                             addrTmp = axisSourceData[0 +: ADDR_WIDTH];
                         end
-                        enableWriteChannel <= tmpMuxOut == MUX_CHANNEL_MEM;
-                        enableAddressChannel <= tmpMuxIn == MUX_CHANNEL_MEM || tmpMuxOut == MUX_CHANNEL_MEM;
+                        enableWriteChannel <= (tmpMuxOut == MUX_CHANNEL_MEM);
+                        enableAddressChannel <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
 
                         addr <= addrTmp;
                         addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
@@ -415,7 +417,7 @@ module DmaStreamEngine #(
                     axisDestValid <= axisSourceValid;
                     axisDestData <= axisSourceData;
                     axisDestLast <= counter == 1;
-                    axiDestLast <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1;
+                    axiDestLast <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1; // streams to the axi interface must be partitioned in several sub transfers. This register will signal that.
 
                     // Enable the data source as long as we have to receive data.
                     // If the counter is 1 (which means last beat) but we didn't got valid data, keep the source active.
@@ -489,7 +491,7 @@ module DmaStreamEngine #(
             end
             endcase 
         end
-        
+
         // Optional addr channel
         if (enableAddressChannel)
         begin
