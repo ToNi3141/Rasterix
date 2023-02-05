@@ -263,6 +263,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     rr::IceGL::createInstance(m_renderer);
     m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+#ifndef USE_HARDWARE
+    rr::IceGL::getInstance().enableColorBufferStream();
+#endif // USE_HARDWARE
 
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);
     ui->label->setPixmap(QPixmap::fromImage(m_image));

@@ -28,19 +28,15 @@ FT60XBusConnector::FT60XBusConnector()
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-void FT60XBusConnector::writeData(const uint8_t* data, const uint32_t bytes)
+void FT60XBusConnector::writeData(const tcb::span<const uint8_t>& data)
 {
     ULONG transfered;
-    FT_WritePipe(fthandle, 0x2, (PUCHAR)data, bytes, &transfered, NULL);
+    FT_WritePipe(fthandle, 0x2, (PUCHAR)(data.data()), data.size(), &transfered, NULL);
 }
 
 bool FT60XBusConnector::clearToSend()
 {
     return true;
-}
-
-void FT60XBusConnector::startColorBufferTransfer(const uint8_t)
-{
 }
 
 } // namespace rr

@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <cstring>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -69,9 +70,9 @@ public:
         writePos = 0;
     }
 
-    const uint8_t* getMemPtr() const
+    tcb::span<const uint8_t> getMemPtr() const
     {
-        return &mem[0];
+        return { &mem[0], getSize() };
     }
 
     uint32_t getSize() const

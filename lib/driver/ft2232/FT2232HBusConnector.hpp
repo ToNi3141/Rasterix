@@ -80,10 +80,10 @@ public:
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    virtual void writeData(const uint8_t* data, const uint32_t bytes) override
+    virtual void writeData(const tcb::span<const uint8_t>& data) override
     {
         DWORD data_written;
-        FT_Write(fthandle, (LPVOID*)(data), bytes, &data_written);
+        FT_Write(fthandle, (LPVOID*)(data.data()), data.size(), &data_written);
     }
 
     virtual bool clearToSend() override

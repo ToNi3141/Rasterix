@@ -104,9 +104,15 @@ Switch to the `build` directory and type `make` to build the project. To test th
 ## Windows Build
 Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
 
-Open `cmake-gui` to create a Visual Studio project. Use as build directory `./build`.
+Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
+```
+cd <rasterix_directory>
+mkdir build
+cd build
+cmake -G "Visual Studio 16 2019" -A Win32 ../.
+```
 
-Go to the `build` directory, open the Visual Studio project and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, run `.\example\minimal\Release\minimal.exe`. It should initialize the renderer and draw a rotating cube.
+Open the Visual Studio project in the `build` directory and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, run `.\example\minimal\Release\minimal.exe`. It should initialize the renderer and draw a rotating cube.
 
 
 ### Run Warcraft 3 

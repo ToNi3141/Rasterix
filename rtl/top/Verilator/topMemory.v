@@ -16,8 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module top #(
-    parameter CMD_STREAM_WIDTH = 64,
-    parameter FRAMEBUFFER_STREAM_WIDTH = 64
+    parameter CMD_STREAM_WIDTH = 64
 )
 (
     input  wire         aclk,
@@ -33,7 +32,7 @@ module top #(
     output wire         m_framebuffer_axis_tvalid,
     input  wire         m_framebuffer_axis_tready,
     output wire         m_framebuffer_axis_tlast,
-    output wire [FRAMEBUFFER_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
+    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
     parameter FRAMEBUFFER_SIZE_BYTES = `FRAMEBUFFER_SIZE_BYTES;
     parameter TEXTURE_BUFFER_SIZE = 17;
@@ -126,7 +125,6 @@ module top #(
     Rasterix #(
         .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .FRAMEBUFFER_STREAM_WIDTH(FRAMEBUFFER_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
     ) rasterix (
         .aclk(aclk),

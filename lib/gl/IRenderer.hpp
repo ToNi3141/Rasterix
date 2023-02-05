@@ -553,6 +553,14 @@ public:
     /// @param y Y is the height of the produced image
     /// @return true if success
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) = 0;
+
+    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
+    /// @param addr The address of the color buffer.
+    virtual void enableColorBufferInMemory(const uint32_t addr) = 0;
+
+    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
+    /// The color buffer in memory is disabled.
+    virtual void enableColorBufferStream() = 0;
 };
 
 } // namespace rr

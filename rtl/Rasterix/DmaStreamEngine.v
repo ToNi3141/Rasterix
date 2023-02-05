@@ -17,67 +17,51 @@
 
 
 // This engine is used to store streams into memory, load streams from memory and initialize memory.
-// The engine supports five commands, NOP, LOAD, STORE, MEMSET, STREAM. 
-// Padding calculation: padding = STREAM_WIDTH - 32
+// Padding calculation: padding = STREAM_WIDTH - 32.
+// The engine uses for the commands st0_axis.
 //
 // NOP
 // Beat 1:
-// +---------+------------------------------------+
-// | padding | 4'h0 | 28'h don't care             |
-// +---------+------------------------------------+
-// No operation
+// +---------+------+------+------------------------------------+
+// | padding | 2'h0 | 2'h0 | 28'h don't care                    |
+// +---------+------+------+------------------------------------+
+// No operation. Can be used to resynchronize to a stream.
 //
-// STORE
+// Standard operation
 // Beat 1:
-// +---------+------------------------------------+
-// | padding | 4'h1 | 28'h stream length in bytes |
-// +---------+------------------------------------+
+// +---------+----------+---------+-----------------------------+
+// | padding | 2'hx out | 2'hx in | 28'h stream length in bytes |
+// +---------+----------+---------+-----------------------------+
 // Beat 2:
-// +---------+------------------------------------+
-// | padding | 32'h address                       |
-// +---------+------------------------------------+
+// +---------+--------------------------------------------------+
+// | padding | 32'h addr (only evaluated when mem_axi is used)  |
+// +---------+--------------------------------------------------+
 // Beat 3 .. n:
-// +----------------------------------------------+
-// | STREAM_WIDTH'h payload                       |
-// +----------------------------------------------+
-// Stores n bytes from the s_cmd_axis stream to the given address in memory.
+// +------------------------------------------------------------+
+// | STREAM_WIDTH'h payload                                     |
+// +------------------------------------------------------------+
 //
-// LOAD
-// Beat 1:
-// +---------+------------------------------------+
-// | padding | 4'h2 | 28'h stream length in bytes |
-// +---------+------------------------------------+
-// Beat 2:
-// +---------+------------------------------------+
-// | padding | 32'h address                       |
-// +---------+------------------------------------+
-// Loads n bytes from the address in memory and outputs it to the m_cmd_axis interface.
+// out and in values:
 //
-// MEMSET
-// Beat 1:
-// +---------+------------------------------------+
-// | padding | 4'h3 | 28'h stream length in bytes |
-// +---------+------------------------------------+
-// Beat 2:
-// +---------+------------------------------------+
-// | padding | 32'h address                       |
-// +---------+------------------------------------+
-// Beat 3:
-// +---------+------------------------------------+
-// | padding | 32'h memset value                  |
-// +---------+------------------------------------+
-// Initializes the memory at address with the given memset value.
+// Channel int = 2'h0
+// Selects the internal channel. When used as in channel, it will store the last beat
+// of the payload stream into a internal register.
+// When used as out, it will load the the value from the internal register and outputs
+// it on the selected channel. It can be used in combination with an other channel to 
+// simulate a memset.
 //
-// STREAM
-// Beat 1:
-// +---------+------------------------------------+
-// | padding | 4'h4 | 28'h stream length in bytes |
-// +---------+------------------------------------+
-// Beat 2 .. n:
-// +----------------------------------------------+
-// | STREAM_WIDTH'h payload                       |
-// +----------------------------------------------+
-// Redirects n bytes of the stream from s_cmd_axis to the m_cmd_axis stream.
+// Channel st0 = 2'h1
+// Selects the st0_axis port. When used as in, then the s_st0_axis is used. When used as
+// out then the m_st0_axis is used.
+//
+// Channel st1 = 2'h2
+// Selects the st1_axis port. When used as in, then the s_st1_axis is used. When used as
+// out then the m_st1_axis is used.
+//
+// Channel mem = 2'h3
+// Selects the mem_axi port. When used as in, then it will read from the memory. When used
+// as out, then it will write to the memory.
+// Note: Used as in and out is a illegal configuration.
 
 module DmaStreamEngine #(
     // Width of the axi interfaces
@@ -89,35 +73,43 @@ module DmaStreamEngine #(
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
-
-    // Auto load command. If this is a NOP (0), no autoload is active and the s_cmd_axis is used for commands
-    // For more specific documentation, refere the documentation of the s_cmd_axis.
-    parameter AUTO_OP = 0, // beat 1
+    // Auto load command. If this is a NOP (0), no autoload is active and the s_st0_axis is used for commands
+    // For more specific documentation, refere the documentation of the s_st0_axis.
+    parameter AUTO_CH_IN = 0, // beat 1
+    parameter AUTO_CH_OUT = 0, // beat 1
 
     // How many bytes are loaded
     parameter AUTO_DATA_SIZE = 0, // beat 1
 
     // The adress used for the auto load
-    parameter AUTO_ADDRESS = 32'h0, // beat 2
-
-    // Memset value
-    parameter AUTO_MEMSET_VAL = 0 // beat 3
+    parameter AUTO_ADDRESS = 32'h0 // beat 2
 ) (
     input  wire                         aclk,
     input  wire                         resetn,
 
-    // Stream interface
-    output wire                         m_cmd_axis_tvalid,
-    input  wire                         m_cmd_axis_tready,
-    output wire                         m_cmd_axis_tlast,
-    output wire [STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata,
+    // Stream interface (Channel 0)
+    output wire                         m_st0_axis_tvalid,
+    input  wire                         m_st0_axis_tready,
+    output wire                         m_st0_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_st0_axis_tdata,
 
-    input  wire                         s_cmd_axis_tvalid,
-    output wire                         s_cmd_axis_tready,
-    input  wire                         s_cmd_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
+    input  wire                         s_st0_axis_tvalid,
+    output wire                         s_st0_axis_tready,
+    input  wire                         s_st0_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]  s_st0_axis_tdata,
 
-    // Memory interface
+    // Stream interface (Channel 1)
+    output wire                         m_st1_axis_tvalid,
+    input  wire                         m_st1_axis_tready,
+    output wire                         m_st1_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_st1_axis_tdata,
+
+    input  wire                         s_st1_axis_tvalid,
+    output wire                         s_st1_axis_tready,
+    input  wire                         s_st1_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]  s_st1_axis_tdata,
+
+    // Memory interface (Channel 2)
     output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_awid,
     output reg  [ADDR_WIDTH - 1 : 0]    m_mem_axi_awaddr,
     output reg  [ 7 : 0]                m_mem_axi_awlen, // How many beats are in this transaction
@@ -167,36 +159,59 @@ module DmaStreamEngine #(
     // 128 / 8 = 16. So we will be axi3 compliant.
     localparam BEATS_PER_TRANSFER = 128 / BYTES_PER_BEAT;
 
-    localparam OP_POS = 28;
-    localparam OP_SIZE = 4;
     localparam OP_IMM_POS = 0;
     localparam OP_IMM_SIZE = 28;
-
-    localparam OP_NOP = 0;
-    localparam OP_STORE = 1;
-    localparam OP_LOAD = 2;
-    localparam OP_MEMSET = 3;
-    localparam OP_STREAM = 4;
-    localparam OP_COMMAND = 5;
+    localparam MUX_CHANNEL_INT = 0;
+    localparam MUX_CHANNEL_ST0 = 1;
+    localparam MUX_CHANNEL_ST1 = 2;
+    localparam MUX_CHANNEL_MEM = 3;
+    localparam MUX_SELECT_IN_POS = 28;
+    localparam MUX_SELECT_OUT_POS = 30;
+    localparam MUX_SELECT_SIZE = 2;
 
     localparam IDLE = 0;
     localparam COMMAND = 1;
-    localparam STORE = 2;
+    localparam ADDR = 2;
     localparam LOAD = 3;
-    localparam STORE_ADDR = 4;
-    localparam LOAD_ADDR = 5;
-    localparam MEMSET = 6;
-    localparam MEMSET_ADDR = 7;
-    localparam MEMSET_VAL = 8;
-    localparam STREAM = 9;
-    localparam STREAM_PAUSED = 10;
+    localparam STREAM = 4;
+    localparam STREAM_PAUSED = 5;
 
-    localparam AUTO_LOAD = AUTO_OP != OP_NOP;
+    localparam AUTO_LOAD = AUTO_CH_IN != 0 && AUTO_CH_OUT != 0;
+
+    wire                         m_int_axis_tvalid;
+    wire                         m_int_axis_tready;
+    wire                         m_int_axis_tlast;
+    wire [STREAM_WIDTH - 1 : 0]  m_int_axis_tdata;
+
+    wire                         s_int_axis_tvalid;
+    wire                         s_int_axis_tready;
+    wire                         s_int_axis_tlast;
+    wire [STREAM_WIDTH - 1 : 0]  s_int_axis_tdata;
+
+    DmaStreamEngineBusTerminate #(
+        .STREAM_WIDTH(STREAM_WIDTH)
+    ) intBusTerminate (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(s_int_axis_tvalid),
+        .m_axis_tready(s_int_axis_tready),
+        .m_axis_tlast(s_int_axis_tlast),
+        .m_axis_tdata(s_int_axis_tdata),
+        
+        .s_axis_tvalid(m_int_axis_tvalid),
+        .s_axis_tready(m_int_axis_tready),
+        .s_axis_tlast(m_int_axis_tlast),
+        .s_axis_tdata(m_int_axis_tdata) 
+    );
 
     reg  [ 5 : 0]               state;
-    reg  [ 5 : 0]               mux;
+    reg  [ 1 : 0]               muxIn;
+    reg  [ 1 : 0]               muxOut;
+    reg  [ 1 : 0]               tmpMuxIn;
+    reg  [ 1 : 0]               tmpMuxOut;
     reg  [OP_IMM_SIZE - 1 : 0]  counter;
-    reg  [31 : 0]               memsetVal;
+    
     reg  [ADDR_WIDTH - 1 : 0]   addr;
     reg                         enableWriteChannel;
     reg  [ADDR_WIDTH - 1 : 0]   addrLast;
@@ -242,68 +257,50 @@ module DmaStreamEngine #(
     end
 
     // Master Channel Muxes output ports
-    assign m_cmd_axis_tvalid    = (mux == OP_STREAM) ? axisDestValid
-                                : (mux == OP_LOAD) ? axisDestValid 
-                                : 0;
+    assign m_st0_axis_tvalid    = (muxOut == MUX_CHANNEL_ST0) ? axisDestValid : 0;
+    assign m_st1_axis_tvalid    = (muxOut == MUX_CHANNEL_ST1) ? axisDestValid : 0;
+    assign m_mem_axi_wvalid     = (muxOut == MUX_CHANNEL_MEM) ? axisDestValid : 0;
+    assign m_int_axis_tvalid    = (muxOut == MUX_CHANNEL_INT) ? axisDestValid : 0;
 
-    assign m_mem_axi_wvalid     = (mux == OP_STORE) ? axisDestValid 
-                                : (mux == OP_MEMSET) ? axisDestValid 
-                                : 0;
-
-    assign m_cmd_axis_tlast = (mux == OP_STREAM) ? axisDestLast 
-                            : (mux == OP_LOAD) ? axisDestLast 
-                            : 0;
-
-    assign m_mem_axi_wlast  = (mux == OP_STORE) ? axiDestLast 
-                            : (mux == OP_MEMSET) ? axiDestLast 
-                            : 0;
+    assign m_st0_axis_tlast = (muxOut == MUX_CHANNEL_ST0) ? axisDestLast : 0;
+    assign m_st1_axis_tlast = (muxOut == MUX_CHANNEL_ST1) ? axisDestLast : 0;
+    assign m_mem_axi_wlast  = (muxOut == MUX_CHANNEL_MEM) ? axiDestLast : 0;
+    assign m_int_axis_tlast = (muxOut == MUX_CHANNEL_INT) ? axisDestLast : 0;
                             
-    assign m_cmd_axis_tdata = (mux == OP_STREAM) ? axisDestData 
-                            : (mux == OP_LOAD) ? axisDestData 
-                            : 0;
-
-    assign m_mem_axi_wdata  = (mux == OP_STORE) ? axisDestData 
-                            : (mux == OP_MEMSET) ? axisDestData 
-                            : 0;
+    assign m_st0_axis_tdata = axisDestData;
+    assign m_st1_axis_tdata = axisDestData;
+    assign m_mem_axi_wdata  = axisDestData;
+    assign m_int_axis_tdata = axisDestData;
 
     // Slave Channel Muxes input ports
-    assign s_cmd_axis_tready    = (mux == OP_STREAM) ? axisSourceReady
-                                : (mux == OP_STORE) ? axisSourceReady
-                                : (mux == OP_COMMAND) ? axisSourceReady
-                                : 0;
-
-    assign m_mem_axi_rready     = (mux == OP_LOAD) ? axisSourceReady
-                                : 0;
+    assign s_st0_axis_tready    = (muxIn == MUX_CHANNEL_ST0) ? axisSourceReady : 0;
+    assign s_st1_axis_tready    = (muxIn == MUX_CHANNEL_ST1) ? axisSourceReady : 0;
+    assign m_mem_axi_rready     = (muxIn == MUX_CHANNEL_MEM) ? axisSourceReady : 0;
+    assign s_int_axis_tready    = (muxIn == MUX_CHANNEL_INT) ? axisSourceReady : 0;
 
     always @(posedge aclk)
     begin
         // Master Channel Muxes input ports
-        axisDestReady   = (mux == OP_STREAM) ? m_cmd_axis_tready
-                        : (mux == OP_LOAD) ? m_cmd_axis_tready
-                        : (mux == OP_STORE) ? m_mem_axi_wready
-                        : (mux == OP_MEMSET) ? m_mem_axi_wready
-                        : 0;
+        axisDestReady   = (muxOut == MUX_CHANNEL_ST0) ? m_st0_axis_tready
+                        : (muxOut == MUX_CHANNEL_ST1) ? m_st1_axis_tready
+                        : (muxOut == MUX_CHANNEL_MEM) ? m_mem_axi_wready
+                        : m_int_axis_tready;
 
         // Slave Channel Muxes output ports
-        axisSourceValid   = (mux == OP_STREAM) ? s_cmd_axis_tvalid 
-                        : (mux == OP_STORE) ? s_cmd_axis_tvalid
-                        : (mux == OP_COMMAND) ? s_cmd_axis_tvalid
-                        : (mux == OP_LOAD) ? m_mem_axi_rvalid
-                        : (mux == OP_MEMSET) ? 1 
-                        : 0;
+        axisSourceValid = (muxIn == MUX_CHANNEL_ST0) ? s_st0_axis_tvalid 
+                        : (muxIn == MUX_CHANNEL_ST1) ? s_st1_axis_tvalid
+                        : (muxIn == MUX_CHANNEL_MEM) ? m_mem_axi_rvalid
+                        : s_int_axis_tvalid;
 
-        axisSourceLast    = (mux == OP_STREAM) ? s_cmd_axis_tlast 
-                        : (mux == OP_STORE) ? s_cmd_axis_tlast
-                        : (mux == OP_LOAD) ? m_mem_axi_rlast
-                        : (mux == OP_MEMSET) ? 0 
-                        : 0;
+        axisSourceLast  = (muxIn == MUX_CHANNEL_ST0) ? s_st0_axis_tlast 
+                        : (muxIn == MUX_CHANNEL_ST1) ? s_st1_axis_tlast
+                        : (muxIn == MUX_CHANNEL_MEM) ? m_mem_axi_rlast
+                        : s_int_axis_tlast;
 
-        axisSourceData    = (mux == OP_STREAM) ? s_cmd_axis_tdata
-                        : (mux == OP_STORE) ? s_cmd_axis_tdata
-                        : (mux == OP_COMMAND) ? s_cmd_axis_tdata
-                        : (mux == OP_LOAD) ? m_mem_axi_rdata
-                        : (mux == OP_MEMSET) ? memsetVal
-                        : 0;
+        axisSourceData  = (muxIn == MUX_CHANNEL_ST0) ? s_st0_axis_tdata
+                        : (muxIn == MUX_CHANNEL_ST1) ? s_st1_axis_tdata
+                        : (muxIn == MUX_CHANNEL_MEM) ? m_mem_axi_rdata
+                        : s_int_axis_tdata;
 
         if (resetn == 0)
         begin
@@ -321,7 +318,8 @@ module DmaStreamEngine #(
             enableAddressChannel <= 0;
 
             state <= IDLE;
-            mux <= AUTO_OP;
+            muxIn <= MUX_CHANNEL_ST0;
+            muxOut <= MUX_CHANNEL_INT;
         end
         else 
         begin
@@ -334,64 +332,55 @@ module DmaStreamEngine #(
 
                 axisSourceReady <= 1;
 
-                if (!AUTO_LOAD)
-                    mux <= OP_COMMAND;
+                if (AUTO_LOAD)
+                begin
+                    muxIn <= MUX_CHANNEL_INT;
+                    muxOut <= MUX_CHANNEL_INT;
+                end
+                else
+                begin
+                    muxIn <= MUX_CHANNEL_ST0;
+                    muxOut <= MUX_CHANNEL_INT;
+                end
+
                 state <= COMMAND;
             end
             COMMAND:
             begin : CommandParsing
                 reg  [OP_IMM_SIZE - 1 : 0]  counterConverted;
-                reg  [OP_SIZE - 1 : 0]      op;
                 if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (AUTO_LOAD)
                     begin
                         counterConverted = AUTO_DATA_SIZE >> BYTES_TO_BEATS_SHIFT;
-                        op = AUTO_OP[0 +: OP_SIZE];
+                        tmpMuxIn <= AUTO_CH_IN;
+                        tmpMuxOut <= AUTO_CH_OUT;
                     end 
                     else
                     begin
                         counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
-                        op = axisSourceData[OP_POS +: OP_SIZE]; 
+                        tmpMuxIn <= axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE];
+                        tmpMuxOut <= axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE];
                     end
                     counter <= counterConverted;
                     
-                    case (op)
-                    OP_NOP:
+                    if (axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE] == 0 && axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE] == 0)
                     begin
-                        axisSourceReady <= 0;
-                        state <= IDLE;
+                        // NOP
+                        state <= COMMAND;
                     end
-                    OP_STORE:
+                    else
                     begin
-                        state <= STORE_ADDR;
+                        state <= ADDR;
                     end
-                    OP_LOAD:
-                    begin
-                        state <= LOAD_ADDR;
-                    end
-                    OP_MEMSET:
-                    begin
-                        state <= MEMSET_ADDR;
-                    end
-                    OP_STREAM:
-                    begin
-                        if (counterConverted > 0)
-                        begin
-                            if (!AUTO_LOAD)
-                                mux <= OP_STREAM;
-                            state <= STREAM;
-                        end
-                    end
-                    endcase
                 end
             end
-            STORE_ADDR:
+            ADDR:
             begin
                 if (axisSourceValid || AUTO_LOAD)
                 begin
                     if (counter > 0)
-                    begin : StoreAddr
+                    begin : Addr
                         reg  [ADDR_WIDTH - 1 : 0] addrTmp;
                         if (AUTO_LOAD)
                         begin
@@ -401,97 +390,14 @@ module DmaStreamEngine #(
                         begin
                             addrTmp = axisSourceData[0 +: ADDR_WIDTH];
                         end
-                        enableWriteChannel <= 1;
-                        addr <= addrTmp;
-                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        enableAddressChannel <= 1;
-                        if (!AUTO_LOAD)
-                            mux <= OP_STORE;
-                        state <= STREAM;
-                    end
-                    else 
-                    begin
-                        axisSourceReady <= 0;
-                        state <= IDLE;
-                    end
-                end
-            end
-            LOAD_ADDR:
-            begin
-                if (axisSourceValid || AUTO_LOAD)
-                begin
-                    if (counter > 0)
-                    begin : LoadAddr
-                        reg  [ADDR_WIDTH - 1 : 0] addrTmp;
-                        if (AUTO_LOAD)
-                        begin
-                            addrTmp = AUTO_ADDRESS[0 +: ADDR_WIDTH];
-                        end
-                        else
-                        begin
-                            addrTmp = axisSourceData[0 +: ADDR_WIDTH];
-                        end
+                        enableWriteChannel <= (tmpMuxOut == MUX_CHANNEL_MEM);
+                        enableAddressChannel <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
 
-                        enableWriteChannel <= 0;
                         addr <= addrTmp;
                         addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        enableAddressChannel <= 1;
-                        if (!AUTO_LOAD)
-                            mux <= OP_LOAD;
-                        state <= STREAM;
-                    end
-                    else 
-                    begin
-                        axisSourceReady <= 0;
-                        state <= IDLE;
-                    end
-                end
-            end
-            MEMSET_ADDR:
-            begin
-                if (axisSourceValid || AUTO_LOAD)
-                begin
-                    if (counter > 0)
-                    begin : MemsetAddr
-                        reg  [ADDR_WIDTH - 1 : 0] addrTmp;
-                        if (AUTO_LOAD)
-                        begin
-                            addrTmp = AUTO_ADDRESS[0 +: ADDR_WIDTH];
-                        end
-                        else
-                        begin
-                            addrTmp = axisSourceData[0 +: ADDR_WIDTH];
-                        end
-                        
-                        enableWriteChannel <= 1;
-                        addr <= addrTmp;
-                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        state <= MEMSET_VAL;
-                    end
-                    else 
-                    begin
-                        axisSourceReady <= 0;
-                        state <= IDLE;
-                    end
-                end
-            end
-            MEMSET_VAL:
-            begin
-                if (axisSourceValid || AUTO_LOAD)
-                begin
-                    if (counter > 0)
-                    begin
-                        if (AUTO_LOAD)
-                        begin
-                            memsetVal <= AUTO_MEMSET_VAL;
-                        end
-                        else
-                        begin
-                            memsetVal <= axisSourceData[0 +: 32];
-                        end
-                        enableAddressChannel <= 1;
-                        if (!AUTO_LOAD)
-                            mux <= OP_MEMSET;
+
+                        muxIn <= tmpMuxIn;
+                        muxOut <= tmpMuxOut;
                         state <= STREAM;
                     end
                     else 
@@ -511,7 +417,7 @@ module DmaStreamEngine #(
                     axisDestValid <= axisSourceValid;
                     axisDestData <= axisSourceData;
                     axisDestLast <= counter == 1;
-                    axiDestLast <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1;
+                    axiDestLast <= counter[0 +: $clog2(BEATS_PER_TRANSFER)] == 1; // streams to the axi interface must be partitioned in several sub transfers. This register will signal that.
 
                     // Enable the data source as long as we have to receive data.
                     // If the counter is 1 (which means last beat) but we didn't got valid data, keep the source active.
@@ -635,4 +541,37 @@ module DmaStreamEngine #(
             end
         end
     end
+endmodule
+
+
+module DmaStreamEngineBusTerminate #(
+    // Width of the axi interfaces
+    parameter STREAM_WIDTH = 32
+) (
+    input  wire                         aclk,
+    input  wire                         resetn,
+
+    // Stream interface
+    output wire                         m_axis_tvalid,
+    input  wire                         m_axis_tready,
+    output wire                         m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
+
+    input  wire                         s_axis_tvalid,
+    output wire                         s_axis_tready,
+    input  wire                         s_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
+);
+    reg [STREAM_WIDTH - 1 : 0] intVal;
+    always @(posedge aclk)
+    begin
+        if (s_axis_tvalid)
+        begin
+            intVal <= s_axis_tdata;
+        end
+    end
+    assign s_axis_tready = 1;
+    assign m_axis_tvalid = 1;
+    assign m_axis_tlast = 0;
+    assign m_axis_tdata = intVal;
 endmodule
