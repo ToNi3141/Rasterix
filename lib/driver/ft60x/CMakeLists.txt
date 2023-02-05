@@ -22,5 +22,5 @@ if (CMAKE_HOST_APPLE)
     configure_file(${FTDI_DYNAMIC_LIBRARY_PATH} ${CMAKE_BINARY_DIR}/ COPYONLY)
 endif()
 
-target_link_libraries(ft60x PRIVATE ${FTDI_LIB_PATH} gl)
+target_link_libraries(ft60x PRIVATE ${FTDI_LIB_PATH} gl span)
 target_include_directories(ft60x PUBLIC ${FTDI_INCLUDE_DIR} .)
