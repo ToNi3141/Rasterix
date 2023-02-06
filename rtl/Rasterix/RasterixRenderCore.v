@@ -25,6 +25,9 @@ module RasterixRenderCore #(
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+
+    // Number of TMUs. Currently supported values: 1 and 2
+    parameter TMU_COUNT = 2,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -68,6 +71,20 @@ module RasterixRenderCore #(
 
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
+
+    initial
+    begin
+        if (TMU_COUNT > 2)
+        begin
+            $error("Only a maximum of 2 TMUs are supported");
+        end
+        if (TMU_COUNT < 1)
+        begin
+            $error("At least one TMU must be enabled");
+        end
+    end
+
+    localparam ENABLE_SECOND_TMU = TMU_COUNT == 2;
     
     ///////////////////////////
     // Regs and wires
@@ -275,55 +292,68 @@ module RasterixRenderCore #(
     defparam renderConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam renderConfigsRegBank.COMPRESSED = 0;
 
-    TextureBuffer textureBufferTMU0 (
-        .aclk(aclk),
-        .resetn(resetn),
+    generate
+        TextureBuffer textureBufferTMU0 (
+            .aclk(aclk),
+            .resetn(resetn),
 
-        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+            .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
-        .texelAddr00(texel0Addr00),
-        .texelAddr01(texel0Addr01),
-        .texelAddr10(texel0Addr10),
-        .texelAddr11(texel0Addr11),
+            .texelAddr00(texel0Addr00),
+            .texelAddr01(texel0Addr01),
+            .texelAddr10(texel0Addr10),
+            .texelAddr11(texel0Addr11),
 
-        .texelOutput00(texel0Input00),
-        .texelOutput01(texel0Input01),
-        .texelOutput10(texel0Input10),
-        .texelOutput11(texel0Input11),
+            .texelOutput00(texel0Input00),
+            .texelOutput01(texel0Input01),
+            .texelOutput10(texel0Input10),
+            .texelOutput11(texel0Input11),
 
-        .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
-        .s_axis_tready(s_cmd_tmu0_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
-    );
-    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+            .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+            .s_axis_tready(s_cmd_tmu0_axis_tready),
+            .s_axis_tlast(s_cmd_xxx_axis_tlast),
+            .s_axis_tdata(s_cmd_xxx_axis_tdata)
+        );
+        defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+        defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
+        defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
 
-    TextureBuffer textureBufferTMU1 (
-        .aclk(aclk),
-        .resetn(resetn),
+        if (ENABLE_SECOND_TMU)
+        begin
+            TextureBuffer textureBufferTMU1 (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+                .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
-        .texelAddr00(texel1Addr00),
-        .texelAddr01(texel1Addr01),
-        .texelAddr10(texel1Addr10),
-        .texelAddr11(texel1Addr11),
+                .texelAddr00(texel1Addr00),
+                .texelAddr01(texel1Addr01),
+                .texelAddr10(texel1Addr10),
+                .texelAddr11(texel1Addr11),
 
-        .texelOutput00(texel1Input00),
-        .texelOutput01(texel1Input01),
-        .texelOutput10(texel1Input10),
-        .texelOutput11(texel1Input11),
+                .texelOutput00(texel1Input00),
+                .texelOutput01(texel1Input01),
+                .texelOutput10(texel1Input10),
+                .texelOutput11(texel1Input11),
 
-        .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
-        .s_axis_tready(s_cmd_tmu1_axis_tready),
-        .s_axis_tlast(s_cmd_xxx_axis_tlast),
-        .s_axis_tdata(s_cmd_xxx_axis_tdata)
-    );
-    defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
-    defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+                .s_axis_tvalid(s_cmd_tmu1_axis_tvalid),
+                .s_axis_tready(s_cmd_tmu1_axis_tready),
+                .s_axis_tlast(s_cmd_xxx_axis_tlast),
+                .s_axis_tdata(s_cmd_xxx_axis_tdata)
+            );
+            defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+            defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
+            defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+        end
+        else
+        begin
+            assign texel1Input00 = 0;
+            assign texel1Input01 = 0;
+            assign texel1Input10 = 0;
+            assign texel1Input11 = 0;
+            assign s_cmd_tmu1_axis_tready = 1;
+        end
+    endgenerate
 
     FrameBuffer depthBuffer (  
         .clk(aclk),
@@ -562,5 +592,6 @@ module RasterixRenderCore #(
     defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
 
 endmodule

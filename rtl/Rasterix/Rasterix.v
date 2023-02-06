@@ -25,6 +25,9 @@ module Rasterix #(
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+
+    // Number of TMUs. Currently supported values: 1 and 2
+    parameter TMU_COUNT = 2,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -182,7 +185,8 @@ module Rasterix #(
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .FRAMEBUFFER_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
+        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .TMU_COUNT(TMU_COUNT)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

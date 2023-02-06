@@ -125,7 +125,9 @@ module top #(
     Rasterix #(
         .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE)
+        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
+        .TMU_COUNT(1)
     ) rasterix (
         .aclk(aclk),
         .resetn(resetn),

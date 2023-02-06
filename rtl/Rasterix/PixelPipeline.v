@@ -37,7 +37,9 @@ module PixelPipeline
 
     localparam FLOAT_SIZE = 32,
 
-    localparam TEX_ADDR_WIDTH = 16 
+    localparam TEX_ADDR_WIDTH = 16,
+
+    parameter ENABLE_SECOND_TMU = 2
 )
 (
     input  wire                             aclk,
@@ -279,51 +281,67 @@ module PixelPipeline
     wire [31 : 0]                           step2_depthWFloat;
     wire                                    step2_valid;
 
-    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(11)) 
-        step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(11)) 
+                step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
 
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
-        step2_screenPosXDelay (.clk(aclk), .in(step1_screenPosX), .out(step2_screenPosX));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
-        step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+                step2_screenPosXDelay (.clk(aclk), .in(step1_screenPosX), .out(step2_screenPosX));
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+                step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
-        step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
-        step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
-        step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
+            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+                step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
+            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+                step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+                step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
 
-    TextureMappingUnit #(
-        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) tmu1 (
-        .aclk(aclk),
-        .resetn(resetn),
+            TextureMappingUnit #(
+                .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
+                .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+            ) tmu1 (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .confFunc(confTMU1TexEnvConfig),
-        .confTextureEnvColor(confTMU1TexEnvColor),
-        .confTextureConfig(confTMU1TextureConfig),
-        .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS]),
+                .confFunc(confTMU1TexEnvConfig),
+                .confTextureEnvColor(confTMU1TexEnvColor),
+                .confTextureConfig(confTMU1TextureConfig),
+                .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS]),
 
-        .texelAddr00(texel1Addr00),
-        .texelAddr01(texel1Addr01),
-        .texelAddr10(texel1Addr10),
-        .texelAddr11(texel1Addr11),
+                .texelAddr00(texel1Addr00),
+                .texelAddr01(texel1Addr01),
+                .texelAddr10(texel1Addr10),
+                .texelAddr11(texel1Addr11),
 
-        .texelInput00(texel1Input00),
-        .texelInput01(texel1Input01),
-        .texelInput10(texel1Input10),
-        .texelInput11(texel1Input11),
+                .texelInput00(texel1Input00),
+                .texelInput01(texel1Input01),
+                .texelInput10(texel1Input10),
+                .texelInput11(texel1Input11),
 
-        .primaryColor(step1_primaryColor),
-        .textureS(step1_texture1S),
-        .textureT(step1_texture1T),
+                .primaryColor(step1_primaryColor),
+                .textureS(step1_texture1S),
+                .textureT(step1_texture1T),
 
-        .previousColor(step1_fragmentColor),
+                .previousColor(step1_fragmentColor),
 
-        .fragmentColor(step2_fragmentColor)
-    );
+                .fragmentColor(step2_fragmentColor)
+            );
+        end
+        else
+        begin
+            assign step2_fragmentColor = step1_fragmentColor;
+            assign step2_index = step1_index;
+            assign step2_screenPosX = step1_screenPosX;
+            assign step2_screenPosY = step1_screenPosY;
+            assign step2_depth = step1_depth;
+            assign step2_depthWFloat = step1_depthWFloat;
+            assign step2_valid = step1_valid;
+        end
+    endgenerate
+
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
