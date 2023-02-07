@@ -39,7 +39,7 @@ module PixelPipeline
 
     localparam TEX_ADDR_WIDTH = 16,
 
-    parameter ENABLE_SECOND_TMU = 2
+    parameter ENABLE_SECOND_TMU = 1
 )
 (
     input  wire                             aclk,
