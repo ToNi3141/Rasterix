@@ -292,32 +292,32 @@ module RasterixRenderCore #(
     defparam renderConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam renderConfigsRegBank.COMPRESSED = 0;
 
+    TextureBuffer textureBufferTMU0 (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+
+        .texelAddr00(texel0Addr00),
+        .texelAddr01(texel0Addr01),
+        .texelAddr10(texel0Addr10),
+        .texelAddr11(texel0Addr11),
+
+        .texelOutput00(texel0Input00),
+        .texelOutput01(texel0Input01),
+        .texelOutput10(texel0Input10),
+        .texelOutput11(texel0Input11),
+
+        .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
+        .s_axis_tready(s_cmd_tmu0_axis_tready),
+        .s_axis_tlast(s_cmd_xxx_axis_tlast),
+        .s_axis_tdata(s_cmd_xxx_axis_tdata)
+    );
+    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+
     generate
-        TextureBuffer textureBufferTMU0 (
-            .aclk(aclk),
-            .resetn(resetn),
-
-            .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-
-            .texelAddr00(texel0Addr00),
-            .texelAddr01(texel0Addr01),
-            .texelAddr10(texel0Addr10),
-            .texelAddr11(texel0Addr11),
-
-            .texelOutput00(texel0Input00),
-            .texelOutput01(texel0Input01),
-            .texelOutput10(texel0Input10),
-            .texelOutput11(texel0Input11),
-
-            .s_axis_tvalid(s_cmd_tmu0_axis_tvalid),
-            .s_axis_tready(s_cmd_tmu0_axis_tready),
-            .s_axis_tlast(s_cmd_xxx_axis_tlast),
-            .s_axis_tdata(s_cmd_xxx_axis_tdata)
-        );
-        defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-        defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
-        defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
-
         if (ENABLE_SECOND_TMU)
         begin
             TextureBuffer textureBufferTMU1 (
