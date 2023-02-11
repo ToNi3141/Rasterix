@@ -139,7 +139,7 @@ To port the driver to a new interface (like SPI, async FT245, or others) use the
 Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look at the build script and the block diagram from the Nexys Video in `rtl/top/Xilinx/NexysVideo` to have a real world example.
 1. Add the following directories to your project: `rtl/Rasterix`, `rtl/Util`, and `rtl/Float`.
 2. Instantiate the `Rasterix` module. When configuring the module, make sure that the following parameters are equal to the template parameter from `Renderer.hpp`:
-   1. `Renderer::CMD_STREAM_WIDTH` and `Rasterix::CMD_STREAM_WIDTH`. 
+   1. `RenderConfig::CMD_STREAM_WIDTH` and `Rasterix::CMD_STREAM_WIDTH`. 
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory. Make sure to adapt the template parameter from the `Renderer.hpp` `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to the size of the connected memory. One page has 4 kB. If you have a connected memory with 512kB, you should set `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to 128.
 5. Connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a framebuffer or a display for instance).

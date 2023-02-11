@@ -7,6 +7,7 @@
 #include "IceGL.hpp"
 #include "Renderer.hpp"
 #include "gl.h"
+#include "RenderConfigs.hpp"
 #if USE_SIMULATION
 #include "VerilatorBusConnector.hpp"
 #endif
@@ -46,7 +47,7 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    rr::Renderer<1024*1024, 10, 64 * 1024, 64, 256> m_renderer{m_busConnector};
+    rr::Renderer<rr::RenderConfigSimulation> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -55,7 +56,7 @@ public:
     static const uint32_t RESOLUTION_W = 1024;
 private:
     rr::FT60XBusConnector m_busConnector;
-    rr::Renderer<1024*1024, 5, 256 * 1024, 128, 256> m_renderer{m_busConnector};
+    rr::Renderer<rr::RenderConfigRasterixNexys> m_renderer{m_busConnector};
 #endif
 
     GLuint m_textureId = 0;

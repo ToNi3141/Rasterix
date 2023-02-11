@@ -31,7 +31,6 @@ class IRenderer
 {
 public:
     static constexpr std::size_t MAX_TMU_COUNT { 2 };
-    static constexpr std::size_t MAX_TEXTURE_SIZE_PX { 256 };
 
     using TMU = uint8_t;
 
@@ -561,6 +560,14 @@ public:
     /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
     /// The color buffer in memory is disabled.
     virtual void enableColorBufferStream() = 0;
+
+    /// @brief Queries the maximum texture size in pixels
+    /// @return The maximum texture size in pixel
+    virtual uint16_t getMaxTextureSize() const = 0;
+
+    /// @brief Queries the maximum number of TMUs available for the hardware
+    /// @brief The number of TMUs available
+    virtual TMU getTmuCount() const = 0;
 };
 
 } // namespace rr

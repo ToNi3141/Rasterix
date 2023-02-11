@@ -60,10 +60,11 @@ namespace rr
 // This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
-// The CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
-template <uint32_t DISPLAY_LIST_SIZE = 2048, uint16_t DISPLAY_LINES = 1, uint32_t INTERNAL_FRAMEBUFFER_SIZE = 64 * 1024, uint16_t CMD_STREAM_WIDTH = 32, uint16_t MAX_NUMBER_OF_TEXTURE_PAGES = 64>
+// The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
+template <class RenderConfig>
 class Renderer : public IRenderer
 {
+    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT * 2) / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + 1 };
 public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
@@ -165,8 +166,8 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureMemoryManager<>::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<TEX_UPLOAD_SIZE, CMD_STREAM_WIDTH / 8> uploader;
+            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
+            DisplayListAssembler<TEX_UPLOAD_SIZE, RenderConfig::CMD_STREAM_WIDTH / 8> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 
             while (!m_busConnector.clearToSend())
@@ -383,7 +384,7 @@ public:
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
     {
         const uint32_t framebufferSize = x * y * 2;
-        const uint32_t framebufferLines = (framebufferSize / INTERNAL_FRAMEBUFFER_SIZE) + ((framebufferSize % INTERNAL_FRAMEBUFFER_SIZE) ? 1 : 0);
+        const uint32_t framebufferLines = (framebufferSize / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + ((framebufferSize % RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) ? 1 : 0);
         if (framebufferLines > DISPLAY_LINES)
         {
             // More lines required than lines available
@@ -396,27 +397,32 @@ public:
         return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
     }
 
-    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
-    /// @param addr The address of the color buffer.
     virtual void enableColorBufferInMemory(const uint32_t addr) override
     {
         m_colorBufferAddr = addr;
         m_colorBufferUseMemory = true;
     }
 
-    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
-    /// The color buffer in memory is disabled.
     virtual void enableColorBufferStream() override
     {
         m_colorBufferUseMemory = false;
     }
 
-private:
-    static constexpr std::size_t TEXTURE_MEMORY_PAGE_SIZE { 4096 };
-    static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { MAX_NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+    virtual uint16_t getMaxTextureSize() const override
+    {
+        return RenderConfig::MAX_TEXTURE_SIZE;
+    }
+    
+    virtual TMU getTmuCount() const override
+    {
+        return RenderConfig::TMU_COUNT;
+    }
 
-    using ListAssembler = DisplayListAssembler<DISPLAY_LIST_SIZE, CMD_STREAM_WIDTH / 8>;
-    using TextureManager = TextureMemoryManager<TEXTURE_NUMBER_OF_TEXTURES, TEXTURE_MEMORY_PAGE_SIZE, MAX_NUMBER_OF_TEXTURE_PAGES>; 
+private:
+    static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
+
+    using ListAssembler = DisplayListAssembler<RenderConfig::DISPLAYLIST_SIZE, RenderConfig::CMD_STREAM_WIDTH / 8, RenderConfig::TMU_COUNT>;
+    using TextureManager = TextureMemoryManager<RenderConfig>; 
 
     static uint32_t convertColor(const Vec4i color)
     {
