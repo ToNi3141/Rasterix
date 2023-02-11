@@ -3,13 +3,14 @@
 #include "IceGL.hpp"
 #include "Renderer.hpp"
 #include "FT60XBusConnector.hpp"
+#include "RenderConfigs.hpp"
 
 using namespace rr;
 
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 FT60XBusConnector m_busConnector;
-Renderer<16 * 1024 * 1024, 5, 256 * 1024, 128, 7680> m_renderer{m_busConnector};
+Renderer<RenderConfigRasterixNexys> m_renderer{m_busConnector};
 
 // Wiggle API
 // -------------------------------------------------------

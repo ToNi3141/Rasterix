@@ -25,8 +25,6 @@
 
 using namespace rr;
 
-static constexpr int32_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
-
 GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {
     GLint ret = GL_NO_ERROR;
@@ -1324,10 +1322,10 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint *params)
         *params = VertexPipeline::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
-        *params = IceGL::MAX_TEX_SIZE;
+        *params = IceGL::getInstance().getMaxTextureSize();
         break;
     case GL_MAX_TEXTURE_UNITS:
-        *params = IceGL::MAX_TEXTURE_UNITS;
+        *params = IceGL::getInstance().getTmuCount();
         break;
     case GL_DOUBLEBUFFER:
         *params = 1;
@@ -2965,8 +2963,9 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     (void)border;// Border is not supported and is ignored for now. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
 
     IceGL::getInstance().setError(GL_NO_ERROR);
+    const uint16_t maxTexSize { IceGL::getInstance().getMaxTextureSize() }; 
 
-    if ((width > MAX_TEX_SIZE)|| (height > MAX_TEX_SIZE))
+    if ((width > maxTexSize)|| (height > maxTexSize))
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_WARN("glTexImage2d texture is too big.");

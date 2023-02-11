@@ -26,12 +26,12 @@
 
 namespace rr
 {
-template <uint16_t MAX_NUMBER_OF_TEXTURES = 64, std::size_t PAGE_SIZE = 4096, std::size_t NUMBER_OF_PAGES = 7680>
+template <class RenderConfig>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX * IRenderer::MAX_TEXTURE_SIZE_PX * 2 };
-    static constexpr uint32_t TEXTURE_PAGE_SIZE { PAGE_SIZE };
+    static constexpr uint32_t MAX_TEXTURE_SIZE { RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 };
+    static constexpr uint32_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
 
     TextureMemoryManager()
     {
@@ -247,7 +247,7 @@ private:
 
     struct Texture
     {
-        static constexpr std::size_t MAX_NUMBER_OF_PAGES { MAX_TEXTURE_SIZE / PAGE_SIZE };
+        static constexpr std::size_t MAX_NUMBER_OF_PAGES { MAX_TEXTURE_SIZE / TEXTURE_PAGE_SIZE };
         bool inUse;
         bool requiresUpload;
         bool requiresDelete;
@@ -309,9 +309,9 @@ private:
     }
 
     // Texture memory allocator
-    std::array<Texture, MAX_NUMBER_OF_TEXTURES> m_textures;
-    std::array<uint32_t, MAX_NUMBER_OF_TEXTURES> m_textureLut;
-    std::array<PageEntry, NUMBER_OF_PAGES> m_pageTable {};
+    std::array<Texture, RenderConfig::NUMBER_OF_TEXTURES> m_textures;
+    std::array<uint32_t, RenderConfig::NUMBER_OF_TEXTURES> m_textureLut;
+    std::array<PageEntry, RenderConfig::NUMBER_OF_TEXTURE_PAGES> m_pageTable {};
 };
 
 } // namespace rr

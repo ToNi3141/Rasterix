@@ -855,6 +855,9 @@
           },
           "TEXTURE_BUFFER_SIZE": {
             "value": "17"
+          },
+          "TMU_COUNT": {
+            "value": "2"
           }
         },
         "reference_info": {
@@ -898,6 +901,14 @@
               "HAS_TLAST": {
                 "value": "1",
                 "value_src": "constant"
+              },
+              "PHASE": {
+                "value": "0",
+                "value_src": "default_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "design_1_mig_7series_0_0_ui_clk",
+                "value_src": "default_prop"
               }
             },
             "port_maps": {
@@ -956,6 +967,14 @@
               "HAS_TLAST": {
                 "value": "1",
                 "value_src": "constant"
+              },
+              "PHASE": {
+                "value": "0",
+                "value_src": "default_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "design_1_mig_7series_0_0_ui_clk",
+                "value_src": "default_prop"
               }
             },
             "port_maps": {
@@ -1088,6 +1107,14 @@
               "MAX_BURST_LENGTH": {
                 "value": "256",
                 "value_src": "auto"
+              },
+              "PHASE": {
+                "value": "0",
+                "value_src": "default_prop"
+              },
+              "CLK_DOMAIN": {
+                "value": "design_1_mig_7series_0_0_ui_clk",
+                "value_src": "default_prop"
               }
             },
             "port_maps": {
@@ -1313,36 +1340,6 @@
       }
     },
     "interface_nets": {
-      "mig_7series_0_DDR3": {
-        "interface_ports": [
-          "ddr3_sdram",
-          "mig_7series_0/DDR3"
-        ]
-      },
-      "axis_data_fifo_1_M_AXIS": {
-        "interface_ports": [
-          "Rasterix_0/s_cmd_axis",
-          "axis_data_fifo_1/M_AXIS"
-        ]
-      },
-      "axi_smc_M00_AXI": {
-        "interface_ports": [
-          "axi_smc/M00_AXI",
-          "mig_7series_0/S_AXI"
-        ]
-      },
-      "Dvi_0_m_mem_axi": {
-        "interface_ports": [
-          "Dvi_0/m_mem_axi",
-          "axi_smc/S01_AXI"
-        ]
-      },
-      "Rasterix_0_m_mem_axi": {
-        "interface_ports": [
-          "Rasterix_0/m_mem_axi",
-          "axi_smc/S00_AXI"
-        ]
-      },
       "axis_dwidth_converter_2_M_AXIS": {
         "interface_ports": [
           "axis_dwidth_converter_2/M_AXIS",
@@ -1353,6 +1350,36 @@
         "interface_ports": [
           "FT245X2AXIS_0/m_axis",
           "axis_dwidth_converter_2/S_AXIS"
+        ]
+      },
+      "axi_smc_M00_AXI": {
+        "interface_ports": [
+          "axi_smc/M00_AXI",
+          "mig_7series_0/S_AXI"
+        ]
+      },
+      "axis_data_fifo_1_M_AXIS": {
+        "interface_ports": [
+          "Rasterix_0/s_cmd_axis",
+          "axis_data_fifo_1/M_AXIS"
+        ]
+      },
+      "Dvi_0_m_mem_axi": {
+        "interface_ports": [
+          "Dvi_0/m_mem_axi",
+          "axi_smc/S01_AXI"
+        ]
+      },
+      "mig_7series_0_DDR3": {
+        "interface_ports": [
+          "ddr3_sdram",
+          "mig_7series_0/DDR3"
+        ]
+      },
+      "Rasterix_0_m_mem_axi": {
+        "interface_ports": [
+          "Rasterix_0/m_mem_axi",
+          "axi_smc/S00_AXI"
         ]
       }
     },

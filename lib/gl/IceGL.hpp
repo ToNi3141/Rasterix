@@ -37,8 +37,6 @@ namespace rr
 class IceGL
 {
 public:
-    IceGL(IRenderer& renderer);
-
     static IceGL& getInstance();
     static bool createInstance(IRenderer& renderer);
 
@@ -61,8 +59,13 @@ public:
     /// The color buffer in memory is disabled.
     void enableColorBufferStream() { m_renderer.enableColorBufferStream(); }
 
-    static constexpr uint16_t MAX_TEX_SIZE { IRenderer::MAX_TEXTURE_SIZE_PX };
-    static constexpr uint16_t MAX_TEXTURE_UNITS { IRenderer::MAX_TMU_COUNT };
+    /// @brief Queries the maximum texture size in pixels
+    /// @return The maximum texture size in pixel
+    uint16_t getMaxTextureSize() const { return m_renderer.getMaxTextureSize(); }
+
+    /// @brief Queries the maximum number of TMUs available for the hardware
+    /// @brief The number of TMUs available
+    IRenderer::TMU getTmuCount() const { return m_renderer.getTmuCount(); }
 private:
     IRenderer& m_renderer;
     PixelPipeline m_pixelPipeline;
@@ -71,6 +74,8 @@ private:
 
     // Errors
     uint32_t m_error { 0 };
+
+    IceGL(IRenderer& renderer);
 
     // OpenGL extensions 
     void addProcedure(std::string name, const void *address);
