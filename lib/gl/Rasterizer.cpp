@@ -30,19 +30,19 @@ Rasterizer::Rasterizer()
 }
 
 
-bool Rasterizer::rasterize(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle)
+bool Rasterizer::rasterize(TriangleStreamDesc& desc, const IRenderer::Triangle& triangle)
 {
-   return rasterizeFixPoint(rasterizedTriangle, triangle);
+   return rasterizeFixPoint(desc, triangle);
 }
 
-bool Rasterizer::checkIfTriangleIsInBounds(Rasterizer::RasterizedTriangle &triangle,
+bool Rasterizer::checkIfTriangleIsInBounds(TriangleStreamDesc &desc,
                                            const uint16_t lineStart,
                                            const uint16_t lineEnd)
 {
     // Check if the triangle is in the current area by checking if the end position is below the start line
     // and if the start of the triangle is within this area
-    if ((triangle.bbEndY >= lineStart) &&
-            (triangle.bbStartY < lineEnd))
+    if ((desc.bbEndY >= lineStart) &&
+            (desc.bbStartY < lineEnd))
     {
         return true;
     }
@@ -65,7 +65,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const IRenderer::Triangle& triangle)
+bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Triangle& triangle)
 {
     static constexpr uint32_t EDGE_FUNC_SIZE = 4;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
@@ -122,10 +122,10 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
 
-    rasterizedTriangle.bbStartX = bbStartX;
-    rasterizedTriangle.bbStartY = bbStartY;
-    rasterizedTriangle.bbEndX = bbEndX;
-    rasterizedTriangle.bbEndY = bbEndY;
+    desc.bbStartX = bbStartX;
+    desc.bbStartY = bbStartY;
+    desc.bbEndX = bbEndX;
+    desc.bbEndY = bbEndY;
 
     VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
 
@@ -137,9 +137,9 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
 
     // Interpolate triangle
     Vec2i p = {{(bbStartX << EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE}};
-    Vec3i& wi = rasterizedTriangle.wInit; // Sn.4
-    Vec3i& wIncX = rasterizedTriangle.wXInc;
-    Vec3i& wIncY = rasterizedTriangle.wYInc;
+    Vec3i& wi = desc.wInit; // Sn.4
+    Vec3i& wIncX = desc.wXInc;
+    Vec3i& wIncY = desc.wYInc;
     wi[0] = edgeFunctionFixPoint(v1, v2, p);
     wi[1] = edgeFunctionFixPoint(v2, v0, p);
     wi[2] = edgeFunctionFixPoint(v0, v1, p);
@@ -172,7 +172,7 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
     wIncYNorm.mul(areaInv);
 
     // Interpolate texture
-    for (uint8_t i = 0; i < rasterizedTriangle.texture.size(); i++)
+    for (uint8_t i = 0; i < desc.texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {
@@ -180,34 +180,34 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
             Vec3 texT { { triangle.texture0[i][0][1], triangle.texture1[i][0][1], triangle.texture2[i][0][1] } };
             Vec3 texQ { { triangle.texture0[i][0][3], triangle.texture1[i][0][3], triangle.texture2[i][0][3] } };
 
-            rasterizedTriangle.texture[i].texStq[0] = texS.dot(wNorm);
-            rasterizedTriangle.texture[i].texStq[1] = texT.dot(wNorm);
-            rasterizedTriangle.texture[i].texStq[2] = texQ.dot(wNorm);
+            desc.texture[i].texStq[0] = texS.dot(wNorm);
+            desc.texture[i].texStq[1] = texT.dot(wNorm);
+            desc.texture[i].texStq[2] = texQ.dot(wNorm);
 
-            rasterizedTriangle.texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
-            rasterizedTriangle.texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
-            rasterizedTriangle.texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
+            desc.texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
+            desc.texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
+            desc.texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
 
-            rasterizedTriangle.texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
-            rasterizedTriangle.texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
-            rasterizedTriangle.texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+            desc.texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
+            desc.texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
+            desc.texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
         }
     }
 
     // Interpolate W
     Vec3 vW { { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] } };
-    rasterizedTriangle.depthW = vW.dot(wNorm);
-    rasterizedTriangle.depthWXInc = vW.dot(wIncXNorm);
-    rasterizedTriangle.depthWYInc = vW.dot(wIncYNorm);
+    desc.depthW = vW.dot(wNorm);
+    desc.depthWXInc = vW.dot(wIncXNorm);
+    desc.depthWYInc = vW.dot(wIncYNorm);
 
     // Interpolate Z
     // Using z buffer. Here are two options for the depth buffer:
     // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
     // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
     Vec3 vZ { { triangle.vertex0[2], triangle.vertex1[2], triangle.vertex2[2] } };
-    rasterizedTriangle.depthZ = vZ.dot(wNorm);
-    rasterizedTriangle.depthZXInc = vZ.dot(wIncXNorm);
-    rasterizedTriangle.depthZYInc = vZ.dot(wIncYNorm);
+    desc.depthZ = vZ.dot(wNorm);
+    desc.depthZXInc = vZ.dot(wIncXNorm);
+    desc.depthZYInc = vZ.dot(wIncYNorm);
 
     // Interpolate color
     Vec3 cr { { triangle.color0[0], triangle.color1[0], triangle.color2[0] } };
@@ -215,20 +215,20 @@ bool Rasterizer::rasterizeFixPoint(RasterizedTriangle& rasterizedTriangle, const
     Vec3 cb { { triangle.color0[2], triangle.color1[2], triangle.color2[2] } };
     Vec3 ca { { triangle.color0[3], triangle.color1[3], triangle.color2[3] } };
 
-    rasterizedTriangle.color[0] = cr.dot(wNorm);
-    rasterizedTriangle.color[1] = cg.dot(wNorm);
-    rasterizedTriangle.color[2] = cb.dot(wNorm);
-    rasterizedTriangle.color[3] = ca.dot(wNorm);
+    desc.color[0] = cr.dot(wNorm);
+    desc.color[1] = cg.dot(wNorm);
+    desc.color[2] = cb.dot(wNorm);
+    desc.color[3] = ca.dot(wNorm);
 
-    rasterizedTriangle.colorXInc[0] = cr.dot(wIncXNorm);
-    rasterizedTriangle.colorXInc[1] = cg.dot(wIncXNorm);
-    rasterizedTriangle.colorXInc[2] = cb.dot(wIncXNorm);
-    rasterizedTriangle.colorXInc[3] = ca.dot(wIncXNorm);
+    desc.colorXInc[0] = cr.dot(wIncXNorm);
+    desc.colorXInc[1] = cg.dot(wIncXNorm);
+    desc.colorXInc[2] = cb.dot(wIncXNorm);
+    desc.colorXInc[3] = ca.dot(wIncXNorm);
 
-    rasterizedTriangle.colorYInc[0] = cr.dot(wIncYNorm);
-    rasterizedTriangle.colorYInc[1] = cg.dot(wIncYNorm);
-    rasterizedTriangle.colorYInc[2] = cb.dot(wIncYNorm);
-    rasterizedTriangle.colorYInc[3] = ca.dot(wIncYNorm);
+    desc.colorYInc[0] = cr.dot(wIncYNorm);
+    desc.colorYInc[1] = cg.dot(wIncYNorm);
+    desc.colorYInc[2] = cb.dot(wIncYNorm);
+    desc.colorYInc[3] = ca.dot(wIncYNorm);
 
     return true;
 }

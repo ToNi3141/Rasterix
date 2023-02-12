@@ -41,6 +41,8 @@
 #include "registers/ScissorStartReg.hpp"
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "descriptors/TriangleStreamDesc.hpp"
+#include "descriptors/FogLutStreamDesc.hpp"
 
 namespace rr
 {
@@ -111,9 +113,9 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        Rasterizer::RasterizedTriangle triangleConf;
+        TriangleStreamDesc triangleDesc;
 
-        if (!m_rasterizer.rasterize(triangleConf, triangle))
+        if (!m_rasterizer.rasterize(triangleDesc, triangle))
         {
             // Triangle is not visible
             return true;
@@ -123,16 +125,12 @@ public:
         {
             const uint16_t currentScreenPositionStart = i * m_yLineResolution;
             const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
-            if (Rasterizer::checkIfTriangleIsInBounds(triangleConf,
+            if (Rasterizer::checkIfTriangleIsInBounds(triangleDesc,
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                Rasterizer::RasterizedTriangle *triangleConfDl = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle();
-                if (triangleConfDl != nullptr)
-                {
-                    std::memcpy(triangleConfDl, &triangleConf, sizeof(triangleConf));
-                }
-                else
+                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle(triangleDesc);
+                if (ret == false)
                 {
                     return false;
                 }
@@ -271,21 +269,8 @@ public:
 
     virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
     {
-        union Value {
-            uint64_t val;
-            struct {
-                int32_t a;
-                int32_t b;
-            } numbers;
-            struct {
-                float a;
-                float b;
-            } floats;
-        };
-
         bool ret = true;
-
-        std::array<uint64_t, 33> arr;
+        FogLutStreamDesc fogLutDesc;
 
         // The verilog code is not able to handle float values smaller than 1.0f.
         // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
@@ -294,13 +279,10 @@ public:
         const float lutUpperBound = end;
 
         // Add bounds to the lut value
-        Value bounds;
-        bounds.floats.a = lutLowerBound;
-        bounds.floats.b = lutUpperBound;
-        arr[0] = bounds.val;
+        fogLutDesc.setBounds(lutLowerBound, lutUpperBound);
 
         // Calculate the lut entries
-        for (std::size_t i = 0; i < arr.size() - 1; i++)
+        for (std::size_t i = 0; i < fogLut.size() - 1; i++)
         {
             float f = fogLut[i];
             float fn = fogLut[i + 1];
@@ -308,17 +290,16 @@ public:
             const float diff = fn - f;
             const float step = diff / 256.0f;
 
-            Value lutEntry;
-            lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
-            lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
+            const float m = step * powf(2, 30);
+            const float b = f * powf(2, 30);
 
-            arr[i + 1] = lutEntry.val;
+            fogLutDesc.setLutValue(i, m, b);
         }
 
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].template writeArray<uint64_t, arr.size()>(ListAssembler::SET_FOG_LUT, arr);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeFogArray(fogLutDesc);
         }
         return ret;
     }

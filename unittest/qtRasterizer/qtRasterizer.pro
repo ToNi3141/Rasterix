@@ -21,7 +21,15 @@ TARGET = qtRasterizer
 SOURCES += main.cpp\
     $${ICEGL_PATH}/VertexPipeline.cpp \
         mainwindow.cpp \
-    $${ICEGL_PATH}/*.cpp
+    $${ICEGL_PATH}/IceGL.cpp \
+    $${ICEGL_PATH}/Clipper.cpp \
+    $${ICEGL_PATH}/Lighting.cpp \
+    $${ICEGL_PATH}/TexGen.cpp \
+    $${ICEGL_PATH}/RenderObj.cpp \
+    $${ICEGL_PATH}/PixelPipeline.cpp \
+    $${ICEGL_PATH}/gl.cpp \
+    $${ICEGL_PATH}/glu.cpp \
+    $${ICEGL_PATH}/Rasterizer.cpp
 
 HEADERS  += mainwindow.h \
     $${ICEGL_PATH}/*.hpp \

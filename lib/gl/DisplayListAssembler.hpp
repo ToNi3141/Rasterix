@@ -26,6 +26,8 @@
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
+#include "descriptors/TriangleStreamDesc.hpp"
+#include "descriptors/FogLutStreamDesc.hpp"
 
 namespace rr
 {
@@ -50,7 +52,7 @@ private:
         static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
 
         // Calculate the triangle size with align overhead.
-        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<Rasterizer::RasterizedTriangle>();
+        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<TriangleStreamDesc>();
 
         // OPs for the DMA Stream Engine
         static constexpr StreamCommandType DSE_NOP              = 0x0000'0000;
@@ -82,8 +84,6 @@ private:
     using SCT = typename StreamCommand::StreamCommandType;
 
 public:
-    static constexpr uint32_t SET_FOG_LUT                   = StreamCommand::RR_OP_FOG_LUT_STREAM;
-
     void clearAssembler()
     {
         m_displayList.clear();
@@ -119,14 +119,19 @@ public:
         return false;
     }
 
-    Rasterizer::RasterizedTriangle* drawTriangle()
+    bool drawTriangle(const TriangleStreamDesc& desc)
     {
         if (openNewStreamSection())
         {
             m_wasLastCommandATextureCommand.reset();
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
+            TriangleStreamDesc* d = createStreamCommand<TriangleStreamDesc>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
+            if (d == nullptr)
+            {
+                return false;
+            }
+            std::memcpy(d, &desc, sizeof(desc));
         }
-        return nullptr;
+        return true;
     }
 
     bool updateTexture(const uint32_t addr, const uint16_t* pixels, const uint32_t texSize)
@@ -244,13 +249,12 @@ public:
         return false;
     }
 
-    template <typename TArg, std::size_t TSize>
-    bool writeArray(uint32_t command, const std::array<TArg, TSize>& arr)
+    bool writeFogArray(const FogLutStreamDesc desc)
     {
         if (openNewStreamSection())
         {
             // Check if the display list contains enough space
-            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<TArg>() * TSize);
+            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<uint64_t>() * desc.size());
             if (expectedSize >= m_displayList.getFreeSpace())
             {
                 return false;
@@ -267,12 +271,13 @@ public:
                 // Out of memory error
                 return false;
             }
-            *opDl = command;
+            *opDl = StreamCommand::RR_OP_FOG_LUT_STREAM;
 
             // Copy array elements
+            tcb::span<const uint64_t> arr = desc.serialize();
             for (auto a : arr)
             {
-                TArg *argDl = m_displayList.template create<TArg>();
+                uint64_t *argDl = m_displayList.template create<uint64_t>();
                 if (argDl)
                 {
                     *argDl = a;
