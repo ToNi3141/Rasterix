@@ -1,0 +1,128 @@
+#ifndef _TEX_ENV_REG_
+#define _TEX_ENV_REG_
+
+#include <cstdint>
+
+namespace rr
+{
+
+class TexEnvReg
+{
+public:
+    enum class Combine
+    {
+        REPLACE,
+        MODULATE,
+        ADD,
+        ADD_SIGNED,
+        INTERPOLATE,
+        SUBTRACT,
+        DOT3_RGB,
+        DOT3_RGBA
+    };
+    enum class Operand
+    {
+        SRC_ALPHA,
+        ONE_MINUS_SRC_ALPHA,
+        SRC_COLOR,
+        ONE_MINUS_SRC_COLOR
+    };
+    enum class SrcReg
+    {
+        TEXTURE,
+        CONSTANT,
+        PRIMARY_COLOR,
+        PREVIOUS
+    };
+
+    TexEnvReg() = default;
+
+    void setCombineRgb(const Combine val) { m_regVal.fields.combineRgb = static_cast<uint32_t>(val); }
+    void setCombineAlpha(const Combine val) { m_regVal.fields.combineAlpha = static_cast<uint32_t>(val); }
+    void setSrcRegRgb0(const SrcReg val) { m_regVal.fields.srcRegRgb0 = static_cast<uint32_t>(val); }
+    void setSrcRegRgb1(const SrcReg val) { m_regVal.fields.srcRegRgb1 = static_cast<uint32_t>(val); }
+    void setSrcRegRgb2(const SrcReg val) { m_regVal.fields.srcRegRgb2 = static_cast<uint32_t>(val); }
+    void setSrcRegAlpha0(const SrcReg val) { m_regVal.fields.srcRegAlpha0 = static_cast<uint32_t>(val); }
+    void setSrcRegAlpha1(const SrcReg val) { m_regVal.fields.srcRegAlpha1 = static_cast<uint32_t>(val); }
+    void setSrcRegAlpha2(const SrcReg val) { m_regVal.fields.srcRegAlpha2 = static_cast<uint32_t>(val); }
+    void setOperandRgb0(const Operand val) { m_regVal.fields.operandRgb0 = static_cast<uint32_t>(val); }
+    void setOperandRgb1(const Operand val) { m_regVal.fields.operandRgb1 = static_cast<uint32_t>(val); }
+    void setOperandRgb2(const Operand val) { m_regVal.fields.operandRgb2 = static_cast<uint32_t>(val); }
+    void setOperandAlpha0(const Operand val) { m_regVal.fields.operandAlpha0 = static_cast<uint32_t>(val); }
+    void setOperandAlpha1(const Operand val) { m_regVal.fields.operandAlpha1 = static_cast<uint32_t>(val); }
+    void setOperandAlpha2(const Operand val) { m_regVal.fields.operandAlpha2 = static_cast<uint32_t>(val); }
+    void setShiftRgb(const uint8_t val) { m_regVal.fields.shiftRgb = val; }
+    void setShiftAlpha(const uint8_t val) { m_regVal.fields.shiftAlpha = val; }
+
+    Combine getCombineRgb() const { return static_cast<Combine>(m_regVal.fields.combineRgb); }
+    Combine getCombineAlpha() const { return static_cast<Combine>(m_regVal.fields.combineAlpha); }
+    SrcReg getSrcRegRgb0() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb0); }
+    SrcReg getSrcRegRgb1() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb1); }
+    SrcReg getSrcRegRgb2() const { return static_cast<SrcReg>(m_regVal.fields.srcRegRgb2); }
+    SrcReg getSrcRegAlpha0() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha0); }
+    SrcReg getSrcRegAlpha1() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha1); }
+    SrcReg getSrcRegAlpha2() const { return static_cast<SrcReg>(m_regVal.fields.srcRegAlpha2); }
+    Operand getOperandRgb0() const { return static_cast<Operand>(m_regVal.fields.operandRgb0); }
+    Operand getOperandRgb1() const { return static_cast<Operand>(m_regVal.fields.operandRgb1); }
+    Operand getOperandRgb2() const { return static_cast<Operand>(m_regVal.fields.operandRgb2); }
+    Operand getOperandAlpha0() const { return static_cast<Operand>(m_regVal.fields.operandAlpha0); }
+    Operand getOperandAlpha1() const { return static_cast<Operand>(m_regVal.fields.operandAlpha1); }
+    Operand getOperandAlpha2() const { return static_cast<Operand>(m_regVal.fields.operandAlpha2); }
+    uint8_t getShiftRgb() const { return m_regVal.fields.shiftRgb; }
+    uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
+
+    void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    uint32_t serialize() const { return m_regVal.data; }
+    uint32_t getAddr() const { return 0x9 + m_offset; }
+private:
+    static constexpr uint8_t TMU_OFFSET { 3 };
+    union RegVal
+    {
+        #pragma pack(push, 1)
+        struct RegContent
+        {
+            RegContent() :
+                combineRgb(static_cast<uint32_t>(Combine::MODULATE)),
+                combineAlpha(static_cast<uint32_t>(Combine::MODULATE)),
+                srcRegRgb0(static_cast<uint32_t>(SrcReg::TEXTURE)),
+                srcRegRgb1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
+                srcRegRgb2(static_cast<uint32_t>(SrcReg::CONSTANT)),
+                srcRegAlpha0(static_cast<uint32_t>(SrcReg::TEXTURE)),
+                srcRegAlpha1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
+                srcRegAlpha2(static_cast<uint32_t>(SrcReg::CONSTANT)),
+                operandRgb0(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                operandRgb1(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                operandRgb2(static_cast<uint32_t>(Operand::SRC_COLOR)),
+                operandAlpha0(static_cast<uint32_t>(Operand::SRC_ALPHA)),
+                operandAlpha1(static_cast<uint32_t>(Operand::SRC_ALPHA)),
+                operandAlpha2(static_cast<uint32_t>(Operand::SRC_ALPHA)),
+                shiftRgb(0),
+                shiftAlpha(0)
+            { }
+
+            uint32_t combineRgb : 3;
+            uint32_t combineAlpha : 3;
+            uint32_t srcRegRgb0 : 2;
+            uint32_t srcRegRgb1 : 2;
+            uint32_t srcRegRgb2 : 2;
+            uint32_t srcRegAlpha0 : 2;
+            uint32_t srcRegAlpha1 : 2;
+            uint32_t srcRegAlpha2 : 2;
+            uint32_t operandRgb0 : 2;
+            uint32_t operandRgb1 : 2;
+            uint32_t operandRgb2 : 2;
+            uint32_t operandAlpha0 : 1;
+            uint32_t operandAlpha1 : 1;
+            uint32_t operandAlpha2 : 1;
+            uint32_t shiftRgb : 2;
+            uint32_t shiftAlpha : 2;
+        } fields {};
+        uint32_t data;
+        #pragma pack(pop)
+    } m_regVal;
+    uint8_t m_offset { 0 };
+};
+
+} // namespace rr
+
+#endif // _TEX_ENV_REG_

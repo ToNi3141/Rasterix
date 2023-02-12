@@ -21,36 +21,13 @@ TARGET = qtRasterizer
 SOURCES += main.cpp\
     $${ICEGL_PATH}/VertexPipeline.cpp \
         mainwindow.cpp \
-    $${ICEGL_PATH}/IceGL.cpp \
-    $${ICEGL_PATH}/Clipper.cpp \
-    $${ICEGL_PATH}/Lighting.cpp \
-    $${ICEGL_PATH}/TexGen.cpp \
-    $${ICEGL_PATH}/RenderObj.cpp \
-    $${ICEGL_PATH}/PixelPipeline.cpp \
-    $${ICEGL_PATH}/gl.cpp \
-    $${ICEGL_PATH}/glu.cpp \
-    $${ICEGL_PATH}/Rasterizer.cpp
+    $${ICEGL_PATH}/*.cpp
 
-HEADERS  += mainwindow.h\
-    $${ICEGL_PATH}/DisplayList.hpp \
-    $${ICEGL_PATH}/IBusConnector.hpp \
-    $${ICEGL_PATH}/IRenderer.hpp \
-    $${ICEGL_PATH}/gl.h \
-    $${ICEGL_PATH}/glu.h \
-    $${ICEGL_PATH}/Renderer.hpp \
-    $${ICEGL_PATH}/VertexPipeline.hpp \
-    $${ICEGL_PATH}/Vec.hpp \
-    $${ICEGL_PATH}/Veci.hpp \
-    $${ICEGL_PATH}/IceGL.hpp \
-    $${ICEGL_PATH}/Rasterizer.hpp \
-    $${ICEGL_PATH}/Mat44.hpp \
-    $${ICEGL_PATH}/Clipper.hpp \
-    $${ICEGL_PATH}/Lighting.hpp \
-    $${ICEGL_PATH}/TexGen.hpp \
-    $${ICEGL_PATH}/RenderObj.hpp \
-    $${ICEGL_PATH}/TextureMemoryManager.hpp \
-    $${ICEGL_PATH}/PixelPipeline.hpp \
-    $${ICEGL_PATH}/DisplayListAssembler.hpp
+HEADERS  += mainwindow.h \
+    $${ICEGL_PATH}/*.hpp \
+    $${ICEGL_PATH}/*.h \
+    $${ICEGL_PATH}/registers/*
+
 
 QMAKE_CXXFLAGS += -I../../lib/3rdParty/span/include/
 QMAKE_CFLAGS += -I../../lib/3rdParty/span/include/

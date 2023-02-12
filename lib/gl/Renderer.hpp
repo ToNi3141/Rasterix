@@ -22,6 +22,7 @@
 #include <array>
 #include "Vec.hpp"
 #include "IRenderer.hpp"
+#include "registers/BaseColorReg.hpp"
 #include "IBusConnector.hpp"
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
@@ -31,6 +32,15 @@
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
+
+#include "registers/ColorBufferClearColorReg.hpp"
+#include "registers/DepthBufferClearDepthReg.hpp"
+#include "registers/FogColorReg.hpp"
+#include "registers/RenderResolutionReg.hpp"
+#include "registers/ScissorEndReg.hpp"
+#include "registers/ScissorStartReg.hpp"
+#include "registers/TexEnvColorReg.hpp"
+#include "registers/YOffsetReg.hpp"
 
 namespace rr
 {
@@ -79,8 +89,10 @@ public:
         // Fixes the first two frames
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+            YOffsetReg reg;
+            reg.setY(i * m_yLineResolution);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(reg);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeRegister(reg);
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -187,7 +199,9 @@ public:
                     const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
                     m_busConnector.writeData(list->getMemPtr());
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeXYRegister(ListAssembler::SET_Y_OFFSET, 0, i * m_yLineResolution);
+                    YOffsetReg reg;
+                    reg.setY(i * m_yLineResolution);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeRegister(reg);
                 }
                 return true;
             });
@@ -218,32 +232,41 @@ public:
 
     virtual bool setClearColor(const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_COLOR_BUFFER_CLEAR_COLOR, convertColor(color));
+        ColorBufferClearColorReg reg;
+        reg.setColor(color);
+        return writeReg(reg);
     }
 
     virtual bool setClearDepth(uint16_t depth) override
     {
-        return writeToReg(ListAssembler::SET_DEPTH_BUFFER_CLEAR_DEPTH, depth);
+        DepthBufferClearDepthReg reg;
+        reg.setValue(depth);
+        return writeReg(reg);
     }
 
-    virtual bool setFragmentPipelineConfig(const FragmentPipelineConf& pipelineConf) override 
+    virtual bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) override 
     {
-        return writeToReg(ListAssembler::SET_FRAGMENT_PIPELINE_CONFIG, pipelineConf.serialize());
+        return writeReg(pipelineConf);
     }
 
-    virtual bool setTexEnv(const TMU target, const TexEnvConf& texEnvConfig) override
+    virtual bool setTexEnv(const TexEnvReg& texEnvConfig) override
     {
-        return writeToReg(ListAssembler::SET_TMU_TEX_ENV(target), texEnvConfig.serialize());
+        return writeReg(texEnvConfig);
     }
 
     virtual bool setTexEnvColor(const TMU target, const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_TMU_TEX_ENV_COLOR(target), convertColor(color));
+        TexEnvColorReg reg;
+        reg.setTmu(target);
+        reg.setColor(color);
+        return writeReg(reg);
     }
 
     virtual bool setFogColor(const Vec4i& color) override
     {
-        return writeToReg(ListAssembler::SET_FOG_COLOR, convertColor(color));
+        FogColorReg reg;
+        reg.setColor(color);
+        return writeReg(reg);
     }
 
     virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
@@ -328,7 +351,9 @@ public:
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(ListAssembler::SET_TMU_TEXTURE_CONFIG(target), m_textureManager.getTmuConfig(texId));
+            TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
+            reg.setTmu(target);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(reg);
         }
         return ret;
     }
@@ -338,22 +363,29 @@ public:
         return m_textureManager.deleteTexture(texId);
     }
 
-    virtual bool setFeatureEnableConfig(const FeatureEnableConf& featureEnable) override
+    virtual bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable) override
     {
         m_scissorEnabled = featureEnable.getEnableScissor();
         m_rasterizer.enableScissor(featureEnable.getEnableScissor());
         static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
         m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
         m_rasterizer.enableTmu(1, featureEnable.getEnableTmu(1));
-        return writeToReg(ListAssembler::SET_FEATURE_ENABLE, featureEnable.serialize());
+        return writeReg(featureEnable);
     }
 
     virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
     {
         bool ret = true;
 
-        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_START_XY, x, y);
-        ret = ret && writeToRegXY(ListAssembler::SET_SCISSOR_END_XY, x + width, y + height);
+        ScissorStartReg regStart;
+        ScissorEndReg regEnd;
+        regStart.setX(x);
+        regStart.setY(y);
+        regEnd.setX(x + width);
+        regEnd.setY(y + height);
+
+        ret = ret && writeReg(regStart);
+        ret = ret && writeReg(regEnd);
 
         m_scissorYStart = y;
         m_scissorYEnd = y + height;
@@ -390,11 +422,15 @@ public:
             // More lines required than lines available
             return false;
         }
-        
+
         m_yLineResolution = y / framebufferLines;
         m_xResolution = x;
         m_displayLines = framebufferLines;
-        return writeToRegXY(ListAssembler::SET_RENDER_RESOLUTION, x, m_yLineResolution);
+        
+        RenderResolutionReg reg;
+        reg.setX(x);
+        reg.setY(m_yLineResolution);
+        return writeReg(reg);
     }
 
     virtual void enableColorBufferInMemory(const uint32_t addr) override
@@ -424,37 +460,18 @@ private:
     using ListAssembler = DisplayListAssembler<RenderConfig::DISPLAYLIST_SIZE, RenderConfig::CMD_STREAM_WIDTH / 8, RenderConfig::TMU_COUNT>;
     using TextureManager = TextureMemoryManager<RenderConfig>; 
 
-    static uint32_t convertColor(const Vec4i color)
-    {
-        uint32_t colorInt =   (static_cast<uint32_t>(0xff & color[3]) << 0)
-                | (static_cast<uint32_t>(0xff & color[2]) << 8)
-                | (static_cast<uint32_t>(0xff & color[1]) << 16)
-                | (static_cast<uint32_t>(0xff & color[0]) << 24);
-        return colorInt;
-    }
-
     template <typename TArg>
-    bool writeToReg(uint32_t regIndex, const TArg& regVal)
+    bool writeReg(const TArg& regVal)
     {
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regIndex, regVal);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regVal);
         }
         return ret;
     }
 
-    bool writeToRegXY(uint32_t regIndex, const uint16_t x, const uint16_t y)
-    {
-        bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeXYRegister(regIndex, x, y);
-        }
-        return ret;
-    }
-
-    bool writeToTextureConfig(const uint16_t texId, const uint32_t tmuConfig)
+    bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig)
     {
         // Find the TMU by searching through the bound textures, if the current texture ID is currently used.
         // If not, just ignore it because then the currently used texture must not be changed.
@@ -462,7 +479,8 @@ private:
         {
             if (m_boundTextures[tmu] == texId)
             {
-                return writeToReg(ListAssembler::SET_TMU_TEXTURE_CONFIG(tmu), tmuConfig);  
+                tmuConfig.setTmu(tmu);
+                return writeReg(tmuConfig);  
             }
         }
         return true;
