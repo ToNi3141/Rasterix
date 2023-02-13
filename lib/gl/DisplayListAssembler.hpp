@@ -51,9 +51,6 @@ private:
         // This mask will set the immediate value
         static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
 
-        // Calculate the triangle size with align overhead.
-        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<TriangleStreamDesc>();
-
         // OPs for the DMA Stream Engine
         static constexpr StreamCommandType DSE_NOP              = 0x0000'0000;
         static constexpr StreamCommandType DSE_STORE            = 0xD000'0000;
@@ -78,8 +75,6 @@ private:
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0010;
         static constexpr StreamCommandType RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0020;
-
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
     };
     using SCT = typename StreamCommand::StreamCommandType;
 
@@ -117,21 +112,6 @@ public:
             }
         }
         return false;
-    }
-
-    bool drawTriangle(const TriangleStreamDesc& desc)
-    {
-        if (openNewStreamSection())
-        {
-            m_wasLastCommandATextureCommand.reset();
-            TriangleStreamDesc* d = createStreamCommand<TriangleStreamDesc>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
-            if (d == nullptr)
-            {
-                return false;
-            }
-            std::memcpy(d, &desc, sizeof(desc));
-        }
-        return true;
     }
 
     bool updateTexture(const uint32_t addr, const uint16_t* pixels, const uint32_t texSize)
@@ -249,12 +229,13 @@ public:
         return false;
     }
 
-    bool writeFogArray(const FogLutStreamDesc desc)
+    template <typename TDesc>
+    bool writeDescriptor(const TDesc desc)
     {
         if (openNewStreamSection())
         {
             // Check if the display list contains enough space
-            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<uint64_t>() * desc.size());
+            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<typename TDesc::ValType>() * desc.size());
             if (expectedSize >= m_displayList.getFreeSpace())
             {
                 return false;
@@ -271,16 +252,23 @@ public:
                 // Out of memory error
                 return false;
             }
-            *opDl = StreamCommand::RR_OP_FOG_LUT_STREAM;
+            *opDl = desc.command();
 
-            // Copy array elements
-            tcb::span<const uint64_t> arr = desc.serialize();
-            for (auto a : arr)
+            // Optimization for texture loading: Only reset the texture command when a triangle was rendered.
+            // Other commands don't matter, because only the triangle uses the texture.
+            if (desc.command() & StreamCommand::RR_OP_TRIANGLE_STREAM)
             {
-                uint64_t *argDl = m_displayList.template create<uint64_t>();
+                m_wasLastCommandATextureCommand.reset();
+            }
+
+            // Create elements
+            typename TDesc::Desc arr;
+            for (auto& a : arr)
+            {
+                typename TDesc::ValType *argDl = m_displayList.template create<typename TDesc::ValType>();
                 if (argDl)
                 {
-                    *argDl = a;
+                    a = { argDl, sizeof(typename TDesc::ValType) };
                 }
                 else
                 {
@@ -288,6 +276,7 @@ public:
                     return false;
                 }
             }
+            desc.serialize(arr);
             return true;
         }
         return false;

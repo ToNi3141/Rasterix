@@ -129,7 +129,7 @@ public:
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].drawTriangle(triangleDesc);
+                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(triangleDesc);
                 if (ret == false)
                 {
                     return false;
@@ -299,7 +299,7 @@ public:
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeFogArray(fogLutDesc);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(fogLutDesc);
         }
         return ret;
     }

@@ -11,6 +11,7 @@ namespace rr
 class FogLutStreamDesc
 {
     static constexpr std::size_t LUT_SIZE { 33 };
+    static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
 public:
     void setBounds(const float lower, const float upper)
     {
@@ -24,8 +25,17 @@ public:
         m_lut[index + 1].numbers.b = b;
     }
 
-    tcb::span<const uint64_t> serialize() const { return { reinterpret_cast<const uint64_t*>(m_lut.data()), m_lut.size() }; }
+    using ValType = uint64_t;
+    using Desc = std::array<tcb::span<ValType>, LUT_SIZE>;
+    void serialize(Desc& desc) const 
+    { 
+        for (uint8_t i = 0; i < desc.size(); i++)
+        {
+            *(desc[i].data()) = m_lut[i].val;
+        }
+    }
     static constexpr std::size_t size() { return LUT_SIZE; }
+    static constexpr uint32_t command() { return FOG_LUT_STREAM; }
 private:
     union Value {
 #pragma pack(push, 4)

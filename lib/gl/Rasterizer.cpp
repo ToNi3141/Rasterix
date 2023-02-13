@@ -41,8 +41,8 @@ bool Rasterizer::checkIfTriangleIsInBounds(TriangleStreamDesc &desc,
 {
     // Check if the triangle is in the current area by checking if the end position is below the start line
     // and if the start of the triangle is within this area
-    if ((desc.bbEndY >= lineStart) &&
-            (desc.bbStartY < lineEnd))
+    if ((desc.getDesc().bbEndY >= lineStart) &&
+            (desc.getDesc().bbStartY < lineEnd))
     {
         return true;
     }
@@ -122,10 +122,10 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Tr
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
 
-    desc.bbStartX = bbStartX;
-    desc.bbStartY = bbStartY;
-    desc.bbEndX = bbEndX;
-    desc.bbEndY = bbEndY;
+    desc.getDesc().bbStartX = bbStartX;
+    desc.getDesc().bbStartY = bbStartY;
+    desc.getDesc().bbEndX = bbEndX;
+    desc.getDesc().bbEndY = bbEndY;
 
     VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
 
@@ -137,9 +137,9 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Tr
 
     // Interpolate triangle
     Vec2i p = {{(bbStartX << EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE}};
-    Vec3i& wi = desc.wInit; // Sn.4
-    Vec3i& wIncX = desc.wXInc;
-    Vec3i& wIncY = desc.wYInc;
+    Vec3i& wi = desc.getDesc().wInit; // Sn.4
+    Vec3i& wIncX = desc.getDesc().wXInc;
+    Vec3i& wIncY = desc.getDesc().wYInc;
     wi[0] = edgeFunctionFixPoint(v1, v2, p);
     wi[1] = edgeFunctionFixPoint(v2, v0, p);
     wi[2] = edgeFunctionFixPoint(v0, v1, p);
@@ -172,7 +172,7 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Tr
     wIncYNorm.mul(areaInv);
 
     // Interpolate texture
-    for (uint8_t i = 0; i < desc.texture.size(); i++)
+    for (uint8_t i = 0; i < desc.getDesc().texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {
@@ -180,34 +180,34 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Tr
             Vec3 texT { { triangle.texture0[i][0][1], triangle.texture1[i][0][1], triangle.texture2[i][0][1] } };
             Vec3 texQ { { triangle.texture0[i][0][3], triangle.texture1[i][0][3], triangle.texture2[i][0][3] } };
 
-            desc.texture[i].texStq[0] = texS.dot(wNorm);
-            desc.texture[i].texStq[1] = texT.dot(wNorm);
-            desc.texture[i].texStq[2] = texQ.dot(wNorm);
+            desc.getDesc().texture[i].texStq[0] = texS.dot(wNorm);
+            desc.getDesc().texture[i].texStq[1] = texT.dot(wNorm);
+            desc.getDesc().texture[i].texStq[2] = texQ.dot(wNorm);
 
-            desc.texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
-            desc.texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
-            desc.texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
+            desc.getDesc().texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
+            desc.getDesc().texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
+            desc.getDesc().texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
 
-            desc.texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
-            desc.texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
-            desc.texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+            desc.getDesc().texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
+            desc.getDesc().texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
+            desc.getDesc().texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
         }
     }
 
     // Interpolate W
     Vec3 vW { { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] } };
-    desc.depthW = vW.dot(wNorm);
-    desc.depthWXInc = vW.dot(wIncXNorm);
-    desc.depthWYInc = vW.dot(wIncYNorm);
+    desc.getDesc().depthW = vW.dot(wNorm);
+    desc.getDesc().depthWXInc = vW.dot(wIncXNorm);
+    desc.getDesc().depthWYInc = vW.dot(wIncYNorm);
 
     // Interpolate Z
     // Using z buffer. Here are two options for the depth buffer:
     // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
     // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
     Vec3 vZ { { triangle.vertex0[2], triangle.vertex1[2], triangle.vertex2[2] } };
-    desc.depthZ = vZ.dot(wNorm);
-    desc.depthZXInc = vZ.dot(wIncXNorm);
-    desc.depthZYInc = vZ.dot(wIncYNorm);
+    desc.getDesc().depthZ = vZ.dot(wNorm);
+    desc.getDesc().depthZXInc = vZ.dot(wIncXNorm);
+    desc.getDesc().depthZYInc = vZ.dot(wIncYNorm);
 
     // Interpolate color
     Vec3 cr { { triangle.color0[0], triangle.color1[0], triangle.color2[0] } };
@@ -215,20 +215,20 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Tr
     Vec3 cb { { triangle.color0[2], triangle.color1[2], triangle.color2[2] } };
     Vec3 ca { { triangle.color0[3], triangle.color1[3], triangle.color2[3] } };
 
-    desc.color[0] = cr.dot(wNorm);
-    desc.color[1] = cg.dot(wNorm);
-    desc.color[2] = cb.dot(wNorm);
-    desc.color[3] = ca.dot(wNorm);
+    desc.getDesc().color[0] = cr.dot(wNorm);
+    desc.getDesc().color[1] = cg.dot(wNorm);
+    desc.getDesc().color[2] = cb.dot(wNorm);
+    desc.getDesc().color[3] = ca.dot(wNorm);
 
-    desc.colorXInc[0] = cr.dot(wIncXNorm);
-    desc.colorXInc[1] = cg.dot(wIncXNorm);
-    desc.colorXInc[2] = cb.dot(wIncXNorm);
-    desc.colorXInc[3] = ca.dot(wIncXNorm);
+    desc.getDesc().colorXInc[0] = cr.dot(wIncXNorm);
+    desc.getDesc().colorXInc[1] = cg.dot(wIncXNorm);
+    desc.getDesc().colorXInc[2] = cb.dot(wIncXNorm);
+    desc.getDesc().colorXInc[3] = ca.dot(wIncXNorm);
 
-    desc.colorYInc[0] = cr.dot(wIncYNorm);
-    desc.colorYInc[1] = cg.dot(wIncYNorm);
-    desc.colorYInc[2] = cb.dot(wIncYNorm);
-    desc.colorYInc[3] = ca.dot(wIncYNorm);
+    desc.getDesc().colorYInc[0] = cr.dot(wIncYNorm);
+    desc.getDesc().colorYInc[1] = cg.dot(wIncYNorm);
+    desc.getDesc().colorYInc[2] = cb.dot(wIncYNorm);
+    desc.getDesc().colorYInc[3] = ca.dot(wIncYNorm);
 
     return true;
 }
