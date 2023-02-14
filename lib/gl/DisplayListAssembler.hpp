@@ -26,8 +26,9 @@
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
-#include "descriptors/TriangleStreamDesc.hpp"
-#include "descriptors/FogLutStreamDesc.hpp"
+#include "DmaStreamEngineCommands.hpp"
+#include "commands/TriangleStreamCmd.hpp"
+#include "commands/FogLutStreamCmd.hpp"
 
 namespace rr
 {
@@ -84,34 +85,6 @@ public:
         m_displayList.clear();
         m_streamCommand = nullptr;
         m_wasLastCommandATextureCommand.reset();
-    }
-
-    bool commit(const uint32_t size, const uint32_t addr, const bool commitToStream)
-    {
-        if (openNewStreamSection())
-        {
-            // Add frame buffer flush command
-            SCT *op = m_displayList.template create<SCT>();
-            if (op)
-            {
-                *op = StreamCommand::RR_OP_FRAMEBUFFER_COMMIT | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
-            }
-
-            closeStreamSection();
-
-            if (op != nullptr)
-            {
-                if (commitToStream)
-                {
-                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_STREAM | size, 0);
-                }
-                else
-                {
-                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_MEMORY | size, addr);
-                }
-            }
-        }
-        return false;
     }
 
     bool updateTexture(const uint32_t addr, const uint16_t* pixels, const uint32_t texSize)
@@ -187,38 +160,6 @@ public:
         return ret;
     }
 
-    bool clear(bool colorBuffer, bool depthBuffer)
-    {
-        if (openNewStreamSection())
-        {
-            const SCT opColorBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
-            const SCT opDepthBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
-
-            SCT *op = m_displayList.template create<SCT>();
-            if (op)
-            {
-                if (colorBuffer && depthBuffer)
-                {
-                    *op = opColorBuffer | opDepthBuffer;
-                }
-                else if (colorBuffer)
-                {
-                    *op = opColorBuffer;
-                }
-                else if (depthBuffer)
-                {
-                    *op = opDepthBuffer;
-                }
-                else
-                {
-                    *op = StreamCommand::RR_OP_NOP;
-                }
-            }
-            return op != nullptr;
-        }
-        return false;
-    }
-
     template <typename TArg>
     bool writeRegister(const TArg& regVal)
     {
@@ -277,7 +218,22 @@ public:
                 }
             }
             desc.serialize(arr);
-            return true;
+            
+            bool ret = true;
+            // Check if commands for the DSE are available. If so, append command the commands.
+            if constexpr (CommandHasDseCommand<decltype(desc)>::value)
+            {
+                if (desc.dseCommand() != DSEC::NOP)
+                {
+                    closeStreamSection();
+                    for (DSEC::Transfer& t : desc.dseTransfer())
+                    {
+                        ret = ret && appendStreamCommand<SCT>(desc.dseCommand() | t.size, t.addr);
+                    }
+                }
+            }
+
+            return ret;
         }
         return false;
     }
@@ -293,6 +249,15 @@ public:
     }
 
 private:
+    template<typename T> class CommandHasDseCommand {
+        template<typename> static std::false_type test(...);
+        template<typename U> static auto test(int)
+        -> decltype(std::declval<U>().dseCommand(), std::true_type());
+    public:
+        static constexpr bool value
+            = std::is_same<decltype(test<T>(0)), std::true_type>::value;
+    };
+
     template <typename TArg> 
     TArg* createStreamCommand(const SCT op)
     {

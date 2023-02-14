@@ -41,8 +41,9 @@
 #include "registers/ScissorStartReg.hpp"
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
-#include "descriptors/TriangleStreamDesc.hpp"
-#include "descriptors/FogLutStreamDesc.hpp"
+#include "commands/TriangleStreamCmd.hpp"
+#include "commands/FogLutStreamCmd.hpp"
+#include "commands/FramebufferCmd.hpp"
 
 namespace rr
 {
@@ -113,7 +114,7 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamDesc triangleDesc;
+        TriangleStreamCmd triangleDesc;
 
         if (!m_rasterizer.rasterize(triangleDesc, triangle))
         {
@@ -169,8 +170,10 @@ public:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
+            FramebufferCmd cmd { true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].commit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeDescriptor(cmd);
         }
 
         // Upload textures
@@ -208,6 +211,8 @@ public:
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
+        FramebufferCmd cmd {colorBuffer, depthBuffer};
+        cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
@@ -217,12 +222,12 @@ public:
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
                 {
-                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
+                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(cmd);
                 }
             }
             else
             {
-                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clear(colorBuffer, depthBuffer);
+                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(cmd);
             }
         }
         return ret;
@@ -270,7 +275,7 @@ public:
     virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
     {
         bool ret = true;
-        FogLutStreamDesc fogLutDesc;
+        FogLutStreamCmd fogLutDesc;
 
         // The verilog code is not able to handle float values smaller than 1.0f.
         // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will

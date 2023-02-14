@@ -30,12 +30,12 @@ Rasterizer::Rasterizer()
 }
 
 
-bool Rasterizer::rasterize(TriangleStreamDesc& desc, const IRenderer::Triangle& triangle)
+bool Rasterizer::rasterize(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle)
 {
    return rasterizeFixPoint(desc, triangle);
 }
 
-bool Rasterizer::checkIfTriangleIsInBounds(TriangleStreamDesc &desc,
+bool Rasterizer::checkIfTriangleIsInBounds(TriangleStreamCmd &desc,
                                            const uint16_t lineStart,
                                            const uint16_t lineEnd)
 {
@@ -65,7 +65,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterizeFixPoint(TriangleStreamDesc& desc, const IRenderer::Triangle& triangle)
+bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle)
 {
     static constexpr uint32_t EDGE_FUNC_SIZE = 4;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));

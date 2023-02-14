@@ -34,7 +34,8 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     $${ICEGL_PATH}/*.hpp \
     $${ICEGL_PATH}/*.h \
-    $${ICEGL_PATH}/registers/*
+    $${ICEGL_PATH}/registers/* \
+    $${ICEGL_PATH}/commands/*
 
 
 QMAKE_CXXFLAGS += -I../../lib/3rdParty/span/include/

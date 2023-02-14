@@ -1,5 +1,5 @@
-#ifndef _TRIANGLE_STREAM_DESC_
-#define _TRIANGLE_STREAM_DESC_
+#ifndef _TRIANGLE_STREAM_CMD_HPP_
+#define _TRIANGLE_STREAM_CMD_HPP_
 
 #include <cstdint>
 #include <array>
@@ -10,7 +10,7 @@
 namespace rr
 {
 
-class TriangleStreamDesc
+class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
 public:
@@ -62,4 +62,4 @@ private:
 
 } // namespace rr
 
-#endif // _TRIANGLE_STREAM_DESC_
+#endif // _TRIANGLE_STREAM_CMD_HPP_

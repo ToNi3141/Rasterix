@@ -1,5 +1,5 @@
-#ifndef _FOG_LUT_STREAM_DESC_
-#define _FOG_LUT_STREAM_DESC_
+#ifndef _FOG_LUT_STREAM_CMD_HPP_
+#define _FOG_LUT_STREAM_CMD_HPP_
 
 #include <cstdint>
 #include <array>
@@ -8,7 +8,7 @@
 namespace rr
 {
 
-class FogLutStreamDesc
+class FogLutStreamCmd
 {
     static constexpr std::size_t LUT_SIZE { 33 };
     static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
@@ -56,4 +56,4 @@ private:
 
 } // namespace rr
 
-#endif // _FOG_LUT_STREAM_DESC_
+#endif // _FOG_LUT_STREAM_CMD_HPP_
