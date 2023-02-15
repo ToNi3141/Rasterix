@@ -16,6 +16,8 @@ static constexpr uint32_t STREAM { 0x9000'0000 };
 static constexpr uint32_t COMMIT_TO_STREAM { 0x6000'0000 };
 static constexpr uint32_t COMMIT_TO_MEMORY { 0xE000'0000 };
 
+static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size. The alignment is not important.
+
 struct Transfer
 {
     uint32_t addr;

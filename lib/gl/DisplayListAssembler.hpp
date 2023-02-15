@@ -229,7 +229,7 @@ public:
             if (cmd.dseCommand() != DSEC::NOP)
             {
                 closeStreamSection();
-                for (DSEC::Transfer& t : cmd.dseTransfer())
+                for (const DSEC::Transfer& t : cmd.dseTransfer())
                 {
                     ret = ret && appendStreamCommand<SCT>(cmd.dseCommand() | t.size, t.addr);
                 }

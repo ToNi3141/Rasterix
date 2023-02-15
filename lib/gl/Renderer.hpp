@@ -44,6 +44,7 @@
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
+#include "commands/TextureStreamCmd.hpp"
 
 namespace rr
 {
@@ -336,7 +337,8 @@ public:
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].useTexture(target, pages, m_textureManager.TEXTURE_PAGE_SIZE, texSize);
+            using Command = TextureStreamCmd<RenderConfig::MAX_TEXTURE_SIZE, RenderConfig::TEXTURE_PAGE_SIZE>;
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize } );
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(reg);
