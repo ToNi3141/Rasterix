@@ -130,7 +130,7 @@ public:
                                                       currentScreenPositionStart,
                                                       currentScreenPositionEnd))
             {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(triangleDesc);
+                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleDesc);
                 if (ret == false)
                 {
                     return false;
@@ -173,7 +173,7 @@ public:
             FramebufferCmd cmd { true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeDescriptor(cmd);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
         }
 
         // Upload textures
@@ -222,12 +222,12 @@ public:
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
                 {
-                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(cmd);
+                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
                 }
             }
             else
             {
-                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(cmd);
+                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
             }
         }
         return ret;
@@ -304,7 +304,7 @@ public:
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeDescriptor(fogLutDesc);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(fogLutDesc);
         }
         return ret;
     }

@@ -47,13 +47,11 @@ public:
 
     TriangleDesc& getDesc() { return m_desc; }
 
-    using ValType = TriangleDesc;
-    using Desc = std::array<tcb::span<ValType>, 1>;
+    using Desc = std::array<tcb::span<TriangleDesc>, 1>;
     void serialize(Desc& desc) const 
     { 
-        std::memcpy(desc[0].data(), &m_desc, sizeof(ValType));
+        std::memcpy(desc[0].data(), &m_desc, sizeof(TriangleDesc));
     }
-    static constexpr std::size_t size() { return 1; }
     static constexpr uint32_t command() { return TRIANGLE_STREAM | sizeof(TriangleDesc); }
 
 private:

@@ -25,8 +25,7 @@ public:
         m_lut[index + 1].numbers.b = b;
     }
 
-    using ValType = uint64_t;
-    using Desc = std::array<tcb::span<ValType>, LUT_SIZE>;
+    using Desc = std::array<tcb::span<uint64_t>, LUT_SIZE>;
     void serialize(Desc& desc) const 
     { 
         for (uint8_t i = 0; i < desc.size(); i++)
@@ -34,7 +33,6 @@ public:
             *(desc[i].data()) = m_lut[i].val;
         }
     }
-    static constexpr std::size_t size() { return LUT_SIZE; }
     static constexpr uint32_t command() { return FOG_LUT_STREAM; }
 private:
     union Value {

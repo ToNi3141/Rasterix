@@ -51,10 +51,8 @@ public:
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
 
-    using ValType = uint8_t;
-    using Desc = std::array<tcb::span<ValType>, 0>;
+    using Desc = std::array<tcb::span<uint8_t>, 0>;
     void serialize(Desc&) const {}
-    static constexpr std::size_t size() { return 0; }
     uint32_t command() const { return m_op; }
 
     uint32_t dseCommand() const { return m_dseOp; }

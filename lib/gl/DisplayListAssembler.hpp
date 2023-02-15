@@ -170,13 +170,15 @@ public:
         return false;
     }
 
-    template <typename TDesc>
-    bool writeDescriptor(const TDesc desc)
+    template <typename TCommand>
+    bool addCommand(const TCommand cmd)
     {
+        using DescArray = typename TCommand::Desc;
+        using DescValueType = typename DescArray::value_type::element_type;
         if (openNewStreamSection())
         {
             // Check if the display list contains enough space
-            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<typename TDesc::ValType>() * desc.size());
+            static constexpr std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>());
             if (expectedSize >= m_displayList.getFreeSpace())
             {
                 return false;
@@ -193,23 +195,23 @@ public:
                 // Out of memory error
                 return false;
             }
-            *opDl = desc.command();
+            *opDl = cmd.command();
 
             // Optimization for texture loading: Only reset the texture command when a triangle was rendered.
             // Other commands don't matter, because only the triangle uses the texture.
-            if (desc.command() & StreamCommand::RR_OP_TRIANGLE_STREAM)
+            if ((cmd.command() & StreamCommand::RR_OP_TRIANGLE_STREAM) == StreamCommand::RR_OP_TRIANGLE_STREAM)
             {
                 m_wasLastCommandATextureCommand.reset();
             }
 
             // Create elements
-            typename TDesc::Desc arr;
+            DescArray arr;
             for (auto& a : arr)
             {
-                typename TDesc::ValType *argDl = m_displayList.template create<typename TDesc::ValType>();
+                DescValueType *argDl = m_displayList.template create<DescValueType>();
                 if (argDl)
                 {
-                    a = { argDl, sizeof(typename TDesc::ValType) };
+                    a = { argDl, sizeof(DescValueType) };
                 }
                 else
                 {
@@ -217,25 +219,24 @@ public:
                     return false;
                 }
             }
-            desc.serialize(arr);
-            
-            bool ret = true;
-            // Check if commands for the DSE are available. If so, append command the commands.
-            if constexpr (CommandHasDseCommand<decltype(desc)>::value)
+            cmd.serialize(arr);
+        }
+
+        bool ret = true;
+        // Check if commands for the DSE are available. If so, append command the commands.
+        if constexpr (HasDseCommand<decltype(cmd)>::value)
+        {
+            if (cmd.dseCommand() != DSEC::NOP)
             {
-                if (desc.dseCommand() != DSEC::NOP)
+                closeStreamSection();
+                for (DSEC::Transfer& t : cmd.dseTransfer())
                 {
-                    closeStreamSection();
-                    for (DSEC::Transfer& t : desc.dseTransfer())
-                    {
-                        ret = ret && appendStreamCommand<SCT>(desc.dseCommand() | t.size, t.addr);
-                    }
+                    ret = ret && appendStreamCommand<SCT>(cmd.dseCommand() | t.size, t.addr);
                 }
             }
-
-            return ret;
         }
-        return false;
+
+        return ret;
     }
 
     const List* getDisplayList() const
@@ -249,13 +250,15 @@ public:
     }
 
 private:
-    template<typename T> class CommandHasDseCommand {
-        template<typename> static std::false_type test(...);
-        template<typename U> static auto test(int)
-        -> decltype(std::declval<U>().dseCommand(), std::true_type());
+    template<typename T> 
+    class HasDseCommand 
+    {
+        template<typename> 
+        static std::false_type test(...);
+        template<typename U> 
+        static auto test(int) -> decltype(std::declval<U>().dseCommand(), std::true_type());
     public:
-        static constexpr bool value
-            = std::is_same<decltype(test<T>(0)), std::true_type>::value;
+        static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
 
     template <typename TArg> 
