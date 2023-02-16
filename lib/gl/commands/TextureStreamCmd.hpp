@@ -9,10 +9,10 @@
 namespace rr
 {
 
-template <uint32_t MAX_TEXTURE_SIZE, uint32_t TEXTURE_PAGE_SIZE>
+template <class RenderConfig>
 class TextureStreamCmd
 {
-    static constexpr uint32_t MAX_PAGES { (MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 2) / TEXTURE_PAGE_SIZE };
+    static constexpr uint32_t MAX_PAGES { (RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2) / RenderConfig::TEXTURE_PAGE_SIZE };
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 8 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 8 }; // size: 8 bit
@@ -24,13 +24,15 @@ public:
         , m_texSize { texSize }
     {
         m_texSize = (std::max)(m_texSize, DSEC::DEVICE_MIN_TRANSFER_SIZE); // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        uint32_t pageSize = (m_texSize > TEXTURE_PAGE_SIZE) ? TEXTURE_PAGE_SIZE : m_texSize;
+        uint32_t pageSize = (m_texSize > RenderConfig::TEXTURE_PAGE_SIZE) ? RenderConfig::TEXTURE_PAGE_SIZE : m_texSize;
         m_numberOfPages = pages.size();
         for (uint32_t i = 0; i < pages.size(); i++)
         {
-            m_pages[i] = { pages[i] * TEXTURE_PAGE_SIZE, pageSize };
+            m_pages[i] = { pages[i] * RenderConfig::TEXTURE_PAGE_SIZE, pageSize };
         }
     }
+
+    uint8_t getTmu() const { return m_tmu; }
 
     using Desc = std::array<tcb::span<uint8_t>, 0>;
     void serialize(Desc&) const {}

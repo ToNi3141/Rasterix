@@ -181,7 +181,7 @@ public:
         m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<TEX_UPLOAD_SIZE, RenderConfig::CMD_STREAM_WIDTH / 8> uploader;
+            DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
             uploader.updateTexture(gramAddr, texAddr, texSize);
 
             while (!m_busConnector.clearToSend())
@@ -337,7 +337,7 @@ public:
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            using Command = TextureStreamCmd<RenderConfig::MAX_TEXTURE_SIZE, RenderConfig::TEXTURE_PAGE_SIZE>;
+            using Command = TextureStreamCmd<RenderConfig>;
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize } );
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
@@ -445,7 +445,7 @@ public:
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using ListAssembler = DisplayListAssembler<RenderConfig::DISPLAYLIST_SIZE, RenderConfig::CMD_STREAM_WIDTH / 8, RenderConfig::TMU_COUNT>;
+    using ListAssembler = DisplayListAssembler<RenderConfig>;
     using TextureManager = TextureMemoryManager<RenderConfig>; 
 
     template <typename TArg>

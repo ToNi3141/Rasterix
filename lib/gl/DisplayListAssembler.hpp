@@ -29,14 +29,16 @@
 #include "DmaStreamEngineCommands.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
+#include "commands/TextureStreamCmd.hpp"
 
 namespace rr
 {
 
-template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT, uint8_t TMU_COUNT = 0>
+template <class RenderConfig, uint32_t DISPLAY_LIST_SIZE = RenderConfig::DISPLAYLIST_SIZE>
 class DisplayListAssembler {
 public:
-        using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
+    static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
+    using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 private:
     static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size. The alignment is not important.
     struct StreamCommand
@@ -101,65 +103,6 @@ public:
         return false;
     }
 
-    bool useTexture(const uint8_t tmu,
-                    const tcb::span<const uint16_t> pages,
-                    const uint32_t pageSize,
-                    const uint32_t texSize)
-    {
-        if (tmu >= m_wasLastCommandATextureCommand.size())
-        {
-            return false;
-        }
-        bool ret = false;
-        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        const std::size_t ps { (texSizeOnDevice > pageSize) ? pageSize : texSizeOnDevice };
-        closeStreamSection();
-        if (m_wasLastCommandATextureCommand[tmu])
-        {
-            m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
-        }
-
-        m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-        if (openNewStreamSection())
-        {
-            SCT *texStreamOp { nullptr };
-            SCT *texLoad { nullptr };
-            uint32_t *texLoadAddr { nullptr };
-            texStreamOp = m_displayList.template create<SCT>();
-            if (texStreamOp)
-            {
-                const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSizeOnDevice))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
-                const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
-
-                *texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
-                closeStreamSection();
-            }
-            else
-            {
-                return false;
-            }
-            m_wasLastCommandATextureCommand.set(tmu);
-            for (const uint16_t p : pages)
-            {
-                texLoad = m_displayList.template create<SCT>();
-                texLoadAddr = m_displayList.template create<uint32_t>();
-                if (texLoad && texLoadAddr)
-                {
-                    *texLoad = StreamCommand::DSE_LOAD | ps;
-                    *texLoadAddr = p * pageSize;
-                    ret = true;
-                }
-                else
-                {
-                    m_displayList.initArea(m_texPosInDisplayList[tmu], m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu]);
-                }
-            }
-            m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
-        }
-
-        return ret;
-    }
-
     template <typename TArg>
     bool writeRegister(const TArg& regVal)
     {
@@ -173,6 +116,36 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand cmd)
     {
+        // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
+        // If the texture wasn't used, then it is not necessary to send to he renderer a load command.
+        // Unfortunately this optimization breaks the code separation. It can be removed, the functionality of the command
+        // shouldn't be affected.
+        if constexpr (std::is_same<TCommand, TriangleStreamCmd>::value)
+        {
+            // Mark that a triangle was rendered
+            m_wasLastCommandATextureCommand.reset();
+        }
+        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        {
+            const uint8_t tmu = cmd.getTmu();
+            if (tmu >= m_wasLastCommandATextureCommand.size())
+            {
+                return false;
+            }
+            // Close the current stream to avoid and undefined behaviour 
+            closeStreamSection();
+            // Check if the last command was a texture command. If so, remove the commands from the display list
+            if (m_wasLastCommandATextureCommand[tmu])
+            {
+                m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
+            }
+            // Remember the current position in the display list
+            m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
+            // Mark that a texture was loaded
+            m_wasLastCommandATextureCommand.set(tmu);
+        }
+
+        // Add commands for the render core
         using DescArray = typename TCommand::Desc;
         using DescValueType = typename DescArray::value_type::element_type;
         if (openNewStreamSection())
@@ -197,12 +170,6 @@ public:
             }
             *opDl = cmd.command();
 
-            // Optimization for texture loading: Only reset the texture command when a triangle was rendered.
-            // Other commands don't matter, because only the triangle uses the texture.
-            if ((cmd.command() & StreamCommand::RR_OP_TRIANGLE_STREAM) == StreamCommand::RR_OP_TRIANGLE_STREAM)
-            {
-                m_wasLastCommandATextureCommand.reset();
-            }
 
             // Create elements
             DescArray arr;
@@ -222,11 +189,11 @@ public:
             cmd.serialize(arr);
         }
 
+        // Add commands for the DmaStreamEngine
         bool ret = true;
-        // Check if commands for the DSE are available. If so, append command the commands.
         if constexpr (HasDseCommand<decltype(cmd)>::value)
         {
-            if (cmd.dseCommand() != DSEC::NOP)
+            if (cmd.dseCommand() != DSEC::NOP) // rename dseCommand into dseOp
             {
                 closeStreamSection();
                 for (const DSEC::Transfer& t : cmd.dseTransfer())
@@ -234,6 +201,13 @@ public:
                     ret = ret && appendStreamCommand<SCT>(cmd.dseCommand() | t.size, t.addr);
                 }
             }
+        }
+
+        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        {
+            const uint8_t tmu = cmd.getTmu();
+            // Store the end position of the display list.
+            m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
         }
 
         return ret;
@@ -339,9 +313,9 @@ private:
     SCT *m_streamCommand { nullptr };
 
     // Helper variables to optimize the texture loading
-    std::bitset<TMU_COUNT> m_wasLastCommandATextureCommand {};
-    std::array<uint32_t, TMU_COUNT> m_texPosInDisplayList {};
-    std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
+    std::bitset<RenderConfig::TMU_COUNT> m_wasLastCommandATextureCommand {};
+    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texPosInDisplayList {};
+    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texSizeInDisplayList {};
 };
 
 } // namespace rr
