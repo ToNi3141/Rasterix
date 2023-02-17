@@ -103,16 +103,6 @@ public:
         return false;
     }
 
-    template <typename TArg>
-    bool writeRegister(const TArg& regVal)
-    {
-        if (openNewStreamSection())
-        {
-            return appendStreamCommand<uint32_t>(StreamCommand::RR_OP_RENDER_CONFIG | regVal.getAddr(), regVal.serialize());
-        }
-        return false;
-    }
-
     template <typename TCommand>
     bool addCommand(const TCommand cmd)
     {

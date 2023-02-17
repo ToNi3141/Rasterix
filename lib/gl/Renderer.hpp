@@ -45,6 +45,7 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
+#include "commands/WriteRegisterCmd.hpp"
 
 namespace rr
 {
@@ -95,8 +96,8 @@ public:
         {
             YOffsetReg reg;
             reg.setY(i * m_yLineResolution);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(reg);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeRegister(reg);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
         }
 
         setTexEnvColor(0, {{0, 0, 0, 0}});
@@ -203,7 +204,7 @@ public:
                     m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
                     YOffsetReg reg;
                     reg.setY(i * m_yLineResolution);
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].writeRegister(reg);
+                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
                 }
                 return true;
             });
@@ -341,7 +342,7 @@ public:
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize } );
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(reg);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
         }
         return ret;
     }
@@ -454,7 +455,7 @@ private:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].writeRegister(regVal);
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { regVal });
         }
         return ret;
     }
