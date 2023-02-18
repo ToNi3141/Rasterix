@@ -21,13 +21,17 @@
 
 #include <cstdint>
 #include <array>
+#include <tcb/span.hpp>
 #include "Vec.hpp"
-#include "tcb/span.hpp"
-#include "IRenderer.hpp"
+#include "Veci.hpp"
+#include "Triangle.hpp"
+#include "Rasterizer.hpp"
+#include "commands/TriangleStreamTypes.hpp"
 
 namespace rr
 {
 
+template <uint8_t MAX_TMU_COUNT>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -35,35 +39,22 @@ public:
     struct TriangleDesc
     {
 #pragma pack(push, 4)
-        struct Texture
-        {
-            Vec3 texStq;
-            Vec3 texStqXInc;
-            Vec3 texStqYInc;
-        };
-
-        uint32_t reserved;
-        uint16_t bbStartX;
-        uint16_t bbStartY;
-        uint16_t bbEndX;
-        uint16_t bbEndY;
-        Vec3i wInit;
-        Vec3i wXInc;
-        Vec3i wYInc;
-        Vec4 color;
-        Vec4 colorXInc;
-        Vec4 colorYInc;
-        float depthW;
-        float depthWXInc;
-        float depthWYInc;
-        float depthZ;
-        float depthZXInc;
-        float depthZYInc;
-        std::array<Texture, IRenderer::MAX_TMU_COUNT> texture;
+        TriangleStreamTypes::StaticParams param;
+        std::array<TriangleStreamTypes::Texture, MAX_TMU_COUNT> texture;
 #pragma pack(pop)
     };
 
-    TriangleDesc& getDesc() { return m_desc; }
+    TriangleStreamCmd(const Rasterizer& rasterizer, const Triangle& triangle)
+    {
+        m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
+    }
+
+    bool isInBounds(const uint16_t lineStart, const uint16_t lineEnd) const 
+    {
+        return Rasterizer::checkIfTriangleIsInBounds(m_desc.param, lineStart, lineEnd);
+    }
+
+    bool isVisible() const { return m_visible; };
 
     using Desc = std::array<tcb::span<TriangleDesc>, 1>;
     void serialize(Desc& desc) const 
@@ -74,6 +65,7 @@ public:
 
 private:
     TriangleDesc m_desc;
+    bool m_visible { false };
 };
 
 } // namespace rr

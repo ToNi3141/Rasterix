@@ -31,16 +31,31 @@ class FogLutStreamCmd
     static constexpr std::size_t LUT_SIZE { 33 };
     static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
 public:
-    void setBounds(const float lower, const float upper)
+    FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
     {
-        m_lut[0].floats.lower = lower;
-        m_lut[0].floats.upper = upper;
-    }
-    
-    void setLutValue(const uint8_t index, const float m, const float b)
-    {
-        m_lut[index + 1].numbers.m = m;
-        m_lut[index + 1].numbers.b = b;
+        // The verilog code is not able to handle float values smaller than 1.0f.
+        // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
+        // the set x to 1.
+        const float lutLowerBound = start < 1.0f ? 1.0f : start;;
+        const float lutUpperBound = end;
+
+        // Add bounds to the lut value
+        setBounds(lutLowerBound, lutUpperBound);
+
+        // Calculate the lut entries
+        for (std::size_t i = 0; i < fogLut.size() - 1; i++)
+        {
+            float f = fogLut[i];
+            float fn = fogLut[i + 1];
+
+            const float diff = fn - f;
+            const float step = diff / 256.0f;
+
+            const float m = step * powf(2, 30);
+            const float b = f * powf(2, 30);
+
+            setLutValue(i, m, b);
+        }
     }
 
     using Desc = std::array<tcb::span<uint64_t>, LUT_SIZE>;
@@ -66,6 +81,18 @@ private:
         } floats;
 #pragma pack(pop)
     };
+
+    void setBounds(const float lower, const float upper)
+    {
+        m_lut[0].floats.lower = lower;
+        m_lut[0].floats.upper = upper;
+    }
+    
+    void setLutValue(const uint8_t index, const float m, const float b)
+    {
+        m_lut[index + 1].numbers.m = m;
+        m_lut[index + 1].numbers.b = b;
+    }
 
     std::array<Value, LUT_SIZE> m_lut;
 };

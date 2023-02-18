@@ -28,7 +28,6 @@
 #include "IRenderer.hpp"
 #include "DmaStreamEngineCommands.hpp"
 #include "commands/TriangleStreamCmd.hpp"
-#include "commands/FogLutStreamCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 
 namespace rr
@@ -75,7 +74,7 @@ public:
         // If the texture wasn't used, then it is not necessary to send to he renderer a load command.
         // Unfortunately this optimization breaks the code separation. It can be removed, the functionality of the command
         // shouldn't be affected.
-        if constexpr (std::is_same<TCommand, TriangleStreamCmd>::value)
+        if constexpr (std::is_same<TCommand, TriangleStreamCmd<IRenderer::MAX_TMU_COUNT>>::value)
         {
             // Mark that a triangle was rendered
             m_wasLastCommandATextureCommand.reset();

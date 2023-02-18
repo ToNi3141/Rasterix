@@ -28,6 +28,7 @@
 #include "registers/FragmentPipelineReg.hpp"
 #include "registers/FeatureEnableReg.hpp"
 #include "registers/TmuTextureReg.hpp"
+#include "Triangle.hpp"
 
 namespace rr
 {
@@ -37,7 +38,6 @@ public:
     static constexpr std::size_t MAX_TMU_COUNT { 2 };
 
     using TMU = uint8_t;
-
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
     
     struct TextureObject
@@ -138,19 +138,6 @@ public:
         const uint16_t width {}; ///< The width of the texture
         const uint16_t height {}; ///< The height of the texture
         const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
-    };
-
-    struct Triangle
-    {
-        const Vec4& vertex0;
-        const Vec4& vertex1;
-        const Vec4& vertex2;
-        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture0;
-        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture1;
-        const std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT>& texture2;
-        const Vec4& color0;
-        const Vec4& color1;
-        const Vec4& color2;
     };
 
     /// @brief Will render a triangle which is constructed with the given parameters

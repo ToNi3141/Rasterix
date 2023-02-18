@@ -408,12 +408,16 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan
         static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-        const bool success = m_renderer.drawTriangle( { vertListClipped[0],
+        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture0 { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } };
+        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture1 { { &texCoordListClipped[i - 2][0], &texCoordListClipped[i - 2][1] } };
+        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture2 { { &texCoordListClipped[i - 1][0], &texCoordListClipped[i - 1][1] } };
+        const bool success = m_renderer.drawTriangle({ 
+                vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
-                { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } },
-                { { &texCoordListClipped[i - 2][0], &texCoordListClipped[i - 2][1] } },
-                { { &texCoordListClipped[i - 1][0], &texCoordListClipped[i - 1][1] } },
+                { *(texture0.data()), texture0.size() },
+                { *(texture1.data()), texture1.size() },
+                { *(texture2.data()), texture2.size() },
                 colorListClipped[0],
                 colorListClipped[i - 2],
                 colorListClipped[i - 1] });

@@ -33,6 +33,10 @@
 #include "TextureMemoryManager.hpp"
 #include <limits>
 
+#include "registers/TexEnvReg.hpp"
+#include "registers/FragmentPipelineReg.hpp"
+#include "registers/FeatureEnableReg.hpp"
+#include "registers/TmuTextureReg.hpp"
 #include "registers/ColorBufferClearColorReg.hpp"
 #include "registers/DepthBufferClearDepthReg.hpp"
 #include "registers/FogColorReg.hpp"
@@ -100,10 +104,10 @@ public:
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
         }
 
-        setTexEnvColor(0, {{0, 0, 0, 0}});
+        setTexEnvColor(0, { { 0, 0, 0, 0 } });
         setClearColor({{0, 0, 0, 0}});
         setClearDepth(65535);
-        setFogColor({{255, 255, 255, 255}});
+        setFogColor({ { 255, 255, 255, 255 } });
         std::array<float, 33> fogLut{};
         std::fill(fogLut.begin(), fogLut.end(), 1.0f);
         setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
@@ -116,9 +120,9 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamCmd triangleDesc;
+        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT> triangleCmd { m_rasterizer, triangle };
 
-        if (!m_rasterizer.rasterize(triangleDesc, triangle))
+        if (!triangleCmd.isVisible())
         {
             // Triangle is not visible
             return true;
@@ -128,11 +132,9 @@ public:
         {
             const uint16_t currentScreenPositionStart = i * m_yLineResolution;
             const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
-            if (Rasterizer::checkIfTriangleIsInBounds(triangleDesc,
-                                                      currentScreenPositionStart,
-                                                      currentScreenPositionEnd))
+            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleDesc);
+                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
                 if (ret == false)
                 {
                     return false;
@@ -213,7 +215,7 @@ public:
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
-        FramebufferCmd cmd {colorBuffer, depthBuffer};
+        FramebufferCmd cmd { colorBuffer, depthBuffer };
         cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -277,31 +279,7 @@ public:
     virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
     {
         bool ret = true;
-        FogLutStreamCmd fogLutDesc;
-
-        // The verilog code is not able to handle float values smaller than 1.0f.
-        // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
-        // the set x to 1.
-        const float lutLowerBound = start < 1.0f ? 1.0f : start;;
-        const float lutUpperBound = end;
-
-        // Add bounds to the lut value
-        fogLutDesc.setBounds(lutLowerBound, lutUpperBound);
-
-        // Calculate the lut entries
-        for (std::size_t i = 0; i < fogLut.size() - 1; i++)
-        {
-            float f = fogLut[i];
-            float fn = fogLut[i + 1];
-
-            const float diff = fn - f;
-            const float step = diff / 256.0f;
-
-            const float m = step * powf(2, 30);
-            const float b = f * powf(2, 30);
-
-            fogLutDesc.setLutValue(i, m, b);
-        }
+        const FogLutStreamCmd fogLutDesc { fogLut, start, end };
 
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)

@@ -29,20 +29,14 @@ Rasterizer::Rasterizer()
 {
 }
 
-
-bool Rasterizer::rasterize(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle)
-{
-   return rasterizeFixPoint(desc, triangle);
-}
-
-bool Rasterizer::checkIfTriangleIsInBounds(TriangleStreamCmd &desc,
+bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
                                            const uint16_t lineStart,
                                            const uint16_t lineEnd)
 {
     // Check if the triangle is in the current area by checking if the end position is below the start line
     // and if the start of the triangle is within this area
-    if ((desc.getDesc().bbEndY >= lineStart) &&
-            (desc.getDesc().bbStartY < lineEnd))
+    if ((params.bbEndY >= lineStart) &&
+            (params.bbStartY < lineEnd))
     {
         return true;
     }
@@ -65,7 +59,9 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle)
+bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
+                           const tcb::span<TriangleStreamTypes::Texture>& texture, 
+                           const Triangle& triangle) const
 {
     static constexpr uint32_t EDGE_FUNC_SIZE = 4;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
@@ -122,10 +118,10 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Tri
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
 
-    desc.getDesc().bbStartX = bbStartX;
-    desc.getDesc().bbStartY = bbStartY;
-    desc.getDesc().bbEndX = bbEndX;
-    desc.getDesc().bbEndY = bbEndY;
+    params.bbStartX = bbStartX;
+    params.bbStartY = bbStartY;
+    params.bbEndX = bbEndX;
+    params.bbEndY = bbEndY;
 
     VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
 
@@ -136,21 +132,21 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Tri
         return false;
 
     // Interpolate triangle
-    Vec2i p = {{(bbStartX << EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE}};
-    Vec3i& wi = desc.getDesc().wInit; // Sn.4
-    Vec3i& wIncX = desc.getDesc().wXInc;
-    Vec3i& wIncY = desc.getDesc().wYInc;
+    Vec2i p = { { (bbStartX << EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE } };
+    Vec3i& wi = params.wInit; // Sn.4
+    Vec3i& wIncX = params.wXInc;
+    Vec3i& wIncY = params.wYInc;
     wi[0] = edgeFunctionFixPoint(v1, v2, p);
     wi[1] = edgeFunctionFixPoint(v2, v0, p);
     wi[2] = edgeFunctionFixPoint(v0, v1, p);
     wi *= sign;
-    Vec2i pw = {{(bbStartX << EDGE_FUNC_SIZE) + ((1)<< EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE}};
+    Vec2i pw = { { (bbStartX << EDGE_FUNC_SIZE) + ((1)<< EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE } };
     wIncX[0] = edgeFunctionFixPoint(v1, v2, pw);
     wIncX[1] = edgeFunctionFixPoint(v2, v0, pw);
     wIncX[2] = edgeFunctionFixPoint(v0, v1, pw);
     wIncX *= sign;
     wIncX -= wi;
-    Vec2i ph = {{bbStartX << EDGE_FUNC_SIZE, (bbStartY << EDGE_FUNC_SIZE) + ((1) << EDGE_FUNC_SIZE)}};
+    Vec2i ph = { { bbStartX << EDGE_FUNC_SIZE, (bbStartY << EDGE_FUNC_SIZE) + ((1) << EDGE_FUNC_SIZE) } };
     wIncY[0] = edgeFunctionFixPoint(v1, v2, ph);
     wIncY[1] = edgeFunctionFixPoint(v2, v0, ph);
     wIncY[2] = edgeFunctionFixPoint(v0, v1, ph);
@@ -172,42 +168,42 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Tri
     wIncYNorm.mul(areaInv);
 
     // Interpolate texture
-    for (uint8_t i = 0; i < desc.getDesc().texture.size(); i++)
+    for (uint8_t i = 0; i < texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {
-            Vec3 texS { { triangle.texture0[i][0][0], triangle.texture1[i][0][0], triangle.texture2[i][0][0] } };
-            Vec3 texT { { triangle.texture0[i][0][1], triangle.texture1[i][0][1], triangle.texture2[i][0][1] } };
-            Vec3 texQ { { triangle.texture0[i][0][3], triangle.texture1[i][0][3], triangle.texture2[i][0][3] } };
+            Vec3 texS { { triangle.texture0[i][0], triangle.texture1[i][0], triangle.texture2[i][0] } };
+            Vec3 texT { { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] } };
+            Vec3 texQ { { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] } };
 
-            desc.getDesc().texture[i].texStq[0] = texS.dot(wNorm);
-            desc.getDesc().texture[i].texStq[1] = texT.dot(wNorm);
-            desc.getDesc().texture[i].texStq[2] = texQ.dot(wNorm);
+            texture[i].texStq[0] = texS.dot(wNorm);
+            texture[i].texStq[1] = texT.dot(wNorm);
+            texture[i].texStq[2] = texQ.dot(wNorm);
 
-            desc.getDesc().texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
-            desc.getDesc().texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
-            desc.getDesc().texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
+            texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
+            texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
+            texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
 
-            desc.getDesc().texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
-            desc.getDesc().texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
-            desc.getDesc().texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+            texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
+            texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
+            texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
         }
     }
 
     // Interpolate W
     Vec3 vW { { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] } };
-    desc.getDesc().depthW = vW.dot(wNorm);
-    desc.getDesc().depthWXInc = vW.dot(wIncXNorm);
-    desc.getDesc().depthWYInc = vW.dot(wIncYNorm);
+    params.depthW = vW.dot(wNorm);
+    params.depthWXInc = vW.dot(wIncXNorm);
+    params.depthWYInc = vW.dot(wIncYNorm);
 
     // Interpolate Z
     // Using z buffer. Here are two options for the depth buffer:
     // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
     // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
     Vec3 vZ { { triangle.vertex0[2], triangle.vertex1[2], triangle.vertex2[2] } };
-    desc.getDesc().depthZ = vZ.dot(wNorm);
-    desc.getDesc().depthZXInc = vZ.dot(wIncXNorm);
-    desc.getDesc().depthZYInc = vZ.dot(wIncYNorm);
+    params.depthZ = vZ.dot(wNorm);
+    params.depthZXInc = vZ.dot(wIncXNorm);
+    params.depthZYInc = vZ.dot(wIncYNorm);
 
     // Interpolate color
     Vec3 cr { { triangle.color0[0], triangle.color1[0], triangle.color2[0] } };
@@ -215,20 +211,20 @@ bool Rasterizer::rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Tri
     Vec3 cb { { triangle.color0[2], triangle.color1[2], triangle.color2[2] } };
     Vec3 ca { { triangle.color0[3], triangle.color1[3], triangle.color2[3] } };
 
-    desc.getDesc().color[0] = cr.dot(wNorm);
-    desc.getDesc().color[1] = cg.dot(wNorm);
-    desc.getDesc().color[2] = cb.dot(wNorm);
-    desc.getDesc().color[3] = ca.dot(wNorm);
+    params.color[0] = cr.dot(wNorm);
+    params.color[1] = cg.dot(wNorm);
+    params.color[2] = cb.dot(wNorm);
+    params.color[3] = ca.dot(wNorm);
 
-    desc.getDesc().colorXInc[0] = cr.dot(wIncXNorm);
-    desc.getDesc().colorXInc[1] = cg.dot(wIncXNorm);
-    desc.getDesc().colorXInc[2] = cb.dot(wIncXNorm);
-    desc.getDesc().colorXInc[3] = ca.dot(wIncXNorm);
+    params.colorXInc[0] = cr.dot(wIncXNorm);
+    params.colorXInc[1] = cg.dot(wIncXNorm);
+    params.colorXInc[2] = cb.dot(wIncXNorm);
+    params.colorXInc[3] = ca.dot(wIncXNorm);
 
-    desc.getDesc().colorYInc[0] = cr.dot(wIncYNorm);
-    desc.getDesc().colorYInc[1] = cg.dot(wIncYNorm);
-    desc.getDesc().colorYInc[2] = cb.dot(wIncYNorm);
-    desc.getDesc().colorYInc[3] = ca.dot(wIncYNorm);
+    params.colorYInc[0] = cr.dot(wIncYNorm);
+    params.colorYInc[1] = cg.dot(wIncYNorm);
+    params.colorYInc[2] = cb.dot(wIncYNorm);
+    params.colorYInc[3] = ca.dot(wIncYNorm);
 
     return true;
 }

@@ -19,9 +19,10 @@
 #include <stdint.h>
 #include <array>
 #include "Vec.hpp"
+#include "Triangle.hpp"
 #include "IRenderer.hpp"
 #include <bitset>
-#include "commands/TriangleStreamCmd.hpp"
+#include "commands/TriangleStreamTypes.hpp"
 
 namespace rr
 {
@@ -30,7 +31,9 @@ class Rasterizer
 public:  
 
     Rasterizer();
-    bool rasterize(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle);
+    bool rasterize(TriangleStreamTypes::StaticParams& params, 
+                   const tcb::span<TriangleStreamTypes::Texture>& texture, 
+                   const Triangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable) { m_enableScissor = enable; }
@@ -38,12 +41,11 @@ public:
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
-    static bool checkIfTriangleIsInBounds(TriangleStreamCmd &desc,
-                                                 const uint16_t lineStart,
-                                                 const uint16_t lineEnd);
+    static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
+                                          const uint16_t lineStart,
+                                          const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
-    inline bool rasterizeFixPoint(TriangleStreamCmd& desc, const IRenderer::Triangle& triangle);
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
     inline static VecInt calcRecip(VecInt val);
 

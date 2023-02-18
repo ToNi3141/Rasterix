@@ -27,8 +27,6 @@ namespace rr
 class PixelPipeline
 {
 public:
-    using Triangle = IRenderer::Triangle;
-
     enum class FogMode
     {
         ONE,
