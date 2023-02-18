@@ -249,6 +249,10 @@ localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA5551 = 1;
 localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGB565 = 2;
 
 // OP_RENDER_CONFIG_Y_OFFSET
+//  +-----------------------------------------+
+//  | 5'hx reserved | 11'h y | 16'hx reserved |
+//  +-----------------------------------------+
+
 // OP_RENDER_CONFIG_RENDER_RESOLUTION
 // OP_RENDER_CONFIG_SCISSOR_START_XY
 // OP_RENDER_CONFIG_SCISSOR_END_XY

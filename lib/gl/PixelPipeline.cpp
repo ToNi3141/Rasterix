@@ -25,7 +25,8 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
 {
     for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
     {
-        m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+        m_tmuConf[i].texEnvConf.setTmu(i);
+        m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
     }
     m_renderer.setFeatureEnableConfig(m_featureEnable);
     m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
@@ -43,7 +44,8 @@ bool PixelPipeline::updatePipeline()
     {
         if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize()))
         {
-            ret = ret && m_renderer.setTexEnv(i, m_tmuConf[i].texEnvConf);
+            m_tmuConf[i].texEnvConf.setTmu(i);
+            ret = ret && m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
             m_tmuConf[i].texEnvConfUploaded = m_tmuConf[i].texEnvConf;
         }
     }
@@ -176,54 +178,54 @@ bool PixelPipeline::useTexture()
 bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
 {
     m_tmuConf[m_tmu].texEnvMode = mode;
-    IRenderer::TexEnvConf texEnvConf {};
+    TexEnvReg texEnvConf {};
     switch (mode) {
     case TexEnvMode::DISABLE:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
         break;
     case TexEnvMode::REPLACE:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
         break;
     case TexEnvMode::MODULATE:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::MODULATE);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::MODULATE);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::MODULATE);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
         break;
     case TexEnvMode::DECAL:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::INTERPOLATE);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegRgb2(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setOperandRgb2(IRenderer::TexEnvConf::Operand::SRC_ALPHA);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setOperandRgb2(TexEnvReg::Operand::SRC_ALPHA);
         break;
     case TexEnvMode::BLEND:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::INTERPOLATE);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::MODULATE);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::CONSTANT);
-        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegRgb2(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::TEXTURE);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::CONSTANT);
+        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::TEXTURE);
         break;
     case TexEnvMode::ADD:
-        texEnvConf.setCombineRgb(IRenderer::TexEnvConf::Combine::ADD);
-        texEnvConf.setCombineAlpha(IRenderer::TexEnvConf::Combine::ADD);
-        texEnvConf.setSrcRegRgb0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(IRenderer::TexEnvConf::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha1(IRenderer::TexEnvConf::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(TexEnvReg::Combine::ADD);
+        texEnvConf.setCombineAlpha(TexEnvReg::Combine::ADD);
+        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
         break;
     case TexEnvMode::COMBINE:
         // Nothing to do here.
@@ -233,7 +235,8 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
     }
     if (mode != TexEnvMode::COMBINE)
     {
-        return m_renderer.setTexEnv(m_tmu, texEnvConf);
+        texEnvConf.setTmu(m_tmu);
+        return m_renderer.setTexEnv(texEnvConf);
     }
     return true;
 }

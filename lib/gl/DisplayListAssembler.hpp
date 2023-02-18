@@ -26,95 +26,19 @@
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
+#include "DmaStreamEngineCommands.hpp"
+#include "commands/TriangleStreamCmd.hpp"
+#include "commands/TextureStreamCmd.hpp"
 
 namespace rr
 {
 
-template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT, uint8_t TMU_COUNT = 0>
+template <class RenderConfig, uint32_t DISPLAY_LIST_SIZE = RenderConfig::DISPLAYLIST_SIZE>
 class DisplayListAssembler {
 public:
-        using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
-private:
-    static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size. The alignment is not important.
-    struct StreamCommand
-    {
-        // Anathomy of a command:
-        // | 4 bit OP | 28 bit IMM |
-
-        using StreamCommandType = uint32_t;
-
-        // This mask will set the command
-        static constexpr StreamCommandType STREAM_COMMAND_OP_MASK = 0xf000'0000;
-
-        // This mask will set the immediate value
-        static constexpr StreamCommandType STREAM_COMMAND_IMM_MASK = 0x0fff'ffff;
-
-        // Calculate the triangle size with align overhead.
-        static constexpr StreamCommandType TRIANGLE_SIZE_ALIGNED = List::template sizeOf<Rasterizer::RasterizedTriangle>();
-
-        // OPs for the DMA Stream Engine
-        static constexpr StreamCommandType DSE_NOP              = 0x0000'0000;
-        static constexpr StreamCommandType DSE_STORE            = 0xD000'0000;
-        static constexpr StreamCommandType DSE_LOAD             = 0xB000'0000;
-        static constexpr StreamCommandType DSE_STREAM           = 0x9000'0000;
-        static constexpr StreamCommandType DSE_COMMIT_TO_STREAM = 0x6000'0000;
-        static constexpr StreamCommandType DSE_COMMIT_TO_MEMORY = 0xE000'0000;
-
-        // OPs for the rasterizer
-        static constexpr StreamCommandType RR_OP_NOP                = 0x0000'0000;
-        static constexpr StreamCommandType RR_OP_RENDER_CONFIG      = 0x1000'0000;
-        static constexpr StreamCommandType RR_OP_FRAMEBUFFER        = 0x2000'0000;
-        static constexpr StreamCommandType RR_OP_TRIANGLE_STREAM    = 0x3000'0000;
-        static constexpr StreamCommandType RR_OP_FOG_LUT_STREAM     = 0x4000'0000;
-        static constexpr StreamCommandType RR_OP_TEXTURE_STREAM     = 0x5000'0000;
-
-        // Immediate values
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_SIZE_POS           = 0; // size: 8 bit
-        static constexpr StreamCommandType RR_TEXTURE_STREAM_TMU_NR_POS         = 8; // size: 8 bit
-
-        static constexpr StreamCommandType RR_X_POS     = 0;
-        static constexpr StreamCommandType RR_Y_POS     = 16;
-        static constexpr StreamCommandType RR_XY_SIZE   = 11;
-
-        static constexpr StreamCommandType RR_RENDER_CONFIG_FEATURE_ENABLE              = 0x0000'0000;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR    = 0x0000'0001;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH    = 0x0000'0002;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_PIPELINE           = 0x0000'0003;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR          = 0x0000'0004;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG     = 0x0000'0005;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG       = 0x0000'0006;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_Y_OFFSET                    = 0x0000'0007;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_RENDER_RESOLUTION           = 0x0000'0008;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV          = 0x0000'0009;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV_COLOR    = 0x0000'000A;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_OFFSET_TEXTURE_CONFIG   = 0x0000'000B;
-        static constexpr StreamCommandType RR_RENDER_CONFIG_TMU_STRIDE                  = 0x0000'0003;
-
-        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COMMIT                 = RR_OP_FRAMEBUFFER | 0x0000'0001;
-        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_MEMSET                 = RR_OP_FRAMEBUFFER | 0x0000'0002;
-        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0010;
-        static constexpr StreamCommandType RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT    = RR_OP_FRAMEBUFFER | 0x0000'0020;
-
-        static constexpr StreamCommandType RR_TRIANGLE_STREAM_FULL  = RR_OP_TRIANGLE_STREAM | TRIANGLE_SIZE_ALIGNED;
-    };
-    using SCT = typename StreamCommand::StreamCommandType;
-
+    static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
+    using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
 public:
-    static constexpr uint32_t SET_FEATURE_ENABLE            = StreamCommand::RR_RENDER_CONFIG_FEATURE_ENABLE; 
-    static constexpr uint32_t SET_COLOR_BUFFER_CLEAR_COLOR  = StreamCommand::RR_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR;
-    static constexpr uint32_t SET_DEPTH_BUFFER_CLEAR_DEPTH  = StreamCommand::RR_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH;
-    static constexpr uint32_t SET_FRAGMENT_PIPELINE_CONFIG  = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_PIPELINE;
-    static constexpr uint32_t SET_SCISSOR_START_XY          = StreamCommand::RR_RENDER_CONFIG_SCISSOR_START_XY_CONFIG;
-    static constexpr uint32_t SET_SCISSOR_END_XY            = StreamCommand::RR_RENDER_CONFIG_SCISSOR_END_XY_CONFIG;
-    static constexpr uint32_t SET_Y_OFFSET                  = StreamCommand::RR_RENDER_CONFIG_Y_OFFSET;
-    static constexpr uint32_t SET_RENDER_RESOLUTION         = StreamCommand::RR_RENDER_CONFIG_RENDER_RESOLUTION;
-    static constexpr uint32_t SET_FOG_COLOR                 = StreamCommand::RR_RENDER_CONFIG_FRAGMENT_FOG_COLOR;
-    static constexpr uint32_t SET_TMU_TEX_ENV(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
-    static constexpr uint32_t SET_TMU_TEXTURE_CONFIG(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEXTURE_CONFIG + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
-    static constexpr uint32_t SET_TMU_TEX_ENV_COLOR(const uint8_t tmu) { return StreamCommand::RR_RENDER_CONFIG_TMU_OFFSET_TEX_ENV_COLOR + (StreamCommand::RR_RENDER_CONFIG_TMU_STRIDE * tmu); }
-
-    static constexpr uint32_t SET_FOG_LUT                   = StreamCommand::RR_OP_FOG_LUT_STREAM;
-
     void clearAssembler()
     {
         m_displayList.clear();
@@ -122,207 +46,74 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool commit(const uint32_t size, const uint32_t addr, const bool commitToStream)
+    bool uploadToDeviceMemory(const uint32_t addr, const tcb::span<const uint8_t> data)
     {
-        if (openNewStreamSection())
-        {
-            // Add frame buffer flush command
-            SCT *op = m_displayList.template create<SCT>();
-            if (op)
-            {
-                *op = StreamCommand::RR_OP_FRAMEBUFFER_COMMIT | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
-            }
-
-            closeStreamSection();
-
-            if (op != nullptr)
-            {
-                if (commitToStream)
-                {
-                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_STREAM | size, 0);
-                }
-                else
-                {
-                    return appendStreamCommand<SCT>(StreamCommand::DSE_COMMIT_TO_MEMORY | size, addr);
-                }
-            }
-        }
-        return false;
-    }
-
-    Rasterizer::RasterizedTriangle* drawTriangle()
-    {
-        if (openNewStreamSection())
-        {
-            m_wasLastCommandATextureCommand.reset();
-            return createStreamCommand<Rasterizer::RasterizedTriangle>(StreamCommand::RR_TRIANGLE_STREAM_FULL);
-        }
-        return nullptr;
-    }
-
-    bool updateTexture(const uint32_t addr, const uint16_t* pixels, const uint32_t texSize)
-    {
-        closeStreamSection();
-        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        bool ret = appendStreamCommand<SCT>(StreamCommand::DSE_STORE | texSizeOnDevice, addr);
-        void *dest = m_displayList.alloc(texSizeOnDevice);
-        if (ret && dest)
-        {
-            memcpy(dest, pixels, texSize);
-            return true;
-        }
-        return false;
-    }
-
-    bool useTexture(const uint8_t tmu,
-                    const tcb::span<const uint16_t> pages,
-                    const uint32_t pageSize,
-                    const uint32_t texSize)
-    {
-        if (tmu >= m_wasLastCommandATextureCommand.size())
+        const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
+        const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;
+        if (expectedSize > m_displayList.getFreeSpace())
         {
             return false;
         }
-        bool ret = false;
-        const std::size_t texSizeOnDevice { (std::max)(texSize, DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        const std::size_t ps { (texSizeOnDevice > pageSize) ? pageSize : texSizeOnDevice };
         closeStreamSection();
-        if (m_wasLastCommandATextureCommand[tmu])
+        
+        appendStreamCommand<DSEC::SCT>(DSEC::OP_STORE | sizeOnDevice, addr);
+        void *dest = m_displayList.alloc(sizeOnDevice);
+        memcpy(dest, data.data(), data.size());
+        return true;
+    }
+
+    template <typename TCommand>
+    bool addCommand(const TCommand& cmd)
+    {
+        if (!hasDisplayListEnoughSpace(cmd))
         {
-            m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
+            return false;
         }
 
-        m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-        if (openNewStreamSection())
+        // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
+        // If the texture wasn't used, then it is not necessary to send to he renderer a load command.
+        // Unfortunately this optimization breaks the code separation. It can be removed, the functionality of the command
+        // shouldn't be affected.
+        if constexpr (std::is_same<TCommand, TriangleStreamCmd<IRenderer::MAX_TMU_COUNT>>::value)
         {
-            SCT *texStreamOp { nullptr };
-            SCT *texLoad { nullptr };
-            uint32_t *texLoadAddr { nullptr };
-            texStreamOp = m_displayList.template create<SCT>();
-            if (texStreamOp)
-            {
-                const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(texSizeOnDevice))) << StreamCommand::RR_TEXTURE_STREAM_SIZE_POS;
-                const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << StreamCommand::RR_TEXTURE_STREAM_TMU_NR_POS;
-
-                *texStreamOp = StreamCommand::RR_OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
-                closeStreamSection();
-            }
-            else
+            // Mark that a triangle was rendered
+            m_wasLastCommandATextureCommand.reset();
+        }
+        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        {
+            const uint8_t tmu = cmd.getTmu();
+            if (tmu >= m_wasLastCommandATextureCommand.size())
             {
                 return false;
             }
-            m_wasLastCommandATextureCommand.set(tmu);
-            for (const uint16_t p : pages)
+            // Close the current stream to avoid and undefined behaviour 
+            closeStreamSection();
+            // Check if the last command was a texture command. If so, remove the commands from the display list
+            if (m_wasLastCommandATextureCommand[tmu])
             {
-                texLoad = m_displayList.template create<SCT>();
-                texLoadAddr = m_displayList.template create<uint32_t>();
-                if (texLoad && texLoadAddr)
-                {
-                    *texLoad = StreamCommand::DSE_LOAD | ps;
-                    *texLoadAddr = p * pageSize;
-                    ret = true;
-                }
-                else
-                {
-                    m_displayList.initArea(m_texPosInDisplayList[tmu], m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu]);
-                }
+                m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
             }
+            // Remember the current position in the display list
+            m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
+            // Mark that a texture was loaded
+            m_wasLastCommandATextureCommand.set(tmu);
+        }
+
+        writeCommand(cmd);
+
+        if constexpr (HasDseOp<decltype(cmd)>::value)
+        {
+            writeDseCommand(cmd);
+        }
+
+        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        {
+            const uint8_t tmu = cmd.getTmu();
+            // Store the end position of the display list.
             m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
         }
 
-        return ret;
-    }
-
-    bool clear(bool colorBuffer, bool depthBuffer)
-    {
-        if (openNewStreamSection())
-        {
-            const SCT opColorBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
-            const SCT opDepthBuffer = StreamCommand::RR_OP_FRAMEBUFFER_MEMSET | StreamCommand::RR_OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
-
-            SCT *op = m_displayList.template create<SCT>();
-            if (op)
-            {
-                if (colorBuffer && depthBuffer)
-                {
-                    *op = opColorBuffer | opDepthBuffer;
-                }
-                else if (colorBuffer)
-                {
-                    *op = opColorBuffer;
-                }
-                else if (depthBuffer)
-                {
-                    *op = opDepthBuffer;
-                }
-                else
-                {
-                    *op = StreamCommand::RR_OP_NOP;
-                }
-            }
-            return op != nullptr;
-        }
-        return false;
-    }
-
-    template <typename TArg>
-    bool writeRegister(uint32_t regIndex, const TArg& regVal)
-    {
-        if (openNewStreamSection())
-        {
-            return appendStreamCommand<TArg>(StreamCommand::RR_OP_RENDER_CONFIG | regIndex, regVal);
-        }
-        return false;
-    }
-
-    template <typename TArg, std::size_t TSize>
-    bool writeArray(uint32_t command, const std::array<TArg, TSize>& arr)
-    {
-        if (openNewStreamSection())
-        {
-            // Check if the display list contains enough space
-            std::size_t expectedSize = List::template sizeOf<SCT>() + (List::template sizeOf<TArg>() * TSize);
-            if (expectedSize >= m_displayList.getFreeSpace())
-            {
-                return false;
-            }
-
-            // Write command
-            SCT *opDl = m_displayList.template create<SCT>();
-            if (!opDl)
-            {
-                if (opDl)
-                {
-                    m_displayList.template remove<SCT>();
-                }
-                // Out of memory error
-                return false;
-            }
-            *opDl = command;
-
-            // Copy array elements
-            for (auto a : arr)
-            {
-                TArg *argDl = m_displayList.template create<TArg>();
-                if (argDl)
-                {
-                    *argDl = a;
-                }
-                else
-                {
-                    // TODO: Current elements have to be removed
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    bool writeXYRegister(const uint32_t regIndex, const uint16_t x, const uint16_t y)
-    {
-        const uint32_t val { (static_cast<uint32_t>(y) << StreamCommand::RR_Y_POS) | (static_cast<uint32_t>(x) << StreamCommand::RR_X_POS) };
-        return writeRegister(regIndex, val);
+        return true;
     }
 
     const List* getDisplayList() const
@@ -332,59 +123,105 @@ public:
 
     static constexpr uint32_t uploadCommandSize()
     {
-        return List::template sizeOf<SCT>() + List::template sizeOf<uint32_t>();
+        return List::template sizeOf<DSEC::SCT>() + List::template sizeOf<uint32_t>();
     }
 
 private:
-    template <typename TArg> 
-    TArg* createStreamCommand(const SCT op)
+    template<typename T> 
+    class HasDseOp 
     {
-        SCT *opDl = m_displayList.template create<SCT>();
+        template<typename> 
+        static std::false_type test(...);
+        template<typename U> 
+        static auto test(int) -> decltype(std::declval<U>().dseOp(), std::true_type());
+    public:
+        static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
+    };
+
+    template <typename TArg>
+    void appendStreamCommand(const DSEC::SCT op, const TArg& arg)
+    {
+        DSEC::SCT *opDl = m_displayList.template create<DSEC::SCT>();
         TArg *argDl = m_displayList.template create<TArg>();
-
-        if (!(opDl && argDl))
-        {
-            if (opDl)
-            {
-                m_displayList.template remove<SCT>();
-            }
-
-            if (argDl)
-            {
-                m_displayList.template remove<TArg>();
-            }
-            // Out of memory error
-            return nullptr;
-        }
         *opDl = op;
-        return argDl;
+        *argDl = arg;
     }
 
-    template <typename TArg, bool CallConstructor = false>
-    bool appendStreamCommand(const SCT op, const TArg& arg)
+    template <typename TArg>
+    bool hasDisplayListEnoughSpace()
     {
-        TArg *argDl = createStreamCommand<TArg>(op);
-        if (argDl)
-        {
-            // This is an optimization. Most of the time, a constructor call is not necessary and will just take a
-            // significant amount of CPU time. So, if it is not required, we omit it.
-            if constexpr (CallConstructor)
-            {
-                new (argDl) TArg();
-            }
+        static constexpr std::size_t expectedSize = List::template sizeOf<uint32_t>() + List::template sizeOf<TArg>() ;
 
-            *argDl = arg;
-            return true;
+        if (expectedSize >= m_displayList.getFreeSpace())
+        {
+            // Not enough memory to finish the operation
+            return false;
         }
-        return false;
+        return true;
+    }
+
+    template <typename TCommand>
+    bool hasDisplayListEnoughSpace(const TCommand& cmd)
+    {
+        using DescArray = typename TCommand::Desc;
+        using DescValueType = typename DescArray::value_type::element_type;
+
+        // Check if the display list contains enough space
+        std::size_t expectedSize = List::template sizeOf<uint32_t>() + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>());
+        if constexpr (HasDseOp<decltype(cmd)>::value)
+        {
+            expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
+        }
+
+        if (expectedSize >= m_displayList.getFreeSpace())
+        {
+            // Not enough memory to finish the operation
+            return false;
+        }
+        return true;
+    }
+
+    template <typename TCommand>
+    void writeCommand(const TCommand& cmd)
+    {
+        using DescArray = typename TCommand::Desc;
+        using DescValueType = typename DescArray::value_type::element_type;
+        if (openNewStreamSection())
+        {
+            // Write command
+            uint32_t *opDl = m_displayList.template create<uint32_t>();
+            *opDl = cmd.command();
+
+            // Create elements
+            DescArray arr;
+            for (auto& a : arr)
+            {
+                DescValueType *argDl = m_displayList.template create<DescValueType>();
+                a = { argDl, sizeof(DescValueType) };
+            }
+            cmd.serialize(arr);
+        }
+    }
+
+    template <typename TCommand>
+    void writeDseCommand(const TCommand& cmd)
+    {
+        if (cmd.dseOp() != DSEC::OP_NOP)
+        {
+            closeStreamSection();
+            for (const DSEC::Transfer& t : cmd.dseTransfer())
+            {
+                appendStreamCommand<DSEC::SCT>(cmd.dseOp() | t.size, t.addr);
+            }
+        }
     }
 
     bool openNewStreamSection()
     {
         if (m_streamCommand == nullptr)
         {
-            m_streamCommand = m_displayList.template create<SCT>();
-            m_displayList.template create<SCT>(); // Dummy
+            m_streamCommand = m_displayList.template create<DSEC::SCT>();
+            m_displayList.template create<DSEC::SCT>(); // Dummy
             if (m_streamCommand)
             {
                 *m_streamCommand = m_displayList.getSize();
@@ -400,7 +237,7 @@ private:
         // to know how big our stream section is.
         if (m_streamCommand)
         {
-            *m_streamCommand = StreamCommand::DSE_STREAM | (m_displayList.getSize() - *m_streamCommand);
+            *m_streamCommand = DSEC::OP_STREAM | (m_displayList.getSize() - *m_streamCommand);
             m_streamCommand = nullptr;
             return true;
         }
@@ -411,12 +248,12 @@ private:
     List m_displayList;
     #pragma pack(pop)
 
-    SCT *m_streamCommand { nullptr };
+    DSEC::SCT *m_streamCommand { nullptr };
 
     // Helper variables to optimize the texture loading
-    std::bitset<TMU_COUNT> m_wasLastCommandATextureCommand {};
-    std::array<uint32_t, TMU_COUNT> m_texPosInDisplayList {};
-    std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
+    std::bitset<RenderConfig::TMU_COUNT> m_wasLastCommandATextureCommand {};
+    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texPosInDisplayList {};
+    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texSizeInDisplayList {};
 };
 
 } // namespace rr

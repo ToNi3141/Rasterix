@@ -24,9 +24,9 @@ struct RenderConfigSimulation
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
 
     // Texture Memory Settings
-    static constexpr uint16_t NUMBER_OF_TEXTURE_PAGES { 7680 };
-    static constexpr uint16_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
-    static constexpr uint16_t TEXTURE_PAGE_SIZE { 4096 };
+    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 7680 };
+    static constexpr uint32_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
+    static constexpr uint32_t TEXTURE_PAGE_SIZE { 4096 };
 };
 
 struct RenderConfigRasterixNexys
@@ -38,9 +38,9 @@ struct RenderConfigRasterixNexys
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 256 * 1024 };
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
-    static constexpr uint16_t NUMBER_OF_TEXTURE_PAGES { 7680 };
-    static constexpr uint16_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
-    static constexpr uint16_t TEXTURE_PAGE_SIZE { 4096 };
+    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 7680 };
+    static constexpr uint32_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
+    static constexpr uint32_t TEXTURE_PAGE_SIZE { 4096 };
 };
 
 

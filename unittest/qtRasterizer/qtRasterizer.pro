@@ -31,26 +31,12 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/glu.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp
 
-HEADERS  += mainwindow.h\
-    $${ICEGL_PATH}/DisplayList.hpp \
-    $${ICEGL_PATH}/IBusConnector.hpp \
-    $${ICEGL_PATH}/IRenderer.hpp \
-    $${ICEGL_PATH}/gl.h \
-    $${ICEGL_PATH}/glu.h \
-    $${ICEGL_PATH}/Renderer.hpp \
-    $${ICEGL_PATH}/VertexPipeline.hpp \
-    $${ICEGL_PATH}/Vec.hpp \
-    $${ICEGL_PATH}/Veci.hpp \
-    $${ICEGL_PATH}/IceGL.hpp \
-    $${ICEGL_PATH}/Rasterizer.hpp \
-    $${ICEGL_PATH}/Mat44.hpp \
-    $${ICEGL_PATH}/Clipper.hpp \
-    $${ICEGL_PATH}/Lighting.hpp \
-    $${ICEGL_PATH}/TexGen.hpp \
-    $${ICEGL_PATH}/RenderObj.hpp \
-    $${ICEGL_PATH}/TextureMemoryManager.hpp \
-    $${ICEGL_PATH}/PixelPipeline.hpp \
-    $${ICEGL_PATH}/DisplayListAssembler.hpp
+HEADERS  += mainwindow.h \
+    $${ICEGL_PATH}/*.hpp \
+    $${ICEGL_PATH}/*.h \
+    $${ICEGL_PATH}/registers/* \
+    $${ICEGL_PATH}/commands/*
+
 
 QMAKE_CXXFLAGS += -I../../lib/3rdParty/span/include/
 QMAKE_CFLAGS += -I../../lib/3rdParty/span/include/

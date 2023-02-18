@@ -27,8 +27,6 @@ namespace rr
 class PixelPipeline
 {
 public:
-    using Triangle = IRenderer::Triangle;
-
     enum class FogMode
     {
         ONE,
@@ -48,20 +46,20 @@ public:
         COMBINE
     };
 
-    using FragmentPipeline = IRenderer::FragmentPipelineConf;
-    using TestFunc = IRenderer::FragmentPipelineConf::TestFunc;
-    using BlendFunc = IRenderer::FragmentPipelineConf::BlendFunc;
-    using LogicOp = IRenderer::FragmentPipelineConf::LogicOp;
+    using FragmentPipeline = FragmentPipelineReg;
+    using TestFunc = FragmentPipelineReg::TestFunc;
+    using BlendFunc = FragmentPipelineReg::BlendFunc;
+    using LogicOp = FragmentPipelineReg::LogicOp;
 
     using TMU = IRenderer::TMU;
     using TextureWrapMode = IRenderer::TextureWrapMode;
     using PixelFormat = IRenderer::TextureObject::PixelFormat;
     using IntendedInternalPixelFormat = IRenderer::TextureObject::IntendedInternalPixelFormat;
-    using Combine = IRenderer::TexEnvConf::Combine;
-    using TexEnv = IRenderer::TexEnvConf;
+    using Combine = TexEnvReg::Combine;
+    using TexEnv = TexEnvReg;
     using TextureObject = IRenderer::TextureObject;
     
-    using FeatureEnable = IRenderer::FeatureEnableConf;
+    using FeatureEnable = FeatureEnableReg;
 
     PixelPipeline(IRenderer& renderer);
 

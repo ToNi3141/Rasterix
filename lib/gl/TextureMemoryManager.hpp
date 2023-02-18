@@ -107,38 +107,38 @@ public:
                 SPDLOG_ERROR("Run out of memory during texture allocation");
             }
         }
-        m_textures[textureSlot].tmuConfig.reg.wrapModeS = m_textures[textureSlotOld].tmuConfig.reg.wrapModeS;
-        m_textures[textureSlot].tmuConfig.reg.wrapModeT = m_textures[textureSlotOld].tmuConfig.reg.wrapModeT;
-        m_textures[textureSlot].tmuConfig.reg.enableMagFilter = m_textures[textureSlotOld].tmuConfig.reg.enableMagFilter;
+        m_textures[textureSlot].tmuConfig.setWarpModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
+        m_textures[textureSlot].tmuConfig.setWarpModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
+        m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
 
-        m_textures[textureSlot].pixels = textureObject.pixels;
+        m_textures[textureSlot].pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textureObject.pixels);
         m_textures[textureSlot].size = textureSizeInBytes;
         m_textures[textureSlot].inUse = true;
         m_textures[textureSlot].requiresUpload = true;
         m_textures[textureSlot].requiresDelete = false;
         m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
-        m_textures[textureSlot].tmuConfig.reg.pixelFormat = static_cast<uint32_t>(textureObject.getPixelFormat());
-        m_textures[textureSlot].tmuConfig.reg.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.width))) - 1));
-        m_textures[textureSlot].tmuConfig.reg.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(textureObject.height))) - 1));
+        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject.getPixelFormat());
+        m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject.width);
+        m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject.height);
         return ret;
     }
 
     void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
         Texture& tex = m_textures[m_textureLut[texId]];
-        tex.tmuConfig.reg.wrapModeS = static_cast<uint32_t>(mode);
+        tex.tmuConfig.setWarpModeS(mode);
     }
 
     void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
         Texture& tex = m_textures[m_textureLut[texId]];
-        tex.tmuConfig.reg.wrapModeT = static_cast<uint32_t>(mode);
+        tex.tmuConfig.setWarpModeT(mode);
     }
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
     {
         Texture& tex = m_textures[m_textureLut[texId]];
-        tex.tmuConfig.reg.enableMagFilter = filter;
+        tex.tmuConfig.setEnableMagFilter(filter);
     }
 
     bool textureValid(const uint16_t texId) const 
@@ -147,10 +147,10 @@ public:
         return (texId != 0) && tex.inUse;
     }
 
-    uint32_t getTmuConfig(const uint16_t texId) const
+    TmuTextureReg getTmuConfig(const uint16_t texId) const
     {
         const Texture& tex = m_textures[m_textureLut[texId]];
-        return tex.tmuConfig.serialized;
+        return tex.tmuConfig;
     }
 
     bool useTexture(const uint16_t texId, const std::function<bool(const uint32_t bufferIndex, const uint32_t addr, const uint32_t size)> appendToDisplayList)
@@ -160,7 +160,7 @@ public:
         const uint32_t texSize { (std::min)(TEXTURE_PAGE_SIZE, tex.size) }; // In case it is just a small texture, just upload a part of the page.
         for (uint32_t i = 0; i < tex.pages; i++)
         {
-            ret = ret && appendToDisplayList(i * TEXTURE_PAGE_SIZE, tex.pageTable[i] * TEXTURE_PAGE_SIZE, texSize); 
+            ret = ret && appendToDisplayList(i * TEXTURE_PAGE_SIZE, tex.pageTable[i] * TEXTURE_PAGE_SIZE, texSize);
         }
         return ret;
     }
@@ -192,9 +192,9 @@ public:
         {
             return {};
         }
-        return { m_textures[textureSlot].pixels,
-            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texWidth * 2),
-            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.reg.texHeight * 2),
+        return { std::reinterpret_pointer_cast<const uint16_t, const uint8_t>(m_textures[textureSlot].pixels),
+            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.getTextureWidth()),
+            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.getTextureHeight()),
             static_cast<IRenderer::TextureObject::IntendedInternalPixelFormat>(m_textures[textureSlot].intendedPixelFormat) };
     }
 
@@ -206,7 +206,7 @@ public:
         return true;
     }
 
-    bool uploadTextures(const std::function<bool(const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)> uploader) 
+    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader) 
     {
         // Upload textures
         for (uint32_t i = 0; i < m_textures.size(); i++)
@@ -218,7 +218,7 @@ public:
                 const uint32_t texturePageSize = (std::min)(texture.size, TEXTURE_PAGE_SIZE);
                 for (std::size_t j = 0; j < texture.pages; j++)
                 {
-                    ret = ret && uploader(texture.pixels.get() + (j * (TEXTURE_PAGE_SIZE / 2)), static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, texturePageSize);
+                    ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { texture.pixels.get() + (j * TEXTURE_PAGE_SIZE), texturePageSize });
                 }
                 texture.requiresUpload = !ret;
             }
@@ -232,7 +232,7 @@ public:
             {
                 texture.requiresDelete = false;
                 texture.inUse = false;
-                texture.pixels = std::shared_ptr<const uint16_t>();
+                texture.pixels = std::shared_ptr<const uint8_t>();
                 deallocPages(texture);
             }
         }
@@ -253,24 +253,10 @@ private:
         bool requiresDelete;
         std::array<uint16_t, MAX_NUMBER_OF_PAGES> pageTable {};
         uint8_t pages { 0 };
-        std::shared_ptr<const uint16_t> pixels;
+        std::shared_ptr<const uint8_t> pixels;
         uint32_t size;
         IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
-        union 
-        {
-            #pragma pack(push, 1)
-            struct TmuTextureConfig
-            {
-                uint32_t texWidth : 8;
-                uint32_t texHeight : 8;
-                uint32_t wrapModeS : 1;
-                uint32_t wrapModeT : 1;
-                uint32_t enableMagFilter : 1;
-                uint32_t pixelFormat : 4;
-            } reg;
-            uint32_t serialized;
-            #pragma pack(pop)
-        } tmuConfig;
+        TmuTextureReg tmuConfig;
     };
 
     bool allocPages(Texture& tex, const uint32_t numberOfPages)
