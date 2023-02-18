@@ -179,11 +179,11 @@ public:
         }
 
         // Upload textures
-        m_textureManager.uploadTextures([&](const uint16_t* texAddr, uint32_t gramAddr, uint32_t texSize)
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
-            uploader.updateTexture(gramAddr, texAddr, texSize);
+            uploader.uploadToDeviceMemory(gramAddr, data);
 
             while (!m_busConnector.clearToSend())
                 ;

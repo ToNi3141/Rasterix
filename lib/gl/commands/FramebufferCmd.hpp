@@ -34,11 +34,11 @@ public:
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
         {
-            m_dseOp = DSEC::COMMIT_TO_STREAM;
+            m_dseOp = DSEC::OP_COMMIT_TO_STREAM;
         }
         else
         {
-            m_dseOp = DSEC::COMMIT_TO_MEMORY;
+            m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
         m_dseSize = size;
         m_dseAddr = addr;
@@ -46,7 +46,7 @@ public:
     void enableMemset() 
     { 
         m_op |= OP_FRAMEBUFFER_MEMSET;
-        m_dseOp = DSEC::NOP;
+        m_dseOp = DSEC::OP_NOP;
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
@@ -55,12 +55,12 @@ public:
     void serialize(Desc&) const {}
     uint32_t command() const { return m_op; }
 
-    uint32_t dseCommand() const { return m_dseOp; }
+    DSEC::SCT dseOp() const { return m_dseOp; }
     std::array<DSEC::Transfer, 1> dseTransfer() const { return { { m_dseAddr, m_dseSize } }; }
 
 private:
     uint32_t m_op {};
-    uint32_t m_dseOp { DSEC::NOP };
+    DSEC::SCT m_dseOp { DSEC::OP_NOP };
     uint32_t m_dseSize {};
     uint32_t m_dseAddr {};
 };

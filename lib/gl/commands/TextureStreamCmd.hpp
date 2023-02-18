@@ -43,13 +43,13 @@ public:
         return OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
     }
 
-    uint32_t dseCommand() const { return DSEC::LOAD; }
+    DSEC::SCT dseOp() const { return DSEC::OP_LOAD; }
     tcb::span<const DSEC::Transfer> dseTransfer() const { return { m_pages.data(), m_numberOfPages }; }
 private:
     uint8_t m_tmu {};
     std::array<DSEC::Transfer, MAX_PAGES> m_pages;
     uint32_t m_numberOfPages {};
-    uint32_t m_texSize {};
+    std::size_t m_texSize {};
 };
 
 } // namespace rr
