@@ -16,6 +16,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
+    using DseTransferType = std::array<DSEC::Transfer, 1>;
 public:
     FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer)
     {
@@ -40,8 +41,8 @@ public:
         {
             m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
-        m_dseSize = size;
-        m_dseAddr = addr;
+        m_dseData = { { addr, size } };
+
     }
     void enableMemset() 
     { 
@@ -56,13 +57,12 @@ public:
     uint32_t command() const { return m_op; }
 
     DSEC::SCT dseOp() const { return m_dseOp; }
-    std::array<DSEC::Transfer, 1> dseTransfer() const { return { { m_dseAddr, m_dseSize } }; }
+    const DseTransferType& dseTransfer() const { return m_dseData; }
 
 private:
     uint32_t m_op {};
     DSEC::SCT m_dseOp { DSEC::OP_NOP };
-    uint32_t m_dseSize {};
-    uint32_t m_dseAddr {};
+    DseTransferType m_dseData {};
 };
 
 } // namespace rr

@@ -16,6 +16,7 @@ class TextureStreamCmd
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 8 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 8 }; // size: 8 bit
+    using DseTransferType = tcb::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const uint8_t tmu,
                     const tcb::span<const uint16_t>& pages,
@@ -25,11 +26,11 @@ public:
     {
         m_texSize = (std::max)(m_texSize, DSEC::DEVICE_MIN_TRANSFER_SIZE); // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         uint32_t pageSize = (m_texSize > RenderConfig::TEXTURE_PAGE_SIZE) ? RenderConfig::TEXTURE_PAGE_SIZE : m_texSize;
-        m_numberOfPages = pages.size();
         for (uint32_t i = 0; i < pages.size(); i++)
         {
             m_pages[i] = { pages[i] * RenderConfig::TEXTURE_PAGE_SIZE, pageSize };
         }
+        m_dseData = { m_pages.data(), pages.size() };  
     }
 
     uint8_t getTmu() const { return m_tmu; }
@@ -44,12 +45,12 @@ public:
     }
 
     DSEC::SCT dseOp() const { return DSEC::OP_LOAD; }
-    tcb::span<const DSEC::Transfer> dseTransfer() const { return { m_pages.data(), m_numberOfPages }; }
+    const DseTransferType& dseTransfer() const { return m_dseData; }
 private:
     uint8_t m_tmu {};
     std::array<DSEC::Transfer, MAX_PAGES> m_pages;
-    uint32_t m_numberOfPages {};
     std::size_t m_texSize {};
+    DseTransferType m_dseData {};
 };
 
 } // namespace rr

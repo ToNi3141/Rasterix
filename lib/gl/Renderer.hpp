@@ -339,7 +339,7 @@ public:
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             using Command = TextureStreamCmd<RenderConfig>;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize } );
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize });
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });

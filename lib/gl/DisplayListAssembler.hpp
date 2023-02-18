@@ -64,7 +64,7 @@ public:
     }
 
     template <typename TCommand>
-    bool addCommand(const TCommand cmd) // Reference?
+    bool addCommand(const TCommand& cmd)
     {
         if (!hasDisplayListEnoughSpace(cmd))
         {
