@@ -62,6 +62,23 @@ public:
         return true;
     }
 
+    void setCheckpoint()
+    {
+        closeStreamSection();
+        m_displayList.setCheckpoint();
+    }
+
+    void resetToCheckpoint()
+    {
+        m_streamCommand = nullptr;
+        m_displayList.resetToCheckpoint();
+    }
+
+    void closeStream()
+    {
+        closeStreamSection();
+    }
+
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RENDERER_HPP
-#define RENDERER_HPP
+#ifndef RENDERER_ARDUINO_HPP
+#define RENDERER_ARDUINO_HPP
 
 #include <stdint.h>
 #include <array>
@@ -81,11 +81,11 @@ namespace rr
 // but requires much more memory because of lots of duplicated data.
 // The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
 template <class RenderConfig>
-class Renderer : public IRenderer
+class RendererArduino : public IRenderer
 {
     static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT * 2) / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + 1 };
 public:
-    Renderer(IBusConnector& busConnector)
+    RendererArduino(IBusConnector& busConnector)
         : m_busConnector(busConnector)
     {
         for (auto& entry : m_displayListAssembler)
@@ -95,15 +95,6 @@ public:
 
         setRenderResolution(640, 480);
 
-        // Fixes the first two frames
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            YOffsetReg reg;
-            reg.setY(i * m_yLineResolution);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
-        }
-
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
         setClearColor({ {0, 0, 0, 0 } });
         setClearDepth(65535);
@@ -111,11 +102,6 @@ public:
         std::array<float, 33> fogLut {};
         std::fill(fogLut.begin(), fogLut.end(), 1.0f);
         setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
-
-        // Initialize the render thread by running it once
-        m_renderThread = std::async([&](){
-            return true;
-        });
     }
 
     virtual bool drawTriangle(const Triangle& triangle) override
@@ -128,25 +114,12 @@ public:
             return true;
         }
 
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
-                if (ret == false)
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return m_displayListAssembler[m_backList].addCommand(triangleCmd);
     }
 
     bool blockTillRenderingFinished()
     {
-        return m_renderThread.valid() && (m_renderThread.get() != true);
+        return false;
     }
 
     virtual void commit() override
@@ -170,17 +143,6 @@ public:
             m_frontList = 1;
         }
 
-        // Prepare all display lists
-        bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            FramebufferCmd cmd { true, true };
-            const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-            cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].closeStream();
-        }
-
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
@@ -194,48 +156,40 @@ public:
             return true;
         });
 
-        // Render image (in new thread)
-        if (ret)
+        for (int32_t i = m_displayLines - 1; i >= 0; i--)
         {
-            m_renderThread = std::async([&](){
-                for (int32_t i = m_displayLines - 1; i >= 0; i--)
-                {
-                    while (!m_busConnector.clearToSend())
-                        ;
-                    const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                    m_busConnector.writeData(list->getMemPtr());
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    YOffsetReg reg;
-                    reg.setY(i * m_yLineResolution);
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
-                }
-                return true;
-            });
+            m_displayListAssembler[m_frontList].setCheckpoint();
+            FramebufferCmd cmd { true, true };
+            const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
+            cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            m_displayListAssembler[m_frontList].addCommand(cmd);
+            // Set YOffset for the next stream
+            YOffsetReg reg;
+            // Check wrap around
+            if ((i - 1) < 0)
+            {
+                reg.setY((m_displayLines - 1) * m_yLineResolution);
+            }
+            else
+            {
+                reg.setY((i - 1) * m_yLineResolution);
+            }
+            m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
+            m_displayListAssembler[m_frontList].closeStream();
+            while (!m_busConnector.clearToSend())
+                ;
+            const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
+            m_busConnector.writeData(list->getMemPtr());
+            m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
+        m_displayListAssembler[m_frontList].clearAssembler();
     }
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
     {
         FramebufferCmd cmd { colorBuffer, depthBuffer };
         cmd.enableMemset();
-        bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
-            if (m_scissorEnabled) 
-            {
-                if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
-                {
-                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-                }
-            }
-            else
-            {
-                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-            }
-        }
-        return ret;
+        return m_displayListAssembler[m_backList].addCommand(cmd);
     }
 
     virtual bool setClearColor(const Vec4i& color) override
@@ -281,13 +235,7 @@ public:
     {
         bool ret = true;
         const FogLutStreamCmd fogLutDesc { fogLut, start, end };
-
-        // Upload data to the display lists
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(fogLutDesc);
-        }
-        return ret;
+        return m_displayListAssembler[m_backList].addCommand(fogLutDesc);
     }
 
     virtual std::pair<bool, uint16_t> createTexture() override
@@ -315,14 +263,11 @@ public:
         bool ret { true };
         const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            using Command = TextureStreamCmd<RenderConfig>;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize });
-            TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
-            reg.setTmu(target);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
-        }
+        using Command = TextureStreamCmd<RenderConfig>;
+        ret = ret && m_displayListAssembler[m_backList].addCommand(Command { target, pages, texSize });
+        TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
+        reg.setTmu(target);
+        ret = ret && m_displayListAssembler[m_backList].addCommand(WriteRegisterCmd { reg });
         return ret;
     }
 
@@ -431,12 +376,7 @@ private:
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
-        bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { regVal });
-        }
-        return ret;
+        return m_displayListAssembler[m_backList].addCommand(WriteRegisterCmd { regVal });
     }
 
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig)
@@ -454,10 +394,12 @@ private:
         return true;
     }
 
+    YOffsetReg m_yOffsetReg {};
+
     bool m_colorBufferUseMemory { true };
     uint32_t m_colorBufferAddr { 0x02000000 };
 
-    std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
+    std::array<ListAssembler, 2> m_displayListAssembler;
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
 
@@ -480,4 +422,4 @@ private:
 };
 
 } // namespace rr
-#endif // RENDERER_HPP
+#endif // RENDERER_ARDUINO_HPP
