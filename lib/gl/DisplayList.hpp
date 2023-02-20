@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <cstring>
-#include <tcb/span.hpp>
+#include <span>
 
 namespace rr
 {
@@ -80,7 +80,7 @@ public:
         writePos = checkpoint;
     }
 
-    tcb::span<const uint8_t> getMemPtr() const
+    std::span<const uint8_t> getMemPtr() const
     {
         return { &mem[0], getSize() };
     }

@@ -182,7 +182,7 @@ public:
         }
 
         // Upload textures
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
         {
             static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
             DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
@@ -313,7 +313,7 @@ public:
             return false;
         }
         bool ret { true };
-        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
         const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {

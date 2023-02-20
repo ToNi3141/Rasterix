@@ -18,7 +18,7 @@
 #ifndef IBUSCONNECTOR_HPP
 #define IBUSCONNECTOR_HPP
 #include <stdint.h>
-#include <tcb/span.hpp>
+#include <span>
 
 namespace rr
 {
@@ -29,7 +29,7 @@ public:
 
     /// @brief Uploads a chunk of data
     /// @param data The data
-    virtual void writeData(const tcb::span<const uint8_t>& data) = 0;
+    virtual void writeData(const std::span<const uint8_t>& data) = 0;
 
     /// @brief Signals if the FIFO of the target is empty and is able to receive the next chunk of data
     /// @return true if the FIFO is empty

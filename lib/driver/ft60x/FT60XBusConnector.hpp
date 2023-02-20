@@ -21,7 +21,7 @@ public:
 
     FT60XBusConnector();
 
-    virtual void writeData(const tcb::span<const uint8_t>& data) override;
+    virtual void writeData(const std::span<const uint8_t>& data) override;
     virtual bool clearToSend() override;
 private:
     FT_HANDLE fthandle;

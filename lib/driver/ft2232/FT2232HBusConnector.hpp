@@ -80,7 +80,7 @@ public:
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    virtual void writeData(const tcb::span<const uint8_t>& data) override
+    virtual void writeData(const std::span<const uint8_t>& data) override
     {
         DWORD data_written;
         FT_Write(fthandle, (LPVOID*)(data.data()), data.size(), &data_written);

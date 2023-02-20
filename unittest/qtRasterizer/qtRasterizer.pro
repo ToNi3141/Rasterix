@@ -7,7 +7,7 @@ ICEGL_PATH = ../../lib/gl
 
 
 QT       += core gui
-CONFIG += c++17
+CONFIG += c++2a
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets

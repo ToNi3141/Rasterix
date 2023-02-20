@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <tcb/span.hpp>
+#include <span>
 #include "DmaStreamEngineCommands.hpp"
 
 namespace rr
@@ -70,7 +70,7 @@ public:
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
 
-    using Desc = std::array<tcb::span<uint8_t>, 0>;
+    using Desc = std::array<std::span<uint8_t>, 0>;
     void serialize(Desc&) const {}
     uint32_t command() const { return m_op; }
 

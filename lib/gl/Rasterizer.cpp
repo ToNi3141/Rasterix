@@ -60,7 +60,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
 }
 
 bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
-                           const tcb::span<TriangleStreamTypes::Texture>& texture, 
+                           const std::span<TriangleStreamTypes::Texture>& texture, 
                            const Triangle& triangle) const
 {
     static constexpr uint32_t EDGE_FUNC_SIZE = 4;

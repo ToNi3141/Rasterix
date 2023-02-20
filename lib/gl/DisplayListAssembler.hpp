@@ -22,7 +22,7 @@
 #include <array>
 #include <bitset>
 #include <algorithm>
-#include <tcb/span.hpp>
+#include <span>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "IRenderer.hpp"
@@ -46,7 +46,7 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool uploadToDeviceMemory(const uint32_t addr, const tcb::span<const uint8_t> data)
+    bool uploadToDeviceMemory(const uint32_t addr, const std::span<const uint8_t> data)
     {
         const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;

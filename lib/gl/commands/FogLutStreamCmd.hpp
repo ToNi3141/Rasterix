@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <tcb/span.hpp>
+#include <span>
 
 namespace rr
 {
@@ -58,7 +58,7 @@ public:
         }
     }
 
-    using Desc = std::array<tcb::span<uint64_t>, LUT_SIZE>;
+    using Desc = std::array<std::span<uint64_t>, LUT_SIZE>;
     void serialize(Desc& desc) const 
     { 
         for (uint8_t i = 0; i < desc.size(); i++)
