@@ -1,3 +1,5 @@
-add_subdirectory(ft60x)
-add_subdirectory(ft2232)
-add_subdirectory(verilator)
+if (BUILD_NATIVE)
+    add_subdirectory(ft60x)
+    add_subdirectory(ft2232)
+    add_subdirectory(verilator)
+endif()

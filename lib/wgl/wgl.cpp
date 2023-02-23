@@ -4,6 +4,7 @@
 #include "Renderer.hpp"
 #include "FT60XBusConnector.hpp"
 #include "RenderConfigs.hpp"
+#include <spdlog/sinks/basic_file_sink.h>
 
 using namespace rr;
 
@@ -28,6 +29,15 @@ GLAPI BOOL APIENTRY impl_wglCopyContext(HGLRC hglrc, HGLRC hglrc2, UINT i)
 
 GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
 {
+    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("IceGL.log", "basic-log.txt");
+    file_sink->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
+    auto logger = std::make_shared<spdlog::logger>("IceGL", file_sink);
+    logger->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
+    logger->info("IceGL started");
+
+    // or you can even set multi_sink logger as default logger
+    spdlog::set_default_logger(logger);
+
     IceGL::createInstance(m_renderer);
     m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     SPDLOG_DEBUG("wglCreateContext called");

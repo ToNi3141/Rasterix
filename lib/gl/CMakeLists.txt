@@ -1,5 +1,3 @@
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=3) 
-
 add_library(gl STATIC
     Clipper.cpp
     gl.cpp

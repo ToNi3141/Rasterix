@@ -28,7 +28,6 @@
 #include "Rasterizer.hpp"
 #include <string.h>
 #include "DisplayListAssembler.hpp"
-#include <future>
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
@@ -415,7 +414,6 @@ private:
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
     Rasterizer m_rasterizer;
-    std::future<bool> m_renderThread;
 
     // Mapping of texture id and TMU
     std::array<uint16_t, MAX_TMU_COUNT> m_boundTextures {};

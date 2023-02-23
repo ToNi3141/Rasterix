@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <spdlog/spdlog.h>
-#include "spdlog/sinks/basic_file_sink.h"
 
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
 namespace rr
@@ -50,14 +49,6 @@ IceGL::IceGL(IRenderer &renderer)
 {
     // Preallocate the first texture. This is the default texture which also can't be deleted.
     m_renderer.createTexture();
-    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("IceGL.log", "basic-log.txt");
-    file_sink->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    auto logger = std::make_shared<spdlog::logger>("IceGL", file_sink);
-    logger->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    logger->info("IceGL started");
-
-    // or you can even set multi_sink logger as default logger
-    spdlog::set_default_logger(logger);
 
     // Register Open GL 1.2 procedures
     addProcedure("glDrawRangeElements", ADDRESS_OF(impl_glDrawRangeElements));

@@ -20,6 +20,7 @@
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
 #include "IRenderer.hpp"
+#include <cstring>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
