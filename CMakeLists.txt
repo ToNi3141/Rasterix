@@ -8,6 +8,7 @@ option(BUILD_CROSS "Sets up a cross compilation build for the RP2040" OFF)
 set(CMAKE_CXX_STANDARD 20)
 
 if (BUILD_CROSS)
+    add_link_options(-Wl,--print-memory-usage)
     # initialize the SDK based on PICO_SDK_PATH
     # note: this must happen before project()
     include(pico_sdk_import.cmake)
