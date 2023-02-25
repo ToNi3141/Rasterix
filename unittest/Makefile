@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationDisplay attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv
+all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv
  
 clean:
 	rm -rf obj_dir
@@ -10,10 +10,15 @@ dmaStreamEngine:
 	-make -C obj_dir -f VDmaStreamEngine.mk
 	./obj_dir/VDmaStreamEngine
 
-simulationDisplay:
+simulationILI9486:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Display/DisplayController8BitILI9486.v --top-module DisplayController8BitILI9486 cpp/sim_DisplayController8BitILI9486.cpp
 	-make -C obj_dir -f VDisplayController8BitILI9486.mk
 	./obj_dir/VDisplayController8BitILI9486
+
+simulationILI9341:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Display/DisplayController8BitILI9341.v --top-module DisplayController8BitILI9341 cpp/sim_DisplayController8BitILI9341.cpp
+	-make -C obj_dir -f VDisplayController8BitILI9341.mk
+	./obj_dir/VDisplayController8BitILI9341
 
 attributeInterpolator:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/AttributeInterpolator.v --top-module AttributeInterpolator cpp/sim_AttributeInterpolator.cpp -I../rtl/float/rtl/float/ -I../rtl/Rasterix/
