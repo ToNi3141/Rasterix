@@ -39,25 +39,40 @@ public:
 
     virtual bool clearToSend() override 
     {
-        return !dma_channel_is_busy(dma_tx);
+        return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
     }
 
     void init()
     {
-        spi_init(spi_default, 48 * 1000 * 1000);
+        gpio_init(RESET);
+        gpio_set_dir(RESET, true);
+        gpio_set_dir(CTS, false);
+        spi_init(spi_default, 50 * 1000 * 1000);
         gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
         gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
+        gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, true);
         gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
         gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
 
         // Make the SPI pins available to picotool
         bi_decl(bi_3pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI));
         // Make the CS pin available to picotool
-        bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
+        //bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
 
         // Grab some unused dma channels
         dma_tx = dma_claim_unused_channel(true);
+
+        gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+        gpio_put(RESET, 0);
+        sleep_ms(50);
+        gpio_put(RESET, 1);
+        sleep_ms(50);
+        gpio_put(RESET, 0);
+        gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+        sleep_ms(50);
     }
+    static constexpr uint32_t RESET { 5 };
+    static constexpr uint32_t CTS { 4 };
 
     uint dma_tx;
 };
@@ -69,8 +84,8 @@ GLuint m_textureId = 0;
 
 static const uint32_t RESOLUTION_H = 240;
 static const uint32_t RESOLUTION_W = 320;
-BusConnector m_busConnector;
-rr::RendererArduino<rr::RenderConfigPico> m_renderer{m_busConnector};
+static BusConnector m_busConnector;
+static rr::RendererArduino<rr::RenderConfigPico> m_renderer{m_busConnector};
 
 
 static constexpr uint16_t cubeIndex[] = {
@@ -299,6 +314,7 @@ void init()
 {
     rr::IceGL::createInstance(m_renderer);
     m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    rr::IceGL::getInstance().enableColorBufferStream();
 
     m_textureId = loadTexture(cubeTexture);
 
@@ -362,20 +378,6 @@ void draw()
     glDisable(GL_SCISSOR_TEST);
     glClearColor(135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Fooling around with the scissor
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(0, 50, 200, 46);
-    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glScissor(200, 50, 200, 48);
-    glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glScissor(400, 50, 200, 50);
-    glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_SCISSOR_TEST);
-    glScissor(200, 200, 200, 100);
 
     // Setup the model view matrix
     glMatrixMode(GL_MODELVIEW);

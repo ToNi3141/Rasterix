@@ -157,6 +157,8 @@ public:
 
         for (int32_t i = m_displayLines - 1; i >= 0; i--)
         {
+            while (!m_busConnector.clearToSend())
+                ;
             m_displayListAssembler[m_frontList].setCheckpoint();
             FramebufferCmd cmd { true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
@@ -175,10 +177,9 @@ public:
             }
             m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
             m_displayListAssembler[m_frontList].closeStream();
-            while (!m_busConnector.clearToSend())
-                ;
             const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
             m_busConnector.writeData(list->getMemPtr());
+            
             m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
         m_displayListAssembler[m_frontList].clearAssembler();
