@@ -6,8 +6,6 @@ file mkdir $SYNTH_OUT
 
 # Copy board file into synth directory to avoid polluting the source directory
 file copy $BOARD_FILE $SYNTH_OUT
-file copy design_1_mig_7series_0_0.xci $SYNTH_OUT
-file copy mig_b.prj $SYNTH_OUT
 
 # Change to synth directory as build directory
 cd $SYNTH_OUT
@@ -15,9 +13,9 @@ cd $SYNTH_OUT
 file mkdir $REPORT_PATH
 
 # Setup project properties
-set_part xc7a200tsbg484-1
+set_part xc7a35tcpg236-1
 set_property TARGET_LANGUAGE Verilog [current_project]
-set_property BOARD_PART digilentinc.com:nexys_video:part0:1.2 [current_project]
+set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.1 [current_project]
 set_property DEFAULT_LIB work [current_project]
 set_property source_mgmt_mode All [current_project]
 
@@ -60,19 +58,13 @@ read_verilog ./../../../../Float/rtl/float/FloatToInt.v
 read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
-read_verilog ./../../../../Util/FT245S2AXIS.v
-read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/ftdi_245fifo.sv
-read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/stream_async_fifo.sv
-read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/stream_wtrans.sv
-read_verilog ./../../../../Display/Dvi.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_tmds_encoder.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_resync.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_serialiser.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_defs.v
-read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
-read_xdc ./../Nexys-Video-Master.xdc
+read_verilog ./../../../../Util/Serial2AXIS.v
+read_verilog ./../../../../3rdParty/sfifo.v
+read_verilog ./../../../../3rdParty/SPI_Slave.v
+read_verilog ./../../../../Display/DisplayController8BitILI9341.v
+
+read_xdc ./../Cmod-A7-Master.xdc
+
 
 # Open board file
 read_bd $BOARD_FILE
@@ -81,6 +73,7 @@ make_wrapper -import -files [get_files $BOARD_FILE] -top
 
 set_property synth_checkpoint_mode None [get_files $BOARD_FILE]
 generate_target all [get_files $BOARD_FILE]
+
 
 # Run synthesis and implementation
 synth_design -top design_1_wrapper
