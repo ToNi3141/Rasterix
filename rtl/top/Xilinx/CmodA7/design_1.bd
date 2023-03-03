@@ -783,6 +783,9 @@
         "parameters": {
           "FIFO_SIZE": {
             "value": "32768"
+          },
+          "FIFO_TRESHOLD": {
+            "value": "8192"
           }
         },
         "reference_info": {
@@ -1066,10 +1069,10 @@
       }
     },
     "interface_nets": {
-      "axis_dwidth_converter_1_M_AXIS": {
+      "Rasterix_0_m_framebuffer_axis": {
         "interface_ports": [
-          "axis_dwidth_converter_1/M_AXIS",
-          "axis_data_fifo_0/S_AXIS"
+          "Rasterix_0/m_framebuffer_axis",
+          "axis_dwidth_converter_1/S_AXIS"
         ]
       },
       "axis_dwidth_converter_0_M_AXIS": {
@@ -1078,22 +1081,16 @@
           "Rasterix_0/s_cmd_axis"
         ]
       },
-      "Rasterix_0_m_framebuffer_axis": {
-        "interface_ports": [
-          "Rasterix_0/m_framebuffer_axis",
-          "axis_dwidth_converter_1/S_AXIS"
-        ]
-      },
       "Serial2AXIS_0_m_axis": {
         "interface_ports": [
           "axis_dwidth_converter_0/S_AXIS",
           "Serial2AXIS_0/m_axis"
         ]
       },
-      "axis_data_fifo_0_M_AXIS": {
+      "axi_emc_0_EMC_INTF": {
         "interface_ports": [
-          "axis_data_fifo_0/M_AXIS",
-          "DisplayController8Bi_1/s_axis"
+          "cellular_ram",
+          "axi_emc_0/EMC_INTF"
         ]
       },
       "Rasterix_0_m_mem_axi": {
@@ -1102,10 +1099,16 @@
           "axi_emc_0/S_AXI_MEM"
         ]
       },
-      "axi_emc_0_EMC_INTF": {
+      "axis_dwidth_converter_1_M_AXIS": {
         "interface_ports": [
-          "cellular_ram",
-          "axi_emc_0/EMC_INTF"
+          "axis_dwidth_converter_1/M_AXIS",
+          "axis_data_fifo_0/S_AXIS"
+        ]
+      },
+      "axis_data_fifo_0_M_AXIS": {
+        "interface_ports": [
+          "axis_data_fifo_0/M_AXIS",
+          "DisplayController8Bi_1/s_axis"
         ]
       }
     },
