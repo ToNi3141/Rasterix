@@ -149,7 +149,7 @@ public:
         return m_renderThread.valid() && (m_renderThread.get() != true);
     }
 
-    virtual void commit() override
+    virtual void swapDisplayList() override
     {
         // Check if the previous rendering has finished. If not, block till it is finished.
         if (blockTillRenderingFinished())
@@ -171,13 +171,12 @@ public:
         }
 
         // Prepare all display lists
-        bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             FramebufferCmd cmd { true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].closeStream();
         }
 
@@ -194,24 +193,28 @@ public:
             return true;
         });
 
-        // Render image (in new thread)
-        if (ret)
+        // Clear display lists
+        for (int32_t i = m_displayLines - 1; i >= 0; i--)
         {
-            m_renderThread = std::async([&](){
-                for (int32_t i = m_displayLines - 1; i >= 0; i--)
-                {
-                    while (!m_busConnector.clearToSend())
-                        ;
-                    const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                    m_busConnector.writeData(list->getMemPtr());
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].clearAssembler();
-                    YOffsetReg reg;
-                    reg.setY(i * m_yLineResolution);
-                    m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
-                }
-                return true;
-            });
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clearAssembler();
+            YOffsetReg reg;
+            reg.setY(i * m_yLineResolution);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
         }
+    }
+
+    virtual void uploadDisplayList() override
+    {
+        m_renderThread = std::async([&](){
+            for (int32_t i = m_displayLines - 1; i >= 0; i--)
+            {
+                while (!m_busConnector.clearToSend())
+                    ;
+                const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
+                m_busConnector.writeData(list->getMemPtr());
+            }
+            return true;
+        });
     }
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override

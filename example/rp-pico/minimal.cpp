@@ -21,20 +21,37 @@
 class BusConnector : public rr::IBusConnector
 {
 public:
+    static constexpr uint32_t RESET { 21 };
+    static constexpr uint32_t CTS { 20 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 16384 };
+    
     BusConnector() { }
 
     virtual ~BusConnector() = default;
 
     virtual void writeData(const std::span<const uint8_t>& data) override 
     {
-        dma_channel_config c = dma_channel_get_default_config(dma_tx);
-        channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
-        channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
-        dma_channel_configure(dma_tx, &c,
-                        &spi_get_hw(spi_default)->dr, // write address
-                        data.data(), // read address
-                        data.size(), // element count (each element is of size transfer_data_size)
-                        true); // Start immediately
+        uint32_t dataToSend = data.size();
+        uint32_t counter = 0;
+        while (dataToSend != 0)
+        {
+            while (!clearToSend())
+                ;
+            // SPI has no flow control. Therefore the flow control must be implemented in software.
+            // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
+            // before sending the next chunk.
+            const uint32_t chunkSize = (dataToSend < MAX_CHUNK_SIZE) ? dataToSend : MAX_CHUNK_SIZE;
+            dma_channel_config c = dma_channel_get_default_config(dma_tx);
+            channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+            channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
+            dma_channel_configure(dma_tx, &c,
+                            &spi_get_hw(spi_default)->dr, // write address
+                            data.data() + counter, // read address
+                            chunkSize, // element count (each element is of size transfer_data_size)
+                            true); // Start immediately
+            counter += chunkSize;
+            dataToSend -= chunkSize;
+        }
     }
 
     virtual bool clearToSend() override 
@@ -71,8 +88,6 @@ public:
         gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
         sleep_ms(50);
     }
-    static constexpr uint32_t RESET { 5 };
-    static constexpr uint32_t CTS { 4 };
 
     uint dma_tx;
 };

@@ -168,8 +168,20 @@ IceGL::IceGL(IRenderer &renderer)
 
 void IceGL::commit()
 {
-    SPDLOG_INFO("Commit called");
-    m_renderer.commit();
+    swapDisplayList();
+    uploadDisplayList();
+}
+
+void IceGL::swapDisplayList() 
+{
+    SPDLOG_INFO("Swap display list called");
+    m_renderer.swapDisplayList(); 
+}
+
+void IceGL::uploadDisplayList() 
+{ 
+    SPDLOG_INFO("Upload display list called");
+    m_renderer.uploadDisplayList(); 
 }
 
 const char *IceGL::getLibExtensions() const

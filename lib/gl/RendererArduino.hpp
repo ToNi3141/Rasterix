@@ -121,7 +121,7 @@ public:
         return false;
     }
 
-    virtual void commit() override
+    virtual void swapDisplayList() override 
     {
         // Check if the previous rendering has finished. If not, block till it is finished.
         if (blockTillRenderingFinished())
@@ -155,6 +155,11 @@ public:
             return true;
         });
 
+        m_displayListAssembler[m_backList].clearAssembler();
+    }
+
+    virtual void uploadDisplayList() override
+    {
         for (int32_t i = m_displayLines - 1; i >= 0; i--)
         {
             while (!m_busConnector.clearToSend())
@@ -182,7 +187,6 @@ public:
             
             m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
-        m_displayListAssembler[m_frontList].clearAssembler();
     }
 
     virtual bool clear(bool colorBuffer, bool depthBuffer) override
