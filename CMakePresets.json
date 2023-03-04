@@ -31,10 +31,7 @@
                 "BUILD_NATIVE": "ON",
                 "ENABLE_SPDLOG": "ON"
             },
-            "architecture": 
-            {
-                "value": "Win32"
-            }
+            "architecture": "Win32"
         },
         {
             "name": "rp2040",
