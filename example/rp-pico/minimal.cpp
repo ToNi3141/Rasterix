@@ -5,7 +5,7 @@
  */
 
 #include "IceGL.hpp"
-#include "RendererArduino.hpp"
+#include "RendererMemoryOptimized.hpp"
 #include "RenderConfigs.hpp"
 #include "gl.h"
 #include "glu.h"
@@ -100,7 +100,7 @@ GLuint m_textureId = 0;
 static const uint32_t RESOLUTION_H = 240;
 static const uint32_t RESOLUTION_W = 320;
 static BusConnector m_busConnector;
-static rr::RendererArduino<rr::RenderConfigPico> m_renderer{m_busConnector};
+static rr::RendererMemoryOptimized<rr::RenderConfigPico> m_renderer{m_busConnector};
 
 
 static constexpr uint16_t cubeIndex[] = {

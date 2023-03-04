@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RENDERER_ARDUINO_HPP
-#define RENDERER_ARDUINO_HPP
+#ifndef RENDERER_MEMORY_OPTIMIZED_HPP
+#define RENDERER_MEMORY_OPTIMIZED_HPP
 
 #include <stdint.h>
 #include <array>
@@ -75,16 +75,16 @@ namespace rr
 // |                                                        | |
 // |                                                        | |
 // +--------------------------------------------------------+ v
-// This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
-// all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
-// but requires much more memory because of lots of duplicated data.
+// This renderer collects all triangles in a single display list. It will create only one display list and will transfer
+// this display list several times but slightly modified (in respect to the display lines) to the renderer.
+// This approach is slower compared to unique display lists for each line, but saves memory on the target.
 // The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
 template <class RenderConfig>
-class RendererArduino : public IRenderer
+class RendererMemoryOptimized : public IRenderer
 {
     static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT * 2) / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + 1 };
 public:
-    RendererArduino(IBusConnector& busConnector)
+    RendererMemoryOptimized(IBusConnector& busConnector)
         : m_busConnector(busConnector)
     {
         for (auto& entry : m_displayListAssembler)
@@ -425,4 +425,4 @@ private:
 };
 
 } // namespace rr
-#endif // RENDERER_ARDUINO_HPP
+#endif // RENDERER_MEMORY_OPTIMIZED_HPP
