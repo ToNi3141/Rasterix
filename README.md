@@ -3,13 +3,15 @@
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Nexys Video Build](#nexys-video-build)
-  - [PC Connection](#pc-connection)
+  - [Hardware Setup](#hardware-setup)
+    - [UMFT600X-B Eval Kit Preparation](#umft600x-b-eval-kit-preparation)
+- [CMOD A7 Build](#cmod-a7-build)
 - [Simulation Build](#simulation-build)
 - [Unit-Tests](#unit-tests)
-- [DLL Build](#dll-build)
   - [OS X Build](#os-x-build)
   - [Windows Build](#windows-build)
     - [Run Warcraft 3](#run-warcraft-3)
+  - [RP2040 Build](#rp2040-build)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -42,6 +44,8 @@ git submodule update
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
 
+This build uses two TMUs.
+
 To build the binaries use the following commands.
 ```
 cd rtl/top/Xilinx/NexysVideo
@@ -49,7 +53,9 @@ cd rtl/top/Xilinx/NexysVideo
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
-## PC Connection
+## Hardware Setup
+Connect the Nexys Video via USB 3.0 to your computer (via the `UMFT600X-B` eval board). Connect to your Nexys Video a 1024x600 px monitor. If you don't have a monitor at hand with this resolution, you have to change the resolution in the `rtl/Display/Dvi.v` wrapper and in the software (for instance in `example/minimal/main.cpp`).
+### UMFT600X-B Eval Kit Preparation
 The current implementation uses a `UMFT600X-B` eval board from FTDI with an FT600 to connect the Nexys with an PC. It offers a USB 3.0 connection and can be connected via the FMC connector.
  
 The `UMFT600X-B` must be prepared:
@@ -64,7 +70,20 @@ Also the following solder bridges must be applied:
 - R26: Short (GPIO: Triggers the reset line)
 - R27: Short (GPIO)
 
-![ft600 picture](pictures/FT600.png)
+<img src="pictures/FT600.png" width="450" height="400">
+
+# CMOD A7 Build
+The build target is a Nexys Video board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
+
+This build uses only one TMU.
+
+To build the binaries use the following commands.
+```
+cd rtl/top/Xilinx/CmodA7
+/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+```
+You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
+
 
 # Simulation Build
 A simulation can be used to easily develop and debug the renderer. The simulation can be found under `unittests/qtRasterizer`. There is a Qt project which can be opened with the QtCreator. This project supports also the real hardware, and can be selected with the `TARGET_BUILD` variable in the .pro file.
@@ -89,17 +108,21 @@ Unit-tests for the Verilog code can be found under `./unittests`.
 
 Just type `make` in the unit-tests directory. It will run all available tests.
 
-# DLL Build
-To run games like Warcraft 3 a DLL is required to forward the OpenGL calls to the FPGA. This repository contains a cmake project to build the DLL.
-
-Note: Only WGL is partially supported, therefore only Windows games which using WGL will probably run. Linux and OS X games won't run currently.
-
 ## OS X Build
 Before configuring and starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 0.5.21. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
 
-Open `cmake-gui` to create a makefile project. Use as build directory `./build`.
-
-Switch to the `build` directory and type `make` to build the project. To test the build, run `./example/minimal/minimal`. It should initialize the renderer and draw a rotating cube.
+To build the library an the minimal example, switch to the source directory and type
+```
+cd <rasterix_directory>
+cmake --preset native
+cd build/native
+make -j
+```
+To run the minimal example, type
+```
+./example/minimal/minimal
+```
+into your terminal. It should now show an image similar to the simulation.
 
 ## Windows Build
 Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
@@ -107,13 +130,15 @@ Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```
 cd <rasterix_directory>
-mkdir build
-cd build
-cmake -G "Visual Studio 16 2019" -A Win32 ../.
+cmake --preset win32
+cd build/win32
 ```
 
-Open the Visual Studio project in the `build` directory and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, run `.\example\minimal\Release\minimal.exe`. It should initialize the renderer and draw a rotating cube.
-
+Open the Visual Studio project in the `build/win32` directory and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
+```
+.\example\minimal\Release\minimal.exe
+```
+into your terminal. It should now show an image similar to the simulation.
 
 ### Run Warcraft 3 
 Only classic Warcraft 3 will work. Reforged does not. 
@@ -125,6 +150,18 @@ Only classic Warcraft 3 will work. Reforged does not.
 Warcraft 3 runs on low settings with around 20-30FPS.
 
 Switching the resolution and videos are currently not working.
+
+## RP2040 Build
+Before you start to build, have a look at the rp2040 SDK readme (https://github.com/raspberrypi/pico-sdk). You have several options, which are supported. The option documented there is based on a already cloned SDK on your computer.
+
+Open a terminal. Use the following commands to build a rp2040 binary:
+```
+cd <rasterix_directory>
+cmake --preset rp2040 -DPICO_SDK_PATH=<path_to_the_sdk>
+cd build/rp2040
+make -j
+```
+You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.

@@ -3,11 +3,12 @@
 
 cmake_minimum_required(VERSION 3.14...3.25)
 option(BUILD_NATIVE "Sets up a native build for the current platform" OFF)
-option(BUILD_CROSS "Sets up a cross compilation build for the RP2040" OFF)
+option(BUILD_RP2040 "Sets up a cross compilation build for the RP2040" OFF)
+option(ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 
-if (BUILD_CROSS)
+if (BUILD_RP2040)
     add_link_options(-Wl,--print-memory-usage)
     # initialize the SDK based on PICO_SDK_PATH
     # note: this must happen before project()
