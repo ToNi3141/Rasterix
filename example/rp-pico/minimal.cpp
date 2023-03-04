@@ -74,7 +74,7 @@ public:
         // Make the SPI pins available to picotool
         bi_decl(bi_3pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI));
         // Make the CS pin available to picotool
-        //bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
+        bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
 
         // Grab some unused dma channels
         dma_tx = dma_claim_unused_channel(true);
@@ -83,7 +83,7 @@ public:
         gpio_put(RESET, 0);
         sleep_ms(50);
         gpio_put(RESET, 1);
-        sleep_ms(50);
+        sleep_ms(500); // Wait a moment till the FPGA has load its configuration
         gpio_put(RESET, 0);
         gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
         sleep_ms(50);
@@ -443,6 +443,6 @@ int main()
         gpio_put(LED_PIN, led);
         led = !led;
         draw();
-        rr::IceGL::getInstance().commit();
+        rr::IceGL::getInstance().render();
     }
 }

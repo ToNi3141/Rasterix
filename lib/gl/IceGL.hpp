@@ -47,7 +47,7 @@ public:
     PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
     VertexQueue& vertexQueue() { return m_vertexQueue; }
 
-    void commit();
+    void render();
     void swapDisplayList();
     void uploadDisplayList();
 

@@ -6,12 +6,13 @@
   - [Hardware Setup](#hardware-setup)
     - [UMFT600X-B Eval Kit Preparation](#umft600x-b-eval-kit-preparation)
 - [CMOD A7 Build](#cmod-a7-build)
+  - [Hardware Setup](#hardware-setup-1)
 - [Simulation Build](#simulation-build)
 - [Unit-Tests](#unit-tests)
-  - [OS X Build](#os-x-build)
-  - [Windows Build](#windows-build)
-    - [Run Warcraft 3](#run-warcraft-3)
-  - [RP2040 Build](#rp2040-build)
+- [OS X Build](#os-x-build)
+- [Windows Build](#windows-build)
+  - [Run Warcraft 3](#run-warcraft-3)
+- [RP2040 Build](#rp2040-build)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -55,6 +56,9 @@ You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Viva
 
 ## Hardware Setup
 Connect the Nexys Video via USB 3.0 to your computer (via the `UMFT600X-B` eval board). Connect to your Nexys Video a 1024x600 px monitor. If you don't have a monitor at hand with this resolution, you have to change the resolution in the `rtl/Display/Dvi.v` wrapper and in the software (for instance in `example/minimal/main.cpp`).
+
+<img src="screenshots/nexysvideo.jpg" width="40%"> 
+
 ### UMFT600X-B Eval Kit Preparation
 The current implementation uses a `UMFT600X-B` eval board from FTDI with an FT600 to connect the Nexys with an PC. It offers a USB 3.0 connection and can be connected via the FMC connector.
  
@@ -73,16 +77,44 @@ Also the following solder bridges must be applied:
 <img src="pictures/FT600.png" width="450" height="400">
 
 # CMOD A7 Build
-The build target is a Nexys Video board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
+The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
-This build uses only one TMU.
+This build uses only one TMU with a maximum texture resolution of 128x128px.
 
-To build the binaries use the following commands.
+To build the binaries, use the following commands.
 ```
 cd rtl/top/Xilinx/CmodA7
 /Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
+
+## Hardware Setup
+The following hardware setup shows an Raspberry Pi Pico connected to an CMOD A7 with an `XC7A35` FPGA connected and an 320x240 pixel display with an `ILI9341` chipset.
+
+<img src="screenshots/cmod7.jpg" width="50%"> 
+
+The Pico is connected via SPI to the CMOD. Have a look at the following table to connect them:
+| Port Name | Pico | CMOD A7 |
+|-----------|------|---------|
+| MISO      | GP16 | 48      |
+| CSN       | GP17 | 46      |
+| SCK       | GP18 | 47      |
+| MOSI      | GP19 | 45      |
+| CTS       | GP20 | 44      |
+| RSTN      | GP21 | 43      |
+
+Supported SPI clock speed: Around 50MHz.
+
+The display is directly connected to the FPGA via the 8080-I parallel interface. The FPGA automatically configures the display when reset is asserted. To connect the display use the following table:
+
+| Port Name | CMOD A7 | ILI9341 |
+|-----------|---------|---------|
+| CS        | n/c     | GND     |
+| C/D       | 12      | C/D     |
+| WR        | 10      | WR      |
+| RD        | 09      | RD      |
+| RST       | n/c     | 3.3V    |
+| DATA[7:0] | [1:8]   | D[7:0]  |
 
 
 # Simulation Build
@@ -108,7 +140,7 @@ Unit-tests for the Verilog code can be found under `./unittests`.
 
 Just type `make` in the unit-tests directory. It will run all available tests.
 
-## OS X Build
+# OS X Build
 Before configuring and starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 0.5.21. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
 
 To build the library an the minimal example, switch to the source directory and type
@@ -124,7 +156,7 @@ To run the minimal example, type
 ```
 into your terminal. It should now show an image similar to the simulation.
 
-## Windows Build
+# Windows Build
 Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
 
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
@@ -140,7 +172,7 @@ Open the Visual Studio project in the `build/win32` directory and build it. Afte
 ```
 into your terminal. It should now show an image similar to the simulation.
 
-### Run Warcraft 3 
+## Run Warcraft 3 
 Only classic Warcraft 3 will work. Reforged does not. 
 - Prepare Warcraft 3. Set the resolution to something like 800x600 or below and set the texture quality to low (currently the Renderer supports only textures with a maximum size of 256x256).
 - Rename `wgl.dll` into `OpenGL32.dll` and copy it together with the 32bit version of the `FTD3XX.dll` in the root directory of your Warcraft 3 installation. 
@@ -151,7 +183,7 @@ Warcraft 3 runs on low settings with around 20-30FPS.
 
 Switching the resolution and videos are currently not working.
 
-## RP2040 Build
+# RP2040 Build
 Before you start to build, have a look at the rp2040 SDK readme (https://github.com/raspberrypi/pico-sdk). You have several options, which are supported. The option documented there is based on a already cloned SDK on your computer.
 
 Open a terminal. Use the following commands to build a rp2040 binary:
@@ -195,7 +227,5 @@ The following features are currently missing compared to a real OpenGL implement
 - Implement logic ops
 - Implement a texture cache to omit the `TextureBuffer`
 - Implement higher texture resolutions
-- Port to an Artix XC7A35
 - Port to an Zynq board (XC7Z020 for now)
-- Make driver usable with microcontrollers
 - ...

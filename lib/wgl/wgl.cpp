@@ -150,7 +150,7 @@ GLAPI BOOL APIENTRY impl_wglShareLists(HGLRC hglrc, HGLRC hglrc2)
 GLAPI BOOL APIENTRY impl_wglSwapBuffers(HDC hdc)
 {
     SPDLOG_DEBUG("wglSwapBuffers called");
-    IceGL::getInstance().commit();
+    IceGL::getInstance().render();
     return TRUE;
 }
 
@@ -160,7 +160,7 @@ GLAPI BOOL APIENTRY impl_wglSwapLayerBuffers(HDC hdc, UINT planes)
 
     if ((planes & WGL_SWAP_MAIN_PLANE) != 0U) {
 
-        IceGL::getInstance().commit();
+        IceGL::getInstance().render();
     }
 
     return TRUE;

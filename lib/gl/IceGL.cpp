@@ -166,7 +166,7 @@ IceGL::IceGL(IRenderer &renderer)
     // }
 }
 
-void IceGL::commit()
+void IceGL::render()
 {
     swapDisplayList();
     uploadDisplayList();

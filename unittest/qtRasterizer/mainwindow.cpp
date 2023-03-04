@@ -450,7 +450,7 @@ void MainWindow::newFrame()
     // Draw the cube
     glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
 
-    rr::IceGL::getInstance().commit();
+    rr::IceGL::getInstance().render();
 
 #if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)

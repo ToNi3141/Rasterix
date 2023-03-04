@@ -456,7 +456,7 @@ int main()
     while (1)
     {
         draw();
-        rr::IceGL::getInstance().commit();
+        rr::IceGL::getInstance().render();
     }
     return 0;
 }
