@@ -1,5 +1,3 @@
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=3) 
-
 add_library(gl STATIC
     Clipper.cpp
     gl.cpp
@@ -13,5 +11,5 @@ add_library(gl STATIC
     VertexPipeline.cpp
 )
 
-target_link_libraries(gl PRIVATE spdlog::spdlog span)
+target_link_libraries(gl PRIVATE spdlog::spdlog)
 target_include_directories(gl PUBLIC .)

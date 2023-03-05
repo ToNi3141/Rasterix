@@ -32,7 +32,7 @@ public:
 
     Rasterizer();
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
-                   const tcb::span<TriangleStreamTypes::Texture>& texture, 
+                   const std::span<TriangleStreamTypes::Texture>& texture, 
                    const Triangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);

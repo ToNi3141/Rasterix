@@ -22,7 +22,7 @@
 #include "IRenderer.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
-#include <tcb/span.hpp>
+#include <span>
 
 namespace rr
 {
@@ -165,7 +165,7 @@ public:
         return ret;
     }
 
-    tcb::span<const uint16_t> getPages(const uint16_t texId) const
+    std::span<const uint16_t> getPages(const uint16_t texId) const
     {
         if (textureValid(texId))
         {
@@ -206,7 +206,7 @@ public:
         return true;
     }
 
-    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader) 
+    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const std::span<const uint8_t> data)> uploader) 
     {
         // Upload textures
         for (uint32_t i = 0; i < m_textures.size(); i++)

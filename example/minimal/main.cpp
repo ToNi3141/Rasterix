@@ -131,7 +131,7 @@ pixel[1] = ((((data[1] - 33) & 0xF) << 4) | ((data[2] - 33) >> 2)); \
 pixel[2] = ((((data[2] - 33) & 0x3) << 6) | ((data[3] - 33))); \
 data += 4; \
 }
-static char *cubeTexture =
+const char *cubeTexture =
 	"B)G@G*WTGJ_VE:;MFJSSG:_VD*3JA)C>AY[EE*OR>Y/>BZ/N@YWKEK#^D:K[:H+-"
 	"4V:I05.07G\"O:7NZ-DB),4.$5VBM97:[7W\"W9'6\\7V^[;7W);7W+566S0$^?(S1["
 	",D\"&.TF/1%*88G\"VE*7JK+X\"F:SP@I79?Y/9AIKBBZ'KE:OUG+3_B:#MDJGX>8_9"
@@ -198,7 +198,7 @@ static char *cubeTexture =
 	"@)3<?93A=X[=@YKIEJW^A9SM>(_@C:3UDJ?UI[L'K\\((E:;JGJ[K)S9P,#QU)C5O"
 	"";
 
-static char *cubeMultiTexture =
+const char *cubeMultiTexture =
 	"````````````````````````]@(RJ+?D7HMZ9J1R:JET9*!Q4H5H37YF4H5H7I=N"
 	";[!W?L&%E[S!]`0T\\_`PL;[N0&!H1'!A4H5H5HMJ5HQJ4H9H47UMOLWZ[/DI]0$Q"
 	"````````````````````````^`@XR]D(:(N29J1S;K!V;:YW5(AI2WME4(%G7)1M"
@@ -456,7 +456,7 @@ int main()
     while (1)
     {
         draw();
-        rr::IceGL::getInstance().commit();
+        rr::IceGL::getInstance().render();
     }
     return 0;
 }

@@ -26,7 +26,7 @@ public:
         clk();
     }
 
-    virtual void writeData(const tcb::span<const uint8_t>& data) override
+    virtual void writeData(const std::span<const uint8_t>& data) override
     {
         // Convert data to 32 bit variables to ease the access
         const uint64_t *data64 = reinterpret_cast<const uint64_t*>(data.data());

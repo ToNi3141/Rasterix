@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <tcb/span.hpp>
+#include <span>
 #include "DmaStreamEngineCommands.hpp"
 
 namespace rr
@@ -34,10 +34,10 @@ class TextureStreamCmd
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 8 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 8 }; // size: 8 bit
-    using DseTransferType = tcb::span<const DSEC::Transfer>;
+    using DseTransferType = std::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const uint8_t tmu,
-                    const tcb::span<const uint16_t>& pages,
+                    const std::span<const uint16_t>& pages,
                     const uint32_t texSize)
         : m_tmu { tmu }
         , m_texSize { texSize }
@@ -53,7 +53,7 @@ public:
 
     uint8_t getTmu() const { return m_tmu; }
 
-    using Desc = std::array<tcb::span<uint8_t>, 0>;
+    using Desc = std::array<std::span<uint8_t>, 0>;
     void serialize(Desc&) const {}
     uint32_t command() const 
     { 

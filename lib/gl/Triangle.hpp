@@ -20,7 +20,7 @@
 #define _TRIANGLE_HPP_
 
 #include <cstdint>
-#include <tcb/span.hpp>
+#include <span>
 #include "Vec.hpp"
 
 namespace rr
@@ -31,9 +31,9 @@ struct Triangle
     const Vec4& vertex0;
     const Vec4& vertex1;
     const Vec4& vertex2;
-    const tcb::span<const Vec4>& texture0;
-    const tcb::span<const Vec4>& texture1;
-    const tcb::span<const Vec4>& texture2;
+    const std::span<const Vec4>& texture0;
+    const std::span<const Vec4>& texture1;
+    const std::span<const Vec4>& texture2;
     const Vec4& color0;
     const Vec4& color1;
     const Vec4& color2;

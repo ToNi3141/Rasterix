@@ -1,2 +1,3 @@
-add_subdirectory(spdlog-1.10.0)
-add_subdirectory(span)
+if (ENABLE_SPDLOG)
+    add_subdirectory(spdlog-1.10.0)
+endif()

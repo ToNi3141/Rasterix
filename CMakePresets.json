@@ -1,0 +1,48 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": 
+    {
+        "major": 3,
+        "minor": 23,
+        "patch": 0
+    },
+    "configurePresets": 
+    [
+        {
+            "name": "native",
+            "displayName": "Native build",
+            "description": "Native build to be used on a desktop computer",
+            "binaryDir": "${sourceDir}/build/native",
+            "generator": "Unix Makefiles",
+            "cacheVariables": 
+            {
+                "BUILD_NATIVE": "ON",
+                "ENABLE_SPDLOG": "ON"
+            }
+        },
+        {
+            "name": "win32",
+            "displayName": "Win32 build",
+            "description": "Native native build for Windows resulting in a 32bit wgl dll",
+            "binaryDir": "${sourceDir}/build/win32",
+            "generator": "Visual Studio 16 2019",
+            "cacheVariables": 
+            {
+                "BUILD_NATIVE": "ON",
+                "ENABLE_SPDLOG": "ON"
+            },
+            "architecture": "Win32"
+        },
+        {
+            "name": "rp2040",
+            "displayName": "rp2040 build",
+            "description": "rp2040 build to be used for the Raspberry Pi Pico",
+            "binaryDir": "${sourceDir}/build/rp2040",
+            "generator": "Unix Makefiles",
+            "cacheVariables": 
+            {
+                "BUILD_RP2040": "ON"
+            }
+        }
+    ]
+}

@@ -29,7 +29,7 @@ module Serial2AXIS
     input  wire         serial_mosi,
     output wire         serial_miso,
     input  wire         serial_sck,
-    input  wire         serial_cs,
+    input  wire         serial_ncs,
     output reg          serial_cts,
 
     output reg          m_axis_tvalid,
@@ -50,7 +50,7 @@ module Serial2AXIS
 
     wire        readFromFifo = fifoReadEnable;
 
-    SPI_Slave #(.SPI_MODE(0)) spiSlave (resetn, aclk, rxDone, mosi, 0, 0, serial_sck, serial_miso, serial_mosi, !serial_cs);
+    SPI_Slave #(.SPI_MODE(0)) spiSlave (resetn, aclk, rxDone, mosi, 0, 0, serial_sck, serial_miso, serial_mosi, serial_ncs);
     //uart_rx #(.CLKS_PER_BIT(16)) rxUart(aclk, rx, rxDone, mosi);
 
     sfifo #(.BW(BW), .LGFLEN(LGFLEN), .OPT_ASYNC_READ(0))

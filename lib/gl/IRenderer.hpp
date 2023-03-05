@@ -144,9 +144,15 @@ public:
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     virtual bool drawTriangle(const Triangle& triangle) = 0;
 
-    /// @brief Will send a picture from working buffers, caches or whatever to the buffer which is
-    ///    read from the display
-    virtual void commit() = 0;
+    /// @brief Switches between the front and the back list. The front list is the list which is uploaded to the
+    /// device. The back list is used to compile a new list.
+    /// @note: Only call this method when uploadDisplayList() has finished.
+    virtual void swapDisplayList() = 0;
+
+    /// @brief Uploads the front display list. It is safe to use this method in another thread. Just make sure 
+    /// that swapDisplayList() and this method are locked. Only call swapDisplayList() when this method has finished.
+    /// @see swapDisplayList()
+    virtual void uploadDisplayList() = 0;
 
     /// @brief Creates a new texture 
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id

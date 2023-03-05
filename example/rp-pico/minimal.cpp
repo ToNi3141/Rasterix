@@ -1,13 +1,107 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include <QImage>
-#include <QPixmap>
-#include <math.h>
-#include <QDebug>
-#include "QTime"
-#include <QThread>
-#include <spdlog/spdlog.h>
+/**
+ * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+#include "IceGL.hpp"
+#include "RendererMemoryOptimized.hpp"
+#include "RenderConfigs.hpp"
+#include "gl.h"
 #include "glu.h"
+
+#include <pico/stdlib.h>
+#include <pico/binary_info.h>
+#include <hardware/spi.h>
+#include <hardware/dma.h>
+
+#include <algorithm>
+
+// Simple BusConnector which wraps the SPI
+class BusConnector : public rr::IBusConnector
+{
+public:
+    static constexpr uint32_t RESET { 21 };
+    static constexpr uint32_t CTS { 20 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 16384 };
+    
+    BusConnector() { }
+
+    virtual ~BusConnector() = default;
+
+    virtual void writeData(const std::span<const uint8_t>& data) override 
+    {
+        uint32_t dataToSend = data.size();
+        uint32_t counter = 0;
+        while (dataToSend != 0)
+        {
+            while (!clearToSend())
+                ;
+            // SPI has no flow control. Therefore the flow control must be implemented in software.
+            // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
+            // before sending the next chunk.
+            const uint32_t chunkSize = (dataToSend < MAX_CHUNK_SIZE) ? dataToSend : MAX_CHUNK_SIZE;
+            dma_channel_config c = dma_channel_get_default_config(dma_tx);
+            channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+            channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
+            dma_channel_configure(dma_tx, &c,
+                            &spi_get_hw(spi_default)->dr, // write address
+                            data.data() + counter, // read address
+                            chunkSize, // element count (each element is of size transfer_data_size)
+                            true); // Start immediately
+            counter += chunkSize;
+            dataToSend -= chunkSize;
+        }
+    }
+
+    virtual bool clearToSend() override 
+    {
+        return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
+    }
+
+    void init()
+    {
+        gpio_init(RESET);
+        gpio_set_dir(RESET, true);
+        gpio_set_dir(CTS, false);
+        spi_init(spi_default, 50 * 1000 * 1000);
+        gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
+        gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
+        gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, true);
+        gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
+        gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
+
+        // Make the SPI pins available to picotool
+        bi_decl(bi_3pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI));
+        // Make the CS pin available to picotool
+        bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
+
+        // Grab some unused dma channels
+        dma_tx = dma_claim_unused_channel(true);
+
+        gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+        gpio_put(RESET, 0);
+        sleep_ms(50);
+        gpio_put(RESET, 1);
+        sleep_ms(500); // Wait a moment till the FPGA has load its configuration
+        gpio_put(RESET, 0);
+        gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
+        sleep_ms(50);
+    }
+
+    uint dma_tx;
+};
+
+static constexpr bool ENABLE_LIGHT = true;
+static constexpr bool ENABLE_BLACK_WHITE = false;
+
+GLuint m_textureId = 0;
+
+static const uint32_t RESOLUTION_H = 240;
+static const uint32_t RESOLUTION_W = 320;
+static BusConnector m_busConnector;
+static rr::RendererMemoryOptimized<rr::RenderConfigPico> m_renderer{m_busConnector};
+
 
 static constexpr uint16_t cubeIndex[] = {
     0, 1, 2, 0, 2, 3, // Face three
@@ -188,93 +282,56 @@ static char *cubeTexture =
 	"@)3<?93A=X[=@YKIEJW^A9SM>(_@C:3UDJ?UI[L'K\\((E:;JGJ[K)S9P,#QU)C5O"
 	"";
 
-static char *cubeMultiTexture =
-	"````````````````````````]@(RJ+?D7HMZ9J1R:JET9*!Q4H5H37YF4H5H7I=N"
-	";[!W?L&%E[S!]`0T\\_`PL;[N0&!H1'!A4H5H5HMJ5HQJ4H9H47UMOLWZ[/DI]0$Q"
-	"````````````````````````^`@XR]D(:(N29J1S;K!V;:YW5(AI2WME4(%G7)1M"
-	";:YV>KN#NL[P^`@X_@HZV>866G\"/1G-B58EI58EI4(-G37UEBY_\"X>\\>_`P\\`P\\_"
-	"`````````````````````````0T][_PLS=P(K<?BK,G?L,KEG+G.3'EI48%J7YAO"
-	";:UWD+NWY?(A`0T]`0T][/DIK;KH0FED279E2WME1G1B06Q?H['>Z_@H`P\\_````"
-	"`````````````````````````````0T]_@HZ^P<W]`0T^@8V[OLKRM@&CZ7$88]`"
-	"D+&_TN(._`P\\`P\\__0DY\\/TMXN\\?N<;U06!K.6!<.6!<.%Y;<X.LW>L:`@X^````"
-	"`````````````````````````````````P\\_`@X^`0T]`0T]_`P\\]0$QV>85S]T+"
-	"X.X=]`0T`P\\_`0T]\\O\\O]0$Q]@(RV.45;7VF/61=.F)<.%U;/UYIM,'Q]@(R````"
-	"````````````````````````````````````````````````````_PL[[OLK[?HJ"
-	"^@8V`@X^`0T]]`0T[OLK^P<W^`@XT]`06F^/0V]@06M?.V)</&%?97>=OLKZUN,3"
-	"`````````````````````````````````````````````P\\_^P<W[_PLX^`@X^`@"
-	"\\O\\O_@HZ]@(R[_PL]`0T`0T]_@HZT]`0772/1G-B0VYA/&-=0V]A4'=T3W!X3FU["
-	"````````````````````````````````````````_`P\\[OLKS]P,K;KJGZS;J[CG"
-	"SML*Z_@HZ_@H]@(R_`P\\````_`P\\W^P<@)&X17%A2'9C4()H6(YL7Y1T9)=[99E\\"
-	"`````````````````````````````````````0T][OLKKKKJ0V)M6'U\\78-`6G]^"
-	"BIW\"U^04]P0S_`P\\`````````@X^[_PLJ+7C1G)E6(YL:ZIU:ZMU:*AT9*%Q7YAN"
-	"````````````````````````````````````_@HZV.457'F'>+I`<;1X;*UU:ZQV"
-	"8I5ZS]T,`P\\_````````````````^P<WQM,#4'AR:JEV;[)W;:YV;:]V:JIT8Y]Q"
-	"`````````````````````````````````@X^\\O\\OP,W];IJ+?\\6#=+AZ<[AZ;[)W"
-	"?J.GY?(A`P\\_````````````````^`@XQ]0#7'R$89QP89UP79=N7I=N8)EO7I=N"
-	"`````````````````````````````P\\_]`0TX.T=ML3R8XF(>;Q`=KQ[;[%W:JAV"
-	"9HJ2V^@8`P\\_`````````````P\\_\\O\\OJ;;E;J*#8Y]R5(AJ4()G4()G5(=I5XQK"
-	"````````````````````````_`P\\]P,S[/DIXN\\?P<[]67J\":J=W;*UV<+-W=+EZ"
-	"<:J\"H[7<_0DY`````````````0T]ZO<GE:3/8)=Q9*%R8IYQ6I%L48-G2WME2WME"
-	"`````````````````````0T]]@(RZ_@H[OPKZO<GM\\/T5'EZ89IQ9Z9S;[%W=KQ["
-	">\\\"!<:*-YO,C`0T]`````````@X^[OLKH['?37UF4H9H5(IJ58IJ5HMJ5HQJ5(AI"
-	"````````````````````^`@X[OLK[OLKZ/4EQM,#;7RG47YO8)EO:ZMU<+-X=+AZ"
-	"=[U\\;:I\\Q=,!_PL[````````````^04UR-8%1VQL1G1C2GIE3X%G4H9H5(EI4X=I"
-	"````````````````_`P\\\\/TM\\/TMZO<GN<7U/UYI6(!Y6Y)M:JIU>+Q^>K]`?,\"\""
-	"?<*#=+&!N,CR_@HZ````````````_`P\\ZO<GI[7B06EC1'!B27=C27AD27AD2WIE"
-	"`````````````P\\_^P<WY_0D\\_`PUN,3;(:@<Z^\";K!W<;-Y?,1_A\\^)BM&.C-*0"
-	"A\\V,=;.#RMH%_PL[`````````````P\\__0DYX>X>@I2[/6-?06M?0VY@1'!A1W1B"
-	"````````````^04UW.D9ZO<G]@(RS-D)9Y.%?L>!@<J#A,N(B-&*B]2.D]>;CM\"7"
-	">+B$L,GF[?HI`@X^`````````````````@X^^P<WV.456G../F9?0FU@17%B1G)B"
-	"`````0T]]`0TX>X>T-\\,]P,S_@HZXN\\?G+;/@LR$A\\^+F-JAD]B:CM62E]*JM-+B"
-	"SM\\([?HJ`0T]`````````````````````````@X^]`0TRM@'6'2'0&I?/VE?/F=>"
-	"_`P\\^@8V[_PLXN\\?X.X=_@HZ`P\\_^@8VV.85M<KLK<7AJ</<F,:[L\\WFV.<4[_TL"
-	"^@8V_`P\\`````````````````````````````````0T]\\_`PRM<&@96W0&A?/69>"
-	"]`0T]@(R]`0T]0$QXN\\?_@HZ`````0T]^04U\\/TM[?LJ[/DHY?,B[/DI^@8V`0T]"
-	"`P\\_````````````````````````````````````````_`P\\]0$QW>H9M,+P<H>G"
-	"Z_@H\\/TM[OLKW.D9Q-(!W^P<W^P<W^P<[/DI^`@X`0T]`0T]_`P\\`0T]`P\\_````"
-	"`````````````````````````````````````````````````@X^^`@X[_PLVN<7"
-	"Q=(\"R=8&L+WM>HFU7W61<(\"J56F+8'>4J+;CY?(B`@X^````````````````````"
-	"`````````````````````````````````````````````````````````0T]_0DY"
-	"/UML.51H36UU8H]^6XEV681X899U<*Y\\9IA^LL#M^P<W````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"3X!F5HQJ89MP;*QU8)QP89QP::ET<K9Y<K-\\;9*7XN\\?````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"58EJ6I%L8Z!Q;:]V8IYQ:ZQU<K=X=KU[<+-X7H]VP<[]`P\\_````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"5HQJ6(]L7IEO9J1S8IYP9:-R;*UU9J1R799N5X9RNLCU`P\\_````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"3GQI37YF5XUK7YEO7IEO6Y-M8IUP7YEO4H1IE*G+V.85````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"0V5K1&]A3X%G69!K7YIO69!L69!L:HV4P<_\\Y?(A]`0T````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"?Y.U@92Y27!L4()G8)IO58IJ4X9HJ+CB\\/TM_`P\\`P\\_````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"D:C%S-D(M\\7S26]L7I9N4(%G4(%HP<[\\_PL[````````````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"C:J]W^P;Z_@HK[WK68UN3GYF6X-`U.$0`0T]````````````````````````````"
-	"````````````````````````````````````````````````````````````````"
-	"";
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    m_image(RESOLUTION_W, RESOLUTION_H, QImage::Format_RGB888)
+// returns a valid textureID on success, otherwise 0
+GLuint loadTexture(const char* tex)
 {
-    ui->setupUi(this);
+    static constexpr uint32_t WIDTH = 32;
+    static constexpr uint32_t HEIGHT = 32;
+    int level = 0;
+    int border = 0;
+
+    // data is aligned in byte order
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // request textureID
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // bind texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Convert from the GIMP format to RGB888
+    char pixelBuffer[WIDTH * HEIGHT * 3];
+    char *pixelBufferPtr = pixelBuffer;
+    for (uint32_t i = 0; i < WIDTH * HEIGHT; i++)
+    {
+        HEADER_PIXEL(tex, pixelBufferPtr);
+        pixelBufferPtr += 3;
+    }
+
+    // specify the 2D texture map
+    glTexImage2D(GL_TEXTURE_2D, level, GL_RGB, WIDTH, HEIGHT, border, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
+    
+    // define how to filter the texture
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // define clamping mode
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // return unique texture identifier
+    return textureID;
+}
+
+void init()
+{
     rr::IceGL::createInstance(m_renderer);
     m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
-#ifndef USE_HARDWARE
     rr::IceGL::getInstance().enableColorBufferStream();
-#endif // USE_HARDWARE
-
-    connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);
-    ui->label->setPixmap(QPixmap::fromImage(m_image));
-    m_timer.setInterval(17);
-    m_timer.setSingleShot(false);
-    m_timer.start();
 
     m_textureId = loadTexture(cubeTexture);
-    m_multiTextureId = loadTexture(cubeMultiTexture);
 
     // Setup viewport, depth range, and projection matrix
     glViewport(0, 0, RESOLUTION_W, RESOLUTION_H);
@@ -327,83 +384,15 @@ MainWindow::MainWindow(QWidget *parent) :
         glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
     }
 
-    if constexpr (ENABLE_MULTI_TEXTURE)
-    {
-        glActiveTexture(GL_TEXTURE1);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-        glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-        glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PREVIOUS);
-        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-        glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-        glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-        glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
-    }
-
-    // glLineWidth(5.0f);
+    glLineWidth(5.0f);
 }
 
-// returns a valid textureID on success, otherwise 0
-GLuint MainWindow::loadTexture(const char* tex)
-{
-    static constexpr uint32_t WIDTH = 32;
-    static constexpr uint32_t HEIGHT = 32;
-    int level = 0;
-    int border = 0;
-
-    // data is aligned in byte order
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    // request textureID
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    // bind texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    // Convert from the GIMP format to RGB888
-    char pixelBuffer[WIDTH * HEIGHT * 3];
-    char *pixelBufferPtr = pixelBuffer;
-    for (uint32_t i = 0; i < WIDTH * HEIGHT; i++)
-    {
-        HEADER_PIXEL(tex, pixelBufferPtr);
-        pixelBufferPtr += 3;
-    }
-
-    // specify the 2D texture map
-    glTexImage2D(GL_TEXTURE_2D, level, GL_RGB, WIDTH, HEIGHT, border, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
-    
-    // define how to filter the texture
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // define clamping mode
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // return unique texture identifier
-    return textureID;
-}
-
-void MainWindow::newFrame()
+void draw()
 {
     // Setup clear color and clear the framebuffer
     glDisable(GL_SCISSOR_TEST);
     glClearColor(135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Fooling around with the scissor
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(0, 50, 200, 46);
-    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glScissor(200, 50, 200, 48);
-    glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glScissor(400, 50, 200, 50);
-    glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_SCISSOR_TEST);
-    glScissor(200, 200, 200, 100);
 
     // Setup the model view matrix
     glMatrixMode(GL_MODELVIEW);
@@ -428,17 +417,6 @@ void MainWindow::newFrame()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
 
-    if constexpr (ENABLE_MULTI_TEXTURE)
-    {
-        // Tex Coords for texture 1
-        glActiveTexture(GL_TEXTURE1);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, m_multiTextureId);
-        glClientActiveTexture(GL_TEXTURE1);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
-    }
-
     // Enable normals
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_FLOAT, 0, cubeNormals);
@@ -449,28 +427,22 @@ void MainWindow::newFrame()
 
     // Draw the cube
     glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
-
-    rr::IceGL::getInstance().render();
-
-#if USE_SIMULATION
-    for (uint32_t i = 0; i < RESOLUTION_H; i++)
-    {
-        for (uint32_t j = 0; j < RESOLUTION_W; j++)
-        {
-            uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 11) & 0x1f) << 3;
-            uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 5) & 0x3f) << 2;
-            uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 0) & 0x1f) << 3;
-            // uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 24) & 0xff) << 0;
-            // uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 16) & 0xff) << 0;
-            // uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 8) & 0xff) << 0;
-            m_image.setPixelColor(QPoint(j, i), QColor(r, g, b));
-        }
-    }
-    ui->label->setPixmap(QPixmap::fromImage(m_image.scaled(m_image.width()*PREVIEW_WINDOW_SCALING, m_image.height()*PREVIEW_WINDOW_SCALING)));
-#endif
 }
 
-MainWindow::~MainWindow()
+int main()
 {
-    delete ui;
+    stdio_init_all();
+    const uint LED_PIN = 25;
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+    bool led = false;
+    m_busConnector.init();
+    init();
+    while (1)
+    {
+        gpio_put(LED_PIN, led);
+        led = !led;
+        draw();
+        rr::IceGL::getInstance().render();
+    }
 }

@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <tcb/span.hpp>
+#include <span>
 #include "Vec.hpp"
 #include "Veci.hpp"
 #include "Triangle.hpp"
@@ -56,7 +56,7 @@ public:
 
     bool isVisible() const { return m_visible; };
 
-    using Desc = std::array<tcb::span<TriangleDesc>, 1>;
+    using Desc = std::array<std::span<TriangleDesc>, 1>;
     void serialize(Desc& desc) const 
     { 
         std::memcpy(desc[0].data(), &m_desc, sizeof(TriangleDesc));

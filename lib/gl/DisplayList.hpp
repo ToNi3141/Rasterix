@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <cstring>
-#include <tcb/span.hpp>
+#include <span>
 
 namespace rr
 {
@@ -70,7 +70,17 @@ public:
         writePos = 0;
     }
 
-    tcb::span<const uint8_t> getMemPtr() const
+    void setCheckpoint()
+    {
+        checkpoint = writePos;
+    }
+
+    void resetToCheckpoint()
+    {
+        writePos = checkpoint;
+    }
+
+    std::span<const uint8_t> getMemPtr() const
     {
         return { &mem[0], getSize() };
     }
@@ -135,6 +145,7 @@ private:
     uint8_t mem[DISPLAY_LIST_SIZE];
     uint32_t writePos { 0 };
     uint32_t readPos { 0 };
+    uint32_t checkpoint { 0 };
 };
 
 } // namespace rr
