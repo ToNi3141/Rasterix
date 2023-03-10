@@ -181,7 +181,7 @@ module CommandParser #(
                     end
                     OP_FOG_LUT_STREAM:
                     begin
-                        streamCounter <= 33;
+                        streamCounter <= 66;
                         mux <= MUX_FOG_LUT_STREAM;
                         state <= EXEC_STREAM;
                     end
