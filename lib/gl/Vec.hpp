@@ -200,6 +200,12 @@ inline Vec<T> operator +(const Vec<T>& lhs, const Vec<T>& rhs)
     return tmp;
 }
 
+template <uint8_t T>
+bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
+{
+    return std::equal(lhs.vec.begin(), lhs.vec.end(), rhs.vec.begin());
+}
+
 using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
