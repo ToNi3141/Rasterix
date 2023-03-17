@@ -76,8 +76,8 @@ private:
     
     void setLutValue(const uint8_t index, const float m, const float b)
     {
-        m_lut[((index + 1) * 2)] = m;
-        m_lut[((index + 1) * 2) + 1] = b;
+        m_lut[((index + 1) * 2)] = static_cast<int32_t>(m);
+        m_lut[((index + 1) * 2) + 1] = static_cast<int32_t>(b);
     }
 
     std::array<uint32_t, LUT_SIZE> m_lut;
