@@ -28,7 +28,7 @@ namespace rr
 
 class FogLutStreamCmd
 {
-    static constexpr std::size_t LUT_SIZE { 33 };
+    static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
     static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
 public:
     FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
@@ -58,43 +58,29 @@ public:
         }
     }
 
-    using Desc = std::array<std::span<uint64_t>, LUT_SIZE>;
+    using Desc = std::array<std::span<uint32_t>, LUT_SIZE>;
     void serialize(Desc& desc) const 
     { 
         for (uint8_t i = 0; i < desc.size(); i++)
         {
-            *(desc[i].data()) = m_lut[i].val;
+            *(desc[i].data()) = m_lut[i];
         }
     }
     static constexpr uint32_t command() { return FOG_LUT_STREAM; }
 private:
-    union Value {
-#pragma pack(push, 4)
-        uint64_t val;
-        struct {
-            int32_t m;
-            int32_t b;
-        } numbers;
-        struct {
-            float lower;
-            float upper;
-        } floats;
-#pragma pack(pop)
-    };
-
     void setBounds(const float lower, const float upper)
     {
-        m_lut[0].floats.lower = lower;
-        m_lut[0].floats.upper = upper;
+        m_lut[0] = *reinterpret_cast<const uint32_t*>(&lower);
+        m_lut[1] = *reinterpret_cast<const uint32_t*>(&upper);
     }
     
     void setLutValue(const uint8_t index, const float m, const float b)
     {
-        m_lut[index + 1].numbers.m = m;
-        m_lut[index + 1].numbers.b = b;
+        m_lut[((index + 1) * 2)] = static_cast<int32_t>(m);
+        m_lut[((index + 1) * 2) + 1] = static_cast<int32_t>(b);
     }
 
-    std::array<Value, LUT_SIZE> m_lut;
+    std::array<uint32_t, LUT_SIZE> m_lut;
 };
 
 } // namespace rr

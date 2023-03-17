@@ -44,7 +44,7 @@ struct RenderConfigPico
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 32 * 1024 };
 
     // Bus Settings
-    static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
+    static constexpr uint16_t CMD_STREAM_WIDTH { 32 };
 
     // Texture Memory Settings
     static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 128 };

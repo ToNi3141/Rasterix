@@ -68,25 +68,12 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
     const float startInc = start < 1.0f ? 1.0f : start;
     const float lutLowerBound = startInc;
     const float lutUpperBound = end;
-    
-    union Value {
-        uint64_t axiVal;
-        struct {
-            int32_t a;
-            int32_t b;
-        } numbers;
-        struct {
-            float a;
-            float b;
-        } floats;
-    };
 
-    Value bounds;
-    bounds.floats.a = lutLowerBound;
-    bounds.floats.b = lutUpperBound;
     t->s_axis_tvalid = 1;
     t->s_axis_tlast = 0;
-    t->s_axis_tdata = bounds.axiVal;
+    t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutLowerBound);
+    clk(t);
+    t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutUpperBound);
     clk(t);
     // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
     for (int i = 0; i < (int)LUT_SIZE; i++)
@@ -99,14 +86,12 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
         float diff = fn - f; 
         float step = diff / 256.0f;
 
-        Value lutEntry;
-        lutEntry.numbers.a = static_cast<int32_t>(step * powf(2, 30));
-        lutEntry.numbers.b = static_cast<int32_t>(f * powf(2, 30));
-
         // printf("%d z: %f f: %f fn: %f step: %f axi: 0x%llX\r\n", i, z, f, fn, step, lutEntry.axiVal);
 
+        t->s_axis_tdata = static_cast<int32_t>(step * powf(2, 30));
+        clk(t);
         t->s_axis_tlast = (i + 1 < (int)LUT_SIZE) ? 0 : 1;
-        t->s_axis_tdata = lutEntry.axiVal;
+        t->s_axis_tdata = static_cast<int32_t>(f * powf(2, 30));
         clk(t);
     }
     t->s_axis_tlast = 0;
