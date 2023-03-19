@@ -538,8 +538,8 @@
           "CMD_STREAM_WIDTH": {
             "value": "32"
           },
-          "FRAMEBUFFER_SIZE_BYTES": {
-            "value": "15"
+          "FRAMEBUFFER_SIZE_IN_WORDS": {
+            "value": "14"
           },
           "FRAMEBUFFER_SUB_PIXEL_WIDTH": {
             "value": "5"

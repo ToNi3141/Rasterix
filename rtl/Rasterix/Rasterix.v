@@ -17,7 +17,9 @@
 
 module Rasterix #(
     // The size of the internal framebuffer (in power of two)
-    parameter FRAMEBUFFER_SIZE_BYTES = 18,
+    // Depth buffer word size: 16 bit
+    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
+    parameter FRAMEBUFFER_SIZE_IN_WORDS = 17,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -180,7 +182,7 @@ module Rasterix #(
     );
 
     RasterixRenderCore #(
-        .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
+        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

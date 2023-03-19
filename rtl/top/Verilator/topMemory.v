@@ -34,7 +34,7 @@ module top #(
     output wire         m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
-    parameter FRAMEBUFFER_SIZE_BYTES = `FRAMEBUFFER_SIZE_BYTES;
+    parameter FRAMEBUFFER_SIZE_IN_WORDS = `FRAMEBUFFER_SIZE_IN_WORDS;
     parameter TEXTURE_BUFFER_SIZE = 17;
 
 
@@ -123,7 +123,7 @@ module top #(
     );
 
     Rasterix #(
-        .FRAMEBUFFER_SIZE_BYTES(FRAMEBUFFER_SIZE_BYTES),
+        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
