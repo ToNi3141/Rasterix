@@ -45,6 +45,7 @@
 #include "registers/ScissorStartReg.hpp"
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "registers/StencilReg.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
@@ -173,7 +174,7 @@ public:
         // Prepare all display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            FramebufferCmd cmd { true, true };
+            FramebufferCmd cmd { true, true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
@@ -217,9 +218,9 @@ public:
         });
     }
 
-    virtual bool clear(bool colorBuffer, bool depthBuffer) override
+    virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd cmd { colorBuffer, depthBuffer };
+        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -423,6 +424,11 @@ public:
     virtual TMU getTmuCount() const override
     {
         return RenderConfig::TMU_COUNT;
+    }
+
+    virtual bool setStencilBufferConfig(const StencilReg& stencilConf) override 
+    {
+        return writeReg(stencilConf);
     }
 
 private:

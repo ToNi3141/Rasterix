@@ -16,18 +16,21 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _FOG_COLOR_REG_
-#define _FOG_COLOR_REG_
-
-#include "registers/BaseColorReg.hpp"
-
+#ifndef _TEST_FUNC_DEF_
+#define _TEST_FUNC_DEF_
 namespace rr
 {
-class FogColorReg : public BaseColorReg
+enum class TestFunc
 {
-public:
-    static constexpr uint32_t getAddr() { return 0x5; }
+    ALWAYS,
+    NEVER,
+    LESS,
+    EQUAL,
+    LEQUAL,
+    GREATER,
+    NOTEQUAL,
+    GEQUAL
 };
 } // namespace rr
 
-#endif // _FOG_COLOR_REG_
+#endif // _TEST_FUNC_DEF_

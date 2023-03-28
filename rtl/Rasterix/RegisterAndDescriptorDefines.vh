@@ -54,27 +54,28 @@ localparam OP_RENDER_CONFIG_FEATURE_ENABLE = 0 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR = 1 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH = 2 * OP_RENDER_CONFIG_REG_WIDTH;
 localparam OP_RENDER_CONFIG_FRAGMENT_PIPELINE = 3 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 4 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 5 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 6 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_Y_OFFSET = 7 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_RENDER_RESOLUTION = 8 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 9 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 10 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 11 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEX_ENV = 12 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR = 13 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG = 14 * OP_RENDER_CONFIG_REG_WIDTH;
-localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 15;
+localparam OP_RENDER_CONFIG_STENCIL_BUFFER = 4 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_FRAGMENT_FOG_COLOR = 5 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_SCISSOR_START_XY = 6 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_SCISSOR_END_XY = 7 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_Y_OFFSET = 8 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_RENDER_RESOLUTION = 9 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV = 10 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEX_ENV_COLOR = 11 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG = 12 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV = 13 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEX_ENV_COLOR = 14 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG = 15 * OP_RENDER_CONFIG_REG_WIDTH;
+localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 16;
 localparam OP_RENDER_CONFIG_REG_WIDTH = 32;
 
 
 
 //---------------------------------------------------------------------------------------------------------
 // Framebuffer configuration
-//  +-----------------------------------------------------------------------------------------------------------------------------+
-//  | 4'h3 | 22'hx bit reserved | 1'hx depth buffer select | 1'hx color buffer select | 2'hx reserved | 1'hx memset | 1'hx commit |
-//  +-----------------------------------------------------------------------------------------------------------------------------+
+//  +----------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 4'h3 | 22'hx bit reserved | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 2'hx reserved | 1'hx memset | 1'hx commit |
+//  +----------------------------------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 // Steam size 1 32bit value.
 localparam OP_FRAMEBUFFER = 2;
@@ -83,6 +84,7 @@ localparam OP_FRAMEBUFFER_MEMSET_POS = 1; // Clears the frame buffer with the co
 // The selected buffer where to execute the command above (multiple selections are possible)
 localparam OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
 localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
+localparam OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS = 6;
 
 //---------------------------------------------------------------------------------------------------------
 // Triangle Stream
@@ -137,9 +139,9 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 8;
 // Description of the different registers:
 
 // OP_RENDER_CONFIG_FEATURE_ENABLE
-//  +---------------------------------------------------------------------------------------------------------------------------+
-//  | 26'hx reserved | 1'hx TMU1 | 1'hx Scissor test | 1'hx TMU0 | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
-//  +---------------------------------------------------------------------------------------------------------------------------+
+//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 25'hx reserved | 1'hx TMU1 | 1'hx TMU0 | 1'hx Scissor test | 1'hx Stencil test | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
+//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_POS = 0;
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS = RENDER_CONFIG_FEATURE_ENABLE_FOG_POS + RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE;
@@ -148,11 +150,13 @@ localparam RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS = RENDER_CONFIG_FEATURE_E
 localparam RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS = RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE = 1;
-localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE;
-localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
-localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS = RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS = RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS + RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE = 1;
-localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS = RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS + RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS + RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_SIZE = 1;
 
 // OP_RENDER_CONFIG_FRAGMENT_PIPELINE
@@ -179,6 +183,36 @@ localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS = RENDER_CONFIG_FRAGMEN
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE = 4;
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS = RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS + RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE;
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE = 4;
+
+// OP_RENDER_CONFIG_STENCIL_BUFFER
+//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 4'hx reserved | 4'hx clear stencil mask | 4'hx clear stencil | 3'hx op fail | 3'hx op zfail | 3'hx op zpass| 4'hx ref | 4'hx mask | 3'hx func | 
+//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
+localparam RENDER_CONFIG_STENCIL_BUFFER_FUNC_POS = 0;
+localparam RENDER_CONFIG_STENCIL_BUFFER_FUNC_SIZE = 3;
+localparam RENDER_CONFIG_STENCIL_BUFFER_MASK_POS = RENDER_CONFIG_STENCIL_BUFFER_FUNC_POS + RENDER_CONFIG_STENCIL_BUFFER_FUNC_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE = 4;
+localparam RENDER_CONFIG_STENCIL_BUFFER_REF_POS = RENDER_CONFIG_STENCIL_BUFFER_MASK_POS + RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE = 4;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_POS = RENDER_CONFIG_STENCIL_BUFFER_REF_POS + RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_SIZE = 3;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_POS = RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_POS + RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_SIZE = 3;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_POS = RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_POS + RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_SIZE = 3;
+localparam RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS = RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_POS + RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE = 4;
+localparam RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS = RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS + RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE;
+localparam RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE = 4;
+
+localparam STENCIL_OP_KEEP = 0;
+localparam STENCIL_OP_ZERO = 1;
+localparam STENCIL_OP_REPLACE = 2;
+localparam STENCIL_OP_INCR = 3;
+localparam STENCIL_OP_INCR_WRAP = 4;
+localparam STENCIL_OP_DECR = 5;
+localparam STENCIL_OP_DECR_WRAP = 6;
+localparam STENCIL_OP_INVERT = 7;
 
 // OP_RENDER_CONFIG_TMU0_TEX_ENV
 // OP_RENDER_CONFIG_TMU1_TEX_ENV
@@ -264,7 +298,7 @@ localparam RENDER_CONFIG_X_SIZE = 11;
 localparam RENDER_CONFIG_Y_POS = 16;
 localparam RENDER_CONFIG_Y_SIZE = 11;
 
-// Depth and Alpha func defines
+// Stencil, Depth and Alpha func defines
 localparam ALWAYS = 0;
 localparam NEVER = 1;
 localparam LESS = 2;

@@ -26,7 +26,7 @@ namespace rr
 class RenderResolutionReg : public BaseXYReg<0x7ff, 0x7ff>
 {
 public:
-    static constexpr uint32_t getAddr() { return 0x8; }
+    static constexpr uint32_t getAddr() { return 0x9; }
 };
 } // namespace rr
 

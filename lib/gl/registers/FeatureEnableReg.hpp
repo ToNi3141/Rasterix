@@ -32,6 +32,7 @@ public:
     void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
     void setEnableTmu(const uint8_t tmu, const bool val) { if (tmu == 0) m_regVal.fields.tmu0 = val; else m_regVal.fields.tmu1 = val; }
     void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
+    void setEnableStencilTest(const bool val) { m_regVal.fields.stencilTest = val; }
 
     bool getEnableFog() const { return m_regVal.fields.fog; }
     bool getEnableBlending() const { return m_regVal.fields.blending; }
@@ -39,6 +40,7 @@ public:
     bool getEnableAlphaTest() const { return m_regVal.fields.alphaTest; }
     bool getEnableTmu(const uint8_t tmu) const { return (tmu == 0) ? m_regVal.fields.tmu0 : m_regVal.fields.tmu1; }
     bool getEnableScissor() const { return m_regVal.fields.scissor; }
+    bool getEnableStencilTest() const { return m_regVal.fields.stencilTest; }
 
     uint32_t serialize() const { return m_regVal.data; }
     static constexpr uint32_t getAddr() { return 0x0; }
@@ -53,8 +55,9 @@ private:
                 , blending(false)
                 , depthTest(false)
                 , alphaTest(false)
-                , tmu0(false)
+                , stencilTest(false)
                 , scissor(false)
+                , tmu0(false)
                 , tmu1(false)
             { }
 
@@ -62,8 +65,9 @@ private:
             uint32_t blending : 1;
             uint32_t depthTest : 1;
             uint32_t alphaTest : 1;
-            uint32_t tmu0 : 1;
+            uint32_t stencilTest : 1;
             uint32_t scissor : 1;
+            uint32_t tmu0 : 1;
             uint32_t tmu1 : 1;
         } fields {};
         uint32_t data;

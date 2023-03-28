@@ -56,6 +56,10 @@ module CommandParser #(
     input  wire         depthBufferApplied,
     output reg          depthBufferCmdCommit,
     output reg          depthBufferCmdMemset,
+    output reg          stencilBufferApply,
+    input  wire         stencilBufferApplied,
+    output reg          stencilBufferCmdCommit,
+    output reg          stencilBufferCmdMemset,
 
     // Debug
     output wire [ 3 : 0]  dbgStreamState
@@ -104,7 +108,7 @@ module CommandParser #(
     assign m_cmd_tmu1_axis_tvalid        = (mux == MUX_TEXTURE1_STREAM) ? tvalid : 0;
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
-    assign applied = colorBufferApplied & depthBufferApplied;
+    assign applied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
 
     assign dbgStreamState = state[3:0];
 
@@ -199,8 +203,11 @@ module CommandParser #(
                         colorBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
                         depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         depthBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
+                        stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
+                        stencilBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
                         colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
                         depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
+                        stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
                         apply <= 1;
                         state <= WAIT_FOR_IDLE;
                     end
@@ -267,6 +274,7 @@ module CommandParser #(
                 apply <= 0;
                 colorBufferApply <= 0;
                 depthBufferApply <= 0;
+                stencilBufferApply <= 0;
                 if (applied)
                 begin
                     fbControlState <= FB_CONTROL_WAITFORCOMMAND;

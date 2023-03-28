@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv
+all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp
  
 clean:
 	rm -rf obj_dir
@@ -44,6 +44,11 @@ texEnv:
 	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/TexEnv.v --top-module TexEnv cpp/sim_TexEnv.cpp -I../rtl/Rasterix/ -I../rtl/float/rtl/float/
 	-make -C obj_dir -f VTexEnv.mk
 	./obj_dir/VTexEnv
+
+stencilOp:
+	verilator -DUNITTEST -CFLAGS -std=c++11 --cc -exe ../rtl/Rasterix/StencilOp.v --top-module StencilOp cpp/sim_StencilOp.cpp -I../rtl/Rasterix/ -I../rtl/float/rtl/float/
+	-make -C obj_dir -f VStencilOp.mk
+	./obj_dir/VStencilOp
 
 .SECONDARY:
 .PHONY: all clean

@@ -28,51 +28,65 @@ module PerFragmentPipeline
 
     parameter DEPTH_WIDTH = 16,
 
+    parameter STENCIL_WIDTH = 4,
+
     parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32
 )
 (
-    input  wire                         aclk,
-    input  wire                         resetn,
+    input  wire                                     aclk,
+    input  wire                                     resetn,
 
     // Shader configurations
-    input  wire [31 : 0]                conf,
-    input  wire [31 : 0]                confFeatureEnable,
+    input  wire [31 : 0]                            conf,
+    input  wire [31 : 0]                            confFeatureEnable,
+    input  wire [31 : 0]                            confStencilBufferConfig,
 
     // Fragment input
-    input  wire                         valid,
-    input  wire [PIXEL_WIDTH - 1 : 0]   fragmentColor,
-    input  wire [31 : 0]                depth,
-    input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] index,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]  screenPosY,
+    input  wire                                     valid,
+    input  wire [PIXEL_WIDTH - 1 : 0]               fragmentColor,
+    input  wire [31 : 0]                            depth,
+    input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   index,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]          screenPosX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]          screenPosY,
 
     // Signals when the fragment wents through the pipeline
-    output reg                          fragmentProcessed,
+    output reg                                      fragmentProcessed,
 
     // Frame buffer access
     // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead,
-    input  wire [PIXEL_WIDTH - 1 : 0]   colorIn,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexRead,
+    input  wire [PIXEL_WIDTH - 1 : 0]               colorIn,
     // Write
-    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite,
-    output reg                          colorWriteEnable,
-    output reg  [PIXEL_WIDTH - 1 : 0]   colorOut,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosX,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosY,
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexWrite,
+    output reg                                      colorWriteEnable,
+    output reg  [PIXEL_WIDTH - 1 : 0]               colorOut,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosY,
 
     // ZBuffer buffer access
     // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead,
-    input  wire [DEPTH_WIDTH - 1 : 0]   depthIn,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexRead,
+    input  wire [DEPTH_WIDTH - 1 : 0]               depthIn,
     // Write
-    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite,
-    output reg                          depthWriteEnable,
-    output reg  [DEPTH_WIDTH - 1 : 0]   depthOut,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosX,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosY
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexWrite,
+    output reg                                      depthWriteEnable,
+    output reg  [DEPTH_WIDTH - 1 : 0]               depthOut,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosY,
+
+    // ZBuffer buffer access
+    // Read
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexRead,
+    input  wire [STENCIL_WIDTH - 1 : 0]             stencilIn,
+    // Write
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexWrite,
+    output reg                                      stencilWriteEnable,
+    output reg  [STENCIL_WIDTH - 1 : 0]             stencilOut,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosY
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -121,6 +135,7 @@ module PerFragmentPipeline
 
     assign colorIndexRead = index;
     assign depthIndexRead = index;
+    assign stencilIndexRead = index;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -134,6 +149,8 @@ module PerFragmentPipeline
     wire [DEPTH_WIDTH - 1 : 0]              step1_depth;
     wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
     reg                                     step1_writeFramebuffer;
+    wire [STENCIL_WIDTH - 1 : 0 ]           step1_stencil;
+    wire                                    step1_writeStencilBuffer;
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(2)) 
         step1_validDelay (.clk(aclk), .in(step0_valid), .out(step1_valid));
@@ -187,9 +204,44 @@ module PerFragmentPipeline
         .success(step1_depthTestTmp)
     );
 
+    wire step1_stencilTestTmp;
+    wire [STENCIL_WIDTH - 1 : 0] step1_stencilBufferValTmp;
+    wire [STENCIL_WIDTH - 1 : 0] step1_stencilRefValTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_REF_POS +: RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE)];
+    wire [STENCIL_WIDTH - 1 : 0] step1_stencilMaskTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE)];
+    ValueDelay #(.VALUE_SIZE(STENCIL_WIDTH), .DELAY(1)) 
+        step1_stencilBufferDelay (.clk(aclk), .in(stencilIn), .out(step1_stencilBufferValTmp)); 
+    TestFunc #(
+        .SUB_PIXEL_WIDTH(STENCIL_WIDTH)
+    ) stencilTest (
+        .aclk(aclk),
+        .resetn(resetn),
+        .func(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_FUNC_POS +: RENDER_CONFIG_STENCIL_BUFFER_FUNC_SIZE]),
+        .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS]),
+        .refVal(stencilIn & step1_stencilMaskTmp),
+        .val(step1_stencilRefValTmp & step1_stencilMaskTmp),
+        .success(step1_stencilTestTmp)
+    );
+
+    StencilOp #(
+        .STENCIL_WIDTH(STENCIL_WIDTH)
+    ) stencilOp (
+        .aclk(aclk),
+        .resetn(resetn),
+        .opZFail(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_POS +: RENDER_CONFIG_STENCIL_BUFFER_OP_ZFAIL_SIZE]),
+        .opZPass(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_POS +: RENDER_CONFIG_STENCIL_BUFFER_OP_ZPASS_SIZE]),
+        .opFail(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_POS +: RENDER_CONFIG_STENCIL_BUFFER_OP_FAIL_SIZE]),
+        .refVal(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_REF_POS +: RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE)]),
+        .enable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS]),
+        .zTest(step1_depthTestTmp),
+        .sTest(step1_stencilTestTmp),
+        .sValIn(step1_stencilBufferValTmp),
+        .sValOut(step1_stencil),
+        .write(step1_writeStencilBuffer)
+    );
+
     always @(posedge aclk)
     begin
-        step1_writeFramebuffer <= step1_depthTestTmp & step1_alphaTestTmp; // Check that both test passing
+        step1_writeFramebuffer <= step1_depthTestTmp & step1_alphaTestTmp & step1_stencilTestTmp;
     end
 
     ////////////////////////////////////////////////////////////////////////////
@@ -207,12 +259,17 @@ module PerFragmentPipeline
             depthIndexWrite <= step1_index;
             depthOutScreenPosX <= step1_screenPosX;
             depthOutScreenPosY <= step1_screenPosY;
+            stencilIndexWrite <= step1_index;
+            stencilOutScreenPosX <= step1_screenPosX;
+            stencilOutScreenPosY <= step1_screenPosY;
             depthOut <= step1_depth;
             colorOut <= step1_fragmentColor;
+            stencilOut <= step1_stencil;
         end
         fragmentProcessed <= step1_valid;
         colorWriteEnable <= step1_valid & step1_writeFramebuffer;
         depthWriteEnable <= step1_valid & step1_writeFramebuffer & confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
+        stencilWriteEnable <= step1_valid & step1_writeStencilBuffer & confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
     end
 endmodule
 

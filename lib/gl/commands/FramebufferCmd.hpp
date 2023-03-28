@@ -34,9 +34,10 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
+    static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
     using DseTransferType = std::array<DSEC::Transfer, 1>;
 public:
-    FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer)
+    FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer, const bool selStencilBuffer)
     {
         if (selColorBuffer)
         {
@@ -45,6 +46,10 @@ public:
         if (selDepthBuffer)
         {
             selectDepthBuffer();
+        }
+        if (selStencilBuffer)
+        {
+            selectStencilBuffer();
         }
     }
 
@@ -69,6 +74,7 @@ public:
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
+    void selectStencilBuffer() { m_op |= OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT; }
 
     using Desc = std::array<std::span<uint8_t>, 0>;
     void serialize(Desc&) const {}

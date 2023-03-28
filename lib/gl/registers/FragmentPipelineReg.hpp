@@ -19,6 +19,7 @@
 #ifndef _FRAGMENT_PIPELINE_REG_
 #define _FRAGMENT_PIPELINE_REG_
 
+#include "TestFuncDef.hpp"
 #include <cstdint>
 
 namespace rr
@@ -26,18 +27,6 @@ namespace rr
 class FragmentPipelineReg
 {
 public:
-    enum class TestFunc
-    {
-        ALWAYS,
-        NEVER,
-        LESS,
-        EQUAL,
-        LEQUAL,
-        GREATER,
-        NOTEQUAL,
-        GEQUAL
-    };
-
     enum class BlendFunc
     {
         ZERO,

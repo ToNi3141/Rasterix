@@ -26,7 +26,7 @@ namespace rr
 class YOffsetReg : public BaseXYReg<0x0, 0x7ff>
 {
 public:
-    static constexpr uint32_t getAddr() { return 0x7; }
+    static constexpr uint32_t getAddr() { return 0x8; }
 };
 } // namespace rr
 
