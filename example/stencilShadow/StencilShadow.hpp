@@ -1,11 +1,11 @@
-#ifndef _TESTSCENE_HPP_
-#define _TESTSCENE_HPP_
+#ifndef _STENCILSHADOW_HPP_
+#define _STENCILSHADOW_HPP_
 #include <span>
 #include "glu.h"
 #include "../../../lib/gl/Vec.hpp"
 #include "../../../lib/gl/Mat44.hpp"
 
-class TestScene
+class StencilShadow
 {
 public:
     void init(const uint32_t resolutionW, const uint32_t resolutionH)
@@ -386,4 +386,4 @@ private:
     float m_torusAngleZ { 0.0f };
 };
 
-#endif // _TESTSCENE_HPP_
+#endif // _STENCILSHADOW_HPP_
