@@ -23,7 +23,7 @@
 Rasterix is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is currently able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The current implementations lacks several important features like Mip Mapping, logic op, stencil buffer and so on. It has more the nature of an prototype.
+The current implementations lacks several important features like mip mapping, logic ops and so on. It has more the nature of an prototype.
 
 # Working Games
 Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`)
