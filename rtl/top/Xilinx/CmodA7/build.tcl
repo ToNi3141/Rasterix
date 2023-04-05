@@ -48,6 +48,7 @@ read_verilog ./../../../../Rasterix/TextureFilter.v
 read_verilog ./../../../../Rasterix/TextureMappingUnit.v
 read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
+read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
 read_verilog ./../../../../Float/rtl/float/FloatFastRecip.v

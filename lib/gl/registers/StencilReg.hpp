@@ -44,13 +44,13 @@ public:
     StencilReg() = default;
 
     void setTestFunc(const TestFunc val) { m_regVal.fields.testFunc = static_cast<uint32_t>(val); }
-    void setMask(const uint8_t val) { m_regVal.fields.mask = std::min(val, MAX_STENCIL_VAL); }
-    void setRef(const uint8_t val) { m_regVal.fields.ref = std::min(val, MAX_STENCIL_VAL); }
+    void setMask(const uint8_t val) { m_regVal.fields.mask = (std::min)(val, MAX_STENCIL_VAL); }
+    void setRef(const uint8_t val) { m_regVal.fields.ref = (std::min)(val, MAX_STENCIL_VAL); }
     void setOpZPass(const StencilOp val) { m_regVal.fields.opZPass = static_cast<uint32_t>(val); }
     void setOpZFail(const StencilOp val) { m_regVal.fields.opZFail = static_cast<uint32_t>(val); }
     void setOpFail(const StencilOp val) { m_regVal.fields.opFail = static_cast<uint32_t>(val); }
-    void setClearStencil(const uint8_t val) { m_regVal.fields.clearStencil = std::min(val, MAX_STENCIL_VAL); }
-    void setStencilMask(const uint8_t val) { m_regVal.fields.stencilMask = std::min(val, MAX_STENCIL_VAL); }
+    void setClearStencil(const uint8_t val) { m_regVal.fields.clearStencil = (std::min)(val, MAX_STENCIL_VAL); }
+    void setStencilMask(const uint8_t val) { m_regVal.fields.stencilMask = (std::min)(val, MAX_STENCIL_VAL); }
 
     TestFunc getTestFunc() const { return static_cast<TestFunc>(m_regVal.fields.testFunc); }
     uint8_t getMask() const { return m_regVal.fields.mask; }
