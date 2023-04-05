@@ -118,9 +118,9 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 
 
 # Simulation Build
-A simulation can be used to easily develop and debug the renderer. The simulation can be found under `unittests/qtRasterizer`. There is a Qt project which can be opened with the QtCreator. This project supports also the real hardware, and can be selected with the `TARGET_BUILD` variable in the .pro file.
+A simulation can be used to easily develop and debug the renderer. The simulation can be found under `example/qtDebug/qtRasterizerFpga`. There is a Qt project which can be opened with the QtCreator. This project supports also the real hardware, which can be selected with the `TARGET_BUILD` variable in the .pro file.
 
-First generate the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
+Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
 ```
 cd rtl/top/Verilator
 make
@@ -135,6 +135,7 @@ It is likely, that your verialtor installation has another path than it is confi
 
 Note: Currently the build is only tested on OS X. The .pro file must be adapted for other operating systems.
 
+There exists a second project `example/qtDebug/qtRasterizerGL`. This project uses the native OpenGL implementation of your machine. You can compare this output with the output of the simulation. The content must be equal.
 # Unit-Tests 
 Unit-tests for the Verilog code can be found under `./unittests`.
 

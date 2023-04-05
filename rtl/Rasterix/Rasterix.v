@@ -28,6 +28,9 @@ module Rasterix #(
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
+    // This enables the 4 bit stencil buffer
+    parameter ENABLE_STENCIL_BUFFER = 1,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     
@@ -185,6 +188,7 @@ module Rasterix #(
         .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
+        .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .FRAMEBUFFER_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),

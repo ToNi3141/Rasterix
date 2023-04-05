@@ -18,8 +18,13 @@ class Minimal
 public:
     void init(const uint32_t resolutionW, const uint32_t resolutionH)
     {
+        glGetIntegerv(GL_MAX_TEXTURE_UNITS, &m_tmuCount);
+
         m_textureId = loadTexture(cubeTexture);
-        m_multiTextureId = loadTexture(cubeMultiTexture);
+        if (m_tmuCount > 1)
+        {
+            m_multiTextureId = loadTexture(cubeMultiTexture);
+        }
 
         // Setup viewport, depth range, and projection matrix
         glViewport(0, 0, resolutionW, resolutionH);
@@ -46,13 +51,13 @@ public:
 
         if constexpr (ENABLE_LIGHT)
         {
-        glActiveTexture(GL_TEXTURE0);
-        glEnable(GL_LIGHT0);
-        glEnable(GL_LIGHTING);
+            glActiveTexture(GL_TEXTURE0);
+            glEnable(GL_LIGHT0);
+            glEnable(GL_LIGHTING);
 
-        static constexpr float colors[4] = {0.0, 0.0, 0.0, 0.0};
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
+            static constexpr float colors[4] = {0.0, 0.0, 0.0, 0.0};
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
         }
         else
         {
@@ -74,17 +79,18 @@ public:
 
         if constexpr (ENABLE_MULTI_TEXTURE)
         {
-            glActiveTexture(GL_TEXTURE1);
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-            glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-            glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PREVIOUS);
-            glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-            glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-            glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-            glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
+            if (m_tmuCount > 1)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+                glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+                glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PREVIOUS);
+                glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+                glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+                glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+                glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
+            }
         }
-
-        // glLineWidth(5.0f);
     }
 
     void draw()
@@ -94,7 +100,7 @@ public:
         glClearColor(135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Fooling around with the scissor
+        // Test the scissor
         glEnable(GL_SCISSOR_TEST);
         glScissor(0, 50, 200, 46);
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
@@ -133,13 +139,16 @@ public:
 
         if constexpr (ENABLE_MULTI_TEXTURE)
         {
-            // Tex Coords for texture 1
-            glActiveTexture(GL_TEXTURE1);
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, m_multiTextureId);
-            glClientActiveTexture(GL_TEXTURE1);
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
+            if (m_tmuCount > 1)
+            {
+                // Tex Coords for texture 1
+                glActiveTexture(GL_TEXTURE1);
+                glEnable(GL_TEXTURE_2D);
+                glBindTexture(GL_TEXTURE_2D, m_multiTextureId);
+                glClientActiveTexture(GL_TEXTURE1);
+                glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+                glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
+            }
         }
 
         // Enable normals
@@ -425,17 +434,18 @@ private:
         glTexImage2D(GL_TEXTURE_2D, level, GL_RGB, WIDTH, HEIGHT, border, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
         
         // define how to filter the texture
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
         // define clamping mode
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         // return unique texture identifier
         return textureID;
     }
 
+    GLint  m_tmuCount = 0;
     GLuint m_textureId = 0;
     GLuint m_multiTextureId = 0;
 };

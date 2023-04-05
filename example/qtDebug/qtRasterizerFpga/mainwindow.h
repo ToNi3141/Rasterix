@@ -18,6 +18,7 @@
 #endif
 
 #include "../../stencilShadow/StencilShadow.hpp"
+#include "../../minimal/Minimal.hpp"
 
 namespace Ui {
 class MainWindow;

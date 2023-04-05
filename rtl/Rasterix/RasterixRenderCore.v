@@ -30,7 +30,8 @@ module RasterixRenderCore #(
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
-    parameter STENCIL_WIDTH = 4,
+    // This enables the 4 bit stencil buffer
+    parameter ENABLE_STENCIL_BUFFER = 1,
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
@@ -69,6 +70,9 @@ module RasterixRenderCore #(
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
+    // Width of the stencil buffer
+    localparam STENCIL_WIDTH = 4;
+
     localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4;
 
     localparam TEX_ADDR_WIDTH = 16;
@@ -495,46 +499,55 @@ module RasterixRenderCore #(
         end
     endgenerate
 
-    FrameBuffer stencilBuffer (  
-        .clk(aclk),
-        .reset(!resetn),
+    generate 
+        if (ENABLE_STENCIL_BUFFER)
+        begin
+                FrameBuffer stencilBuffer (  
+                .clk(aclk),
+                .reset(!resetn),
 
-        .confClearColor(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)]),
-        .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
-        .confScissorStartX(confScissorStartXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
-        .confScissorStartY(confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .confScissorEndX(confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
-        .confScissorEndY(confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .confYOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .confXResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
-        .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confClearColor(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)]),
+                .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+                .confScissorStartX(confScissorStartXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confScissorStartY(confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confScissorEndX(confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confScissorEndY(confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confYOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confXResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
 
-        .fragIndexRead(stencilIndexRead),
-        .fragOut(stencilIn),
-        .fragIndexWrite(stencilIndexWrite),
-        .fragIn(stencilOut),
-        .fragWriteEnable(stencilWriteEnable),
-        .fragMask(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)]),
-        .screenPosX(stencilOutScreenPosX),
-        .screenPosY(stencilOutScreenPosY),
+                .fragIndexRead(stencilIndexRead),
+                .fragOut(stencilIn),
+                .fragIndexWrite(stencilIndexWrite),
+                .fragIn(stencilOut),
+                .fragWriteEnable(stencilWriteEnable),
+                .fragMask(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)]),
+                .screenPosX(stencilOutScreenPosX),
+                .screenPosY(stencilOutScreenPosY),
 
-        .apply(stencilBufferApply),
-        .applied(stencilBufferApplied),
-        .cmdCommit(stencilBufferCmdCommit),
-        .cmdMemset(stencilBufferCmdMemset),
+                .apply(stencilBufferApply),
+                .applied(stencilBufferApplied),
+                .cmdCommit(stencilBufferCmdCommit),
+                .cmdMemset(stencilBufferCmdMemset),
 
-        .m_axis_tvalid(),
-        .m_axis_tready(1'b1),
-        .m_axis_tlast(),
-        .m_axis_tdata()
-    );
-    defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
-    defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
-    defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
-    defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-    defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
-
+                .m_axis_tvalid(),
+                .m_axis_tready(1'b1),
+                .m_axis_tlast(),
+                .m_axis_tdata()
+            );
+            defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
+            defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
+            defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
+            defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+            defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+        end
+        else
+        begin
+            assign stencilIn = 0;
+            assign stencilBufferApplied = 1;
+        end
+    endgenerate
 
     Rasterizer rop (
         .clk(aclk), 
