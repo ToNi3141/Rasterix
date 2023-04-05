@@ -71,13 +71,13 @@ private:
         {
             RegContent() :
                 testFunc(static_cast<uint32_t>(TestFunc::ALWAYS)),
-                mask(~0),
+                mask(0xf),
                 ref(0),
                 opZPass(static_cast<uint32_t>(StencilOp::KEEP)),
                 opZFail(static_cast<uint32_t>(StencilOp::KEEP)),
                 opFail(static_cast<uint32_t>(StencilOp::KEEP)),
                 clearStencil(0),
-                stencilMask(~0)
+                stencilMask(0xf)
             { }
 
             uint32_t testFunc : 3;
