@@ -79,11 +79,11 @@ module DisplayController8BitILI9341 #(
         initMem[ 13] = {1'b0, 8'h36};  
         if (LANDSCAPE_CONFIG)
         begin
-            initMem[ 14] = {1'b1, 8'h20 | 8'h40 | 8'h08}; // MY MX BGR
+            initMem[ 14] = {1'b1, 8'h80 | 8'h20 | 8'h40 | 8'h08}; // MY = 1, MX = 1, MV = 1, BGR = 1
         end
         else
         begin
-            initMem[ 14] = {1'b1, 8'h00 | 8'h40 | 8'h08}; // MY MX BGR
+            initMem[ 14] = {1'b1, 8'h00 | 8'h00 | 8'h40 | 8'h08}; // MY = 0, MX = 0, MV = 1, BGR = 1
         end
         initMem[ 15] = {1'b0, 8'h3A};  
         initMem[ 16] = {1'b1, 8'h55}; 
