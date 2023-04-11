@@ -5,6 +5,33 @@
 #include "../../../lib/gl/Vec.hpp"
 #include "../../../lib/gl/Mat44.hpp"
 
+// Example of stencil shadows using the zpass algorithm.
+// The following steps will be executed:
+// 1. Create torus (it will create a triangle array)
+// 2. Search on the torus array all adjacent triangles.
+//      This array has double the size of the torus array:
+//      The first three vertices are the triangle itself, the next three vertices containing the adjacent vertices:
+//         5________2________4  
+//          \      / \      /
+//           \    /   \    /
+//            \  /     \  /
+//              0_______1
+//              \       / 
+//               \     /
+//                \   /
+//                  3 
+//      This is done only during startup, in a static mesh the neighbors will never change
+// 3. Draw the scene in shadow
+// 4. Search the silhouette of the current object (with help of the adjacent torus list)
+// 5. Disable drawing in color and depth buffer, enable drawing to stencil buffer
+// 5. Enable zpass and draw shadow cone based on the edge between light and shadow (a second edge is extended into infinity. This forms a quad to draw)
+// 6. Enable drawing in color and depth buffer, disable drawing to stencil buffer
+// 7. Enable stencil test and disable zpass algorithm
+// 8. Draw whole scene again with enabled light
+// 9. To draw new frame, start with 3.
+// Note: Self shadowing in general works, but the edges between light and dark look ugly because the light is drawn with
+// smooth shading, but self shadowing does not work smooth so you will get a hard edge between the polygon in light and 
+// the one in the dark. A potential fix is flat shading but then the light will generally look ugly.
 class StencilShadow
 {
 public:
@@ -40,8 +67,8 @@ public:
         glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
 
         // Create Torus with adjacent vertex list
-        createTorus(m_torusVertex, m_torusNormal, 0.5, 3, 6, 6);
-        createAdjacentArray(m_torusAdjacencies, m_torusVertex);
+        createTorus(m_torusVertex, m_torusNormal, 0.5, 3, TORUS_SIDES, TORUS_RINGS);
+        createAdjacentArray(m_torusWithAdjacentTriangles, m_torusVertex);
 
         // Position camera
         glMatrixMode(GL_MODELVIEW);
@@ -58,12 +85,14 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glStencilMask(0);
 
+        // Draw scene in shadow
         glPushMatrix();
         {
-            glColor3ub(111, 111, 111);
+            glColor3ub(200, 200, 200); // Shadow color
             drawGround();
         }
         glPopMatrix();
+        // Draw shadow in stencil buffer
         glPushMatrix();
         {
             m_torusAngleY += 1.0f;
@@ -75,10 +104,11 @@ public:
             drawTorusSilhouetteInStencilBuffer();
         }
         glPopMatrix();
+        // Enable stencil test and draw scene in light
         enableStencilTest();
         glPushMatrix();
         {
-            glColor3ub(255, 255, 255);
+            glColor3ub(255, 255, 255); // Light color
             drawGround();
         }
         glPopMatrix();
@@ -86,6 +116,9 @@ public:
     }
 
 private:
+    static constexpr int TORUS_SIDES { 6 };
+    static constexpr int TORUS_RINGS { 6 };
+    static constexpr int TRIANGULATED_QUAD_VERTS { 6 };
     void drawGround()
     {
         static const std::array<rr::Vec3, 4> quadVerts {{
@@ -124,7 +157,7 @@ private:
         // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         // glColor4ub(111, 111, 111, 111);
         enableStencilBufferDrawing();
-        drawSilhouette(m_torusAdjacencies, m_lightPosition);
+        drawSilhouette(m_torusWithAdjacentTriangles, m_lightPosition);
         disableStencilBufferDrawing();
         // glDisable(GL_BLEND);
     }
@@ -156,7 +189,7 @@ private:
         glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
         glDisable(GL_STENCIL_TEST);
         glDepthMask(1);
-        glColorMask(1,1,1,1);
+        glColorMask(1, 1, 1, 1);
         glStencilMask(0x0);
     }
 
@@ -271,12 +304,12 @@ private:
         for (uint32_t i = 0; i < verts.size() / 6; i++)
         {
             const rr::Vec3* line = &(verts[i * 6]);
-            rr::Vec3 e1 = line[1] - line[0];
-            rr::Vec3 e2 = line[2] - line[0];
-            rr::Vec3 e3 = line[3] - line[0];
-            rr::Vec3 e4 = line[4] - line[1];
-            rr::Vec3 e5 = line[2] - line[1];
-            rr::Vec3 e6 = line[5] - line[0];
+            const rr::Vec3 e1 = line[1] - line[0];
+            const rr::Vec3 e2 = line[2] - line[0];
+            const rr::Vec3 e3 = line[3] - line[0];
+            const rr::Vec3 e4 = line[4] - line[1];
+            const rr::Vec3 e5 = line[2] - line[1];
+            const rr::Vec3 e6 = line[5] - line[0];
 
             rr::Vec3 normal = e1;
             normal.cross(e2);
@@ -378,9 +411,9 @@ private:
 
     rr::Vec4 m_lightPosition {{ 1.0, 3.0, 6.0, 0.0 }};
 
-    std::array<rr::Vec3, 6 * 6 * 6> m_torusNormal;
-    std::array<rr::Vec3, 6 * 6 * 6> m_torusVertex;
-    std::array<rr::Vec3, 6 * 6 * 12> m_torusAdjacencies;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS>       m_torusNormal;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS>       m_torusVertex;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS * 2>   m_torusWithAdjacentTriangles;
 
     float m_torusAngleY { 0.0f };
     float m_torusAngleZ { 0.0f };
