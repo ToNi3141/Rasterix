@@ -398,10 +398,29 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // facing backwards, then all in the clipping list will do this and vice versa.
         const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
         const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
-        if (currentOrientation != m_cullMode)
+        if (currentOrientation != m_cullMode) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
             return true;
     }
     
+    if (m_renderer.getEnableTwoSideStencil())
+    {
+        const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
+        const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
+        if (currentOrientation != Face::FRONT) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+        {
+            m_renderer.selectStencilTwoSideFrontForDevice();
+        }
+        else
+        {
+            m_renderer.selectStencilTwoSideBackForDevice();
+        }
+         if (!m_renderer.updatePipeline())
+         {
+             SPDLOG_ERROR("drawTriangle(): Cannot update pixel pipeline");
+             return false;
+         }
+    }
+
     // Render the triangle
     for (uint8_t i = 3; i <= vertListSize; i++)
     {
@@ -520,8 +539,8 @@ bool VertexPipeline::drawTriangleArray(
         case RenderObj::DrawMode::QUADS:
             if (i & 0x1)
             {
-                i0 = i + 1;
-                i1 = i - 1;
+                i0 = i - 1;
+                i1 = i + 1;
                 i2 = i + 2;
                 i += 3;
             }

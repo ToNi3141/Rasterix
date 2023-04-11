@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
 // The framebuffer is used to store the frame.
 //
 // This module uses an AXIS interface to stream out the framebuffer contents.
@@ -27,11 +25,6 @@
 //
 // The fragment interface can be used to access single fragments from the framebuffer
 //
-// To optimize the memory utilization, this module has a internal and external pixel configuration. It automatically
-// converts between the internal and external. With that it is possible to have unified interface to this module,
-// (for instance 32 bit colors) but with a internal representation as RGB444 or RGBA4444 or RGB666 and so on to optimize
-// the utilization.
-//
 // Improvements: The scrissor is not optimized. When memset is called, it will set the whole memory except
 // the scissor area. A improved version will just set the scissor area.
 // It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
@@ -40,28 +33,27 @@
 // Depth: 1 cycle
 module FrameBuffer
 #(
-    // Width of the AXIS interface with the frame buffer content
-    parameter STREAM_WIDTH = 16,
+    // Number of pixels a stream beat contains
+    parameter NUMBER_OF_PIXELS_PER_BEAT = 1,
     
     // Number of sub pixels the interface of this module containts
     parameter NUMBER_OF_SUB_PIXELS = 4,
-    // Number of sub pixels the internal memory contains (when there is a missmatch between the module interface, the module will then convert the colors)
-    parameter NUMBER_OF_SUB_PIXELS_INTERNAL = 4,
     // Number of bits of each sub pixel containts
     parameter SUB_PIXEL_WIDTH = 8,
-    // Internal size of a sub pixel (will be converted if there is a missmatch between SUB_PIXEL_WIDTH)
-    parameter SUB_PIXEL_WIDTH_INTERNAL = 4,
 
     // The maximum size of the screen in power of two
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,
-    parameter FRAMEBUFFER_SIZE_BYTES = 18, // Framebuffer size in power of two bytes
+    parameter FRAMEBUFFER_SIZE_IN_WORDS = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_BYTES - 1
+    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_WORDS,
+
+    // Width of the AXIS interface with the frame buffer content
+    localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH
 )
 (
     input   wire                            clk,
@@ -112,30 +104,13 @@ module FrameBuffer
     
 );
     // Number of pixels a AXIS beat or a memory line can contain
-    localparam PIXEL_PER_BEAT = STREAM_WIDTH / 16; // The stream will only contain 16 bit colors
-    localparam PIXEL_PER_BEAT_LOG2 = $clog2(PIXEL_PER_BEAT);
+    localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT);
 
     // Size constrains of the internal memory
-    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS_INTERNAL * SUB_PIXEL_WIDTH_INTERNAL;
-    localparam MEM_MASK_WIDTH = PIXEL_PER_BEAT * NUMBER_OF_SUB_PIXELS_INTERNAL;
-    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH_INTERNAL;
+    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH;
+    localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS;
+    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
-
-    // Used for expanding pixels to set default values
-    localparam ALPHA_POS = 0;
-    localparam DEFAULT_ALPHA_VAL = 0;
-
-    `Expand(Expand, SUB_PIXEL_WIDTH_INTERNAL, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS_INTERNAL);
-    `Reduce(Reduce, SUB_PIXEL_WIDTH_INTERNAL, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS_INTERNAL);
-
-    // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
-    // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
-    // without removing or adding something.
-    // If it is set to a lower value, then the functions will start to remove or add new pixels.
-    localparam SUB_PIXEL_OFFSET = (NUMBER_OF_SUB_PIXELS == NUMBER_OF_SUB_PIXELS_INTERNAL) ? NUMBER_OF_SUB_PIXELS : ALPHA_POS; 
-    `ReduceVec(ReduceVec, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, NUMBER_OF_SUB_PIXELS, NUMBER_OF_SUB_PIXELS_INTERNAL);
-    `ReduceVec(ReduceVecMask, 1, NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, NUMBER_OF_SUB_PIXELS, NUMBER_OF_SUB_PIXELS_INTERNAL);
-    `ExpandVec(ExpandVec, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS_INTERNAL, SUB_PIXEL_OFFSET, NUMBER_OF_SUB_PIXELS, NUMBER_OF_SUB_PIXELS);
 
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
@@ -164,7 +139,7 @@ module FrameBuffer
     reg  [ADDR_WIDTH - 1 : 0]       memAddrReadDelay;
     wire [MEM_WIDTH - 1 : 0]        memDataIn; 
     wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { PIXEL_PER_BEAT { ReduceVecMask(fragMask) } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { fragMask } };
     wire                            memScissorTest;
     wire                            memWriteEnable = fragWriteEnable;
     
@@ -174,7 +149,7 @@ module FrameBuffer
     reg                             cmdRunning;
     reg  [5 : 0]                    cmdState;
     reg                             cmdWrite;
-    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { PIXEL_PER_BEAT { ReduceVecMask(fragMask) } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { fragMask } };
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
 
     // Memcpy address
@@ -183,20 +158,20 @@ module FrameBuffer
     // State variables for the memset
     wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemsetAddr = cmdIndex;
     reg  [X_BIT_WIDTH - 1 : 0]      cmdMemsetX;
-    wire [X_BIT_WIDTH - 1 : 0]      cmdMemsetXNext = cmdMemsetX + PIXEL_PER_BEAT;
+    wire [X_BIT_WIDTH - 1 : 0]      cmdMemsetXNext = cmdMemsetX + NUMBER_OF_PIXELS_PER_BEAT;
     reg  [Y_BIT_WIDTH - 1 : 0]      cmdMemsetY;
     wire [Y_BIT_WIDTH - 1 : 0]      cmdMemsetYNext = cmdMemsetY - 1;
     wire [MEM_MASK_WIDTH - 1 : 0]   cmdMemsetScissorMask;
-    wire [PIXEL_PER_BEAT - 1 : 0]   cmdMemsetScissor;
+    wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0]   cmdMemsetScissor;
     reg                             cmdMemsetPending = 0;
 
     // Multiplexed interface to the internal memory. It multiplexs between the commands and the fragmend access.
     wire [MEM_WIDTH - 1 : 0]        memBusDataOut;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrWrite = (cmdRunning) ? cmdMemsetAddr                                          : memAddrWrite;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrRead  = (cmdRunning) ? cmdMemcpyAddr                                          : memAddrRead;
-    wire [MEM_WIDTH - 1 : 0]        memBusDataIn    = (cmdRunning) ? { PIXEL_PER_BEAT { Reduce(ReduceVec(confClearColor)) } }   : memDataIn;
-    wire                            memBusWrite     = (cmdRunning) ? cmdWrite                                               : memWriteEnable;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memBusWriteMask = (cmdRunning) ? cmdMask & cmdMemsetScissorMask                         : memWriteMask;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrWrite = (cmdRunning) ? cmdMemsetAddr                          : memAddrWrite;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrRead  = (cmdRunning) ? cmdMemcpyAddr                          : memAddrRead;
+    wire [MEM_WIDTH - 1 : 0]        memBusDataIn    = (cmdRunning) ? { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } }  : memDataIn;
+    wire                            memBusWrite     = (cmdRunning) ? cmdWrite                               : memWriteEnable;
+    wire [MEM_MASK_WIDTH - 1 : 0]   memBusWriteMask = (cmdRunning) ? cmdMask & cmdMemsetScissorMask         : memWriteMask;
 
     // Instance of the internal memory
     DualPortRam ramTile (
@@ -213,25 +188,25 @@ module FrameBuffer
     );
     defparam ramTile.ADDR_WIDTH = MEM_ADDR_WIDTH;
     defparam ramTile.MEM_WIDTH = MEM_WIDTH;
-    defparam ramTile.WRITE_STROBE_WIDTH = SUB_PIXEL_WIDTH_INTERNAL;
+    defparam ramTile.WRITE_STROBE_WIDTH = SUB_PIXEL_WIDTH;
 
     genvar i, j;
 
     // Scissor check for the memset command 
     generate
-        if (PIXEL_PER_BEAT == 1)
+        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
         begin 
             assign cmdMemsetScissor = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX, cmdMemsetY);
-            assign cmdMemsetScissorMask = { NUMBER_OF_SUB_PIXELS_INTERNAL { cmdMemsetScissor } };
+            assign cmdMemsetScissorMask = { NUMBER_OF_SUB_PIXELS { cmdMemsetScissor } };
         end
         else
         begin
-            for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
+            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
             begin
                 assign cmdMemsetScissor[i] = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX + i, cmdMemsetY);
-                for (j = 0; j < NUMBER_OF_SUB_PIXELS_INTERNAL; j = j + 1)
+                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign cmdMemsetScissorMask[(i * NUMBER_OF_SUB_PIXELS_INTERNAL) + j] = cmdMemsetScissor[i];
+                    assign cmdMemsetScissorMask[(i * NUMBER_OF_SUB_PIXELS) + j] = cmdMemsetScissor[i];
                 end
             end
         end
@@ -240,25 +215,25 @@ module FrameBuffer
     // Fragment access including the scissor check
     generate
         assign memScissorTest = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, screenPosX, screenPosY);
-        if (PIXEL_PER_BEAT == 1)
+        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
         begin
             assign memAddrWrite = fragIndexWrite;
-            assign memDataIn = Reduce(ReduceVec(fragIn));
-            assign memWriteMask = memMask & { NUMBER_OF_SUB_PIXELS_INTERNAL { memScissorTest } };
+            assign memDataIn = fragIn;
+            assign memWriteMask = memMask & { NUMBER_OF_SUB_PIXELS { memScissorTest } };
             assign memAddrRead = fragIndexRead;
             assign memDataOut = memBusDataOut;
         end
         else
         begin
-            for (i = 0; i < PIXEL_PER_BEAT; i = i + 1)
+            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
             begin
-                for (j = 0; j < NUMBER_OF_SUB_PIXELS_INTERNAL; j = j + 1)
+                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign memWriteMask[(i * NUMBER_OF_SUB_PIXELS_INTERNAL) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j] & memScissorTest;
+                    assign memWriteMask[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j] & memScissorTest;
                 end
             end
             assign memAddrWrite = fragIndexWrite[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign memDataIn = { PIXEL_PER_BEAT { Reduce(ReduceVec(fragIn)) } };
+            assign memDataIn = { NUMBER_OF_PIXELS_PER_BEAT { fragIn } };
             assign memAddrRead = fragIndexRead[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
             assign memDataOut = memBusDataOut[memAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * MEM_PIXEL_WIDTH +: MEM_PIXEL_WIDTH];
         end
@@ -266,27 +241,10 @@ module FrameBuffer
 
     always @(posedge clk)
     begin
-        fragOut <= ExpandVec(Expand(memDataOut), DEFAULT_ALPHA_VAL);
+        fragOut <= memDataOut;
     end
-
-    // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
-    generate
-        `XXX2RGB565(XXX2RGB565, SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
-        `Expand(ExpandFramebufferStream, SUB_PIXEL_WIDTH_INTERNAL, SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
-        if (NUMBER_OF_SUB_PIXELS_INTERNAL == 4)
-        begin
-            `ReduceVec(ReduceVecFramebufferStream, SUB_PIXEL_WIDTH_INTERNAL, PIXEL_PER_BEAT * NUMBER_OF_SUB_PIXELS, ALPHA_POS, NUMBER_OF_SUB_PIXELS, PIXEL_PER_BEAT * 3);
-            assign m_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(memBusDataOut)));
-        end
-        else if (NUMBER_OF_SUB_PIXELS_INTERNAL == 3)
-        begin
-            assign m_axis_tdata = XXX2RGB565(ExpandFramebufferStream(memBusDataOut));
-        end
-        else 
-        begin
-            assign m_axis_tdata = memBusDataOut; // Fallback
-        end
-    endgenerate
+            
+    assign m_axis_tdata = memBusDataOut;
 
     // Command execution
     always @(posedge clk)

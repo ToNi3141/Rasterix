@@ -1,9 +1,9 @@
 #include "Runner.hpp"
-#include "Minimal.hpp"
+#include "StencilShadow.hpp"
 
 int main()
 {
-    static Runner<Minimal> r;
+    static Runner<StencilShadow> r;
     r.execute();
     return 0;
 }

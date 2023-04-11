@@ -28,6 +28,7 @@
 #include "registers/FragmentPipelineReg.hpp"
 #include "registers/FeatureEnableReg.hpp"
 #include "registers/TmuTextureReg.hpp"
+#include "registers/StencilReg.hpp"
 #include "Triangle.hpp"
 
 namespace rr
@@ -201,8 +202,9 @@ public:
     /// @brief Will clear a buffer
     /// @param frameBuffer Will clear the frame buffer
     /// @param zBuffer Will clear the z buffer
+    /// @param stencilBuffer Will clear the stencil buffer
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool clear(bool frameBuffer, bool zBuffer) = 0;
+    virtual bool clear(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer) = 0;
 
     /// @brief Will set a color which is used as clear color for the frame buffer
     /// when clear() is called
@@ -281,6 +283,11 @@ public:
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
     virtual TMU getTmuCount() const = 0;
+
+    /// @brief Configures the stencil buffer
+    /// @param stencilConf The config of the stencil buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool setStencilBufferConfig(const StencilReg& stencilConf) = 0;
 };
 
 } // namespace rr

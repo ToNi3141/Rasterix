@@ -44,6 +44,7 @@
 #include "registers/ScissorStartReg.hpp"
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "registers/StencilReg.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
@@ -165,7 +166,7 @@ public:
             while (!m_busConnector.clearToSend())
                 ;
             m_displayListAssembler[m_frontList].setCheckpoint();
-            FramebufferCmd cmd { true, true };
+            FramebufferCmd cmd { true, true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[m_frontList].addCommand(cmd);
@@ -189,9 +190,9 @@ public:
         }
     }
 
-    virtual bool clear(bool colorBuffer, bool depthBuffer) override
+    virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd cmd { colorBuffer, depthBuffer };
+        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         return m_displayListAssembler[m_backList].addCommand(cmd);
     }
@@ -371,6 +372,10 @@ public:
         return RenderConfig::TMU_COUNT;
     }
 
+    virtual bool setStencilBufferConfig(const StencilReg& stencilConf) override
+    {
+        return writeReg(stencilConf);
+    }
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 

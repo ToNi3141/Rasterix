@@ -15,9 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+`include "PixelUtil.vh"
+
 module RasterixRenderCore #(
     // The size of the internal framebuffer (in power of two)
-    parameter FRAMEBUFFER_SIZE_BYTES = 18,
+    // Depth buffer word size: 16 bit
+    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
+    parameter FRAMEBUFFER_SIZE_IN_WORDS = 17,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -25,6 +29,9 @@ module RasterixRenderCore #(
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+
+    // This enables the 4 bit stencil buffer
+    parameter ENABLE_STENCIL_BUFFER = 1,
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
@@ -63,11 +70,14 @@ module RasterixRenderCore #(
 `include "RasterizerDefines.vh"
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
+    // Width of the stencil buffer
+    localparam STENCIL_WIDTH = 4;
+
     localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4;
 
     localparam TEX_ADDR_WIDTH = 16;
 
-    localparam FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_SIZE_BYTES - 1;
+    localparam FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_SIZE_IN_WORDS;
 
     // The bit width of the texture stream
     localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
@@ -83,6 +93,21 @@ module RasterixRenderCore #(
             $error("At least one TMU must be enabled");
         end
     end
+
+    localparam PIXEL_PER_BEAT = FRAMEBUFFER_STREAM_WIDTH / 16;
+    localparam DEFAULT_ALPHA_VAL = 0;
+    localparam COLOR_BUFFER_PIXEL_WIDTH = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * FRAMEBUFFER_SUB_PIXEL_WIDTH;
+
+    // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
+    // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
+    // without removing or adding something.
+    // If it is set to a lower value, then the functions will start to remove or add new pixels.
+    localparam SUB_PIXEL_OFFSET = (COLOR_NUMBER_OF_SUB_PIXEL == FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) ? COLOR_NUMBER_OF_SUB_PIXEL : COLOR_A_POS; 
+    `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL);
+    `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
 
     localparam ENABLE_SECOND_TMU = TMU_COUNT == 2;
     
@@ -109,22 +134,31 @@ module RasterixRenderCore #(
     wire [31 : 0]                   texel1Input11;
 
     // Color buffer access
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead;
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite;
-    wire            colorWriteEnable;
-    wire [31 : 0]   colorIn;
-    wire [31 : 0]   colorOut;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          colorIndexRead;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          colorIndexWrite;
+    wire                                            colorWriteEnable;
+    wire [COLOR_BUFFER_PIXEL_WIDTH - 1 : 0]         colorBufferFragOut;
+    wire [31 : 0]                                   colorOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] colorOutScreenPosY;
 
     // Depth buffer access
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead;
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite;
-    wire            depthWriteEnable;
-    wire [15 : 0]   depthIn;
-    wire [15 : 0]   depthOut;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          depthIndexRead;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          depthIndexWrite;
+    wire                                            depthWriteEnable;
+    wire [15 : 0]                                   depthIn;
+    wire [15 : 0]                                   depthOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] depthOutScreenPosY;
+
+    // Stencil buffer access
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          stencilIndexRead;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          stencilIndexWrite;
+    wire                                            stencilWriteEnable;
+    wire [STENCIL_WIDTH - 1 : 0]                    stencilIn;
+    wire [STENCIL_WIDTH - 1 : 0]                    stencilOut;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] stencilOutScreenPosX;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] stencilOutScreenPosY;
 
     wire pixelInPipelineInterpolator;
     wire pixelInPipelineShader;
@@ -146,6 +180,10 @@ module RasterixRenderCore #(
     wire            depthBufferCmdCommit;
     wire            depthBufferCmdMemset;
     wire [31 : 0]   confDepthBufferClearDepth;
+    wire            stencilBufferApply;
+    wire            stencilBufferApplied;
+    wire            stencilBufferCmdCommit;
+    wire            stencilBufferCmdMemset;
 
     // Attribute interpolator
     wire            m_attr_inter_axis_tvalid;
@@ -193,6 +231,7 @@ module RasterixRenderCore #(
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvConfig;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TextureConfig;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvColor;
+    wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confStencilBufferConfig;
 
     assign confFeatureEnable = renderConfigs[OP_RENDER_CONFIG_FEATURE_ENABLE +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confColorBufferClearColor = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
@@ -209,6 +248,7 @@ module RasterixRenderCore #(
     assign confScissorEndXY = renderConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confYOffset = renderConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confRenderResolution = renderConfigs[OP_RENDER_CONFIG_RENDER_RESOLUTION +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confStencilBufferConfig = renderConfigs[OP_RENDER_CONFIG_STENCIL_BUFFER +: OP_RENDER_CONFIG_REG_WIDTH];
 
     assign dbgRasterizerRunning = rasterizerRunning;
 
@@ -251,6 +291,10 @@ module RasterixRenderCore #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .stencilBufferApply(stencilBufferApply),
+        .stencilBufferApplied(stencilBufferApplied),
+        .stencilBufferCmdCommit(stencilBufferCmdCommit),
+        .stencilBufferCmdMemset(stencilBufferCmdMemset),
 
         // Debug
         .dbgStreamState(dbgStreamState)
@@ -388,20 +432,19 @@ module RasterixRenderCore #(
         .m_axis_tlast(),
         .m_axis_tdata()
     );
-    defparam depthBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
+    defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
     defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
-    defparam depthBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = 1;
-    defparam depthBuffer.SUB_PIXEL_WIDTH_INTERNAL = 16;
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
     defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam depthBuffer.FRAMEBUFFER_SIZE_BYTES = FRAMEBUFFER_SIZE_BYTES;
+    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
 
+    wire [(COLOR_BUFFER_PIXEL_WIDTH * PIXEL_PER_BEAT) - 1 : 0] m_framebuffer_unconverted_axis_tdata;
     FrameBuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
-        .confClearColor(confColorBufferClearColor),
+        .confClearColor(ColorBufferReduce(ColorBufferReduceVec(confColorBufferClearColor))),
         .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
         .confScissorStartX(confScissorStartXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
         .confScissorStartY(confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
@@ -412,14 +455,15 @@ module RasterixRenderCore #(
         .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
 
         .fragIndexRead(colorIndexRead),
-        .fragOut(colorIn),
+        .fragOut(colorBufferFragOut),
         .fragIndexWrite(colorIndexWrite),
-        .fragIn(colorOut),
+        .fragIn(ColorBufferReduce(ColorBufferReduceVec(colorOut))),
         .fragWriteEnable(colorWriteEnable),
-        .fragMask({ confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
+        .fragMask(ColorBufferReduceMask ({ 
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
-                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE]}),
+                    confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE] })),
         .screenPosX(colorOutScreenPosX),
         .screenPosY(colorOutScreenPosY),
         
@@ -431,16 +475,79 @@ module RasterixRenderCore #(
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
         .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(m_framebuffer_axis_tdata)
+        .m_axis_tdata(m_framebuffer_unconverted_axis_tdata)
     );
-    defparam colorBuffer.STREAM_WIDTH = FRAMEBUFFER_STREAM_WIDTH;
-    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = COLOR_NUMBER_OF_SUB_PIXEL;
-    defparam colorBuffer.NUMBER_OF_SUB_PIXELS_INTERNAL = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
-    defparam colorBuffer.SUB_PIXEL_WIDTH_INTERNAL = FRAMEBUFFER_SUB_PIXEL_WIDTH;
-    defparam colorBuffer.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
+    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = FRAMEBUFFER_SUB_PIXEL_WIDTH;
     defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam colorBuffer.FRAMEBUFFER_SIZE_BYTES = FRAMEBUFFER_SIZE_BYTES;
+    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+
+    // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
+    generate
+        `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
+        `Expand(ExpandFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
+        begin
+            `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
+            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(m_framebuffer_unconverted_axis_tdata)));
+        end
+        else
+        begin
+            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(m_framebuffer_unconverted_axis_tdata));
+        end
+    endgenerate
+
+    generate 
+        if (ENABLE_STENCIL_BUFFER)
+        begin
+                FrameBuffer stencilBuffer (  
+                .clk(aclk),
+                .reset(!resetn),
+
+                .confClearColor(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)]),
+                .confEnableScissor(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS]),
+                .confScissorStartX(confScissorStartXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confScissorStartY(confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confScissorEndX(confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confScissorEndY(confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confYOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+                .confXResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
+                .confYResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
+
+                .fragIndexRead(stencilIndexRead),
+                .fragOut(stencilIn),
+                .fragIndexWrite(stencilIndexWrite),
+                .fragIn(stencilOut),
+                .fragWriteEnable(stencilWriteEnable),
+                .fragMask(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)]),
+                .screenPosX(stencilOutScreenPosX),
+                .screenPosY(stencilOutScreenPosY),
+
+                .apply(stencilBufferApply),
+                .applied(stencilBufferApplied),
+                .cmdCommit(stencilBufferCmdCommit),
+                .cmdMemset(stencilBufferCmdMemset),
+
+                .m_axis_tvalid(),
+                .m_axis_tready(1'b1),
+                .m_axis_tlast(),
+                .m_axis_tdata()
+            );
+            defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
+            defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
+            defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
+            defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+            defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+        end
+        else
+        begin
+            assign stencilIn = 0;
+            assign stencilBufferApplied = 1;
+        end
+    endgenerate
 
     Rasterizer rop (
         .clk(aclk), 
@@ -541,6 +648,7 @@ module RasterixRenderCore #(
         .confFeatureEnable(confFeatureEnable),
         .confFragmentPipelineConfig(confFragmentPipelineConfig),
         .confFragmentPipelineFogColor(confFragmentPipelineFogColor),
+        .confStencilBufferConfig(confStencilBufferConfig),
         .confTMU0TexEnvConfig(confTMU0TexEnvConfig),
         .confTMU0TextureConfig(confTMU0TextureConfig),
         .confTMU0TexEnvColor(confTMU0TexEnvColor),
@@ -574,7 +682,7 @@ module RasterixRenderCore #(
         .texel1Input11(texel1Input11),
 
         .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
+        .colorIn(ColorBufferExpandVec(ColorBufferExpand(colorBufferFragOut), DEFAULT_ALPHA_VAL)),
         .colorIndexWrite(colorIndexWrite),
         .colorWriteEnable(colorWriteEnable),
         .colorOut(colorOut),
@@ -587,11 +695,20 @@ module RasterixRenderCore #(
         .depthWriteEnable(depthWriteEnable),
         .depthOut(depthOut),
         .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY)
+        .depthOutScreenPosY(depthOutScreenPosY),
+
+        .stencilIndexRead(stencilIndexRead),
+        .stencilIn(stencilIn),
+        .stencilIndexWrite(stencilIndexWrite),
+        .stencilWriteEnable(stencilWriteEnable),
+        .stencilOut(stencilOut),
+        .stencilOutScreenPosX(stencilOutScreenPosX),
+        .stencilOutScreenPosY(stencilOutScreenPosY)
     );
     defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+    defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
 
 endmodule

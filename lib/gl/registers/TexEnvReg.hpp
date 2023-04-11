@@ -91,7 +91,7 @@ public:
 
     void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t serialize() const { return m_regVal.data; }
-    uint32_t getAddr() const { return 0x9 + m_offset; }
+    uint32_t getAddr() const { return 0xA + m_offset; }
 private:
     static constexpr uint8_t TMU_OFFSET { 3 };
     union RegVal

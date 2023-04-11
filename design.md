@@ -45,6 +45,7 @@ The driver is build with the following components:
       - `Fog`: Calculates the fog color of the fragment.
       - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / depth tests.
         - `ColorBlender`: Implements the color blending modes.
-        - `TestFunc`: Implements the test functions for the alpha and depth test.
+        - `TestFunc`: Implements the test functions for the alpha, stencil and depth test.
+        - `StencilOp`: Implements the stencil ops.
       - `TextureBuffer`: Buffer which contains the complete texture.
     - `FrameBuffer`: Contains the depth and color buffer.

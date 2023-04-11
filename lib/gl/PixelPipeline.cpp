@@ -30,6 +30,7 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
     }
     m_renderer.setFeatureEnableConfig(m_featureEnable);
     m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
+    m_renderer.setStencilBufferConfig(m_stencilConf);
 }
 
 bool PixelPipeline::drawTriangle(const Triangle& triangle) 
@@ -59,6 +60,22 @@ bool PixelPipeline::updatePipeline()
     {
         ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
         m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;
+    }
+    if (m_enableTwoSideStencil)
+    {
+        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize())
+        {
+            ret = ret && m_renderer.setStencilBufferConfig(*m_stencilConfTwoSide);
+            m_stencilConfUploaded = *m_stencilConfTwoSide;
+        }
+    }
+    else
+    {
+        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
+        {
+            ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
+            m_stencilConfUploaded = m_stencilConf;
+        }
     }
     if (m_fogDirty)
     {
@@ -264,10 +281,48 @@ bool PixelPipeline::setClearDepth(const float depth)
     return m_renderer.setClearDepth(depthx);
 }
 
-bool PixelPipeline::clearFramebuffer(bool frameBuffer, bool zBuffer) 
+bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer) 
 { 
     bool ret = updatePipeline();
-    return ret && m_renderer.clear(frameBuffer, zBuffer); 
+    return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer); 
+}
+
+PixelPipeline::StencilConfig& PixelPipeline::stencilConfig()
+{ 
+    if (m_enableTwoSideStencil)
+    {
+        if (m_stencilFace == StencilFace::FRONT)
+        {
+            return m_stencilConfFront;
+        }
+        return m_stencilConfBack;
+    }
+    return m_stencilConf;
+}
+
+void PixelPipeline::enableTwoSideStencil(const bool enable)
+{
+    m_enableTwoSideStencil = enable;
+}
+
+bool PixelPipeline::getEnableTwoSideStencil() const
+{
+    return m_enableTwoSideStencil;
+}
+
+void PixelPipeline::setStencilFace(const StencilFace face)
+{
+    m_stencilFace = face;
+}
+
+void PixelPipeline::selectStencilTwoSideFrontForDevice() 
+{ 
+    m_stencilConfTwoSide = &m_stencilConfFront; 
+}
+
+void PixelPipeline::selectStencilTwoSideBackForDevice() 
+{ 
+    m_stencilConfTwoSide = &m_stencilConfBack; 
 }
 
 } // namespace rr

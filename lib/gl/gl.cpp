@@ -300,7 +300,61 @@ PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
     }
 }
 
+TestFunc convertTestFunc(const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_ALWAYS:
+        return TestFunc::ALWAYS;
+    case GL_NEVER:
+        return TestFunc::NEVER;
+    case GL_LESS:
+        return TestFunc::LESS;
+    case GL_EQUAL:
+        return TestFunc::EQUAL;
+    case GL_LEQUAL:
+        return TestFunc::LEQUAL;
+    case GL_GREATER:
+        return TestFunc::GREATER;
+    case GL_NOTEQUAL:
+        return TestFunc::NOTEQUAL;
+    case GL_GEQUAL:
+        return TestFunc::GEQUAL;
 
+    default:
+        SPDLOG_WARN("convertTestFunc 0x{:X} not suppored", mode);
+        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        return TestFunc::ALWAYS;
+    }
+}
+
+PixelPipeline::StencilConfig::StencilOp convertStencilOp(const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_KEEP:
+        return PixelPipeline::StencilConfig::StencilOp::KEEP;
+    case GL_ZERO:
+        return PixelPipeline::StencilConfig::StencilOp::ZERO;
+    case GL_REPLACE:
+        return PixelPipeline::StencilConfig::StencilOp::REPLACE;
+    case GL_INCR:
+        return PixelPipeline::StencilConfig::StencilOp::INCR;
+    case GL_INCR_WRAP_EXT:
+        return PixelPipeline::StencilConfig::StencilOp::INCR_WRAP;
+    case GL_DECR:
+        return PixelPipeline::StencilConfig::StencilOp::DECR;
+    case GL_DECR_WRAP_EXT:
+        return PixelPipeline::StencilConfig::StencilOp::DECR_WRAP;
+    case GL_INVERT:
+        return PixelPipeline::StencilConfig::StencilOp::INVERT;
+
+    default:
+        SPDLOG_WARN("convertStencilOp 0x{:X} not suppored", mode);
+        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        return PixelPipeline::StencilConfig::StencilOp::KEEP;
+    }
+}
 
 
 
@@ -317,39 +371,8 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
 {
     SPDLOG_DEBUG("glAlphaFunc func 0x{:X} ref {}", func, ref);
 
-    PixelPipeline::TestFunc testFunc { PixelPipeline::TestFunc::LESS };
     IceGL::getInstance().setError(GL_NO_ERROR);
-    switch (func)
-    {
-    case GL_ALWAYS:
-        testFunc = PixelPipeline::TestFunc::ALWAYS;
-        break;
-    case GL_NEVER:
-        testFunc = PixelPipeline::TestFunc::NEVER;
-        break;
-    case GL_LESS:
-        testFunc = PixelPipeline::TestFunc::LESS;
-        break;
-    case GL_EQUAL:
-        testFunc = PixelPipeline::TestFunc::EQUAL;
-        break;
-    case GL_LEQUAL:
-        testFunc = PixelPipeline::TestFunc::LEQUAL;
-        break;
-    case GL_GREATER:
-        testFunc = PixelPipeline::TestFunc::GREATER;
-        break;
-    case GL_NOTEQUAL:
-        testFunc = PixelPipeline::TestFunc::NOTEQUAL;
-        break;
-    case GL_GEQUAL:
-        testFunc = PixelPipeline::TestFunc::GEQUAL;
-        break;
-
-    default:
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
-        break;
-    }
+    const TestFunc testFunc { convertTestFunc(func) };
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
@@ -403,8 +426,8 @@ GLAPI void APIENTRY impl_glCallLists(GLsizei n, GLenum type, const GLvoid *lists
 GLAPI void APIENTRY impl_glClear(GLbitfield mask)
 {
     SPDLOG_DEBUG("glClear mask 0x{:X} called", mask);
-    // TODO GL_STENCIL_BUFFER_BIT has to be implemented
-    if (IceGL::getInstance().pixelPipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT))
+
+    if (IceGL::getInstance().pixelPipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
     {
         IceGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -462,7 +485,9 @@ GLAPI void APIENTRY impl_glClearIndex(GLfloat c)
 
 GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
-    SPDLOG_WARN("glClearStencil not implemented");
+    SPDLOG_DEBUG("glClearStencil {} called", s);
+
+    IceGL::getInstance().pixelPipeline().stencilConfig().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble *equation)
@@ -851,39 +876,9 @@ GLAPI void APIENTRY impl_glDeleteLists(GLuint list, GLsizei range)
 GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 {
     SPDLOG_DEBUG("glDepthFunc 0x{:X} called", func);
-    PixelPipeline::TestFunc testFunc { PixelPipeline::TestFunc::LESS };
-    IceGL::getInstance().setError(GL_NO_ERROR);
-    switch (func)
-    {
-    case GL_ALWAYS:
-        testFunc = PixelPipeline::TestFunc::ALWAYS;
-        break;
-    case GL_NEVER:
-        testFunc = PixelPipeline::TestFunc::NEVER;
-        break;
-    case GL_LESS:
-        testFunc = PixelPipeline::TestFunc::LESS;
-        break;
-    case GL_EQUAL:
-        testFunc = PixelPipeline::TestFunc::EQUAL;
-        break;
-    case GL_LEQUAL:
-        testFunc = PixelPipeline::TestFunc::LEQUAL;
-        break;
-    case GL_GREATER:
-        testFunc = PixelPipeline::TestFunc::GREATER;
-        break;
-    case GL_NOTEQUAL:
-        testFunc = PixelPipeline::TestFunc::NOTEQUAL;
-        break;
-    case GL_GEQUAL:
-        testFunc = PixelPipeline::TestFunc::GEQUAL;
-        break;
 
-    default:
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
-        break;
-    }
+    IceGL::getInstance().setError(GL_NO_ERROR);
+    const TestFunc testFunc { convertTestFunc(func) };
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
@@ -979,6 +974,14 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
         IceGL::getInstance().vertexPipeline().setEnableNormalizing(false);
         break;
+    case GL_STENCIL_TEST:
+        SPDLOG_DEBUG("glDisable GL_STENCIL_TEST called");
+        IceGL::getInstance().pixelPipeline().setEnableStencil(false);
+        break;
+    case GL_STENCIL_TEST_TWO_SIDE_EXT:
+        SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
+        IceGL::getInstance().pixelPipeline().enableTwoSideStencil(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1068,6 +1071,14 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
         IceGL::getInstance().vertexPipeline().setEnableNormalizing(true);
+        break;
+    case GL_STENCIL_TEST:
+        SPDLOG_DEBUG("glEnable GL_STENCIL_TEST called");
+        IceGL::getInstance().pixelPipeline().setEnableStencil(true);
+        break;
+    case GL_STENCIL_TEST_TWO_SIDE_EXT:
+        SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
+        IceGL::getInstance().pixelPipeline().enableTwoSideStencil(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -1349,7 +1360,7 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint *params)
         *params = 16;
         break;
     case GL_STENCIL_BITS:
-        *params = 0;
+        *params = rr::StencilReg::MAX_STENCIL_VAL;
         break;
     default:
         *params = 0;
@@ -2415,17 +2426,40 @@ GLAPI void APIENTRY impl_glShadeModel(GLenum mode)
 
 GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
-    SPDLOG_WARN("glStencilFunc not implemented");
+    SPDLOG_DEBUG("glStencilFunc func 0x{:X} ref 0x{:X} mask 0x{:X} called", func);
+
+    IceGL::getInstance().setError(GL_NO_ERROR);
+    const TestFunc testFunc { convertTestFunc(func) };
+
+    if (IceGL::getInstance().getError() == GL_NO_ERROR)
+    {
+        IceGL::getInstance().pixelPipeline().stencilConfig().setTestFunc(testFunc);
+        IceGL::getInstance().pixelPipeline().stencilConfig().setRef(ref);
+        IceGL::getInstance().pixelPipeline().stencilConfig().setMask(mask);
+    }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
-    SPDLOG_WARN("glStencilMask not implemented");
+    SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
+    IceGL::getInstance().pixelPipeline().stencilConfig().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 {
-    SPDLOG_WARN("glStencilOp not implemented");
+    SPDLOG_DEBUG("glStencilOp fail 0x{:X} zfail 0x{:X} zpass 0x{:X} called", fail, zfail, zpass);
+    
+    IceGL::getInstance().setError(GL_NO_ERROR);
+    const PixelPipeline::StencilConfig::StencilOp failOp { convertStencilOp(fail) };
+    const PixelPipeline::StencilConfig::StencilOp zfailOp { convertStencilOp(zfail) };
+    const PixelPipeline::StencilConfig::StencilOp zpassOp { convertStencilOp(zpass) };
+
+    if (IceGL::getInstance().getError() == GL_NO_ERROR)
+    {
+        IceGL::getInstance().pixelPipeline().stencilConfig().setOpFail(failOp);
+        IceGL::getInstance().pixelPipeline().stencilConfig().setOpZFail(zfailOp);
+        IceGL::getInstance().pixelPipeline().stencilConfig().setOpZPass(zpassOp);
+    }
 }
 
 GLAPI void APIENTRY impl_glTexCoord1d(GLdouble s)
@@ -4127,6 +4161,24 @@ GLAPI void APIENTRY impl_glUnlockArrays()
     SPDLOG_WARN("glUnlockArrays not implemented");
 }
 
+GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
+{
+    SPDLOG_DEBUG("impl_glActiveStencilFaceEXT face 0x{:X} called", face);
+    IceGL::getInstance().setError(GL_NO_ERROR);
+    if (face == GL_FRONT)
+    {
+        IceGL::getInstance().pixelPipeline().setStencilFace(PixelPipeline::StencilFace::FRONT);
+    }
+    else if (face == GL_BACK)
+    {
+        IceGL::getInstance().pixelPipeline().setStencilFace(PixelPipeline::StencilFace::BACK);
+    }
+    else 
+    {
+        IceGL::getInstance().setError(GL_INVALID_ENUM);
+    }
+}
+
 // Wrapper
 // Open GL 1.0
 // -------------------------------------------------------
@@ -4532,4 +4584,5 @@ GLAPI_WRAPPER void APIENTRY glMultTransposeMatrixd(const GLdouble *m){ impl_glMu
 // -------------------------------------------------------
 GLAPI_WRAPPER void APIENTRY glLockArrays(GLint first, GLsizei count){ impl_glLockArrays(first, count); }
 GLAPI_WRAPPER void APIENTRY glUnlockArrays(){ impl_glUnlockArrays(); }
+GLAPI_WRAPPER void APIENTRY glActiveStencilFaceEXT(GLenum face) { impl_glActiveStencilFaceEXT(face); }
 // -------------------------------------------------------

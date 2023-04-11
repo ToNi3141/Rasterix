@@ -6,6 +6,7 @@
 #include <QTimer>
 #include "IceGL.hpp"
 #include "Renderer.hpp"
+#include "RendererMemoryOptimized.hpp"
 #include "gl.h"
 #include "RenderConfigs.hpp"
 #if USE_SIMULATION
@@ -15,6 +16,9 @@
 #undef VOID // Undef void because it is defined in the tcl.h and there is a typedef in WinTypes.h (which is used for the FT2232 library)
 #include "FT60XBusConnector.hpp"
 #endif
+
+#include "../../stencilShadow/StencilShadow.hpp"
+#include "../../minimal/Minimal.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -32,11 +36,6 @@ public slots:
     void newFrame();
 
 private:
-    static constexpr bool ENABLE_LIGHT = true;
-    static constexpr bool ENABLE_BLACK_WHITE = false;
-    static constexpr bool ENABLE_MULTI_TEXTURE = true;
-
-    GLuint loadTexture(const char *tex);
 
 #if USE_SIMULATION
 public:
@@ -59,15 +58,11 @@ private:
     rr::Renderer<rr::RenderConfigRasterixNexys> m_renderer{m_busConnector};
 #endif
 
-    GLuint m_textureId = 0;
-    GLuint m_multiTextureId = 0;
-    int32_t m_fbSel = 0;
-    float m_clipPlane = 1;
-
     Ui::MainWindow *ui;
 
     QTimer m_timer;
     QImage m_image;
+    StencilShadow m_testScene;
 };
 
 #endif // MAINWINDOW_H

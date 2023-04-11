@@ -136,7 +136,7 @@ std::tuple<const uint32_t,
     ClipVertList* currentColorListBufferIn = &colorList;
     ClipVertList* currentColorListBufferOut = &colorListBuffer;
 
-    int8_t numberOfVerts = 3; // Initial the list contains 3 vertecies
+    int8_t numberOfVerts = 3; // Initial the list contains 3 vertices
     int8_t numberOfVertsCurrentPlane = 0;
 
     for (auto oc : {OutCode::OC_NEAR, OutCode::OC_FAR, OutCode::OC_LEFT, OutCode::OC_RIGHT, OutCode::OC_TOP, OutCode::OC_BOTTOM})

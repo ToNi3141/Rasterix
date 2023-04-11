@@ -363,6 +363,10 @@ typedef double GLclampd;
 #define GL_REPLACE                              0x1E01
 #define GL_INCR                                 0x1E02
 #define GL_DECR                                 0x1E03
+#define GL_INCR_WRAP_EXT                        0x8507
+#define GL_DECR_WRAP_EXT                        0x8508
+#define GL_STENCIL_TEST_TWO_SIDE_EXT            0x8910
+#define GL_ACTIVE_STENCIL_FACE_EXT              0x8911
 
 // Buffers, Pixel Drawing/Reading
 #define GL_NONE                                 0x0
@@ -1294,6 +1298,7 @@ GLAPI void APIENTRY impl_glMultTransposeMatrixd(const GLdouble *m);
 // -------------------------------------------------------
 GLAPI void APIENTRY impl_glLockArrays(GLint first, GLsizei count);
 GLAPI void APIENTRY impl_glUnlockArrays();
+GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face);
 // -------------------------------------------------------
 
 
@@ -1704,6 +1709,7 @@ GLAPI_WRAPPER void APIENTRY glMultTransposeMatrixd(const GLdouble *m);
 // -------------------------------------------------------
 GLAPI_WRAPPER void APIENTRY glLockArrays(GLint first, GLsizei count);
 GLAPI_WRAPPER void APIENTRY glUnlockArrays();
+GLAPI_WRAPPER void APIENTRY glActiveStencilFaceEXT(GLenum face);
 // -------------------------------------------------------
 
 #ifdef __cplusplus

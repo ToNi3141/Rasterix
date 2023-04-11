@@ -46,8 +46,13 @@ public:
         COMBINE
     };
 
+    enum class StencilFace 
+    {
+        FRONT,
+        BACK
+    };
+
     using FragmentPipeline = FragmentPipelineReg;
-    using TestFunc = FragmentPipelineReg::TestFunc;
     using BlendFunc = FragmentPipelineReg::BlendFunc;
     using LogicOp = FragmentPipelineReg::LogicOp;
 
@@ -58,6 +63,7 @@ public:
     using Combine = TexEnvReg::Combine;
     using TexEnv = TexEnvReg;
     using TextureObject = IRenderer::TextureObject;
+    using StencilConfig = StencilReg;
     
     using FeatureEnable = FeatureEnableReg;
 
@@ -73,6 +79,7 @@ public:
     void setEnableBlending(const bool enable) { m_featureEnable.setEnableBlending(enable); }
     void setEnableFog(const bool enable) { m_featureEnable.setEnableFog(enable); }
     void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
+    void setEnableStencil(const bool enable) { m_featureEnable.setEnableStencilTest(enable); }
     bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_tmu); }
     bool getEnableTmu(const uint8_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
     bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
@@ -80,6 +87,7 @@ public:
     bool getEnableBlending() const { return m_featureEnable.getEnableBlending(); }
     bool getEnableFog() const { return m_featureEnable.getEnableFog(); }
     bool getEnableScissor() const { return m_featureEnable.getEnableScissor(); }
+    bool getEnableStencil() const { return m_featureEnable.getEnableStencilTest(); }
 
     // Textures
     bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
@@ -94,12 +102,20 @@ public:
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
 
     // Framebuffer
-    bool clearFramebuffer(bool frameBuffer, bool zBuffer);
+    bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
 
     // Fragment Pipeline
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipelineConf; }
+
+    // Stencil Buffer
+    StencilConfig& stencilConfig();
+    void enableTwoSideStencil(const bool enable);
+    bool getEnableTwoSideStencil() const;
+    void setStencilFace(const StencilFace face);
+    void selectStencilTwoSideFrontForDevice();
+    void selectStencilTwoSideBackForDevice();
 
     // TMU
     bool setTexEnvMode(const TexEnvMode mode);
@@ -146,6 +162,15 @@ private:
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};
     FragmentPipeline m_fragmentPipelineConfUploaded {};
+
+    // Current stencil buffer configuration
+    bool m_enableTwoSideStencil { false };
+    StencilFace m_stencilFace { StencilFace::FRONT };
+    StencilConfig m_stencilConf {};
+    StencilConfig m_stencilConfFront {};
+    StencilConfig m_stencilConfBack {};
+    StencilConfig* m_stencilConfTwoSide { &m_stencilConfFront };
+    StencilConfig m_stencilConfUploaded {};
 
     // Fog
     bool m_fogDirty { false };

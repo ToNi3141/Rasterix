@@ -26,7 +26,7 @@ namespace rr
 class ScissorEndReg : public BaseXYReg<0x7ff, 0x7ff>
 {
 public:
-    static constexpr uint32_t getAddr() { return 0x6; }
+    static constexpr uint32_t getAddr() { return 0x7; }
 };
 } // namespace rr
 

@@ -32,6 +32,8 @@ module PixelPipeline
 
     localparam DEPTH_WIDTH = 16,
 
+    parameter STENCIL_WIDTH = 4,
+
     parameter SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
@@ -42,74 +44,86 @@ module PixelPipeline
     parameter ENABLE_SECOND_TMU = 1
 )
 (
-    input  wire                             aclk,
-    input  wire                             resetn,
-    output wire                             pixelInPipeline,
+    input  wire                                     aclk,
+    input  wire                                     resetn,
+    output wire                                     pixelInPipeline,
 
     // Fog function LUT stream
-    input  wire                             s_fog_lut_axis_tvalid,
-    output wire                             s_fog_lut_axis_tready,
-    input  wire                             s_fog_lut_axis_tlast,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_fog_lut_axis_tdata,
+    input  wire                                     s_fog_lut_axis_tvalid,
+    output wire                                     s_fog_lut_axis_tready,
+    input  wire                                     s_fog_lut_axis_tlast,
+    input  wire [CMD_STREAM_WIDTH - 1 : 0]          s_fog_lut_axis_tdata,
 
     // Shader configurations
-    input  wire [31 : 0]                    confFeatureEnable,
-    input  wire [31 : 0]                    confFragmentPipelineConfig,
-    input  wire [PIXEL_WIDTH - 1 : 0]       confFragmentPipelineFogColor,
-    input  wire [31 : 0]                    confTMU0TexEnvConfig,
-    input  wire [31 : 0]                    confTMU0TextureConfig,
-    input  wire [PIXEL_WIDTH - 1 : 0]       confTMU0TexEnvColor,
-    input  wire [31 : 0]                    confTMU1TexEnvConfig,
-    input  wire [31 : 0]                    confTMU1TextureConfig,
-    input  wire [PIXEL_WIDTH - 1 : 0]       confTMU1TexEnvColor,
+    input  wire [31 : 0]                            confFeatureEnable,
+    input  wire [31 : 0]                            confFragmentPipelineConfig,
+    input  wire [PIXEL_WIDTH - 1 : 0]               confFragmentPipelineFogColor,
+    input  wire [31 : 0]                            confStencilBufferConfig,
+    input  wire [31 : 0]                            confTMU0TexEnvConfig,
+    input  wire [31 : 0]                            confTMU0TextureConfig,
+    input  wire [PIXEL_WIDTH - 1 : 0]               confTMU0TexEnvColor,
+    input  wire [31 : 0]                            confTMU1TexEnvConfig,
+    input  wire [31 : 0]                            confTMU1TextureConfig,
+    input  wire [PIXEL_WIDTH - 1 : 0]               confTMU1TexEnvColor,
 
     // Fragment Stream
-    input  wire                             s_axis_tvalid,
-    output wire                             s_axis_tready,
-    input  wire                             s_axis_tlast,
+    input  wire                                     s_axis_tvalid,
+    output wire                                     s_axis_tready,
+    input  wire                                     s_axis_tlast,
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
     // TMU0 texel quad access
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel0Addr00,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel0Addr01,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel0Addr10,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel0Addr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel0Input00,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel0Input01,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel0Input10,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel0Input11,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr00,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr01,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr10,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr11,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input00,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input01,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input10,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input11,
     // TMU1 texel quad access
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel1Addr00,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel1Addr01,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel1Addr10,
-    output wire [TEX_ADDR_WIDTH - 1 : 0]    texel1Addr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel1Input00,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel1Input01,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel1Input10,
-    input  wire [PIXEL_WIDTH - 1 : 0]       texel1Input11,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr00,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr01,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr10,
+    output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr11,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input00,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input01,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input10,
+    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input11,
 
     // Frame buffer access
     // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexRead,
-    input  wire [PIXEL_WIDTH - 1 : 0]       colorIn,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexRead,
+    input  wire [PIXEL_WIDTH - 1 : 0]               colorIn,
     // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] colorIndexWrite,
-    output wire                             colorWriteEnable,
-    output wire [PIXEL_WIDTH - 1 : 0]       colorOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  colorOutScreenPosY,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexWrite,
+    output wire                                     colorWriteEnable,
+    output wire [PIXEL_WIDTH - 1 : 0]               colorOut,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosY,
 
     // ZBuffer buffer access
     // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexRead,
-    input  wire [DEPTH_WIDTH - 1 : 0]       depthIn,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexRead,
+    input  wire [DEPTH_WIDTH - 1 : 0]               depthIn,
     // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] depthIndexWrite,
-    output wire                             depthWriteEnable,
-    output wire [DEPTH_WIDTH - 1 : 0]       depthOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  depthOutScreenPosY
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexWrite,
+    output wire                                     depthWriteEnable,
+    output wire [DEPTH_WIDTH - 1 : 0]               depthOut,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosY,
+
+    // Stencil buffer access
+    // Read
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexRead,
+    input  wire [STENCIL_WIDTH - 1 : 0]             stencilIn,
+    // Write
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexWrite,
+    output wire                                     stencilWriteEnable,
+    output wire [STENCIL_WIDTH - 1 : 0]             stencilOut,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosY
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
@@ -396,6 +410,7 @@ module PixelPipeline
         .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
         .SCREEN_POS_WIDTH(SCREEN_POS_WIDTH),
         .DEPTH_WIDTH(DEPTH_WIDTH),
+        .STENCIL_WIDTH(STENCIL_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) perFragmentPipeline (
         .aclk(aclk),
@@ -403,6 +418,7 @@ module PixelPipeline
 
         .conf(confFragmentPipelineConfig),
         .confFeatureEnable(confFeatureEnable),
+        .confStencilBufferConfig(confStencilBufferConfig),
 
         .valid(step3_valid),
         .fragmentColor(step3_fragmentColor),
@@ -429,7 +445,16 @@ module PixelPipeline
         .depthWriteEnable(depthWriteEnable),
         .depthOut(depthOut),
         .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY)
+        .depthOutScreenPosY(depthOutScreenPosY),
+
+        .stencilIndexRead(stencilIndexRead),
+        .stencilIn(stencilIn),
+        
+        .stencilIndexWrite(stencilIndexWrite),
+        .stencilWriteEnable(stencilWriteEnable),
+        .stencilOut(stencilOut),
+        .stencilOutScreenPosX(stencilOutScreenPosX),
+        .stencilOutScreenPosY(stencilOutScreenPosY)
     );
 endmodule
 
