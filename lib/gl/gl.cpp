@@ -1360,7 +1360,7 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint *params)
         *params = 16;
         break;
     case GL_STENCIL_BITS:
-        *params = 4;
+        *params = rr::StencilReg::MAX_STENCIL_VAL;
         break;
     default:
         *params = 0;
