@@ -1,9 +1,9 @@
 {
-    "version": 6,
+    "version": 2,
     "cmakeMinimumRequired": 
     {
         "major": 3,
-        "minor": 23,
+        "minor": 20,
         "patch": 0
     },
     "configurePresets": 
@@ -42,6 +42,18 @@
             "cacheVariables": 
             {
                 "BUILD_RP2040": "ON"
+            }
+        },
+        {
+            "name": "zynq_embedded_linux",
+            "displayName": "Zynq embedded linux build",
+            "description": "Build for an zynq embedded linux device",
+            "binaryDir": "${sourceDir}/build/zynq",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_ZYNQ_EMBEDDED_LINUX" : "ON",
+                "ENABLE_SPDLOG": "ON"
             }
         }
     ]

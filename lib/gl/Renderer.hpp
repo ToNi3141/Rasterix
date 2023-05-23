@@ -93,7 +93,8 @@ public:
         {
             entry.clearAssembler();
         }
-
+        
+        enableColorBufferInMemory(0x01E00000);
         setRenderResolution(640, 480);
 
         // Fixes the first two frames
@@ -174,7 +175,7 @@ public:
         // Prepare all display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            FramebufferCmd cmd { true, true, true };
+            FramebufferCmd<RenderConfig> cmd { true, true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
@@ -220,7 +221,7 @@ public:
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
+        FramebufferCmd<RenderConfig> cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -464,7 +465,7 @@ private:
     }
 
     bool m_colorBufferUseMemory { true };
-    uint32_t m_colorBufferAddr { 0x02000000 };
+    uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
     uint8_t m_frontList = 0;

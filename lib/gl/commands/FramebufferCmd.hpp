@@ -27,6 +27,7 @@
 namespace rr
 {
 
+template <typename RenderConfig>
 class FramebufferCmd
 {
     static constexpr uint32_t OP_FRAMEBUFFER { 0x2000'0000 };
@@ -64,7 +65,7 @@ public:
         {
             m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
-        m_dseData = { { addr, size } };
+        m_dseData = { { RenderConfig::GRAM_MEMORY_LOC + addr, size } };
 
     }
     void enableMemset() 

@@ -5,6 +5,7 @@
 - [Nexys Video Build](#nexys-video-build)
   - [Hardware Setup](#hardware-setup)
     - [UMFT600X-B Eval Kit Preparation](#umft600x-b-eval-kit-preparation)
+- [Arty Z7-20 Build](#arty-z7-20-build)
 - [CMOD A7 Build](#cmod-a7-build)
   - [Hardware Setup](#hardware-setup-1)
 - [Simulation Build](#simulation-build)
@@ -13,6 +14,9 @@
 - [Windows Build](#windows-build)
   - [Run Warcraft 3](#run-warcraft-3)
 - [RP2040 Build](#rp2040-build)
+- [Zynq Build](#zynq-build)
+  - [Build Kernel Driver](#build-kernel-driver)
+  - [Build the examples](#build-the-examples)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -35,7 +39,7 @@ and under Windows Warcraft 3 (with WGL).
 # Checkout Repository
 Use the following commands to checkout the repository:
 
-```
+```sh
 git clone https://github.com/ToNi3141/Rasterix.git
 cd Rasterix
 git submodule init
@@ -48,7 +52,7 @@ The build target is a Nexys Video board with an `XC7A200` FPGA. The interface us
 This build uses two TMUs.
 
 To build the binaries use the following commands.
-```
+```sh
 cd rtl/top/Xilinx/NexysVideo
 /Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
 ```
@@ -76,13 +80,16 @@ Also the following solder bridges must be applied:
 
 <img src="pictures/FT600.png" width="450" height="400">
 
+# Arty Z7-20 Build
+TODO
+
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
 This build uses only one TMU with a maximum texture resolution of 128x128px.
 
 To build the binaries, use the following commands.
-```
+```sh
 cd rtl/top/Xilinx/CmodA7
 /Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
 ```
@@ -121,7 +128,7 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 A simulation can be used to easily develop and debug the renderer. The simulation can be found under `example/qtDebug/qtRasterizerFpga`. There is a Qt project which can be opened with the QtCreator. This project supports also the real hardware, which can be selected with the `TARGET_BUILD` variable in the .pro file.
 
 Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
-```
+```sh
 cd rtl/top/Verilator
 make
 ```
@@ -145,7 +152,7 @@ Just type `make` in the unit-tests directory. It will run all available tests.
 Before configuring and starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 0.5.21. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
 
 To build the library an the minimal example, switch to the source directory and type
-```
+```sh
 cd <rasterix_directory>
 cmake --preset native
 cd build/native
@@ -161,7 +168,7 @@ into your terminal. It should now show an image similar to the simulation.
 Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
 
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
-```
+```sh
 cd <rasterix_directory>
 cmake --preset win32
 cd build/win32
@@ -188,13 +195,29 @@ Switching the resolution and videos are currently not working.
 Before you start to build, have a look at the rp2040 SDK readme (https://github.com/raspberrypi/pico-sdk). You have several options, which are supported. The option documented there is based on a already cloned SDK on your computer.
 
 Open a terminal. Use the following commands to build a rp2040 binary:
-```
+```sh
 cd <rasterix_directory>
 cmake --preset rp2040 -DPICO_SDK_PATH=<path_to_the_sdk>
 cd build/rp2040
 make -j
 ```
 You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
+
+# Zynq Build
+The Zynq build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
+
+## Build Kernel Driver
+The Zynq builds requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device three overlay which must be used for the build (it contains memory allocations for the graphics memory and entries for the dma proxy).
+
+## Build the examples
+Open a terminal. Use the following commands:
+```sh
+cd <rasterix_directory>
+export SYSROOTS=/<path_to_your_petalinux_build_dir>/images/linux/sdk/sysroots
+cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake
+cmake --build build/zynq
+```
+Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.

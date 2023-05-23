@@ -1,10 +1,8 @@
-# Note: Use powershell to create the visual studio project as a 32 bit version to create the 32 bit DLL for 32 bit games.
-# C:\<pwd>\Rasterix\build> cmake -G "Visual Studio 16 2019" -A Win32 ../.
-
 cmake_minimum_required(VERSION 3.14...3.25)
 option(BUILD_NATIVE "Sets up a native build for the current platform" OFF)
 option(BUILD_RP2040 "Sets up a cross compilation build for the RP2040" OFF)
 option(ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
+option(BUILD_ZYNQ_EMBEDDED_LINUX "Sets up a cross build environment for embedded linux with zynq drivers" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -21,7 +19,7 @@ if (BUILD_RP2040)
     pico_sdk_init()
 endif()
 
-if (BUILD_NATIVE)
+if (BUILD_NATIVE OR BUILD_ZYNQ_EMBEDDED_LINUX)
     project(
         Rasterix
         VERSION 0.1

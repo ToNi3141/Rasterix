@@ -17,7 +17,9 @@
 
 `timescale 1ns / 1ps
 
-module Dvi (
+module Dvi #(
+    FB_ADDR = 32'h01E00000
+) (
     input wire              aclk,
     input wire              aclk5x,
     input wire              resetn,
@@ -55,7 +57,7 @@ dvi_framebuffer #(
     .VIDEO_REFRESH(60),
     .VIDEO_ENABLE(1),
     .VIDEO_X2_MODE(0),
-    .VIDEO_FB_RAM(32'h02000000)
+    .VIDEO_FB_RAM(FB_ADDR)
 ) dvi (
     .clk_i(aclk),
     .rst_i(!resetn),

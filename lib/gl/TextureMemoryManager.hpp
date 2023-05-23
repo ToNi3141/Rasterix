@@ -153,18 +153,6 @@ public:
         return tex.tmuConfig;
     }
 
-    bool useTexture(const uint16_t texId, const std::function<bool(const uint32_t bufferIndex, const uint32_t addr, const uint32_t size)> appendToDisplayList)
-    {
-        Texture& tex = m_textures[m_textureLut[texId]];
-        bool ret { textureValid(texId) };
-        const uint32_t texSize { (std::min)(TEXTURE_PAGE_SIZE, tex.size) }; // In case it is just a small texture, just upload a part of the page.
-        for (uint32_t i = 0; i < tex.pages; i++)
-        {
-            ret = ret && appendToDisplayList(i * TEXTURE_PAGE_SIZE, tex.pageTable[i] * TEXTURE_PAGE_SIZE, texSize);
-        }
-        return ret;
-    }
-
     std::span<const uint16_t> getPages(const uint16_t texId) const
     {
         if (textureValid(texId))

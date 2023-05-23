@@ -56,7 +56,7 @@ public:
         }
         closeStreamSection();
         
-        appendStreamCommand<DSEC::SCT>(DSEC::OP_STORE | sizeOnDevice, addr);
+        appendStreamCommand<DSEC::SCT>(DSEC::OP_STORE | sizeOnDevice, RenderConfig::GRAM_MEMORY_LOC + addr);
         void *dest = m_displayList.alloc(sizeOnDevice);
         memcpy(dest, data.data(), data.size());
         return true;
