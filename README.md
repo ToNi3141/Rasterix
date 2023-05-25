@@ -81,7 +81,17 @@ Also the following solder bridges must be applied:
 <img src="pictures/FT600.png" width="450" height="400">
 
 # Arty Z7-20 Build
-TODO
+The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petalinux running on the board. It will by default output a 1024x600px video signal on the HDMI OUT. Just connect there a monitor which can handle this resolution.
+
+This build uses one TMU.
+
+To build the binaries use the following commands.
+```sh
+cd rtl/top/Xilinx/ArtyZ7-20
+/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+```
+You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
+
 
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
