@@ -15,8 +15,11 @@
   - [Run Warcraft 3](#run-warcraft-3)
 - [RP2040 Build](#rp2040-build)
 - [Zynq Build](#zynq-build)
+  - [Preparation SD Card](#preparation-sd-card)
+  - [Build Petalinux](#build-petalinux)
   - [Build Kernel Driver](#build-kernel-driver)
-  - [Build the examples](#build-the-examples)
+  - [Build SDK](#build-sdk)
+  - [Build Examples](#build-examples)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -216,14 +219,76 @@ You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directo
 # Zynq Build
 The Zynq build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
 
-## Build Kernel Driver
-The Zynq builds requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device three overlay which must be used for the build (it contains memory allocations for the graphics memory and entries for the dma proxy).
+## Preparation SD Card
+Use the following layout:
+```
+> fdisk -l /dev/sdc
+Disk /dev/sdc: 29.72 GiB, 31914983424 bytes, 62333952 sectors
+Disk model: USB  SD Reader  
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xafa8e6ad
 
-## Build the examples
+Device     Boot   Start      End  Sectors  Size Id Type
+/dev/sdc1          8192  1056767  1048576  512M  b W95 FAT32
+/dev/sdc2       1056768 62332927 61276160 29.2G 83 Linux
+
+```
+Use for `sdc1` the following label: `BOOT`
+
+Use for `sdc2` the following label: `rootfs`
+
+## Build Petalinux
+The following steps will give you a hint how to build and install petalinux. As precondition you must have build the hardware and have installed the petalinux tools.
+```sh
+# Configure petalinux
+petalinux-config --get-hw-description '/home/<username>/Rasterix/rtl/top/Xilinx/ArtyZ7-20/synth'
+# Now set the following configuration:
+#   Image Packaging Configuration --> Root filesystem type (EXT4 (SD/eMMC/SATA/USB))
+
+# Copy the pre configured device tree overlay
+cp /home/<username>/Rasterix/lib/driver/dmaproxy/kernel/system-user.dtsi project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+
+# Build
+petalinux-build
+petalinux-package --boot --fsbl ./images/linux/zynq_fsbl.elf --fpga ./images/linux/system.bit --u-boot --force
+
+# Copy the files to your SD card
+cp ./images/linux/BOOT.BIN ./images/linux/boot.scr ./images/linux/image.ub /media/BOOT
+sudo tar -xzf ./images/linux/rootfs.tar.gz -C /media/rootfs
+```
+Now you can plug the SD card into your ArtyZ7. It should now boot. If not, please refer the official documentation.
+
+## Build Kernel Driver
+The Zynq build requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device tree overlay which contains memory allocations for the graphics memory and entries for the dma proxy.
+```sh
+# Create a symbolic link of the dmaproxy driver into the petalinux modules
+ln -s '/home/<username>/Rasterix/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterix/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
+
+# Build the kernel module
+petalinux-build -c dma-proxy 
+
+# Copy it to your target
+scp ./build/tmp/sysroots-components/zynq_generic/dma-proxy/lib/modules/5.15.36-xilinx-v2022.2/extra/dma-proxy.ko petalinux@192.168.2.120:/home/petalinux/
+```
+Load the driver on the target with `sudo insmod dma-proxy.ko`.
+
+## Build SDK
+The SDK is used to build examples.
+```sh
+# Build the petalinux SDK
+petalinux-build --sdk
+
+# Install the SDK (for instance to /opt/petalinux/2022.2/)
+sh images/linux/sdk.sh
+```
+## Build Examples
 Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
-export SYSROOTS=/<path_to_your_petalinux_build_dir>/images/linux/sdk/sysroots
+export SYSROOTS=/opt/petalinux/2022.2/sysroots
 cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake
 cmake --build build/zynq
 ```

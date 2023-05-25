@@ -1,5 +1,5 @@
 #include "DMAProxyBusConnector.hpp"
-#include "kernel/dma-proxy.hpp"
+#include "kernel/dma-proxy/files/include/dma-proxy.h"
 
 #include <stdio.h>
 #include <stdlib.h>

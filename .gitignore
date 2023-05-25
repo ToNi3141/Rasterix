@@ -4,9 +4,6 @@ rtl/top/Xilinx/NexysVideo/*.jou
 rtl/top/Xilinx/CmodA7/synth
 rtl/top/Xilinx/CmodA7/*.log
 rtl/top/Xilinx/CmodA7/*.jou
-rtl/top/Xilinx/ZynqZ7-20/synth
-rtl/top/Xilinx/ZynqZ7-20/*.log
-rtl/top/Xilinx/ZynqZ7-20/*.jou
 rtl/top/Verilator/obj_dir
 *.user
 build-*
