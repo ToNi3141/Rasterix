@@ -33,12 +33,17 @@
 namespace rr
 {
 
-template <class RenderConfig, uint32_t DISPLAY_LIST_SIZE = RenderConfig::DISPLAYLIST_SIZE>
+template <class RenderConfig>
 class DisplayListAssembler {
 public:
     static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
-    using List = DisplayList<DISPLAY_LIST_SIZE, ALIGNMENT>;
-public:
+    using List = DisplayList<ALIGNMENT>;
+
+    void setBuffer(std::span<uint8_t> buffer)
+    {
+        m_displayList.setBuffer(buffer);
+    }
+
     void clearAssembler()
     {
         m_displayList.clear();
@@ -261,9 +266,7 @@ private:
         return false;
     }
 
-    #pragma pack(push, 8)
     List m_displayList;
-    #pragma pack(pop)
 
     DSEC::SCT *m_streamCommand { nullptr };
 

@@ -117,7 +117,7 @@
 #include <linux/of_dma.h>
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
-#include "dma-proxy.h"
+#include "include/dma-proxy.h"
 
 MODULE_LICENSE("GPL");
 
@@ -517,7 +517,7 @@ static int create_channel(struct platform_device *pdev, struct dma_proxy_channel
 
 	/* Allocate DMA memory that will be shared/mapped by user space, allocating
 	 * a set of buffers for the channel with user space specifying which buffer
-	 * to use for a tranfer..
+	 * to use for a transfer..
 	 */
 	pchannel_p->buffer_table_p = (struct channel_buffer *)
 		dmam_alloc_coherent(pchannel_p->dma_device_p,
@@ -555,7 +555,7 @@ static int dma_proxy_probe(struct platform_device *pdev)
 	
 	lp = (struct dma_proxy *) devm_kmalloc(&pdev->dev, sizeof(struct dma_proxy), GFP_KERNEL);
 	if (!lp) {
-		dev_err(dev, "Cound not allocate proxy device\n");
+		dev_err(dev, "Could not allocate proxy device\n");
 		return -ENOMEM;
 	}
 	dev_set_drvdata(dev, lp);

@@ -16,75 +16,63 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/param.h>
-
+#include <spdlog/spdlog.h>
 #include <cstring>
-
-
-/* The user must tune the application number of channels to match the proxy driver device tree
- * and the names of each channel must match the dma-names in the device tree for the proxy
- * driver node. The number of channels can be less than the number of names as the other
- * channels will just not be used in testing.
- */
-#define TX_CHANNEL_COUNT 1
-#define RX_CHANNEL_COUNT 1
-
-const char *tx_channel_names[] = { "dma_proxy_tx", /* add unique channel names here */ };
-const char *rx_channel_names[] = { "dma_proxy_rx", /* add unique channel names here */ };
-
-/* Internal data which should work without tuning */
-
-struct channel {
-    struct channel_buffer *buf_ptr;
-    int fd;
-};
-
-static int verify;
-static int test_size;
-static volatile int stop = 0;
-int num_transfers;
-
-struct channel tx_channels[TX_CHANNEL_COUNT], rx_channels[RX_CHANNEL_COUNT];
 
 namespace rr
 {
 
 DMAProxyBusConnector::DMAProxyBusConnector()
 {
+    const char *tx_channel_names[] = { "dma_proxy_tx" };
+    const char *rx_channel_names[] = { "dma_proxy_rx" };
+
     char channel_name[64] = "/dev/";
     strcat(channel_name, tx_channel_names[0]);
-    tx_channels[0].fd = open(channel_name, O_RDWR);
-    if (tx_channels[0].fd < 1) {
-        printf("Unable to open DMA proxy device file: %s\r", channel_name);
+    m_txChannel.fd = open(channel_name, O_RDWR);
+    if (m_txChannel.fd < 1) {
+        SPDLOG_ERROR("Unable to open DMA proxy device file: {}", channel_name);
         exit(EXIT_FAILURE);
     }
-    tx_channels[0].buf_ptr = (struct channel_buffer *)mmap(NULL, sizeof(struct channel_buffer) * TX_BUFFER_COUNT,
-                                    PROT_READ | PROT_WRITE, MAP_SHARED, tx_channels[0].fd, 0);
-    if (tx_channels[0].buf_ptr == MAP_FAILED) {
+    m_txChannel.buf_ptr = reinterpret_cast<struct channel_buffer *>(mmap(NULL, sizeof(channel_buffer) * TX_BUFFER_COUNT,
+                                    PROT_READ | PROT_WRITE, MAP_SHARED, m_txChannel.fd, 0));
+    if (m_txChannel.buf_ptr == MAP_FAILED) {
         printf("Failed to mmap tx channel\n");
+        SPDLOG_ERROR("Failed to mmap tx channel");
         exit(EXIT_FAILURE);
     }
 }
 
-void DMAProxyBusConnector::writeData(const std::span<const uint8_t>& data)
+void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
-    int i, counter = 0, buffer_id = 0, in_progress_count = 0;
-    int stop_in_progress = 0;
-
-    tx_channels[0].buf_ptr[buffer_id].length = data.size();
-    memcpy(tx_channels[0].buf_ptr[buffer_id].buffer, data.data(), data.size());
-    ioctl(tx_channels[0].fd, START_XFER, &buffer_id);
-
-    /* Perform the DMA transfer and check the status after it completes
-    * as the call blocks til the transfer is done.
-    */
-    ioctl(tx_channels[0].fd, FINISH_XFER, &buffer_id);
-    if (tx_channels[0].buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
-        printf("Proxy tx transfer error\n");
+    int buffer_id = index;
+    m_txChannel.buf_ptr[buffer_id].length = size;
+    ioctl(m_txChannel.fd, XFER, &buffer_id);
+    if (m_txChannel.buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
+    {
+        SPDLOG_ERROR("Proxy tx transfer error");
+    }
 }
 
 bool DMAProxyBusConnector::clearToSend()
 {
     return true;
+}
+
+std::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
+{
+    if (index >= BUFFER_COUNT)
+    {
+        SPDLOG_ERROR("Index {} out of bounds.", index);
+        return {};
+    }
+    SPDLOG_DEBUG("Requested memory for index {} with size {}", index, BUFFER_SIZE);
+    return { reinterpret_cast<uint8_t*>(&m_txChannel.buf_ptr[index].buffer[0]), BUFFER_SIZE };
+}
+
+uint8_t DMAProxyBusConnector::getBufferCount() const
+{
+    return BUFFER_COUNT;
 }
 
 } // namespace rr

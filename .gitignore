@@ -12,3 +12,5 @@ unittest/obj_dir
 build/
 lib/driver/ft60x/ftd3xx/osx/
 lib/driver/ft60x/ftd3xx/win/
+.vscode
+CMakeUserPresets.json

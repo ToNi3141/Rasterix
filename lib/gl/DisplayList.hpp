@@ -25,14 +25,19 @@
 namespace rr
 {
 
-template <uint32_t DISPLAY_LIST_SIZE, uint8_t ALIGNMENT>
+template <uint8_t ALIGNMENT>
 class DisplayList {
 public:
+    void setBuffer(std::span<uint8_t> buffer)
+    {
+        mem = buffer;
+    }
+
     // Interface for writing the display list
 
     void* alloc(const uint32_t size)
     {
-        if ((size + writePos) <= DISPLAY_LIST_SIZE)
+        if ((size + writePos) <= mem.size())
         {
             void* memPlace = &mem[writePos];
             writePos += size;
@@ -82,7 +87,7 @@ public:
 
     std::span<const uint8_t> getMemPtr() const
     {
-        return { &mem[0], getSize() };
+        return { mem.data(), getSize() };
     }
 
     uint32_t getSize() const
@@ -92,7 +97,7 @@ public:
 
     uint32_t getFreeSpace() const
     {
-        return DISPLAY_LIST_SIZE - writePos;
+        return mem.size() - writePos;
     }
 
     void initArea(const uint32_t start, const uint32_t size)
@@ -142,7 +147,7 @@ public:
     }
 
 private:
-    uint8_t mem[DISPLAY_LIST_SIZE];
+    std::span<uint8_t> mem;
     uint32_t writePos { 0 };
     uint32_t readPos { 0 };
     uint32_t checkpoint { 0 };

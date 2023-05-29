@@ -19,7 +19,7 @@
 #define DMAPROXYBUSCONNECTOR_HPP
 
 #include "IBusConnector.hpp"
-
+struct channel_buffer;
 namespace rr
 {
 class DMAProxyBusConnector : public IBusConnector
@@ -29,9 +29,16 @@ public:
 
     DMAProxyBusConnector();
 
-    virtual void writeData(const std::span<const uint8_t>& data) override;
+    virtual void writeData(const uint8_t index, const uint32_t size) override;
     virtual bool clearToSend() override;
+    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
+    virtual uint8_t getBufferCount() const override;
 private:
+    struct Channel {
+        struct channel_buffer *buf_ptr;
+        int fd;
+    };
+    Channel m_txChannel;
     std::span<uint8_t> m_tmpBuffer{};
 };
 

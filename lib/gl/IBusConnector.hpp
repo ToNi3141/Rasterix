@@ -28,12 +28,22 @@ public:
     virtual ~IBusConnector() = default;
 
     /// @brief Uploads a chunk of data
-    /// @param data The data
-    virtual void writeData(const std::span<const uint8_t>& data) = 0;
+    /// @param index The index of the buffer to upload
+    /// @param size How many bytes of this buffer to upload
+    virtual void writeData(const uint8_t index, const uint32_t size) = 0;
 
     /// @brief Signals if the FIFO of the target is empty and is able to receive the next chunk of data
     /// @return true if the FIFO is empty
     virtual bool clearToSend() = 0;
+
+    /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
+    /// @param index The index of the requested buffer
+    /// @return Returns the requested buffer, or an empty optional if no buffer is available for the given index
+    virtual std::span<uint8_t> requestBuffer(const uint8_t index) = 0;
+
+    /// @brief Returns the number of buffers available to request
+    /// @return The number of buffers which can be requested
+    virtual uint8_t getBufferCount() const = 0;
 };
 
 } // namespace rr

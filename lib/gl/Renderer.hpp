@@ -93,18 +93,23 @@ public:
         {
             entry.clearAssembler();
         }
-        
-        enableColorBufferInMemory(0x01E00000);
-        setRenderResolution(640, 480);
 
         // Fixes the first two frames
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
+            auto buffer1 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_backList));
+            auto buffer2 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_frontList));
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setBuffer(buffer1);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setBuffer(buffer2);
+
             YOffsetReg reg;
             reg.setY(i * m_yLineResolution);
             m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
         }
+
+        enableColorBufferInMemory(0x01E00000);
+        setRenderResolution(640, 480);
 
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
         setClearColor({ {0, 0, 0, 0 } });
@@ -185,13 +190,13 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
+            DisplayListAssembler<RenderConfig> uploader;
+            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
             uploader.uploadToDeviceMemory(gramAddr, data);
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr());
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize()); // TODO: Probably a dedicated method for the small buffer is required
             return true;
         });
 
@@ -213,7 +218,7 @@ public:
                 while (!m_busConnector.clearToSend())
                     ;
                 const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                m_busConnector.writeData(list->getMemPtr());
+                m_busConnector.writeData(i + (DISPLAY_LINES * m_frontList), list->getSize());
             }
             return true;
         });
@@ -399,7 +404,7 @@ public:
         m_yLineResolution = y / framebufferLines;
         m_xResolution = x;
         m_displayLines = framebufferLines;
-        
+
         RenderResolutionReg reg;
         reg.setX(x);
         reg.setY(m_yLineResolution);
