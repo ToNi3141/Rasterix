@@ -124,30 +124,33 @@
 `define ReduceVec(FuncName, ElementWidth, NumberOfElements, Offset, N, NewNumberOfElements) \
     function [(ElementWidth * NewNumberOfElements) - 1 : 0] FuncName; \
         input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
-        integer i, j, k = 0; \
-        for (i = 0; i < NumberOfElements; ) \
+        integer i, j, k; \
         begin \
-            if (i >= Offset) \
+            k = 0; \
+            for (i = 0; i < NumberOfElements; ) \
             begin \
-                for (j = 0; j < N; j = j + 1) \
+                if (i >= Offset) \
                 begin \
-                    if (j == 0) \
+                    for (j = 0; j < N; j = j + 1) \
                     begin \
-                        i = i + 1; \
-                    end \
-                    else \
-                    begin \
-                        FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
-                        k = k + 1; \
-                        i = i + 1; \
+                        if (j == 0) \
+                        begin \
+                            i = i + 1; \
+                        end \
+                        else \
+                        begin \
+                            FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                            k = k + 1; \
+                            i = i + 1; \
+                        end \
                     end \
                 end \
-            end \
-            else \
-            begin \
-                FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
-                k = k + 1; \
-                i = i + 1; \
+                else \
+                begin \
+                    FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                    k = k + 1; \
+                    i = i + 1; \
+                end \
             end \
         end \
     endfunction
@@ -163,31 +166,34 @@
     function [(ElementWidth * NewNumberOfElements) - 1 : 0] FuncName; \
         input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
         input [ElementWidth - 1 : 0] value; \
-        integer i, j, k = 0; \
-        for (i = 0; i < NumberOfElements; ) \
+        integer i, j, k; \
         begin \
-            if (i >= Offset) \
+            k = 0; \
+            for (i = 0; i < NumberOfElements; ) \
             begin \
-                for (j = 0; j < N; j = j + 1) \
+                if (i >= Offset) \
                 begin \
-                    if (j == 0) \
+                    for (j = 0; j < N; j = j + 1) \
                     begin \
-                        FuncName[k * ElementWidth +: ElementWidth] = value; \
-                        k = k + 1; \
-                    end \
-                    else \
-                    begin \
-                        FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
-                        k = k + 1; \
-                        i = i + 1; \
+                        if (j == 0) \
+                        begin \
+                            FuncName[k * ElementWidth +: ElementWidth] = value; \
+                            k = k + 1; \
+                        end \
+                        else \
+                        begin \
+                            FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                            k = k + 1; \
+                            i = i + 1; \
+                        end \
                     end \
                 end \
-            end \
-            else \
-            begin \
-                FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
-                k = k + 1; \
-                i = i + 1; \
+                else \
+                begin \
+                    FuncName[k * ElementWidth +: ElementWidth] = pixel[i * ElementWidth +: ElementWidth]; \
+                    k = k + 1; \
+                    i = i + 1; \
+                end \
             end \
         end \
     endfunction

@@ -92,6 +92,10 @@ public:
         {
             entry.clearAssembler();
         }
+        auto buffer1 = m_busConnector.requestBuffer(0);
+        auto buffer2 = m_busConnector.requestBuffer(1);
+        m_displayListAssembler[0].setBuffer(buffer1);
+        m_displayListAssembler[1].setBuffer(buffer2);
 
         enableColorBufferInMemory(0x01E00000);
         setRenderResolution(640, 480);
@@ -147,13 +151,13 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
+            DisplayListAssembler<RenderConfig> uploader;
+            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
             uploader.uploadToDeviceMemory(gramAddr, data);
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr());
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
             return true;
         });
 
@@ -185,7 +189,7 @@ public:
             m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
             m_displayListAssembler[m_frontList].closeStream();
             const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
-            m_busConnector.writeData(list->getMemPtr());
+            m_busConnector.writeData(m_frontList, list->getSize());
             
             m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
