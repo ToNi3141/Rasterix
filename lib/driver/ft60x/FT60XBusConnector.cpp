@@ -28,10 +28,10 @@ FT60XBusConnector::FT60XBusConnector()
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-void FT60XBusConnector::writeData(const std::span<const uint8_t>& data)
+void FT60XBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
-    ULONG transfered;
-    FT_WritePipe(fthandle, 0x2, (PUCHAR)(data.data()), data.size(), &transfered, NULL);
+    ULONG transferred;
+    FT_WritePipe(fthandle, 0x2, (PUCHAR)(this->m_dlMem[index].data()), size, &transferred, NULL);
 }
 
 bool FT60XBusConnector::clearToSend()

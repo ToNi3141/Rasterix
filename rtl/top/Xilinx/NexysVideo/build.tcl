@@ -1,13 +1,8 @@
 set SYNTH_OUT ./synth
 set REPORT_PATH ./reports
-set BOARD_FILE ./design_1.bd
+set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 file delete -force $SYNTH_OUT
 file mkdir $SYNTH_OUT
-
-# Copy board file into synth directory to avoid polluting the source directory
-file copy $BOARD_FILE $SYNTH_OUT
-file copy design_1_mig_7series_0_0.xci $SYNTH_OUT
-file copy mig_b.prj $SYNTH_OUT
 
 # Change to synth directory as build directory
 cd $SYNTH_OUT
@@ -74,6 +69,8 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_defs.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
 read_xdc ./../Nexys-Video-Master.xdc
+
+source ../design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

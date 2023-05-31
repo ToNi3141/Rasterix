@@ -62,6 +62,7 @@ equals(TARGET_BUILD, "simulation") {
     # Set here the path to your local verilator installation
     unix:!macx {
         VERILATOR_PATH = /usr/local/share/verilator
+        SOURCES += $${VERILATOR_PATH}/include/verilated_threads.cpp
     }
     macx: {
         VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
