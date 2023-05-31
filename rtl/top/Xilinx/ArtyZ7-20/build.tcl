@@ -4,9 +4,6 @@ set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 file delete -force $SYNTH_OUT
 file mkdir $SYNTH_OUT
 
-# Copy board file into synth directory to avoid polluting the source directory
-# file copy $BOARD_FILE $SYNTH_OUT
-
 # Change to synth directory as build directory
 cd $SYNTH_OUT
 
