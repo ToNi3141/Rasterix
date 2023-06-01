@@ -139,7 +139,7 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<32 * 1024> m_busConnector;
-    rr::RendererMemoryOptimized<rr::RenderConfigPico> m_renderer { m_busConnector };
+    rr::RendererMemoryOptimized<rr::RenderConfigCModA7> m_renderer { m_busConnector };
     bool led = false;
     Scene m_scene {};
 };

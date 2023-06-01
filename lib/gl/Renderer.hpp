@@ -196,7 +196,7 @@ public:
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize()); // TODO: Probably a dedicated method for the small buffer is required
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
             return true;
         });
 
