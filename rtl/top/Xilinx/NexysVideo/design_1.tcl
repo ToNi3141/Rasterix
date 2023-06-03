@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2020.1
+set scripts_vivado_version 2022.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -137,7 +137,7 @@ xilinx.com:ip:axis_dwidth_converter:1.1\
 xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:mig_7series:4.2\
 xilinx.com:ip:proc_sys_reset:5.0\
-xilinx.com:ip:util_ds_buf:2.1\
+xilinx.com:ip:util_ds_buf:2.2\
 "
 
    set list_ips_missing ""
@@ -442,85 +442,91 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property -dict [ list \
-   CONFIG.ADDR_WIDTH {28} \
-   CONFIG.CMD_STREAM_WIDTH {128} \
-   CONFIG.STRB_WIDTH {16} \
-   CONFIG.TEXTURE_BUFFER_SIZE {17} \
-   CONFIG.TMU_COUNT {2} \
- ] $Rasterix_0
+    set_property -dict [list \
+    CONFIG.ADDR_WIDTH {28} \
+    CONFIG.CMD_STREAM_WIDTH {128} \
+    CONFIG.STRB_WIDTH {16} \
+    CONFIG.TEXTURE_BUFFER_SIZE {17} \
+    CONFIG.TMU_COUNT {2} \
+  ] $Rasterix_0
+
 
   # Create instance: axi_smc, and set properties
   set axi_smc [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_smc ]
-  set_property -dict [ list \
-   CONFIG.ADVANCED_PROPERTIES {          __view__ { functional { S02_Entry { PKT_W_THR 128 } S02_Buffer { W_SIZE 256 } S00_Entry { PKT_W_THR 16 } } }         } \
-   CONFIG.NUM_CLKS {2} \
-   CONFIG.NUM_MI {1} \
-   CONFIG.NUM_SI {2} \
- ] $axi_smc
+  set_property -dict [list \
+    CONFIG.ADVANCED_PROPERTIES {          __view__ { functional { S02_Entry { PKT_W_THR 128 } S02_Buffer { W_SIZE 256 } S00_Entry { PKT_W_THR 16 } } }         } \
+    CONFIG.NUM_CLKS {2} \
+    CONFIG.NUM_MI {1} \
+    CONFIG.NUM_SI {2} \
+  ] $axi_smc
+
 
   # Create instance: axis_data_fifo_1, and set properties
   set axis_data_fifo_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_1 ]
-  set_property -dict [ list \
-   CONFIG.FIFO_DEPTH {512} \
-   CONFIG.FIFO_MEMORY_TYPE {distributed} \
-   CONFIG.TDATA_NUM_BYTES {16} \
- ] $axis_data_fifo_1
+  set_property -dict [list \
+    CONFIG.FIFO_DEPTH {512} \
+    CONFIG.FIFO_MEMORY_TYPE {distributed} \
+    CONFIG.TDATA_NUM_BYTES {16} \
+  ] $axis_data_fifo_1
+
 
   # Create instance: axis_dwidth_converter_2, and set properties
   set axis_dwidth_converter_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_dwidth_converter:1.1 axis_dwidth_converter_2 ]
-  set_property -dict [ list \
-   CONFIG.M_TDATA_NUM_BYTES {16} \
- ] $axis_dwidth_converter_2
+  set_property -dict [list \
+    CONFIG.HAS_MI_TKEEP {1} \
+    CONFIG.M_TDATA_NUM_BYTES {16} \
+  ] $axis_dwidth_converter_2
+
 
   # Create instance: clk_wiz_0, and set properties
   set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz_0 ]
-  set_property -dict [ list \
-   CONFIG.CLKIN1_JITTER_PS {100.0} \
-   CONFIG.CLKIN2_JITTER_PS {333.33000000000004} \
-   CONFIG.CLKOUT1_DRIVES {BUFG} \
-   CONFIG.CLKOUT1_JITTER {151.636} \
-   CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
-   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50} \
-   CONFIG.CLKOUT1_USED {true} \
-   CONFIG.CLKOUT2_DRIVES {BUFG} \
-   CONFIG.CLKOUT2_JITTER {110.209} \
-   CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
-   CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {250} \
-   CONFIG.CLKOUT2_USED {true} \
-   CONFIG.CLKOUT3_DRIVES {BUFG} \
-   CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT4_DRIVES {BUFG} \
-   CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT5_DRIVES {BUFG} \
-   CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT6_DRIVES {BUFG} \
-   CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT7_DRIVES {BUFG} \
-   CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.ENABLE_CLOCK_MONITOR {false} \
-   CONFIG.FEEDBACK_SOURCE {FDBK_AUTO} \
-   CONFIG.MMCM_BANDWIDTH {OPTIMIZED} \
-   CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \
-   CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
-   CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
-   CONFIG.MMCM_CLKOUT0_DIVIDE_F {20.000} \
-   CONFIG.MMCM_CLKOUT1_DIVIDE {4} \
-   CONFIG.MMCM_COMPENSATION {ZHOLD} \
-   CONFIG.MMCM_DIVCLK_DIVIDE {1} \
-   CONFIG.NUM_OUT_CLKS {2} \
-   CONFIG.PLL_CLKIN_PERIOD {20.000} \
-   CONFIG.PRIMITIVE {MMCM} \
-   CONFIG.PRIM_IN_FREQ {100} \
-   CONFIG.RESET_BOARD_INTERFACE {Custom} \
-   CONFIG.RESET_PORT {reset} \
-   CONFIG.RESET_TYPE {ACTIVE_HIGH} \
-   CONFIG.SECONDARY_IN_FREQ {100.000} \
-   CONFIG.SECONDARY_SOURCE {Single_ended_clock_capable_pin} \
-   CONFIG.USE_FREQ_SYNTH {true} \
-   CONFIG.USE_INCLK_SWITCHOVER {false} \
-   CONFIG.USE_RESET {false} \
- ] $clk_wiz_0
+  set_property -dict [list \
+    CONFIG.CLKIN1_JITTER_PS {100.0} \
+    CONFIG.CLKIN2_JITTER_PS {333.33000000000004} \
+    CONFIG.CLKOUT1_DRIVES {BUFG} \
+    CONFIG.CLKOUT1_JITTER {151.636} \
+    CONFIG.CLKOUT1_PHASE_ERROR {98.575} \
+    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50} \
+    CONFIG.CLKOUT1_USED {true} \
+    CONFIG.CLKOUT2_DRIVES {BUFG} \
+    CONFIG.CLKOUT2_JITTER {110.209} \
+    CONFIG.CLKOUT2_PHASE_ERROR {98.575} \
+    CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {250} \
+    CONFIG.CLKOUT2_USED {true} \
+    CONFIG.CLKOUT3_DRIVES {BUFG} \
+    CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT4_DRIVES {BUFG} \
+    CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT5_DRIVES {BUFG} \
+    CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT6_DRIVES {BUFG} \
+    CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT7_DRIVES {BUFG} \
+    CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.ENABLE_CLOCK_MONITOR {false} \
+    CONFIG.FEEDBACK_SOURCE {FDBK_AUTO} \
+    CONFIG.MMCM_BANDWIDTH {OPTIMIZED} \
+    CONFIG.MMCM_CLKFBOUT_MULT_F {10.000} \
+    CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
+    CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
+    CONFIG.MMCM_CLKOUT0_DIVIDE_F {20.000} \
+    CONFIG.MMCM_CLKOUT1_DIVIDE {4} \
+    CONFIG.MMCM_COMPENSATION {ZHOLD} \
+    CONFIG.MMCM_DIVCLK_DIVIDE {1} \
+    CONFIG.NUM_OUT_CLKS {2} \
+    CONFIG.PLL_CLKIN_PERIOD {20.000} \
+    CONFIG.PRIMITIVE {MMCM} \
+    CONFIG.PRIM_IN_FREQ {100} \
+    CONFIG.RESET_BOARD_INTERFACE {Custom} \
+    CONFIG.RESET_PORT {reset} \
+    CONFIG.RESET_TYPE {ACTIVE_HIGH} \
+    CONFIG.SECONDARY_IN_FREQ {100.000} \
+    CONFIG.SECONDARY_SOURCE {Single_ended_clock_capable_pin} \
+    CONFIG.USE_FREQ_SYNTH {true} \
+    CONFIG.USE_INCLK_SWITCHOVER {false} \
+    CONFIG.USE_RESET {false} \
+  ] $clk_wiz_0
+
 
   # Create instance: mig_7series_0, and set properties
   set mig_7series_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:mig_7series:4.2 mig_7series_0 ]
@@ -529,15 +535,15 @@ proc create_root_design { parentCell } {
   set str_mig_folder [get_property IP_DIR [ get_ips [ get_property CONFIG.Component_Name $mig_7series_0 ] ] ]
   set str_mig_file_name mig_b.prj
   set str_mig_file_path ${str_mig_folder}/${str_mig_file_name}
-
   write_mig_file_design_1_mig_7series_0_0 $str_mig_file_path
 
-  set_property -dict [ list \
-   CONFIG.BOARD_MIG_PARAM {ddr3_sdram} \
-   CONFIG.MIG_DONT_TOUCH_PARAM {Custom} \
-   CONFIG.RESET_BOARD_INTERFACE {reset} \
-   CONFIG.XML_INPUT_FILE {mig_b.prj} \
- ] $mig_7series_0
+  set_property -dict [list \
+    CONFIG.BOARD_MIG_PARAM {ddr3_sdram} \
+    CONFIG.MIG_DONT_TOUCH_PARAM {Custom} \
+    CONFIG.RESET_BOARD_INTERFACE {reset} \
+    CONFIG.XML_INPUT_FILE {mig_b.prj} \
+  ] $mig_7series_0
+
 
   # Create instance: rst_mig_7series_0_81M, and set properties
   set rst_mig_7series_0_81M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_7series_0_81M ]
@@ -546,28 +552,24 @@ proc create_root_design { parentCell } {
   set rst_mig_7series_0_81M1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_7series_0_81M1 ]
 
   # Create instance: util_ds_buf_0, and set properties
-  set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0 ]
-  set_property -dict [ list \
-   CONFIG.C_BUF_TYPE {OBUFDS} \
- ] $util_ds_buf_0
+  set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.2 util_ds_buf_0 ]
+  set_property CONFIG.C_BUF_TYPE {OBUFDS} $util_ds_buf_0
+
 
   # Create instance: util_ds_buf_1, and set properties
-  set util_ds_buf_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_1 ]
-  set_property -dict [ list \
-   CONFIG.C_BUF_TYPE {OBUFDS} \
- ] $util_ds_buf_1
+  set util_ds_buf_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.2 util_ds_buf_1 ]
+  set_property CONFIG.C_BUF_TYPE {OBUFDS} $util_ds_buf_1
+
 
   # Create instance: util_ds_buf_2, and set properties
-  set util_ds_buf_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_2 ]
-  set_property -dict [ list \
-   CONFIG.C_BUF_TYPE {OBUFDS} \
- ] $util_ds_buf_2
+  set util_ds_buf_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.2 util_ds_buf_2 ]
+  set_property CONFIG.C_BUF_TYPE {OBUFDS} $util_ds_buf_2
+
 
   # Create instance: util_ds_buf_3, and set properties
-  set util_ds_buf_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_3 ]
-  set_property -dict [ list \
-   CONFIG.C_BUF_TYPE {OBUFDS} \
- ] $util_ds_buf_3
+  set util_ds_buf_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.2 util_ds_buf_3 ]
+  set_property CONFIG.C_BUF_TYPE {OBUFDS} $util_ds_buf_3
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
@@ -623,6 +625,7 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -634,6 +637,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

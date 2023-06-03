@@ -12,7 +12,7 @@ file mkdir $REPORT_PATH
 # Setup project properties
 set_part xc7a35tcpg236-1
 set_property TARGET_LANGUAGE Verilog [current_project]
-set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.1 [current_project]
+set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.2 [current_project]
 set_property DEFAULT_LIB work [current_project]
 set_property source_mgmt_mode All [current_project]
 

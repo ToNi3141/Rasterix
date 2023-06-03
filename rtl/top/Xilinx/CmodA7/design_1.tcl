@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2020.1
+set scripts_vivado_version 2022.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -51,7 +51,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xc7a35tcpg236-1
-   set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.1 [current_project]
+   set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.2 [current_project]
 }
 
 
@@ -260,10 +260,11 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property -dict [ list \
-   CONFIG.CLOCK_DIV {4} \
-   CONFIG.LANDSCAPE_CONFIG {1} \
- ] $DisplayController8Bi_1
+    set_property -dict [list \
+    CONFIG.CLOCK_DIV {4} \
+    CONFIG.LANDSCAPE_CONFIG {1} \
+  ] $DisplayController8Bi_1
+
 
   # Create instance: Rasterix_0, and set properties
   set block_name Rasterix
@@ -275,13 +276,14 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property -dict [ list \
-   CONFIG.CMD_STREAM_WIDTH {32} \
-   CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {14} \
-   CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
-   CONFIG.STRB_WIDTH {8} \
-   CONFIG.TMU_COUNT {1} \
- ] $Rasterix_0
+    set_property -dict [list \
+    CONFIG.CMD_STREAM_WIDTH {32} \
+    CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {14} \
+    CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
+    CONFIG.STRB_WIDTH {8} \
+    CONFIG.TMU_COUNT {1} \
+  ] $Rasterix_0
+
 
   # Create instance: Serial2AXIS_0, and set properties
   set block_name Serial2AXIS
@@ -293,70 +295,84 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property -dict [ list \
-   CONFIG.FIFO_SIZE {32768} \
-   CONFIG.FIFO_TRESHOLD {8192} \
- ] $Serial2AXIS_0
+    set_property -dict [list \
+    CONFIG.FIFO_SIZE {32768} \
+    CONFIG.FIFO_TRESHOLD {8192} \
+  ] $Serial2AXIS_0
+
 
   # Create instance: axi_emc_0, and set properties
   set axi_emc_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_emc:3.0 axi_emc_0 ]
-  set_property -dict [ list \
-   CONFIG.C_MEM0_TYPE {1} \
-   CONFIG.C_MEM0_WIDTH {8} \
-   CONFIG.C_S_AXI_MEM_DATA_WIDTH {32} \
-   CONFIG.EMC_BOARD_INTERFACE {cellular_ram} \
-   CONFIG.USE_BOARD_FLOW {true} \
- ] $axi_emc_0
+  set_property -dict [list \
+    CONFIG.C_MEM0_TYPE {1} \
+    CONFIG.C_MEM0_WIDTH {8} \
+    CONFIG.C_S_AXI_MEM_DATA_WIDTH {32} \
+    CONFIG.C_TAVDV_PS_MEM_0 {8000} \
+    CONFIG.C_TCEDV_PS_MEM_0 {8000} \
+    CONFIG.C_THZCE_PS_MEM_0 {8000} \
+    CONFIG.C_THZOE_PS_MEM_0 {8000} \
+    CONFIG.C_TLZWE_PS_MEM_0 {3000} \
+    CONFIG.C_TWC_PS_MEM_0 {8000} \
+    CONFIG.C_TWP_PS_MEM_0 {8000} \
+    CONFIG.EMC_BOARD_INTERFACE {cellular_ram} \
+    CONFIG.USE_BOARD_FLOW {true} \
+  ] $axi_emc_0
+
 
   # Create instance: axis_data_fifo_0, and set properties
   set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
-  set_property -dict [ list \
-   CONFIG.FIFO_DEPTH {16384} \
-   CONFIG.HAS_TLAST {0} \
- ] $axis_data_fifo_0
+  set_property -dict [list \
+    CONFIG.FIFO_DEPTH {16384} \
+    CONFIG.HAS_TLAST {0} \
+  ] $axis_data_fifo_0
+
 
   # Create instance: axis_dwidth_converter_1, and set properties
   set axis_dwidth_converter_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_dwidth_converter:1.1 axis_dwidth_converter_1 ]
-  set_property -dict [ list \
-   CONFIG.S_TDATA_NUM_BYTES {4} \
- ] $axis_dwidth_converter_1
+  set_property CONFIG.S_TDATA_NUM_BYTES {4} $axis_dwidth_converter_1
+
 
   # Create instance: clk_wiz_0, and set properties
   set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz_0 ]
-  set_property -dict [ list \
-   CONFIG.AXI_DRP {false} \
-   CONFIG.CLKOUT1_DRIVES {BUFG} \
-   CONFIG.CLKOUT1_JITTER {479.872} \
-   CONFIG.CLKOUT1_PHASE_ERROR {668.310} \
-   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {100} \
-   CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {100.000} \
-   CONFIG.CLK_IN1_BOARD_INTERFACE {sys_clock} \
-   CONFIG.FEEDBACK_SOURCE {FDBK_AUTO} \
-   CONFIG.JITTER_SEL {Min_O_Jitter} \
-   CONFIG.MMCM_BANDWIDTH {HIGH} \
-   CONFIG.MMCM_CLKFBOUT_MULT_F {62.500} \
-   CONFIG.MMCM_CLKOUT0_DIVIDE_F {7.500} \
-   CONFIG.MMCM_COMPENSATION {ZHOLD} \
-   CONFIG.PHASE_DUTY_CONFIG {false} \
-   CONFIG.RESET_BOARD_INTERFACE {Custom} \
-   CONFIG.USE_BOARD_FLOW {true} \
-   CONFIG.USE_DYN_PHASE_SHIFT {false} \
-   CONFIG.USE_DYN_RECONFIG {false} \
-   CONFIG.USE_FREQ_SYNTH {true} \
-   CONFIG.USE_RESET {false} \
- ] $clk_wiz_0
+  set_property -dict [list \
+    CONFIG.AXI_DRP {false} \
+    CONFIG.CLKIN1_JITTER_PS {833.33} \
+    CONFIG.CLKOUT1_DRIVES {BUFG} \
+    CONFIG.CLKOUT1_JITTER {479.872} \
+    CONFIG.CLKOUT1_PHASE_ERROR {668.310} \
+    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {100} \
+    CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT4_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT5_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT6_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLKOUT7_REQUESTED_OUT_FREQ {100.000} \
+    CONFIG.CLK_IN1_BOARD_INTERFACE {sys_clock} \
+    CONFIG.FEEDBACK_SOURCE {FDBK_AUTO} \
+    CONFIG.JITTER_SEL {Min_O_Jitter} \
+    CONFIG.MMCM_BANDWIDTH {HIGH} \
+    CONFIG.MMCM_CLKFBOUT_MULT_F {62.500} \
+    CONFIG.MMCM_CLKIN1_PERIOD {83.333} \
+    CONFIG.MMCM_CLKIN2_PERIOD {10.0} \
+    CONFIG.MMCM_CLKOUT0_DIVIDE_F {7.500} \
+    CONFIG.MMCM_COMPENSATION {ZHOLD} \
+    CONFIG.PHASE_DUTY_CONFIG {false} \
+    CONFIG.RESET_BOARD_INTERFACE {Custom} \
+    CONFIG.USE_BOARD_FLOW {true} \
+    CONFIG.USE_DYN_PHASE_SHIFT {false} \
+    CONFIG.USE_DYN_RECONFIG {false} \
+    CONFIG.USE_FREQ_SYNTH {true} \
+    CONFIG.USE_RESET {false} \
+  ] $clk_wiz_0
+
 
   # Create instance: proc_sys_reset_0, and set properties
   set proc_sys_reset_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0 ]
-  set_property -dict [ list \
-   CONFIG.RESET_BOARD_INTERFACE {reset} \
-   CONFIG.USE_BOARD_FLOW {true} \
- ] $proc_sys_reset_0
+  set_property -dict [list \
+    CONFIG.RESET_BOARD_INTERFACE {reset} \
+    CONFIG.USE_BOARD_FLOW {true} \
+  ] $proc_sys_reset_0
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net Rasterix_0_m_framebuffer_axis [get_bd_intf_pins Rasterix_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_1/S_AXIS]
@@ -391,6 +407,7 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -402,6 +419,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

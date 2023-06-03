@@ -1,9 +1,3 @@
-rtl/top/Xilinx/NexysVideo/synth
-rtl/top/Xilinx/NexysVideo/*.log
-rtl/top/Xilinx/NexysVideo/*.jou
-rtl/top/Xilinx/CmodA7/synth
-rtl/top/Xilinx/CmodA7/*.log
-rtl/top/Xilinx/CmodA7/*.jou
 rtl/top/Verilator/obj_dir
 *.user
 build-*
