@@ -1,10 +1,7 @@
 TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
 
-# Set here the path to your local verilator installation
-
 ICEGL_PATH = ../../../lib/gl
-
 
 QT       += core gui
 CONFIG += c++2a
@@ -15,7 +12,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 DEFINES += HARDWARE_RENDERER
 
 TEMPLATE = app
-QT += serialport
 TARGET = qtRasterizerFpga
 
 SOURCES += main.cpp\
@@ -44,8 +40,6 @@ DEFINES += GL_SILENCE_DEPRICATION
 QMAKE_CXXFLAGS += -I../../../lib/3rdParty/spdlog-1.10.0/include/
 QMAKE_CFLAGS += -I../../../lib/3rdParty/spdlog-1.10.0/include/
 
-
-
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE
 
@@ -65,15 +59,25 @@ equals(TARGET_BUILD, "hardware") {
     SOURCES += $${FT60X_BUS_CONNECTOR_PATH}/FT60XBusConnector.cpp
 }
 equals(TARGET_BUILD, "simulation") {
-    VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
+    # Set here the path to your local verilator installation
+    unix:!macx {
+        VERILATOR_PATH = /usr/local/share/verilator
+        SOURCES += $${VERILATOR_PATH}/include/verilated_threads.cpp
+    }
+    macx: {
+        VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
+    }
+
     VERILATOR_BUS_CONNECTOR_PATH = ../../../lib/driver/verilator
     VERILATOR_CODE_GEN_PATH = ../../../rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION
 
     HEADERS += $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp
+    HEADERS += $${VERILATOR_BUS_CONNECTOR_PATH}/../util/GenericMemoryBusConnector.hpp
 
     SOURCES += $${VERILATOR_PATH}/include/verilated.cpp
+    SOURCES += $${VERILATOR_PATH}/include/verilated_threads.cpp
 
     LIBS += $${VERILATOR_CODE_GEN_PATH}/Vtop__ALL.a
 }
@@ -82,5 +86,6 @@ FORMS    += mainwindow.ui
 
 QMAKE_CXXFLAGS += -I$${VERILATOR_CODE_GEN_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/ \
+    -I$${VERILATOR_BUS_CONNECTOR_PATH}/../ \
     -I$${VERILATOR_PATH}/include/ \
     -I$${ICEGL_PATH}/

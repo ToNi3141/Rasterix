@@ -94,16 +94,22 @@ public:
             entry.clearAssembler();
         }
 
-        setRenderResolution(640, 480);
-
         // Fixes the first two frames
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
+            auto buffer1 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_backList));
+            auto buffer2 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_frontList));
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setBuffer(buffer1);
+            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setBuffer(buffer2);
+
             YOffsetReg reg;
             reg.setY(i * m_yLineResolution);
             m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
         }
+
+        enableColorBufferInMemory(0x01E00000);
+        setRenderResolution(640, 480);
 
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
         setClearColor({ {0, 0, 0, 0 } });
@@ -174,7 +180,7 @@ public:
         // Prepare all display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            FramebufferCmd cmd { true, true, true };
+            FramebufferCmd<RenderConfig> cmd { true, true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
@@ -184,13 +190,13 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
+            DisplayListAssembler<RenderConfig> uploader;
+            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
             uploader.uploadToDeviceMemory(gramAddr, data);
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr());
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
             return true;
         });
 
@@ -212,7 +218,7 @@ public:
                 while (!m_busConnector.clearToSend())
                     ;
                 const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                m_busConnector.writeData(list->getMemPtr());
+                m_busConnector.writeData(i + (DISPLAY_LINES * m_frontList), list->getSize());
             }
             return true;
         });
@@ -220,7 +226,7 @@ public:
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
+        FramebufferCmd<RenderConfig> cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -398,7 +404,7 @@ public:
         m_yLineResolution = y / framebufferLines;
         m_xResolution = x;
         m_displayLines = framebufferLines;
-        
+
         RenderResolutionReg reg;
         reg.setX(x);
         reg.setY(m_yLineResolution);
@@ -464,7 +470,7 @@ private:
     }
 
     bool m_colorBufferUseMemory { true };
-    uint32_t m_colorBufferAddr { 0x02000000 };
+    uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
     uint8_t m_frontList = 0;

@@ -12,6 +12,7 @@
 #include <algorithm>
 
 // Simple BusConnector which wraps the SPI
+template <uint32_t DISPLAYLIST_SIZE = 32 * 1024>
 class BusConnector : public rr::IBusConnector
 {
 public:
@@ -23,9 +24,10 @@ public:
 
     virtual ~BusConnector() = default;
 
-    virtual void writeData(const std::span<const uint8_t>& data) override 
+    virtual void writeData(const uint8_t index, const uint32_t size) override 
     {
-        uint32_t dataToSend = data.size();
+        std::span<const uint8_t> data = requestBuffer(index);
+        uint32_t dataToSend = size;
         uint32_t counter = 0;
         while (dataToSend != 0)
         {
@@ -51,6 +53,24 @@ public:
     virtual bool clearToSend() override 
     {
         return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
+    }
+
+    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override 
+    { 
+        switch (index) 
+        {
+            case 0:
+            case 1:
+                return { m_dlMem[index] }; 
+            case 2:
+            return { m_displayListTmp }; 
+                break;
+        }
+        return {}; 
+    }
+    virtual uint8_t getBufferCount() const override 
+    { 
+        return 3; 
     }
 
     void init()
@@ -82,8 +102,10 @@ public:
         gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
         sleep_ms(50);
     }
-
+private:
     uint dma_tx;
+    std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 2> m_dlMem;
+    std::array<uint8_t, 4096 + 64> m_displayListTmp;
 };
 
 template <typename Scene>
@@ -116,8 +138,8 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector m_busConnector;
-    rr::RendererMemoryOptimized<rr::RenderConfigPico> m_renderer{m_busConnector};
+    BusConnector<32 * 1024> m_busConnector;
+    rr::RendererMemoryOptimized<rr::RenderConfigCModA7> m_renderer { m_busConnector };
     bool led = false;
     Scene m_scene {};
 };

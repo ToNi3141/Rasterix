@@ -2,13 +2,14 @@
 #define VERILATORBUSCONNECTOR_H
 
 #include "verilated.h"
-#include "IBusConnector.hpp"
+#include "util/GenericMemoryBusConnector.hpp"
 #include "Vtop.h"
+#include <span>
 
 namespace rr
 {
-template <typename FBType>
-class VerilatorBusConnector : public IBusConnector
+template <typename FBType, uint32_t NUMBER_OF_DISPLAY_LISTS = 33, uint32_t DISPLAY_LIST_SIZE = 1024 * 1024>
+class VerilatorBusConnector : public GenericMemoryBusConnector<NUMBER_OF_DISPLAY_LISTS, DISPLAY_LIST_SIZE>
 {
 public:
     virtual ~VerilatorBusConnector() = default;
@@ -26,11 +27,11 @@ public:
         clk();
     }
 
-    virtual void writeData(const std::span<const uint8_t>& data) override
+    virtual void writeData(const uint8_t index, const uint32_t size) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint64_t *data64 = reinterpret_cast<const uint64_t*>(data.data());
-        const uint64_t bytes64 = data.size() / sizeof(*data64);
+        const uint64_t *data64 = reinterpret_cast<const uint64_t*>(this->m_dlMem[index].data());
+        const uint64_t bytes64 = size / sizeof(*data64);
         for (uint16_t i = 0; i < bytes64; )
         {
             if (m_top.s_cmd_axis_tready)

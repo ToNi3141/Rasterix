@@ -10,9 +10,9 @@ cd $SYNTH_OUT
 file mkdir $REPORT_PATH
 
 # Setup project properties
-set_part xc7a200tsbg484-1
+set_part xc7z020clg400-1
 set_property TARGET_LANGUAGE Verilog [current_project]
-set_property BOARD_PART digilentinc.com:nexys_video:part0:1.2 [current_project]
+set_property BOARD_PART digilentinc.com:arty-z7-20:part0:1.1 [current_project]
 set_property DEFAULT_LIB work [current_project]
 set_property source_mgmt_mode All [current_project]
 
@@ -68,7 +68,7 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_serialiser.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_defs.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
-read_xdc ./../Nexys-Video-Master.xdc
+read_xdc ./../Arty-Z7-20-Master.xdc
 
 source ../design_1.tcl
 
@@ -79,6 +79,7 @@ make_wrapper -import -files [get_files $BOARD_FILE] -top
 
 set_property synth_checkpoint_mode None [get_files $BOARD_FILE]
 generate_target all [get_files $BOARD_FILE]
+
 
 # Run synthesis and implementation
 synth_design -top design_1_wrapper
@@ -97,3 +98,6 @@ report_drc -file $REPORT_PATH/post_imp_drc.rpt
 
 # Write bit file 
 write_bitstream -bin_file rasterix.bit
+
+# Write hardware
+write_hw_platform -fixed -include_bit -force -file design_1_wrapper.xsa

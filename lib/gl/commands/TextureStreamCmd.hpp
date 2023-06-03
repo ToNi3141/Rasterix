@@ -46,7 +46,7 @@ public:
         uint32_t pageSize = (m_texSize > RenderConfig::TEXTURE_PAGE_SIZE) ? RenderConfig::TEXTURE_PAGE_SIZE : m_texSize;
         for (uint32_t i = 0; i < pages.size(); i++)
         {
-            m_pages[i] = { pages[i] * RenderConfig::TEXTURE_PAGE_SIZE, pageSize };
+            m_pages[i] = { RenderConfig::GRAM_MEMORY_LOC + (pages[i] * RenderConfig::TEXTURE_PAGE_SIZE), pageSize };
         }
         m_dseData = { m_pages.data(), pages.size() };  
     }

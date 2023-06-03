@@ -92,7 +92,12 @@ public:
         {
             entry.clearAssembler();
         }
+        auto buffer1 = m_busConnector.requestBuffer(0);
+        auto buffer2 = m_busConnector.requestBuffer(1);
+        m_displayListAssembler[0].setBuffer(buffer1);
+        m_displayListAssembler[1].setBuffer(buffer2);
 
+        enableColorBufferInMemory(0x01E00000);
         setRenderResolution(640, 480);
 
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
@@ -146,13 +151,13 @@ public:
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
         {
-            static constexpr uint32_t TEX_UPLOAD_SIZE { TextureManager::TEXTURE_PAGE_SIZE + ListAssembler::uploadCommandSize() };
-            DisplayListAssembler<RenderConfig, TEX_UPLOAD_SIZE> uploader;
+            DisplayListAssembler<RenderConfig> uploader;
+            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
             uploader.uploadToDeviceMemory(gramAddr, data);
 
             while (!m_busConnector.clearToSend())
                 ;
-            m_busConnector.writeData(uploader.getDisplayList()->getMemPtr());
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
             return true;
         });
 
@@ -166,7 +171,7 @@ public:
             while (!m_busConnector.clearToSend())
                 ;
             m_displayListAssembler[m_frontList].setCheckpoint();
-            FramebufferCmd cmd { true, true, true };
+            FramebufferCmd<RenderConfig> cmd { true, true, true };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[m_frontList].addCommand(cmd);
@@ -184,7 +189,7 @@ public:
             m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
             m_displayListAssembler[m_frontList].closeStream();
             const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
-            m_busConnector.writeData(list->getMemPtr());
+            m_busConnector.writeData(m_frontList, list->getSize());
             
             m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
@@ -192,7 +197,7 @@ public:
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
+        FramebufferCmd<RenderConfig> cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         return m_displayListAssembler[m_backList].addCommand(cmd);
     }
@@ -406,7 +411,7 @@ private:
     YOffsetReg m_yOffsetReg {};
 
     bool m_colorBufferUseMemory { true };
-    uint32_t m_colorBufferAddr { 0x02000000 };
+    uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, 2> m_displayListAssembler;
     uint8_t m_frontList = 0;

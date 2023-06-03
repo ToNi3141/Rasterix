@@ -3157,14 +3157,14 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             }
             break;
         default:
-            SPDLOG_WARN("glTexParameteri pname not supported");
+            SPDLOG_WARN("glTexParameteri pname 0x{:X} not supported", pname);
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             break;
         }
     }
     else
     {
-        SPDLOG_WARN("glTexParameteri target not supported");
+        SPDLOG_WARN("glTexParameteri target 0x{:X} not supported", target);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
     }
 }

@@ -1,11 +1,8 @@
 set SYNTH_OUT ./synth
 set REPORT_PATH ./reports
-set BOARD_FILE ./design_1.bd
+set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 file delete -force $SYNTH_OUT
 file mkdir $SYNTH_OUT
-
-# Copy board file into synth directory to avoid polluting the source directory
-file copy $BOARD_FILE $SYNTH_OUT
 
 # Change to synth directory as build directory
 cd $SYNTH_OUT
@@ -15,7 +12,7 @@ file mkdir $REPORT_PATH
 # Setup project properties
 set_part xc7a35tcpg236-1
 set_property TARGET_LANGUAGE Verilog [current_project]
-set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.1 [current_project]
+set_property BOARD_PART digilentinc.com:cmod_a7-35t:part0:1.2 [current_project]
 set_property DEFAULT_LIB work [current_project]
 set_property source_mgmt_mode All [current_project]
 
@@ -63,9 +60,9 @@ read_verilog ./../../../../Util/Serial2AXIS.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/SPI_Slave.v
 read_verilog ./../../../../Display/DisplayController8BitILI9341.v
-
 read_xdc ./../Cmod-A7-Master.xdc
 
+source ../design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

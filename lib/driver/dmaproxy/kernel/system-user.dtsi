@@ -1,0 +1,25 @@
+/include/ "system-conf.dtsi"
+/ {
+
+   reserved-memory {
+      #address-cells = <1>;
+      #size-cells = <1>;
+      ranges;
+  
+      reserved: buffer@0x0E000000 {
+         no-map;
+         reg = <0x0E000000 0x02000000>;
+      };
+   };
+  
+   reserved-driver@0 {
+      compatible = "xlnx,reserved-memory";
+      memory-region = <&reserved>;
+   };
+
+   dma_proxy {
+     compatible ="xlnx,dma_proxy";
+     dmas = <&axi_dma_0 0  &axi_dma_0 1>;
+     dma-names = "dma_proxy_tx", "dma_proxy_rx";
+   };
+};
