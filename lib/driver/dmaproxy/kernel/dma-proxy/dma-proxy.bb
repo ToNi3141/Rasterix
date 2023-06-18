@@ -10,9 +10,14 @@ INHIBIT_PACKAGE_STRIP = "1"
 SRC_URI = "file://Makefile \
            file://dma-proxy.c \
 	   file://COPYING \
+       file://include/ \
           "
 
 S = "${WORKDIR}"
+
+do_compile () {
+    oe_runmake INCLUDE=${S}/include
+}
 
 # The inherit of module.bbclass will automatically name module packages with
 # "kernel-module-" prefix as required by the oe-core build environment.

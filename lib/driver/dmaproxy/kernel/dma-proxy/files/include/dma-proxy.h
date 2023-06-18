@@ -24,7 +24,7 @@
  * otherwise there may be issues when using cached memory.
  */
 
-#define BUFFER_SIZE (128 * 1024)	 	/* must match driver exactly */
+#define BUFFER_SIZE (512 * 1024)	 	/* must match driver exactly */
 #define BUFFER_COUNT 32					/* driver only */
 
 #define TX_BUFFER_COUNT 	BUFFER_COUNT	/* app only, must be <= to the number in the driver */
