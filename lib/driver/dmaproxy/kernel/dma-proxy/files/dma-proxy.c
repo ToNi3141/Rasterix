@@ -117,7 +117,7 @@
 #include <linux/of_dma.h>
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
-#include "include/dma-proxy.h"
+#include "dma-proxy.h"
 
 MODULE_LICENSE("GPL");
 

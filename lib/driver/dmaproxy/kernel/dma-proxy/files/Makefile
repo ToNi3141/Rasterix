@@ -1,6 +1,6 @@
 obj-m := dma-proxy.o
 
-MY_CFLAGS += -g -DDEBUG -I/files/include/
+MY_CFLAGS += -g -DDEBUG -I$(INCLUDE)
 ccflags-y += ${MY_CFLAGS}
 
 SRC := $(shell pwd)

@@ -24,8 +24,8 @@
  * otherwise there may be issues when using cached memory.
  */
 
-#define BUFFER_SIZE (128 * 1024)	 	/* must match driver exactly */
-#define BUFFER_COUNT 32					/* driver only */
+#define BUFFER_SIZE (768 * 1024)	 	/* must match driver exactly */
+#define BUFFER_COUNT 21					/* driver only */
 
 #define TX_BUFFER_COUNT 	BUFFER_COUNT	/* app only, must be <= to the number in the driver */
 #define BUFFER_INCREMENT	1				/* normally 1, but skipping buffers (2) defeats prefetching in the CPU */

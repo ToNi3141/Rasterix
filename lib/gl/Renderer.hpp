@@ -22,7 +22,6 @@
 #include <array>
 #include "Vec.hpp"
 #include "IRenderer.hpp"
-#include "registers/BaseColorReg.hpp"
 #include "IBusConnector.hpp"
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
@@ -33,6 +32,7 @@
 #include "TextureMemoryManager.hpp"
 #include <limits>
 
+#include "registers/BaseColorReg.hpp"
 #include "registers/TexEnvReg.hpp"
 #include "registers/FragmentPipelineReg.hpp"
 #include "registers/FeatureEnableReg.hpp"

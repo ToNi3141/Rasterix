@@ -11,10 +11,20 @@
          reg = <0x0E000000 0x02000000>;
       };
    };
-  
+
    reserved-driver@0 {
       compatible = "xlnx,reserved-memory";
       memory-region = <&reserved>;
+   };
+
+   framebuffer {
+      compatible = "simple-framebuffer";
+      reg = <0x0FE00000 (1024 * 600 * 2)>;
+      width = <1024>;
+      height = <600>;
+      stride = <(1024 * 2)>;
+      format = "r5g6b5";
+      status = "okay";
    };
 
    dma_proxy {
@@ -22,4 +32,18 @@
      dmas = <&axi_dma_0 0  &axi_dma_0 1>;
      dma-names = "dma_proxy_tx", "dma_proxy_rx";
    };
+
+   usb_phy0: usb_phy@0 {
+      compatible = "ulpi-phy";
+      #phy-cells = <0>;
+      reg = <0xe0002000 0x1000>;
+      view-port = <0x0170>;
+      drv-vbus;
+   };
+};
+
+&usb0 
+{
+   dr_mode = "host";
+   usb-phy = <&usb_phy0>;
 };
