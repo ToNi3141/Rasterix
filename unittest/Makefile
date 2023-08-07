@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp memoryReadRequestGenerator
+all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp memoryReadRequestGenerator framebufferSerializer
  
 clean:
 	rm -rf obj_dir
@@ -54,6 +54,11 @@ memoryReadRequestGenerator:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/MemoryReadRequestGenerator.v --top-module MemoryReadRequestGenerator cpp/sim_MemoryReadRequestGenerator.cpp -I../rtl/Rasterix/
 	-make -C obj_dir -f VMemoryReadRequestGenerator.mk
 	./obj_dir/VMemoryReadRequestGenerator
+
+framebufferSerializer:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferSerializer.v --top-module FramebufferSerializer cpp/sim_FramebufferSerializer.cpp -I../rtl/Rasterix/
+	-make -C obj_dir -f VFramebufferSerializer.mk
+	./obj_dir/VFramebufferSerializer
 
 .SECONDARY:
 .PHONY: all clean

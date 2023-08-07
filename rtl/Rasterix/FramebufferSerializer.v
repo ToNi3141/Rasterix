@@ -24,7 +24,9 @@ module FramebufferSerializer #(
     parameter ID_WIDTH = 8,
 
     // Sets the width of a pixel to fix the memory alignment
-    parameter PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 16,
+    // The keep with
+    parameter KEEP_WIDTH = PIXEL_WIDTH / 8
 ) (
     input  wire                             aclk,
     input  wire                             resetn,
@@ -36,6 +38,7 @@ module FramebufferSerializer #(
     // Framebuffer Interface
     output reg                              m_frag_axis_tvalid,
     input  wire                             m_frag_axis_tready,
+    output reg  [KEEP_WIDTH - 1 : 0]        m_frag_axis_tkeep,
     output reg  [PIXEL_WIDTH - 1 : 0]       m_frag_axis_tdata,
     output reg  [ADDR_WIDTH - 1 : 0]        m_frag_axis_tdest,
     output reg                              m_frag_axis_tlast,
@@ -45,6 +48,7 @@ module FramebufferSerializer #(
     input  wire                             s_fetch_axis_tlast,
     output reg                              s_fetch_axis_tready,
     input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_axis_tdest,
+    input  wire [KEEP_WIDTH - 1 : 0]        s_fetch_axis_tkeep,
 
     /////////////////////////
     // Memory Interface
@@ -58,16 +62,19 @@ module FramebufferSerializer #(
     input  wire                             m_mem_axi_rvalid,
     output reg                              m_mem_axi_rready
 );
-    localparam ADDR_TAG_POS = $clog2((STREAM_WIDTH) / PIXEL_WIDTH);
+    localparam ADDR_TAG_POS = $clog2((STREAM_WIDTH) / 8);
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
-    localparam ADDR_BYTE_POS_WIDTH = ADDR_WIDTH - ADDR_TAG_WIDTH;
-    localparam ADDR_BYTE_POS_POS = 0;
+    localparam ADDR_BYTE_POS_POS = $clog2(PIXEL_WIDTH / 8);
+    localparam ADDR_BYTE_POS_WIDTH = ADDR_WIDTH - ADDR_TAG_WIDTH - ADDR_BYTE_POS_POS;
 
     reg [ADDR_TAG_WIDTH - 1 : 0]    addrTag;
     reg [ADDR_WIDTH - 1 : 0]        addrSkid;
-    reg                             skidMaybeRequired;
+    reg [KEEP_WIDTH - 1 : 0]        tkeepSkid;
+    reg                             tlastSkid;
+    reg                             memoryBubbleCycleRequired;
     reg                             stateSkid;
     reg [STREAM_WIDTH - 1 : 0]      cacheLine;
+    
 
     always @(posedge aclk)
     begin
@@ -75,6 +82,7 @@ module FramebufferSerializer #(
         begin
             m_frag_axis_tvalid <= 0;
             m_frag_axis_tlast <= 0;
+            m_frag_axis_tkeep <= 0;
 
             s_fetch_axis_tready <= 0;
 
@@ -82,34 +90,50 @@ module FramebufferSerializer #(
 
             addrTag <= 0;
 
-            skidMaybeRequired <= 0;
+            memoryBubbleCycleRequired <= 0;
             stateSkid <= 0;
         end
         else
         begin : Fetch
-            reg tagValid = (addrTag != tag);
-            reg leaveSkid = m_frag_axis_tready && (tagValid || m_mem_axi_rvalid);
-            reg normalOperation = m_frag_axis_tready && s_fetch_axis_tvalid && !stateSkid;
+            reg [ADDR_TAG_WIDTH - 1 : 0]        tag;
+            reg [ADDR_BYTE_POS_WIDTH  - 1 : 0]  bytePos;
+            reg                                 tlast;
+            reg [KEEP_WIDTH - 1 : 0]            tkeep;
+
+            reg firstFrag;
+            reg tagValid;
+            reg leaveSkid;
+            reg normalOperation;
+
+            if (memoryBubbleCycleRequired)
+            begin
+                memoryBubbleCycleRequired <= 0;
+            end
+
+            if (stateSkid)
+            begin
+                tag = addrSkid[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
+                bytePos = addrSkid[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
+                tlast = tlastSkid;
+                tkeep = tkeepSkid;
+            end
+            else
+            begin
+                tag = s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
+                bytePos = s_fetch_axis_tdest[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
+                tlast = s_fetch_axis_tlast;
+                tkeep = s_fetch_axis_tkeep;
+            end
+            firstFrag = addrTag == 0;
+            tagValid = (addrTag == tag) && !firstFrag;
+            leaveSkid = (m_frag_axis_tready || firstFrag) && (tagValid || m_mem_axi_rvalid) && stateSkid;
+            normalOperation = (m_frag_axis_tready || firstFrag) && s_fetch_axis_tvalid && !stateSkid;
 
             if (normalOperation || leaveSkid)
-            begin : Fetch
+            begin
                 // For normal operation (includes leaving the skid state)
                 // This means that source data is available and the destination is also capable of receiving data.
                 // Only an invalid memory access can cause a stall here.
-
-                reg [ADDR_TAG_WIDTH - 1 : 0] tag;
-                reg [ADDR_BYTE_POS_WIDTH  - 1 : 0] bytePos;
-
-                if (stateSkid)
-                begin
-                    tag = addrSkid[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
-                    bytePos = addrSkid[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
-                end
-                else
-                begin
-                    tag = s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
-                    bytePos = s_fetch_axis_tdest[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
-                end
 
                 if (leaveSkid)
                 begin
@@ -120,39 +144,55 @@ module FramebufferSerializer #(
                 begin
                     // Tag is valid, everything ok
                     m_mem_axi_rready <= 0;
-                    skidMaybeRequired <= 0;
-                    m_frag_axis_tdest <= tag;
+                    m_frag_axis_tdest <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
                     m_frag_axis_tdata <= cacheLine[bytePos * PIXEL_WIDTH +: PIXEL_WIDTH];
                     m_frag_axis_tvalid <= 1;
+                    m_frag_axis_tlast <= tlast;
+                    m_frag_axis_tkeep <= tkeep;
+                    if (tlast)
+                    begin
+                        addrTag <= 0;
+                    end
                 end    
                 else if (m_mem_axi_rvalid)
                 begin
-                    if (skidMaybeRequired)
+                    if (memoryBubbleCycleRequired)
                     begin
-                        // Slow fetch, because a fast skid was already used (where the rready siganl is exploited).
+                        // Slow fetch, because a fast fetch was already used (where the rready siganl is exploited).
                         // It is now required to wait for one clock cylce to read the new data. This extra clock cycle 
-                        // results in a skid step
+                        // results in a bubble cycle.
                         stateSkid <= 1;
                         m_mem_axi_rready <= 0;
-                        skidMaybeRequired <= 0;
                         s_fetch_axis_tready <= 0;
-                        addrSkid <= s_fetch_axis_tdest;
+                        addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                        tlastSkid <= tlast;
+                        tkeepSkid <= tkeep;
                         m_frag_axis_tvalid <= 0;
                     end
                     else
                     begin
                         // Fast fetch, tag invalid but valid data from memory is available. rready is set to true, but normally
-                        // it is now required to wait for one clock cycle. But this is not a problem if no memory fetch is executed,
-                        // in the next clock cycle. But this case is handled in another step (if required). But for here the skid
-                        // step can be omitted and a steady stream (without bubble cycles) can be guaranteed.
+                        // it is now required to wait for one clock cycle. But this is not a problem if no memory fetch is executed
+                        // in the next clock cycle. In case a fetch is executed in the next clock cycle, memoryBubbleCycleRequired will
+                        // be true and is handled in the code above.
                         // Load data and stream it out
                         m_mem_axi_rready <= 1;
-                        skidMaybeRequired <= 1; // Skid is only required when rready was not one, otherwise we can burst
+                        memoryBubbleCycleRequired <= 1; // Skid is only required when rready was not one, otherwise we can burst
                         s_fetch_axis_tready <= 1;
                         cacheLine <= m_mem_axi_rdata;
                         m_frag_axis_tdata <= m_mem_axi_rdata[bytePos * PIXEL_WIDTH +: PIXEL_WIDTH];
-                        m_frag_axis_tdest <= tag;
+                        m_frag_axis_tdest <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
                         m_frag_axis_tvalid <= 1;
+                        m_frag_axis_tlast <= tlast;
+                        m_frag_axis_tkeep <= tkeep;
+                        if (tlast)
+                        begin
+                            addrTag <= 0;
+                        end
+                        else
+                        begin
+                            addrTag <= tag;
+                        end
                     end
                 end
                 else
@@ -160,16 +200,16 @@ module FramebufferSerializer #(
                     // Tag is not valid and the memory does not contain any data -> pause stream and skid.
                     stateSkid <= 1;
                     m_mem_axi_rready <= 0;
-                    skidMaybeRequired <= 0;
                     s_fetch_axis_tready <= 0;
-                    addrSkid <= s_fetch_axis_tdest;
+                    addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                    tlastSkid <= tlast;
+                    tkeepSkid <= tkeep;
                     m_frag_axis_tvalid <= 0;
                 end
             end
             else
             begin
                 // Case when no source data is available or the destination is not capable of receiving data
-                
                 if (stateSkid)
                 begin
                     if (m_frag_axis_tready)
@@ -187,15 +227,21 @@ module FramebufferSerializer #(
                         begin
                             stateSkid <= 1;
                             m_mem_axi_rready <= 0;
-                            skidMaybeRequired <= 0;
                             s_fetch_axis_tready <= 0;
-                            addrSkid <= s_fetch_axis_tdest;
+                            addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                            tlastSkid <= tlast;
+                            tkeepSkid <= tkeep;
                         end
                     end
                     else if (!s_fetch_axis_tvalid)
                     begin
                         // No new data from the source. It's enough to just set the tvalid to zero till new data is available
                         m_frag_axis_tvalid <= 0;
+                    end
+
+                    if (m_mem_axi_rvalid && m_mem_axi_rready)
+                    begin
+                        m_mem_axi_rready <= 0;
                     end
                 end
             end
