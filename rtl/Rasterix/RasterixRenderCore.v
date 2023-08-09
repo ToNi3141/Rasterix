@@ -72,6 +72,7 @@ module RasterixRenderCore #(
 `include "AttributeInterpolatorDefines.vh"
     // Width of the stencil buffer
     localparam STENCIL_WIDTH = 4;
+    localparam DEPTH_WIDTH = 16;
 
     localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4;
 
@@ -159,6 +160,14 @@ module RasterixRenderCore #(
     wire [STENCIL_WIDTH - 1 : 0]                    stencilOut;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] stencilOutScreenPosX;
     wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] stencilOutScreenPosY;
+
+    // Per fragment wires
+    wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]      framebuffer_fragmentColor;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]          framebuffer_index;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] framebuffer_screenPosX;
+    wire [ATTR_INTERP_AXIS_SCREEN_POS_SIZE - 1 : 0] framebuffer_screenPosY;
+    wire [31 : 0]                                   framebuffer_depth;
+    wire                                            framebuffer_valid;
 
     wire pixelInPipelineInterpolator;
     wire pixelInPipelineShader;
@@ -549,6 +558,11 @@ module RasterixRenderCore #(
         end
     endgenerate
 
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 1
+    // Rasterizing the triangle
+    // Clocks: n/a
+    ////////////////////////////////////////////////////////////////////////////
     Rasterizer rop (
         .clk(aclk), 
         .reset(!resetn), 
@@ -582,6 +596,21 @@ module RasterixRenderCore #(
     defparam rop.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
+    wire fragmentProcessed;
+    ValueTrack pixelTracker (
+        .aclk(aclk),
+        .resetn(resetn),
+        
+        .sigIncommingValue(m_attr_inter_axis_tvalid & m_attr_inter_axis_tready),
+        .sigOutgoingValue(fragmentProcessed),
+        .valueInPipeline(pixelInPipelineShader)
+    );
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Interpolation of attributes
+    // Clocks: 45
+    ////////////////////////////////////////////////////////////////////////////
     AttributeInterpolator attributeInterpolator (
         .aclk(aclk),
         .resetn(resetn),
@@ -635,10 +664,14 @@ module RasterixRenderCore #(
         .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
 
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 3
+    // Texturing triangle, fogging
+    // Clocks: 32
+    ////////////////////////////////////////////////////////////////////////////
     PixelPipeline pixelPipeline (    
         .aclk(aclk),
         .resetn(resetn),
-        .pixelInPipeline(pixelInPipelineShader),
 
         .s_fog_lut_axis_tvalid(s_cmd_fog_axis_tvalid),
         .s_fog_lut_axis_tready(s_cmd_fog_axis_tready),
@@ -681,6 +714,42 @@ module RasterixRenderCore #(
         .texel1Input10(texel1Input10),
         .texel1Input11(texel1Input11),
 
+        .framebuffer_valid(framebuffer_valid),
+        .framebuffer_fragmentColor(framebuffer_fragmentColor),
+        .framebuffer_depth(framebuffer_depth),
+        .framebuffer_index(framebuffer_index),
+        .framebuffer_screenPosX(framebuffer_screenPosX),
+        .framebuffer_screenPosY(framebuffer_screenPosY)
+    );
+    defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
+    defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+    defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
+    defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 4
+    // Access framebuffer, blend, test and save pixel in framebuffer
+    // Clocks: 5
+    ////////////////////////////////////////////////////////////////////////////
+    PerFragmentPipeline perFragmentPipeline (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .conf(confFragmentPipelineConfig),
+        .confFeatureEnable(confFeatureEnable),
+        .confStencilBufferConfig(confStencilBufferConfig),
+
+        .valid(framebuffer_valid),
+        .fragmentColor(framebuffer_fragmentColor),
+        .depth(framebuffer_depth),
+        .index(framebuffer_index),
+        .screenPosX(framebuffer_screenPosX),
+        .screenPosY(framebuffer_screenPosY),
+
+        .fragmentProcessed(fragmentProcessed),
+
         .colorIndexRead(colorIndexRead),
         .colorIn(ColorBufferExpandVec(ColorBufferExpand(colorBufferFragOut), DEFAULT_ALPHA_VAL)),
         .colorIndexWrite(colorIndexWrite),
@@ -705,10 +774,9 @@ module RasterixRenderCore #(
         .stencilOutScreenPosX(stencilOutScreenPosX),
         .stencilOutScreenPosY(stencilOutScreenPosY)
     );
-    defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
-    defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
-    defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
-    defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
-
+    defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = FRAMEBUFFER_INDEX_WIDTH;
+    defparam perFragmentPipeline.SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
+    defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
+    defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
+    defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
 endmodule

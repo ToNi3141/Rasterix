@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 37 cycles
+// Depth: 32 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -30,7 +30,7 @@ module PixelPipeline
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
-    localparam DEPTH_WIDTH = 16,
+    parameter DEPTH_WIDTH = 16,
 
     parameter STENCIL_WIDTH = 4,
 
@@ -46,7 +46,6 @@ module PixelPipeline
 (
     input  wire                                     aclk,
     input  wire                                     resetn,
-    output wire                                     pixelInPipeline,
 
     // Fog function LUT stream
     input  wire                                     s_fog_lut_axis_tvalid,
@@ -92,38 +91,12 @@ module PixelPipeline
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input10,
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input11,
 
-    // Frame buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexRead,
-    input  wire [PIXEL_WIDTH - 1 : 0]               colorIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexWrite,
-    output wire                                     colorWriteEnable,
-    output wire [PIXEL_WIDTH - 1 : 0]               colorOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosY,
-
-    // ZBuffer buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexRead,
-    input  wire [DEPTH_WIDTH - 1 : 0]               depthIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexWrite,
-    output wire                                     depthWriteEnable,
-    output wire [DEPTH_WIDTH - 1 : 0]               depthOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosY,
-
-    // Stencil buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexRead,
-    input  wire [STENCIL_WIDTH - 1 : 0]             stencilIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexWrite,
-    output wire                                     stencilWriteEnable,
-    output wire [STENCIL_WIDTH - 1 : 0]             stencilOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosY
+    output wire [PIXEL_WIDTH - 1 : 0]               framebuffer_fragmentColor,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   framebuffer_index,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosY,
+    output wire [31 : 0]                            framebuffer_depth,
+    output wire                                     framebuffer_valid
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
@@ -133,16 +106,6 @@ module PixelPipeline
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
 
     assign s_axis_tready = 1;
-
-    wire fragmentProcessed;
-    ValueTrack pixelTracker (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .sigIncommingValue(s_axis_tvalid & s_axis_tready),
-        .sigOutgoingValue(fragmentProcessed),
-        .valueInPipeline(pixelInPipeline)
-    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -401,61 +364,13 @@ module PixelPipeline
         .color(step3_fragmentColor)
     );
 
-    ////////////////////////////////////////////////////////////////////////////
-    // STEP 4
-    // Access framebuffer, blend, test and save pixel in framebuffer
-    // Clocks: 5
-    ////////////////////////////////////////////////////////////////////////////
-    PerFragmentPipeline #(
-        .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
-        .SCREEN_POS_WIDTH(SCREEN_POS_WIDTH),
-        .DEPTH_WIDTH(DEPTH_WIDTH),
-        .STENCIL_WIDTH(STENCIL_WIDTH),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) perFragmentPipeline (
-        .aclk(aclk),
-        .resetn(resetn),
+    assign framebuffer_fragmentColor = step3_fragmentColor;
+    assign framebuffer_index = step3_index;
+    assign framebuffer_screenPosX = step3_screenPosX;
+    assign framebuffer_screenPosY = step3_screenPosY;
+    assign framebuffer_depth = step3_depth;
+    assign framebuffer_valid = step3_valid;
 
-        .conf(confFragmentPipelineConfig),
-        .confFeatureEnable(confFeatureEnable),
-        .confStencilBufferConfig(confStencilBufferConfig),
-
-        .valid(step3_valid),
-        .fragmentColor(step3_fragmentColor),
-        .depth(step3_depth),
-        .index(step3_index),
-        .screenPosX(step3_screenPosX),
-        .screenPosY(step3_screenPosY),
-
-        .fragmentProcessed(fragmentProcessed),
-
-        .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
-
-        .colorIndexWrite(colorIndexWrite),
-        .colorWriteEnable(colorWriteEnable),
-        .colorOut(colorOut),
-        .colorOutScreenPosX(colorOutScreenPosX),
-        .colorOutScreenPosY(colorOutScreenPosY),
-
-        .depthIndexRead(depthIndexRead),
-        .depthIn(depthIn),
-        
-        .depthIndexWrite(depthIndexWrite),
-        .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut),
-        .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY),
-
-        .stencilIndexRead(stencilIndexRead),
-        .stencilIn(stencilIn),
-        
-        .stencilIndexWrite(stencilIndexWrite),
-        .stencilWriteEnable(stencilWriteEnable),
-        .stencilOut(stencilOut),
-        .stencilOutScreenPosX(stencilOutScreenPosX),
-        .stencilOutScreenPosY(stencilOutScreenPosY)
-    );
 endmodule
 
 
