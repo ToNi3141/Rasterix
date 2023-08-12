@@ -14,6 +14,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+`include "PixelUtil.vh"
 
 module Rasterix #(
     // The size of the internal framebuffer (in power of two)
@@ -27,6 +28,16 @@ module Rasterix #(
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+    // The number of sub pixels in the framebuffer
+    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4,
+    // The sub pixel with in the framebuffer
+    localparam PIXEL_WIDTH_FRAMEBUFFER = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * FRAMEBUFFER_SUB_PIXEL_WIDTH,
+
+    // The width of the stencil buffer
+    localparam STENCIL_WIDTH = 4,
+
+    // The width of the depth buffer
+    localparam DEPTH_WIDTH = 16,
 
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
@@ -37,6 +48,9 @@ module Rasterix #(
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
+
+    // The width of the frame buffer stream
+    parameter FRAMEBUFFER_STREAM_WIDTH = CMD_STREAM_WIDTH,
 
     // The size of the texture in bytes in power of two
     parameter TEXTURE_BUFFER_SIZE = 15,
@@ -106,6 +120,23 @@ module Rasterix #(
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
+`include "RegisterAndDescriptorDefines.vh"
+    localparam DEFAULT_ALPHA_VAL = 0;
+    localparam SCREEN_POS_WIDTH = 11;
+    localparam PIXEL_WIDTH_STREAM = 16;
+    localparam PIXEL_PER_BEAT = FRAMEBUFFER_STREAM_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
+    // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
+    // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
+    // without removing or adding something.
+    // If it is set to a lower value, then the functions will start to remove or add new pixels.
+    localparam SUB_PIXEL_OFFSET = (COLOR_NUMBER_OF_SUB_PIXEL == FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) ? COLOR_NUMBER_OF_SUB_PIXEL : COLOR_A_POS; 
+    `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL);
+    `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+    `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
+
     wire                             m_cmd_axis_tvalid;
     wire                             m_cmd_axis_tready;
     wire                             m_cmd_axis_tlast;
@@ -184,13 +215,209 @@ module Rasterix #(
         .m_mem_axi_rready(m_mem_axi_rready)
     );
 
+    wire                                             framebufferParamEnableScissor;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartY;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorEndX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorEndY;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYOffset;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamXResolution;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYResolution;
+
+    // Color buffer access
+    wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              colorBufferClearColor;
+    wire                                             colorBufferApply;
+    wire                                             colorBufferApplied;
+    wire                                             colorBufferCmdCommit;
+    wire                                             colorBufferCmdMemset;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         colorIndexRead;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         colorIndexWrite;
+    wire                                             colorWriteEnable;
+    wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           colorIn;
+    wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              colorOut;
+    wire [4 - 1 : 0]  colorMask;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  colorOutScreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  colorOutScreenPosY;
+
+    // Depth buffer access
+    wire [DEPTH_WIDTH - 1 : 0]                       depthBufferClearDepth;
+    wire                                             depthBufferApply;
+    wire                                             depthBufferApplied;
+    wire                                             depthBufferCmdCommit;
+    wire                                             depthBufferCmdMemset;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         depthIndexRead;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         depthIndexWrite;
+    wire                                             depthWriteEnable;
+    wire [DEPTH_WIDTH - 1 : 0]                       depthIn;
+    wire [DEPTH_WIDTH - 1 : 0]                       depthOut;
+    wire                                             depthMask;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  depthOutScreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  depthOutScreenPosY;
+
+    // Stencil buffer access
+    wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferClearStencil;
+    wire                                             stencilBufferApply;
+    wire                                             stencilBufferApplied;
+    wire                                             stencilBufferCmdCommit;
+    wire                                             stencilBufferCmdMemset;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         stencilIndexRead;
+    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         stencilIndexWrite;
+    wire                                             stencilWriteEnable;
+    wire [STENCIL_WIDTH - 1 : 0]                     stencilIn;
+    wire [STENCIL_WIDTH - 1 : 0]                     stencilOut;
+    wire [STENCIL_WIDTH - 1: 0]                      stencilMask;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  stencilOutScreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]                  stencilOutScreenPosY;
+
+    FrameBuffer depthBuffer (  
+        .clk(aclk),
+        .reset(!resetn),
+
+        .confClearColor(depthBufferClearDepth),
+        .confEnableScissor(framebufferParamEnableScissor),
+        .confScissorStartX(framebufferParamScissorStartX),
+        .confScissorStartY(framebufferParamScissorStartY),
+        .confScissorEndX(framebufferParamScissorEndX),
+        .confScissorEndY(framebufferParamScissorEndY),
+        .confYOffset(framebufferParamYOffset),
+        .confXResolution(framebufferParamXResolution),
+        .confYResolution(framebufferParamYResolution),
+
+        .fragIndexRead(depthIndexRead),
+        .fragOut(depthIn),
+        .fragIndexWrite(depthIndexWrite),
+        .fragIn(depthOut),
+        .fragWriteEnable(depthWriteEnable),
+        .fragMask(depthMask),
+        .screenPosX(depthOutScreenPosX),
+        .screenPosY(depthOutScreenPosY),
+
+        .apply(depthBufferApply),
+        .applied(depthBufferApplied),
+        .cmdCommit(depthBufferCmdCommit),
+        .cmdMemset(depthBufferCmdMemset),
+
+        .m_axis_tvalid(),
+        .m_axis_tready(1'b1),
+        .m_axis_tlast(),
+        .m_axis_tdata()
+    );
+    defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
+    defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
+    defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
+    defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+    defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+
+    wire [(PIXEL_WIDTH_STREAM * PIXEL_PER_BEAT) - 1 : 0] s_framebuffer_unconverted_axis_tdata;
+    FrameBuffer colorBuffer (  
+        .clk(aclk),
+        .reset(!resetn),
+
+        .confClearColor(ColorBufferReduce(ColorBufferReduceVec(colorBufferClearColor))),
+        .confEnableScissor(framebufferParamEnableScissor),
+        .confScissorStartX(framebufferParamScissorStartX),
+        .confScissorStartY(framebufferParamScissorStartY),
+        .confScissorEndX(framebufferParamScissorEndX),
+        .confScissorEndY(framebufferParamScissorEndY),
+        .confYOffset(framebufferParamYOffset),
+        .confXResolution(framebufferParamXResolution),
+        .confYResolution(framebufferParamYResolution),
+
+        .fragIndexRead(colorIndexRead),
+        .fragOut(colorIn),
+        .fragIndexWrite(colorIndexWrite),
+        .fragIn(ColorBufferReduce(ColorBufferReduceVec(colorOut))),
+        .fragWriteEnable(colorWriteEnable),
+        .fragMask(ColorBufferReduceMask(colorMask)),
+        .screenPosX(colorOutScreenPosX),
+        .screenPosY(colorOutScreenPosY),
+        
+        .apply(colorBufferApply),
+        .applied(colorBufferApplied),
+        .cmdCommit(colorBufferCmdCommit),
+        .cmdMemset(colorBufferCmdMemset),
+
+        .m_axis_tvalid(s_framebuffer_axis_tvalid),
+        .m_axis_tready(s_framebuffer_axis_tready),
+        .m_axis_tlast(s_framebuffer_axis_tlast),
+        .m_axis_tdata(s_framebuffer_unconverted_axis_tdata)
+    );
+    defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
+    defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = FRAMEBUFFER_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+    defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+
+    // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
+    generate
+        `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
+        `Expand(ExpandFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
+        begin
+            `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
+            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(s_framebuffer_unconverted_axis_tdata)));
+        end
+        else
+        begin
+            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(s_framebuffer_unconverted_axis_tdata));
+        end
+    endgenerate
+
+    generate 
+        if (ENABLE_STENCIL_BUFFER)
+        begin
+            FrameBuffer stencilBuffer (  
+                .clk(aclk),
+                .reset(!resetn),
+
+                .confClearColor(stencilBufferClearStencil),
+                .confEnableScissor(framebufferParamEnableScissor),
+                .confScissorStartX(framebufferParamScissorStartX),
+                .confScissorStartY(framebufferParamScissorStartY),
+                .confScissorEndX(framebufferParamScissorEndX),
+                .confScissorEndY(framebufferParamScissorEndY),
+                .confYOffset(framebufferParamYOffset),
+                .confXResolution(framebufferParamXResolution),
+                .confYResolution(framebufferParamYResolution),
+
+                .fragIndexRead(stencilIndexRead),
+                .fragOut(stencilIn),
+                .fragIndexWrite(stencilIndexWrite),
+                .fragIn(stencilOut),
+                .fragWriteEnable(stencilWriteEnable),
+                .fragMask(stencilMask),
+                .screenPosX(stencilOutScreenPosX),
+                .screenPosY(stencilOutScreenPosY),
+
+                .apply(stencilBufferApply),
+                .applied(stencilBufferApplied),
+                .cmdCommit(stencilBufferCmdCommit),
+                .cmdMemset(stencilBufferCmdMemset),
+
+                .m_axis_tvalid(),
+                .m_axis_tready(1'b1),
+                .m_axis_tlast(),
+                .m_axis_tdata()
+            );
+            defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
+            defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
+            defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
+            defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+            defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+        end
+        else
+        begin
+            assign stencilIn = 0;
+            assign stencilBufferApplied = 1;
+        end
+    endgenerate
+
     RasterixRenderCore #(
-        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
-        .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
-        .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
-        .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
+        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .FRAMEBUFFER_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .TMU_COUNT(TMU_COUNT)
     ) graphicCore (
@@ -202,10 +429,56 @@ module Rasterix #(
         .s_cmd_axis_tlast(m_cmd_axis_tlast),
         .s_cmd_axis_tdata(m_cmd_axis_tdata),
 
-        .m_framebuffer_axis_tvalid(s_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(s_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(s_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(s_framebuffer_axis_tdata)
+        .framebufferParamEnableScissor(framebufferParamEnableScissor),
+        .framebufferParamScissorStartX(framebufferParamScissorStartX),
+        .framebufferParamScissorStartY(framebufferParamScissorStartY),
+        .framebufferParamScissorEndX(framebufferParamScissorEndX),
+        .framebufferParamScissorEndY(framebufferParamScissorEndY),
+        .framebufferParamYOffset(framebufferParamYOffset),
+        .framebufferParamXResolution(framebufferParamXResolution),
+        .framebufferParamYResolution(framebufferParamYResolution),
+
+        .colorBufferClearColor(colorBufferClearColor),
+        .colorBufferApply(colorBufferApply),
+        .colorBufferApplied(colorBufferApplied),
+        .colorBufferCmdCommit(colorBufferCmdCommit),
+        .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorIndexRead(colorIndexRead),
+        .colorIn(ColorBufferExpandVec(ColorBufferExpand(colorIn), DEFAULT_ALPHA_VAL)),
+        .colorIndexWrite(colorIndexWrite),
+        .colorWriteEnable(colorWriteEnable),
+        .colorOut(colorOut),
+        .colorMask(colorMask),
+        .colorOutScreenPosX(colorOutScreenPosX),
+        .colorOutScreenPosY(colorOutScreenPosY),
+
+        .depthBufferClearDepth(depthBufferClearDepth),
+        .depthBufferApply(depthBufferApply),
+        .depthBufferApplied(depthBufferApplied),
+        .depthBufferCmdCommit(depthBufferCmdCommit),
+        .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthIndexRead(depthIndexRead),
+        .depthIn(depthIn),
+        .depthIndexWrite(depthIndexWrite),
+        .depthWriteEnable(depthWriteEnable),
+        .depthOut(depthOut),
+        .depthMask(depthMask),
+        .depthOutScreenPosX(depthOutScreenPosX),
+        .depthOutScreenPosY(depthOutScreenPosY),
+
+        .stencilBufferClearStencil(stencilBufferClearStencil),
+        .stencilBufferApply(stencilBufferApply),
+        .stencilBufferApplied(stencilBufferApplied),
+        .stencilBufferCmdCommit(stencilBufferCmdCommit),
+        .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilIndexRead(stencilIndexRead),
+        .stencilIn(stencilIn),
+        .stencilIndexWrite(stencilIndexWrite),
+        .stencilWriteEnable(stencilWriteEnable),
+        .stencilOut(stencilOut),
+        .stencilMask(stencilMask),
+        .stencilOutScreenPosX(stencilOutScreenPosX),
+        .stencilOutScreenPosY(stencilOutScreenPosY)
     );
 
 endmodule

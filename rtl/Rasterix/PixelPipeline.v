@@ -41,7 +41,9 @@ module PixelPipeline
 
     localparam TEX_ADDR_WIDTH = 16,
 
-    parameter ENABLE_SECOND_TMU = 1
+    parameter ENABLE_SECOND_TMU = 1,
+    
+    parameter SCREEN_POS_WIDTH = 11
 )
 (
     input  wire                                     aclk,
@@ -100,7 +102,6 @@ module PixelPipeline
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
-    localparam SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
 
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
@@ -133,9 +134,9 @@ module PixelPipeline
 
     // Screen Poisition
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
-        convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_x));
+        convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_x));
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
-        convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_y));
+        convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_y));
 
     // Fragment valid flag
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
