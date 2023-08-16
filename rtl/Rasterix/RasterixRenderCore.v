@@ -75,14 +75,18 @@ module RasterixRenderCore #(
     input  wire                                             colorBufferApplied,
     output wire                                             colorBufferCmdCommit,
     output wire                                             colorBufferCmdMemset,
-    output wire [INDEX_WIDTH - 1 : 0]                       colorIndexRead,
-    output wire [INDEX_WIDTH - 1 : 0]                       colorIndexWrite,
-    output wire                                             colorWriteEnable,
-    input  wire [PIXEL_WIDTH - 1 : 0]                       colorIn,
-    output wire [PIXEL_WIDTH - 1 : 0]                       colorOut,
-    output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              colorMask,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  colorOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  colorOutScreenPosY,
+    output wire                                             color_arvalid,
+    output wire                                             color_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       color_araddr,
+    input  wire                                             color_rvalid,
+    input  wire                                             color_rlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       color_waddr,
+    output wire                                             color_wvalid,
+    input  wire [PIXEL_WIDTH - 1 : 0]                       color_rdata,
+    output wire [PIXEL_WIDTH - 1 : 0]                       color_wdata,
+    output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              color_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosY,
 
     // Depth buffer access
     output wire [DEPTH_WIDTH - 1 : 0]                       depthBufferClearDepth,
@@ -90,14 +94,18 @@ module RasterixRenderCore #(
     input  wire                                             depthBufferApplied,
     output wire                                             depthBufferCmdCommit,
     output wire                                             depthBufferCmdMemset,
-    output wire [INDEX_WIDTH - 1 : 0]                       depthIndexRead,
-    output wire [INDEX_WIDTH - 1 : 0]                       depthIndexWrite,
-    output wire                                             depthWriteEnable,
-    input  wire [DEPTH_WIDTH - 1 : 0]                       depthIn,
-    output wire [DEPTH_WIDTH - 1 : 0]                       depthOut,
-    output wire                                             depthMask,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  depthOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  depthOutScreenPosY,
+    output wire                                             depth_arvalid,
+    output wire                                             depth_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       depth_araddr,
+    input  wire                                             depth_rvalid,
+    input  wire                                             depth_rlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       depth_waddr,
+    output wire                                             depth_wvalid,
+    input  wire [DEPTH_WIDTH - 1 : 0]                       depth_rdata,
+    output wire [DEPTH_WIDTH - 1 : 0]                       depth_wdata,
+    output wire                                             depth_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  depth_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  depth_wscreenPosY,
 
     // Stencil buffer access
     output wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferClearStencil,
@@ -105,14 +113,18 @@ module RasterixRenderCore #(
     input  wire                                             stencilBufferApplied,
     output wire                                             stencilBufferCmdCommit,
     output wire                                             stencilBufferCmdMemset,
-    output wire [INDEX_WIDTH - 1 : 0]                       stencilIndexRead,
-    output wire [INDEX_WIDTH - 1 : 0]                       stencilIndexWrite,
-    output wire                                             stencilWriteEnable,
-    input  wire [STENCIL_WIDTH - 1 : 0]                     stencilIn,
-    output wire [STENCIL_WIDTH - 1 : 0]                     stencilOut,
-    output wire [STENCIL_WIDTH - 1 : 0]                     stencilMask,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencilOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencilOutScreenPosY,
+    output wire                                             stencil_arvalid,
+    output wire                                             stencil_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       stencil_araddr,
+    input  wire                                             stencil_rvalid,
+    input  wire                                             stencil_rlast,
+    output wire [INDEX_WIDTH - 1 : 0]                       stencil_waddr,
+    output wire                                             stencil_wvalid,
+    input  wire [STENCIL_WIDTH - 1 : 0]                     stencil_rdata,
+    output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wdata,
+    output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosY,
 
     // Debug
     output wire [ 3:0]  dbgStreamState,
@@ -274,13 +286,13 @@ module RasterixRenderCore #(
     assign framebufferParamYOffset = confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign framebufferParamXResolution = confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
     assign framebufferParamYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
-    assign depthMask = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
-    assign colorMask = { 
+    assign depth_wstrb = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
+    assign color_wstrb = { 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE] };
-    assign stencilMask = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)];
+    assign stencil_wstrb = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)];
 
 
     assign dbgRasterizerRunning = rasterizerRunning;
@@ -626,29 +638,41 @@ module RasterixRenderCore #(
 
         .fragmentProcessed(fragmentProcessed),
 
-        .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
-        .colorIndexWrite(colorIndexWrite),
-        .colorWriteEnable(colorWriteEnable),
-        .colorOut(colorOut),
-        .colorOutScreenPosX(colorOutScreenPosX),
-        .colorOutScreenPosY(colorOutScreenPosY),
+        .color_arvalid(color_arvalid),
+        .color_arlast(color_arlast),
+        .color_araddr(color_araddr),
+        .color_rvalid(color_rvalid),
+        .color_rlast(color_rlast),
+        .color_rdata(color_rdata),
+        .color_waddr(color_waddr),
+        .color_wvalid(color_wvalid),
+        .color_wdata(color_wdata),
+        .color_wscreenPosX(color_wscreenPosX),
+        .color_wscreenPosY(color_wscreenPosY),
 
-        .depthIndexRead(depthIndexRead),
-        .depthIn(depthIn),
-        .depthIndexWrite(depthIndexWrite),
-        .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut),
-        .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY),
+        .depth_arvalid(depth_arvalid),
+        .depth_arlast(depth_arlast),
+        .depth_araddr(depth_araddr),
+        .depth_rvalid(depth_rvalid),
+        .depth_rlast(depth_rlast),
+        .depth_rdata(depth_rdata),
+        .depth_waddr(depth_waddr),
+        .depth_wvalid(depth_wvalid),
+        .depth_wdata(depth_wdata),
+        .depth_wscreenPosX(depth_wscreenPosX),
+        .depth_wscreenPosY(depth_wscreenPosY),
 
-        .stencilIndexRead(stencilIndexRead),
-        .stencilIn(stencilIn),
-        .stencilIndexWrite(stencilIndexWrite),
-        .stencilWriteEnable(stencilWriteEnable),
-        .stencilOut(stencilOut),
-        .stencilOutScreenPosX(stencilOutScreenPosX),
-        .stencilOutScreenPosY(stencilOutScreenPosY)
+        .stencil_arvalid(stencil_arvalid),
+        .stencil_arlast(stencil_arlast),
+        .stencil_araddr(stencil_araddr),
+        .stencil_rvalid(stencil_rvalid),
+        .stencil_rlast(stencil_rlast),
+        .stencil_rdata(stencil_rdata),
+        .stencil_waddr(stencil_waddr),
+        .stencil_wvalid(stencil_wvalid),
+        .stencil_wdata(stencil_wdata),
+        .stencil_wscreenPosX(stencil_wscreenPosX),
+        .stencil_wscreenPosY(stencil_wscreenPosY)
     );
     defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam perFragmentPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;

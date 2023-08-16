@@ -29,8 +29,8 @@
 // the scissor area. A improved version will just set the scissor area.
 // It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
 //
-// Pipelined: n/a
-// Depth: 1 cycle
+// Pipelined: yes
+// Depth: 2 cycle
 module FrameBuffer
 #(
     // Number of pixels a stream beat contains
@@ -76,15 +76,26 @@ module FrameBuffer
     // Fragment interface
     /////////////////////////
 
-    // Framebuffer Interface
-    input  wire [ADDR_WIDTH - 1 : 0]        fragIndexRead,
-    output reg  [PIXEL_WIDTH - 1 : 0]       fragOut,
-    input  wire [ADDR_WIDTH - 1 : 0]        fragIndexWrite,
-    input  wire [PIXEL_WIDTH - 1 : 0]       fragIn,
-    input  wire                             fragWriteEnable,
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  fragMask,
-    input  wire [X_BIT_WIDTH - 1 : 0]       screenPosX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       screenPosY,
+    // Output stream
+    input  wire                             arvalid,
+    input  wire                             arlast,
+    // output wire                             arready,
+    input  wire [ADDR_WIDTH - 1 : 0]        araddr,
+
+    output reg                              rvalid,
+    output reg                              rlast,
+    // input  wire                             rready,
+    output reg  [PIXEL_WIDTH - 1 : 0]       rdata,
+
+    // Input Stream
+    input  wire                             wvalid,
+    input  wire                             wlast,
+    // output wire                             wready,
+    input  wire [ADDR_WIDTH - 1 : 0]        waddr,
+    input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  wstrb,
+    input  wire [X_BIT_WIDTH - 1 : 0]       wscreenPosX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       wscreenPosY,
     
     /////////////////////////
     // Control
@@ -139,9 +150,11 @@ module FrameBuffer
     reg  [ADDR_WIDTH - 1 : 0]       memAddrReadDelay;
     wire [MEM_WIDTH - 1 : 0]        memDataIn; 
     wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { fragMask } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb } };
     wire                            memScissorTest;
-    wire                            memWriteEnable = fragWriteEnable;
+    wire                            memWriteEnable = wvalid;
+    reg                             rvalidDelay;
+    reg                             rlastDelay;
     
     // State variables for managing the memory (memset and memcpy)
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdIndex;
@@ -149,7 +162,7 @@ module FrameBuffer
     reg                             cmdRunning;
     reg  [5 : 0]                    cmdState;
     reg                             cmdWrite;
-    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { fragMask } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb } };
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
 
     // Memcpy address
@@ -214,13 +227,13 @@ module FrameBuffer
 
     // Fragment access including the scissor check
     generate
-        assign memScissorTest = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, screenPosX, screenPosY);
+        assign memScissorTest = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, wscreenPosX, wscreenPosY);
         if (NUMBER_OF_PIXELS_PER_BEAT == 1)
         begin
-            assign memAddrWrite = fragIndexWrite;
-            assign memDataIn = fragIn;
+            assign memAddrWrite = waddr;
+            assign memDataIn = wdata;
             assign memWriteMask = memMask & { NUMBER_OF_SUB_PIXELS { memScissorTest } };
-            assign memAddrRead = fragIndexRead;
+            assign memAddrRead = araddr;
             assign memDataOut = memBusDataOut;
         end
         else
@@ -229,19 +242,23 @@ module FrameBuffer
             begin
                 for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign memWriteMask[(i * NUMBER_OF_SUB_PIXELS) + j] = (fragIndexWrite[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j] & memScissorTest;
+                    assign memWriteMask[(i * NUMBER_OF_SUB_PIXELS) + j] = (waddr[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j] & memScissorTest;
                 end
             end
-            assign memAddrWrite = fragIndexWrite[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign memDataIn = { NUMBER_OF_PIXELS_PER_BEAT { fragIn } };
-            assign memAddrRead = fragIndexRead[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
+            assign memAddrWrite = waddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
+            assign memDataIn = { NUMBER_OF_PIXELS_PER_BEAT { wdata } };
+            assign memAddrRead = araddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
             assign memDataOut = memBusDataOut[memAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * MEM_PIXEL_WIDTH +: MEM_PIXEL_WIDTH];
         end
     endgenerate
 
     always @(posedge clk)
     begin
-        fragOut <= memDataOut;
+        rdata <= memDataOut;
+        rvalidDelay <= arvalid;
+        rvalid <= rvalidDelay;
+        rlastDelay <= arlast;
+        rlast <= rlastDelay;
     end
             
     assign m_axis_tdata = memBusDataOut;
@@ -260,7 +277,7 @@ module FrameBuffer
         end
         else
         begin
-            memAddrReadDelay <= fragIndexRead;
+            memAddrReadDelay <= araddr;
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
