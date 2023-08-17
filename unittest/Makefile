@@ -1,6 +1,6 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp memoryReadRequestGenerator framebufferSerializer
+all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp memoryReadRequestGenerator framebufferSerializer streamConcatFifo
  
 clean:
 	rm -rf obj_dir
@@ -59,6 +59,11 @@ framebufferSerializer:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferSerializer.v --top-module FramebufferSerializer cpp/sim_FramebufferSerializer.cpp -I../rtl/Rasterix/
 	-make -C obj_dir -f VFramebufferSerializer.mk
 	./obj_dir/VFramebufferSerializer
+
+streamConcatFifo:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamConcatFifo.v --top-module StreamConcatFifo cpp/sim_StreamConcatFifo.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VStreamConcatFifo.mk
+	./obj_dir/VStreamConcatFifo
 
 .SECONDARY:
 .PHONY: all clean
