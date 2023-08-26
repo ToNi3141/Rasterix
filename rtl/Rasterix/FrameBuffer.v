@@ -71,6 +71,7 @@ module FrameBuffer
     input  wire [Y_BIT_WIDTH - 1 : 0]       confYOffset,
     input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
     input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0] confMask,
 
     /////////////////////////
     // Fragment interface
@@ -150,7 +151,7 @@ module FrameBuffer
     reg  [ADDR_WIDTH - 1 : 0]       memAddrReadDelay;
     wire [MEM_WIDTH - 1 : 0]        memDataIn; 
     wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb & confMask } };
     wire                            memScissorTest;
     wire                            memWriteEnable = wvalid;
     reg                             rvalidDelay;
@@ -162,7 +163,7 @@ module FrameBuffer
     reg                             cmdRunning;
     reg  [5 : 0]                    cmdState;
     reg                             cmdWrite;
-    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { confMask } };
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
 
     // Memcpy address

@@ -75,14 +75,17 @@ module RasterixRenderCore #(
     input  wire                                             colorBufferApplied,
     output wire                                             colorBufferCmdCommit,
     output wire                                             colorBufferCmdMemset,
+    output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              colorBufferMask,
+    input  wire                                             color_arready,
     output wire                                             color_arvalid,
     output wire                                             color_arlast,
     output wire [INDEX_WIDTH - 1 : 0]                       color_araddr,
+    output wire                                             color_rready,
     input  wire                                             color_rvalid,
-    input  wire                                             color_rlast,
+    input  wire [PIXEL_WIDTH - 1 : 0]                       color_rdata,
     output wire [INDEX_WIDTH - 1 : 0]                       color_waddr,
     output wire                                             color_wvalid,
-    input  wire [PIXEL_WIDTH - 1 : 0]                       color_rdata,
+    output wire                                             color_wlast,
     output wire [PIXEL_WIDTH - 1 : 0]                       color_wdata,
     output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              color_wstrb,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosX,
@@ -94,14 +97,17 @@ module RasterixRenderCore #(
     input  wire                                             depthBufferApplied,
     output wire                                             depthBufferCmdCommit,
     output wire                                             depthBufferCmdMemset,
+    output wire                                             depthBufferMask,
+    input  wire                                             depth_arready,
     output wire                                             depth_arvalid,
     output wire                                             depth_arlast,
     output wire [INDEX_WIDTH - 1 : 0]                       depth_araddr,
+    output wire                                             depth_rready,
     input  wire                                             depth_rvalid,
-    input  wire                                             depth_rlast,
+    input  wire [DEPTH_WIDTH - 1 : 0]                       depth_rdata,
     output wire [INDEX_WIDTH - 1 : 0]                       depth_waddr,
     output wire                                             depth_wvalid,
-    input  wire [DEPTH_WIDTH - 1 : 0]                       depth_rdata,
+    output wire                                             depth_wlast,
     output wire [DEPTH_WIDTH - 1 : 0]                       depth_wdata,
     output wire                                             depth_wstrb,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  depth_wscreenPosX,
@@ -113,14 +119,17 @@ module RasterixRenderCore #(
     input  wire                                             stencilBufferApplied,
     output wire                                             stencilBufferCmdCommit,
     output wire                                             stencilBufferCmdMemset,
+    output wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask,
+    input  wire                                             stencil_arready,
     output wire                                             stencil_arvalid,
     output wire                                             stencil_arlast,
     output wire [INDEX_WIDTH - 1 : 0]                       stencil_araddr,
+    output wire                                             stencil_rready,
     input  wire                                             stencil_rvalid,
-    input  wire                                             stencil_rlast,
+    input  wire [STENCIL_WIDTH - 1 : 0]                     stencil_rdata,
     output wire [INDEX_WIDTH - 1 : 0]                       stencil_waddr,
     output wire                                             stencil_wvalid,
-    input  wire [STENCIL_WIDTH - 1 : 0]                     stencil_rdata,
+    output wire                                             stencil_wlast,
     output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wdata,
     output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wstrb,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosX,
@@ -201,6 +210,8 @@ module RasterixRenderCore #(
     wire [SCREEN_POS_WIDTH - 1 : 0]                 framebuffer_screenPosY;
     wire [31 : 0]                                   framebuffer_depth;
     wire                                            framebuffer_valid;
+    wire                                            framebuffer_last;
+    wire                                            framebuffer_keep;
 
     wire pixelInPipelineInterpolator;
     wire pixelInPipelineShader;
@@ -215,12 +226,14 @@ module RasterixRenderCore #(
     wire            m_attr_inter_axis_tvalid;
     wire            m_attr_inter_axis_tready;
     wire            m_attr_inter_axis_tlast;
+    wire            m_attr_inter_axis_tkeep;
     wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
 
     // Rasterizer
     wire            m_rasterizer_axis_tvalid;
     wire            m_rasterizer_axis_tready;
     wire            m_rasterizer_axis_tlast;
+    wire            m_rasterizer_axis_tkeep;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
 
     // Steams
@@ -286,13 +299,13 @@ module RasterixRenderCore #(
     assign framebufferParamYOffset = confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign framebufferParamXResolution = confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
     assign framebufferParamYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
-    assign depth_wstrb = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
-    assign color_wstrb = { 
+    assign depthBufferMask = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
+    assign colorBufferMask = { 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE] };
-    assign stencil_wstrb = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)];
+    assign stencilBufferMask = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)];
 
 
     assign dbgRasterizerRunning = rasterizerRunning;
@@ -463,6 +476,7 @@ module RasterixRenderCore #(
         .m_axis_tvalid(m_rasterizer_axis_tvalid),
         .m_axis_tready(m_rasterizer_axis_tready),
         .m_axis_tlast(m_rasterizer_axis_tlast),
+        .m_axis_tkeep(m_rasterizer_axis_tkeep),
         .m_axis_tdata(m_rasterizer_axis_tdata),
 
         .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -497,19 +511,67 @@ module RasterixRenderCore #(
     // Interpolation of attributes
     // Clocks: 45
     ////////////////////////////////////////////////////////////////////////////
+    wire [(RASTERIZER_AXIS_PARAMETER_SIZE * 4) - 1 : 0] mem_index;
+    wire [ 3 : 0]                                       mem_valid;
+    wire [ 3 : 0]                                       mem_last;
+    wire [ 3 : 0]                                       mem_keep;
+    wire                                                mem_arready_attrib;
+    assign color_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 3) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign depth_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 2) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign stencil_araddr   = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 1) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign color_arvalid    = mem_valid[3];
+    assign depth_arvalid    = mem_valid[2];
+    assign stencil_arvalid  = mem_valid[1];
+    assign color_arlast     = mem_last[3];
+    assign depth_arlast     = mem_last[2];
+    assign stencil_arlast   = mem_last[1];
+
+    axis_broadcast axisBroadcast (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata(m_rasterizer_axis_tdata),
+        .s_axis_tlast(m_rasterizer_axis_tlast),
+        .s_axis_tvalid(m_rasterizer_axis_tvalid),
+        .s_axis_tready(m_rasterizer_axis_tready),
+        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+        .s_axis_tid(),
+        .s_axis_tdest(),
+        .s_axis_tuser(),
+
+        .m_axis_tdata(mem_index),
+        .m_axis_tvalid(mem_valid),
+        .m_axis_tready({ color_arready, depth_arready, stencil_arready, mem_arready_attrib }),
+        .m_axis_tlast(mem_last),
+        .m_axis_tkeep(mem_keep),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
+    );
+    defparam axisBroadcast.M_COUNT = 4;
+    defparam axisBroadcast.DATA_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam axisBroadcast.KEEP_ENABLE = 1;
+    defparam axisBroadcast.KEEP_WIDTH = 1;
+    defparam axisBroadcast.LAST_ENABLE = 1;
+    defparam axisBroadcast.ID_ENABLE = 0;
+    defparam axisBroadcast.DEST_ENABLE = 0;
+    defparam axisBroadcast.USER_ENABLE = 0;
+
     AttributeInterpolator attributeInterpolator (
         .aclk(aclk),
         .resetn(resetn),
         .pixelInPipeline(pixelInPipelineInterpolator),
 
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tdata(m_rasterizer_axis_tdata),
+        .s_axis_tvalid(mem_valid[0]),
+        .s_axis_tready(mem_arready_attrib),
+        .s_axis_tlast(mem_last[0]),
+        .s_axis_tkeep(mem_keep[0]),
+        .s_axis_tdata(mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 0) +: RASTERIZER_AXIS_PARAMETER_SIZE]),
 
         .m_axis_tvalid(m_attr_inter_axis_tvalid),
         .m_axis_tready(m_attr_inter_axis_tready),
         .m_axis_tlast(m_attr_inter_axis_tlast),
+        .m_axis_tkeep(m_attr_inter_axis_tkeep),
         .m_axis_tdata(m_attr_inter_axis_tdata),
 
         .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -555,7 +617,6 @@ module RasterixRenderCore #(
     // Texturing triangle, fogging
     // Clocks: 32
     ////////////////////////////////////////////////////////////////////////////
-    // TODO: Es wird aktuell noch nicht tlast durch geroutet
     PixelPipeline pixelPipeline (    
         .aclk(aclk),
         .resetn(resetn),
@@ -579,6 +640,7 @@ module RasterixRenderCore #(
         .s_axis_tvalid(m_attr_inter_axis_tvalid),
         .s_axis_tready(m_attr_inter_axis_tready),
         .s_axis_tlast(m_attr_inter_axis_tlast),
+        .s_axis_tkeep(m_attr_inter_axis_tkeep),
         .s_axis_tdata(m_attr_inter_axis_tdata),
 
         .texel0Addr00(texel0Addr00),
@@ -602,6 +664,8 @@ module RasterixRenderCore #(
         .texel1Input11(texel1Input11),
 
         .framebuffer_valid(framebuffer_valid),
+        .framebuffer_last(framebuffer_last),
+        .framebuffer_keep(framebuffer_keep),
         .framebuffer_fragmentColor(framebuffer_fragmentColor),
         .framebuffer_depth(framebuffer_depth),
         .framebuffer_index(framebuffer_index),
@@ -621,6 +685,51 @@ module RasterixRenderCore #(
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
+    localparam FRAGMENT_STREAM_WIDTH = (COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 + 1;
+
+    wire fragment_stream_out_tvalid;
+    wire fragment_stream_out_tready;
+    wire [(FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH) - 1 : 0] fragment_stream_out_tdata;
+
+    StreamConcatFifo streamConcatFifo (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .stream0_tvalid(framebuffer_valid),
+        .stream0_tdata({ 
+            framebuffer_keep,
+            framebuffer_last,
+            framebuffer_screenPosY,
+            framebuffer_screenPosX,
+            framebuffer_index,
+            framebuffer_depth, 
+            framebuffer_fragmentColor 
+        }),
+        .stream0_tready(),
+
+        .stream1_tvalid(color_rvalid),
+        .stream1_tdata(color_rdata),
+        .stream1_tready(color_rready),
+
+        .stream2_tvalid(depth_rvalid),
+        .stream2_tdata(depth_rdata),
+        .stream2_tready(depth_rready),
+
+        .stream3_tvalid(stencil_rvalid),
+        .stream3_tdata(stencil_rdata),
+        .stream3_tready(stencil_rready),
+
+        .stream_out_tvalid(fragment_stream_out_tvalid),
+        .stream_out_tdata(fragment_stream_out_tdata),
+        .stream_out_tready(fragment_stream_out_tready)
+    );
+    
+    defparam streamConcatFifo.FIFO_DEPTH_POW2 = 7;
+    defparam streamConcatFifo.STREAM0_WIDTH = FRAGMENT_STREAM_WIDTH;
+    defparam streamConcatFifo.STREAM1_WIDTH = PIXEL_WIDTH;
+    defparam streamConcatFifo.STREAM2_WIDTH = DEPTH_WIDTH;
+    defparam streamConcatFifo.STREAM3_WIDTH = STENCIL_WIDTH;
+
     PerFragmentPipeline perFragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
@@ -629,48 +738,48 @@ module RasterixRenderCore #(
         .confFeatureEnable(confFeatureEnable),
         .confStencilBufferConfig(confStencilBufferConfig),
 
-        .valid(framebuffer_valid),
-        .fragmentColor(framebuffer_fragmentColor),
-        .depth(framebuffer_depth),
-        .index(framebuffer_index),
-        .screenPosX(framebuffer_screenPosX),
-        .screenPosY(framebuffer_screenPosY),
+        .frag_tready(fragment_stream_out_tready),
+        .frag_tlast(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) +: 1]),
+        .frag_tkeep(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 +: 1]),
+        .frag_tvalid(fragment_stream_out_tvalid),
+        .frag_tcolor(fragment_stream_out_tdata[0 +: (COLOR_SUB_PIXEL_WIDTH * 4)]),
+        .frag_tdepth(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) +: 32]),
+        .frag_tindex(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 +: INDEX_WIDTH]),
+        .frag_tscreenPosX(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH +: SCREEN_POS_WIDTH]),
+        .frag_tscreenPosY(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 
-        .color_arvalid(color_arvalid),
-        .color_arlast(color_arlast),
-        .color_araddr(color_araddr),
-        .color_rvalid(color_rvalid),
-        .color_rlast(color_rlast),
-        .color_rdata(color_rdata),
+        .color_rready(),
+        .color_rvalid(fragment_stream_out_tvalid),
+        .color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
         .color_waddr(color_waddr),
         .color_wvalid(color_wvalid),
+        .color_wlast(color_wlast),
         .color_wdata(color_wdata),
+        .color_wstrb(color_wstrb),
         .color_wscreenPosX(color_wscreenPosX),
         .color_wscreenPosY(color_wscreenPosY),
 
-        .depth_arvalid(depth_arvalid),
-        .depth_arlast(depth_arlast),
-        .depth_araddr(depth_araddr),
-        .depth_rvalid(depth_rvalid),
-        .depth_rlast(depth_rlast),
-        .depth_rdata(depth_rdata),
+        .depth_rready(),
+        .depth_rvalid(fragment_stream_out_tvalid),
+        .depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
         .depth_waddr(depth_waddr),
         .depth_wvalid(depth_wvalid),
+        .depth_wlast(depth_wlast),
         .depth_wdata(depth_wdata),
+        .depth_wstrb(depth_wstrb),
         .depth_wscreenPosX(depth_wscreenPosX),
         .depth_wscreenPosY(depth_wscreenPosY),
 
-        .stencil_arvalid(stencil_arvalid),
-        .stencil_arlast(stencil_arlast),
-        .stencil_araddr(stencil_araddr),
-        .stencil_rvalid(stencil_rvalid),
-        .stencil_rlast(stencil_rlast),
-        .stencil_rdata(stencil_rdata),
+        .stencil_rready(),
+        .stencil_rvalid(fragment_stream_out_tvalid),
+        .stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
         .stencil_waddr(stencil_waddr),
         .stencil_wvalid(stencil_wvalid),
+        .stencil_wlast(stencil_wlast),
         .stencil_wdata(stencil_wdata),
+        .stencil_wstrb(stencil_wstrb),
         .stencil_wscreenPosX(stencil_wscreenPosX),
         .stencil_wscreenPosY(stencil_wscreenPosY)
     );

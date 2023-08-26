@@ -28,7 +28,8 @@ module Rasterizer
 
     localparam ATTRIBUTE_SIZE = 32,
 
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE
+    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
+    localparam KEEP_WIDTH = 1
 )
 (
     input wire                              clk,
@@ -48,6 +49,7 @@ module Rasterizer
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
     output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
+    output reg  [KEEP_WIDTH - 1 : 0]        m_axis_tkeep,
 
     // Triangle Attributes
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbStart,
@@ -107,6 +109,7 @@ module Rasterizer
         begin
             m_axis_tlast <= 0;
             m_axis_tvalid <= 0;
+            m_axis_tkeep <= ~0;
             rasterizerRunning <= 0;
             rasterizerState <= RASTERIZER_WAITFORCOMMAND;
         end
@@ -116,6 +119,8 @@ module Rasterizer
             RASTERIZER_WAITFORCOMMAND:
             begin
                 m_axis_tvalid <= 0;
+                m_axis_tkeep <= ~0;
+                m_axis_tlast <= 0;
                 if (startRendering)
                 begin
                     lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
@@ -373,7 +378,9 @@ module Rasterizer
                     begin
                         // Now the edge walker is below the triangle. No Triangle hit is expected anymore.
                         // That means, the edge walking is aborted.
-                        m_axis_tvalid <= 0;
+                        m_axis_tvalid <= 1;
+                        m_axis_tkeep <= 0;
+                        m_axis_tlast <= 1;
                         rasterizerRunning <= 0;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end

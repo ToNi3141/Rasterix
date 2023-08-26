@@ -230,6 +230,7 @@ module Rasterix #(
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
+    wire [3 : 0]                                     colorBufferMask;
     wire                                             color_arvalid;
     wire                                             color_arlast;
     wire                                             color_rvalid;
@@ -249,6 +250,7 @@ module Rasterix #(
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
+    wire                                             depthBufferMask;
     wire                                             depth_arvalid;
     wire                                             depth_arlast;
     wire                                             depth_rvalid;
@@ -268,6 +270,7 @@ module Rasterix #(
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
+    wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             stencil_arvalid;
     wire                                             stencil_arlast;
     wire                                             stencil_rvalid;
@@ -294,6 +297,7 @@ module Rasterix #(
         .confYOffset(framebufferParamYOffset),
         .confXResolution(framebufferParamXResolution),
         .confYResolution(framebufferParamYResolution),
+        .confMask(depthBufferMask),
 
         .araddr(depth_araddr),
         .arvalid(depth_arvalid),
@@ -339,6 +343,7 @@ module Rasterix #(
         .confYOffset(framebufferParamYOffset),
         .confXResolution(framebufferParamXResolution),
         .confYResolution(framebufferParamYResolution),
+        .confMask(ColorBufferReduceMask(colorBufferMask)),
 
         .araddr(color_araddr),
         .arvalid(color_arvalid),
@@ -401,6 +406,7 @@ module Rasterix #(
                 .confYOffset(framebufferParamYOffset),
                 .confXResolution(framebufferParamXResolution),
                 .confYResolution(framebufferParamYResolution),
+                .confMask(stencilBufferMask),
 
                 .araddr(stencil_araddr),
                 .arvalid(stencil_arvalid),
@@ -467,12 +473,19 @@ module Rasterix #(
         .colorBufferApplied(colorBufferApplied),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorBufferMask(colorBufferMask),
+        .color_arready(1),
+        .color_arlast(),
+        .color_arvalid(color_arvalid),
         .color_araddr(color_araddr),
+        .color_rready(),
         .color_rdata(ColorBufferExpandVec(ColorBufferExpand(color_rdata), DEFAULT_ALPHA_VAL)),
+        .color_rvalid(color_rvalid),
         .color_waddr(color_waddr),
         .color_wvalid(color_wvalid),
         .color_wdata(color_wdata),
         .color_wstrb(color_wstrb),
+        .color_wlast(),
         .color_wscreenPosX(color_wscreenPosX),
         .color_wscreenPosY(color_wscreenPosY),
 
@@ -481,12 +494,19 @@ module Rasterix #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthBufferMask(depthBufferMask),
+        .depth_arready(1),
+        .depth_arlast(),
+        .depth_arvalid(depth_arvalid),
         .depth_araddr(depth_araddr),
+        .depth_rready(),
         .depth_rdata(depth_rdata),
+        .depth_rvalid(depth_rvalid),
         .depth_waddr(depth_waddr),
         .depth_wvalid(depth_wvalid),
         .depth_wdata(depth_wdata),
         .depth_wstrb(depth_wstrb),
+        .depth_wlast(),
         .depth_wscreenPosX(depth_wscreenPosX),
         .depth_wscreenPosY(depth_wscreenPosY),
 
@@ -495,12 +515,19 @@ module Rasterix #(
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilBufferMask(stencilBufferMask),
+        .stencil_arready(1),
+        .stencil_arlast(),
+        .stencil_arvalid(stencil_arvalid),
         .stencil_araddr(stencil_araddr),
+        .stencil_rready(),
         .stencil_rdata(stencil_rdata),
+        .stencil_rvalid(stencil_rvalid),
         .stencil_waddr(stencil_waddr),
         .stencil_wvalid(stencil_wvalid),
         .stencil_wdata(stencil_wdata),
         .stencil_wstrb(stencil_wstrb),
+        .stencil_wlast(),
         .stencil_wscreenPosX(stencil_wscreenPosX),
         .stencil_wscreenPosY(stencil_wscreenPosY)
     );

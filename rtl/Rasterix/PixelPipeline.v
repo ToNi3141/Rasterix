@@ -43,7 +43,9 @@ module PixelPipeline
 
     parameter ENABLE_SECOND_TMU = 1,
     
-    parameter SCREEN_POS_WIDTH = 11
+    parameter SCREEN_POS_WIDTH = 11,
+
+    localparam KEEP_WIDTH = 1
 )
 (
     input  wire                                     aclk,
@@ -71,6 +73,7 @@ module PixelPipeline
     input  wire                                     s_axis_tvalid,
     output wire                                     s_axis_tready,
     input  wire                                     s_axis_tlast,
+    input  wire [KEEP_WIDTH - 1 : 0]                s_axis_tkeep,
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
@@ -98,7 +101,9 @@ module PixelPipeline
     output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosX,
     output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosY,
     output wire [31 : 0]                            framebuffer_depth,
-    output wire                                     framebuffer_valid
+    output wire                                     framebuffer_valid,
+    output wire                                     framebuffer_last,
+    output wire                                     framebuffer_keep
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
@@ -127,6 +132,8 @@ module PixelPipeline
     wire [31 : 0]               step_convert_color_b;
     wire [31 : 0]               step_convert_color_a;
     wire                        step_convert_tvalid;
+    wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
+    wire                        step_convert_tlast;
 
     // Framebuffer Index
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
@@ -138,9 +145,13 @@ module PixelPipeline
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
         convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_y));
 
-    // Fragment valid flag
+    // Fragment stream flags
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         convert_valid_delay (.clk(aclk), .in(s_axis_tvalid), .out(step_convert_tvalid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(4)) 
+        convert_keep_delay (.clk(aclk), .in(s_axis_tkeep), .out(step_convert_tkeep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+        convert_last_delay (.clk(aclk), .in(s_axis_tlast), .out(step_convert_tlast));
 
     // Depth
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
@@ -193,6 +204,8 @@ module PixelPipeline
     wire [PIXEL_WIDTH - 1 : 0]              step1_primaryColor;
     wire [31 : 0]                           step1_texture1S;
     wire [31 : 0]                           step1_texture1T;
+    wire [KEEP_WIDTH - 1 : 0]               step1_keep;
+    wire                                    step1_last;
 
 
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(11)) 
@@ -207,8 +220,13 @@ module PixelPipeline
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
+
     ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+        step1_keepDelay (.clk(aclk), .in(step_convert_tkeep), .out(step1_keep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+        step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
 
     ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
         step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
@@ -258,6 +276,8 @@ module PixelPipeline
     wire [31 : 0]                           step2_depth;
     wire [31 : 0]                           step2_depthWFloat;
     wire                                    step2_valid;
+    wire [KEEP_WIDTH - 1 : 0]               step2_keep;
+    wire                                    step2_last;
 
     generate
         if (ENABLE_SECOND_TMU)
@@ -274,8 +294,13 @@ module PixelPipeline
                 step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
             ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
                 step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
+
             ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
                 step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
+            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+                step2_keepDelay (.clk(aclk), .in(step1_keep), .out(step2_keep));
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+                step2_lastDelay (.clk(aclk), .in(step1_last), .out(step2_last));
 
             TextureMappingUnit #(
                 .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -332,6 +357,8 @@ module PixelPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step3_screenPosY;
     wire [31 : 0]                           step3_depth;
     wire                                    step3_valid;
+    wire [KEEP_WIDTH - 1 : 0]               step3_keep;
+    wire                                    step3_last;
 
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(6)) 
         step3_indexDelay (.clk(aclk), .in(step2_index), .out(step3_index));
@@ -343,6 +370,10 @@ module PixelPipeline
         step3_depthDelay (.clk(aclk), .in(step2_depth), .out(step3_depth));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
         step3_validDelay (.clk(aclk), .in(step2_valid), .out(step3_valid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(6)) 
+        step3_keepDelay (.clk(aclk), .in(step2_keep), .out(step3_keep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
+        step3_lastDelay (.clk(aclk), .in(step2_last), .out(step3_last));
 
     Fog #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
@@ -371,6 +402,8 @@ module PixelPipeline
     assign framebuffer_screenPosY = step3_screenPosY;
     assign framebuffer_depth = step3_depth;
     assign framebuffer_valid = step3_valid;
+    assign framebuffer_keep = step3_keep;
+    assign framebuffer_last = step3_last;
 
 endmodule
 

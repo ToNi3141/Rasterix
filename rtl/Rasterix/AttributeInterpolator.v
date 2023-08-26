@@ -20,7 +20,8 @@ module AttributeInterpolator #(
 
     localparam ATTRIBUTE_SIZE = 32,
     localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
-    localparam ATTR_INTERP_AXIS_PARAMETER_SIZE = 12 * ATTRIBUTE_SIZE
+    localparam ATTR_INTERP_AXIS_PARAMETER_SIZE = 12 * ATTRIBUTE_SIZE,
+    localparam KEEP_WIDTH = 1
 )
 (
     input wire                              aclk,
@@ -33,12 +34,14 @@ module AttributeInterpolator #(
     input  wire                             s_axis_tvalid,
     output wire                             s_axis_tready,
     input  wire                             s_axis_tlast,
+    input  wire [KEEP_WIDTH - 1 : 0]        s_axis_tkeep,
     input  wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Pixel Stream Interpolated
     output wire                             m_axis_tvalid,
     input  wire                             m_axis_tready,
     output wire                             m_axis_tlast,
+    output wire [KEEP_WIDTH - 1 : 0]        m_axis_tkeep,
     output wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
 
     // Attributes
@@ -153,6 +156,7 @@ module AttributeInterpolator #(
     wire [AXIS_SCREEN_POS_SIZE - 1 : 0] step_0_screen_pos_y; 
     wire step_0_tvalid;
     wire step_0_tlast;
+    wire [KEEP_WIDTH - 1 : 0] step_0_tkeep;
     ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_framebuffer_index (.clk(aclk), .in(framebuffer_index), .out(step_0_framebuffer_index));
 
@@ -162,10 +166,13 @@ module AttributeInterpolator #(
         step_0_delay_screen_pos_y (.clk(aclk), .in(screen_pos_y), .out(step_0_screen_pos_y));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
-        step_1_delay_tvalid (.clk(aclk), .in(s_axis_tvalid), .out(step_0_tvalid));
+        step_0_delay_tvalid (.clk(aclk), .in(s_axis_tvalid), .out(step_0_tvalid));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
-        step_1_delay_tlast (.clk(aclk), .in(s_axis_tlast), .out(step_0_tlast));
+        step_0_delay_tlast (.clk(aclk), .in(s_axis_tlast), .out(step_0_tlast));
+
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY))
+        step_0_delay_tkeep(.clk(aclk), .in(s_axis_tkeep), .out(step_0_tkeep));
 
     ValueTrack pixelTracker (
         .aclk(aclk),
@@ -462,6 +469,7 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     assign m_axis_tvalid = step_0_tvalid;
     assign m_axis_tlast = step_0_tlast;
+    assign m_axis_tkeep = step_0_tkeep;
     assign m_axis_tdata = {
         step_0_framebuffer_index,
         {step_0_screen_pos_y, step_0_screen_pos_x},
