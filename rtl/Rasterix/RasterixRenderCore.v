@@ -213,9 +213,7 @@ module RasterixRenderCore #(
     wire                                            framebuffer_last;
     wire                                            framebuffer_keep;
 
-    wire pixelInPipelineInterpolator;
-    wire pixelInPipelineShader;
-    wire pixelInPipeline = pixelInPipelineInterpolator || pixelInPipelineShader;
+    wire pixelInPipeline;
     wire startRendering;
 
    
@@ -501,9 +499,9 @@ module RasterixRenderCore #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .sigIncommingValue(m_attr_inter_axis_tvalid & m_attr_inter_axis_tready),
+        .sigIncommingValue(m_rasterizer_axis_tvalid & m_rasterizer_axis_tready),
         .sigOutgoingValue(fragmentProcessed),
-        .valueInPipeline(pixelInPipelineShader)
+        .valueInPipeline(pixelInPipeline)
     );
     
     ////////////////////////////////////////////////////////////////////////////
@@ -560,7 +558,7 @@ module RasterixRenderCore #(
     AttributeInterpolator attributeInterpolator (
         .aclk(aclk),
         .resetn(resetn),
-        .pixelInPipeline(pixelInPipelineInterpolator),
+        .pixelInPipeline(),
 
         .s_axis_tvalid(mem_valid[0]),
         .s_axis_tready(mem_arready_attrib),

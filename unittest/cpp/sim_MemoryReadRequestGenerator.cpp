@@ -108,7 +108,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == false); // It is shortly deasserted when the last fetch is coming
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0002);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
 
         // Execute no fetch. Memory request is still pending
         t->s_fetch_axis_tvalid = false;
@@ -122,7 +122,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
 
         // Execute more clock cycles, no additional requests should be executed
         clk(t);
@@ -220,7 +220,7 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0002);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
     }
 
     // Destroy model
@@ -303,7 +303,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0002);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
 
         // Mem requests
         t->s_fetch_axis_tvalid = false;
@@ -319,7 +319,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
 
         // Last mem request
         t->s_fetch_axis_tvalid = false;
@@ -327,7 +327,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
 
         // Last mem request
         t->s_fetch_axis_tvalid = false;

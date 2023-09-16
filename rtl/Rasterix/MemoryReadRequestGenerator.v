@@ -24,7 +24,8 @@ module MemoryReadRequestGenerator #(
     parameter ID_WIDTH = 8,
 
     // Sets the width of a pixel to fix the memory alignment
-    parameter PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 16,
+    localparam PIXEL_WIDTH_LG = $clog2(PIXEL_WIDTH / 8)
 ) (
     input  wire                             aclk,
     input  wire                             resetn,
@@ -60,17 +61,23 @@ module MemoryReadRequestGenerator #(
     output reg                              m_mem_axi_arvalid,
     input  wire                             m_mem_axi_arready
 );
-    localparam ADDR_TAG_POS = $clog2((STREAM_WIDTH) / PIXEL_WIDTH);
+    localparam INDEX_TAG_POS = $clog2((STREAM_WIDTH) / PIXEL_WIDTH);
+    localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
+
+    localparam ADDR_BYTE_POS = $clog2(PIXEL_WIDTH / 8);
+    localparam ADDR_BYTE_WIDTH = $clog2(STREAM_WIDTH / 8) - ADDR_BYTE_POS;
+    localparam ADDR_TAG_POS = ADDR_BYTE_WIDTH;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
-    reg [ADDR_TAG_WIDTH - 1 : 0] lastAddrTag;
-    reg [ADDR_TAG_WIDTH - 1 : 0] lastAddrTagSkid;
-    reg lastFetchSkid;
-    reg lastFetch;
-    reg memRequest;
-    reg fetchEnabled;
-    reg [ADDR_TAG_WIDTH - 1 : 0] memRequestAddr;
+    reg [INDEX_TAG_WIDTH - 1 : 0]   lastAddrTag;
+    reg [INDEX_TAG_WIDTH - 1 : 0]   lastAddrTagSkid;
+    reg                             lastFetchSkid;
+    reg                             lastFetch;
+    reg                             memRequest;
+    reg                             fetchEnabled;
+    reg [ADDR_WIDTH - 1 : 0]        memRequestAddr;
 
+    // Fetch handling
     always @(posedge aclk)
     begin
         if (!resetn)
@@ -79,48 +86,18 @@ module MemoryReadRequestGenerator #(
             lastAddrTagSkid <= 0;
             lastFetchSkid <= 0;
             lastFetch <= 0;
-            memRequest <= 0;
-
-            m_mem_axi_arid <= 0;
-            m_mem_axi_arlen <= 0; // Use always one beat. If the performance too slow, then we could increase the STREAM_WIDTH and use an external bus converter
-            m_mem_axi_arsize <= { $clog2(STREAM_WIDTH / 8) }[0 +: 3];
-            m_mem_axi_arburst <= 1;
-            m_mem_axi_arlock <= 0;
-            m_mem_axi_arcache <= 0;
-            m_mem_axi_arprot <= 0;
-            m_mem_axi_arvalid <= 0;
 
             s_fetch_axis_tready <= 1;
+
             fetchEnabled <= 0;
         end
         else
         begin
-            // Memory request handling
-            if (!m_mem_axi_arvalid)
-            begin
-                // If no pending memory request is available, then check if a new request has to be issued
-                if (memRequest)
-                begin
-                    m_mem_axi_arvalid <= 1;
-                    m_mem_axi_araddr <= confAddr + { memRequestAddr, { (ADDR_TAG_POS){1'b0} } };
-                    memRequest <= 0;
-                end
-            end
-            else
-            begin
-                // Reset pending request when the arready signal was asserted
-                if (m_mem_axi_arready)
-                begin
-                    m_mem_axi_arvalid <= 0;
-                end
-            end
-
-            // Fetch handling
             if (s_fetch_axis_tready)
             begin
                 if (s_fetch_axis_tvalid)
                 begin : Fetch
-                    reg newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH])) && fetchEnabled);
+                    reg newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])) && fetchEnabled);
 
                     // This signal signalizes if at least one address was send via the fetch interface and has initialized lastAddrTag.
                     // Otherwise a memory request for an previous request with and old address in lastAddrTag could be triggered.
@@ -129,7 +106,7 @@ module MemoryReadRequestGenerator #(
                     if (newMemRequest && memRequest)
                     begin
                         s_fetch_axis_tready <= 0;
-                        lastAddrTagSkid <= s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
+                        lastAddrTagSkid <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
                         lastFetchSkid <= s_fetch_axis_tlast;
                     end
                     else
@@ -137,10 +114,10 @@ module MemoryReadRequestGenerator #(
                         // If the boundaries of the tag are exceeded, trigger a new write request
                         if (newMemRequest)
                         begin
-                            memRequestAddr <= lastAddrTag;
+                            memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                             memRequest <= 1;
                         end
-                        lastAddrTag <= s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
+                        lastAddrTag <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
                         // The last signal is a special case and is handled in the other state
                         if (s_fetch_axis_tlast)
                         begin
@@ -154,7 +131,7 @@ module MemoryReadRequestGenerator #(
             begin
                 if (!memRequest)
                 begin
-                    memRequestAddr <= lastAddrTag;
+                    memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                     memRequest <= 1;
                     
                     if (lastFetch)
@@ -172,6 +149,46 @@ module MemoryReadRequestGenerator #(
                         s_fetch_axis_tready <= !lastFetchSkid;
                         lastFetch <= lastFetchSkid;
                     end
+                end
+            end
+        end
+    end
+
+    // Memory request handling
+    always @(posedge aclk)
+    begin
+        if (!resetn)
+        begin
+            memRequest <= 0;
+
+            m_mem_axi_arid <= 0;
+            m_mem_axi_arlen <= 0; // Use always one beat. If the performance too slow, then we could increase the STREAM_WIDTH and use an external bus converter
+            m_mem_axi_arsize <= { $clog2(STREAM_WIDTH / 8) }[0 +: 3];
+            m_mem_axi_arburst <= 1;
+            m_mem_axi_arlock <= 0;
+            m_mem_axi_arcache <= 0;
+            m_mem_axi_arprot <= 0;
+            m_mem_axi_arvalid <= 0;
+        end
+        else
+        begin
+            // Memory request handling
+            if (!m_mem_axi_arvalid)
+            begin
+                // If no pending memory request is available, then check if a new request has to be issued
+                if (memRequest)
+                begin
+                    m_mem_axi_araddr <= confAddr + memRequestAddr;
+                    m_mem_axi_arvalid <= 1;
+                    memRequest <= 0;
+                end
+            end
+            else
+            begin
+                // Reset pending request when the arready signal was asserted
+                if (m_mem_axi_arready)
+                begin
+                    m_mem_axi_arvalid <= 0;
                 end
             end
         end
