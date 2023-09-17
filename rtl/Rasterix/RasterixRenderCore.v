@@ -87,7 +87,7 @@ module RasterixRenderCore #(
     output wire                                             color_wvalid,
     output wire                                             color_wlast,
     output wire [PIXEL_WIDTH - 1 : 0]                       color_wdata,
-    output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              color_wstrb,
+    output wire                                             color_wstrb,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosX,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosY,
 
@@ -131,7 +131,7 @@ module RasterixRenderCore #(
     output wire                                             stencil_wvalid,
     output wire                                             stencil_wlast,
     output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wdata,
-    output wire [STENCIL_WIDTH - 1 : 0]                     stencil_wstrb,
+    output wire                                             stencil_wstrb,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosX,
     output wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosY,
 

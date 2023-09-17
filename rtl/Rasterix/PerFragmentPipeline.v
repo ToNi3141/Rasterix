@@ -71,7 +71,7 @@ module PerFragmentPipeline
     output reg                                      color_wvalid,
     output reg                                      color_wlast,
     output reg  [PIXEL_WIDTH - 1 : 0]               color_wdata,
-    output reg  [NUMBER_OF_SUB_PIXELS - 1 : 0]      color_wstrb,
+    output reg                                      color_wstrb,
     output reg  [SCREEN_POS_WIDTH - 1 : 0]          color_wscreenPosX,
     output reg  [SCREEN_POS_WIDTH - 1 : 0]          color_wscreenPosY,
 
@@ -99,7 +99,7 @@ module PerFragmentPipeline
     output reg                                      stencil_wvalid,
     output reg                                      stencil_wlast,
     output reg  [STENCIL_WIDTH - 1 : 0]             stencil_wdata,
-    output reg  [STENCIL_WIDTH - 1 : 0]             stencil_wstrb,
+    output reg                                      stencil_wstrb,
     output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencil_wscreenPosX,
     output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencil_wscreenPosY
 );
@@ -286,9 +286,9 @@ module PerFragmentPipeline
         color_wlast <= step1_last;
         depth_wlast <= step1_last;
         stencil_wlast <= step1_last;
-        color_wstrb <= { NUMBER_OF_SUB_PIXELS { step1_keep } };
+        color_wstrb <= step1_keep;
         depth_wstrb <= step1_keep;
-        stencil_wstrb <= { STENCIL_WIDTH { step1_keep } };
+        stencil_wstrb <= step1_keep;
     end
 endmodule
 

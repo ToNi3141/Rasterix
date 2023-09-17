@@ -240,7 +240,7 @@ module Rasterix #(
     wire                                             color_wvalid;
     wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           color_rdata;
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              color_wdata;
-    wire [3 : 0]                                     color_wstrb;
+    wire                                             color_wstrb;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  color_wscreenPosY;
 
@@ -280,7 +280,7 @@ module Rasterix #(
     wire                                             stencil_wvalid;
     wire [STENCIL_WIDTH - 1 : 0]                     stencil_rdata;
     wire [STENCIL_WIDTH - 1 : 0]                     stencil_wdata;
-    wire [STENCIL_WIDTH - 1: 0]                      stencil_wstrb;
+    wire                                             stencil_wstrb;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosY;
 
@@ -354,7 +354,7 @@ module Rasterix #(
         .waddr(color_waddr),
         .wdata(ColorBufferReduce(ColorBufferReduceVec(color_wdata))),
         .wvalid(color_wvalid),
-        .wstrb(ColorBufferReduceMask(color_wstrb)),
+        .wstrb(color_wstrb),
         .wscreenPosX(color_wscreenPosX),
         .wscreenPosY(color_wscreenPosY),
         
