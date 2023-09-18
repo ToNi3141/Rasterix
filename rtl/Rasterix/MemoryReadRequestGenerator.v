@@ -70,11 +70,10 @@ module MemoryReadRequestGenerator #(
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
     reg [INDEX_TAG_WIDTH - 1 : 0]   lastAddrTag;
-    reg [INDEX_TAG_WIDTH - 1 : 0]   lastAddrTagSkid;
-    reg                             lastFetchSkid;
+    reg [INDEX_TAG_WIDTH - 1 : 0]   newAddrTagSkid;
+    reg                             lastSkid;
     reg                             lastFetch;
     reg                             memRequest;
-    reg                             fetchEnabled;
     reg [ADDR_WIDTH - 1 : 0]        memRequestAddr;
 
     // Fetch handling
@@ -82,14 +81,12 @@ module MemoryReadRequestGenerator #(
     begin
         if (!resetn)
         begin
-            lastAddrTag <= 0;
-            lastAddrTagSkid <= 0;
-            lastFetchSkid <= 0;
+            lastAddrTag <= ~0;
+            newAddrTagSkid <= ~0;
+            lastSkid <= 0;
             lastFetch <= 0;
 
             s_fetch_axis_tready <= 1;
-
-            fetchEnabled <= 0;
         end
         else
         begin
@@ -97,32 +94,32 @@ module MemoryReadRequestGenerator #(
             begin
                 if (s_fetch_axis_tvalid)
                 begin : Fetch
-                    reg newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])) && fetchEnabled);
+                    reg newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
 
-                    // This signal signalizes if at least one address was send via the fetch interface and has initialized lastAddrTag.
-                    // Otherwise a memory request for an previous request with and old address in lastAddrTag could be triggered.
-                    fetchEnabled <= 1;
                     // Safe current address in the skid buffer when the memory request handling is busy
                     if (newMemRequest && memRequest)
                     begin
                         s_fetch_axis_tready <= 0;
-                        lastAddrTagSkid <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
-                        lastFetchSkid <= s_fetch_axis_tlast;
+                        newAddrTagSkid <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+                        lastSkid <= s_fetch_axis_tlast;
                     end
                     else
                     begin
                         // If the boundaries of the tag are exceeded, trigger a new write request
                         if (newMemRequest)
                         begin
-                            memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
+                            memRequestAddr <= { s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH] << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                             memRequest <= 1;
                         end
-                        lastAddrTag <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
-                        // The last signal is a special case and is handled in the other state
+                        
+                        // If this is the last signal, set the lastAddrTag to max to enable a new request, when new addresses are comming
                         if (s_fetch_axis_tlast)
                         begin
-                            lastFetch <= 1;
-                            s_fetch_axis_tready <= 0;
+                            lastAddrTag <= ~0;
+                        end
+                        else
+                        begin
+                            lastAddrTag <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
                         end
                     end
                 end
@@ -131,23 +128,16 @@ module MemoryReadRequestGenerator #(
             begin
                 if (!memRequest)
                 begin
-                    memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
+                    memRequestAddr <= { newAddrTagSkid << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                     memRequest <= 1;
-                    
-                    if (lastFetch)
+                    s_fetch_axis_tready <= 1;
+                    if (lastSkid)
                     begin
-                        // If the current request was the last request in the stream, then reinitialize everything
-                        fetchEnabled <= 0;
-                        lastFetchSkid <= 0;
-                        lastFetch <= 0;
-                        s_fetch_axis_tready <= 1;
+                        lastAddrTag <= ~0;
                     end
                     else
                     begin
-                        // If the memory request handling is not busy anymore, load the data from the skid buffer.
-                        lastAddrTag <= lastAddrTagSkid;
-                        s_fetch_axis_tready <= !lastFetchSkid;
-                        lastFetch <= lastFetchSkid;
+                        lastAddrTag <= newAddrTagSkid;
                     end
                 end
             end
