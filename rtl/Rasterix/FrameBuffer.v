@@ -94,7 +94,7 @@ module FrameBuffer
     // output wire                             wready,
     input  wire [ADDR_WIDTH - 1 : 0]        waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  wstrb,
+    input  wire                             wstrb,
     input  wire [X_BIT_WIDTH - 1 : 0]       wscreenPosX,
     input  wire [Y_BIT_WIDTH - 1 : 0]       wscreenPosY,
     
@@ -124,6 +124,8 @@ module FrameBuffer
     localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH;
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
 
+    localparam [NUMBER_OF_SUB_PIXELS - 1 : 0] ZERO_MASK = 0;
+
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_MEMCPY = 1;
@@ -151,7 +153,7 @@ module FrameBuffer
     reg  [ADDR_WIDTH - 1 : 0]       memAddrReadDelay;
     wire [MEM_WIDTH - 1 : 0]        memDataIn; 
     wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { wstrb & confMask } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { (wstrb) ? confMask : ZERO_MASK } };
     wire                            memScissorTest;
     wire                            memWriteEnable = wvalid;
     reg                             rvalidDelay;
