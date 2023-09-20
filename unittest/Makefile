@@ -80,5 +80,10 @@ framebufferWriterClear:
 	-make -C obj_dir -f VFramebufferWriterClear.mk
 	./obj_dir/VFramebufferWriterClear
 
+framebufferReader:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VFramebufferReader.mk
+	./obj_dir/VFramebufferReader
+
 .SECONDARY:
 .PHONY: all clean

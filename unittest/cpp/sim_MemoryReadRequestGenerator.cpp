@@ -99,14 +99,14 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         // Send 5. fetch
         t->s_fetch_axis_tvalid = true;
         // Only important for the next cycle, to request again 0. Otherwise it wouldn't 
-        // request zero again, because it seems that the same address is requested again
+        // request zero again, because it seems that the same address was already requested
         t->s_fetch_axis_tlast = true; 
         t->s_fetch_axis_tdest = 0;
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
-        // Wait for the request
+        // Request
         t->s_fetch_axis_tvalid = false;
         t->s_fetch_axis_tlast = false; 
         clk(t);

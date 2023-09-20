@@ -26,7 +26,7 @@ module FramebufferSerializer #(
     // Sets the width of a pixel to fix the memory alignment
     parameter PIXEL_WIDTH = 16,
     // The keep with
-    parameter KEEP_WIDTH = PIXEL_WIDTH / 8
+    parameter KEEP_WIDTH = 1
 ) (
     input  wire                             aclk,
     input  wire                             resetn,
@@ -88,7 +88,7 @@ module FramebufferSerializer #(
 
             m_mem_axi_rready <= 0;
 
-            addrTag <= 0;
+            addrTag <= ~0;
 
             memoryBubbleCycleRequired <= 0;
             stateSkid <= 0;
@@ -124,7 +124,7 @@ module FramebufferSerializer #(
                 tlast = s_fetch_axis_tlast;
                 tkeep = s_fetch_axis_tkeep;
             end
-            firstFrag = addrTag == 0;
+            firstFrag = addrTag == { ADDR_TAG_WIDTH { 1'b1 } };
             tagValid = (addrTag == tag) && !firstFrag;
             leaveSkid = (m_frag_axis_tready || firstFrag) && (tagValid || m_mem_axi_rvalid) && stateSkid;
             normalOperation = (m_frag_axis_tready || firstFrag) && s_fetch_axis_tvalid && !stateSkid;
@@ -144,14 +144,14 @@ module FramebufferSerializer #(
                 begin
                     // Tag is valid, everything ok
                     m_mem_axi_rready <= 0;
-                    m_frag_axis_tdest <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                    m_frag_axis_tdest <= { tag, bytePos };
                     m_frag_axis_tdata <= cacheLine[bytePos * PIXEL_WIDTH +: PIXEL_WIDTH];
                     m_frag_axis_tvalid <= 1;
                     m_frag_axis_tlast <= tlast;
                     m_frag_axis_tkeep <= tkeep;
                     if (tlast)
                     begin
-                        addrTag <= 0;
+                        addrTag <= ~0;
                     end
                 end    
                 else if (m_mem_axi_rvalid)
@@ -164,7 +164,7 @@ module FramebufferSerializer #(
                         stateSkid <= 1;
                         m_mem_axi_rready <= 0;
                         s_fetch_axis_tready <= 0;
-                        addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                        addrSkid <= { tag, bytePos };
                         tlastSkid <= tlast;
                         tkeepSkid <= tkeep;
                         m_frag_axis_tvalid <= 0;
@@ -181,13 +181,13 @@ module FramebufferSerializer #(
                         s_fetch_axis_tready <= 1;
                         cacheLine <= m_mem_axi_rdata;
                         m_frag_axis_tdata <= m_mem_axi_rdata[bytePos * PIXEL_WIDTH +: PIXEL_WIDTH];
-                        m_frag_axis_tdest <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                        m_frag_axis_tdest <= { tag, bytePos };
                         m_frag_axis_tvalid <= 1;
                         m_frag_axis_tlast <= tlast;
                         m_frag_axis_tkeep <= tkeep;
                         if (tlast)
                         begin
-                            addrTag <= 0;
+                            addrTag <= ~0;
                         end
                         else
                         begin
@@ -201,7 +201,7 @@ module FramebufferSerializer #(
                     stateSkid <= 1;
                     m_mem_axi_rready <= 0;
                     s_fetch_axis_tready <= 0;
-                    addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                    addrSkid <= { tag, bytePos };
                     tlastSkid <= tlast;
                     tkeepSkid <= tkeep;
                     m_frag_axis_tvalid <= 0;
@@ -228,7 +228,7 @@ module FramebufferSerializer #(
                             stateSkid <= 1;
                             m_mem_axi_rready <= 0;
                             s_fetch_axis_tready <= 0;
-                            addrSkid <= { tag, bytePos, { ADDR_BYTE_POS_POS { 1'b0 } } };
+                            addrSkid <= { tag, bytePos };
                             tlastSkid <= tlast;
                             tkeepSkid <= tkeep;
                         end
