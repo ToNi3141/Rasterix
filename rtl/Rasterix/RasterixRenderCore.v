@@ -213,7 +213,7 @@ module RasterixRenderCore #(
     wire                                            framebuffer_last;
     wire                                            framebuffer_keep;
 
-    wire pixelInPipeline;
+    wire pipelineEmpty;
     wire startRendering;
 
    
@@ -233,6 +233,11 @@ module RasterixRenderCore #(
     wire            m_rasterizer_axis_tlast;
     wire            m_rasterizer_axis_tkeep;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
+
+    wire            m_rasterizer_sem_axis_tvalid;
+    wire            m_rasterizer_sem_axis_tlast;
+    wire            m_rasterizer_sem_axis_tkeep;
+    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_sem_axis_tdata;
 
     // Steams
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
@@ -336,7 +341,7 @@ module RasterixRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
-        .pixelInPipeline(pixelInPipeline),
+        .pixelInPipeline(!pipelineEmpty),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -494,18 +499,36 @@ module RasterixRenderCore #(
     defparam rop.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
-    wire fragmentProcessed;
-    ValueTrack pixelTracker (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .sigIncommingValue(m_rasterizer_axis_tvalid & m_rasterizer_axis_tready),
-        .sigOutgoingValue(fragmentProcessed),
-        .valueInPipeline(pixelInPipeline)
-    );
-    
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
+    // Implementation of the flow control via a stream semaphor
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    wire fragmentProcessed;
+    StreamSemaphore ssem (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(m_rasterizer_sem_axis_tvalid),
+        .m_axis_tlast(m_rasterizer_sem_axis_tlast),
+        .m_axis_tdata(m_rasterizer_sem_axis_tdata),
+        .m_axis_tkeep(m_rasterizer_sem_axis_tkeep),
+
+        .s_axis_tvalid(m_rasterizer_axis_tvalid),
+        .s_axis_tready(m_rasterizer_axis_tready),
+        .s_axis_tlast(m_rasterizer_axis_tlast),
+        .s_axis_tdata(m_rasterizer_axis_tdata),
+        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+
+        .sigRelease(fragmentProcessed),
+        .released(pipelineEmpty)
+    );
+    defparam ssem.MAX_NUMBER_OF_ELEMENTS = 128;
+    defparam ssem.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam ssem.KEEP_WIDTH = 1;
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 3
     // Interpolation of attributes
     // Clocks: 45
     ////////////////////////////////////////////////////////////////////////////
@@ -528,11 +551,11 @@ module RasterixRenderCore #(
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata(m_rasterizer_axis_tdata),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+        .s_axis_tdata(m_rasterizer_sem_axis_tdata),
+        .s_axis_tlast(m_rasterizer_sem_axis_tlast),
+        .s_axis_tvalid(m_rasterizer_sem_axis_tvalid),
+        .s_axis_tready(),
+        .s_axis_tkeep(m_rasterizer_sem_axis_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
@@ -611,7 +634,7 @@ module RasterixRenderCore #(
     );
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 3
+    // STEP 4
     // Texturing triangle, fogging
     // Clocks: 32
     ////////////////////////////////////////////////////////////////////////////
@@ -679,7 +702,7 @@ module RasterixRenderCore #(
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 4
+    // STEP 5
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
