@@ -230,6 +230,7 @@ module Rasterix #(
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
+    wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire                                             color_arvalid;
     wire                                             color_arlast;
@@ -250,6 +251,7 @@ module Rasterix #(
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
+    wire                                             depthBufferEnable;
     wire                                             depthBufferMask;
     wire                                             depth_arvalid;
     wire                                             depth_arlast;
@@ -270,6 +272,7 @@ module Rasterix #(
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
+    wire                                             stencilBufferEnable;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             stencil_arvalid;
     wire                                             stencil_arlast;
@@ -288,6 +291,7 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
+        .confEnable(depthBufferEnable),
         .confClearColor(depthBufferClearDepth),
         .confEnableScissor(framebufferParamEnableScissor),
         .confScissorStartX(framebufferParamScissorStartX),
@@ -334,6 +338,7 @@ module Rasterix #(
         .clk(aclk),
         .reset(!resetn),
 
+        .confEnable(colorBufferEnable),
         .confClearColor(ColorBufferReduce(ColorBufferReduceVec(colorBufferClearColor))),
         .confEnableScissor(framebufferParamEnableScissor),
         .confScissorStartX(framebufferParamScissorStartX),
@@ -397,6 +402,7 @@ module Rasterix #(
                 .clk(aclk),
                 .reset(!resetn),
 
+                .confEnable(stencilBufferEnable),
                 .confClearColor(stencilBufferClearStencil),
                 .confEnableScissor(framebufferParamEnableScissor),
                 .confScissorStartX(framebufferParamScissorStartX),
@@ -473,6 +479,7 @@ module Rasterix #(
         .colorBufferApplied(colorBufferApplied),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .color_arready(1),
         .color_arlast(),
@@ -494,6 +501,7 @@ module Rasterix #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .depth_arready(1),
         .depth_arlast(),
@@ -515,6 +523,7 @@ module Rasterix #(
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .stencil_arready(1),
         .stencil_arlast(),

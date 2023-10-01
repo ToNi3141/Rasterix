@@ -62,6 +62,7 @@ module FrameBuffer
     /////////////////////////
     // Configs
     /////////////////////////
+    input  wire                             confEnable,
     input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
     input  wire                             confEnableScissor,
     input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
@@ -155,7 +156,7 @@ module FrameBuffer
     wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
     wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { (wstrb) ? confMask : ZERO_MASK } };
     wire                            memScissorTest;
-    wire                            memWriteEnable = wvalid;
+    wire                            memWriteEnable = wvalid && confEnable;
     reg                             rvalidDelay;
     reg                             rlastDelay;
     

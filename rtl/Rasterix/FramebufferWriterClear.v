@@ -24,7 +24,7 @@ module FramebufferWriterClear #(
     parameter Y_BIT_WIDTH = 11,
 
     // Size of the pixels
-    localparam PIXEL_WIDTH = 16,
+    parameter PIXEL_WIDTH = 16,
     localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
     localparam PIXEL_WIDTH_LG = $clog2(PIXEL_WIDTH / 8)
 ) (
@@ -68,7 +68,7 @@ module FramebufferWriterClear #(
 
     // Cmd interface
     input  wire                         apply, // This start a command 
-    output reg                          applied // This marks if the commands have been applied.
+    output reg                          applied // This marks if the commands has been applied.
 
 );
     reg                         valid;

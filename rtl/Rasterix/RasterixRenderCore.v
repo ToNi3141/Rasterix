@@ -75,6 +75,7 @@ module RasterixRenderCore #(
     input  wire                                             colorBufferApplied,
     output wire                                             colorBufferCmdCommit,
     output wire                                             colorBufferCmdMemset,
+    output wire                                             colorBufferEnable,
     output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]              colorBufferMask,
     input  wire                                             color_arready,
     output wire                                             color_arvalid,
@@ -97,6 +98,7 @@ module RasterixRenderCore #(
     input  wire                                             depthBufferApplied,
     output wire                                             depthBufferCmdCommit,
     output wire                                             depthBufferCmdMemset,
+    output wire                                             depthBufferEnable,
     output wire                                             depthBufferMask,
     input  wire                                             depth_arready,
     output wire                                             depth_arvalid,
@@ -119,6 +121,7 @@ module RasterixRenderCore #(
     input  wire                                             stencilBufferApplied,
     output wire                                             stencilBufferCmdCommit,
     output wire                                             stencilBufferCmdMemset,
+    output wire                                             stencilBufferEnable,
     output wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask,
     input  wire                                             stencil_arready,
     output wire                                             stencil_arvalid,
@@ -302,12 +305,15 @@ module RasterixRenderCore #(
     assign framebufferParamYOffset = confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign framebufferParamXResolution = confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
     assign framebufferParamYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
+    assign depthBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
     assign depthBufferMask = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
+    assign colorBufferEnable = 1'b1;
     assign colorBufferMask = { 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_B_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_A_SIZE] };
+    assign stencilBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
     assign stencilBufferMask = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_STENICL_MASK_SIZE - STENCIL_WIDTH)];
 
 
