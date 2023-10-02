@@ -26,7 +26,7 @@ module FramebufferReader #(
     parameter ID_WIDTH = 8,
 
     // Size of the pixels
-    localparam PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 16
 
 ) (
     input  wire                             aclk,
@@ -46,14 +46,12 @@ module FramebufferReader #(
     input  wire                             s_fetch_axis_tlast,
     output wire                             s_fetch_axis_tready,
     input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_axis_tdest,
-    input  wire                             s_fetch_axis_tkeep,
 
     // Framebuffer Interface
     output wire                             m_frag_axis_tvalid,
     input  wire                             m_frag_axis_tready,
     output wire [PIXEL_WIDTH - 1 : 0]       m_frag_axis_tdata,
     output wire [ADDR_WIDTH - 1 : 0]        m_frag_axis_tdest,
-    output wire                             m_frag_axis_tkeep,
     output wire                             m_frag_axis_tlast,
 
     /////////////////////////
@@ -86,19 +84,16 @@ module FramebufferReader #(
     wire [ 1 : 0]                   bc_fetch_tlast;
     wire [ 1 : 0]                   bc_fetch_tready;
     wire [(ADDR_WIDTH * 2) - 1 : 0] bc_fetch_tdest;
-    wire [ 1 : 0]                   bc_fetch_tkeep;
 
     wire                            fifo_fetch_tvalid;
     wire                            fifo_fetch_tlast;
     wire                            fifo_fetch_tready;
     wire [ADDR_WIDTH - 1 : 0]       fifo_fetch_tdest;
-    wire                            fifo_fetch_tkeep;
     wire                            fifo_fetch_tempty;
-    wire [ADDR_WIDTH + 2 - 1 : 0]   fifo_fetch_tdata;
+    wire [ADDR_WIDTH + 1 - 1 : 0]   fifo_fetch_tdata;
     wire                            fifo_full;
     assign fifo_fetch_tvalid = !fifo_fetch_tempty;
-    assign fifo_fetch_tlast = fifo_fetch_tdata[ADDR_WIDTH + 1 +: 1];
-    assign fifo_fetch_tkeep = fifo_fetch_tdata[ADDR_WIDTH +: 1];
+    assign fifo_fetch_tlast = fifo_fetch_tdata[ADDR_WIDTH +: 1];
     assign fifo_fetch_tdest = fifo_fetch_tdata[0 +: ADDR_WIDTH];
 
     assign bc_fetch_tready[1] = !fifo_full; 
@@ -106,8 +101,7 @@ module FramebufferReader #(
     axis_broadcast #(
         .M_COUNT(2),
         .DATA_WIDTH(ADDR_WIDTH),
-        .KEEP_ENABLE(1),
-        .KEEP_WIDTH(1),
+        .KEEP_ENABLE(0),
         .LAST_ENABLE(1),
         .ID_ENABLE(0),
         .DEST_ENABLE(0),
@@ -120,7 +114,6 @@ module FramebufferReader #(
         .s_axis_tlast(s_fetch_axis_tlast),
         .s_axis_tvalid(s_fetch_axis_tvalid),
         .s_axis_tready(s_fetch_axis_tready),
-        .s_axis_tkeep(s_fetch_axis_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
@@ -129,7 +122,6 @@ module FramebufferReader #(
         .m_axis_tvalid(bc_fetch_tvalid),
         .m_axis_tready(bc_fetch_tready),
         .m_axis_tlast(bc_fetch_tlast),
-        .m_axis_tkeep(bc_fetch_tkeep),
         .m_axis_tid(),
         .m_axis_tdest(),
         .m_axis_tuser()
@@ -143,7 +135,7 @@ module FramebufferReader #(
         .i_reset(!resetn),
 
         .i_wr(bc_fetch_tvalid[1]),
-        .i_data({ bc_fetch_tlast[1], bc_fetch_tkeep[1], bc_fetch_tdest[ADDR_WIDTH +: ADDR_WIDTH] }),
+        .i_data({ bc_fetch_tlast[1], bc_fetch_tdest[ADDR_WIDTH +: ADDR_WIDTH] }),
         .o_full(fifo_full),
         .o_fill(),
 
@@ -184,15 +176,13 @@ module FramebufferReader #(
         .STREAM_WIDTH(STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH),
-        .KEEP_WIDTH(1)
+        .PIXEL_WIDTH(PIXEL_WIDTH)
     ) fbs (
         .aclk(aclk),
         .resetn(resetn),
 
         .m_frag_axis_tvalid(m_frag_axis_tvalid),
         .m_frag_axis_tready(m_frag_axis_tready),
-        .m_frag_axis_tkeep(m_frag_axis_tkeep),
         .m_frag_axis_tdata(m_frag_axis_tdata),
         .m_frag_axis_tdest(m_frag_axis_tdest),
         .m_frag_axis_tlast(m_frag_axis_tlast),
@@ -201,7 +191,6 @@ module FramebufferReader #(
         .s_fetch_axis_tlast(fifo_fetch_tlast),
         .s_fetch_axis_tready(fifo_fetch_tready),
         .s_fetch_axis_tdest(fifo_fetch_tdest),
-        .s_fetch_axis_tkeep(fifo_fetch_tkeep),
 
         .m_mem_axi_rid(m_mem_axi_rid),
         .m_mem_axi_rdata(m_mem_axi_rdata),

@@ -24,9 +24,7 @@ module FramebufferSerializer #(
     parameter ID_WIDTH = 8,
 
     // Sets the width of a pixel to fix the memory alignment
-    parameter PIXEL_WIDTH = 16,
-    // The keep with
-    parameter KEEP_WIDTH = 1
+    parameter PIXEL_WIDTH = 16
 ) (
     input  wire                             aclk,
     input  wire                             resetn,
@@ -38,7 +36,6 @@ module FramebufferSerializer #(
     // Framebuffer Interface
     output reg                              m_frag_axis_tvalid,
     input  wire                             m_frag_axis_tready,
-    output reg  [KEEP_WIDTH - 1 : 0]        m_frag_axis_tkeep,
     output reg  [PIXEL_WIDTH - 1 : 0]       m_frag_axis_tdata,
     output reg  [ADDR_WIDTH - 1 : 0]        m_frag_axis_tdest,
     output reg                              m_frag_axis_tlast,
@@ -48,7 +45,6 @@ module FramebufferSerializer #(
     input  wire                             s_fetch_axis_tlast,
     output reg                              s_fetch_axis_tready,
     input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_axis_tdest,
-    input  wire [KEEP_WIDTH - 1 : 0]        s_fetch_axis_tkeep,
 
     /////////////////////////
     // Memory Interface
@@ -69,7 +65,6 @@ module FramebufferSerializer #(
 
     reg [ADDR_TAG_WIDTH - 1 : 0]    addrTag;
     reg [ADDR_WIDTH - 1 : 0]        addrSkid;
-    reg [KEEP_WIDTH - 1 : 0]        tkeepSkid;
     reg                             tlastSkid;
     reg                             memoryBubbleCycleRequired;
     reg                             stateSkid;
@@ -82,7 +77,6 @@ module FramebufferSerializer #(
         begin
             m_frag_axis_tvalid <= 0;
             m_frag_axis_tlast <= 0;
-            m_frag_axis_tkeep <= 0;
 
             s_fetch_axis_tready <= 0;
 
@@ -98,7 +92,6 @@ module FramebufferSerializer #(
             reg [ADDR_TAG_WIDTH - 1 : 0]        tag;
             reg [ADDR_BYTE_POS_WIDTH  - 1 : 0]  bytePos;
             reg                                 tlast;
-            reg [KEEP_WIDTH - 1 : 0]            tkeep;
 
             reg firstFrag;
             reg tagValid;
@@ -115,14 +108,12 @@ module FramebufferSerializer #(
                 tag = addrSkid[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
                 bytePos = addrSkid[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
                 tlast = tlastSkid;
-                tkeep = tkeepSkid;
             end
             else
             begin
                 tag = s_fetch_axis_tdest[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
                 bytePos = s_fetch_axis_tdest[ADDR_BYTE_POS_POS +: ADDR_BYTE_POS_WIDTH];
                 tlast = s_fetch_axis_tlast;
-                tkeep = s_fetch_axis_tkeep;
             end
             firstFrag = addrTag == { ADDR_TAG_WIDTH { 1'b1 } };
             tagValid = (addrTag == tag) && !firstFrag;
@@ -148,7 +139,6 @@ module FramebufferSerializer #(
                     m_frag_axis_tdata <= cacheLine[bytePos * PIXEL_WIDTH +: PIXEL_WIDTH];
                     m_frag_axis_tvalid <= 1;
                     m_frag_axis_tlast <= tlast;
-                    m_frag_axis_tkeep <= tkeep;
                     if (tlast)
                     begin
                         addrTag <= ~0;
@@ -166,7 +156,6 @@ module FramebufferSerializer #(
                         s_fetch_axis_tready <= 0;
                         addrSkid <= { tag, bytePos };
                         tlastSkid <= tlast;
-                        tkeepSkid <= tkeep;
                         m_frag_axis_tvalid <= 0;
                     end
                     else
@@ -184,7 +173,6 @@ module FramebufferSerializer #(
                         m_frag_axis_tdest <= { tag, bytePos };
                         m_frag_axis_tvalid <= 1;
                         m_frag_axis_tlast <= tlast;
-                        m_frag_axis_tkeep <= tkeep;
                         if (tlast)
                         begin
                             addrTag <= ~0;
@@ -203,7 +191,6 @@ module FramebufferSerializer #(
                     s_fetch_axis_tready <= 0;
                     addrSkid <= { tag, bytePos };
                     tlastSkid <= tlast;
-                    tkeepSkid <= tkeep;
                     m_frag_axis_tvalid <= 0;
                 end
             end
@@ -230,7 +217,6 @@ module FramebufferSerializer #(
                             s_fetch_axis_tready <= 0;
                             addrSkid <= { tag, bytePos };
                             tlastSkid <= tlast;
-                            tkeepSkid <= tkeep;
                         end
                     end
                     else if (!s_fetch_axis_tvalid)

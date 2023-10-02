@@ -65,7 +65,6 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     t->s_fetch_axis_tvalid = 1;
     t->s_fetch_axis_tlast = 1;
     t->s_fetch_axis_tdest = 0x100;
-    t->s_fetch_axis_tkeep = 1;
     clk(t);
     CHECK(t->m_frag_axis_tvalid == 0);
     t->s_fetch_axis_tvalid = 0;
@@ -119,7 +118,6 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
         t->s_fetch_axis_tvalid = 1;
         t->s_fetch_axis_tlast = 0;
         t->s_fetch_axis_tdest = i;
-        t->s_fetch_axis_tkeep = 1;
         clk(t);
         CHECK(t->s_fetch_axis_tready == 1);
     }
@@ -128,7 +126,6 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     t->s_fetch_axis_tvalid = 1;
     t->s_fetch_axis_tlast = 0; 
     t->s_fetch_axis_tdest = 300;
-    t->s_fetch_axis_tkeep = 1;
     clk(t);
     CHECK(t->s_fetch_axis_tready == 0);
 

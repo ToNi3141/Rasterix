@@ -63,7 +63,6 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     t->s_fetch_axis_tvalid = 1;
     t->s_fetch_axis_tdest = 0x100;
     t->s_fetch_axis_tlast = 0;
-    t->s_fetch_axis_tkeep = 0x1;
     t->m_frag_axis_tready = 1;
     // Memory is initially not valid
     t->m_mem_axi_rvalid = 0;
@@ -82,7 +81,6 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_axis_tdata == 0x5555);
     REQUIRE(t->m_frag_axis_tdest == 0x100);
     REQUIRE(t->m_frag_axis_tlast == 0);
-    REQUIRE(t->m_frag_axis_tkeep == 0x1);
     t->s_fetch_axis_tdest = 0x101;
 
     // Fetch cached data. Dont request data from memory
@@ -92,7 +90,6 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_axis_tdata == 0xffff);
     REQUIRE(t->m_frag_axis_tdest == 0x101);
     REQUIRE(t->m_frag_axis_tlast == 0);
-    REQUIRE(t->m_frag_axis_tkeep == 0x1);
     t->s_fetch_axis_tdest = 0x102;
     t->m_mem_axi_rdata = 0xaaaa'0000;
 
@@ -103,7 +100,6 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_axis_tdata == 0x0000);
     REQUIRE(t->m_frag_axis_tdest == 0x102);
     REQUIRE(t->m_frag_axis_tlast == 0);
-    REQUIRE(t->m_frag_axis_tkeep == 0x1);
     t->s_fetch_axis_tdest = 0x103;
     t->m_mem_axi_rvalid = 0; // Disable memory
 
@@ -114,10 +110,8 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_axis_tdata == 0xaaaa);
     REQUIRE(t->m_frag_axis_tdest == 0x103);
     REQUIRE(t->m_frag_axis_tlast == 0);
-    REQUIRE(t->m_frag_axis_tkeep == 0x1);
     t->s_fetch_axis_tlast = 1;
     t->s_fetch_axis_tdest = 0x104;
-    t->s_fetch_axis_tkeep = 0;
 
     // New data required but no new data on the memory available
     clk(t);
@@ -140,7 +134,6 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_axis_tdata == 0x2222);
     REQUIRE(t->m_frag_axis_tdest == 0x104);
     REQUIRE(t->m_frag_axis_tlast == 1);
-    REQUIRE(t->m_frag_axis_tkeep == 0x0);
     t->s_fetch_axis_tdest = 0x105;
     t->m_mem_axi_rvalid = 0;
     
@@ -182,7 +175,6 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         t->s_fetch_axis_tvalid = 1;
         t->s_fetch_axis_tdest = 0x100;
         t->s_fetch_axis_tlast = 0;
-        t->s_fetch_axis_tkeep = 0x1;
         t->m_frag_axis_tready = 1;
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = 0xffff'5555;
@@ -194,7 +186,6 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5555);
         REQUIRE(t->m_frag_axis_tdest == 0x100);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x102;
         t->m_mem_axi_rdata = 0xaaaa'0000;
 
@@ -210,7 +201,6 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x0000);
         REQUIRE(t->m_frag_axis_tdest == 0x102);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tlast = 1;
         t->s_fetch_axis_tdest = 0x105;
         t->m_mem_axi_rdata = 0x1111'2222;
@@ -229,7 +219,6 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x1111);
         REQUIRE(t->m_frag_axis_tdest == 0x105);
         REQUIRE(t->m_frag_axis_tlast == 1);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
 
         clk(t); // Extra clock because of the memory bubble cycle
     }
@@ -259,7 +248,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         t->s_fetch_axis_tvalid = 1;
         t->s_fetch_axis_tdest = 0x100;
         t->s_fetch_axis_tlast = 0;
-        t->s_fetch_axis_tkeep = 0x1;
         t->m_frag_axis_tready = 0; // Fragment port is not ready
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = 0xffff'5555;
@@ -271,7 +259,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5555);
         REQUIRE(t->m_frag_axis_tdest == 0x100);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x101; 
 
         // Skid cycle because fragment port is not ready
@@ -281,7 +268,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5555);
         REQUIRE(t->m_frag_axis_tdest == 0x100);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x101;
         t->m_frag_axis_tready = 1;
 
@@ -292,7 +278,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0xffff);
         REQUIRE(t->m_frag_axis_tdest == 0x101);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x102; 
         t->m_frag_axis_tready = 0;
 
@@ -303,7 +288,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0xffff);
         REQUIRE(t->m_frag_axis_tdest == 0x101);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x102;
         t->m_frag_axis_tready = 1;
         t->m_mem_axi_rdata = 0x1234'5678;
@@ -315,10 +299,8 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5678);
         REQUIRE(t->m_frag_axis_tdest == 0x102);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x103; 
         t->s_fetch_axis_tlast = 1;
-        t->s_fetch_axis_tkeep = 0;
         t->m_frag_axis_tready = 0;
 
         // Skid cycle because fragment port is not ready
@@ -328,7 +310,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5678);
         REQUIRE(t->m_frag_axis_tdest == 0x102);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tdest = 0x103;
         t->m_frag_axis_tready = 1;
 
@@ -339,7 +320,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x1234);
         REQUIRE(t->m_frag_axis_tdest == 0x103);
         REQUIRE(t->m_frag_axis_tlast == 1);
-        REQUIRE(t->m_frag_axis_tkeep == 0);
         t->m_frag_axis_tready = 0;
         t->s_fetch_axis_tvalid = 0;
 
@@ -350,7 +330,6 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x1234);
         REQUIRE(t->m_frag_axis_tdest == 0x103);
         REQUIRE(t->m_frag_axis_tlast == 1);
-        REQUIRE(t->m_frag_axis_tkeep == 0);
         t->m_frag_axis_tready = 1;
 
         // Acknowledge the last data
@@ -385,7 +364,6 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         t->s_fetch_axis_tvalid = 0; // No valid data on the fetch interface
         t->s_fetch_axis_tdest = 0x100;
         t->s_fetch_axis_tlast = 0;
-        t->s_fetch_axis_tkeep = 0x1;
         t->m_frag_axis_tready = 1;
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = 0xffff'5555;
@@ -404,7 +382,6 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0x5555);
         REQUIRE(t->m_frag_axis_tdest == 0x100);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tvalid = 0;
 
         // Wait for valid data on the fetch interface
@@ -421,7 +398,6 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0xffff);
         REQUIRE(t->m_frag_axis_tdest == 0x101);
         REQUIRE(t->m_frag_axis_tlast == 0);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tvalid = 0;
 
         // Wait for valid data on the fetch interface
@@ -431,7 +407,6 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         t->s_fetch_axis_tvalid = 1;
         t->s_fetch_axis_tdest = 0x102;
         t->s_fetch_axis_tlast = 1;
-        t->s_fetch_axis_tkeep = 0x1;
         t->m_mem_axi_rdata = 0xaaaa'bbbb;
 
         // Fetch last data from fetch interface and memory interface, output it
@@ -441,7 +416,6 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_axis_tdata == 0xbbbb);
         REQUIRE(t->m_frag_axis_tdest == 0x102);
         REQUIRE(t->m_frag_axis_tlast == 1);
-        REQUIRE(t->m_frag_axis_tkeep == 0x1);
         t->s_fetch_axis_tvalid = 0;
 
         clk(t); // memory bubble cycle
