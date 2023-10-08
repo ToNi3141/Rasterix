@@ -91,28 +91,28 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     reset(t);
 
     t->confClearColor = 0xabcd;
-    t->confXResolution = 16;
-    t->confYResolution = 8;
+    t->confXResolution = X_RES;
+    t->confYResolution = Y_RES;
 
     t->m_frag_tready = 1;
 
     t->apply = 1;
 
-    for (uint32_t x = 0, y = 0; x < X_RES && y < Y_RES; x++)
+    for (uint32_t x = 0, y = (Y_RES - 1); x < X_RES && y > 0; x++)
     {
         clk(t);
         t->apply = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == (((y + 1) == Y_RES) && ((x + 1) == X_RES)));
+        CHECK(t->m_frag_tlast == (((y - 1) == 0) && ((x + 1) == X_RES)));
         CHECK(t->m_frag_tdata == 0xabcd);
         CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + (y * Y_RES));
+        CHECK(t->m_frag_taddr == x + (((Y_RES - 1) - y) * Y_RES));
         CHECK(t->m_frag_txpos == x);
         CHECK(t->m_frag_typos == y);
         if (x + 1 == X_RES)
         {
-            y++;
+            y--;
         }
     }
 
@@ -130,14 +130,14 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     reset(t);
 
     t->confClearColor = 0xabcd;
-    t->confXResolution = 16;
-    t->confYResolution = 8;
+    t->confXResolution = X_RES;
+    t->confYResolution = Y_RES;
 
     t->m_frag_tready = 0;
 
     t->apply = 1;
 
-    for (uint32_t x = 0, y = 0; x < X_RES && y < Y_RES; x++)
+    for (uint32_t x = 0, y = (Y_RES - 1); x < X_RES && y > 0; x++)
     {
         t->m_frag_tready = 0;
         clk(t);
@@ -147,16 +147,16 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
         t->m_frag_tready = 1;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == (((y + 1) == Y_RES) && ((x + 1) == X_RES)));
+        CHECK(t->m_frag_tlast == (((y - 1) == 0) && ((x + 1) == X_RES)));
         CHECK(t->m_frag_tdata == 0xabcd);
         CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + (y * Y_RES));
+        CHECK(t->m_frag_taddr == x + (((Y_RES - 1) - y) * Y_RES));
         CHECK(t->m_frag_txpos == x);
         CHECK(t->m_frag_typos == y);
         clk(t);
         if (x + 1 == X_RES)
         {
-            y++;
+            y--;
         }
     }
 

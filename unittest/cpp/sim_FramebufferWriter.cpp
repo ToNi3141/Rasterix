@@ -626,6 +626,8 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
     t->confAddr = 0x1000'0000;
     t->confEnableScissor = 0;
     t->confMask = 0x3;
+    t->confXResolution = 8;
+    t->confYResolution = 8;
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
