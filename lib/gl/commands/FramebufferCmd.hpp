@@ -54,19 +54,28 @@ public:
         }
     }
 
-    void enableCommit(const uint32_t size, const uint32_t addr, const bool commitToStream) 
+    void enableExternalFramebufferSwap()
+    {
+        // TODO
+    }
+    void enableExternalCommit(const uint32_t size, const uint32_t addr)
+    {
+        m_op = 0;
+        m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
+        m_dseData = { { RenderConfig::GRAM_MEMORY_LOC + addr, size } };
+    }
+    void enableInternalCommit(const uint32_t size, const uint32_t addr, const bool commitToStream) 
     { 
-        // m_op |= OP_FRAMEBUFFER_COMMIT; 
+        m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
         {
-            m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
+            m_dseOp = DSEC::OP_COMMIT_TO_STREAM;
         }
         else
         {
-            m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
+            m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
         m_dseData = { { RenderConfig::GRAM_MEMORY_LOC + addr, size } };
-
     }
     void enableMemset() 
     { 

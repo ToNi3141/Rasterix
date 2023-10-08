@@ -5,6 +5,13 @@
 
 namespace rr
 {
+enum class FramebufferType
+{
+    INTERNAL_TO_STREAM,
+    INTERNAL_TO_MEMORY,
+    EXTERNAL_MEMORY_TO_STREAM,
+    EXTERNAL_MEMORY_DOUBLE_BUFFER
+};
 
 struct RenderConfigSimulation
 {
@@ -28,6 +35,15 @@ struct RenderConfigSimulation
     // Memory RAM location. This is used as memory offset for all device memory  
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_STREAM };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_2 { 0 };
 };
 
 struct RenderConfigSimulationMemory
@@ -52,6 +68,15 @@ struct RenderConfigSimulationMemory
     // Memory RAM location. This is used as memory offset for all device memory  
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::EXTERNAL_MEMORY_TO_STREAM };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_1 { 0x01C00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_1 { 0x01B00000 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_2 { 0x01B00000 };
 };
 
 struct RenderConfigCModA7
@@ -76,6 +101,15 @@ struct RenderConfigCModA7
     // Memory RAM location. This is used as memory offset for all device memory  
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_STREAM };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_1 { 0 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_2 { 0 };
 };
 
 struct RenderConfigRasterixNexys
@@ -100,6 +134,15 @@ struct RenderConfigRasterixNexys
     // Memory RAM location. This is used as memory offset for all device memory  
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_1 { 0x01C00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_1 { 0x01B00000 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_2 { 0x01B00000 };
 };
 
 struct RenderConfigRasterixZynq
@@ -124,6 +167,15 @@ struct RenderConfigRasterixZynq
     // Memory RAM location. This is used as memory offset for all device memory  
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0E000000 }; // Shares memory with linux
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_1 { 0x01C00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_1 { 0x01B00000 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC_2 { 0x01E00000 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC_2 { 0x01B00000 };
 };
 
 

@@ -54,6 +54,7 @@
 #include "commands/FramebufferCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
@@ -111,11 +112,22 @@ public:
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
         }
 
-        enableColorBufferInMemory(0x01E00000);
-        setColorBufferAddress(0x01E00000);
-        setDepthBufferAddress(0x01C00000);
-        setStencilBufferAddress(0x01B00000);
-        setRenderResolution(640, 480);
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
+        {
+            enableColorBufferInMemory();
+        }
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+        {
+            enableColorBufferStream();
+        }
+        if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+            || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
+        {
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC_1);
+            setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC_1);
+        }
+        setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
 
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
         setClearColor({ {0, 0, 0, 0 } });
@@ -188,7 +200,22 @@ public:
         {
             FramebufferCmd<RenderConfig> cmd { false, false, false };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-            cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+                || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY))
+            {
+                cmd.selectColorBuffer();
+                cmd.selectDepthBuffer();
+                cmd.selectStencilBuffer();
+                cmd.enableInternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            }
+            if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
+            {
+                cmd.enableExternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
+            }
+            if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+            {
+                cmd.enableExternalFramebufferSwap();
+            }
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].closeStream();
         }
@@ -417,9 +444,8 @@ public:
         return writeReg(reg);
     }
 
-    virtual void enableColorBufferInMemory(const uint32_t addr) override
+    virtual void enableColorBufferInMemory() override
     {
-        m_colorBufferAddr = addr;
         m_colorBufferUseMemory = true;
     }
 
@@ -443,20 +469,6 @@ public:
         return writeReg(stencilConf);
     }
 
-    virtual bool setColorBufferAddress(const uint32_t addr) override
-    {
-        return writeReg(ColorBufferAddrReg { addr });
-    }
-
-    virtual bool setDepthBufferAddress(const uint32_t addr) override
-    {
-        return writeReg(DepthBufferAddrReg { addr });
-    }
-
-    virtual bool setStencilBufferAddress(const uint32_t addr) override
-    {
-        return writeReg(StencilBufferAddrReg { addr });
-    }
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
@@ -487,6 +499,22 @@ private:
             }
         }
         return true;
+    }
+
+    bool setColorBufferAddress(const uint32_t addr)
+    {
+        m_colorBufferAddr = addr;
+        return writeReg(ColorBufferAddrReg { addr });
+    }
+
+    bool setDepthBufferAddress(const uint32_t addr)
+    {
+        return writeReg(DepthBufferAddrReg { addr });
+    }
+
+    bool setStencilBufferAddress(const uint32_t addr)
+    {
+        return writeReg(StencilBufferAddrReg { addr });
     }
 
     bool m_colorBufferUseMemory { true };

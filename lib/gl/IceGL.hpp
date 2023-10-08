@@ -54,14 +54,6 @@ public:
     const char *getLibExtensions() const;
     const void *getLibProcedure(std::string name) const;
 
-    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
-    /// @param addr The address of the color buffer.
-    void enableColorBufferInMemory(const uint32_t addr) { m_renderer.enableColorBufferInMemory(addr); }
-
-    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
-    /// The color buffer in memory is disabled.
-    void enableColorBufferStream() { m_renderer.enableColorBufferStream(); }
-
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
     uint16_t getMaxTextureSize() const { return m_renderer.getMaxTextureSize(); }

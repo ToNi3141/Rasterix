@@ -269,8 +269,7 @@ public:
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) = 0;
 
     /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
-    /// @param addr The address of the color buffer.
-    virtual void enableColorBufferInMemory(const uint32_t addr) = 0;
+    virtual void enableColorBufferInMemory() = 0;
 
     /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
     /// The color buffer in memory is disabled.
@@ -288,21 +287,6 @@ public:
     /// @param stencilConf The config of the stencil buffer
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setStencilBufferConfig(const StencilReg& stencilConf) = 0;
-
-    /// @brief Set the address of the color buffer
-    /// @param addr The address of the buffer in memory
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
-    virtual bool setColorBufferAddress(const uint32_t addr) = 0;
-
-    /// @brief Set the address of the depth buffer
-    /// @param addr The address of the buffer in memory
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
-    virtual bool setDepthBufferAddress(const uint32_t addr) = 0;
-
-    /// @brief Set the address of the color buffer
-    /// @param addr The address of the buffer in memory
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
-    virtual bool setStencilBufferAddress(const uint32_t addr) = 0;
 };
 
 } // namespace rr

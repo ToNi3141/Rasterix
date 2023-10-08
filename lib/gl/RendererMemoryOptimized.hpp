@@ -356,9 +356,10 @@ public:
         return writeReg(reg);
     }
 
-    virtual void enableColorBufferInMemory(const uint32_t addr) override
+    virtual void enableColorBufferInMemory() override
     {
-        m_colorBufferAddr = addr;
+        // TODO
+        //m_colorBufferAddr = addr;
         m_colorBufferUseMemory = true;
     }
 

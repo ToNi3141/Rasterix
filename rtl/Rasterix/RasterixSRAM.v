@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 `include "PixelUtil.vh"
 
-module Rasterix #(
+module RasterixSRAM #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
