@@ -22,6 +22,9 @@ module RasterixRenderCore #(
     // The access is in words, not bytes! A word can have the size of at least 1 bit to n bits
     parameter INDEX_WIDTH = 17,
 
+    // The width of the address channel
+    parameter ADDR_WIDTH = 32,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     
@@ -74,6 +77,7 @@ module RasterixRenderCore #(
 
     // Color buffer access
     output wire [PIXEL_WIDTH - 1 : 0]           colorBufferClearColor,
+    output wire [ADDR_WIDTH - 1 : 0]            colorBufferAddr,
     output wire                                 colorBufferApply,
     input  wire                                 colorBufferApplied,
     output wire                                 colorBufferCmdCommit,
@@ -98,6 +102,7 @@ module RasterixRenderCore #(
 
     // Depth buffer access
     output wire [DEPTH_WIDTH - 1 : 0]           depthBufferClearDepth,
+    output wire [ADDR_WIDTH - 1 : 0]            depthBufferAddr,
     output wire                                 depthBufferApply,
     input  wire                                 depthBufferApplied,
     output wire                                 depthBufferCmdCommit,
@@ -122,6 +127,7 @@ module RasterixRenderCore #(
 
     // Stencil buffer access
     output wire [STENCIL_WIDTH - 1 : 0]         stencilBufferClearStencil,
+    output wire [ADDR_WIDTH - 1 : 0]            stencilBufferAddr,
     output wire                                 stencilBufferApply,
     input  wire                                 stencilBufferApplied,
     output wire                                 stencilBufferCmdCommit,
@@ -222,8 +228,15 @@ module RasterixRenderCore #(
     wire                                            framebuffer_last;
     wire                                            framebuffer_keep;
 
-    wire pipelineEmpty;
-    wire startRendering;
+    wire                                    pipelineEmpty;
+    wire                                    startRendering;
+    wire                                    color_fifo_empty;
+    wire                                    depth_fifo_empty;
+    wire                                    stencil_fifo_empty;
+    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  color_fifo_fill;
+    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  depth_fifo_fill;
+    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  stencil_fifo_fill;
+    wire                                    fifosAlmostFull;
 
    
     // Control
@@ -246,11 +259,18 @@ module RasterixRenderCore #(
     wire            m_rasterizer_sem_axis_tvalid;
     wire            m_rasterizer_sem_axis_tlast;
     wire            m_rasterizer_sem_axis_tkeep;
+    wire            m_rasterizer_sem_axis_tready;
     wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_sem_axis_tdata;
+
+    wire            m_rasterizer_sbr_axis_tvalid;
+    wire            m_rasterizer_sbr_axis_tready;
+    wire            m_rasterizer_sbr_axis_tlast;
+    wire            m_rasterizer_sbr_axis_tkeep;
+    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_sbr_axis_tdata;
 
     // Steams
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
-    wire [ 3 : 0]    s_cmd_xxx_axis_tuser;
+    wire [ 4 : 0]    s_cmd_xxx_axis_tuser;
     wire             s_cmd_xxx_axis_tlast;
     wire             s_cmd_fog_axis_tvalid;
     wire             s_cmd_rasterizer_axis_tvalid;
@@ -303,6 +323,10 @@ module RasterixRenderCore #(
     assign depthBufferClearDepth = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: RENDER_CONFIG_CLEAR_DEPTH_SIZE - (RENDER_CONFIG_CLEAR_DEPTH_SIZE - DEPTH_WIDTH)];
     assign stencilBufferClearStencil = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)];
 
+    assign colorBufferAddr = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign depthBufferAddr = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign stencilBufferAddr = renderConfigs[OP_RENDER_CONFIG_STENCIL_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
+
     assign framebufferParamEnableScissor = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_SCISSOR_POS];
     assign framebufferParamScissorStartX = confScissorStartXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
     assign framebufferParamScissorStartY = confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
@@ -353,7 +377,7 @@ module RasterixRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
-        .pixelInPipeline(!pipelineEmpty),
+        .pixelInPipeline(!pipelineEmpty && !color_fifo_empty && !depth_fifo_empty && !stencil_fifo_empty),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -513,10 +537,40 @@ module RasterixRenderCore #(
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
-    // Implementation of the flow control via a stream semaphor
+    // Implementation of the flow control via a stream semaphore
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
     wire fragmentProcessed;
+    assign fifosAlmostFull = (color_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
+            || (depth_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
+            || (stencil_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG));
+
+    // Used to prevent overflows of the write fifos
+    StreamBarrier sbr (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
+        .m_axis_tready(m_rasterizer_sbr_axis_tready),
+        .m_axis_tlast(m_rasterizer_sbr_axis_tlast),
+        .m_axis_tdata(m_rasterizer_sbr_axis_tdata),
+        .m_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
+
+        .s_axis_tvalid(m_rasterizer_axis_tvalid),
+        .s_axis_tready(m_rasterizer_axis_tready),
+        .s_axis_tlast(m_rasterizer_axis_tlast),
+        .s_axis_tdata(m_rasterizer_axis_tdata),
+        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+
+        .stall(fifosAlmostFull)
+    );
+    defparam sbr.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam sbr.KEEP_WIDTH = 1;
+
+    // In combination with the StreamBarrier, it prevents overflows of the
+    // write fifos by ensuring that the pipeline contains a maximum of 
+    // MAX_NUMBER_OF_PIXELS_LG pixels. The StreamBarrier starts to stall,
+    // as soon as the fill level of fifos are exceeding MAX_NUMBER_OF_PIXELS_LG.
     StreamSemaphore ssem (
         .aclk(aclk),
         .resetn(resetn),
@@ -525,12 +579,13 @@ module RasterixRenderCore #(
         .m_axis_tlast(m_rasterizer_sem_axis_tlast),
         .m_axis_tdata(m_rasterizer_sem_axis_tdata),
         .m_axis_tkeep(m_rasterizer_sem_axis_tkeep),
+        .m_axis_tready(m_rasterizer_sem_axis_tready),
 
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tdata(m_rasterizer_axis_tdata),
-        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+        .s_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
+        .s_axis_tready(m_rasterizer_sbr_axis_tready),
+        .s_axis_tlast(m_rasterizer_sbr_axis_tlast),
+        .s_axis_tdata(m_rasterizer_sbr_axis_tdata),
+        .s_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
 
         .sigRelease(fragmentProcessed),
         .released(pipelineEmpty)
@@ -566,7 +621,7 @@ module RasterixRenderCore #(
         .s_axis_tdata(m_rasterizer_sem_axis_tdata),
         .s_axis_tlast(m_rasterizer_sem_axis_tlast),
         .s_axis_tvalid(m_rasterizer_sem_axis_tvalid),
-        .s_axis_tready(),
+        .s_axis_tready(m_rasterizer_sem_axis_tready),
         .s_axis_tkeep(m_rasterizer_sem_axis_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
@@ -853,7 +908,6 @@ module RasterixRenderCore #(
 
     localparam COLOR_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + PIXEL_WIDTH;
     wire [COLOR_FIFO_WIDTH - 1 : 0] color_fifo_out_data;
-    wire                            color_fifo_empty;
     sfifo colorWriteFifo (
         .i_clk(aclk),
         .i_reset(!resetn),
@@ -861,14 +915,14 @@ module RasterixRenderCore #(
         .i_wr(color_fifo_wvalid),
         .i_data({ color_fifo_wlast, color_fifo_wstrb, color_fifo_wscreenPosY, color_fifo_wscreenPosX, color_fifo_waddr, color_fifo_wdata }),
         .o_full(),
-        .o_fill(),
+        .o_fill(color_fifo_fill),
 
         .i_rd(color_wready),
         .o_data(color_fifo_out_data),
         .o_empty(color_fifo_empty)    
     );
     defparam colorWriteFifo.BW = COLOR_FIFO_WIDTH;
-    defparam colorWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG;
+    defparam colorWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG + 1;
     defparam colorWriteFifo.OPT_ASYNC_READ = 0;
 
     assign color_wdata = color_fifo_out_data[0 +: PIXEL_WIDTH];
@@ -881,7 +935,6 @@ module RasterixRenderCore #(
 
     localparam DEPTH_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + DEPTH_WIDTH;
     wire [DEPTH_FIFO_WIDTH - 1 : 0] depth_fifo_out_data;
-    wire                            depth_fifo_empty;
     sfifo depthWriteFifo (
         .i_clk(aclk),
         .i_reset(!resetn),
@@ -889,14 +942,14 @@ module RasterixRenderCore #(
         .i_wr(depth_fifo_wvalid),
         .i_data({ depth_fifo_wlast, depth_fifo_wstrb, depth_fifo_wscreenPosY, depth_fifo_wscreenPosX, depth_fifo_waddr, depth_fifo_wdata }),
         .o_full(),
-        .o_fill(),
+        .o_fill(depth_fifo_fill),
 
         .i_rd(depth_wready),
         .o_data(depth_fifo_out_data),
         .o_empty(depth_fifo_empty)    
     );
     defparam depthWriteFifo.BW = DEPTH_FIFO_WIDTH;
-    defparam depthWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG;
+    defparam depthWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG + 1;
     defparam depthWriteFifo.OPT_ASYNC_READ = 0;
 
     assign depth_wdata = depth_fifo_out_data[0 +: DEPTH_WIDTH];
@@ -909,7 +962,6 @@ module RasterixRenderCore #(
 
     localparam STENCIL_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + STENCIL_WIDTH;
     wire [STENCIL_FIFO_WIDTH - 1 : 0]   stencil_fifo_out_data;
-    wire                                stencil_fifo_empty;
     sfifo stencilWriteFifo (
         .i_clk(aclk),
         .i_reset(!resetn),
@@ -917,14 +969,14 @@ module RasterixRenderCore #(
         .i_wr(stencil_fifo_wvalid),
         .i_data({ stencil_fifo_wlast, stencil_fifo_wstrb, stencil_fifo_wscreenPosY, stencil_fifo_wscreenPosX, stencil_fifo_waddr, stencil_fifo_wdata }),
         .o_full(),
-        .o_fill(),
+        .o_fill(stencil_fifo_fill),
 
         .i_rd(stencil_wready),
         .o_data(stencil_fifo_out_data),
         .o_empty(stencil_fifo_empty)    
     );
     defparam stencilWriteFifo.BW = STENCIL_FIFO_WIDTH;
-    defparam stencilWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG;
+    defparam stencilWriteFifo.LGFLEN = MAX_NUMBER_OF_PIXELS_LG + 1;
     defparam stencilWriteFifo.OPT_ASYNC_READ = 0;
 
     assign stencil_wdata = stencil_fifo_out_data[0 +: STENCIL_WIDTH];

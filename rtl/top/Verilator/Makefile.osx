@@ -2,7 +2,7 @@ PROJ = Rasterizer
 
 VERILATOR = verilator
 
-FRAMEBUFFER_SIZE_IN_WORDS = 15
+FRAMEBUFFER_SIZE_IN_WORDS = 24
 
 all: mem 
 
@@ -15,6 +15,10 @@ simulation:
 
 mem:
 	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+	-make -C obj_dir -f Vtop.mk
+
+mem-trace:
+	$(VERILATOR) --trace --no-trace-params -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

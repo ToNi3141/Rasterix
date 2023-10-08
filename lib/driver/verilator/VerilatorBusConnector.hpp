@@ -5,6 +5,7 @@
 #include "util/GenericMemoryBusConnector.hpp"
 #include "Vtop.h"
 #include <span>
+#include <verilated_vcd_c.h>
 
 namespace rr
 {
@@ -17,6 +18,8 @@ public:
     VerilatorBusConnector(FBType *framebuffer, const uint16_t resolutionW = 128, const uint16_t resolutionH = 128)
         : m_resolutionW(resolutionW), m_resolutionH(resolutionH), m_framebuffer(framebuffer)
     {
+        Verilated::traceEverOn(true);
+
         m_top.m_framebuffer_axis_tready = 1;
         m_top.s_cmd_axis_tvalid = 0;
 

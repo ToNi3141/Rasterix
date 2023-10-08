@@ -48,6 +48,7 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
     VStreamSemaphore* t = new VStreamSemaphore();
     
     t->sigRelease = 0;
+    t->m_axis_tready = 1;
     reset(t);
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_axis_tvalid == 0);
@@ -80,6 +81,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     VStreamSemaphore* t = new VStreamSemaphore();
     
     t->sigRelease = 0;
+    t->m_axis_tready = 1;
     reset(t);
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_axis_tvalid == 0);
@@ -109,6 +111,66 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
         CHECK(t->m_axis_tvalid == 0);
         CHECK(t->released == !(i < (MAX_ITERATIONS - 1)));
     }
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("Test flow control", "[VStreamSemaphore]")
+{
+    VStreamSemaphore* t = new VStreamSemaphore();
+    
+    t->sigRelease = 0;
+    t->m_axis_tready = 0;
+    reset(t);
+    CHECK(t->s_axis_tready == 1);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->released == 1);
+
+    t->sigRelease = 0;
+    t->m_axis_tready = 0;
+    t->s_axis_tvalid = 1;
+    t->s_axis_tlast = 0;
+    t->s_axis_tdata = 0x12345678;
+    t->s_axis_tkeep = 1;
+    clk(t);
+    CHECK(t->m_axis_tvalid == 1);
+    CHECK(t->m_axis_tlast == 0);
+    CHECK(t->m_axis_tdata == 0x12345678);
+    CHECK(t->m_axis_tkeep == 1);
+    CHECK(t->released == 0);
+
+    t->sigRelease = 0;
+    t->m_axis_tready = 0;
+    t->s_axis_tvalid = 1;
+    t->s_axis_tlast = 0;
+    t->s_axis_tdata = 0x87654321;
+    t->s_axis_tkeep = 1;
+    clk(t);
+    CHECK(t->m_axis_tvalid == 1);
+    CHECK(t->m_axis_tlast == 0);
+    CHECK(t->m_axis_tdata == 0x12345678);
+    CHECK(t->m_axis_tkeep == 1);
+    CHECK(t->released == 0);
+
+    t->sigRelease = 1;
+    t->m_axis_tready = 1;
+    t->s_axis_tvalid = 1;
+    t->s_axis_tlast = 0;
+    t->s_axis_tdata = 0x87654321;
+    t->s_axis_tkeep = 1;
+    clk(t);
+    CHECK(t->m_axis_tvalid == 1);
+    CHECK(t->m_axis_tlast == 0);
+    CHECK(t->m_axis_tdata == 0x87654321);
+    CHECK(t->m_axis_tkeep == 1);
+    CHECK(t->released == 0);
+
+    t->sigRelease = 1;
+    t->s_axis_tvalid = 0;
+    clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->released == 1);
 
     // Destroy model
     delete t;

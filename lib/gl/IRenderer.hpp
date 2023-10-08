@@ -288,6 +288,21 @@ public:
     /// @param stencilConf The config of the stencil buffer
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setStencilBufferConfig(const StencilReg& stencilConf) = 0;
+
+    /// @brief Set the address of the color buffer
+    /// @param addr The address of the buffer in memory
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
+    virtual bool setColorBufferAddress(const uint32_t addr) = 0;
+
+    /// @brief Set the address of the depth buffer
+    /// @param addr The address of the buffer in memory
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
+    virtual bool setDepthBufferAddress(const uint32_t addr) = 0;
+
+    /// @brief Set the address of the color buffer
+    /// @param addr The address of the buffer in memory
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out of memory)
+    virtual bool setStencilBufferAddress(const uint32_t addr) = 0;
 };
 
 } // namespace rr

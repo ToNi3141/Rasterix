@@ -30,6 +30,30 @@ struct RenderConfigSimulation
     static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
 };
 
+struct RenderConfigSimulationMemory
+{
+    // TMU settings
+    static constexpr uint8_t TMU_COUNT { 2 };
+    static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+
+    // Display Settings
+    static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
+    static constexpr uint16_t MAX_DISPLAY_HEIGHT { 480 };
+    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
+
+    // Bus Settings
+    static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
+
+    // Texture Memory Settings
+    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 6912 };
+    static constexpr uint32_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
+    static constexpr uint32_t TEXTURE_PAGE_SIZE { 4096 };
+
+    // Memory RAM location. This is used as memory offset for all device memory  
+    // address calculations. Mostly useful for architectures with shared memory
+    static constexpr uint32_t GRAM_MEMORY_LOC { 0x0 }; // No shared memory
+};
+
 struct RenderConfigCModA7
 {
     // TMU settings

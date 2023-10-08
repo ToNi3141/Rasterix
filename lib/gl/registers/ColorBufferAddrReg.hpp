@@ -16,29 +16,18 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _BASE_SINGLE_REG_
-#define _BASE_SINGLE_REG_
+#ifndef _COLOR_BUFFER_ADDR_REG_
+#define _COLOR_BUFFER_ADDR_REG_
 
-#include <cstdint>
-#include "Veci.hpp"
+#include "registers/BaseSingleReg.hpp"
 
 namespace rr
 {
-template <uint32_t MASK>
-class BaseSingleReg
+class ColorBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
-    BaseSingleReg() = default;
-    BaseSingleReg(const uint32_t val) { setValue(val); }
-
-    void setValue(const uint32_t val) { m_regVal = val & MASK; }
-
-    uint32_t getValue() const { return m_regVal; }
-
-    uint32_t serialize() const { return m_regVal; }
-private:
-    uint32_t m_regVal { 0 };
+    static constexpr uint32_t getAddr() { return 16; }
 };
 } // namespace rr
 
-#endif // _BASE_SINGLE_REG_
+#endif // _COLOR_BUFFER_ADDR_REG_

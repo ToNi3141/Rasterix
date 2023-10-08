@@ -30,6 +30,7 @@ module StreamSemaphore #(
     output reg                          m_axis_tlast,
     output reg  [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
     output reg  [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,
+    input  wire                         m_axis_tready,
 
     input  wire                         s_axis_tvalid,
     output wire                         s_axis_tready,
@@ -41,17 +42,15 @@ module StreamSemaphore #(
     output wire                         released
 );
     localparam SKID_WIDTH = 1 + KEEP_WIDTH + STREAM_WIDTH;
-    reg [7 : 0] valuesCounter = 0;
-    wire [SKID_WIDTH - 1 : 0] skidData;
-
-    wire skidReady = valuesCounter < MAX_NUMBER_OF_ELEMENTS;
-    wire skidValid;
+    reg  [7 : 0]                valuesCounter = 0;
+    wire [SKID_WIDTH - 1 : 0]   skidOutData;
+    wire                        skidInReady;
 
     wire sigOutgoingValue = sigRelease;
     wire sigIncommingValue = s_axis_tvalid && s_axis_tready;
 
     skidbuffer #(
-        .OPT_OUTREG(0),
+        .OPT_OUTREG(1),
         .OPT_PASSTHROUGH(0),
         .OPT_INITIAL(1),
         .DW(SKID_WIDTH)
@@ -60,12 +59,12 @@ module StreamSemaphore #(
         .i_reset(!resetn),
 
         .i_valid(s_axis_tvalid),
-        .o_ready(s_axis_tready),
+        .o_ready(skidInReady),
         .i_data({ s_axis_tlast, s_axis_tkeep, s_axis_tdata }),
 
-        .o_valid(skidValid),
-        .i_ready(skidReady),
-        .o_data(skidData)
+        .o_valid(m_axis_tvalid),
+        .i_ready(m_axis_tready),
+        .o_data(skidOutData)
     );
 
     always @(posedge aclk)
@@ -92,11 +91,11 @@ module StreamSemaphore #(
         end
     end
 
-    always @(posedge aclk)
+    always @(*)
     begin
-        m_axis_tvalid <= skidValid && skidReady;
-        m_axis_tdata <= skidData[0 +: STREAM_WIDTH];
-        m_axis_tkeep <= skidData[STREAM_WIDTH +: KEEP_WIDTH];
-        m_axis_tlast <= skidData[STREAM_WIDTH + KEEP_WIDTH +: 1];
+        s_axis_tready = skidInReady && (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
+        m_axis_tdata = skidOutData[0 +: STREAM_WIDTH];
+        m_axis_tkeep = skidOutData[STREAM_WIDTH +: KEEP_WIDTH];
+        m_axis_tlast = skidOutData[STREAM_WIDTH + KEEP_WIDTH +: 1];
     end
 endmodule

@@ -46,7 +46,7 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    rr::Renderer<rr::RenderConfigSimulation> m_renderer{m_busConnector};
+    rr::Renderer<rr::RenderConfigSimulationMemory> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -62,7 +62,7 @@ private:
 
     QTimer m_timer;
     QImage m_image;
-    StencilShadow m_testScene;
+    Minimal m_testScene;
 };
 
 #endif // MAINWINDOW_H

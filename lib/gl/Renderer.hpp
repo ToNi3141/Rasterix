@@ -46,6 +46,9 @@
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
 #include "registers/StencilReg.hpp"
+#include "registers/ColorBufferAddrReg.hpp"
+#include "registers/DepthBufferAddrReg.hpp"
+#include "registers/StencilBufferAddrReg.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
@@ -109,6 +112,9 @@ public:
         }
 
         enableColorBufferInMemory(0x01E00000);
+        setColorBufferAddress(0x01E00000);
+        setDepthBufferAddress(0x01C00000);
+        setStencilBufferAddress(0x01B00000);
         setRenderResolution(640, 480);
 
         setTexEnvColor(0, { { 0, 0, 0, 0 } });
@@ -180,7 +186,7 @@ public:
         // Prepare all display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            FramebufferCmd<RenderConfig> cmd { true, true, true };
+            FramebufferCmd<RenderConfig> cmd { false, false, false };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
@@ -437,6 +443,20 @@ public:
         return writeReg(stencilConf);
     }
 
+    virtual bool setColorBufferAddress(const uint32_t addr) override
+    {
+        return writeReg(ColorBufferAddrReg { addr });
+    }
+
+    virtual bool setDepthBufferAddress(const uint32_t addr) override
+    {
+        return writeReg(DepthBufferAddrReg { addr });
+    }
+
+    virtual bool setStencilBufferAddress(const uint32_t addr) override
+    {
+        return writeReg(StencilBufferAddrReg { addr });
+    }
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 

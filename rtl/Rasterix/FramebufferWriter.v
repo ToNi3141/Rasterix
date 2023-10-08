@@ -55,6 +55,7 @@ module FramebufferWriter #(
     /////////////////////////
 
     // Framebuffer Interface
+    // TODO: Its a master interface
     input  wire                             s_frag_tvalid,
     input  wire                             s_frag_tlast,
     output reg                              s_frag_tready,
@@ -133,8 +134,14 @@ module FramebufferWriter #(
     reg                                 lastSkid;
     reg                                 wasLast;
 
+    wire [INDEX_TAG_WIDTH - 1 : 0]      tag;
+    wire [INDEX_BYTE_WIDTH - 1 : 0]     bytePos;
+            
+    assign tag = s_frag_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+    assign bytePos = s_frag_taddr[INDEX_BYTE_POS +: INDEX_BYTE_WIDTH];
+
     wire maskWriteEnable = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, s_frag_txpos, s_frag_typos);
-    FramebufferWriterStrobeGen #(.STRB_WIDTH(STRB_WIDTH), .MASK_WIDTH(PIXEL_MASK_WIDTH)) fbwsg (.mask((maskWriteEnable && s_frag_tstrb) ? confMask : 0), .val(s_frag_taddr[0 +: INDEX_BYTE_WIDTH]), .strobe(currStrobe));
+    FramebufferWriterStrobeGen #(.STRB_WIDTH(STRB_WIDTH), .MASK_WIDTH(PIXEL_MASK_WIDTH)) fbwsg (.mask((maskWriteEnable && s_frag_tstrb) ? confMask : 0), .val(bytePos), .strobe(currStrobe));
 
     always @(posedge aclk)
     begin
@@ -150,12 +157,7 @@ module FramebufferWriter #(
             wasLast <= 0;
         end
         else
-        begin : Serialize
-            reg [INDEX_TAG_WIDTH - 1 : 0]   tag;
-            reg [INDEX_BYTE_WIDTH - 1 : 0]  bytePos;
-            
-            tag = s_frag_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
-            bytePos = s_frag_taddr[INDEX_BYTE_POS +: INDEX_BYTE_WIDTH];
+        begin
             if (s_frag_tready)
             begin
                 if (s_frag_tvalid)
@@ -175,7 +177,7 @@ module FramebufferWriter #(
                     end
                     else
                     begin
-                        if (!memRequest || !optDataInLine)
+                        if (!memRequest)
                         begin
                             memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { ADDR_BYTE_WIDTH { 1'b0 } } };
                             memRequestData <= line;

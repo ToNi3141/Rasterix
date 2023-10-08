@@ -77,6 +77,7 @@ equals(TARGET_BUILD, "simulation") {
     HEADERS += $${VERILATOR_BUS_CONNECTOR_PATH}/../util/GenericMemoryBusConnector.hpp
 
     SOURCES += $${VERILATOR_PATH}/include/verilated.cpp
+    SOURCES += $${VERILATOR_PATH}/include/verilated_vcd_c.cpp
 
     LIBS += $${VERILATOR_CODE_GEN_PATH}/Vtop__ALL.a
 }
