@@ -121,6 +121,7 @@ module Rasterizer
                 m_axis_tvalid <= 0;
                 m_axis_tkeep <= ~0;
                 m_axis_tlast <= 0;
+                rasterizerRunning <= 0;
                 if (startRendering)
                 begin
                     lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
@@ -381,7 +382,6 @@ module Rasterizer
                         m_axis_tvalid <= 1;
                         m_axis_tkeep <= 0;
                         m_axis_tlast <= 1;
-                        rasterizerRunning <= 0;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
 

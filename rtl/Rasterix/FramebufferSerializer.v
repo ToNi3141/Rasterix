@@ -78,7 +78,7 @@ module FramebufferSerializer #(
             m_frag_axis_tvalid <= 0;
             m_frag_axis_tlast <= 0;
 
-            s_fetch_axis_tready <= 0;
+            s_fetch_axis_tready <= 1;
 
             m_mem_axi_rready <= 0;
 

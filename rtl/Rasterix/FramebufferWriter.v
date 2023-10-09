@@ -55,7 +55,6 @@ module FramebufferWriter #(
     /////////////////////////
 
     // Framebuffer Interface
-    // TODO: Its a master interface
     input  wire                             s_frag_tvalid,
     input  wire                             s_frag_tlast,
     output reg                              s_frag_tready,

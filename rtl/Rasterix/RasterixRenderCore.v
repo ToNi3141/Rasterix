@@ -377,7 +377,7 @@ module RasterixRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .startRendering(startRendering),
-        .pixelInPipeline(!pipelineEmpty && !color_fifo_empty && !depth_fifo_empty && !stencil_fifo_empty),
+        .pixelInPipeline(!pipelineEmpty || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -538,34 +538,12 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // Implementation of the flow control via a stream semaphore
-    // Clocks: 1
+    // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
     wire fragmentProcessed;
     assign fifosAlmostFull = (color_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
             || (depth_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
             || (stencil_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG));
-
-    // Used to prevent overflows of the write fifos
-    StreamBarrier sbr (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .m_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
-        .m_axis_tready(m_rasterizer_sbr_axis_tready),
-        .m_axis_tlast(m_rasterizer_sbr_axis_tlast),
-        .m_axis_tdata(m_rasterizer_sbr_axis_tdata),
-        .m_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
-
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tdata(m_rasterizer_axis_tdata),
-        .s_axis_tkeep(m_rasterizer_axis_tkeep),
-
-        .stall(fifosAlmostFull)
-    );
-    defparam sbr.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
-    defparam sbr.KEEP_WIDTH = 1;
 
     // In combination with the StreamBarrier, it prevents overflows of the
     // write fifos by ensuring that the pipeline contains a maximum of 
@@ -581,11 +559,11 @@ module RasterixRenderCore #(
         .m_axis_tkeep(m_rasterizer_sem_axis_tkeep),
         .m_axis_tready(m_rasterizer_sem_axis_tready),
 
-        .s_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
-        .s_axis_tready(m_rasterizer_sbr_axis_tready),
-        .s_axis_tlast(m_rasterizer_sbr_axis_tlast),
-        .s_axis_tdata(m_rasterizer_sbr_axis_tdata),
-        .s_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
+        .s_axis_tvalid(m_rasterizer_axis_tvalid),
+        .s_axis_tready(m_rasterizer_axis_tready),
+        .s_axis_tlast(m_rasterizer_axis_tlast),
+        .s_axis_tdata(m_rasterizer_axis_tdata),
+        .s_axis_tkeep(m_rasterizer_axis_tkeep),
 
         .sigRelease(fragmentProcessed),
         .released(pipelineEmpty)
@@ -593,6 +571,28 @@ module RasterixRenderCore #(
     defparam ssem.MAX_NUMBER_OF_ELEMENTS = 2 ** MAX_NUMBER_OF_PIXELS_LG;
     defparam ssem.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
     defparam ssem.KEEP_WIDTH = 1;
+
+    // Used to prevent overflows of the write fifos
+    StreamBarrier sbr (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
+        .m_axis_tready(m_rasterizer_sbr_axis_tready),
+        .m_axis_tlast(m_rasterizer_sbr_axis_tlast),
+        .m_axis_tdata(m_rasterizer_sbr_axis_tdata),
+        .m_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
+
+        .s_axis_tvalid(m_rasterizer_sem_axis_tvalid),
+        .s_axis_tready(m_rasterizer_sem_axis_tready),
+        .s_axis_tlast(m_rasterizer_sem_axis_tlast),
+        .s_axis_tdata(m_rasterizer_sem_axis_tdata),
+        .s_axis_tkeep(m_rasterizer_sem_axis_tkeep),
+
+        .stall(fifosAlmostFull)
+    );
+    defparam sbr.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam sbr.KEEP_WIDTH = 1;
     
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
@@ -618,11 +618,11 @@ module RasterixRenderCore #(
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata(m_rasterizer_sem_axis_tdata),
-        .s_axis_tlast(m_rasterizer_sem_axis_tlast),
-        .s_axis_tvalid(m_rasterizer_sem_axis_tvalid),
-        .s_axis_tready(m_rasterizer_sem_axis_tready),
-        .s_axis_tkeep(m_rasterizer_sem_axis_tkeep),
+        .s_axis_tdata(m_rasterizer_sbr_axis_tdata),
+        .s_axis_tlast(m_rasterizer_sbr_axis_tlast),
+        .s_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
+        .s_axis_tready(m_rasterizer_sbr_axis_tready),
+        .s_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),

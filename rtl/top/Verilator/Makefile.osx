@@ -18,8 +18,12 @@ mem-ext:
 	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
-mem-trace:
+mem-ext-trace:
 	$(VERILATOR) --trace --no-trace-params -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+	-make -C obj_dir -f Vtop.mk
+
+mem-int-trace:
+	$(VERILATOR) --trace -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-arch x86_64 -O3' --cc topMemorySRAM.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

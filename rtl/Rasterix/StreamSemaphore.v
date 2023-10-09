@@ -46,8 +46,9 @@ module StreamSemaphore #(
     wire [SKID_WIDTH - 1 : 0]   skidOutData;
     wire                        skidInReady;
 
-    wire sigOutgoingValue = sigRelease;
-    wire sigIncommingValue = s_axis_tvalid && s_axis_tready;
+    wire sigOutgoingValue   = sigRelease;
+    wire sigIncommingValue  = s_axis_tvalid && s_axis_tready;
+    wire free               = (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
 
     skidbuffer #(
         .OPT_OUTREG(1),
@@ -58,7 +59,7 @@ module StreamSemaphore #(
         .i_clk(aclk),
         .i_reset(!resetn),
 
-        .i_valid(s_axis_tvalid),
+        .i_valid(s_axis_tvalid && free),
         .o_ready(skidInReady),
         .i_data({ s_axis_tlast, s_axis_tkeep, s_axis_tdata }),
 
@@ -93,7 +94,7 @@ module StreamSemaphore #(
 
     always @(*)
     begin
-        s_axis_tready = skidInReady && (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
+        s_axis_tready = skidInReady && free;
         m_axis_tdata = skidOutData[0 +: STREAM_WIDTH];
         m_axis_tkeep = skidOutData[STREAM_WIDTH +: KEEP_WIDTH];
         m_axis_tlast = skidOutData[STREAM_WIDTH + KEEP_WIDTH +: 1];

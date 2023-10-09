@@ -280,15 +280,15 @@ module PerFragmentPipeline
             stencil_wdata <= step1_stencil;
         end
         fragmentProcessed <= step1_valid;
-        color_wvalid <= step1_valid & step1_writeFramebuffer;
-        depth_wvalid <= step1_valid & step1_writeFramebuffer;
-        stencil_wvalid <= step1_valid & step1_writeStencilBuffer;
+        color_wvalid <= step1_valid;
+        depth_wvalid <= step1_valid;
+        stencil_wvalid <= step1_valid;
         color_wlast <= step1_last;
         depth_wlast <= step1_last;
         stencil_wlast <= step1_last;
-        color_wstrb <= step1_keep;
-        depth_wstrb <= step1_keep;
-        stencil_wstrb <= step1_keep;
+        color_wstrb <= step1_keep & step1_writeFramebuffer;
+        depth_wstrb <= step1_keep & step1_writeFramebuffer;
+        stencil_wstrb <= step1_keep & step1_writeStencilBuffer;
     end
 endmodule
 
