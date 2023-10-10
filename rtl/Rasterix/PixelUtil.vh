@@ -210,4 +210,16 @@
         end \
     endfunction
 
+`define RGB5652XXX(FuncName, ElementWidth, NumberOfPixels) \
+    function [(ElementWidth * 3 * NumberOfPixels) - 1 : 0] FuncName; \
+        input [15 : 0] pixels; \
+        integer i = 0; \
+        for (i = 0; i < NumberOfPixels; i = i + 1) \
+        begin \
+            FuncName[(i * ElementWidth * 3)                      +: ElementWidth] = { pixels[(i * 16) + 0  +: 5], pixels[(i * 16) + 0  + (ElementWidth - 6) +: (ElementWidth - 5)] }; \
+            FuncName[(i * ElementWidth * 3) + ElementWidth       +: ElementWidth] = { pixels[(i * 16) + 5  +: 6], pixels[(i * 16) + 5  + (ElementWidth - 5) +: (ElementWidth - 6)] }; \
+            FuncName[(i * ElementWidth * 3) + (ElementWidth * 2) +: ElementWidth] = { pixels[(i * 16) + 11 +: 5], pixels[(i * 16) + 11 + (ElementWidth - 6) +: (ElementWidth - 5)] }; \
+        end \
+    endfunction
+
 `endif // PIXEL_UTIL_VH

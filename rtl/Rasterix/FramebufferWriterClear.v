@@ -111,7 +111,7 @@ module FramebufferWriterClear #(
                 // Note: The clear process starts at a position where (0, 0) is located at the top left.
                 // The OpenGL coordinate system starts at the bottom left. To switch the coordinate system
                 // this module starts with the bottom first and iterates through the top.
-                ypos <= confYResolution - 1;
+                ypos <= confYResolution;
                 addr <= 0;
                 last <= 0;
                 valid <= 1;

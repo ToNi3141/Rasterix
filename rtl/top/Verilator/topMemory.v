@@ -134,7 +134,7 @@ module top #(
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
         .TMU_COUNT(2),
-        .ADDR_WIDTH(32)
+        .ADDR_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS)
     ) rasterix (
         .aclk(aclk),
         .resetn(resetn),

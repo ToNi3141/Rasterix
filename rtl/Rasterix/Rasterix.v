@@ -31,7 +31,7 @@ module Rasterix #(
     // The number of sub pixels in the framebuffer
     localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4,
     // The sub pixel with in the framebuffer
-    localparam PIXEL_WIDTH_FRAMEBUFFER = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * FRAMEBUFFER_SUB_PIXEL_WIDTH,
+    localparam PIXEL_WIDTH_FRAMEBUFFER = 16,
 
     // The width of the stencil buffer
     localparam STENCIL_WIDTH = 4,
@@ -134,9 +134,9 @@ module Rasterix #(
     `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
     `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL);
-    `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
     `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS);
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1);
+    `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1);
 
     wire                             m_cmd_axis_tvalid;
     wire                             m_cmd_axis_tready;
@@ -980,7 +980,7 @@ module Rasterix #(
         .color_arvalid(color_arvalid),
         .color_araddr(color_araddr),
         .color_rready(color_rready),
-        .color_rdata(ColorBufferExpandVec(ColorBufferExpand(color_rdata), DEFAULT_ALPHA_VAL)),
+        .color_rdata(ColorBufferExpandVec(RGB5652XXX(color_rdata), DEFAULT_ALPHA_VAL)),
         .color_rvalid(color_rvalid),
         .color_waddr(color_waddr),
         .color_wvalid(color_wvalid),

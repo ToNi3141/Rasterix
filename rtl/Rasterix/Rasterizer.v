@@ -386,6 +386,9 @@ module Rasterizer
                     end
 
                     /* verilator lint_off WIDTH */
+                    // BUG: There is the possibility that the term ((yLineResolution - 1) - y) can underflow
+                    // when y == yLineResolution. This happens when objects are on the border of the view port
+                    // and y increments a outside of the view port.
                     fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
                     /* verilator lint_on WIDTH */
                     

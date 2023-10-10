@@ -98,16 +98,16 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
 
     t->apply = 1;
 
-    for (uint32_t x = 0, y = (Y_RES - 1); x < X_RES && y > 0; x++)
+    for (uint32_t x = 0, y = Y_RES; x < X_RES && y > 0; x++)
     {
         clk(t);
         t->apply = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == (((y - 1) == 0) && ((x + 1) == X_RES)));
+        CHECK(t->m_frag_tlast == ((y == 0) && ((x + 1) == X_RES)));
         CHECK(t->m_frag_tdata == 0xabcd);
         CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + (((Y_RES - 1) - y) * Y_RES));
+        CHECK(t->m_frag_taddr == x + ((Y_RES - y) * Y_RES));
         CHECK(t->m_frag_txpos == x);
         CHECK(t->m_frag_typos == y);
         if (x + 1 == X_RES)
@@ -137,7 +137,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
 
     t->apply = 1;
 
-    for (uint32_t x = 0, y = (Y_RES - 1); x < X_RES && y > 0; x++)
+    for (uint32_t x = 0, y = Y_RES; x < X_RES && y > 0; x++)
     {
         t->m_frag_tready = 0;
         clk(t);
@@ -147,10 +147,10 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
         t->m_frag_tready = 1;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == (((y - 1) == 0) && ((x + 1) == X_RES)));
+        CHECK(t->m_frag_tlast == ((y == 0) && ((x + 1) == X_RES)));
         CHECK(t->m_frag_tdata == 0xabcd);
         CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + (((Y_RES - 1) - y) * Y_RES));
+        CHECK(t->m_frag_taddr == x + ((Y_RES - y) * Y_RES));
         CHECK(t->m_frag_txpos == x);
         CHECK(t->m_frag_typos == y);
         clk(t);
