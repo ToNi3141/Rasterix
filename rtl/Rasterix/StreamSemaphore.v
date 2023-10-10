@@ -33,13 +33,13 @@ module StreamSemaphore #(
     input  wire                         m_axis_tready,
 
     input  wire                         s_axis_tvalid,
-    output wire                         s_axis_tready,
+    output reg                          s_axis_tready,
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata,
     input  wire [KEEP_WIDTH - 1 : 0]    s_axis_tkeep,
 
     input  wire                         sigRelease,
-    output wire                         released
+    output reg                          released
 );
     localparam SKID_WIDTH = 1 + KEEP_WIDTH + STREAM_WIDTH;
     reg  [7 : 0]                valuesCounter = 0;

@@ -414,7 +414,7 @@ module Rasterix #(
     wire [3 : 0]                                     colorBufferMask;
     wire                                             color_arvalid;
     wire                                             color_arlast;
-    wire                                             color_arredy;
+    wire                                             color_arready;
     wire                                             color_rvalid;
     wire                                             color_rready;
     wire                                             color_rlast;
