@@ -170,6 +170,7 @@ module MemoryReadRequestGenerator #(
                 begin
                     m_mem_axi_araddr <= confAddr + memRequestAddr;
                     m_mem_axi_arvalid <= 1;
+                    m_mem_axi_arid <= m_mem_axi_arid + 1;
                     memRequest <= 0;
                 end
             end

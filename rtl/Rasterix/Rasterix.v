@@ -148,141 +148,142 @@ module Rasterix #(
     wire                             s_framebuffer_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata;
 
-    localparam NRM = 4;
+    localparam NRS = 4;
 
-    wire [(NRM * ID_WIDTH) - 1 : 0]         s_xbar_axi_awid;
-    wire [(NRM * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_awaddr;
-    wire [(NRM * 8) : 0]                    s_xbar_axi_awlen; 
-    wire [(NRM * 3) : 0]                    s_xbar_axi_awsize;
-    wire [(NRM * 2) : 0]                    s_xbar_axi_awburst;
-    wire [NRM - 1 : 0]                      s_xbar_axi_awlock;
-    wire [(NRM * 4) - 1 : 0]                s_xbar_axi_awcache;
-    wire [(NRM * 3) - 1 : 0]                s_xbar_axi_awprot; 
-    wire [NRM - 1 : 0]                      s_xbar_axi_awvalid;
-    wire [NRM - 1 : 0]                      s_xbar_axi_awready;
+    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_awid;
+    wire [(NRS * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_awaddr;
+    wire [(NRS * 8) : 0]                    s_xbar_axi_awlen; 
+    wire [(NRS * 3) : 0]                    s_xbar_axi_awsize;
+    wire [(NRS * 2) : 0]                    s_xbar_axi_awburst;
+    wire [NRS - 1 : 0]                      s_xbar_axi_awlock;
+    wire [(NRS * 4) - 1 : 0]                s_xbar_axi_awcache;
+    wire [(NRS * 3) - 1 : 0]                s_xbar_axi_awprot; 
+    wire [NRS - 1 : 0]                      s_xbar_axi_awvalid;
+    wire [NRS - 1 : 0]                      s_xbar_axi_awready;
 
-    wire [(NRM * CMD_STREAM_WIDTH) - 1 : 0] s_xbar_axi_wdata;
-    wire [(NRM * STRB_WIDTH) - 1 : 0]       s_xbar_axi_wstrb;
-    wire [NRM - 1 : 0]                      s_xbar_axi_wlast;
-    wire [NRM - 1 : 0]                      s_xbar_axi_wvalid;
-    wire [NRM - 1 : 0]                      s_xbar_axi_wready;
+    wire [(NRS * CMD_STREAM_WIDTH) - 1 : 0] s_xbar_axi_wdata;
+    wire [(NRS * STRB_WIDTH) - 1 : 0]       s_xbar_axi_wstrb;
+    wire [NRS - 1 : 0]                      s_xbar_axi_wlast;
+    wire [NRS - 1 : 0]                      s_xbar_axi_wvalid;
+    wire [NRS - 1 : 0]                      s_xbar_axi_wready;
 
-    wire [(NRM * ID_WIDTH) - 1 : 0]         s_xbar_axi_bid;
-    wire [(NRM * 2) - 1 : 0]                s_xbar_axi_bresp;
-    wire [NRM - 1 : 0]                      s_xbar_axi_bvalid;
-    wire [NRM - 1 : 0]                      s_xbar_axi_bready;
+    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_bid;
+    wire [(NRS * 2) - 1 : 0]                s_xbar_axi_bresp;
+    wire [NRS - 1 : 0]                      s_xbar_axi_bvalid;
+    wire [NRS - 1 : 0]                      s_xbar_axi_bready;
 
-    wire [(NRM * ID_WIDTH) - 1 : 0]         s_xbar_axi_arid;
-    wire [(NRM * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_araddr;
-    wire [(NRM * 8) - 1 : 0]                s_xbar_axi_arlen;
-    wire [(NRM * 3) - 1 : 0]                s_xbar_axi_arsize;
-    wire [(NRM * 2) - 1 : 0]                s_xbar_axi_arburst;
-    wire [NRM - 1 : 0]                      s_xbar_axi_arlock;
-    wire [(NRM * 4) - 1 : 0]                s_xbar_axi_arcache;
-    wire [(NRM * 3) - 1 : 0]                s_xbar_axi_arprot;
-    wire [NRM - 1 : 0]                      s_xbar_axi_arvalid;
-    wire [NRM - 1 : 0]                      s_xbar_axi_arready;
+    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_arid;
+    wire [(NRS * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_araddr;
+    wire [(NRS * 8) - 1 : 0]                s_xbar_axi_arlen;
+    wire [(NRS * 3) - 1 : 0]                s_xbar_axi_arsize;
+    wire [(NRS * 2) - 1 : 0]                s_xbar_axi_arburst;
+    wire [NRS - 1 : 0]                      s_xbar_axi_arlock;
+    wire [(NRS * 4) - 1 : 0]                s_xbar_axi_arcache;
+    wire [(NRS * 3) - 1 : 0]                s_xbar_axi_arprot;
+    wire [NRS - 1 : 0]                      s_xbar_axi_arvalid;
+    wire [NRS - 1 : 0]                      s_xbar_axi_arready;
 
-    wire [(NRM * ID_WIDTH) - 1 : 0]         s_xbar_axi_rid;
-    wire [(NRM * CMD_STREAM_WIDTH) - 1 : 0] s_xbar_axi_rdata;
-    wire [(NRM * 2) - 1 : 0]                s_xbar_axi_rresp;
-    wire [NRM - 1 : 0]                      s_xbar_axi_rlast;
-    wire [NRM - 1 : 0]                      s_xbar_axi_rvalid;
-    wire [NRM - 1 : 0]                      s_xbar_axi_rready;
+    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_rid;
+    wire [(NRS * CMD_STREAM_WIDTH) - 1 : 0] s_xbar_axi_rdata;
+    wire [(NRS * 2) - 1 : 0]                s_xbar_axi_rresp;
+    wire [NRS - 1 : 0]                      s_xbar_axi_rlast;
+    wire [NRS - 1 : 0]                      s_xbar_axi_rvalid;
+    wire [NRS - 1 : 0]                      s_xbar_axi_rready;
 
-    axixbar #(
-        .C_AXI_DATA_WIDTH(CMD_STREAM_WIDTH),
-        .C_AXI_ADDR_WIDTH(ADDR_WIDTH),
-        .C_AXI_ID_WIDTH(ID_WIDTH),
-        .NM(NRM),
-        .NS(2)
+    axi_crossbar #(
+        .DATA_WIDTH(CMD_STREAM_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .S_ID_WIDTH(2),
+        .S_COUNT(NRS),
+        .M_COUNT(1),
+        .M_ADDR_WIDTH({1{{1{32'd25}}}})
     ) mainXBar (
-        .S_AXI_ACLK(aclk),
-        .S_AXI_ARESETN(resetn),
+        .clk(aclk),
+        .rst(!resetn),
 
-        .S_AXI_AWID(s_xbar_axi_awid),
-        .S_AXI_AWADDR(s_xbar_axi_awaddr),
-        .S_AXI_AWLEN(s_xbar_axi_awlen),
-        .S_AXI_AWSIZE(s_xbar_axi_awsize),
-        .S_AXI_AWBURST(s_xbar_axi_awburst),
-        .S_AXI_AWLOCK(s_xbar_axi_awlock),
-        .S_AXI_AWCACHE(s_xbar_axi_awcache),
-        .S_AXI_AWPROT(s_xbar_axi_awprot),
-        .S_AXI_AWQOS(0),
-        .S_AXI_AWVALID(s_xbar_axi_awvalid),
-        .S_AXI_AWREADY(s_xbar_axi_awready),
+        .s_axi_awid(s_xbar_axi_awid),
+        .s_axi_awaddr(s_xbar_axi_awaddr),
+        .s_axi_awlen(s_xbar_axi_awlen),
+        .s_axi_awsize(s_xbar_axi_awsize),
+        .s_axi_awburst(s_xbar_axi_awburst),
+        .s_axi_awlock(s_xbar_axi_awlock),
+        .s_axi_awcache(s_xbar_axi_awcache),
+        .s_axi_awprot(s_xbar_axi_awprot),
+        .s_axi_awqos(0),
+        .s_axi_awvalid(s_xbar_axi_awvalid),
+        .s_axi_awready(s_xbar_axi_awready),
 
-        .S_AXI_WDATA(s_xbar_axi_wdata),
-        .S_AXI_WSTRB(s_xbar_axi_wstrb),
-        .S_AXI_WLAST(s_xbar_axi_wlast),
-        .S_AXI_WVALID(s_xbar_axi_wvalid),
-        .S_AXI_WREADY(s_xbar_axi_wready),
+        .s_axi_wdata(s_xbar_axi_wdata),
+        .s_axi_wstrb(s_xbar_axi_wstrb),
+        .s_axi_wlast(s_xbar_axi_wlast),
+        .s_axi_wvalid(s_xbar_axi_wvalid),
+        .s_axi_wready(s_xbar_axi_wready),
 
-        .S_AXI_BID(s_xbar_axi_bid),
-        .S_AXI_BRESP(s_xbar_axi_bresp),
-        .S_AXI_BVALID(s_xbar_axi_bvalid),
-        .S_AXI_BREADY(s_xbar_axi_bready),
+        .s_axi_bid(s_xbar_axi_bid),
+        .s_axi_bresp(s_xbar_axi_bresp),
+        .s_axi_bvalid(s_xbar_axi_bvalid),
+        .s_axi_bready(s_xbar_axi_bready),
 
-        .S_AXI_ARID(s_xbar_axi_arid),
-        .S_AXI_ARADDR(s_xbar_axi_araddr),
-        .S_AXI_ARLEN(s_xbar_axi_arlen),
-        .S_AXI_ARSIZE(s_xbar_axi_arsize),
-        .S_AXI_ARBURST(s_xbar_axi_arburst),
-        .S_AXI_ARLOCK(s_xbar_axi_arlock),
-        .S_AXI_ARCACHE(s_xbar_axi_arcache),
-        .S_AXI_ARPROT(s_xbar_axi_arprot),
-        .S_AXI_ARQOS(0),
-        .S_AXI_ARVALID(s_xbar_axi_arvalid),
-        .S_AXI_ARREADY(s_xbar_axi_arready),
+        .s_axi_arid(s_xbar_axi_arid),
+        .s_axi_araddr(s_xbar_axi_araddr),
+        .s_axi_arlen(s_xbar_axi_arlen),
+        .s_axi_arsize(s_xbar_axi_arsize),
+        .s_axi_arburst(s_xbar_axi_arburst),
+        .s_axi_arlock(s_xbar_axi_arlock),
+        .s_axi_arcache(s_xbar_axi_arcache),
+        .s_axi_arprot(s_xbar_axi_arprot),
+        .s_axi_arqos(0),
+        .s_axi_arvalid(s_xbar_axi_arvalid),
+        .s_axi_arready(s_xbar_axi_arready),
 
-        .S_AXI_RID(s_xbar_axi_rid),
-        .S_AXI_RDATA(s_xbar_axi_rdata),
-        .S_AXI_RRESP(s_xbar_axi_rresp),
-        .S_AXI_RLAST(s_xbar_axi_rlast),
-        .S_AXI_RVALID(s_xbar_axi_rvalid),
-        .S_AXI_RREADY(s_xbar_axi_rready),
+        .s_axi_rid(s_xbar_axi_rid),
+        .s_axi_rdata(s_xbar_axi_rdata),
+        .s_axi_rresp(s_xbar_axi_rresp),
+        .s_axi_rlast(s_xbar_axi_rlast),
+        .s_axi_rvalid(s_xbar_axi_rvalid),
+        .s_axi_rready(s_xbar_axi_rready),
 
-        .M_AXI_AWID(m_mem_axi_awid),
-        .M_AXI_AWADDR(m_mem_axi_awaddr),
-        .M_AXI_AWLEN(m_mem_axi_awlen),
-        .M_AXI_AWSIZE(m_mem_axi_awsize),
-        .M_AXI_AWBURST(m_mem_axi_awburst),
-        .M_AXI_AWLOCK(m_mem_axi_awlock),
-        .M_AXI_AWCACHE(m_mem_axi_awcache),
-        .M_AXI_AWPROT(m_mem_axi_awprot),
-        .M_AXI_AWQOS(),
-        .M_AXI_AWVALID(m_mem_axi_awvalid),
-        .M_AXI_AWREADY(m_mem_axi_awready),
+        .m_axi_awid(m_mem_axi_awid),
+        .m_axi_awaddr(m_mem_axi_awaddr),
+        .m_axi_awlen(m_mem_axi_awlen),
+        .m_axi_awsize(m_mem_axi_awsize),
+        .m_axi_awburst(m_mem_axi_awburst),
+        .m_axi_awlock(m_mem_axi_awlock),
+        .m_axi_awcache(m_mem_axi_awcache),
+        .m_axi_awprot(m_mem_axi_awprot),
+        .m_axi_awqos(),
+        .m_axi_awvalid(m_mem_axi_awvalid),
+        .m_axi_awready(m_mem_axi_awready),
 
-        .M_AXI_WDATA(m_mem_axi_wdata),
-        .M_AXI_WSTRB(m_mem_axi_wstrb),
-        .M_AXI_WLAST(m_mem_axi_wlast),
-        .M_AXI_WVALID(m_mem_axi_wvalid),
-        .M_AXI_WREADY(m_mem_axi_wready),
+        .m_axi_wdata(m_mem_axi_wdata),
+        .m_axi_wstrb(m_mem_axi_wstrb),
+        .m_axi_wlast(m_mem_axi_wlast),
+        .m_axi_wvalid(m_mem_axi_wvalid),
+        .m_axi_wready(m_mem_axi_wready),
 
-        .M_AXI_BID(m_mem_axi_bid),
-        .M_AXI_BRESP(m_mem_axi_bresp),
-        .M_AXI_BVALID(m_mem_axi_bvalid),
-        .M_AXI_BREADY(m_mem_axi_bready),
+        .m_axi_bid(m_mem_axi_bid),
+        .m_axi_bresp(m_mem_axi_bresp),
+        .m_axi_bvalid(m_mem_axi_bvalid),
+        .m_axi_bready(m_mem_axi_bready),
 
-        .M_AXI_ARID(m_mem_axi_arid),
-        .M_AXI_ARADDR(m_mem_axi_araddr),
-        .M_AXI_ARLEN(m_mem_axi_arlen),
-        .M_AXI_ARSIZE(m_mem_axi_arsize),
-        .M_AXI_ARBURST(m_mem_axi_arburst),
-        .M_AXI_ARLOCK(m_mem_axi_arlock),
-        .M_AXI_ARCACHE(m_mem_axi_arcache),
-        .M_AXI_ARQOS(),
-        .M_AXI_ARPROT(m_mem_axi_arprot),
-        .M_AXI_ARVALID(m_mem_axi_arvalid),
-        .M_AXI_ARREADY(m_mem_axi_arready),
+        .m_axi_arid(m_mem_axi_arid),
+        .m_axi_araddr(m_mem_axi_araddr),
+        .m_axi_arlen(m_mem_axi_arlen),
+        .m_axi_arsize(m_mem_axi_arsize),
+        .m_axi_arburst(m_mem_axi_arburst),
+        .m_axi_arlock(m_mem_axi_arlock),
+        .m_axi_arcache(m_mem_axi_arcache),
+        .m_axi_arqos(),
+        .m_axi_arprot(m_mem_axi_arprot),
+        .m_axi_arvalid(m_mem_axi_arvalid),
+        .m_axi_arready(m_mem_axi_arready),
 
-        .M_AXI_RID(m_mem_axi_rid),
-        .M_AXI_RDATA(m_mem_axi_rdata),
-        .M_AXI_RRESP(m_mem_axi_rresp),
-        .M_AXI_RLAST(m_mem_axi_rlast),
-        .M_AXI_RVALID(m_mem_axi_rvalid),
-        .M_AXI_RREADY(m_mem_axi_rready)
+        .m_axi_rid(m_mem_axi_rid),
+        .m_axi_rdata(m_mem_axi_rdata),
+        .m_axi_rresp(m_mem_axi_rresp),
+        .m_axi_rlast(m_mem_axi_rlast),
+        .m_axi_rvalid(m_mem_axi_rvalid),
+        .m_axi_rready(m_mem_axi_rready)
     );
 
     DmaStreamEngine #(
