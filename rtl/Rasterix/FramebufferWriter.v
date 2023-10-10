@@ -81,10 +81,10 @@ module FramebufferWriter #(
     input  wire                             m_mem_axi_awready,
 
     // Data channel
-    output wire [STREAM_WIDTH - 1 : 0]      m_mem_axi_wdata,
+    output reg  [STREAM_WIDTH - 1 : 0]      m_mem_axi_wdata,
     output reg  [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
-    output wire                             m_mem_axi_wlast,
-    output wire                             m_mem_axi_wvalid,
+    output reg                              m_mem_axi_wlast,
+    output reg                              m_mem_axi_wvalid,
     input  wire                             m_mem_axi_wready,
 
     // Write response channel
@@ -98,7 +98,8 @@ module FramebufferWriter #(
     localparam INDEX_TAG_POS = INDEX_BYTE_WIDTH;
     localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
     localparam ADDR_BYTE_POS = $clog2(PIXEL_WIDTH / 8);
-    localparam ADDR_BYTE_WIDTH = $clog2(STREAM_WIDTH / 8) - ADDR_BYTE_POS;
+    localparam STREAM_WIDTH_LG = $clog2(STREAM_WIDTH / 8);
+    localparam ADDR_BYTE_WIDTH = STREAM_WIDTH_LG - ADDR_BYTE_POS;
     localparam ADDR_TAG_POS = ADDR_BYTE_WIDTH;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
@@ -253,7 +254,7 @@ module FramebufferWriter #(
         begin
             m_mem_axi_awid <= 0;
             m_mem_axi_awlen <= 0; // Use always one beat. If the performance too slow, then we could increase the STREAM_WIDTH and use an external bus converter
-            m_mem_axi_awsize <= { $clog2(STREAM_WIDTH / 8) }[0 +: 3];
+            m_mem_axi_awsize <= STREAM_WIDTH_LG[0 +: 3];
             m_mem_axi_awburst <= 1;
             m_mem_axi_awlock <= 0;
             m_mem_axi_awcache <= 0;

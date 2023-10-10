@@ -65,7 +65,8 @@ module MemoryReadRequestGenerator #(
     localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
 
     localparam ADDR_BYTE_POS = $clog2(PIXEL_WIDTH / 8);
-    localparam ADDR_BYTE_WIDTH = $clog2(STREAM_WIDTH / 8) - ADDR_BYTE_POS;
+    localparam STREAM_WIDTH_LG = $clog2(STREAM_WIDTH / 8);
+    localparam ADDR_BYTE_WIDTH = STREAM_WIDTH_LG - ADDR_BYTE_POS;
     localparam ADDR_TAG_POS = ADDR_BYTE_WIDTH;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
@@ -75,6 +76,8 @@ module MemoryReadRequestGenerator #(
     reg                             lastFetch;
     reg                             memRequest;
     reg [ADDR_WIDTH - 1 : 0]        memRequestAddr;
+    wire newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
+
 
     // Fetch handling
     always @(posedge aclk)
@@ -93,9 +96,7 @@ module MemoryReadRequestGenerator #(
             if (s_fetch_axis_tready)
             begin
                 if (s_fetch_axis_tvalid)
-                begin : Fetch
-                    reg newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
-
+                begin
                     // Safe current address in the skid buffer when the memory request handling is busy
                     if (newMemRequest && memRequest)
                     begin
@@ -153,7 +154,7 @@ module MemoryReadRequestGenerator #(
 
             m_mem_axi_arid <= 0;
             m_mem_axi_arlen <= 0; // Use always one beat. If the performance too slow, then we could increase the STREAM_WIDTH and use an external bus converter
-            m_mem_axi_arsize <= { $clog2(STREAM_WIDTH / 8) }[0 +: 3];
+            m_mem_axi_arsize <= STREAM_WIDTH_LG[0 +: 3];
             m_mem_axi_arburst <= 1;
             m_mem_axi_arlock <= 0;
             m_mem_axi_arcache <= 0;
