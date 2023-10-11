@@ -26,17 +26,16 @@ module FramebufferWriterStrobeGen #(
     output reg  [STRB_WIDTH - 1 : 0]    strobe
 );
     generate
-        genvar i;
-        for (i = 0; i < INDEX_COUNT; i = i + 1)
-        always_latch begin
-            if (val == i)
-            begin
-                strobe = { 
-                    { STRB_WIDTH - ((i + 1) * MASK_WIDTH) { 1'b0 } }, 
-                    mask, 
-                    { i * MASK_WIDTH { 1'b0 } } 
-                };
-            end
+        /* verilator lint_off LATCH */
+        always
+        /* verilator lint_on LATCH */
+        begin : bla
+            integer i;
+            for (i = 0; i < INDEX_COUNT; i = i + 1)
+                if (val == i[0 +: INDEX_WIDTH])
+                begin
+                    strobe = { { (STRB_WIDTH - MASK_WIDTH) { 1'b0 } }, mask } << (i * MASK_WIDTH);
+                end
         end
     endgenerate
 endmodule
