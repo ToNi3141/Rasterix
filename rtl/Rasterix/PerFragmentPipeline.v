@@ -287,8 +287,8 @@ module PerFragmentPipeline
         depth_wlast <= step1_last;
         stencil_wlast <= step1_last;
         color_wstrb <= step1_keep & step1_writeFramebuffer;
-        depth_wstrb <= step1_keep & step1_writeFramebuffer;
-        stencil_wstrb <= step1_keep & step1_writeStencilBuffer;
+        depth_wstrb <= step1_keep & step1_writeFramebuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
+        stencil_wstrb <= step1_keep & step1_writeStencilBuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
     end
 endmodule
 
