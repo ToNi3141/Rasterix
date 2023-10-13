@@ -78,6 +78,8 @@ module Rasterix #(
     input  wire                             m_framebuffer_axis_tready,
     output wire                             m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
+    output wire                             swap_fb,
+    input  wire                             fb_swapped,
 
     // Memory interface
     output wire [ID_WIDTH - 1 : 0]          m_mem_axi_awid,
@@ -550,7 +552,7 @@ module Rasterix #(
         .confMask({ depthBufferMask, depthBufferMask }),
         .confClearColor(depthBufferClearDepth),
 
-        .apply(depthBufferApply),
+        .apply(depthBufferApply & depthBufferCmdMemset),
         .applied(depthBufferApplied),
 
         .fetch_arvalid(depth_arvalid),
@@ -636,7 +638,7 @@ module Rasterix #(
         .confMask(ColorBufferReduceMask(colorBufferMask)),
         .confClearColor(XXX2RGB565(ColorBufferReduceVec(colorBufferClearColor))),
 
-        .apply(colorBufferApply),
+        .apply(colorBufferApply & colorBufferCmdMemset),
         .applied(colorBufferApplied),
 
         .fetch_arvalid(color_arvalid),
@@ -874,7 +876,7 @@ module Rasterix #(
                 .confMask(|stencilBufferMask),
                 .confClearColor(stencilBufferClearStencil),
 
-                .apply(stencilBufferApply),
+                .apply(stencilBufferApply & stencilBufferCmdMemset),
                 .applied(stencilBufferApplied),
 
                 .fetch_arvalid(stencil_arvalid),
@@ -970,7 +972,7 @@ module Rasterix #(
         .colorBufferClearColor(colorBufferClearColor),
         .colorBufferAddr(colorBufferAddr),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied),
+        .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferEnable(colorBufferEnable),
@@ -1039,5 +1041,7 @@ module Rasterix #(
         .stencil_wscreenPosX(stencil_wscreenPosX),
         .stencil_wscreenPosY(stencil_wscreenPosY)
     );
+
+    assign swap_fb = colorBufferApply && colorBufferCmdCommit;
 
 endmodule
