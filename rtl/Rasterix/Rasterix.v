@@ -59,6 +59,7 @@ module Rasterix #(
     parameter ADDR_WIDTH = 32,
     // Memory ID width
     parameter ID_WIDTH = 8,
+    localparam ID_WIDTH_LOC = ID_WIDTH / 4,
     // Memory strobe width
     parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8
 )
@@ -152,11 +153,11 @@ module Rasterix #(
 
     localparam NRS = 4;
 
-    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_awid;
+    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     s_xbar_axi_awid;
     wire [(NRS * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_awaddr;
-    wire [(NRS * 8) : 0]                    s_xbar_axi_awlen; 
-    wire [(NRS * 3) : 0]                    s_xbar_axi_awsize;
-    wire [(NRS * 2) : 0]                    s_xbar_axi_awburst;
+    wire [(NRS * 8) - 1 : 0]                s_xbar_axi_awlen; 
+    wire [(NRS * 3) - 1 : 0]                s_xbar_axi_awsize;
+    wire [(NRS * 2) - 1 : 0]                s_xbar_axi_awburst;
     wire [NRS - 1 : 0]                      s_xbar_axi_awlock;
     wire [(NRS * 4) - 1 : 0]                s_xbar_axi_awcache;
     wire [(NRS * 3) - 1 : 0]                s_xbar_axi_awprot; 
@@ -169,12 +170,12 @@ module Rasterix #(
     wire [NRS - 1 : 0]                      s_xbar_axi_wvalid;
     wire [NRS - 1 : 0]                      s_xbar_axi_wready;
 
-    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_bid;
+    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     s_xbar_axi_bid;
     wire [(NRS * 2) - 1 : 0]                s_xbar_axi_bresp;
     wire [NRS - 1 : 0]                      s_xbar_axi_bvalid;
     wire [NRS - 1 : 0]                      s_xbar_axi_bready;
 
-    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_arid;
+    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     s_xbar_axi_arid;
     wire [(NRS * ADDR_WIDTH) - 1 : 0]       s_xbar_axi_araddr;
     wire [(NRS * 8) - 1 : 0]                s_xbar_axi_arlen;
     wire [(NRS * 3) - 1 : 0]                s_xbar_axi_arsize;
@@ -185,7 +186,7 @@ module Rasterix #(
     wire [NRS - 1 : 0]                      s_xbar_axi_arvalid;
     wire [NRS - 1 : 0]                      s_xbar_axi_arready;
 
-    wire [(NRS * ID_WIDTH) - 1 : 0]         s_xbar_axi_rid;
+    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     s_xbar_axi_rid;
     wire [(NRS * CMD_STREAM_WIDTH) - 1 : 0] s_xbar_axi_rdata;
     wire [(NRS * 2) - 1 : 0]                s_xbar_axi_rresp;
     wire [NRS - 1 : 0]                      s_xbar_axi_rlast;
@@ -195,7 +196,7 @@ module Rasterix #(
     axi_crossbar #(
         .DATA_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .S_ID_WIDTH(2),
+        .S_ID_WIDTH(ID_WIDTH_LOC),
         .S_COUNT(NRS),
         .M_COUNT(1),
         .M_ADDR_WIDTH({1{{1{32'd25}}}})
@@ -315,7 +316,7 @@ module Rasterix #(
         .s_st0_axis_tlast(s_cmd_axis_tlast),
         .s_st0_axis_tdata(s_cmd_axis_tdata),
 
-        .m_mem_axi_awid(s_xbar_axi_awid[0 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_awid(s_xbar_axi_awid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_awaddr(s_xbar_axi_awaddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_awlen(s_xbar_axi_awlen[0 * 8 +: 8]), 
         .m_mem_axi_awsize(s_xbar_axi_awsize[0 * 3 +: 3]), 
@@ -332,12 +333,12 @@ module Rasterix #(
         .m_mem_axi_wvalid(s_xbar_axi_wvalid[0 * 1 +: 1]),
         .m_mem_axi_wready(s_xbar_axi_wready[0 * 1 +: 1]),
 
-        .m_mem_axi_bid(s_xbar_axi_bid[0 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_bid(s_xbar_axi_bid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_bresp(s_xbar_axi_bresp[0 * 2 +: 2]),
         .m_mem_axi_bvalid(s_xbar_axi_bvalid[0 * 1 +: 1]),
         .m_mem_axi_bready(s_xbar_axi_bready[0 * 1 +: 1]),
 
-        .m_mem_axi_arid(s_xbar_axi_arid[0 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_arid(s_xbar_axi_arid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_araddr(s_xbar_axi_araddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_arlen(s_xbar_axi_arlen[0 * 8 +: 8]),
         .m_mem_axi_arsize(s_xbar_axi_arsize[0 * 3 +: 3]),
@@ -348,14 +349,14 @@ module Rasterix #(
         .m_mem_axi_arvalid(s_xbar_axi_arvalid[0 * 1 +: 1]),
         .m_mem_axi_arready(s_xbar_axi_arready[0 * 1 +: 1]),
 
-        .m_mem_axi_rid(s_xbar_axi_rid[0 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_rid(s_xbar_axi_rid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_rdata(s_xbar_axi_rdata[0 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
         .m_mem_axi_rresp(s_xbar_axi_rresp[0 * 2 +: 2]),
         .m_mem_axi_rlast(s_xbar_axi_rlast[0 * 1 +: 1]),
         .m_mem_axi_rvalid(s_xbar_axi_rvalid[0 * 1 +: 1]),
         .m_mem_axi_rready(s_xbar_axi_rready[0 * 1 +: 1])
 
-        //         .m_mem_axi_awid(s_xbar_axi_awid[1 * ID_WIDTH +: ID_WIDTH]),
+        //         .m_mem_axi_awid(s_xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_awaddr(s_xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
         // .m_mem_axi_awlen(s_xbar_axi_awlen[1 * 8 +: 8]), 
         // .m_mem_axi_awsize(s_xbar_axi_awsize[1 * 3 +: 3]), 
@@ -372,12 +373,12 @@ module Rasterix #(
         // .m_mem_axi_wvalid(s_xbar_axi_wvalid[1 * 1 +: 1]),
         // .m_mem_axi_wready(s_xbar_axi_wready[1 * 1 +: 1]),
 
-        // .m_mem_axi_bid(s_xbar_axi_bid[1 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_bid(s_xbar_axi_bid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_bresp(s_xbar_axi_bresp[1 * 2 +: 2]),
         // .m_mem_axi_bvalid(s_xbar_axi_bvalid[1 * 1 +: 1]),
         // .m_mem_axi_bready(s_xbar_axi_bready[1 * 1 +: 1]),
 
-        // .m_mem_axi_arid(s_xbar_axi_arid[1 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_arid(s_xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_araddr(s_xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
         // .m_mem_axi_arlen(s_xbar_axi_arlen[1 * 8 +: 8]),
         // .m_mem_axi_arsize(s_xbar_axi_arsize[1 * 3 +: 3]),
@@ -388,7 +389,7 @@ module Rasterix #(
         // .m_mem_axi_arvalid(s_xbar_axi_arvalid[1 * 1 +: 1]),
         // .m_mem_axi_arready(s_xbar_axi_arready[1 * 1 +: 1]),
 
-        // .m_mem_axi_rid(s_xbar_axi_rid[1 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_rid(s_xbar_axi_rid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_rdata(s_xbar_axi_rdata[1 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
         // .m_mem_axi_rresp(s_xbar_axi_rresp[1 * 2 +: 2]),
         // .m_mem_axi_rlast(s_xbar_axi_rlast[1 * 1 +: 1]),
@@ -532,7 +533,7 @@ module Rasterix #(
     StreamFramebuffer #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
+        .ID_WIDTH(ID_WIDTH_LOC),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
         .PIXEL_WIDTH(16)
@@ -574,7 +575,7 @@ module Rasterix #(
         .frag_wxpos(depth_wscreenPosX),
         .frag_wypos(depth_wscreenPosY),
 
-        .m_mem_axi_awid(s_xbar_axi_awid[2 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_awid(s_xbar_axi_awid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_awaddr(s_xbar_axi_awaddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_awlen(s_xbar_axi_awlen[2 * 8 +: 8]), 
         .m_mem_axi_awsize(s_xbar_axi_awsize[2 * 3 +: 3]), 
@@ -591,12 +592,12 @@ module Rasterix #(
         .m_mem_axi_wvalid(s_xbar_axi_wvalid[2 * 1 +: 1]),
         .m_mem_axi_wready(s_xbar_axi_wready[2 * 1 +: 1]),
 
-        .m_mem_axi_bid(s_xbar_axi_bid[2 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_bid(s_xbar_axi_bid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_bresp(s_xbar_axi_bresp[2 * 2 +: 2]),
         .m_mem_axi_bvalid(s_xbar_axi_bvalid[2 * 1 +: 1]),
         .m_mem_axi_bready(s_xbar_axi_bready[2 * 1 +: 1]),
 
-        .m_mem_axi_arid(s_xbar_axi_arid[2 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_arid(s_xbar_axi_arid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_araddr(s_xbar_axi_araddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_arlen(s_xbar_axi_arlen[2 * 8 +: 8]),
         .m_mem_axi_arsize(s_xbar_axi_arsize[2 * 3 +: 3]),
@@ -607,7 +608,7 @@ module Rasterix #(
         .m_mem_axi_arvalid(s_xbar_axi_arvalid[2 * 1 +: 1]),
         .m_mem_axi_arready(s_xbar_axi_arready[2 * 1 +: 1]),
 
-        .m_mem_axi_rid(s_xbar_axi_rid[2 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_rid(s_xbar_axi_rid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_rdata(s_xbar_axi_rdata[2 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
         .m_mem_axi_rresp(s_xbar_axi_rresp[2 * 2 +: 2]),
         .m_mem_axi_rlast(s_xbar_axi_rlast[2 * 1 +: 1]),
@@ -618,7 +619,7 @@ module Rasterix #(
     StreamFramebuffer #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
+        .ID_WIDTH(ID_WIDTH_LOC),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
         .PIXEL_WIDTH(PIXEL_WIDTH_STREAM)
@@ -660,7 +661,7 @@ module Rasterix #(
         .frag_wxpos(color_wscreenPosX),
         .frag_wypos(color_wscreenPosY),
 
-        .m_mem_axi_awid(s_xbar_axi_awid[1 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_awid(s_xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_awaddr(s_xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_awlen(s_xbar_axi_awlen[1 * 8 +: 8]), 
         .m_mem_axi_awsize(s_xbar_axi_awsize[1 * 3 +: 3]), 
@@ -677,12 +678,12 @@ module Rasterix #(
         .m_mem_axi_wvalid(s_xbar_axi_wvalid[1 * 1 +: 1]),
         .m_mem_axi_wready(s_xbar_axi_wready[1 * 1 +: 1]),
 
-        .m_mem_axi_bid(s_xbar_axi_bid[1 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_bid(s_xbar_axi_bid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_bresp(s_xbar_axi_bresp[1 * 2 +: 2]),
         .m_mem_axi_bvalid(s_xbar_axi_bvalid[1 * 1 +: 1]),
         .m_mem_axi_bready(s_xbar_axi_bready[1 * 1 +: 1]),
 
-        .m_mem_axi_arid(s_xbar_axi_arid[1 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_arid(s_xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_araddr(s_xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
         .m_mem_axi_arlen(s_xbar_axi_arlen[1 * 8 +: 8]),
         .m_mem_axi_arsize(s_xbar_axi_arsize[1 * 3 +: 3]),
@@ -693,7 +694,7 @@ module Rasterix #(
         .m_mem_axi_arvalid(s_xbar_axi_arvalid[1 * 1 +: 1]),
         .m_mem_axi_arready(s_xbar_axi_arready[1 * 1 +: 1]),
 
-        .m_mem_axi_rid(s_xbar_axi_rid[1 * ID_WIDTH +: ID_WIDTH]),
+        .m_mem_axi_rid(s_xbar_axi_rid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_mem_axi_rdata(s_xbar_axi_rdata[1 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
         .m_mem_axi_rresp(s_xbar_axi_rresp[1 * 2 +: 2]),
         .m_mem_axi_rlast(s_xbar_axi_rlast[1 * 1 +: 1]),
@@ -701,7 +702,7 @@ module Rasterix #(
         .m_mem_axi_rready(s_xbar_axi_rready[1 * 1 +: 1])
 
 
-        // .m_mem_axi_awid(s_xbar_axi_awid[0 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_awid(s_xbar_axi_awid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_awaddr(s_xbar_axi_awaddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
         // .m_mem_axi_awlen(s_xbar_axi_awlen[0 * 8 +: 8]), 
         // .m_mem_axi_awsize(s_xbar_axi_awsize[0 * 3 +: 3]), 
@@ -718,12 +719,12 @@ module Rasterix #(
         // .m_mem_axi_wvalid(s_xbar_axi_wvalid[0 * 1 +: 1]),
         // .m_mem_axi_wready(s_xbar_axi_wready[0 * 1 +: 1]),
 
-        // .m_mem_axi_bid(s_xbar_axi_bid[0 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_bid(s_xbar_axi_bid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_bresp(s_xbar_axi_bresp[0 * 2 +: 2]),
         // .m_mem_axi_bvalid(s_xbar_axi_bvalid[0 * 1 +: 1]),
         // .m_mem_axi_bready(s_xbar_axi_bready[0 * 1 +: 1]),
 
-        // .m_mem_axi_arid(s_xbar_axi_arid[0 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_arid(s_xbar_axi_arid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_araddr(s_xbar_axi_araddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
         // .m_mem_axi_arlen(s_xbar_axi_arlen[0 * 8 +: 8]),
         // .m_mem_axi_arsize(s_xbar_axi_arsize[0 * 3 +: 3]),
@@ -734,7 +735,7 @@ module Rasterix #(
         // .m_mem_axi_arvalid(s_xbar_axi_arvalid[0 * 1 +: 1]),
         // .m_mem_axi_arready(s_xbar_axi_arready[0 * 1 +: 1]),
 
-        // .m_mem_axi_rid(s_xbar_axi_rid[0 * ID_WIDTH +: ID_WIDTH]),
+        // .m_mem_axi_rid(s_xbar_axi_rid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         // .m_mem_axi_rdata(s_xbar_axi_rdata[0 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
         // .m_mem_axi_rresp(s_xbar_axi_rresp[0 * 2 +: 2]),
         // .m_mem_axi_rlast(s_xbar_axi_rlast[0 * 1 +: 1]),
@@ -856,7 +857,7 @@ module Rasterix #(
             StreamFramebuffer #(
                 .STREAM_WIDTH(CMD_STREAM_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
-                .ID_WIDTH(ID_WIDTH),
+                .ID_WIDTH(ID_WIDTH_LOC),
                 .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
                 .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
                 .PIXEL_WIDTH(8)
@@ -898,7 +899,7 @@ module Rasterix #(
                 .frag_wxpos(stencil_wscreenPosX),
                 .frag_wypos(stencil_wscreenPosY),
 
-                .m_mem_axi_awid(s_xbar_axi_awid[3 * ID_WIDTH +: ID_WIDTH]),
+                .m_mem_axi_awid(s_xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
                 .m_mem_axi_awaddr(s_xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
                 .m_mem_axi_awlen(s_xbar_axi_awlen[3 * 8 +: 8]), 
                 .m_mem_axi_awsize(s_xbar_axi_awsize[3 * 3 +: 3]), 
@@ -915,12 +916,12 @@ module Rasterix #(
                 .m_mem_axi_wvalid(s_xbar_axi_wvalid[3 * 1 +: 1]),
                 .m_mem_axi_wready(s_xbar_axi_wready[3 * 1 +: 1]),
 
-                .m_mem_axi_bid(s_xbar_axi_bid[3 * ID_WIDTH +: ID_WIDTH]),
+                .m_mem_axi_bid(s_xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
                 .m_mem_axi_bresp(s_xbar_axi_bresp[3 * 2 +: 2]),
                 .m_mem_axi_bvalid(s_xbar_axi_bvalid[3 * 1 +: 1]),
                 .m_mem_axi_bready(s_xbar_axi_bready[3 * 1 +: 1]),
 
-                .m_mem_axi_arid(s_xbar_axi_arid[3 * ID_WIDTH +: ID_WIDTH]),
+                .m_mem_axi_arid(s_xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
                 .m_mem_axi_araddr(s_xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
                 .m_mem_axi_arlen(s_xbar_axi_arlen[3 * 8 +: 8]),
                 .m_mem_axi_arsize(s_xbar_axi_arsize[3 * 3 +: 3]),
@@ -931,7 +932,7 @@ module Rasterix #(
                 .m_mem_axi_arvalid(s_xbar_axi_arvalid[3 * 1 +: 1]),
                 .m_mem_axi_arready(s_xbar_axi_arready[3 * 1 +: 1]),
 
-                .m_mem_axi_rid(s_xbar_axi_rid[3 * ID_WIDTH +: ID_WIDTH]),
+                .m_mem_axi_rid(s_xbar_axi_rid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
                 .m_mem_axi_rdata(s_xbar_axi_rdata[3 * CMD_STREAM_WIDTH +: CMD_STREAM_WIDTH]),
                 .m_mem_axi_rresp(s_xbar_axi_rresp[3 * 2 +: 2]),
                 .m_mem_axi_rlast(s_xbar_axi_rlast[3 * 1 +: 1]),

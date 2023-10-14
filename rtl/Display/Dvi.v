@@ -89,7 +89,7 @@ module Dvi #(
         .outport_rvalid_i(m_mem_axi_rvalid),
         .outport_rdata_i(m_mem_axi_rdata),
         .outport_rresp_i(m_mem_axi_rresp),
-        .outport_rid_i(m_mem_axi_rid),
+        .outport_rid_i(m_mem_axi_rid[0 +: 4]),
         .outport_rlast_i(m_mem_axi_rlast),
         .cfg_awready_o(),
         .cfg_wready_o(),

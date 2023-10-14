@@ -27,7 +27,7 @@ module FramebufferWriterStrobeGen #(
 );
     generate
         /* verilator lint_off LATCH */
-        always
+        always @(*)
         /* verilator lint_on LATCH */
         begin : bla
             integer i;
