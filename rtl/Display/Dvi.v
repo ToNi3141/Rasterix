@@ -131,7 +131,7 @@ module Dvi #(
     begin
         if (!resetn)
         begin
-            addr <= FB_2_ADDR;
+            addr <= FB_1_ADDR;
             swapped <= 1;
         end
         else

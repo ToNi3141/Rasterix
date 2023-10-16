@@ -124,8 +124,8 @@ public:
             || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
         {
             setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-            setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC_1);
-            setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC_1);
+            setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
+            setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
         }
         setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
 
@@ -214,11 +214,13 @@ public:
             }
             if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
             {
+                cmd.selectColorBuffer();
                 cmd.enableExternalFramebufferSwap();
             }
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(cmd);
             m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].closeStream();
         }
+
 
         // Upload textures
         m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
@@ -240,6 +242,17 @@ public:
             YOffsetReg reg;
             reg.setY(i * m_yLineResolution);
             m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
+        }
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+        {
+            if (m_backList == 0)
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            }
+            else
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+            }
         }
     }
 

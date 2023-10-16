@@ -149,6 +149,9 @@ module top #(
         .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
         .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
+        .swap_fb(),
+        .fb_swapped(1),
+
         .m_mem_axi_awid(s_axi_awid),
         .m_mem_axi_awaddr(s_axi_awaddr),
         .m_mem_axi_awlen(s_axi_awlen), 
