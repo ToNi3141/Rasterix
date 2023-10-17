@@ -29,7 +29,7 @@ module Dvi #(
     input  wire             swap,
     output reg              swapped,
 
-    output wire [3 : 0]     m_mem_axi_arid,
+    output wire [ 3 : 0]    m_mem_axi_arid,
     output wire [31 : 0]    m_mem_axi_araddr,
     output wire [ 7 : 0]    m_mem_axi_arlen,
     output wire [ 2 : 0]    m_mem_axi_arsize,
@@ -39,8 +39,9 @@ module Dvi #(
     output wire [ 2 : 0]    m_mem_axi_arprot,
     output wire             m_mem_axi_arvalid,
     input  wire             m_mem_axi_arready,
+    output wire [ 3 : 0]    m_mem_axi_arqos,
 
-    input  wire [7 : 0]     m_mem_axi_rid,
+    input  wire [ 7 : 0]    m_mem_axi_rid,
     input  wire [31 : 0]    m_mem_axi_rdata,
     input  wire [ 1 : 0]    m_mem_axi_rresp,
     input  wire             m_mem_axi_rlast,
@@ -59,6 +60,7 @@ module Dvi #(
     wire [31 : 0] araddr;
     reg  [31 : 0] addr;
     assign m_mem_axi_araddr = araddr + addr;
+    assign m_mem_axi_arqos = ~0;
 
     dvi_framebuffer #(
         .VIDEO_WIDTH(1024),
