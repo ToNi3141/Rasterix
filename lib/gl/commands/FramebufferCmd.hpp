@@ -56,7 +56,8 @@ public:
 
     void enableExternalFramebufferSwap()
     {
-        // TODO
+        m_op |= OP_FRAMEBUFFER_COMMIT;
+        m_dseOp = DSEC::OP_NOP;
     }
     void enableExternalCommit(const uint32_t size, const uint32_t addr)
     {

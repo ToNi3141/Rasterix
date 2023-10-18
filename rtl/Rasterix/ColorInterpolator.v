@@ -41,7 +41,7 @@ module ColorInterpolator #(
     localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
-    parameter [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
 
     ColorMixer #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)

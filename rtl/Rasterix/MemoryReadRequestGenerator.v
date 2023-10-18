@@ -143,11 +143,8 @@ module MemoryReadRequestGenerator #(
                 end
             end
         end
-    end
-
-    // Memory request handling
-    always @(posedge aclk)
-    begin
+         
+        // Memory request handling
         if (!resetn)
         begin
             memRequest <= 0;

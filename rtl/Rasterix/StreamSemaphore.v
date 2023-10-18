@@ -26,7 +26,7 @@ module StreamSemaphore #(
     input  wire                         aclk,
     input  wire                         resetn,
 
-    output reg                          m_axis_tvalid,
+    output wire                         m_axis_tvalid,
     output reg                          m_axis_tlast,
     output reg  [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
     output reg  [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,

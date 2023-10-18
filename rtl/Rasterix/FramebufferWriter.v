@@ -245,11 +245,8 @@ module FramebufferWriter #(
                 end
             end
         end
-    end
 
-    // Memory request handling
-    always @(posedge aclk)
-    begin
+        // Memory request handling
         if (!resetn)
         begin
             m_mem_axi_awid <= 0;

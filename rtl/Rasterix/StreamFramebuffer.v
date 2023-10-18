@@ -240,7 +240,7 @@ module StreamFramebuffer
         .confYResolution(confYResolution),
         .confMask(confMask),
 
-        .s_frag_tvalid(frag_tvalid & confEnable),
+        .s_frag_tvalid(frag_tvalid),
         .s_frag_tlast(frag_tlast),
         .s_frag_tready(frag_tready),
         .s_frag_tdata(frag_tdata),
