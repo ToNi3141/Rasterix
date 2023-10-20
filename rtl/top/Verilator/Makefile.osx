@@ -5,25 +5,25 @@ VERILATOR = verilator
 FRAMEBUFFER_SIZE_IN_WORDS_INT = 15
 FRAMEBUFFER_SIZE_IN_WORDS_EXT = 25
 
-all: mem-int
+all: rrxif
 
 clean:
 	rm -rf obj_dir
 
-mem-int:
-	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-arch x86_64 -O3' --cc topMemorySRAM.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+rrxif:
+	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-arch x86_64 -O3' --cc TopRRXIF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
-mem-ext:
-	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+rrxef:
+	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc TopRRXEF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
-mem-ext-trace:
-	$(VERILATOR) --trace --no-trace-params -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+rrxef-trace:
+	$(VERILATOR) --trace --no-trace-params -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-arch x86_64 -O3' --cc TopRRXEF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
-mem-int-trace:
-	$(VERILATOR) --trace -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-arch x86_64 -O3' --cc topMemorySRAM.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+rrxif-trace:
+	$(VERILATOR) --trace -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-arch x86_64 -O3' --cc TopRRXIF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

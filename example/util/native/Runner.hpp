@@ -32,6 +32,6 @@ private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::FT60XBusConnector m_busConnector;
-    rr::Renderer<rr::RenderConfigRasterixNexys> m_renderer { m_busConnector };
+    rr::Renderer<rr::RenderConfigRRXEFNexys> m_renderer { m_busConnector };
     Scene m_scene {};
 };

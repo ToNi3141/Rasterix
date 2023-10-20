@@ -13,7 +13,7 @@ enum class FramebufferType
     EXTERNAL_MEMORY_DOUBLE_BUFFER
 };
 
-struct RenderConfigSimulation
+struct RenderConfigRRXIFSimulation
 {
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
@@ -44,7 +44,7 @@ struct RenderConfigSimulation
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
 };
 
-struct RenderConfigSimulationMemory
+struct RenderConfigRRXEFSimulation
 {
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
@@ -75,7 +75,7 @@ struct RenderConfigSimulationMemory
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0x01900000 };
 };
 
-struct RenderConfigCModA7
+struct RenderConfigRRXIFCModA7
 {
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 1 };
@@ -106,7 +106,7 @@ struct RenderConfigCModA7
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
 };
 
-struct RenderConfigRasterixNexys
+struct RenderConfigRRXEFNexys
 {
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
@@ -137,7 +137,7 @@ struct RenderConfigRasterixNexys
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0x01900000 };
 };
 
-struct RenderConfigRasterixZynq
+struct RenderConfigRRXEFZynq
 {
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 1 };
