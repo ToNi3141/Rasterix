@@ -267,7 +267,7 @@ module top #(
         .m_axi_rready(m_mem_axi_rready)
     );
 
-    Rasterix #(
+    RasterixEF #(
         .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ENABLE_STENCIL_BUFFER(1),
