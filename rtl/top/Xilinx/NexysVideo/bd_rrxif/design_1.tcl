@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# Dvi, FT245X2AXIS, Rasterix
+# Dvi, FT245X2AXIS, RasterixIF
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -138,6 +138,7 @@ xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:mig_7series:4.2\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:util_ds_buf:2.2\
+xilinx.com:ip:xlconstant:1.1\
 "
 
    set list_ips_missing ""
@@ -165,7 +166,7 @@ if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 Dvi\
 FT245X2AXIS\
-Rasterix\
+RasterixIF\
 "
 
    set list_mods_missing ""
@@ -432,23 +433,23 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: Rasterix_0, and set properties
-  set block_name Rasterix
-  set block_cell_name Rasterix_0
-  if { [catch {set Rasterix_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  # Create instance: RasterixIF_0, and set properties
+  set block_name RasterixIF
+  set block_cell_name RasterixIF_0
+  if { [catch {set RasterixIF_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $Rasterix_0 eq "" } {
+   } elseif { $RasterixIF_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {28} \
     CONFIG.CMD_STREAM_WIDTH {128} \
+    CONFIG.FRAMEBUFFER_STREAM_WIDTH {128} \
     CONFIG.STRB_WIDTH {16} \
     CONFIG.TEXTURE_BUFFER_SIZE {17} \
-    CONFIG.TMU_COUNT {2} \
-  ] $Rasterix_0
+  ] $RasterixIF_0
 
 
   # Create instance: axi_smc, and set properties
@@ -571,12 +572,17 @@ proc create_root_design { parentCell } {
   set_property CONFIG.C_BUF_TYPE {OBUFDS} $util_ds_buf_3
 
 
+  # Create instance: xlconstant_0, and set properties
+  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
+  set_property CONFIG.CONST_VAL {0} $xlconstant_0
+
+
   # Create interface connections
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net FT245X2AXIS_0_m_axis [get_bd_intf_pins FT245X2AXIS_0/m_axis] [get_bd_intf_pins axis_dwidth_converter_2/S_AXIS]
-  connect_bd_intf_net -intf_net Rasterix_0_m_mem_axi [get_bd_intf_pins Rasterix_0/m_mem_axi] [get_bd_intf_pins axi_smc/S00_AXI]
+  connect_bd_intf_net -intf_net RasterixIF_0_m_mem_axi [get_bd_intf_pins RasterixIF_0/m_mem_axi] [get_bd_intf_pins axi_smc/S00_AXI]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
-  connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins Rasterix_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
+  connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins RasterixIF_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
   connect_bd_intf_net -intf_net axis_dwidth_converter_2_M_AXIS [get_bd_intf_pins axis_data_fifo_1/S_AXIS] [get_bd_intf_pins axis_dwidth_converter_2/M_AXIS]
   connect_bd_intf_net -intf_net mig_7series_0_DDR3 [get_bd_intf_ports ddr3_sdram] [get_bd_intf_pins mig_7series_0/DDR3]
 
@@ -603,10 +609,10 @@ proc create_root_design { parentCell } {
   connect_bd_net -net fmc_txen_1 [get_bd_ports fmc_txen] [get_bd_pins FT245X2AXIS_0/fmc_txen]
   connect_bd_net -net mig_7series_0_mmcm_locked [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_7series_0_81M/dcm_locked]
   connect_bd_net -net mig_7series_0_ui_addn_clk_0 [get_bd_pins mig_7series_0/clk_ref_i] [get_bd_pins mig_7series_0/ui_addn_clk_0]
-  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins FT245X2AXIS_0/aclk] [get_bd_pins Rasterix_0/aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axis_data_fifo_1/s_axis_aclk] [get_bd_pins axis_dwidth_converter_2/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk]
+  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins Dvi_0/aclkLogic] [get_bd_pins FT245X2AXIS_0/aclk] [get_bd_pins RasterixIF_0/aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axis_data_fifo_1/s_axis_aclk] [get_bd_pins axis_dwidth_converter_2/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk]
   connect_bd_net -net mig_7series_0_ui_clk_sync_rst [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_7series_0_81M/ext_reset_in]
   connect_bd_net -net rst_mig_7series_0_81M1_peripheral_aresetn [get_bd_pins Dvi_0/resetn] [get_bd_pins rst_mig_7series_0_81M1/peripheral_aresetn]
-  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins FT245X2AXIS_0/aresetn] [get_bd_pins Rasterix_0/resetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axis_data_fifo_1/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_2/aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in]
+  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins FT245X2AXIS_0/aresetn] [get_bd_pins RasterixIF_0/resetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axis_data_fifo_1/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_2/aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in]
   connect_bd_net -net util_ds_buf_0_OBUF_DS_N [get_bd_ports hdmi_tx_r_n] [get_bd_pins util_ds_buf_0/OBUF_DS_N]
   connect_bd_net -net util_ds_buf_0_OBUF_DS_P [get_bd_ports hdmi_tx_r_p] [get_bd_pins util_ds_buf_0/OBUF_DS_P]
   connect_bd_net -net util_ds_buf_1_OBUF_DS_N [get_bd_ports hdmi_tx_g_n] [get_bd_pins util_ds_buf_1/OBUF_DS_N]
@@ -616,10 +622,11 @@ proc create_root_design { parentCell } {
   connect_bd_net -net util_ds_buf_3_OBUF_DS_N [get_bd_ports hdmi_tx_clk_n] [get_bd_pins util_ds_buf_3/OBUF_DS_N]
   connect_bd_net -net util_ds_buf_3_OBUF_DS_P [get_bd_ports hdmi_tx_clk_p] [get_bd_pins util_ds_buf_3/OBUF_DS_P]
   connect_bd_net -net util_ds_buf_4_BUFG_O [get_bd_ports clk100] [get_bd_pins mig_7series_0/sys_clk_i]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins Dvi_0/swap] [get_bd_pins xlconstant_0/dout]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces Dvi_0/m_mem_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
-  assign_bd_address -offset 0x00000000 -range 0x10000000 -target_address_space [get_bd_addr_spaces Rasterix_0/m_mem_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
+  assign_bd_address -offset 0x00000000 -range 0x10000000 -target_address_space [get_bd_addr_spaces RasterixIF_0/m_mem_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
 
 
   # Restore current instance

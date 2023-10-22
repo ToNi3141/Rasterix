@@ -57,7 +57,7 @@ This build uses two TMUs.
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -91,7 +91,7 @@ This build uses one TMU.
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -104,7 +104,7 @@ This build uses only one TMU with a maximum texture resolution of 128x128px.
 To build the binaries, use the following commands.
 ```sh
 cd rtl/top/Xilinx/CmodA7
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
