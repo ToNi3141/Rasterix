@@ -114,6 +114,7 @@ public:
 
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
         {
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
             enableColorBufferInMemory();
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
