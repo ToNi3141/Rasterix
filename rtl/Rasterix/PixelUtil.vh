@@ -27,7 +27,7 @@
 
 // Gets an signed integer S1.X and clamps and satureates it to a S0.Y number.
 `define ReduceAndSaturateSigned(FuncName, SubPixelWidthIn, SubPixelWidthOut) \
-    function [SubPixelWidthOut - 1 : 0] FuncName; \
+    function automatic [SubPixelWidthOut - 1 : 0] FuncName; \
         input [SubPixelWidthIn - 1 : 0] subpixel; \
         localparam Diff = SubPixelWidthIn - SubPixelWidthOut; \
         if (subpixel[SubPixelWidthIn - 1]) // check sign \
@@ -70,7 +70,7 @@
     endfunction
 
 `define Expand(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
-    function [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
+    function automatic [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
         input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
         localparam PIXEL_WIDTH = ElementWidth * NumberOfElements; \
         localparam DIFF_SUB_PIXEL_WIDTH = NewElementWidth - ElementWidth; \

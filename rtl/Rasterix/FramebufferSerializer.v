@@ -17,7 +17,7 @@
 
 module FramebufferSerializer #(
     // Width of the axi interfaces
-    parameter STREAM_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
     // Width of ID signal
@@ -52,14 +52,14 @@ module FramebufferSerializer #(
 
     // Data channel
     input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_rid,
-    input  wire [STREAM_WIDTH - 1 : 0]      m_mem_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_mem_axi_rdata,
     input  wire [ 1 : 0]                    m_mem_axi_rresp,
     input  wire                             m_mem_axi_rlast,
     input  wire                             m_mem_axi_rvalid,
     output reg                              m_mem_axi_rready
 );
     localparam ADDR_BYTE_POS_POS = 0;
-    localparam ADDR_BYTE_POS_WIDTH = $clog2(STREAM_WIDTH / PIXEL_WIDTH);
+    localparam ADDR_BYTE_POS_WIDTH = $clog2(DATA_WIDTH / PIXEL_WIDTH);
     localparam ADDR_TAG_POS = ADDR_BYTE_POS_POS + ADDR_BYTE_POS_WIDTH;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
@@ -68,7 +68,7 @@ module FramebufferSerializer #(
     reg                             tlastSkid;
     reg                             memoryBubbleCycleRequired;
     reg                             stateSkid;
-    reg [STREAM_WIDTH - 1 : 0]      cacheLine;
+    reg [DATA_WIDTH - 1 : 0]        cacheLine;
     
 
     always @(posedge aclk)

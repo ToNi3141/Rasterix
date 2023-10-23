@@ -47,13 +47,10 @@ module RasterixIF #(
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
-    parameter CMD_STREAM_WIDTH = 16,
-
-    // The width of the frame buffer stream
-    parameter FRAMEBUFFER_STREAM_WIDTH = CMD_STREAM_WIDTH,
+    parameter CMD_STREAM_WIDTH = 32,
 
     // The size of the texture in bytes in power of two
-    parameter TEXTURE_BUFFER_SIZE = 15,
+    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
 
     // Memory address witdth
     parameter ADDR_WIDTH = 24,
@@ -124,7 +121,7 @@ module RasterixIF #(
     localparam DEFAULT_ALPHA_VAL = 0;
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
-    localparam PIXEL_PER_BEAT = FRAMEBUFFER_STREAM_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam PIXEL_PER_BEAT = CMD_STREAM_WIDTH / PIXEL_WIDTH_STREAM;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line

@@ -32,12 +32,16 @@ read_verilog ./../../../../Rasterix/FunctionInterpolator.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
-read_verilog ./../../../../Rasterix/Rasterix.v
+read_verilog ./../../../../Rasterix/RasterixIF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerDefines.vh
 read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../Rasterix/RegisterBank.v
+read_verilog ./../../../../Rasterix/StencilOp.v
+read_verilog ./../../../../Rasterix/StreamBarrier.v
+read_verilog ./../../../../Rasterix/StreamConcatFifo.v
+read_verilog ./../../../../Rasterix/StreamSemaphore.v
 read_verilog ./../../../../Rasterix/TestFunc.v
 read_verilog ./../../../../Rasterix/TexEnv.v
 read_verilog ./../../../../Rasterix/TextureBuffer.v
@@ -57,6 +61,8 @@ read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/Serial2AXIS.v
+read_verilog ./../../../../3rdParty/axis_broadcast.v
+read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/SPI_Slave.v
 read_verilog ./../../../../Display/DisplayController8BitILI9341.v

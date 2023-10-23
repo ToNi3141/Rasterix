@@ -18,11 +18,11 @@
 module StreamFramebuffer 
 #(
     // Width of the axi interfaces
-    parameter STREAM_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
     // Width of wstrb (width of data bus in words)
-    parameter STRB_WIDTH = (STREAM_WIDTH / 8),
+    parameter STRB_WIDTH = (DATA_WIDTH / 8),
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
@@ -103,7 +103,7 @@ module StreamFramebuffer
     output wire                             m_mem_axi_awvalid,
     input  wire                             m_mem_axi_awready,
 
-    output wire [STREAM_WIDTH - 1 : 0]      m_mem_axi_wdata,
+    output wire [DATA_WIDTH - 1 : 0]      m_mem_axi_wdata,
     output wire [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
     output wire                             m_mem_axi_wlast,
     output wire                             m_mem_axi_wvalid,
@@ -126,7 +126,7 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_rid,
-    input  wire [STREAM_WIDTH - 1 : 0]      m_mem_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]      m_mem_axi_rdata,
     input  wire [ 1 : 0]                    m_mem_axi_rresp,
     input  wire                             m_mem_axi_rlast,
     input  wire                             m_mem_axi_rvalid,
@@ -142,7 +142,7 @@ module StreamFramebuffer
     wire [X_BIT_WIDTH - 1 : 0]   frag_typos;
 
     FramebufferReader #(
-        .STREAM_WIDTH(STREAM_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH),
@@ -219,7 +219,7 @@ module StreamFramebuffer
     );
 
     FramebufferWriter #(
-        .STREAM_WIDTH(STREAM_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH),

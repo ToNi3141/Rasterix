@@ -3,7 +3,6 @@ PROJ = Rasterizer
 VERILATOR = verilator
 
 FRAMEBUFFER_SIZE_IN_WORDS_INT = 15
-FRAMEBUFFER_SIZE_IN_WORDS_EXT = 25
 
 all: rrxif 
 
@@ -15,7 +14,7 @@ rrxif:
 	-make -C obj_dir -f Vtop.mk
 
 rrxef:
-	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_EXT) -CFLAGS '-O3' --cc TopRRXEF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+	$(VERILATOR) -Wno-lint -DUNITTEST -CFLAGS '-O3' --cc TopRRXEF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

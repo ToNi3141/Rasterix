@@ -17,11 +17,11 @@
 
 module FramebufferWriter #(
     // Width of the axi interfaces
-    parameter STREAM_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
     // Width of wstrb (width of data bus in words)
-    parameter STRB_WIDTH = (STREAM_WIDTH / 8),
+    parameter STRB_WIDTH = (DATA_WIDTH / 8),
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
@@ -81,7 +81,7 @@ module FramebufferWriter #(
     input  wire                             m_mem_axi_awready,
 
     // Data channel
-    output reg  [STREAM_WIDTH - 1 : 0]      m_mem_axi_wdata,
+    output reg  [DATA_WIDTH - 1 : 0]        m_mem_axi_wdata,
     output reg  [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
     output reg                              m_mem_axi_wlast,
     output reg                              m_mem_axi_wvalid,
@@ -94,12 +94,12 @@ module FramebufferWriter #(
     output reg                              m_mem_axi_bready
 );
     localparam INDEX_BYTE_POS = 0;
-    localparam INDEX_BYTE_WIDTH = $clog2(STREAM_WIDTH / PIXEL_WIDTH);
+    localparam INDEX_BYTE_WIDTH = $clog2(DATA_WIDTH / PIXEL_WIDTH);
     localparam INDEX_TAG_POS = INDEX_BYTE_WIDTH;
     localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
     localparam ADDR_BYTE_POS = $clog2(PIXEL_WIDTH / 8);
-    localparam STREAM_WIDTH_LG = $clog2(STREAM_WIDTH / 8);
-    localparam ADDR_BYTE_WIDTH = STREAM_WIDTH_LG - ADDR_BYTE_POS;
+    localparam DATA_WIDTH_LG = $clog2(DATA_WIDTH / 8);
+    localparam ADDR_BYTE_WIDTH = DATA_WIDTH_LG - ADDR_BYTE_POS;
     localparam ADDR_TAG_POS = ADDR_BYTE_WIDTH;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
@@ -117,13 +117,13 @@ module FramebufferWriter #(
     endfunction
 
     reg [ADDR_WIDTH - 1 : 0]            memRequestAddr;
-    reg [STREAM_WIDTH - 1 : 0]          memRequestData;
+    reg [DATA_WIDTH - 1 : 0]            memRequestData;
     reg [STRB_WIDTH - 1 : 0]            memRequestStrb;
     reg                                 memRequest;
 
     reg  [INDEX_TAG_WIDTH - 1 : 0]      lastAddrTag;
     reg                                 optDataInLine;
-    reg  [STREAM_WIDTH - 1 : 0]         line;
+    reg  [DATA_WIDTH - 1 : 0]           line;
     reg  [STRB_WIDTH - 1 : 0]           lineStrobe;
     wire [STRB_WIDTH - 1 : 0]           currStrobe;
 
@@ -250,8 +250,8 @@ module FramebufferWriter #(
         if (!resetn)
         begin
             m_mem_axi_awid <= 0;
-            m_mem_axi_awlen <= 0; // Use always one beat. If the performance too slow, then we could increase the STREAM_WIDTH and use an external bus converter
-            m_mem_axi_awsize <= STREAM_WIDTH_LG[0 +: 3];
+            m_mem_axi_awlen <= 0; // Use always one beat. If the performance too slow, then we could increase the DATA_WIDTH and use an external bus converter
+            m_mem_axi_awsize <= DATA_WIDTH_LG[0 +: 3];
             m_mem_axi_awburst <= 1;
             m_mem_axi_awlock <= 0;
             m_mem_axi_awcache <= 0;

@@ -17,21 +17,8 @@
 `include "PixelUtil.vh"
 
 module RasterixEF #(
-    // The size of the internal framebuffer (in power of two)
-    // Depth buffer word size: 16 bit
-    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 17,
-
-    // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
-    // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
-    // Lower depth will result in color banding.
-    parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
-    // This enables the alpha channel of the framebuffer. Requires additional memory.
-    parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
-    // The number of sub pixels in the framebuffer
-    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4,
-    // The sub pixel with in the framebuffer
-    localparam PIXEL_WIDTH_FRAMEBUFFER = 16,
+    // The pixel with in the framebuffer
+    localparam PIXEL_WIDTH = 16, // Only RGB565 is supported
 
     // The width of the stencil buffer
     localparam STENCIL_WIDTH = 4,
@@ -47,13 +34,14 @@ module RasterixEF #(
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
-    parameter CMD_STREAM_WIDTH = 16,
+    parameter CMD_STREAM_WIDTH = 32,
 
     // The width of the frame buffer stream
-    parameter FRAMEBUFFER_STREAM_WIDTH = CMD_STREAM_WIDTH,
+    // Allowed values: 32, 64, 128, 256 bit
+    parameter FB_MEM_DATA_WIDTH = CMD_STREAM_WIDTH,
 
     // The size of the texture in bytes in power of two
-    parameter TEXTURE_BUFFER_SIZE = 15,
+    parameter TEXTURE_BUFFER_SIZE = 17,
 
     // Memory address witdth
     parameter ADDR_WIDTH = 32,
@@ -62,7 +50,8 @@ module RasterixEF #(
     parameter ID_WIDTH = 8,
 
     // Memory strobe width
-    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8
+    parameter CMD_MEM_STRB_WIDTH = CMD_STREAM_WIDTH / 8,
+    parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8
 )
 (
     input  wire                             aclk,
@@ -96,7 +85,7 @@ module RasterixEF #(
     input  wire                             m_common_axi_awready,
 
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_common_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_common_axi_wstrb,
+    output wire [CMD_MEM_STRB_WIDTH - 1 : 0]m_common_axi_wstrb,
     output wire                             m_common_axi_wlast,
     output wire                             m_common_axi_wvalid,
     input  wire                             m_common_axi_wready,
@@ -136,8 +125,8 @@ module RasterixEF #(
     output wire                             m_color_axi_awvalid,
     input  wire                             m_color_axi_awready,
 
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_color_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_color_axi_wstrb,
+    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_color_axi_wdata,
+    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_color_axi_wstrb,
     output wire                             m_color_axi_wlast,
     output wire                             m_color_axi_wvalid,
     input  wire                             m_color_axi_wready,
@@ -159,7 +148,7 @@ module RasterixEF #(
     input  wire                             m_color_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_color_axi_rid,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_color_axi_rdata,
+    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_color_axi_rdata,
     input  wire [ 1 : 0]                    m_color_axi_rresp,
     input  wire                             m_color_axi_rlast,
     input  wire                             m_color_axi_rvalid,
@@ -177,8 +166,8 @@ module RasterixEF #(
     output wire                             m_depth_axi_awvalid,
     input  wire                             m_depth_axi_awready,
 
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_depth_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_depth_axi_wstrb,
+    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_depth_axi_wdata,
+    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_depth_axi_wstrb,
     output wire                             m_depth_axi_wlast,
     output wire                             m_depth_axi_wvalid,
     input  wire                             m_depth_axi_wready,
@@ -200,7 +189,7 @@ module RasterixEF #(
     input  wire                             m_depth_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_depth_axi_rid,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_depth_axi_rdata,
+    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_depth_axi_rdata,
     input  wire [ 1 : 0]                    m_depth_axi_rresp,
     input  wire                             m_depth_axi_rlast,
     input  wire                             m_depth_axi_rvalid,
@@ -218,8 +207,8 @@ module RasterixEF #(
     output wire                             m_stencil_axi_awvalid,
     input  wire                             m_stencil_axi_awready,
 
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_stencil_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_stencil_axi_wstrb,
+    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_stencil_axi_wdata,
+    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_stencil_axi_wstrb,
     output wire                             m_stencil_axi_wlast,
     output wire                             m_stencil_axi_wvalid,
     input  wire                             m_stencil_axi_wready,
@@ -241,18 +230,18 @@ module RasterixEF #(
     input  wire                             m_stencil_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_stencil_axi_rid,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_stencil_axi_rdata,
+    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_stencil_axi_rdata,
     input  wire [ 1 : 0]                    m_stencil_axi_rresp,
     input  wire                             m_stencil_axi_rlast,
     input  wire                             m_stencil_axi_rvalid,
     output wire                             m_stencil_axi_rready
 );
 `include "RegisterAndDescriptorDefines.vh"
+    localparam FRAMEBUFFER_SIZE_IN_WORDS = 20; // Width of the framebuffer index. 20 bit is enough for a framebuffer with a size of 2MB (RGB565)
     localparam DEFAULT_ALPHA_VAL = 0;
     localparam SCREEN_POS_WIDTH = 11;
-    localparam PIXEL_WIDTH_STREAM = 16;
-    localparam PIXEL_PER_BEAT = FRAMEBUFFER_STREAM_WIDTH / PIXEL_WIDTH_STREAM;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
+    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = 3; // The number of sub pixels in the framebuffer
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
     // without removing or adding something.
@@ -261,7 +250,6 @@ module RasterixEF #(
     `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
-    `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
 
@@ -372,7 +360,7 @@ module RasterixEF #(
     wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         color_waddr;
     wire                                             color_wvalid;
     wire                                             color_wready;
-    wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           color_rdata;
+    wire [PIXEL_WIDTH - 1 : 0]                       color_rdata;
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              color_wdata;
     wire                                             color_wstrb;
     wire                                             color_wlast;
@@ -432,12 +420,13 @@ module RasterixEF #(
     wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosY;
 
     StreamFramebuffer #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .DATA_WIDTH(FB_MEM_DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
-        .PIXEL_WIDTH(DEPTH_WIDTH)
+        .PIXEL_WIDTH(DEPTH_WIDTH),
+        .STRB_WIDTH(FB_MEM_STRB_WIDTH)
     ) depthBuffer (
         .aclk(aclk),
         .resetn(resetn),
@@ -518,12 +507,13 @@ module RasterixEF #(
     );
 
     StreamFramebuffer #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .DATA_WIDTH(FB_MEM_DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
-        .PIXEL_WIDTH(PIXEL_WIDTH_STREAM)
+        .PIXEL_WIDTH(PIXEL_WIDTH),
+        .STRB_WIDTH(FB_MEM_STRB_WIDTH)
     ) colorBuffer (
         .aclk(aclk),
         .resetn(resetn),
@@ -607,12 +597,13 @@ module RasterixEF #(
         if (ENABLE_STENCIL_BUFFER)
         begin
             StreamFramebuffer #(
-                .STREAM_WIDTH(CMD_STREAM_WIDTH),
+                .DATA_WIDTH(FB_MEM_DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
                 .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
-                .PIXEL_WIDTH(8)
+                .PIXEL_WIDTH(8),
+                .STRB_WIDTH(FB_MEM_STRB_WIDTH)
             ) stencilBuffer (
                 .aclk(aclk),
                 .resetn(resetn),

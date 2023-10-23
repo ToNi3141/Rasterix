@@ -444,10 +444,10 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {28} \
+    CONFIG.CMD_MEM_STRB_WIDTH {16} \
     CONFIG.CMD_STREAM_WIDTH {128} \
-    CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {20} \
-    CONFIG.FRAMEBUFFER_STREAM_WIDTH {128} \
-    CONFIG.STRB_WIDTH {16} \
+    CONFIG.FB_MEM_DATA_WIDTH {128} \
+    CONFIG.FB_MEM_STRB_WIDTH {16} \
     CONFIG.TEXTURE_BUFFER_SIZE {17} \
   ] $RasterixEF_0
 
