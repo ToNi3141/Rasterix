@@ -199,6 +199,37 @@ struct RenderConfigRRXEFZynq
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0x01900000 };
 };
 
+struct RenderConfigRRXIFZynq
+{
+    // TMU settings
+    static constexpr uint8_t TMU_COUNT { 2 };
+    static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    
+    // Display Settings
+    static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
+    static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
+    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 128 * 1024 };
+
+    // Bus Settings
+    static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
+
+    // Texture Memory Settings
+    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 7680 };
+    static constexpr uint32_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
+    static constexpr uint32_t TEXTURE_PAGE_SIZE { 4096 };
+
+    // Memory RAM location. This is used as memory offset for all device memory  
+    // address calculations. Mostly useful for architectures with shared memory
+    static constexpr uint32_t GRAM_MEMORY_LOC { 0x0E000000 }; // Shares memory with linux
+
+    // Framebuffer Memory Location
+    static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
+    static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t DEPTH_BUFFER_LOC { 0 };
+    static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
+};
+
 
 } // namespace rr
 

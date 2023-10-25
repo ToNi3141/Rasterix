@@ -243,6 +243,9 @@ Use for `sdc2` the following label: `rootfs`
 ## Build Petalinux
 The following steps will give you a hint how to build and install petalinux. As precondition you must have build the hardware and have installed the petalinux tools.
 ```sh
+# Set environment variables (if not already done)
+source /opt/pkg/petalinux/settings.sh
+
 # Create project
 petalinux-create --type project --template zynq --name artyZ7_os_rrx
 cd artyZ7_os_rrx
