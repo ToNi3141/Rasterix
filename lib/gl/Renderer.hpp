@@ -199,7 +199,7 @@ public:
         // Prepare all display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            FramebufferCmd<RenderConfig> cmd { false, false, false };
+            FramebufferCmd cmd { false, false, false };
             const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
             if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
                 || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY))
@@ -273,7 +273,7 @@ public:
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd<RenderConfig> cmd { colorBuffer, depthBuffer, stencilBuffer };
+        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -517,18 +517,18 @@ private:
 
     bool setColorBufferAddress(const uint32_t addr)
     {
-        m_colorBufferAddr = addr;
-        return writeReg(ColorBufferAddrReg { addr });
+        m_colorBufferAddr = addr + RenderConfig::GRAM_MEMORY_LOC;
+        return writeReg(ColorBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
     }
 
     bool setDepthBufferAddress(const uint32_t addr)
     {
-        return writeReg(DepthBufferAddrReg { addr });
+        return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
     }
 
     bool setStencilBufferAddress(const uint32_t addr)
     {
-        return writeReg(StencilBufferAddrReg { addr });
+        return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
     }
 
     bool m_colorBufferUseMemory { true };
