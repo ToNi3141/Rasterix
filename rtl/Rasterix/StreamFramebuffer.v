@@ -43,7 +43,6 @@ module StreamFramebuffer
     // Configs
     /////////////////////////
     input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
-    input  wire                             confEnable,
     input  wire                             confEnableScissor,
     input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
     input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
@@ -103,7 +102,7 @@ module StreamFramebuffer
     output wire                             m_mem_axi_awvalid,
     input  wire                             m_mem_axi_awready,
 
-    output wire [DATA_WIDTH - 1 : 0]      m_mem_axi_wdata,
+    output wire [DATA_WIDTH - 1 : 0]        m_mem_axi_wdata,
     output wire [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
     output wire                             m_mem_axi_wlast,
     output wire                             m_mem_axi_wvalid,
@@ -126,7 +125,7 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_rid,
-    input  wire [DATA_WIDTH - 1 : 0]      m_mem_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_mem_axi_rdata,
     input  wire [ 1 : 0]                    m_mem_axi_rresp,
     input  wire                             m_mem_axi_rlast,
     input  wire                             m_mem_axi_rvalid,

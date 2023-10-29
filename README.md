@@ -20,6 +20,7 @@
   - [Build Kernel Driver](#build-kernel-driver)
   - [Build SDK](#build-sdk)
   - [Build Examples](#build-examples)
+  - [Reload FPGA content without rebuilding the File System](#reload-fpga-content-without-rebuilding-the-file-system)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -300,6 +301,14 @@ cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_z
 cmake --build build/zynq
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
+
+## Reload FPGA content without rebuilding the File System
+To reload the FPGA content, copy the bin file (`scp synth/rasterix.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
+```sh
+sudo rmmod dma-proxy.ko
+sudo fpgautil -b rasterix.bin -f Full
+sudo insmod dma-proxy.ko
+```
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.

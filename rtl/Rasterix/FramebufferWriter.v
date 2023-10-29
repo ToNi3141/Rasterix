@@ -273,12 +273,12 @@ module FramebufferWriter #(
                 if (memRequest)
                 begin
                     m_mem_axi_awaddr <= confAddr + memRequestAddr;
-                    m_mem_axi_awvalid <= 1;
+                    m_mem_axi_awvalid <= |memRequestStrb;
                     m_mem_axi_awid <= m_mem_axi_awid + 1;
 
                     m_mem_axi_wdata <= memRequestData;
                     m_mem_axi_wstrb <= memRequestStrb;
-                    m_mem_axi_wvalid <= 1;
+                    m_mem_axi_wvalid <= |memRequestStrb; // Trigger memory request only when there is something to write
         
                     memRequest <= 0;
                 end

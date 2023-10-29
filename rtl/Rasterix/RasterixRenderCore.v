@@ -609,9 +609,9 @@ module RasterixRenderCore #(
     assign color_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 3) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
     assign depth_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 2) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
     assign stencil_araddr   = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 1) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign color_arvalid    = mem_valid[3];
-    assign depth_arvalid    = mem_valid[2];
-    assign stencil_arvalid  = mem_valid[1];
+    assign color_arvalid    = mem_valid[3] & colorBufferEnable;
+    assign depth_arvalid    = mem_valid[2] & depthBufferEnable;
+    assign stencil_arvalid  = mem_valid[1] & stencilBufferEnable;
     assign color_arlast     = mem_last[3];
     assign depth_arlast     = mem_last[2];
     assign stencil_arlast   = mem_last[1];
@@ -631,7 +631,7 @@ module RasterixRenderCore #(
 
         .m_axis_tdata(mem_index),
         .m_axis_tvalid(mem_valid),
-        .m_axis_tready({ color_arready, depth_arready, stencil_arready, mem_arready_attrib }),
+        .m_axis_tready({ color_arready | !colorBufferEnable, depth_arready | !depthBufferEnable, stencil_arready | !stencilBufferEnable, mem_arready_attrib }),
         .m_axis_tlast(mem_last),
         .m_axis_tkeep(mem_keep),
         .m_axis_tid(),
@@ -773,7 +773,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5
     // Access framebuffer, blend, test and save pixel in framebuffer
-    // Clocks: 5
+    // Clocks: 5 + n
     ////////////////////////////////////////////////////////////////////////////
     localparam FRAGMENT_STREAM_WIDTH = (COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 + 1;
 
@@ -785,6 +785,7 @@ module RasterixRenderCore #(
         .aclk(aclk),
         .resetn(resetn),
 
+        .stream0_enable(1'b1),
         .stream0_tvalid(framebuffer_valid),
         .stream0_tdata({ 
             framebuffer_keep,
@@ -797,14 +798,17 @@ module RasterixRenderCore #(
         }),
         .stream0_tready(),
 
+        .stream1_enable(colorBufferEnable),
         .stream1_tvalid(color_rvalid),
         .stream1_tdata(color_rdata),
         .stream1_tready(color_rready),
 
+        .stream2_enable(depthBufferEnable),
         .stream2_tvalid(depth_rvalid),
         .stream2_tdata(depth_rdata),
         .stream2_tready(depth_rready),
 
+        .stream3_enable(stencilBufferEnable),
         .stream3_tvalid(stencil_rvalid),
         .stream3_tdata(stencil_rdata),
         .stream3_tready(stencil_rready),

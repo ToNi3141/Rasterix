@@ -33,18 +33,22 @@ module StreamConcatFifo
     input  wire                         aclk,
     input  wire                         resetn,
 
+    input  wire                         stream0_enable,
     input  wire                         stream0_tvalid,
     input  wire [STREAM0_WIDTH - 1 : 0] stream0_tdata,
     output wire                         stream0_tready,
 
+    input  wire                         stream1_enable,
     input  wire                         stream1_tvalid,
     input  wire [STREAM1_WIDTH - 1 : 0] stream1_tdata,
     output wire                         stream1_tready,
 
+    input  wire                         stream2_enable,
     input  wire                         stream2_tvalid,
     input  wire [STREAM2_WIDTH - 1 : 0] stream2_tdata,
     output wire                         stream2_tready,
 
+    input  wire                         stream3_enable,
     input  wire                         stream3_tvalid,
     input  wire [STREAM3_WIDTH - 1 : 0] stream3_tdata,
     output wire                         stream3_tready,
@@ -59,7 +63,10 @@ module StreamConcatFifo
     wire [STREAM1_WIDTH - 1 : 0]    stream1_data;
     wire [STREAM2_WIDTH - 1 : 0]    stream2_data;
     wire [STREAM3_WIDTH - 1 : 0]    stream3_data;
-    wire                            complete_transfer_available = !(stream_empty[0] | stream_empty[1] | stream_empty[2] | stream_empty[3]);
+    wire                            complete_transfer_available =   ((!stream_empty[0] | !stream0_enable) 
+                                                                    & (!stream_empty[1] | !stream1_enable)
+                                                                    & (!stream_empty[2] | !stream2_enable)
+                                                                    & (!stream_empty[3] | !stream3_enable));
     wire                            stream_out_read = stream_out_tready && complete_transfer_available;
 
     assign stream0_tready = !stream_full[0];

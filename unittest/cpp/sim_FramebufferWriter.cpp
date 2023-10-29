@@ -741,13 +741,12 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         clk(t); 
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
-        CHECK(t->m_mem_axi_awvalid == 1);
-        CHECK(t->m_mem_axi_wvalid == 1);
-        CHECK(t->m_mem_axi_awaddr == 0x1000'0008);
-        CHECK(t->m_mem_axi_awlen == 0);
-        CHECK(t->m_mem_axi_wvalid == 1);
-        CHECK(t->m_mem_axi_wdata == 0xdddd'cccc);
-        CHECK(t->m_mem_axi_wstrb == 0b00'00);
+        CHECK(t->m_mem_axi_awvalid == 0); // all strobe bits are zero -> no write is executed
+        // CHECK(t->m_mem_axi_awaddr == 0x1000'0008);
+        // CHECK(t->m_mem_axi_awlen == 0);
+        CHECK(t->m_mem_axi_wvalid == 0); // all strobe bits are zero -> no write is executed
+        // CHECK(t->m_mem_axi_wdata == 0xdddd'cccc);
+        // CHECK(t->m_mem_axi_wstrb == 0b00'00);
 
         clk(t); 
         t->s_frag_tvalid = 0;

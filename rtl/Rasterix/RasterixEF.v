@@ -435,7 +435,6 @@ module RasterixEF #(
         .resetn(resetn),
 
         .confAddr(depthBufferAddr),
-        .confEnable(depthBufferEnable),
         .confEnableScissor(framebufferParamEnableScissor),
         .confScissorStartX(framebufferParamScissorStartX),
         .confScissorStartY(framebufferParamScissorStartY),
@@ -522,7 +521,6 @@ module RasterixEF #(
         .resetn(resetn),
 
         .confAddr(colorBufferAddr),
-        .confEnable(colorBufferEnable),
         .confEnableScissor(framebufferParamEnableScissor),
         .confScissorStartX(framebufferParamScissorStartX),
         .confScissorStartY(framebufferParamScissorStartY),
@@ -612,7 +610,6 @@ module RasterixEF #(
                 .resetn(resetn),
 
                 .confAddr(stencilBufferAddr),
-                .confEnable(stencilBufferEnable),
                 .confEnableScissor(framebufferParamEnableScissor),
                 .confScissorStartX(framebufferParamScissorStartX),
                 .confScissorStartY(framebufferParamScissorStartY),
@@ -688,6 +685,8 @@ module RasterixEF #(
         end
         else
         begin
+            assign stencil_arready = 1;
+            assign stencil_rvalid = 1;
             assign stencil_rdata = 0;
             assign stencilBufferApplied = 1;
         end
