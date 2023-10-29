@@ -28,11 +28,17 @@ read_verilog ./../../../../Rasterix/DmaStreamEngine.v
 read_verilog ./../../../../Rasterix/DualPortRam.v
 read_verilog ./../../../../Rasterix/Fog.v
 read_verilog ./../../../../Rasterix/FrameBuffer.v
+read_verilog ./../../../../Rasterix/FramebufferReader.v
+read_verilog ./../../../../Rasterix/FramebufferSerializer.v
+read_verilog ./../../../../Rasterix/FramebufferWriter.v
+read_verilog ./../../../../Rasterix/FramebufferWriterClear.v
+read_verilog ./../../../../Rasterix/FramebufferWriterStrobeGen.v
 read_verilog ./../../../../Rasterix/FunctionInterpolator.v
+read_verilog ./../../../../Rasterix/MemoryReadRequestGenerator.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
-read_verilog ./../../../../Rasterix/RasterixIF.v
+read_verilog ./../../../../Rasterix/RasterixEF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerDefines.vh
@@ -41,6 +47,7 @@ read_verilog ./../../../../Rasterix/RegisterBank.v
 read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Rasterix/StreamBarrier.v
 read_verilog ./../../../../Rasterix/StreamConcatFifo.v
+read_verilog ./../../../../Rasterix/StreamFramebuffer.v
 read_verilog ./../../../../Rasterix/StreamSemaphore.v
 read_verilog ./../../../../Rasterix/TestFunc.v
 read_verilog ./../../../../Rasterix/TexEnv.v
@@ -107,6 +114,7 @@ report_drc -file $REPORT_PATH/post_imp_drc.rpt
 
 # Write bit file 
 write_bitstream -bin_file rasterix.bit
+write_cfgmem -force -format bin -interface smapx32 -disablebitswap -loadbit "up 0 rasterix.bit" rasterix.bin
 
 # Write hardware
 write_hw_platform -fixed -include_bit -force -file design_1_wrapper.xsa

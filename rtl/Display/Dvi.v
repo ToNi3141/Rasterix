@@ -18,8 +18,7 @@
 `timescale 1ns / 1ps
 
 module Dvi #(
-    FB_1_ADDR = 32'h01E00000,
-    FB_2_ADDR = 32'h01C00000
+    FB_ADDR_DEFAULT = 32'h01E00000
 ) (
     input  wire             aclkLogic,
     input  wire             aclk,
@@ -27,6 +26,7 @@ module Dvi #(
     input  wire             resetn,
 
     input  wire             swap,
+    input  wire [31 : 0]    fbAddr,
     output reg              swapped,
 
     output wire [ 3 : 0]    m_mem_axi_arid,
@@ -133,21 +133,14 @@ module Dvi #(
     begin
         if (!resetn)
         begin
-            addr <= FB_1_ADDR;
+            addr <= FB_ADDR_DEFAULT;
             swapped <= 1;
         end
         else
         begin
             if (swap && swapped)
             begin
-                if (addr == FB_1_ADDR)
-                begin
-                    addr <= FB_2_ADDR;
-                end
-                else
-                begin
-                    addr <= FB_1_ADDR;
-                end
+                addr <= fbAddr;
                 swapped <= 0;
             end
             if (!swap)

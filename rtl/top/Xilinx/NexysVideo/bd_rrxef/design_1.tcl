@@ -599,6 +599,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Net [get_bd_ports fmc_wkup] [get_bd_pins FT245X2AXIS_0/fmc_wkup]
   connect_bd_net -net Net1 [get_bd_ports fmc_be] [get_bd_pins FT245X2AXIS_0/fmc_be]
   connect_bd_net -net Net2 [get_bd_ports fmc_data] [get_bd_pins FT245X2AXIS_0/fmc_data]
+  connect_bd_net -net RasterixEF_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterixEF_0/fb_addr]
   connect_bd_net -net RasterixEF_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterixEF_0/swap_fb]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_smc/aclk1] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins rst_mig_7series_0_81M1/slowest_sync_clk]
   connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins Dvi_0/aclk5x] [get_bd_pins clk_wiz_0/clk_out2]

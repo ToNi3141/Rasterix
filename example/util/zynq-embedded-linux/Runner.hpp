@@ -32,6 +32,6 @@ private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::DMAProxyBusConnector m_busConnector;
-    rr::Renderer<rr::RenderConfigRRXIFZynq> m_renderer { m_busConnector };
+    rr::Renderer<rr::RenderConfigRRXEFZynq> m_renderer { m_busConnector };
     Scene m_scene {};
 };

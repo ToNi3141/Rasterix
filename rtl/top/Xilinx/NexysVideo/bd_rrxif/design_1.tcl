@@ -576,6 +576,14 @@ proc create_root_design { parentCell } {
   set_property CONFIG.CONST_VAL {0} $xlconstant_0
 
 
+  # Create instance: xlconstant_1, and set properties
+  set xlconstant_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_1 ]
+  set_property -dict [list \
+    CONFIG.CONST_VAL {0} \
+    CONFIG.CONST_WIDTH {32} \
+  ] $xlconstant_1
+
+
   # Create interface connections
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net FT245X2AXIS_0_m_axis [get_bd_intf_pins FT245X2AXIS_0/m_axis] [get_bd_intf_pins axis_dwidth_converter_2/S_AXIS]
@@ -622,6 +630,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net util_ds_buf_3_OBUF_DS_P [get_bd_ports hdmi_tx_clk_p] [get_bd_pins util_ds_buf_3/OBUF_DS_P]
   connect_bd_net -net util_ds_buf_4_BUFG_O [get_bd_ports clk100] [get_bd_pins mig_7series_0/sys_clk_i]
   connect_bd_net -net xlconstant_0_dout [get_bd_pins Dvi_0/swap] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net xlconstant_1_dout [get_bd_pins Dvi_0/fbAddr] [get_bd_pins xlconstant_1/dout]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces Dvi_0/m_mem_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force

@@ -171,7 +171,7 @@ struct RenderConfigRRXEFNexys
 struct RenderConfigRRXEFZynq
 {
     // TMU settings
-    static constexpr uint8_t TMU_COUNT { 1 };
+    static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
     
     // Display Settings

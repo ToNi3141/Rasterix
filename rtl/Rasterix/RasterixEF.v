@@ -70,6 +70,7 @@ module RasterixEF #(
     output wire                             m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
     output wire                             swap_fb,
+    output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
     input  wire                             fb_swapped,
 
     // Common memory interface
@@ -418,6 +419,8 @@ module RasterixEF #(
     wire                                             stencil_wlast;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  stencil_wscreenPosY;
+
+    assign fb_addr = colorBufferAddr;
 
     StreamFramebuffer #(
         .DATA_WIDTH(FB_MEM_DATA_WIDTH),
