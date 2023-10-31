@@ -319,6 +319,7 @@ proc create_root_design { parentCell } {
     CONFIG.MMCM_CLKOUT0_DIVIDE_F {20.000} \
     CONFIG.MMCM_CLKOUT1_DIVIDE {4} \
     CONFIG.NUM_OUT_CLKS {2} \
+    CONFIG.PRIM_SOURCE {No_buffer} \
     CONFIG.USE_RESET {false} \
   ] $clk_wiz_0
 

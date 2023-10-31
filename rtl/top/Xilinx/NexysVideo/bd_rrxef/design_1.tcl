@@ -518,6 +518,7 @@ proc create_root_design { parentCell } {
     CONFIG.PLL_CLKIN_PERIOD {20.000} \
     CONFIG.PRIMITIVE {MMCM} \
     CONFIG.PRIM_IN_FREQ {100} \
+    CONFIG.PRIM_SOURCE {No_buffer} \
     CONFIG.RESET_BOARD_INTERFACE {Custom} \
     CONFIG.RESET_PORT {reset} \
     CONFIG.RESET_TYPE {ACTIVE_HIGH} \

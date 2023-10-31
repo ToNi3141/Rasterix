@@ -773,7 +773,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5
     // Access framebuffer, blend, test and save pixel in framebuffer
-    // Clocks: 5 + n
+    // Clocks: 4 + n
     ////////////////////////////////////////////////////////////////////////////
     localparam FRAGMENT_STREAM_WIDTH = (COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 + 1;
 
@@ -781,6 +781,7 @@ module RasterixRenderCore #(
     wire fragment_stream_out_tready;
     wire [(FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH) - 1 : 0] fragment_stream_out_tdata;
 
+    // Clocks: n
     StreamConcatFifo streamConcatFifo (
         .aclk(aclk),
         .resetn(resetn),
@@ -847,6 +848,7 @@ module RasterixRenderCore #(
     wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosY;
     
+    // Clocks: 4
     PerFragmentPipeline perFragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
