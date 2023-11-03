@@ -50,6 +50,15 @@ IceGL::IceGL(IRenderer &renderer)
     // Preallocate the first texture. This is the default texture which also can't be deleted.
     m_renderer.createTexture();
 
+    // Set initial values
+    m_renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
+    m_renderer.setClearColor({ {0, 0, 0, 0 } });
+    m_renderer.setClearDepth(65535);
+    m_renderer.setFogColor({ { 255, 255, 255, 255 } });
+    std::array<float, 33> fogLut {};
+    std::fill(fogLut.begin(), fogLut.end(), 1.0f);
+    m_renderer.setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
+
     // Register Open GL 1.2 procedures
     addProcedure("glDrawRangeElements", ADDRESS_OF(impl_glDrawRangeElements));
     addProcedure("glTexImage3D", ADDRESS_OF(impl_glTexImage3D));
@@ -168,20 +177,8 @@ IceGL::IceGL(IRenderer &renderer)
 
 void IceGL::render()
 {
-    swapDisplayList();
-    uploadDisplayList();
-}
-
-void IceGL::swapDisplayList() 
-{
-    SPDLOG_INFO("Swap display list called");
-    m_renderer.swapDisplayList(); 
-}
-
-void IceGL::uploadDisplayList() 
-{ 
-    SPDLOG_INFO("Upload display list called");
-    m_renderer.uploadDisplayList(); 
+    SPDLOG_INFO("Render called");
+    m_renderer.render();
 }
 
 const char *IceGL::getLibExtensions() const
