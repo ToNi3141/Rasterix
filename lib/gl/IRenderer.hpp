@@ -262,13 +262,6 @@ public:
     /// @return true if success
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) = 0;
 
-    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
-    virtual void enableColorBufferInMemory() = 0;
-
-    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
-    /// The color buffer in memory is disabled.
-    virtual void enableColorBufferStream() = 0;
-
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
     virtual uint16_t getMaxTextureSize() const = 0;

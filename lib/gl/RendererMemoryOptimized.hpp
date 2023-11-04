@@ -311,16 +311,6 @@ public:
         return writeReg(reg);
     }
 
-    virtual void enableColorBufferInMemory() override
-    {
-        m_colorBufferUseMemory = true;
-    }
-
-    virtual void enableColorBufferStream() override
-    {
-        m_colorBufferUseMemory = false;
-    }
-
     virtual uint16_t getMaxTextureSize() const override
     {
         return RenderConfig::MAX_TEXTURE_SIZE;
@@ -458,6 +448,16 @@ private:
             m_busConnector.writeData(m_frontList, list->getSize());
             m_displayListAssembler[m_frontList].resetToCheckpoint();
         }
+    }
+
+    void enableColorBufferInMemory()
+    {
+        m_colorBufferUseMemory = true;
+    }
+
+    void enableColorBufferStream()
+    {
+        m_colorBufferUseMemory = false;
     }
 
     bool m_colorBufferUseMemory { true };

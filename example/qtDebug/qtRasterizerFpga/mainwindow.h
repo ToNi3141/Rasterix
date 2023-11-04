@@ -17,6 +17,9 @@
 #include "FT60XBusConnector.hpp"
 #endif
 
+#include "VerilatorBusConnector.hpp"
+#include "RenderConfigs.hpp"
+#include "Renderer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 

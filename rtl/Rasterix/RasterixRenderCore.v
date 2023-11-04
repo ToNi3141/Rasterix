@@ -551,6 +551,10 @@ module RasterixRenderCore #(
     // write fifos by ensuring that the pipeline contains a maximum of 
     // MAX_NUMBER_OF_PIXELS_LG pixels. The StreamBarrier starts to stall,
     // as soon as the fill level of fifos are exceeding MAX_NUMBER_OF_PIXELS_LG.
+    // Its easier to do it this way, because then we have a single point of 
+    // truth for the semaphore (rendering output) and the StreamBarrier keeps
+    // track, that the write fifos can always contain at lesat MAX_NUMBER_OF_PIXELS_LG
+    // pixel.
     StreamSemaphore ssem (
         .aclk(aclk),
         .resetn(resetn),

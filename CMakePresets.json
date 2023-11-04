@@ -46,6 +46,7 @@
             "generator": "Unix Makefiles",
             "cacheVariables": 
             {
+                "PICO_SDK_FETCH_FROM_GIT": "ON",
                 "BUILD_RP2040": "ON",
                 "BUILD_EXAMPLES": "ON"
             }

@@ -1,7 +1,9 @@
 TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
 
-ICEGL_PATH = ../../../lib/gl
+PATH_PREFIX = ../../..
+
+ICEGL_PATH = $${PATH_PREFIX}/lib/gl
 
 QT       += core gui
 CONFIG += c++2a
@@ -37,14 +39,14 @@ HEADERS  += mainwindow.h \
 
 DEFINES += SPDLOG_ACTIVE_LEVEL=3
 DEFINES += GL_SILENCE_DEPRICATION
-QMAKE_CXXFLAGS += -I../../../lib/3rdParty/spdlog-1.10.0/include/
-QMAKE_CFLAGS += -I../../../lib/3rdParty/spdlog-1.10.0/include/
+QMAKE_CXXFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/spdlog-1.10.0/include/
+QMAKE_CFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/spdlog-1.10.0/include/
 
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE
 
-    FT60X_BUS_CONNECTOR_PATH = ../../../lib/driver/ft60x
-    FT60X_LIB_PATH = ../../../lib/driver/ft60x/ftd3xx/osx
+    FT60X_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/ft60x
+    FT60X_LIB_PATH = $${PATH_PREFIX}/lib/driver/ft60x/ftd3xx/osx
 
     LIBS += /usr/local/homebrew/Cellar/libusb/1.0.26/lib/libusb-1.0.dylib
     LIBS += $${FT60X_LIB_PATH}/libftd3xx-static.a
@@ -68,8 +70,8 @@ equals(TARGET_BUILD, "simulation") {
         VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
     }
 
-    VERILATOR_BUS_CONNECTOR_PATH = ../../../lib/driver/verilator
-    VERILATOR_CODE_GEN_PATH = ../../../rtl/top/Verilator/obj_dir
+    VERILATOR_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/verilator
+    VERILATOR_CODE_GEN_PATH = $${PATH_PREFIX}/rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION
 
