@@ -86,10 +86,10 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     CHECK(t->m_frag_axis_tdata == 0x5678);
     CHECK(t->m_mem_axi_rready == 1);
 
-    // Check that we cant read the data twice
+    // Check that the data is don't read twice
     t->m_mem_axi_rvalid = 0;
     clk(t);
-    CHECK(t->m_frag_axis_tvalid == 0);
+    CHECK(t->m_frag_axis_tvalid == 1);
 
     delete t;
 }
@@ -112,8 +112,8 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
 
     t->confAddr = 0x2000'0000;
 
-    // Create 128 + 1 (skid) read requests to fill the fifo
-    for (uint32_t i = 0; i <= 128; i++)
+    // Create 128 + 2 (skid) read requests to fill the fifo
+    for (uint32_t i = 0; i <= 129; i++)
     {
         t->s_fetch_axis_tvalid = 1;
         t->s_fetch_axis_tlast = 0;
@@ -129,24 +129,25 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     clk(t);
     CHECK(t->s_fetch_axis_tready == 0);
 
+    t->s_fetch_axis_tvalid = 0;
+
     // Enable read channel
     t->m_mem_axi_rvalid = 1;
     t->m_mem_axi_rdata = 0;
-    clk(t);
 
     // Readout the data from the fifo
-    for (uint32_t i = 0; i <= 128; i++)
+    for (uint32_t i = 0; i <= 129; i++)
     {
         clk(t);
         CHECK(t->m_frag_axis_tvalid == 1);
         CHECK(t->m_frag_axis_tdest == i);
-        if (i % 2)
+        if (i > 1) // Start checking this when the first two pixels are fetched. That is required till the ready is back propagated
             CHECK(t->s_fetch_axis_tready == 1);
     }
 
     // Read the last data
-    clk(t); // Additional clock is required because the last i triggers a fetch and also 300 triggers a fetch therefore a bubble cycle is required
     clk(t);
+    CHECK(t->s_fetch_axis_tready == 1);
     CHECK(t->m_frag_axis_tvalid == 1);
     CHECK(t->m_frag_axis_tdest == 300);
 

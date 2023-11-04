@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Reads stream with a vector of pixels from the memory interface. Based on
+// the index from the fetch interface, it serializes the vector into pixels
+// available on the fragment interface.
+// Performance: 1 pixel per cycle
 module FramebufferSerializer #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,
@@ -149,7 +153,7 @@ module FramebufferSerializer #(
                     if (memoryBubbleCycleRequired)
                     begin
                         // Slow fetch, because a fast fetch was already used (where the rready siganl is exploited).
-                        // It is now required to wait for one clock cylce to read the new data. This extra clock cycle 
+                        // It is now required to wait for one clock cycle to read the new data. This extra clock cycle 
                         // results in a bubble cycle.
                         stateSkid <= 1;
                         m_mem_axi_rready <= 0;

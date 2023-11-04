@@ -15,6 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// This module is used to read pixels from the memory.
+// High level module which combines the read requesting of pixel vectors
+// and the serialization of the vector in one module.
+// It is the counter part to the FramebufferWriter.
+// Performance: 1 pixel per cycle
 module FramebufferReader #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,

@@ -16,6 +16,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 `include "PixelUtil.vh"
 
+// Renderer variant which utilizes a framebuffer on the memory. It currently has 
+// some limitations:
+// - Alpha channel on framebuffer is not supported
+// - Write masks on the color components are not supported (its hard to map a RGB565 color onto 16 bits with 2 bit strobe)
+//  - Write mask on the color channel itself is supported
+// - Write masks on the single bits of the stencil buffer is not supported
+//  - Write mask on the whole stencil channel is supported
+// - Only RGB565 colors are supported
 module RasterixEF #(
     // The pixel with in the framebuffer
     localparam PIXEL_WIDTH = 16, // Only RGB565 is supported

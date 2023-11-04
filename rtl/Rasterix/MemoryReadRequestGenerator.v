@@ -15,6 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Based on the data on the fetch interface, it will request one vector 
+// of pixels from the memory. To trigger a request, it will check the 
+// vector boundaries. For instance, if the PIXEL_WIDTH is 16 and the 
+// DATA_WIDTH is 32, then it will ignore the least significant bit on 
+// the fetch interface and only fetches a new vector when the more 
+// significant bits change.
+// Performance: 1 pixel per cycle, 1 pixel vector every two cycles
 module MemoryReadRequestGenerator #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,

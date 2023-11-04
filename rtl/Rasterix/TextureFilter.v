@@ -18,7 +18,7 @@
 // This module filters the texture. It gets 4 pixel from the texture buffer inclusive 
 // the sub pixel information where the sample lies exactly.
 // Pipelined: yes
-// Depth: 4 cylces
+// Depth: 4 cycles
 module TextureFilter #(
     localparam SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4

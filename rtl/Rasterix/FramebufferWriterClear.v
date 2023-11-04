@@ -15,6 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Used to clear the framebuffer. It will trigger a write request for 
+// each pixel in the framebuffer including the position of the pixel.
+// The FramebufferWriter can then decide to write the pixel to the
+// framebuffer or omit it (for instance when the scissor test fails).
+// It has a fragment in and fragment out interface. The fragment in
+// interface is connected to the pixel pipeline and is deactivated 
+// as long as a clear is in progress.
+// Performance: 1 pixel per cylce
 module FramebufferWriterClear #(
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,

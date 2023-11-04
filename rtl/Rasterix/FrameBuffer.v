@@ -30,6 +30,7 @@
 // It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
 //
 // Pipelined: yes
+// Performance: 1 pixel per cycle
 // Depth: 2 cycle
 module FrameBuffer
 #(

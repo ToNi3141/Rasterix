@@ -16,6 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 `include "PixelUtil.vh"
 
+// Renderer variant with internal memory. It is much more compatible to the
+// OpenGL specification like the RasterixEF. None of the limitations of the
+// RasterixEF implementation are true for this implementation.
 module RasterixIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit

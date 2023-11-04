@@ -18,7 +18,7 @@
 // This is a true dual port ram. The main difference to the DualPortRam wrapper
 // is the data out port on the write channel.
 // Pipelined: n/a
-// Depth: 1 cylce
+// Depth: 1 cycle
 module TrueDualPortRam #(
     parameter MEM_WIDTH = 16, // Memory width in bits
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits

@@ -15,6 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Framebuffer implementation which ready pixels directly from the memory.
+// No cache is implemented. No RAW/WAR avoidance strategies are implemented.
+// Only read a pixel from the same address again, when it is ensured, that
+// a already pending pixel was written to the memory. Otherwise previous 
+// results will be overwritten.
+// Performance: 1 (r/w) pixel per cycle. Theoretically it is capable to 
+// service the pipeline without stalling (as long as the memory connect to 
+// this module is fast enough)
 module StreamFramebuffer 
 #(
     // Width of the axi interfaces

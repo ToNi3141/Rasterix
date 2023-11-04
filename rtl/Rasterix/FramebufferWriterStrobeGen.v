@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Helper module to create a write strobe of a pixel in the pixel vector.
 module FramebufferWriterStrobeGen #(
     parameter STRB_WIDTH = 16,
     parameter MASK_WIDTH = 4,

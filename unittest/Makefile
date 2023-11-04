@@ -1,6 +1,23 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp memoryReadRequestGenerator framebufferSerializer streamConcatFifo framebufferWriter framebufferWriterStrobeGen framebufferWriterClear
+all: \
+	dmaStreamEngine  \
+	simulationILI9486 \
+	simulationILI9341 \
+	attributeInterpolator \
+	functionInterpolator \
+	textureSampler \
+	colorInterpolator \
+	texEnv \
+	stencilOp \
+	memoryReadRequestGenerator \
+	framebufferSerializer \
+	streamConcatFifo \
+	framebufferWriter \
+	framebufferWriterStrobeGen \
+	framebufferWriterClear \
+	framebufferReader \
+	streamSemaphore
  
 clean:
 	rm -rf obj_dir

@@ -15,6 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Collects pixels from the fragment interface and deserializes them into
+// a vector of pixels.
+// If the boundaries of the fragment addresses exceeds the vector, it will
+// trigger a memory write request. For instance, if the DATA_WIDTH is 32 
+// the PIXEL_WIDTH is 16, then it will deserialize two pixel together in 
+// one vector. It will do it as long the one LSb changes. Of higher
+// significant bits in the taddr change, then it will trigger a write request
+// indifferent if the vector is fully deserialized, it will trigger a write
+// request with an adapted strobe. It is the counter part to the
+// FrameBufferReader.
+// Performance: 1 pixel per cycle, 1 write request every two cycles
 module FramebufferWriter #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,
@@ -162,12 +173,16 @@ module FramebufferWriter #(
             begin
                 if (s_frag_tvalid)
                 begin
+                    // if last tag equals the current tag of the current pixel
+                    // then write the pixel into the line and update the strobes
                     if (lastAddrTag == tag)
                     begin
                         line[PIXEL_WIDTH * bytePos +: PIXEL_WIDTH] <= s_frag_tdata;
                         lineStrobe <= lineStrobe | currStrobe;
                         optDataInLine <= 1;
                         wasLast <= s_frag_tlast;
+                        // The last state needs a special handling. Go into the skid 
+                        // state to trigger a write request.
                         if (s_frag_tlast)
                         begin
                             lastSkid <= 0;
@@ -179,6 +194,10 @@ module FramebufferWriter #(
                     begin
                         if (!memRequest)
                         begin
+                            // Write request must be executed because the current tag is not equal to the last one
+                            // This case is the fast case where no memory request is pending the memory request 
+                            // can be executed immediately. The current pixel can then directly written into the 
+                            // new line.
                             memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { ADDR_BYTE_WIDTH { 1'b0 } } };
                             memRequestData <= line;
                             memRequestStrb <= lineStrobe;
@@ -198,6 +217,8 @@ module FramebufferWriter #(
                         end
                         else
                         begin
+                            // This is the slow case where a memory request is still pending. The pixel must be written 
+                            // into the skid buffer and the stream must be interrupted.
                             s_frag_tready <= 0;
                             lastAddrTagSkid <= tag;
                             bytePosSkid <= bytePos;
@@ -210,8 +231,11 @@ module FramebufferWriter #(
             end
             else
             begin
+                // This is the skid state. It will wait till the memory request can be executed and as soon, that is the 
+                // case the skid state will be left.
                 if (!memRequest)
                 begin
+                    // Create memory request
                     memRequestAddr <= { lastAddrTag << PIXEL_WIDTH_LG, { ADDR_BYTE_WIDTH { 1'b0 } } };
                     memRequestData <= line;
                     memRequestStrb <= lineStrobe;
@@ -219,12 +243,14 @@ module FramebufferWriter #(
                     
                     if (wasLast)
                     begin
-                        lastAddrTag <= 0;
+                        // If it was the last pixel, reset the address tag
+                        lastAddrTag <= ~0;
                         wasLast <= 0;
                         optDataInLine <= 0;
                     end
                     else
                     begin
+                        // Load data from the skid buffer
                         lastAddrTag <= lastAddrTagSkid;
                         wasLast <= lastSkid;
                         optDataInLine <= 1;
@@ -234,6 +260,8 @@ module FramebufferWriter #(
                     lineStrobe <= lineStrobeSkid;
                     if (lastSkid)
                     begin
+                        // If it was the last pixel, go immediately into the skid state to trigger a 
+                        // write request.
                         lastSkid <= 0;
                         lineStrobeSkid <= 0;
                         s_frag_tready <= 0;

@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module observes the incoming and outgoing values of a pipeline
-// and controls the flow into the pipeline
+// and controls the flow into the pipeline.
 module StreamSemaphore #(
     parameter MAX_NUMBER_OF_ELEMENTS = 128,
     parameter STREAM_WIDTH = 32,

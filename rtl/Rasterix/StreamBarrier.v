@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module can act as a barrier for the AXI Stream. As soon as the stall
-// siganl asserts, it will interrupt the stream
+// signal asserts, it will interrupt the stream.
 module StreamBarrier #(
     parameter STREAM_WIDTH = 32,
     parameter KEEP_WIDTH = 1
