@@ -79,7 +79,7 @@ module FramebufferWriterClear #(
 
     wire [ADDR_WIDTH - 1 : 0]   addrNext = addr + 1;
     wire [X_BIT_WIDTH - 1 : 0]  xposNext = xpos + 1;
-    wire [X_BIT_WIDTH - 1 : 0]  yposNext = ypos + 1;
+    wire [X_BIT_WIDTH - 1 : 0]  yposNext = ypos - 1;
 
     assign m_frag_tvalid    = (applied) ? s_frag_tvalid   : valid;
     assign m_frag_tlast     = (applied) ? s_frag_tlast    : last;
@@ -108,7 +108,10 @@ module FramebufferWriterClear #(
             begin
                 applied <= 0;
                 xpos <= 0;
-                ypos <= 0;
+                // Note: The clear process starts at a position where (0, 0) is located at the top left.
+                // The OpenGL coordinate system starts at the bottom left. To switch the coordinate system
+                // this module starts with the bottom first and iterates through the top.
+                ypos <= confYResolution;
                 addr <= 0;
                 last <= 0;
                 valid <= 1;
@@ -122,7 +125,7 @@ module FramebufferWriterClear #(
                     begin
                         xpos <= 0;
                         ypos <= yposNext;
-                        if (yposNext == confYResolution)
+                        if (yposNext == 0)
                         begin
                             applied <= 1;
                             valid <= 0;
@@ -131,7 +134,7 @@ module FramebufferWriterClear #(
                     else
                     begin
                         xpos <= xposNext;
-                        last <= (ypos == confYResolution) && ((xposNext + 1) == confXResolution);
+                        last <= (ypos == 0) && ((xposNext + 1) == confXResolution);
                     end
                     addr <= addrNext;
                 end

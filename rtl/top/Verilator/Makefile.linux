@@ -2,19 +2,19 @@ PROJ = Rasterizer
 
 VERILATOR = verilator
 
-FRAMEBUFFER_SIZE_IN_WORDS = 15
+FRAMEBUFFER_SIZE_IN_WORDS_INT = 15
 
-all: mem 
+all: rrxif 
 
 clean:
 	rm -rf obj_dir
 
-simulation:
-	$(VERILATOR) -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS) -CFLAGS '' --cc top.v --top-module top -I../../Rasterix -I../../Float/rtl/float/
+rrxif:
+	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-O3' --cc TopRRXIF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
-mem:
-	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS) -CFLAGS '-O3' --cc topMemory.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
+rrxef:
+	$(VERILATOR) -Wno-lint -DUNITTEST -CFLAGS '-O3' --cc TopRRXEF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/
 	-make -C obj_dir -f Vtop.mk
 
 .SECONDARY:

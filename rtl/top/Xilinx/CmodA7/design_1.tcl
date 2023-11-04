@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# DisplayController8BitILI9341, Rasterix, Serial2AXIS
+# DisplayController8BitILI9341, RasterixIF, Serial2AXIS
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -162,7 +162,7 @@ set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 DisplayController8BitILI9341\
-Rasterix\
+RasterixIF\
 Serial2AXIS\
 "
 
@@ -266,13 +266,13 @@ proc create_root_design { parentCell } {
   ] $DisplayController8Bi_1
 
 
-  # Create instance: Rasterix_0, and set properties
-  set block_name Rasterix
-  set block_cell_name Rasterix_0
-  if { [catch {set Rasterix_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  # Create instance: RasterixIF_0, and set properties
+  set block_name RasterixIF
+  set block_cell_name RasterixIF_0
+  if { [catch {set RasterixIF_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $Rasterix_0 eq "" } {
+   } elseif { $RasterixIF_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
@@ -280,9 +280,10 @@ proc create_root_design { parentCell } {
     CONFIG.CMD_STREAM_WIDTH {32} \
     CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {14} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
-    CONFIG.STRB_WIDTH {8} \
+    CONFIG.STRB_WIDTH {4} \
+    CONFIG.TEXTURE_BUFFER_SIZE {14} \
     CONFIG.TMU_COUNT {1} \
-  ] $Rasterix_0
+  ] $RasterixIF_0
 
 
   # Create instance: Serial2AXIS_0, and set properties
@@ -375,9 +376,9 @@ proc create_root_design { parentCell } {
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net Rasterix_0_m_framebuffer_axis [get_bd_intf_pins Rasterix_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_1/S_AXIS]
-  connect_bd_intf_net -intf_net Rasterix_0_m_mem_axi [get_bd_intf_pins Rasterix_0/m_mem_axi] [get_bd_intf_pins axi_emc_0/S_AXI_MEM]
-  connect_bd_intf_net -intf_net Serial2AXIS_0_m_axis [get_bd_intf_pins Rasterix_0/s_cmd_axis] [get_bd_intf_pins Serial2AXIS_0/m_axis]
+  connect_bd_intf_net -intf_net RasterixIF_0_m_framebuffer_axis [get_bd_intf_pins RasterixIF_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_1/S_AXIS]
+  connect_bd_intf_net -intf_net RasterixIF_0_m_mem_axi [get_bd_intf_pins RasterixIF_0/m_mem_axi] [get_bd_intf_pins axi_emc_0/S_AXI_MEM]
+  connect_bd_intf_net -intf_net Serial2AXIS_0_m_axis [get_bd_intf_pins RasterixIF_0/s_cmd_axis] [get_bd_intf_pins Serial2AXIS_0/m_axis]
   connect_bd_intf_net -intf_net axi_emc_0_EMC_INTF [get_bd_intf_ports cellular_ram] [get_bd_intf_pins axi_emc_0/EMC_INTF]
   connect_bd_intf_net -intf_net axis_data_fifo_0_M_AXIS [get_bd_intf_pins DisplayController8Bi_1/s_axis] [get_bd_intf_pins axis_data_fifo_0/M_AXIS]
   connect_bd_intf_net -intf_net axis_dwidth_converter_1_M_AXIS [get_bd_intf_pins axis_data_fifo_0/S_AXIS] [get_bd_intf_pins axis_dwidth_converter_1/M_AXIS]
@@ -391,9 +392,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net DisplayController8Bi_1_wr [get_bd_ports dispWr] [get_bd_pins DisplayController8Bi_1/wr]
   connect_bd_net -net Serial2AXIS_0_serial_cts [get_bd_ports serCts] [get_bd_pins Serial2AXIS_0/serial_cts]
   connect_bd_net -net Serial2AXIS_0_serial_miso [get_bd_ports serMiso] [get_bd_pins Serial2AXIS_0/serial_miso]
-  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins DisplayController8Bi_1/aclk] [get_bd_pins Rasterix_0/aclk] [get_bd_pins Serial2AXIS_0/aclk] [get_bd_pins axi_emc_0/rdclk] [get_bd_pins axi_emc_0/s_axi_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins axis_dwidth_converter_1/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
+  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins DisplayController8Bi_1/aclk] [get_bd_pins RasterixIF_0/aclk] [get_bd_pins Serial2AXIS_0/aclk] [get_bd_pins axi_emc_0/rdclk] [get_bd_pins axi_emc_0/s_axi_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins axis_dwidth_converter_1/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins proc_sys_reset_0/dcm_locked]
-  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins DisplayController8Bi_1/resetn] [get_bd_pins Rasterix_0/resetn] [get_bd_pins Serial2AXIS_0/resetn] [get_bd_pins axi_emc_0/s_axi_aresetn] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_1/aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
+  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins DisplayController8Bi_1/resetn] [get_bd_pins RasterixIF_0/resetn] [get_bd_pins Serial2AXIS_0/resetn] [get_bd_pins axi_emc_0/s_axi_aresetn] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_1/aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
   connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins proc_sys_reset_0/ext_reset_in]
   connect_bd_net -net serCs_1 [get_bd_ports serCs] [get_bd_pins Serial2AXIS_0/serial_ncs]
   connect_bd_net -net serMosi_1 [get_bd_ports serMosi] [get_bd_pins Serial2AXIS_0/serial_mosi]
@@ -401,7 +402,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz_0/clk_in1]
 
   # Create address segments
-  assign_bd_address -offset 0x00000000 -range 0x00080000 -target_address_space [get_bd_addr_spaces Rasterix_0/m_mem_axi] [get_bd_addr_segs axi_emc_0/S_AXI_MEM/Mem0] -force
+  assign_bd_address -offset 0x00000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces RasterixIF_0/m_mem_axi] [get_bd_addr_segs axi_emc_0/S_AXI_MEM/Mem0] -force
 
 
   # Restore current instance

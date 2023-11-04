@@ -54,6 +54,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
     t->confAddr = 0x1000'0000;
 
     // Do this twice, to see, if also a second cycle is possible
+    uint32_t id = 1;
     for (uint32_t i = 0; i < 2; i++)
     {
         REQUIRE(t->s_fetch_axis_tready == true);
@@ -71,7 +72,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         t->s_fetch_axis_tdest = 1;
         clk(t);
         REQUIRE(t->s_fetch_axis_tready == true);
-        REQUIRE(t->m_mem_axi_arid == 0);
+        REQUIRE(t->m_mem_axi_arid == id++);
         REQUIRE(t->m_mem_axi_arlen == 0);
         REQUIRE(t->m_mem_axi_arsize == 2);
         REQUIRE(t->m_mem_axi_arburst == 1);
@@ -95,6 +96,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_arid == id++);
 
         // Send 5. fetch
         t->s_fetch_axis_tvalid = true;
@@ -113,6 +115,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->s_fetch_axis_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_arid == id++);
 
         // Execute more clock cycles, no additional requests should be executed
         clk(t);

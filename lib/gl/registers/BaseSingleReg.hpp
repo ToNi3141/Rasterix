@@ -29,6 +29,7 @@ class BaseSingleReg
 {
 public:
     BaseSingleReg() = default;
+    BaseSingleReg(const uint32_t val) { setValue(val); }
 
     void setValue(const uint32_t val) { m_regVal = val & MASK; }
 

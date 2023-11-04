@@ -121,6 +121,7 @@ module Rasterizer
                 m_axis_tvalid <= 0;
                 m_axis_tkeep <= ~0;
                 m_axis_tlast <= 0;
+                rasterizerRunning <= 0;
                 if (startRendering)
                 begin
                     lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
@@ -381,12 +382,15 @@ module Rasterizer
                         m_axis_tvalid <= 1;
                         m_axis_tkeep <= 0;
                         m_axis_tlast <= 1;
-                        rasterizerRunning <= 0;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
 
                     /* verilator lint_off WIDTH */
-                    fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
+                    // Check that the fbIndex never exceeds the borders of the view port
+                    if ((y < yResolution) && (x < xResolution))
+                    begin
+                        fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
+                    end
                     /* verilator lint_on WIDTH */
                     
                     // Arguments for the shader

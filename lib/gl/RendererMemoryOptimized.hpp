@@ -45,11 +45,15 @@
 #include "registers/TexEnvColorReg.hpp"
 #include "registers/YOffsetReg.hpp"
 #include "registers/StencilReg.hpp"
+#include "registers/ColorBufferAddrReg.hpp"
+#include "registers/DepthBufferAddrReg.hpp"
+#include "registers/StencilBufferAddrReg.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
@@ -97,16 +101,24 @@ public:
         m_displayListAssembler[0].setBuffer(buffer1);
         m_displayListAssembler[1].setBuffer(buffer2);
 
-        enableColorBufferInMemory(0x01E00000);
-        setRenderResolution(640, 480);
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
+        {
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            enableColorBufferInMemory();
+        }
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+        {
+            enableColorBufferStream();
+        }
+        if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+            || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
+        {
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
+            setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
+        }
 
-        setTexEnvColor(0, { { 0, 0, 0, 0 } });
-        setClearColor({ {0, 0, 0, 0 } });
-        setClearDepth(65535);
-        setFogColor({ { 255, 255, 255, 255 } });
-        std::array<float, 33> fogLut {};
-        std::fill(fogLut.begin(), fogLut.end(), 1.0f);
-        setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
+        setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
     }
 
     virtual bool drawTriangle(const Triangle& triangle) override
@@ -122,20 +134,8 @@ public:
         return m_displayListAssembler[m_backList].addCommand(triangleCmd);
     }
 
-    bool blockTillRenderingFinished()
+    virtual void render() override 
     {
-        return false;
-    }
-
-    virtual void swapDisplayList() override 
-    {
-        // Check if the previous rendering has finished. If not, block till it is finished.
-        if (blockTillRenderingFinished())
-        {
-            // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
-            return;
-        }
-
         // Switch the display lists
         if (m_backList == 0)
         {
@@ -148,56 +148,15 @@ public:
             m_frontList = 1;
         }
 
-        // Upload textures
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
-        {
-            DisplayListAssembler<RenderConfig> uploader;
-            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
-            uploader.uploadToDeviceMemory(gramAddr, data);
-
-            while (!m_busConnector.clearToSend())
-                ;
-            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
-            return true;
-        });
-
+        uploadTextures();
+        uploadDisplayList();
         m_displayListAssembler[m_backList].clearAssembler();
-    }
-
-    virtual void uploadDisplayList() override
-    {
-        for (int32_t i = m_displayLines - 1; i >= 0; i--)
-        {
-            while (!m_busConnector.clearToSend())
-                ;
-            m_displayListAssembler[m_frontList].setCheckpoint();
-            FramebufferCmd<RenderConfig> cmd { true, true, true };
-            const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-            cmd.enableCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
-            m_displayListAssembler[m_frontList].addCommand(cmd);
-            // Set YOffset for the next stream
-            YOffsetReg reg;
-            // Check wrap around
-            if ((i - 1) < 0)
-            {
-                reg.setY((m_displayLines - 1) * m_yLineResolution);
-            }
-            else
-            {
-                reg.setY((i - 1) * m_yLineResolution);
-            }
-            m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
-            m_displayListAssembler[m_frontList].closeStream();
-            const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
-            m_busConnector.writeData(m_frontList, list->getSize());
-            
-            m_displayListAssembler[m_frontList].resetToCheckpoint();
-        }
+        swapFramebuffer();
     }
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
-        FramebufferCmd<RenderConfig> cmd { colorBuffer, depthBuffer, stencilBuffer };
+        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
         cmd.enableMemset();
         return m_displayListAssembler[m_backList].addCommand(cmd);
     }
@@ -288,7 +247,6 @@ public:
 
     virtual bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable) override
     {
-        m_scissorEnabled = featureEnable.getEnableScissor();
         m_rasterizer.enableScissor(featureEnable.getEnableScissor());
         static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
         m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
@@ -309,9 +267,6 @@ public:
 
         ret = ret && writeReg(regStart);
         ret = ret && writeReg(regEnd);
-
-        m_scissorYStart = y;
-        m_scissorYEnd = y + height;
 
         m_rasterizer.setScissorBox(x, y, width, height);
 
@@ -356,17 +311,6 @@ public:
         return writeReg(reg);
     }
 
-    virtual void enableColorBufferInMemory(const uint32_t addr) override
-    {
-        m_colorBufferAddr = addr;
-        m_colorBufferUseMemory = true;
-    }
-
-    virtual void enableColorBufferStream() override
-    {
-        m_colorBufferUseMemory = false;
-    }
-
     virtual uint16_t getMaxTextureSize() const override
     {
         return RenderConfig::MAX_TEXTURE_SIZE;
@@ -408,7 +352,113 @@ private:
         return true;
     }
 
-    YOffsetReg m_yOffsetReg {};
+    bool setColorBufferAddress(const uint32_t addr)
+    {
+        m_colorBufferAddr = addr + RenderConfig::GRAM_MEMORY_LOC;
+        return writeReg(ColorBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
+    }
+
+    bool setDepthBufferAddress(const uint32_t addr)
+    {
+        return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
+    }
+
+    bool setStencilBufferAddress(const uint32_t addr)
+    {
+        return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
+    }
+
+    void uploadTextures()
+    {
+        // Upload textures
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
+        {
+            DisplayListAssembler<RenderConfig> uploader;
+            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
+            uploader.uploadToDeviceMemory(gramAddr, data);
+
+            while (!m_busConnector.clearToSend())
+                ;
+            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
+            return true;
+        });
+    }
+
+    FramebufferCmd createCommitFramebufferCommand(const uint32_t i)
+    {
+        FramebufferCmd cmd { false, false, false };
+        const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
+        if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+            || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY))
+        {
+            cmd.selectColorBuffer();
+            cmd.selectDepthBuffer();
+            cmd.selectStencilBuffer();
+            cmd.enableInternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+        }
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
+        {
+            cmd.enableExternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
+        }
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+        {
+            cmd.selectColorBuffer();
+            cmd.enableExternalFramebufferSwap();
+        }
+        return cmd;
+    }
+
+    void swapFramebuffer()
+    {
+        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+        {
+            if (m_backList == 0)
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            }
+            else
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+            }
+        }
+    }
+
+    void uploadDisplayList()
+    {
+        for (int32_t i = m_displayLines - 1; i >= 0; i--)
+        {
+            while (!m_busConnector.clearToSend())
+                ;
+            m_displayListAssembler[m_frontList].setCheckpoint();
+            m_displayListAssembler[m_frontList].addCommand(createCommitFramebufferCommand(i));
+            // Set YOffset for the next stream
+            YOffsetReg reg;
+            // Check wrap around
+            if ((i - 1) < 0)
+            {
+                reg.setY((m_displayLines - 1) * m_yLineResolution);
+            }
+            else
+            {
+                reg.setY((i - 1) * m_yLineResolution);
+            }
+            m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
+            m_displayListAssembler[m_frontList].closeStream();
+            const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
+            m_busConnector.writeData(m_frontList, list->getSize());
+            m_displayListAssembler[m_frontList].resetToCheckpoint();
+        }
+    }
+
+    void enableColorBufferInMemory()
+    {
+        m_colorBufferUseMemory = true;
+    }
+
+    void enableColorBufferStream()
+    {
+        m_colorBufferUseMemory = false;
+    }
 
     bool m_colorBufferUseMemory { true };
     uint32_t m_colorBufferAddr {};
@@ -416,11 +466,6 @@ private:
     std::array<ListAssembler, 2> m_displayListAssembler;
     uint8_t m_frontList = 0;
     uint8_t m_backList = 1;
-
-    // Optimization for the scissor test to filter unecessary clean calls
-    bool m_scissorEnabled { false };
-    int16_t m_scissorYStart { 0 };
-    int16_t m_scissorYEnd { 0 };
 
     uint16_t m_yLineResolution { 128 };
     uint16_t m_xResolution { 640 };

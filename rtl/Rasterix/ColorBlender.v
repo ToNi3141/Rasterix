@@ -80,10 +80,10 @@ module ColorBlender
     wire [PIXEL_WIDTH - 1 : 0]    colorMixed;
     wire [PIXEL_WIDTH - 1 : 0]    step_sourceColor;
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(2)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(3)) 
         step_sourceColorDelay (.clk(aclk), .in(sourceColor), .out(step_sourceColor));
 
-    always @*
+    always @(posedge aclk)
     begin : Select
         reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gs;

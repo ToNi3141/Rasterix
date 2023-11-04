@@ -29,7 +29,7 @@ module CommandParser #(
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
     output reg  [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_xxx_axis_tdata,
-    output reg  [ 3 : 0]    m_cmd_xxx_axis_tuser,
+    output reg  [ 4 : 0]    m_cmd_xxx_axis_tuser,
     output reg              m_cmd_xxx_axis_tlast,
     output wire             m_cmd_fog_axis_tvalid,
     output wire             m_cmd_rasterizer_axis_tvalid,
@@ -192,7 +192,7 @@ module CommandParser #(
                     OP_RENDER_CONFIG:
                     begin
                         streamCounter <= 1;
-                        m_cmd_xxx_axis_tuser <= s_cmd_axis_tdata[0 +: 4];
+                        m_cmd_xxx_axis_tuser <= s_cmd_axis_tdata[0 +: 5];
                         mux <= MUX_RENDER_CONFIG;
                         state <= EXEC_STREAM;
                     end
@@ -208,7 +208,9 @@ module CommandParser #(
                         colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
                         depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
                         stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
-                        apply <= 1;
+                        apply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS] 
+                            | s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] 
+                            | s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
                         state <= WAIT_FOR_IDLE;
                     end
                     OP_NOP_STREAM:

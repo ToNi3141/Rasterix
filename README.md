@@ -20,6 +20,7 @@
   - [Build Kernel Driver](#build-kernel-driver)
   - [Build SDK](#build-sdk)
   - [Build Examples](#build-examples)
+  - [Reload FPGA content without rebuilding the File System](#reload-fpga-content-without-rebuilding-the-file-system)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
@@ -57,7 +58,7 @@ This build uses two TMUs.
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -91,7 +92,7 @@ This build uses one TMU.
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -104,7 +105,7 @@ This build uses only one TMU with a maximum texture resolution of 128x128px.
 To build the binaries, use the following commands.
 ```sh
 cd rtl/top/Xilinx/CmodA7
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -243,6 +244,9 @@ Use for `sdc2` the following label: `rootfs`
 ## Build Petalinux
 The following steps will give you a hint how to build and install petalinux. As precondition you must have build the hardware and have installed the petalinux tools.
 ```sh
+# Set environment variables (if not already done)
+source /opt/pkg/petalinux/settings.sh
+
 # Create project
 petalinux-create --type project --template zynq --name artyZ7_os_rrx
 cd artyZ7_os_rrx
@@ -297,6 +301,14 @@ cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_z
 cmake --build build/zynq
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
+
+## Reload FPGA content without rebuilding the File System
+To reload the FPGA content, copy the bin file (`scp synth/rasterix.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
+```sh
+sudo rmmod dma-proxy.ko
+sudo fpgautil -b rasterix.bin -f Full
+sudo insmod dma-proxy.ko
+```
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.

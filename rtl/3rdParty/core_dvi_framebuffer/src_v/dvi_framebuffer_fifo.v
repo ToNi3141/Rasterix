@@ -46,19 +46,19 @@ module dvi_framebuffer_fifo
 //-----------------------------------------------------------------
 // Registers
 //-----------------------------------------------------------------
-reg [9:0]   rd_ptr_q;
-reg [9:0]   wr_ptr_q;
+reg [10:0]   rd_ptr_q;
+reg [10:0]   wr_ptr_q;
 
 //-----------------------------------------------------------------
 // Write Side
 //-----------------------------------------------------------------
-wire [9:0] write_next_w = wr_ptr_q + 10'd1;
+wire [10:0] write_next_w = wr_ptr_q + 11'd1;
 
 wire full_w = (write_next_w == rd_ptr_q);
 
 always @ (posedge clk_i or posedge rst_i)
 if (rst_i)
-    wr_ptr_q <= 10'b0;
+    wr_ptr_q <= 11'b0;
 // Push
 else if (push_i & !full_w)
     wr_ptr_q <= write_next_w;
@@ -77,10 +77,10 @@ else
 
 always @ (posedge clk_i or posedge rst_i)
 if (rst_i)
-    rd_ptr_q     <= 10'b0;
+    rd_ptr_q     <= 11'b0;
 // Read address increment
 else if (read_ok_w && ((!valid_o) || (valid_o && pop_i)))
-    rd_ptr_q <= rd_ptr_q + 10'd1;
+    rd_ptr_q <= rd_ptr_q + 11'd1;
 
 //-------------------------------------------------------------------
 // Read Skid Buffer
@@ -150,12 +150,12 @@ module dvi_framebuffer_dp_ram
     // Inputs
      input           clk0_i
     ,input           rst0_i
-    ,input  [ 9:0]   addr0_i
+    ,input  [ 10:0]   addr0_i
     ,input  [ 31:0]  data0_i
     ,input           wr0_i
     ,input           clk1_i
     ,input           rst1_i
-    ,input  [ 9:0]   addr1_i
+    ,input  [ 10:0]   addr1_i
     ,input  [ 31:0]  data1_i
     ,input           wr1_i
 
@@ -165,7 +165,7 @@ module dvi_framebuffer_dp_ram
 );
 
 /* verilator lint_off MULTIDRIVEN */
-reg [31:0]   ram [1023:0] /*verilator public*/;
+reg [31:0]   ram [2047:0] /*verilator public*/;
 /* verilator lint_on MULTIDRIVEN */
 
 reg [31:0] ram_read0_q;

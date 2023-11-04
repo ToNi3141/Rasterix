@@ -342,6 +342,8 @@ module PixelPipeline
             assign step2_depth = step1_depth;
             assign step2_depthWFloat = step1_depthWFloat;
             assign step2_valid = step1_valid;
+            assign step2_keep = step1_keep;
+            assign step2_last = step1_last;
         end
     endgenerate
 
