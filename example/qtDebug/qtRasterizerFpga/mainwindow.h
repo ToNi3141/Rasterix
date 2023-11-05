@@ -49,7 +49,7 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    rr::Renderer<rr::RenderConfigRRXEFSimulation> m_renderer{m_busConnector};
+    rr::Renderer<rr::RenderConfigRRXIFSimulation> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE

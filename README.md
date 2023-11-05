@@ -158,7 +158,7 @@ A simulation can be used to easily develop and debug the renderer. The simulatio
 Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
 ```sh
 cd rtl/top/Verilator
-make
+make -f Makefile.linux rrxif -j
 ```
 Then build the Qt project. If the build was successful, you will see the following image on the screen, when you have started the application:
 
@@ -168,9 +168,10 @@ You see here a cube with enabled multi texturing and lighting. Below you can see
 
 It is likely, that your verialtor installation has another path than it is configured in the `qtRasterizer.pro` file. Let the variable  `VERILATOR_PATH` point to your verilator installation and rebuild the project.
 
-Note: Currently the build is only tested on OS X. The .pro file must be adapted for other operating systems.
+Note: Currently the build is only tested on OS X and linux. The .pro file must be adapted for other operating systems.
 
 There exists a second project `example/qtDebug/qtRasterizerGL`. This project uses the native OpenGL implementation of your machine. You can compare this output with the output of the simulation. The content must be equal.
+
 # Unit-Tests 
 Unit-tests for the Verilog code can be found under `./unittests`.
 
@@ -347,8 +348,8 @@ sudo insmod dma-proxy.ko
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.
 ## Port the driver
 To port the driver to a new interface (like SPI, async FT245, or others) use the following steps:
-1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods. This is also performance critical. Use (if possible) non blocking methods. Otherwise the rendering is slowed down because the data transfer blocks further processing.
-2. Instantiate and use this class for the `Renderer`.
+1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods.
+2. Instantiate and use this class for the `Renderer`. If you use a microcontroller, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
 3. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system.
 4. Build
 
