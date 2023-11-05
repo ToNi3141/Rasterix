@@ -169,8 +169,7 @@ To build the library an the minimal example, switch to the source directory and 
 ```sh
 cd <rasterix_directory>
 cmake --preset native
-cd build/native
-make -j
+cmake --build build/native --parallel
 ```
 To run the minimal example, type
 ```
@@ -185,14 +184,16 @@ Open a terminal. Use the following commands to create a 32bit Visual Studio Proj
 ```sh
 cd <rasterix_directory>
 cmake --preset win32
-cd build/win32
+cmake --build .\build\win32\ --config Release --parallel
 ```
 
-Open the Visual Studio project in the `build/win32` directory and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
+You will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
 ```
+cd \build\win32
 .\example\minimal\Release\minimal.exe
 ```
 into your terminal. It should now show an image similar to the simulation.
+Note: You need the `FTD3xx.dll` in you execution directory. It is automatically copied to the build directory.
 
 ## Run Warcraft 3 
 Only classic Warcraft 3 will work. Reforged does not. 
@@ -212,8 +213,7 @@ Open a terminal. Use the following commands to build a rp2040 binary:
 ```sh
 cd <rasterix_directory>
 cmake --preset rp2040 -DPICO_SDK_PATH=<path_to_the_sdk>
-cd build/rp2040
-make -j
+cmake --build build/rp2040 --parallel
 ```
 You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
 
@@ -298,7 +298,7 @@ Open a terminal. Use the following commands:
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
 cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake
-cmake --build build/zynq
+cmake --build build/zynq --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
 
