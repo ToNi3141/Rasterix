@@ -98,12 +98,12 @@ framebufferWriterClear:
 	./obj_dir/VFramebufferWriterClear
 
 framebufferReader:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/3rdParty/verilog-axis
 	-make -C obj_dir -f VFramebufferReader.mk
 	./obj_dir/VFramebufferReader
 
 streamSemaphore:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
 	-make -C obj_dir -f VStreamSemaphore.mk
 	./obj_dir/VStreamSemaphore
 

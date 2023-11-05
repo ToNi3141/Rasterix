@@ -61,9 +61,7 @@ read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/FT245S2AXIS.v
-read_verilog ./../../../../3rdParty/axi_register_rd.v
-read_verilog ./../../../../3rdParty/axi_register_wr.v
-read_verilog ./../../../../3rdParty/axis_broadcast.v
+read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/ftdi_245fifo.sv
