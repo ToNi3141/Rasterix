@@ -96,7 +96,7 @@ module FramebufferWriterClear #(
     assign m_frag_tstrb     = (applied) ? s_frag_tstrb    : 1;
     assign m_frag_taddr     = (applied) ? s_frag_taddr    : addr;
     assign m_frag_txpos     = (applied) ? s_frag_txpos    : xpos;
-    assign m_frag_typos     = (applied) ? s_frag_typos    : ypos;
+    assign m_frag_typos     = (applied) ? s_frag_typos    : ypos - 1;
 
     always @(posedge aclk)
     begin
