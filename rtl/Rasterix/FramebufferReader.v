@@ -47,17 +47,17 @@ module FramebufferReader #(
     /////////////////////////
 
     // Fetch interface
-    input  wire                             s_fetch_axis_tvalid,
-    input  wire                             s_fetch_axis_tlast,
-    output wire                             s_fetch_axis_tready,
-    input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_axis_tdest,
+    input  wire                             s_fetch_tvalid,
+    input  wire                             s_fetch_tlast,
+    output wire                             s_fetch_tready,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_taddr,
 
     // Framebuffer Interface
-    output wire                             m_frag_axis_tvalid,
-    input  wire                             m_frag_axis_tready,
-    output wire [PIXEL_WIDTH - 1 : 0]       m_frag_axis_tdata,
-    output wire [ADDR_WIDTH - 1 : 0]        m_frag_axis_tdest,
-    output wire                             m_frag_axis_tlast,
+    output wire                             m_frag_tvalid,
+    input  wire                             m_frag_tready,
+    output wire [PIXEL_WIDTH - 1 : 0]       m_frag_tdata,
+    output wire [ADDR_WIDTH - 1 : 0]        m_frag_taddr,
+    output wire                             m_frag_tlast,
 
     /////////////////////////
     // Memory Interface
@@ -115,10 +115,10 @@ module FramebufferReader #(
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata(s_fetch_axis_tdest),
-        .s_axis_tlast(s_fetch_axis_tlast),
-        .s_axis_tvalid(s_fetch_axis_tvalid),
-        .s_axis_tready(s_fetch_axis_tready),
+        .s_axis_tdata(s_fetch_taddr),
+        .s_axis_tlast(s_fetch_tlast),
+        .s_axis_tvalid(s_fetch_tvalid),
+        .s_axis_tready(s_fetch_tready),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
@@ -160,10 +160,10 @@ module FramebufferReader #(
 
         .confAddr(confAddr),
         
-        .s_fetch_axis_tvalid(bc_fetch_tvalid[0]),
-        .s_fetch_axis_tlast(bc_fetch_tlast[0]),
-        .s_fetch_axis_tready(bc_fetch_tready[0]),
-        .s_fetch_axis_tdest(bc_fetch_tdest[0 +: ADDR_WIDTH]),
+        .s_fetch_tvalid(bc_fetch_tvalid[0]),
+        .s_fetch_tlast(bc_fetch_tlast[0]),
+        .s_fetch_tready(bc_fetch_tready[0]),
+        .s_fetch_taddr(bc_fetch_tdest[0 +: ADDR_WIDTH]),
 
         .m_mem_axi_arid(m_mem_axi_arid),
         .m_mem_axi_araddr(m_mem_axi_araddr),
@@ -186,16 +186,16 @@ module FramebufferReader #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_frag_axis_tvalid(m_frag_axis_tvalid),
-        .m_frag_axis_tready(m_frag_axis_tready),
-        .m_frag_axis_tdata(m_frag_axis_tdata),
-        .m_frag_axis_tdest(m_frag_axis_tdest),
-        .m_frag_axis_tlast(m_frag_axis_tlast),
+        .m_frag_tvalid(m_frag_tvalid),
+        .m_frag_tready(m_frag_tready),
+        .m_frag_tdata(m_frag_tdata),
+        .m_frag_taddr(m_frag_taddr),
+        .m_frag_tlast(m_frag_tlast),
 
-        .s_fetch_axis_tvalid(fifo_fetch_tvalid),
-        .s_fetch_axis_tlast(fifo_fetch_tlast),
-        .s_fetch_axis_tready(fifo_fetch_tready),
-        .s_fetch_axis_tdest(fifo_fetch_tdest),
+        .s_fetch_tvalid(fifo_fetch_tvalid),
+        .s_fetch_tlast(fifo_fetch_tlast),
+        .s_fetch_tready(fifo_fetch_tready),
+        .s_fetch_taddr(fifo_fetch_tdest),
 
         .m_mem_axi_rid(m_mem_axi_rid),
         .m_mem_axi_rdata(m_mem_axi_rdata),

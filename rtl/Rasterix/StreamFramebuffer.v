@@ -74,26 +74,26 @@ module StreamFramebuffer
     /////////////////////////
 
     // Fetch interface
-    input  wire                             fetch_arvalid,
-    input  wire                             fetch_arlast,
-    output wire                             fetch_arready,
-    input  wire [ADDR_WIDTH - 1 : 0]        fetch_araddr,
+    input  wire                             s_fetch_arvalid,
+    input  wire                             s_fetch_arlast,
+    output wire                             s_fetch_arready,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_araddr,
 
     // Framebuffer read interface
-    output wire                             frag_rvalid,
-    input  wire                             frag_rready,
-    output wire [PIXEL_WIDTH - 1 : 0]       frag_rdata,
-    output wire                             frag_rlast,
+    output wire                             s_frag_rvalid,
+    input  wire                             s_frag_rready,
+    output wire [PIXEL_WIDTH - 1 : 0]       s_frag_rdata,
+    output wire                             s_frag_rlast,
 
     // Framebuffer write interface
-    input  wire                             frag_wvalid,
-    input  wire                             frag_wlast,
-    output wire                             frag_wready,
-    input  wire [PIXEL_WIDTH - 1 : 0]       frag_wdata,
-    input  wire                             frag_wstrb,
-    input  wire [ADDR_WIDTH - 1 : 0]        frag_waddr,
-    input  wire [X_BIT_WIDTH - 1 : 0]       frag_wxpos,
-    input  wire [X_BIT_WIDTH - 1 : 0]       frag_wypos,
+    input  wire                             s_frag_wvalid,
+    input  wire                             s_frag_wlast,
+    output wire                             s_frag_wready,
+    input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_wdata,
+    input  wire                             s_frag_wstrb,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_frag_waddr,
+    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_wxpos,
+    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_wypos,
 
     /////////////////////////
     // Memory Interface
@@ -160,16 +160,16 @@ module StreamFramebuffer
 
         .confAddr(confAddr),
 
-        .s_fetch_axis_tvalid(fetch_arvalid),
-        .s_fetch_axis_tlast(fetch_arlast),
-        .s_fetch_axis_tready(fetch_arready),
-        .s_fetch_axis_tdest(fetch_araddr),
+        .s_fetch_tvalid(s_fetch_arvalid),
+        .s_fetch_tlast(s_fetch_arlast),
+        .s_fetch_tready(s_fetch_arready),
+        .s_fetch_taddr(s_fetch_araddr),
 
-        .m_frag_axis_tvalid(frag_rvalid),
-        .m_frag_axis_tready(frag_rready),
-        .m_frag_axis_tdata(frag_rdata),
-        .m_frag_axis_tdest(),
-        .m_frag_axis_tlast(frag_rlast),
+        .m_frag_tvalid(s_frag_rvalid),
+        .m_frag_tready(s_frag_rready),
+        .m_frag_tdata(s_frag_rdata),
+        .m_frag_taddr(),
+        .m_frag_tlast(s_frag_rlast),
 
         .m_mem_axi_arid(m_mem_axi_arid),
         .m_mem_axi_araddr(m_mem_axi_araddr),
@@ -203,14 +203,14 @@ module StreamFramebuffer
         .confXResolution(confXResolution),
         .confYResolution(confYResolution),
 
-        .s_frag_tvalid(frag_wvalid),
-        .s_frag_tlast(frag_wlast),
-        .s_frag_tready(frag_wready),
-        .s_frag_tdata(frag_wdata),
-        .s_frag_tstrb(frag_wstrb),
-        .s_frag_taddr(frag_waddr),
-        .s_frag_txpos(frag_wxpos),
-        .s_frag_typos(frag_wypos),
+        .s_frag_tvalid(s_frag_wvalid),
+        .s_frag_tlast(s_frag_wlast),
+        .s_frag_tready(s_frag_wready),
+        .s_frag_tdata(s_frag_wdata),
+        .s_frag_tstrb(s_frag_wstrb),
+        .s_frag_taddr(s_frag_waddr),
+        .s_frag_txpos(s_frag_wxpos),
+        .s_frag_typos(s_frag_wypos),
 
         .m_frag_tvalid(frag_tvalid),
         .m_frag_tlast(frag_tlast),

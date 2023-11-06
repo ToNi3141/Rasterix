@@ -47,10 +47,10 @@ module MemoryReadRequestGenerator #(
     /////////////////////////
 
     // Fetch interface
-    input  wire                             s_fetch_axis_tvalid,
-    input  wire                             s_fetch_axis_tlast,
-    output reg                              s_fetch_axis_tready,
-    input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_axis_tdest,
+    input  wire                             s_fetch_tvalid,
+    input  wire                             s_fetch_tlast,
+    output reg                              s_fetch_tready,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_fetch_taddr,
 
     /////////////////////////
     // Memory Interface
@@ -83,7 +83,7 @@ module MemoryReadRequestGenerator #(
     reg                             lastFetch;
     reg                             memRequest;
     reg [ADDR_WIDTH - 1 : 0]        memRequestAddr;
-    wire newMemRequest = (((lastAddrTag != s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
+    wire newMemRequest = (((lastAddrTag != s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
 
 
     // Fetch handling
@@ -96,38 +96,38 @@ module MemoryReadRequestGenerator #(
             lastSkid <= 0;
             lastFetch <= 0;
 
-            s_fetch_axis_tready <= 1;
+            s_fetch_tready <= 1;
         end
         else
         begin
-            if (s_fetch_axis_tready)
+            if (s_fetch_tready)
             begin
-                if (s_fetch_axis_tvalid)
+                if (s_fetch_tvalid)
                 begin
                     // Safe current address in the skid buffer when the memory request handling is busy
                     if (newMemRequest && memRequest)
                     begin
-                        s_fetch_axis_tready <= 0;
-                        newAddrTagSkid <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
-                        lastSkid <= s_fetch_axis_tlast;
+                        s_fetch_tready <= 0;
+                        newAddrTagSkid <= s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+                        lastSkid <= s_fetch_tlast;
                     end
                     else
                     begin
                         // If the boundaries of the tag are exceeded, trigger a new write request
                         if (newMemRequest)
                         begin
-                            memRequestAddr <= { s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH] << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
+                            memRequestAddr <= { s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH] << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                             memRequest <= 1;
                         end
                         
                         // If this is the last signal, set the lastAddrTag to max to enable a new request, when new addresses are comming
-                        if (s_fetch_axis_tlast)
+                        if (s_fetch_tlast)
                         begin
                             lastAddrTag <= ~0;
                         end
                         else
                         begin
-                            lastAddrTag <= s_fetch_axis_tdest[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+                            lastAddrTag <= s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
                         end
                     end
                 end
@@ -138,7 +138,7 @@ module MemoryReadRequestGenerator #(
                 begin
                     memRequestAddr <= { newAddrTagSkid << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
                     memRequest <= 1;
-                    s_fetch_axis_tready <= 1;
+                    s_fetch_tready <= 1;
                     if (lastSkid)
                     begin
                         lastAddrTag <= ~0;

@@ -46,8 +46,8 @@ void reset(VMemoryReadRequestGenerator* t)
 TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryReadRequestGenerator]")
 {
     VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
-    t->s_fetch_axis_tlast = 0;
-    t->s_fetch_axis_tvalid = 0;
+    t->s_fetch_tlast = 0;
+    t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;
     reset(t);
 
@@ -57,21 +57,21 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
     uint32_t id = 1;
     for (uint32_t i = 0; i < 2; i++)
     {
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 1. fetch (start memory request)
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 0;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 0;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2. fetch (do memory request)
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 1;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 1;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arid == id++);
         REQUIRE(t->m_mem_axi_arlen == 0);
         REQUIRE(t->m_mem_axi_arsize == 2);
@@ -83,15 +83,15 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Send 3. fetch (start memory request)
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 2;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 2;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 4. fetch (do memory request)
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 3;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 3;
         clk(t);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
@@ -99,30 +99,30 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_arid == id++);
 
         // Send 5. fetch
-        t->s_fetch_axis_tvalid = true;
+        t->s_fetch_tvalid = true;
         // Only important for the next cycle, to request again 0. Otherwise it wouldn't 
         // request zero again, because it seems that the same address was already requested
-        t->s_fetch_axis_tlast = true; 
-        t->s_fetch_axis_tdest = 0;
+        t->s_fetch_tlast = true; 
+        t->s_fetch_taddr = 0;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Request
-        t->s_fetch_axis_tvalid = false;
-        t->s_fetch_axis_tlast = false; 
+        t->s_fetch_tvalid = false;
+        t->s_fetch_tlast = false; 
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
         REQUIRE(t->m_mem_axi_arid == id++);
 
         // Execute more clock cycles, no additional requests should be executed
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
     }
 
@@ -133,8 +133,8 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
 TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
 {
     VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
-    t->s_fetch_axis_tlast = 0;
-    t->s_fetch_axis_tvalid = 0;
+    t->s_fetch_tlast = 0;
+    t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;
     reset(t);
 
@@ -144,48 +144,48 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
     for (uint32_t i = 0; i < 2; i++)
     {
         // Send 1. fetch
-        t->s_fetch_axis_tlast = false;
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 0;
+        t->s_fetch_tlast = false;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 0;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2.1 fetch
-        t->s_fetch_axis_tvalid = false;
-        t->s_fetch_axis_tdest = 1;
+        t->s_fetch_tvalid = false;
+        t->s_fetch_taddr = 1;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Send 2.2 fetch
-        t->s_fetch_axis_tvalid = false;
-        t->s_fetch_axis_tdest = 1;
+        t->s_fetch_tvalid = false;
+        t->s_fetch_taddr = 1;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2.3 fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 1;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 1;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 3. fetch.
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 2;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 2;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 4.1 fetch.
-        t->s_fetch_axis_tvalid = false;
-        t->s_fetch_axis_tlast = true;
-        t->s_fetch_axis_tdest = 3;
+        t->s_fetch_tvalid = false;
+        t->s_fetch_tlast = true;
+        t->s_fetch_taddr = 3;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
     }
@@ -197,8 +197,8 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
 TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadRequestGenerator]")
 {
     VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
-    t->s_fetch_axis_tlast = 0;
-    t->s_fetch_axis_tvalid = 0;
+    t->s_fetch_tlast = 0;
+    t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 0;
     reset(t);
 
@@ -210,103 +210,103 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         t->m_mem_axi_arready = 0;
 
         // Send 1. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 0;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 0;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 1;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 1;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Send 3. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 2;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 2;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Send 4. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 3;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 3;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Send 5. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 4;
-        t->s_fetch_axis_tlast = true;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 4;
+        t->s_fetch_tlast = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == false);
+        REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Mem requests
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == false);
+        REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Mem requests
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == false);
+        REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // Mem requests
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         t->m_mem_axi_arready = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == false);
+        REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Mem requests
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         t->m_mem_axi_arready = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == false);
+        REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
 
         // Mem requests
-        t->s_fetch_axis_tvalid = false;
-        t->s_fetch_axis_tlast = false;
+        t->s_fetch_tvalid = false;
+        t->s_fetch_tlast = false;
         t->m_mem_axi_arready = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Last mem request
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         t->m_mem_axi_arready = false;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
 
         // Last mem request
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         t->m_mem_axi_arready = false;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
 
         // Last mem request
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         t->m_mem_axi_arready = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
     }
 
@@ -317,8 +317,8 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
 TEST_CASE("tlast after one clock", "[MemoryReadRequestGenerator]")
 {
     VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
-    t->s_fetch_axis_tlast = 0;
-    t->s_fetch_axis_tvalid = 0;
+    t->s_fetch_tlast = 0;
+    t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;
     reset(t);
 
@@ -328,23 +328,23 @@ TEST_CASE("tlast after one clock", "[MemoryReadRequestGenerator]")
     for (uint32_t i = 0; i < 2; i++)
     {
         // Send 1. fetch
-        t->s_fetch_axis_tvalid = true;
-        t->s_fetch_axis_tdest = 0;
-        t->s_fetch_axis_tlast = true;
+        t->s_fetch_tvalid = true;
+        t->s_fetch_taddr = 0;
+        t->s_fetch_tlast = true;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Memory request
-        t->s_fetch_axis_tvalid = false;
+        t->s_fetch_tvalid = false;
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
 
         // End
         clk(t);
-        REQUIRE(t->s_fetch_axis_tready == true);
+        REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
     }
 

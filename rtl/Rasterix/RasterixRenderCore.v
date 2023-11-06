@@ -87,21 +87,21 @@ module RasterixRenderCore #(
     output wire                                 colorBufferCmdMemset,
     output wire                                 colorBufferEnable,
     output wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  colorBufferMask,
-    input  wire                                 color_arready,
-    output wire                                 color_arvalid,
-    output wire                                 color_arlast,
-    output wire [INDEX_WIDTH - 1 : 0]           color_araddr,
-    output wire                                 color_rready,
-    input  wire                                 color_rvalid,
-    input  wire [PIXEL_WIDTH - 1 : 0]           color_rdata,
-    output wire [INDEX_WIDTH - 1 : 0]           color_waddr,
-    output wire                                 color_wvalid,
-    input  wire                                 color_wready,
-    output wire                                 color_wlast,
-    output wire [PIXEL_WIDTH - 1 : 0]           color_wdata,
-    output wire                                 color_wstrb,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      color_wscreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      color_wscreenPosY,
+    input  wire                                 m_color_arready,
+    output wire                                 m_color_arvalid,
+    output wire                                 m_color_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]           m_color_araddr,
+    output wire                                 m_color_rready,
+    input  wire                                 m_color_rvalid,
+    input  wire [PIXEL_WIDTH - 1 : 0]           m_color_rdata,
+    output wire [INDEX_WIDTH - 1 : 0]           m_color_waddr,
+    output wire                                 m_color_wvalid,
+    input  wire                                 m_color_wready,
+    output wire                                 m_color_wlast,
+    output wire [PIXEL_WIDTH - 1 : 0]           m_color_wdata,
+    output wire                                 m_color_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_color_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_color_wscreenPosY,
 
     // Depth buffer access
     output wire [DEPTH_WIDTH - 1 : 0]           depthBufferClearDepth,
@@ -112,21 +112,21 @@ module RasterixRenderCore #(
     output wire                                 depthBufferCmdMemset,
     output wire                                 depthBufferEnable,
     output wire                                 depthBufferMask,
-    input  wire                                 depth_arready,
-    output wire                                 depth_arvalid,
-    output wire                                 depth_arlast,
-    output wire [INDEX_WIDTH - 1 : 0]           depth_araddr,
-    output wire                                 depth_rready,
-    input  wire                                 depth_rvalid,
-    input  wire [DEPTH_WIDTH - 1 : 0]           depth_rdata,
-    output wire [INDEX_WIDTH - 1 : 0]           depth_waddr,
-    output wire                                 depth_wvalid,
-    input  wire                                 depth_wready,
-    output wire                                 depth_wlast,
-    output wire [DEPTH_WIDTH - 1 : 0]           depth_wdata,
-    output wire                                 depth_wstrb,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      depth_wscreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      depth_wscreenPosY,
+    input  wire                                 m_depth_arready,
+    output wire                                 m_depth_arvalid,
+    output wire                                 m_depth_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]           m_depth_araddr,
+    output wire                                 m_depth_rready,
+    input  wire                                 m_depth_rvalid,
+    input  wire [DEPTH_WIDTH - 1 : 0]           m_depth_rdata,
+    output wire [INDEX_WIDTH - 1 : 0]           m_depth_waddr,
+    output wire                                 m_depth_wvalid,
+    input  wire                                 m_depth_wready,
+    output wire                                 m_depth_wlast,
+    output wire [DEPTH_WIDTH - 1 : 0]           m_depth_wdata,
+    output wire                                 m_depth_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_depth_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_depth_wscreenPosY,
 
     // Stencil buffer access
     output wire [STENCIL_WIDTH - 1 : 0]         stencilBufferClearStencil,
@@ -137,21 +137,21 @@ module RasterixRenderCore #(
     output wire                                 stencilBufferCmdMemset,
     output wire                                 stencilBufferEnable,
     output wire [STENCIL_WIDTH - 1 : 0]         stencilBufferMask,
-    input  wire                                 stencil_arready,
-    output wire                                 stencil_arvalid,
-    output wire                                 stencil_arlast,
-    output wire [INDEX_WIDTH - 1 : 0]           stencil_araddr,
-    output wire                                 stencil_rready,
-    input  wire                                 stencil_rvalid,
-    input  wire [STENCIL_WIDTH - 1 : 0]         stencil_rdata,
-    output wire [INDEX_WIDTH - 1 : 0]           stencil_waddr,
-    output wire                                 stencil_wvalid,
-    input  wire                                 stencil_wready,
-    output wire                                 stencil_wlast,
-    output wire [STENCIL_WIDTH - 1 : 0]         stencil_wdata,
-    output wire                                 stencil_wstrb,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      stencil_wscreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      stencil_wscreenPosY,
+    input  wire                                 m_stencil_arready,
+    output wire                                 m_stencil_arvalid,
+    output wire                                 m_stencil_arlast,
+    output wire [INDEX_WIDTH - 1 : 0]           m_stencil_araddr,
+    output wire                                 m_stencil_rready,
+    input  wire                                 m_stencil_rvalid,
+    input  wire [STENCIL_WIDTH - 1 : 0]         m_stencil_rdata,
+    output wire [INDEX_WIDTH - 1 : 0]           m_stencil_waddr,
+    output wire                                 m_stencil_wvalid,
+    input  wire                                 m_stencil_wready,
+    output wire                                 m_stencil_wlast,
+    output wire [STENCIL_WIDTH - 1 : 0]         m_stencil_wdata,
+    output wire                                 m_stencil_wstrb,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_stencil_wscreenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]      m_stencil_wscreenPosY,
 
     // Debug
     output wire [ 3 : 0]                        dbgStreamState,
@@ -624,15 +624,15 @@ module RasterixRenderCore #(
     wire [ 3 : 0]                                       mem_last;
     wire [ 3 : 0]                                       mem_keep;
     wire                                                mem_arready_attrib;
-    assign color_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 3) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign depth_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 2) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign stencil_araddr   = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 1) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign color_arvalid    = mem_valid[3] & colorBufferEnable;
-    assign depth_arvalid    = mem_valid[2] & depthBufferEnable;
-    assign stencil_arvalid  = mem_valid[1] & stencilBufferEnable;
-    assign color_arlast     = mem_last[3];
-    assign depth_arlast     = mem_last[2];
-    assign stencil_arlast   = mem_last[1];
+    assign m_color_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 3) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign m_depth_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 2) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign m_stencil_araddr   = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 1) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
+    assign m_color_arvalid    = mem_valid[3] & colorBufferEnable;
+    assign m_depth_arvalid    = mem_valid[2] & depthBufferEnable;
+    assign m_stencil_arvalid  = mem_valid[1] & stencilBufferEnable;
+    assign m_color_arlast     = mem_last[3];
+    assign m_depth_arlast     = mem_last[2];
+    assign m_stencil_arlast   = mem_last[1];
 
     axis_broadcast axisBroadcast (
         .clk(aclk),
@@ -649,7 +649,7 @@ module RasterixRenderCore #(
 
         .m_axis_tdata(mem_index),
         .m_axis_tvalid(mem_valid),
-        .m_axis_tready({ color_arready | !colorBufferEnable, depth_arready | !depthBufferEnable, stencil_arready | !stencilBufferEnable, mem_arready_attrib }),
+        .m_axis_tready({ m_color_arready | !colorBufferEnable, m_depth_arready | !depthBufferEnable, m_stencil_arready | !stencilBufferEnable, mem_arready_attrib }),
         .m_axis_tlast(mem_last),
         .m_axis_tkeep(mem_keep),
         .m_axis_tid(),
@@ -818,19 +818,19 @@ module RasterixRenderCore #(
         .stream0_tready(),
 
         .stream1_enable(colorBufferEnable),
-        .stream1_tvalid(color_rvalid),
-        .stream1_tdata(color_rdata),
-        .stream1_tready(color_rready),
+        .stream1_tvalid(m_color_rvalid),
+        .stream1_tdata(m_color_rdata),
+        .stream1_tready(m_color_rready),
 
         .stream2_enable(depthBufferEnable),
-        .stream2_tvalid(depth_rvalid),
-        .stream2_tdata(depth_rdata),
-        .stream2_tready(depth_rready),
+        .stream2_tvalid(m_depth_rvalid),
+        .stream2_tdata(m_depth_rdata),
+        .stream2_tready(m_depth_rready),
 
         .stream3_enable(stencilBufferEnable),
-        .stream3_tvalid(stencil_rvalid),
-        .stream3_tdata(stencil_rdata),
-        .stream3_tready(stencil_rready),
+        .stream3_tvalid(m_stencil_rvalid),
+        .stream3_tdata(m_stencil_rdata),
+        .stream3_tready(m_stencil_rready),
 
         .stream_out_tvalid(fragment_stream_out_tvalid),
         .stream_out_tdata(fragment_stream_out_tdata),
@@ -947,7 +947,7 @@ module RasterixRenderCore #(
                 .o_full(),
                 .o_fill(color_fifo_fill),
 
-                .i_rd(color_wready),
+                .i_rd(m_color_wready),
                 .o_data(color_fifo_out_data),
                 .o_empty(color_fifo_empty)    
             );
@@ -955,23 +955,23 @@ module RasterixRenderCore #(
             defparam colorWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
             defparam colorWriteFifo.OPT_ASYNC_READ = 0;
 
-            assign color_wdata = color_fifo_out_data[0 +: PIXEL_WIDTH];
-            assign color_waddr = color_fifo_out_data[PIXEL_WIDTH +: INDEX_WIDTH];
-            assign color_wscreenPosX = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
-            assign color_wscreenPosY = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign color_wstrb = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
-            assign color_wlast = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
-            assign color_wvalid = !color_fifo_empty;
+            assign m_color_wdata = color_fifo_out_data[0 +: PIXEL_WIDTH];
+            assign m_color_waddr = color_fifo_out_data[PIXEL_WIDTH +: INDEX_WIDTH];
+            assign m_color_wscreenPosX = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wscreenPosY = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wstrb = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
+            assign m_color_wlast = color_fifo_out_data[PIXEL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
+            assign m_color_wvalid = !color_fifo_empty;
         end
         else
         begin
-            assign color_wdata = color_fifo_wdata;
-            assign color_waddr = color_fifo_waddr;
-            assign color_wscreenPosX = color_fifo_wscreenPosX;
-            assign color_wscreenPosY = color_fifo_wscreenPosY;
-            assign color_wstrb = color_fifo_wstrb;
-            assign color_wlast = color_fifo_wlast;
-            assign color_wvalid = color_fifo_wvalid;
+            assign m_color_wdata = color_fifo_wdata;
+            assign m_color_waddr = color_fifo_waddr;
+            assign m_color_wscreenPosX = color_fifo_wscreenPosX;
+            assign m_color_wscreenPosY = color_fifo_wscreenPosY;
+            assign m_color_wstrb = color_fifo_wstrb;
+            assign m_color_wlast = color_fifo_wlast;
+            assign m_color_wvalid = color_fifo_wvalid;
 
             assign color_fifo_fill = 0;
             assign color_fifo_empty = 1;
@@ -992,7 +992,7 @@ module RasterixRenderCore #(
                 .o_full(),
                 .o_fill(depth_fifo_fill),
 
-                .i_rd(depth_wready),
+                .i_rd(m_depth_wready),
                 .o_data(depth_fifo_out_data),
                 .o_empty(depth_fifo_empty)    
             );
@@ -1000,23 +1000,23 @@ module RasterixRenderCore #(
             defparam depthWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
             defparam depthWriteFifo.OPT_ASYNC_READ = 0;
 
-            assign depth_wdata = depth_fifo_out_data[0 +: DEPTH_WIDTH];
-            assign depth_waddr = depth_fifo_out_data[DEPTH_WIDTH +: INDEX_WIDTH];
-            assign depth_wscreenPosX = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
-            assign depth_wscreenPosY = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign depth_wstrb = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
-            assign depth_wlast = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
-            assign depth_wvalid = !depth_fifo_empty;
+            assign m_depth_wdata = depth_fifo_out_data[0 +: DEPTH_WIDTH];
+            assign m_depth_waddr = depth_fifo_out_data[DEPTH_WIDTH +: INDEX_WIDTH];
+            assign m_depth_wscreenPosX = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wscreenPosY = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wstrb = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
+            assign m_depth_wlast = depth_fifo_out_data[DEPTH_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
+            assign m_depth_wvalid = !depth_fifo_empty;
         end
         else
         begin
-            assign depth_wdata = depth_fifo_wdata;
-            assign depth_waddr = depth_fifo_waddr;
-            assign depth_wscreenPosX = depth_fifo_wscreenPosX;
-            assign depth_wscreenPosY = depth_fifo_wscreenPosY;
-            assign depth_wstrb = depth_fifo_wstrb;
-            assign depth_wlast = depth_fifo_wlast;
-            assign depth_wvalid = depth_fifo_wvalid;
+            assign m_depth_wdata = depth_fifo_wdata;
+            assign m_depth_waddr = depth_fifo_waddr;
+            assign m_depth_wscreenPosX = depth_fifo_wscreenPosX;
+            assign m_depth_wscreenPosY = depth_fifo_wscreenPosY;
+            assign m_depth_wstrb = depth_fifo_wstrb;
+            assign m_depth_wlast = depth_fifo_wlast;
+            assign m_depth_wvalid = depth_fifo_wvalid;
 
             assign depth_fifo_fill = 0;
             assign depth_fifo_empty = 1;
@@ -1037,7 +1037,7 @@ module RasterixRenderCore #(
                 .o_full(),
                 .o_fill(stencil_fifo_fill),
 
-                .i_rd(stencil_wready),
+                .i_rd(m_stencil_wready),
                 .o_data(stencil_fifo_out_data),
                 .o_empty(stencil_fifo_empty)    
             );
@@ -1045,23 +1045,23 @@ module RasterixRenderCore #(
             defparam stencilWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
             defparam stencilWriteFifo.OPT_ASYNC_READ = 0;
 
-            assign stencil_wdata = stencil_fifo_out_data[0 +: STENCIL_WIDTH];
-            assign stencil_waddr = stencil_fifo_out_data[STENCIL_WIDTH +: INDEX_WIDTH];
-            assign stencil_wscreenPosX = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
-            assign stencil_wscreenPosY = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign stencil_wstrb = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
-            assign stencil_wlast = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
-            assign stencil_wvalid = !stencil_fifo_empty;
+            assign m_stencil_wdata = stencil_fifo_out_data[0 +: STENCIL_WIDTH];
+            assign m_stencil_waddr = stencil_fifo_out_data[STENCIL_WIDTH +: INDEX_WIDTH];
+            assign m_stencil_wscreenPosX = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wscreenPosY = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wstrb = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH +: 1];
+            assign m_stencil_wlast = stencil_fifo_out_data[STENCIL_WIDTH + INDEX_WIDTH + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + 1 +: 1];
+            assign m_stencil_wvalid = !stencil_fifo_empty;
         end
         else
         begin
-            assign stencil_wdata = stencil_fifo_wdata;
-            assign stencil_waddr = stencil_fifo_waddr;
-            assign stencil_wscreenPosX = stencil_fifo_wscreenPosX;
-            assign stencil_wscreenPosY = stencil_fifo_wscreenPosY;
-            assign stencil_wstrb = stencil_fifo_wstrb;
-            assign stencil_wlast = stencil_fifo_wlast;
-            assign stencil_wvalid = stencil_fifo_wvalid;
+            assign m_stencil_wdata = stencil_fifo_wdata;
+            assign m_stencil_waddr = stencil_fifo_waddr;
+            assign m_stencil_wscreenPosX = stencil_fifo_wscreenPosX;
+            assign m_stencil_wscreenPosY = stencil_fifo_wscreenPosY;
+            assign m_stencil_wstrb = stencil_fifo_wstrb;
+            assign m_stencil_wlast = stencil_fifo_wlast;
+            assign m_stencil_wvalid = stencil_fifo_wvalid;
 
             assign stencil_fifo_fill = 0;
             assign stencil_fifo_empty = 1;
