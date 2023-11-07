@@ -48,60 +48,60 @@ module PerFragmentPipeline
     input  wire [31 : 0]                            confStencilBufferConfig,
 
     // Fragment input
-    output wire                                     frag_tready,
-    input  wire                                     frag_tlast,
-    input  wire [KEEP_WIDTH - 1 : 0]                frag_tkeep,
-    input  wire                                     frag_tvalid,
-    input  wire [PIXEL_WIDTH - 1 : 0]               frag_tcolor,
-    input  wire [31 : 0]                            frag_tdepth,
-    input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   frag_tindex,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]          frag_tscreenPosX,
-    input  wire [SCREEN_POS_WIDTH - 1 : 0]          frag_tscreenPosY,
+    output wire                                     s_frag_tready,
+    input  wire                                     s_frag_tlast,
+    input  wire [KEEP_WIDTH - 1 : 0]                s_frag_tkeep,
+    input  wire                                     s_frag_tvalid,
+    input  wire [PIXEL_WIDTH - 1 : 0]               s_frag_tcolor,
+    input  wire [31 : 0]                            s_frag_tdepth,
+    input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   s_frag_tindex,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_frag_tscreenPosX,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_frag_tscreenPosY,
 
     // Signals when the fragment wents through the pipeline
     output reg                                      fragmentProcessed,
 
     // Frame buffer access
     // Read
-    output wire                                     color_rready,
-    input  wire                                     color_rvalid,
-    input  wire [PIXEL_WIDTH - 1 : 0]               color_rdata,
+    output wire                                     s_color_rready,
+    input  wire                                     s_color_rvalid,
+    input  wire [PIXEL_WIDTH - 1 : 0]               s_color_rdata,
     // Write
-    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   color_waddr,
-    output reg                                      color_wvalid,
-    output reg                                      color_wlast,
-    output reg  [PIXEL_WIDTH - 1 : 0]               color_wdata,
-    output reg                                      color_wstrb,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          color_wscreenPosX,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          color_wscreenPosY,
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_color_waddr,
+    output reg                                      m_color_wvalid,
+    output reg                                      m_color_wlast,
+    output reg  [PIXEL_WIDTH - 1 : 0]               m_color_wdata,
+    output reg                                      m_color_wstrb,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_color_wscreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_color_wscreenPosY,
 
     // ZBuffer buffer access
     // Read
-    output wire                                     depth_rready,
-    input  wire                                     depth_rvalid,
-    input  wire [DEPTH_WIDTH - 1 : 0]               depth_rdata,
+    output wire                                     s_depth_rready,
+    input  wire                                     s_depth_rvalid,
+    input  wire [DEPTH_WIDTH - 1 : 0]               s_depth_rdata,
     // Write
-    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depth_waddr,
-    output reg                                      depth_wvalid,
-    output reg                                      depth_wlast,
-    output reg  [DEPTH_WIDTH - 1 : 0]               depth_wdata,
-    output reg                                      depth_wstrb,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          depth_wscreenPosX,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          depth_wscreenPosY,
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_depth_waddr,
+    output reg                                      m_depth_wvalid,
+    output reg                                      m_depth_wlast,
+    output reg  [DEPTH_WIDTH - 1 : 0]               m_depth_wdata,
+    output reg                                      m_depth_wstrb,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_depth_wscreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_depth_wscreenPosY,
 
     // ZBuffer buffer access
     // Read
-    output wire                                     stencil_rready,
-    input  wire                                     stencil_rvalid,
-    input  wire [STENCIL_WIDTH - 1 : 0]             stencil_rdata,
+    output wire                                     s_stencil_rready,
+    input  wire                                     s_stencil_rvalid,
+    input  wire [STENCIL_WIDTH - 1 : 0]             s_stencil_rdata,
     // Write
-    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencil_waddr,
-    output reg                                      stencil_wvalid,
-    output reg                                      stencil_wlast,
-    output reg  [STENCIL_WIDTH - 1 : 0]             stencil_wdata,
-    output reg                                      stencil_wstrb,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencil_wscreenPosX,
-    output reg  [SCREEN_POS_WIDTH - 1 : 0]          stencil_wscreenPosY
+    output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_stencil_waddr,
+    output reg                                      m_stencil_wvalid,
+    output reg                                      m_stencil_wlast,
+    output reg  [STENCIL_WIDTH - 1 : 0]             m_stencil_wdata,
+    output reg                                      m_stencil_wstrb,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_stencil_wscreenPosX,
+    output reg  [SCREEN_POS_WIDTH - 1 : 0]          m_stencil_wscreenPosY
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -123,12 +123,12 @@ module PerFragmentPipeline
         end
     endfunction
 
-    wire rready_sig = frag_tvalid & color_rvalid & depth_rvalid & stencil_rvalid;
+    wire rready_sig = s_frag_tvalid & s_color_rvalid & s_depth_rvalid & s_stencil_rvalid;
 
-    assign color_rready = rready_sig;
-    assign depth_rready = rready_sig;
-    assign stencil_rready = rready_sig;
-    assign frag_tready = rready_sig;
+    assign s_color_rready = rready_sig;
+    assign s_depth_rready = rready_sig;
+    assign s_stencil_rready = rready_sig;
+    assign s_frag_tready = rready_sig;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -136,13 +136,13 @@ module PerFragmentPipeline
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
     wire                                    step0_valid = rready_sig;
-    wire                                    step0_last = frag_tlast;
-    wire [KEEP_WIDTH  - 1 : 0]              step0_keep = frag_tkeep;
-    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step0_index = frag_tindex;
-    wire [DEPTH_WIDTH - 1 : 0]              step0_depth = clampDepth(frag_tdepth);
-    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosX = frag_tscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosY = frag_tscreenPosY;
-    wire [PIXEL_WIDTH - 1 : 0]              step0_fragmentColor = frag_tcolor;
+    wire                                    step0_last = s_frag_tlast;
+    wire [KEEP_WIDTH  - 1 : 0]              step0_keep = s_frag_tkeep;
+    wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step0_index = s_frag_tindex;
+    wire [DEPTH_WIDTH - 1 : 0]              step0_depth = clampDepth(s_frag_tdepth);
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosX = s_frag_tscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosY = s_frag_tscreenPosY;
+    wire [PIXEL_WIDTH - 1 : 0]              step0_fragmentColor = s_frag_tcolor;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -186,7 +186,7 @@ module PerFragmentPipeline
         .funcDFactor(conf[RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS +: RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS]),
         .sourceColor(step0_fragmentColor),
-        .destColor(color_rdata),
+        .destColor(s_color_rdata),
 
         .color(step1_fragmentColor)
     );
@@ -214,7 +214,7 @@ module PerFragmentPipeline
         .resetn(resetn),
         .func(conf[RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS]),
-        .refVal(depth_rdata),
+        .refVal(s_depth_rdata),
         .val(step0_depth),
         .success(step1_depthTestTmp)
     );
@@ -225,7 +225,7 @@ module PerFragmentPipeline
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilRefValTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_REF_POS +: RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE)];
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilMaskTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE)];
     ValueDelay #(.VALUE_SIZE(STENCIL_WIDTH), .DELAY(1)) 
-        step1_stencilBufferDelay (.clk(aclk), .in(stencil_rdata), .out(step1_stencilBufferValTmp)); 
+        step1_stencilBufferDelay (.clk(aclk), .in(s_stencil_rdata), .out(step1_stencilBufferValTmp)); 
     TestFunc #(
         .SUB_PIXEL_WIDTH(STENCIL_WIDTH)
     ) stencilTest (
@@ -233,7 +233,7 @@ module PerFragmentPipeline
         .resetn(resetn),
         .func(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_FUNC_POS +: RENDER_CONFIG_STENCIL_BUFFER_FUNC_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS]),
-        .refVal(stencil_rdata & step1_stencilMaskTmp),
+        .refVal(s_stencil_rdata & step1_stencilMaskTmp),
         .val(step1_stencilRefValTmp & step1_stencilMaskTmp),
         .success(step1_stencilTestTmp)
     );
@@ -276,29 +276,29 @@ module PerFragmentPipeline
     begin
         if (step1_valid)
         begin
-            color_waddr <= step1_index;
-            color_wscreenPosX <= step1_screenPosX;
-            color_wscreenPosY <= step1_screenPosY;
-            depth_waddr <= step1_index;
-            depth_wscreenPosX <= step1_screenPosX;
-            depth_wscreenPosY <= step1_screenPosY;
-            stencil_waddr <= step1_index;
-            stencil_wscreenPosX <= step1_screenPosX;
-            stencil_wscreenPosY <= step1_screenPosY;
-            depth_wdata <= step1_depth;
-            color_wdata <= step1_fragmentColor;
-            stencil_wdata <= step1_stencil;
+            m_color_waddr <= step1_index;
+            m_color_wscreenPosX <= step1_screenPosX;
+            m_color_wscreenPosY <= step1_screenPosY;
+            m_depth_waddr <= step1_index;
+            m_depth_wscreenPosX <= step1_screenPosX;
+            m_depth_wscreenPosY <= step1_screenPosY;
+            m_stencil_waddr <= step1_index;
+            m_stencil_wscreenPosX <= step1_screenPosX;
+            m_stencil_wscreenPosY <= step1_screenPosY;
+            m_depth_wdata <= step1_depth;
+            m_color_wdata <= step1_fragmentColor;
+            m_stencil_wdata <= step1_stencil;
         end
         fragmentProcessed <= step1_valid;
-        color_wvalid <= step1_valid;
-        depth_wvalid <= step1_valid;
-        stencil_wvalid <= step1_valid;
-        color_wlast <= step1_last;
-        depth_wlast <= step1_last;
-        stencil_wlast <= step1_last;
-        color_wstrb <= step1_keep & step1_writeFramebuffer;
-        depth_wstrb <= step1_keep & step1_writeFramebuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
-        stencil_wstrb <= step1_keep & step1_writeStencilBuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
+        m_color_wvalid <= step1_valid;
+        m_depth_wvalid <= step1_valid;
+        m_stencil_wvalid <= step1_valid;
+        m_color_wlast <= step1_last;
+        m_depth_wlast <= step1_last;
+        m_stencil_wlast <= step1_last;
+        m_color_wstrb <= step1_keep & step1_writeFramebuffer;
+        m_depth_wstrb <= step1_keep & step1_writeFramebuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
+        m_stencil_wstrb <= step1_keep & step1_writeStencilBuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
     end
 endmodule
 

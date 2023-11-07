@@ -771,14 +771,14 @@ module RasterixRenderCore #(
         .texel1Input10(texel1Input10),
         .texel1Input11(texel1Input11),
 
-        .framebuffer_valid(framebuffer_valid),
-        .framebuffer_last(framebuffer_last),
-        .framebuffer_keep(framebuffer_keep),
-        .framebuffer_fragmentColor(framebuffer_fragmentColor),
-        .framebuffer_depth(framebuffer_depth),
-        .framebuffer_index(framebuffer_index),
-        .framebuffer_screenPosX(framebuffer_screenPosX),
-        .framebuffer_screenPosY(framebuffer_screenPosY)
+        .m_framebuffer_valid(framebuffer_valid),
+        .m_framebuffer_last(framebuffer_last),
+        .m_framebuffer_keep(framebuffer_keep),
+        .m_framebuffer_fragmentColor(framebuffer_fragmentColor),
+        .m_framebuffer_depth(framebuffer_depth),
+        .m_framebuffer_index(framebuffer_index),
+        .m_framebuffer_screenPosX(framebuffer_screenPosX),
+        .m_framebuffer_screenPosY(framebuffer_screenPosY)
     );
     defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
@@ -804,9 +804,9 @@ module RasterixRenderCore #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .stream0_enable(1'b1),
-        .stream0_tvalid(framebuffer_valid),
-        .stream0_tdata({ 
+        .s_stream0_tenable(1'b1),
+        .s_stream0_tvalid(framebuffer_valid),
+        .s_stream0_tdata({ 
             framebuffer_keep,
             framebuffer_last,
             framebuffer_screenPosY,
@@ -815,26 +815,26 @@ module RasterixRenderCore #(
             framebuffer_depth, 
             framebuffer_fragmentColor 
         }),
-        .stream0_tready(),
+        .s_stream0_tready(),
 
-        .stream1_enable(colorBufferEnable),
-        .stream1_tvalid(m_color_rvalid),
-        .stream1_tdata(m_color_rdata),
-        .stream1_tready(m_color_rready),
+        .s_stream1_tenable(colorBufferEnable),
+        .s_stream1_tvalid(m_color_rvalid),
+        .s_stream1_tdata(m_color_rdata),
+        .s_stream1_tready(m_color_rready),
 
-        .stream2_enable(depthBufferEnable),
-        .stream2_tvalid(m_depth_rvalid),
-        .stream2_tdata(m_depth_rdata),
-        .stream2_tready(m_depth_rready),
+        .s_stream2_tenable(depthBufferEnable),
+        .s_stream2_tvalid(m_depth_rvalid),
+        .s_stream2_tdata(m_depth_rdata),
+        .s_stream2_tready(m_depth_rready),
 
-        .stream3_enable(stencilBufferEnable),
-        .stream3_tvalid(m_stencil_rvalid),
-        .stream3_tdata(m_stencil_rdata),
-        .stream3_tready(m_stencil_rready),
+        .s_stream3_tenable(stencilBufferEnable),
+        .s_stream3_tvalid(m_stencil_rvalid),
+        .s_stream3_tdata(m_stencil_rdata),
+        .s_stream3_tready(m_stencil_rready),
 
-        .stream_out_tvalid(fragment_stream_out_tvalid),
-        .stream_out_tdata(fragment_stream_out_tdata),
-        .stream_out_tready(fragment_stream_out_tready)
+        .m_stream_tvalid(fragment_stream_out_tvalid),
+        .m_stream_tdata(fragment_stream_out_tdata),
+        .m_stream_tready(fragment_stream_out_tready)
     );
     defparam streamConcatFifo.FIFO_DEPTH_POW2 = MAX_NUMBER_OF_PIXELS_LG;
     defparam streamConcatFifo.STREAM0_WIDTH = FRAGMENT_STREAM_WIDTH;
@@ -875,50 +875,50 @@ module RasterixRenderCore #(
         .confFeatureEnable(confFeatureEnable),
         .confStencilBufferConfig(confStencilBufferConfig),
 
-        .frag_tready(fragment_stream_out_tready),
-        .frag_tlast(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) +: 1]),
-        .frag_tkeep(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 +: 1]),
-        .frag_tvalid(fragment_stream_out_tvalid),
-        .frag_tcolor(fragment_stream_out_tdata[0 +: (COLOR_SUB_PIXEL_WIDTH * 4)]),
-        .frag_tdepth(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) +: 32]),
-        .frag_tindex(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 +: INDEX_WIDTH]),
-        .frag_tscreenPosX(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH +: SCREEN_POS_WIDTH]),
-        .frag_tscreenPosY(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_frag_tready(fragment_stream_out_tready),
+        .s_frag_tlast(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) +: 1]),
+        .s_frag_tkeep(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 +: 1]),
+        .s_frag_tvalid(fragment_stream_out_tvalid),
+        .s_frag_tcolor(fragment_stream_out_tdata[0 +: (COLOR_SUB_PIXEL_WIDTH * 4)]),
+        .s_frag_tdepth(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) +: 32]),
+        .s_frag_tindex(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 +: INDEX_WIDTH]),
+        .s_frag_tscreenPosX(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_frag_tscreenPosY(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 
-        .color_rready(),
-        .color_rvalid(fragment_stream_out_tvalid),
-        .color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
-        .color_waddr(color_fifo_waddr),
-        .color_wvalid(color_fifo_wvalid),
-        .color_wlast(color_fifo_wlast),
-        .color_wdata(color_fifo_wdata),
-        .color_wstrb(color_fifo_wstrb),
-        .color_wscreenPosX(color_fifo_wscreenPosX),
-        .color_wscreenPosY(color_fifo_wscreenPosY),
+        .s_color_rready(),
+        .s_color_rvalid(fragment_stream_out_tvalid),
+        .s_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
+        .m_color_waddr(color_fifo_waddr),
+        .m_color_wvalid(color_fifo_wvalid),
+        .m_color_wlast(color_fifo_wlast),
+        .m_color_wdata(color_fifo_wdata),
+        .m_color_wstrb(color_fifo_wstrb),
+        .m_color_wscreenPosX(color_fifo_wscreenPosX),
+        .m_color_wscreenPosY(color_fifo_wscreenPosY),
 
-        .depth_rready(),
-        .depth_rvalid(fragment_stream_out_tvalid),
-        .depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
-        .depth_waddr(depth_fifo_waddr),
-        .depth_wvalid(depth_fifo_wvalid),
-        .depth_wlast(depth_fifo_wlast),
-        .depth_wdata(depth_fifo_wdata),
-        .depth_wstrb(depth_fifo_wstrb),
-        .depth_wscreenPosX(depth_fifo_wscreenPosX),
-        .depth_wscreenPosY(depth_fifo_wscreenPosY),
+        .s_depth_rready(),
+        .s_depth_rvalid(fragment_stream_out_tvalid),
+        .s_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
+        .m_depth_waddr(depth_fifo_waddr),
+        .m_depth_wvalid(depth_fifo_wvalid),
+        .m_depth_wlast(depth_fifo_wlast),
+        .m_depth_wdata(depth_fifo_wdata),
+        .m_depth_wstrb(depth_fifo_wstrb),
+        .m_depth_wscreenPosX(depth_fifo_wscreenPosX),
+        .m_depth_wscreenPosY(depth_fifo_wscreenPosY),
 
-        .stencil_rready(),
-        .stencil_rvalid(fragment_stream_out_tvalid),
-        .stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
-        .stencil_waddr(stencil_fifo_waddr),
-        .stencil_wvalid(stencil_fifo_wvalid),
-        .stencil_wlast(stencil_fifo_wlast),
-        .stencil_wdata(stencil_fifo_wdata),
-        .stencil_wstrb(stencil_fifo_wstrb),
-        .stencil_wscreenPosX(stencil_fifo_wscreenPosX),
-        .stencil_wscreenPosY(stencil_fifo_wscreenPosY)
+        .s_stencil_rready(),
+        .s_stencil_rvalid(fragment_stream_out_tvalid),
+        .s_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
+        .m_stencil_waddr(stencil_fifo_waddr),
+        .m_stencil_wvalid(stencil_fifo_wvalid),
+        .m_stencil_wlast(stencil_fifo_wlast),
+        .m_stencil_wdata(stencil_fifo_wdata),
+        .m_stencil_wstrb(stencil_fifo_wstrb),
+        .m_stencil_wscreenPosX(stencil_fifo_wscreenPosX),
+        .m_stencil_wscreenPosY(stencil_fifo_wscreenPosY)
     );
     defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam perFragmentPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;

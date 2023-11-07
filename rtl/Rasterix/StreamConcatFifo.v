@@ -16,8 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Concatenates four streams into one stream.
-// Note that the output stream is not registered. stream_out_tready will have direct impact
-// unlike with AXI Streams. Advantage: Skid buffer is not required when handling stream_out_tready.
+// Note that the output stream is not registered. m_stream_tready will have direct impact
+// unlike with AXI Streams. Advantage: Skid buffer is not required when handling m_stream_tready.
 module StreamConcatFifo
 #(
     parameter FIFO_DEPTH_POW2 = 5,
@@ -33,46 +33,46 @@ module StreamConcatFifo
     input  wire                         aclk,
     input  wire                         resetn,
 
-    input  wire                         stream0_enable,
-    input  wire                         stream0_tvalid,
-    input  wire [STREAM0_WIDTH - 1 : 0] stream0_tdata,
-    output wire                         stream0_tready,
+    input  wire                         s_stream0_tenable,
+    input  wire                         s_stream0_tvalid,
+    input  wire [STREAM0_WIDTH - 1 : 0] s_stream0_tdata,
+    output wire                         s_stream0_tready,
 
-    input  wire                         stream1_enable,
-    input  wire                         stream1_tvalid,
-    input  wire [STREAM1_WIDTH - 1 : 0] stream1_tdata,
-    output wire                         stream1_tready,
+    input  wire                         s_stream1_tenable,
+    input  wire                         s_stream1_tvalid,
+    input  wire [STREAM1_WIDTH - 1 : 0] s_stream1_tdata,
+    output wire                         s_stream1_tready,
 
-    input  wire                         stream2_enable,
-    input  wire                         stream2_tvalid,
-    input  wire [STREAM2_WIDTH - 1 : 0] stream2_tdata,
-    output wire                         stream2_tready,
+    input  wire                         s_stream2_tenable,
+    input  wire                         s_stream2_tvalid,
+    input  wire [STREAM2_WIDTH - 1 : 0] s_stream2_tdata,
+    output wire                         s_stream2_tready,
 
-    input  wire                         stream3_enable,
-    input  wire                         stream3_tvalid,
-    input  wire [STREAM3_WIDTH - 1 : 0] stream3_tdata,
-    output wire                         stream3_tready,
+    input  wire                         s_stream3_tenable,
+    input  wire                         s_stream3_tvalid,
+    input  wire [STREAM3_WIDTH - 1 : 0] s_stream3_tdata,
+    output wire                         s_stream3_tready,
 
-    output wire                         stream_out_tvalid,
-    output wire [STREAMO_WIDTH - 1 : 0] stream_out_tdata,
-    input  wire                         stream_out_tready
+    output wire                         m_stream_tvalid,
+    output wire [STREAMO_WIDTH - 1 : 0] m_stream_tdata,
+    input  wire                         m_stream_tready
 );
     wire                            stream_full [NUMBER_OF_STREAMS - 1 : 0];
     wire                            stream_empty [NUMBER_OF_STREAMS - 1 : 0];
-    wire [STREAM0_WIDTH - 1 : 0]    stream0_data;
-    wire [STREAM1_WIDTH - 1 : 0]    stream1_data;
-    wire [STREAM2_WIDTH - 1 : 0]    stream2_data;
-    wire [STREAM3_WIDTH - 1 : 0]    stream3_data;
-    wire                            complete_transfer_available =   ((!stream_empty[0] | !stream0_enable) 
-                                                                    & (!stream_empty[1] | !stream1_enable)
-                                                                    & (!stream_empty[2] | !stream2_enable)
-                                                                    & (!stream_empty[3] | !stream3_enable));
-    wire                            stream_out_read = stream_out_tready && complete_transfer_available;
+    wire [STREAM0_WIDTH - 1 : 0]    s_stream0_data;
+    wire [STREAM1_WIDTH - 1 : 0]    s_stream1_data;
+    wire [STREAM2_WIDTH - 1 : 0]    s_stream2_data;
+    wire [STREAM3_WIDTH - 1 : 0]    s_stream3_data;
+    wire                            complete_transfer_available =   ((!stream_empty[0] | !s_stream0_tenable) 
+                                                                    & (!stream_empty[1] | !s_stream1_tenable)
+                                                                    & (!stream_empty[2] | !s_stream2_tenable)
+                                                                    & (!stream_empty[3] | !s_stream3_tenable));
+    wire                            stream_out_read = m_stream_tready && complete_transfer_available;
 
-    assign stream0_tready = !stream_full[0];
-    assign stream1_tready = !stream_full[1];
-    assign stream2_tready = !stream_full[2];
-    assign stream3_tready = !stream_full[3];
+    assign s_stream0_tready = !stream_full[0];
+    assign s_stream1_tready = !stream_full[1];
+    assign s_stream2_tready = !stream_full[2];
+    assign s_stream3_tready = !stream_full[3];
 
     sfifo #(
         .BW(STREAM0_WIDTH),
@@ -84,13 +84,13 @@ module StreamConcatFifo
         .i_clk(aclk),
         .i_reset(!resetn),
 
-        .i_wr(stream0_tvalid),
-        .i_data(stream0_tdata),
+        .i_wr(s_stream0_tvalid),
+        .i_data(s_stream0_tdata),
         .o_full(stream_full[0]),
         .o_fill(),
 
         .i_rd(stream_out_read),
-        .o_data(stream0_data),
+        .o_data(s_stream0_data),
         .o_empty(stream_empty[0])
     );
 
@@ -104,13 +104,13 @@ module StreamConcatFifo
         .i_clk(aclk),
         .i_reset(!resetn),
 
-        .i_wr(stream1_tvalid),
-        .i_data(stream1_tdata),
+        .i_wr(s_stream1_tvalid),
+        .i_data(s_stream1_tdata),
         .o_full(stream_full[1]),
         .o_fill(),
 
         .i_rd(stream_out_read),
-        .o_data(stream1_data),
+        .o_data(s_stream1_data),
         .o_empty(stream_empty[1])
     );
 
@@ -124,13 +124,13 @@ module StreamConcatFifo
         .i_clk(aclk),
         .i_reset(!resetn),
 
-        .i_wr(stream2_tvalid),
-        .i_data(stream2_tdata),
+        .i_wr(s_stream2_tvalid),
+        .i_data(s_stream2_tdata),
         .o_full(stream_full[2]),
         .o_fill(),
 
         .i_rd(stream_out_read),
-        .o_data(stream2_data),
+        .o_data(s_stream2_data),
         .o_empty(stream_empty[2])
     );
 
@@ -144,16 +144,16 @@ module StreamConcatFifo
         .i_clk(aclk),
         .i_reset(!resetn),
 
-        .i_wr(stream3_tvalid),
-        .i_data(stream3_tdata),
+        .i_wr(s_stream3_tvalid),
+        .i_data(s_stream3_tdata),
         .o_full(stream_full[3]),
         .o_fill(),
 
         .i_rd(stream_out_read),
-        .o_data(stream3_data),
+        .o_data(s_stream3_data),
         .o_empty(stream_empty[3])
     );
 
-    assign stream_out_tvalid = complete_transfer_available;
-    assign stream_out_tdata = { stream3_data, stream2_data, stream1_data, stream0_data };
+    assign m_stream_tvalid = complete_transfer_available;
+    assign m_stream_tdata = { s_stream3_data, s_stream2_data, s_stream1_data, s_stream0_data };
 endmodule

@@ -7,7 +7,7 @@
     - [Flow Control](#flow-control)
       - [StreamSemaphore](#streamsemaphore)
       - [StreamBarrier](#streambarrier)
-      - [StreamConcat](#streamconcat)
+      - [StreamConcatFifo](#streamconcatfifo)
   - [Pixel Pipeline](#pixel-pipeline)
   - [Texture Mapping Unit](#texture-mapping-unit)
   - [Per Fragment Pipeline](#per-fragment-pipeline)
@@ -58,7 +58,7 @@ The driver is build with the following components:
     - `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
     - `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the depth test, alpha test, blending and texenv calculations, texture clamping and so on.
     - `TextureBuffer`: Buffer which contains the complete texture. One for each TMU. They are filled with data from the command parser.
-    - `StreamConcat`: Concatinates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here.
+    - `StreamConcatFifo`: Concatinates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here.
     - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / stencil / depth tests.
     - `FrameBuffer`: Contains the color, depth and stencil buffer.
 
@@ -73,8 +73,8 @@ Unlike the `StreamSemaphore` the `StreamBarrier` takes the write FIFOs into acco
 
 In theory, the `StreamBarrier` should be enough for the flow control. It is possible to use it at every position the pipeline stalls, but it has the drawback, that the FIFOs must be twice as big for the same performance which the semaphore offers. We could stall also the FIFO at a lower fill level, to compensate the logic used, but it will directly affect the performance of the pipeline, because fewer pixel can enter the pipeline until a stall event occurs. 
 
-#### StreamConcat
-When the pixel comes past the `StreamSemaphore` and `StreamBarrier`, it is broadcasted to the `AttributeInterpolator` and to the framebuffers. The framebuffers will now start to fetch the fragment from an internal or external memory (depending if it is the `RasterixIF` or `RasterixEF`). If they have read the requested fragment, they will push it to the `StreamConcat`. The `StreamConcat` contains for each channel a FIFO of the size configured in the semaphore. It only start to concatenate and forward the data, when it is able to fetch data from all four channel FIFOs. If one channel lacks data (for instance from the color buffer), then it will stall as long as the data is not arrived.
+#### StreamConcatFifo
+When the pixel comes past the `StreamSemaphore` and `StreamBarrier`, it is broadcasted to the `AttributeInterpolator` and to the framebuffers. The framebuffers will now start to fetch the fragment from an internal or external memory (depending if it is the `RasterixIF` or `RasterixEF`). If they have read the requested fragment, they will push it to the `StreamConcatFifo`. The `StreamConcatFifo` contains for each channel a FIFO of the size configured in the semaphore. It only start to concatenate and forward the data, when it is able to fetch data from all four channel FIFOs. If one channel lacks data (for instance from the color buffer), then it will stall as long as the data is not arrived.
 
 After the `PerFragmentPipeline`, the finished fragment is pushed into the write FIFOs. The write FIFOs will push the data into framebuffer. They function as barrier in case of a framebuffer stall.
 

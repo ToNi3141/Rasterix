@@ -47,65 +47,65 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
 {
     VStreamConcatFifo* t = new VStreamConcatFifo();
 
-    t->stream0_enable = 1;
-    t->stream1_enable = 1;
-    t->stream2_enable = 1;
-    t->stream3_enable = 1;
+    t->s_stream0_tenable = 1;
+    t->s_stream1_tenable = 1;
+    t->s_stream2_tenable = 1;
+    t->s_stream3_tenable = 1;
 
-    t->stream0_tvalid = 0;
-    t->stream1_tvalid = 0;
-    t->stream2_tvalid = 0;
-    t->stream3_tvalid = 0;
+    t->s_stream0_tvalid = 0;
+    t->s_stream1_tvalid = 0;
+    t->s_stream2_tvalid = 0;
+    t->s_stream3_tvalid = 0;
 
-    t->stream_out_tready = 0;
+    t->m_stream_tready = 0;
 
     reset(t);
 
-    CHECK(t->stream_out_tvalid == 0);
-    CHECK(t->stream0_tready == 1);
-    CHECK(t->stream1_tready == 1);
-    CHECK(t->stream2_tready == 1);
-    CHECK(t->stream3_tready == 1);
+    CHECK(t->m_stream_tvalid == 0);
+    CHECK(t->s_stream0_tready == 1);
+    CHECK(t->s_stream1_tready == 1);
+    CHECK(t->s_stream2_tready == 1);
+    CHECK(t->s_stream3_tready == 1);
 
-    t->stream_out_tready = 1;
+    t->m_stream_tready = 1;
 
     for (uint32_t i = 0; i < 2; i++)
     {
         // Push one byte into stream0
-        t->stream0_tvalid = 1;
-        t->stream0_tdata = 0;
+        t->s_stream0_tvalid = 1;
+        t->s_stream0_tdata = 0;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream0_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream0_tready == 1);
 
         // Push one byte into stream1
-        t->stream0_tvalid = 0;
-        t->stream1_tvalid = 1;
-        t->stream1_tdata = 1;
+        t->s_stream0_tvalid = 0;
+        t->s_stream1_tvalid = 1;
+        t->s_stream1_tdata = 1;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream1_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream1_tready == 1);
 
         // Push one byte into stream2
-        t->stream1_tvalid = 0;
-        t->stream2_tvalid = 1;
-        t->stream2_tdata = 2;
+        t->s_stream1_tvalid = 0;
+        t->s_stream2_tvalid = 1;
+        t->s_stream2_tdata = 2;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream2_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream2_tready == 1);
 
         // Push one byte into stream3
-        t->stream2_tvalid = 0;
-        t->stream3_tvalid = 1;
-        t->stream3_tdata = 3;
+        t->s_stream2_tvalid = 0;
+        t->s_stream3_tvalid = 1;
+        t->s_stream3_tdata = 3;
         clk(t);
-        CHECK(t->stream_out_tvalid == 1);
-        CHECK(t->stream_out_tdata == 0x03020100);
-        CHECK(t->stream3_tready == 1);
+        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->m_stream_tdata == 0x03020100);
+        CHECK(t->s_stream3_tready == 1);
 
-        t->stream3_tvalid = 0;
+        t->s_stream3_tvalid = 0;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
+        CHECK(t->m_stream_tvalid == 0);
     }
 
     delete t;
@@ -115,48 +115,48 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
 {
     VStreamConcatFifo* t = new VStreamConcatFifo();
 
-    t->stream0_enable = 1;
-    t->stream1_enable = 1;
-    t->stream2_enable = 1;
-    t->stream3_enable = 1;
+    t->s_stream0_tenable = 1;
+    t->s_stream1_tenable = 1;
+    t->s_stream2_tenable = 1;
+    t->s_stream3_tenable = 1;
 
-    t->stream0_tvalid = 0;
-    t->stream1_tvalid = 0;
-    t->stream2_tvalid = 0;
-    t->stream3_tvalid = 0;
+    t->s_stream0_tvalid = 0;
+    t->s_stream1_tvalid = 0;
+    t->s_stream2_tvalid = 0;
+    t->s_stream3_tvalid = 0;
 
-    t->stream_out_tready = 0;
+    t->m_stream_tready = 0;
 
     reset(t);
 
     // Trigger one transfer
-    t->stream0_tvalid = 1;
-    t->stream0_tdata = 0;
-    t->stream1_tvalid = 1;
-    t->stream1_tdata = 1;
-    t->stream2_tvalid = 1;
-    t->stream2_tdata = 2;
-    t->stream3_tvalid = 1;
-    t->stream3_tdata = 3;
+    t->s_stream0_tvalid = 1;
+    t->s_stream0_tdata = 0;
+    t->s_stream1_tvalid = 1;
+    t->s_stream1_tdata = 1;
+    t->s_stream2_tvalid = 1;
+    t->s_stream2_tdata = 2;
+    t->s_stream3_tvalid = 1;
+    t->s_stream3_tdata = 3;
     clk(t);
-    CHECK(t->stream_out_tvalid == 1);
-    CHECK(t->stream_out_tdata == 0x03020100);
-    CHECK(t->stream0_tready == 1);
-    CHECK(t->stream1_tready == 1);
-    CHECK(t->stream2_tready == 1);
-    CHECK(t->stream3_tready == 1);
+    CHECK(t->m_stream_tvalid == 1);
+    CHECK(t->m_stream_tdata == 0x03020100);
+    CHECK(t->s_stream0_tready == 1);
+    CHECK(t->s_stream1_tready == 1);
+    CHECK(t->s_stream2_tready == 1);
+    CHECK(t->s_stream3_tready == 1);
 
     // Cycle without read
-    t->stream3_tvalid = 0;
+    t->s_stream3_tvalid = 0;
     clk(t);
-    CHECK(t->stream_out_tvalid == 1);
-    CHECK(t->stream_out_tdata == 0x03020100);
-    CHECK(t->stream3_tready == 1);
+    CHECK(t->m_stream_tvalid == 1);
+    CHECK(t->m_stream_tdata == 0x03020100);
+    CHECK(t->s_stream3_tready == 1);
 
     // Set output (combinatorial). Must have a direct effect on the output.
-    t->stream_out_tready = 1;
+    t->m_stream_tready = 1;
     clk(t);
-    CHECK(t->stream_out_tvalid == 0);
+    CHECK(t->m_stream_tvalid == 0);
 
     delete t;
 }
@@ -165,54 +165,54 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
 {
     VStreamConcatFifo* t = new VStreamConcatFifo();
 
-    t->stream0_enable = 1;
-    t->stream1_enable = 1;
-    t->stream2_enable = 1;
-    t->stream3_enable = 1;
+    t->s_stream0_tenable = 1;
+    t->s_stream1_tenable = 1;
+    t->s_stream2_tenable = 1;
+    t->s_stream3_tenable = 1;
 
-    t->stream0_tvalid = 0;
-    t->stream1_tvalid = 0;
-    t->stream2_tvalid = 0;
-    t->stream3_tvalid = 0;
+    t->s_stream0_tvalid = 0;
+    t->s_stream1_tvalid = 0;
+    t->s_stream2_tvalid = 0;
+    t->s_stream3_tvalid = 0;
 
-    t->stream_out_tready = 0;
+    t->m_stream_tready = 0;
 
     reset(t);
 
-    CHECK(t->stream_out_tvalid == 0);
-    CHECK(t->stream0_tready == 1);
-    CHECK(t->stream1_tready == 1);
-    CHECK(t->stream2_tready == 1);
-    CHECK(t->stream3_tready == 1);
+    CHECK(t->m_stream_tvalid == 0);
+    CHECK(t->s_stream0_tready == 1);
+    CHECK(t->s_stream1_tready == 1);
+    CHECK(t->s_stream2_tready == 1);
+    CHECK(t->s_stream3_tready == 1);
 
-    t->stream_out_tready = 0;
+    t->m_stream_tready = 0;
 
     // Make the fifo full
     for (uint32_t i = 0; i < 31; i++)
     {
-        t->stream0_tvalid = 1;
-        t->stream0_tdata = 0;
-        t->stream1_tvalid = 1;
-        t->stream1_tdata = 1;
-        t->stream2_tvalid = 1;
-        t->stream2_tdata = 2;
-        t->stream3_tvalid = 1;
-        t->stream3_tdata = 3;
+        t->s_stream0_tvalid = 1;
+        t->s_stream0_tdata = 0;
+        t->s_stream1_tvalid = 1;
+        t->s_stream1_tdata = 1;
+        t->s_stream2_tvalid = 1;
+        t->s_stream2_tdata = 2;
+        t->s_stream3_tvalid = 1;
+        t->s_stream3_tdata = 3;
         clk(t);
-        CHECK(t->stream_out_tvalid == 1);
-        CHECK(t->stream0_tready == 1);
-        CHECK(t->stream1_tready == 1);
-        CHECK(t->stream2_tready == 1);
-        CHECK(t->stream3_tready == 1);
+        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->s_stream0_tready == 1);
+        CHECK(t->s_stream1_tready == 1);
+        CHECK(t->s_stream2_tready == 1);
+        CHECK(t->s_stream3_tready == 1);
     }
 
     // Check that the fifos are full
     clk(t);
-    CHECK(t->stream_out_tvalid == 1);
-    CHECK(t->stream0_tready == 0);
-    CHECK(t->stream1_tready == 0);
-    CHECK(t->stream2_tready == 0);
-    CHECK(t->stream3_tready == 0);
+    CHECK(t->m_stream_tvalid == 1);
+    CHECK(t->s_stream0_tready == 0);
+    CHECK(t->s_stream1_tready == 0);
+    CHECK(t->s_stream2_tready == 0);
+    CHECK(t->s_stream3_tready == 0);
 
     delete t;
 }
@@ -221,65 +221,65 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
 {
     VStreamConcatFifo* t = new VStreamConcatFifo();
 
-    t->stream0_enable = 1;
-    t->stream1_enable = 1;
-    t->stream2_enable = 0;
-    t->stream3_enable = 1;
+    t->s_stream0_tenable = 1;
+    t->s_stream1_tenable = 1;
+    t->s_stream2_tenable = 0;
+    t->s_stream3_tenable = 1;
 
-    t->stream0_tvalid = 0;
-    t->stream1_tvalid = 0;
-    t->stream2_tvalid = 0;
-    t->stream3_tvalid = 0;
+    t->s_stream0_tvalid = 0;
+    t->s_stream1_tvalid = 0;
+    t->s_stream2_tvalid = 0;
+    t->s_stream3_tvalid = 0;
 
-    t->stream_out_tready = 0;
+    t->m_stream_tready = 0;
 
     reset(t);
 
-    CHECK(t->stream_out_tvalid == 0);
-    CHECK(t->stream0_tready == 1);
-    CHECK(t->stream1_tready == 1);
-    CHECK(t->stream2_tready == 1);
-    CHECK(t->stream3_tready == 1);
+    CHECK(t->m_stream_tvalid == 0);
+    CHECK(t->s_stream0_tready == 1);
+    CHECK(t->s_stream1_tready == 1);
+    CHECK(t->s_stream2_tready == 1);
+    CHECK(t->s_stream3_tready == 1);
 
-    t->stream_out_tready = 1;
+    t->m_stream_tready = 1;
 
     for (uint32_t i = 0; i < 2; i++)
     {
         // Push one byte into stream0
-        t->stream0_tvalid = 1;
-        t->stream0_tdata = 0;
+        t->s_stream0_tvalid = 1;
+        t->s_stream0_tdata = 0;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream0_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream0_tready == 1);
 
         // Push one byte into stream1
-        t->stream0_tvalid = 0;
-        t->stream1_tvalid = 1;
-        t->stream1_tdata = 1;
+        t->s_stream0_tvalid = 0;
+        t->s_stream1_tvalid = 1;
+        t->s_stream1_tdata = 1;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream1_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream1_tready == 1);
 
         // Push no byte into stream2
-        t->stream1_tvalid = 0;
-        t->stream2_tvalid = 0;
-        t->stream2_tdata = 2;
+        t->s_stream1_tvalid = 0;
+        t->s_stream2_tvalid = 0;
+        t->s_stream2_tdata = 2;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
-        CHECK(t->stream2_tready == 1);
+        CHECK(t->m_stream_tvalid == 0);
+        CHECK(t->s_stream2_tready == 1);
 
         // Push one byte into stream3
-        t->stream2_tvalid = 0;
-        t->stream3_tvalid = 1;
-        t->stream3_tdata = 3;
+        t->s_stream2_tvalid = 0;
+        t->s_stream3_tvalid = 1;
+        t->s_stream3_tdata = 3;
         clk(t);
-        CHECK(t->stream_out_tvalid == 1);
-        CHECK(t->stream_out_tdata == 0x03000100);
-        CHECK(t->stream3_tready == 1);
+        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->m_stream_tdata == 0x03000100);
+        CHECK(t->s_stream3_tready == 1);
 
-        t->stream3_tvalid = 0;
+        t->s_stream3_tvalid = 0;
         clk(t);
-        CHECK(t->stream_out_tvalid == 0);
+        CHECK(t->m_stream_tvalid == 0);
     }
 
     delete t;

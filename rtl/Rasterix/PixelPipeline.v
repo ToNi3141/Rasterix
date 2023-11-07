@@ -96,14 +96,14 @@ module PixelPipeline
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input10,
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input11,
 
-    output wire [PIXEL_WIDTH - 1 : 0]               framebuffer_fragmentColor,
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   framebuffer_index,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          framebuffer_screenPosY,
-    output wire [31 : 0]                            framebuffer_depth,
-    output wire                                     framebuffer_valid,
-    output wire                                     framebuffer_last,
-    output wire                                     framebuffer_keep
+    output wire [PIXEL_WIDTH - 1 : 0]               m_framebuffer_fragmentColor,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_framebuffer_index,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          m_framebuffer_screenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          m_framebuffer_screenPosY,
+    output wire [31 : 0]                            m_framebuffer_depth,
+    output wire                                     m_framebuffer_valid,
+    output wire                                     m_framebuffer_last,
+    output wire                                     m_framebuffer_keep
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
@@ -398,14 +398,14 @@ module PixelPipeline
         .color(step3_fragmentColor)
     );
 
-    assign framebuffer_fragmentColor = step3_fragmentColor;
-    assign framebuffer_index = step3_index;
-    assign framebuffer_screenPosX = step3_screenPosX;
-    assign framebuffer_screenPosY = step3_screenPosY;
-    assign framebuffer_depth = step3_depth;
-    assign framebuffer_valid = step3_valid;
-    assign framebuffer_keep = step3_keep;
-    assign framebuffer_last = step3_last;
+    assign m_framebuffer_fragmentColor = step3_fragmentColor;
+    assign m_framebuffer_index = step3_index;
+    assign m_framebuffer_screenPosX = step3_screenPosX;
+    assign m_framebuffer_screenPosY = step3_screenPosY;
+    assign m_framebuffer_depth = step3_depth;
+    assign m_framebuffer_valid = step3_valid;
+    assign m_framebuffer_keep = step3_keep;
+    assign m_framebuffer_last = step3_last;
 
 endmodule
 
