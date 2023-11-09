@@ -1,5 +1,5 @@
 
-- [Rasterix](#rasterix)
+- [About this Project](#about-this-project)
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Nexys Video Build](#nexys-video-build)
@@ -10,7 +10,11 @@
   - [Hardware Setup](#hardware-setup-1)
 - [Simulation Build](#simulation-build)
 - [Unit-Tests](#unit-tests)
-- [OS X Build](#os-x-build)
+- [Native Build](#native-build)
+  - [OSX](#osx)
+  - [Windows](#windows)
+  - [Linux](#linux)
+  - [Build](#build)
 - [Windows Build](#windows-build)
   - [Run Warcraft 3](#run-warcraft-3)
 - [RP2040 Build](#rp2040-build)
@@ -20,17 +24,27 @@
   - [Build Kernel Driver](#build-kernel-driver)
   - [Build SDK](#build-sdk)
   - [Build Examples](#build-examples)
+  - [Reload FPGA content without rebuilding the File System](#reload-fpga-content-without-rebuilding-the-file-system)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
 - [Missing Features](#missing-features)
-- [Next Steps](#next-steps)
+- [Next Possible Steps](#next-possible-steps)
 
-# Rasterix
-Rasterix is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
+# About this Project
+The Rasterix project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is currently able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The current implementations lacks several important features like mip mapping, logic ops and so on. It has more the nature of an prototype.
+The long term goal of this project is to recreate an open source fixed function renderer compatible with all fixed function APIs (OpenGL 1.5, OpenGL ES 1.1, Glide, Direct 3D 7.0) and is also suitable for embedded devices. The current focus is on OpenGL.
+
+It comes in two variants, `RasterixIF` and `RasterixEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations (because of AXI strobe limitations: stencil is applied on the whole value, not per bit, color mask does also not work per color, only on the whole fragment, no alpha channel), they are completely equal.
+
+`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA since the rendering is completely executed in static RAM resources of your FPGA. But the drawback is (you might already guess) the occupation of a lot of RAM resources of your FPGA.
+For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended. 
+
+The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
+
+`RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem since all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance but the the number of memory request the system can execute, is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around two times slower that the `RasterixIF`). Contrary to the `RasterixIF`, it don't uses FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests.
 
 # Working Games
 Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`)
@@ -52,19 +66,21 @@ git submodule update
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
 
-This build uses two TMUs.
+This builds the `RasterixIF` and uses two TMU. The framebuffers have a size of 256kB + 256kB + 64kB. You can build it in two variants, `rrxif` and `rrxef`. 
+
+__The `rrxif` variant is the default.__ If you want to use the `rrxef` variant, please note that you need to manually adapt the examples (use `RenderConfigRRXEFNexys` instead of `RenderConfigRRXIFNexys`).
 
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
 ## Hardware Setup
 Connect the Nexys Video via USB 3.0 to your computer (via the `UMFT600X-B` eval board). Connect to your Nexys Video a 1024x600 px monitor. If you don't have a monitor at hand with this resolution, you have to change the resolution in the `rtl/Display/Dvi.v` wrapper and in the software (for instance in `example/minimal/main.cpp`).
 
-<img src="screenshots/nexysvideo.jpg" width="40%"> 
+<img src="screenshots/nexysvideo.jpg" width="70%"> 
 
 ### UMFT600X-B Eval Kit Preparation
 The current implementation uses a `UMFT600X-B` eval board from FTDI with an FT600 to connect the Nexys with an PC. It offers a USB 3.0 connection and can be connected via the FMC connector.
@@ -86,25 +102,24 @@ Also the following solder bridges must be applied:
 # Arty Z7-20 Build
 The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petalinux running on the board. It will by default output a 1024x600px video signal on the HDMI OUT. Just connect there a monitor which can handle this resolution.
 
-This build uses one TMU.
+This builds the `RasterixEF` and uses two TMU.
 
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
-
 
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
-This build uses only one TMU with a maximum texture resolution of 128x128px.
+This builds the `RasterixIF` and uses one TMU with a maximum texture resolution of 128x128px. The framebuffers have a size of 64kB + 64kB + 16kB. 
 
 To build the binaries, use the following commands.
 ```sh
 cd rtl/top/Xilinx/CmodA7
-/Xilinx/Vivado/2020.1/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -143,7 +158,7 @@ A simulation can be used to easily develop and debug the renderer. The simulatio
 Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
 ```sh
 cd rtl/top/Verilator
-make
+make -f Makefile.linux rrxif -j
 ```
 Then build the Qt project. If the build was successful, you will see the following image on the screen, when you have started the application:
 
@@ -153,45 +168,61 @@ You see here a cube with enabled multi texturing and lighting. Below you can see
 
 It is likely, that your verialtor installation has another path than it is configured in the `qtRasterizer.pro` file. Let the variable  `VERILATOR_PATH` point to your verilator installation and rebuild the project.
 
-Note: Currently the build is only tested on OS X. The .pro file must be adapted for other operating systems.
+Note: Currently the build is only tested on OS X and linux. The .pro file must be adapted for other operating systems.
 
 There exists a second project `example/qtDebug/qtRasterizerGL`. This project uses the native OpenGL implementation of your machine. You can compare this output with the output of the simulation. The content must be equal.
+
 # Unit-Tests 
 Unit-tests for the Verilog code can be found under `./unittests`.
 
 Just type `make` in the unit-tests directory. It will run all available tests.
 
-# OS X Build
+# Native Build
+Uses the [Nexys Video Build](#nexys-video-build).
+## OSX
 Before configuring and starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 0.5.21. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
 
+## Windows
+Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
+
+## Linux
+Before configuring and starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 64bit X64 D3XX driver version 1.0.14. Unzip the archive and copy the `osx` directory to `lib/driver/ft60x/ftd3xx/`.
+
+## Build
 To build the library an the minimal example, switch to the source directory and type
 ```sh
 cd <rasterix_directory>
 cmake --preset native
-cd build/native
-make -j
+cmake --build build/native --config Release --parallel
 ```
+Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
+
 To run the minimal example, type
 ```
+cd build/native
 ./example/minimal/minimal
 ```
 into your terminal. It should now show an image similar to the simulation.
 
 # Windows Build
-Before starting the build, download from FTDI (https://ftdichip.com/drivers/d3xx-drivers/) the 32bit X86 D3XX driver version 1.3.0.4. Unzip the archive and copy the `win` directory to `lib/driver/ft60x/ftd3xx/`.
+Uses the [Nexys Video Build](#nexys-video-build).
+
+This is a more specific preset for windows which also builds WGL. Please refer to the [Windows](#windows) section as a precondition for this build.
 
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
 cmake --preset win32
-cd build/win32
+cmake --build .\build\win32\ --config Release --parallel
 ```
 
-Open the Visual Studio project in the `build/win32` directory and build it. Afterwards you will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
-```
+You will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
+```sh
+cd build\win32
 .\example\minimal\Release\minimal.exe
 ```
 into your terminal. It should now show an image similar to the simulation.
+Note: You need the `FTD3xx.dll` in you execution directory. It is automatically copied to the build directory.
 
 ## Run Warcraft 3 
 Only classic Warcraft 3 will work. Reforged does not. 
@@ -205,18 +236,21 @@ Warcraft 3 runs on low settings with around 20-30FPS.
 Switching the resolution and videos are currently not working.
 
 # RP2040 Build
+Uses the [CMOD A7 Build](#cmod-a7-build).
+
 Before you start to build, have a look at the rp2040 SDK readme (https://github.com/raspberrypi/pico-sdk). You have several options, which are supported. The option documented there is based on a already cloned SDK on your computer.
 
 Open a terminal. Use the following commands to build a rp2040 binary:
 ```sh
 cd <rasterix_directory>
 cmake --preset rp2040 -DPICO_SDK_PATH=<path_to_the_sdk>
-cd build/rp2040
-make -j
+cmake --build build/rp2040 --config Release --parallel
 ```
 You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
 
 # Zynq Build
+Uses the [Arty Z7-20 Build](#arty-z7-20-build).
+
 The Zynq build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
 
 ## Preparation SD Card
@@ -243,6 +277,9 @@ Use for `sdc2` the following label: `rootfs`
 ## Build Petalinux
 The following steps will give you a hint how to build and install petalinux. As precondition you must have build the hardware and have installed the petalinux tools.
 ```sh
+# Set environment variables (if not already done)
+source /opt/pkg/petalinux/settings.sh
+
 # Create project
 petalinux-create --type project --template zynq --name artyZ7_os_rrx
 cd artyZ7_os_rrx
@@ -288,22 +325,31 @@ petalinux-build --sdk
 # Install the SDK (for instance to /opt/petalinux/2022.2/)
 sh images/linux/sdk.sh
 ```
+
 ## Build Examples
 Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
 cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake
-cmake --build build/zynq
+cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
+
+## Reload FPGA content without rebuilding the File System
+To reload the FPGA content, copy the bin file (`scp synth/rasterix.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
+```sh
+sudo rmmod dma-proxy.ko
+sudo fpgautil -b rasterix.bin -f Full
+sudo insmod dma-proxy.ko
+```
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.
 ## Port the driver
 To port the driver to a new interface (like SPI, async FT245, or others) use the following steps:
-1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods. This is also performance critical. Use (if possible) non blocking methods. Otherwise the rendering is slowed down because the data transfer blocks further processing.
-2. Instantiate and use this class for the `Renderer`.
+1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods.
+2. Instantiate and use this class for the `Renderer`. If you use a microcontroller, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
 3. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system.
 4. Build
 
@@ -311,7 +357,7 @@ To port the driver to a new interface (like SPI, async FT245, or others) use the
 Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look at the build script and the block diagram from the Nexys Video in `rtl/top/Xilinx/NexysVideo` to have a real world example.
 1. Add the following directories to your project: `rtl/Rasterix`, `rtl/Util`, and `rtl/Float`.
 2. Instantiate the `Rasterix` module. When configuring the module, make sure that the following parameters are equal to the template parameter from `Renderer.hpp`:
-   1. `RenderConfig::CMD_STREAM_WIDTH` and `Rasterix::CMD_STREAM_WIDTH`. 
+   1. Write a RenderConfig specifically for your design. See `RenderConfigs.hpp` for examples and documentation.  
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory. Make sure to adapt the template parameter from the `Renderer.hpp` `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to the size of the connected memory. One page has 4 kB. If you have a connected memory with 512kB, you should set `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to 128.
 5. Connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a framebuffer or a display for instance).
@@ -324,11 +370,10 @@ The following features are currently missing compared to a real OpenGL implement
 - Mip Mapping
 - ...
 
-# Next Steps
+# Next Possible Steps
 - Add the possibility to use more than one render context
 - Implement Mip Mapping
-- Implement logic ops
-- Implement a texture cache to omit the `TextureBuffer`
+- Implement Logic Ops
+- Implement a texture cache to reduce the memory consuption by omitting the `TextureBuffer`
 - Implement higher texture resolutions
-- Port to an Zynq board (XC7Z020 for now)
 - ...

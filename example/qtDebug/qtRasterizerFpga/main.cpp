@@ -3,7 +3,8 @@
 #include <QApplication>
 
 double sc_time_stamp() {
-    return 0;
+    static double t = 0;
+    return ++t;
 }
 
 int main(int argc, char *argv[])

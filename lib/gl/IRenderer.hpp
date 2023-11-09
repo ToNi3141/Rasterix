@@ -145,15 +145,9 @@ public:
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     virtual bool drawTriangle(const Triangle& triangle) = 0;
 
-    /// @brief Switches between the front and the back list. The front list is the list which is uploaded to the
-    /// device. The back list is used to compile a new list.
-    /// @note: Only call this method when uploadDisplayList() has finished.
-    virtual void swapDisplayList() = 0;
-
-    /// @brief Uploads the front display list. It is safe to use this method in another thread. Just make sure 
-    /// that swapDisplayList() and this method are locked. Only call swapDisplayList() when this method has finished.
-    /// @see swapDisplayList()
-    virtual void uploadDisplayList() = 0;
+    /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
+    /// the framebuffers
+    virtual void render() = 0;
 
     /// @brief Creates a new texture 
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
@@ -267,14 +261,6 @@ public:
     /// @param y Y is the height of the produced image
     /// @return true if success
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) = 0;
-
-    /// @brief Enables a color buffer in memory. All rendered images will then be stored in this area.
-    /// @param addr The address of the color buffer.
-    virtual void enableColorBufferInMemory(const uint32_t addr) = 0;
-
-    /// @brief Enables the stream port of the hardware. All rendered images will be directly streamed.
-    /// The color buffer in memory is disabled.
-    virtual void enableColorBufferStream() = 0;
 
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel

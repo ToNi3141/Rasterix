@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 37 cycles
+// Depth: 32 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -30,7 +30,7 @@ module PixelPipeline
     // The minimum bit width which is required to contain the resolution
     parameter FRAMEBUFFER_INDEX_WIDTH = 14,
 
-    localparam DEPTH_WIDTH = 16,
+    parameter DEPTH_WIDTH = 16,
 
     parameter STENCIL_WIDTH = 4,
 
@@ -41,12 +41,15 @@ module PixelPipeline
 
     localparam TEX_ADDR_WIDTH = 16,
 
-    parameter ENABLE_SECOND_TMU = 1
+    parameter ENABLE_SECOND_TMU = 1,
+    
+    parameter SCREEN_POS_WIDTH = 11,
+
+    localparam KEEP_WIDTH = 1
 )
 (
     input  wire                                     aclk,
     input  wire                                     resetn,
-    output wire                                     pixelInPipeline,
 
     // Fog function LUT stream
     input  wire                                     s_fog_lut_axis_tvalid,
@@ -70,6 +73,7 @@ module PixelPipeline
     input  wire                                     s_axis_tvalid,
     output wire                                     s_axis_tready,
     input  wire                                     s_axis_tlast,
+    input  wire [KEEP_WIDTH - 1 : 0]                s_axis_tkeep,
     input  wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
 
     // Texture access
@@ -92,57 +96,22 @@ module PixelPipeline
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input10,
     input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input11,
 
-    // Frame buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexRead,
-    input  wire [PIXEL_WIDTH - 1 : 0]               colorIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   colorIndexWrite,
-    output wire                                     colorWriteEnable,
-    output wire [PIXEL_WIDTH - 1 : 0]               colorOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          colorOutScreenPosY,
-
-    // ZBuffer buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexRead,
-    input  wire [DEPTH_WIDTH - 1 : 0]               depthIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   depthIndexWrite,
-    output wire                                     depthWriteEnable,
-    output wire [DEPTH_WIDTH - 1 : 0]               depthOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          depthOutScreenPosY,
-
-    // Stencil buffer access
-    // Read
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexRead,
-    input  wire [STENCIL_WIDTH - 1 : 0]             stencilIn,
-    // Write
-    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   stencilIndexWrite,
-    output wire                                     stencilWriteEnable,
-    output wire [STENCIL_WIDTH - 1 : 0]             stencilOut,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosX,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]          stencilOutScreenPosY
+    output wire [PIXEL_WIDTH - 1 : 0]               m_framebuffer_fragmentColor,
+    output wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_framebuffer_index,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          m_framebuffer_screenPosX,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]          m_framebuffer_screenPosY,
+    output wire [31 : 0]                            m_framebuffer_depth,
+    output wire                                     m_framebuffer_valid,
+    output wire                                     m_framebuffer_last,
+    output wire                                     m_framebuffer_keep
 );
 `include "RegisterAndDescriptorDefines.vh"
 `include "AttributeInterpolatorDefines.vh"
-    localparam SCREEN_POS_WIDTH = ATTR_INTERP_AXIS_SCREEN_POS_SIZE;
 
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
 
     assign s_axis_tready = 1;
-
-    wire fragmentProcessed;
-    ValueTrack pixelTracker (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .sigIncommingValue(s_axis_tvalid & s_axis_tready),
-        .sigOutgoingValue(fragmentProcessed),
-        .valueInPipeline(pixelInPipeline)
-    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -163,6 +132,8 @@ module PixelPipeline
     wire [31 : 0]               step_convert_color_b;
     wire [31 : 0]               step_convert_color_a;
     wire                        step_convert_tvalid;
+    wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
+    wire                        step_convert_tlast;
 
     // Framebuffer Index
     ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
@@ -170,13 +141,17 @@ module PixelPipeline
 
     // Screen Poisition
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
-        convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_x));
+        convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_x));
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
-        convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: ATTR_INTERP_AXIS_SCREEN_POS_SIZE]), .out(step_convert_sreen_pos_y));
+        convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_y));
 
-    // Fragment valid flag
+    // Fragment stream flags
     ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
         convert_valid_delay (.clk(aclk), .in(s_axis_tvalid), .out(step_convert_tvalid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(4)) 
+        convert_keep_delay (.clk(aclk), .in(s_axis_tkeep), .out(step_convert_tkeep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+        convert_last_delay (.clk(aclk), .in(s_axis_tlast), .out(step_convert_tlast));
 
     // Depth
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
@@ -229,6 +204,8 @@ module PixelPipeline
     wire [PIXEL_WIDTH - 1 : 0]              step1_primaryColor;
     wire [31 : 0]                           step1_texture1S;
     wire [31 : 0]                           step1_texture1T;
+    wire [KEEP_WIDTH - 1 : 0]               step1_keep;
+    wire                                    step1_last;
 
 
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(11)) 
@@ -243,8 +220,13 @@ module PixelPipeline
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
+
     ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+        step1_keepDelay (.clk(aclk), .in(step_convert_tkeep), .out(step1_keep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+        step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
 
     ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
         step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
@@ -294,6 +276,8 @@ module PixelPipeline
     wire [31 : 0]                           step2_depth;
     wire [31 : 0]                           step2_depthWFloat;
     wire                                    step2_valid;
+    wire [KEEP_WIDTH - 1 : 0]               step2_keep;
+    wire                                    step2_last;
 
     generate
         if (ENABLE_SECOND_TMU)
@@ -310,8 +294,13 @@ module PixelPipeline
                 step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
             ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
                 step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
+
             ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
                 step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
+            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+                step2_keepDelay (.clk(aclk), .in(step1_keep), .out(step2_keep));
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+                step2_lastDelay (.clk(aclk), .in(step1_last), .out(step2_last));
 
             TextureMappingUnit #(
                 .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -353,6 +342,8 @@ module PixelPipeline
             assign step2_depth = step1_depth;
             assign step2_depthWFloat = step1_depthWFloat;
             assign step2_valid = step1_valid;
+            assign step2_keep = step1_keep;
+            assign step2_last = step1_last;
         end
     endgenerate
 
@@ -368,6 +359,8 @@ module PixelPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step3_screenPosY;
     wire [31 : 0]                           step3_depth;
     wire                                    step3_valid;
+    wire [KEEP_WIDTH - 1 : 0]               step3_keep;
+    wire                                    step3_last;
 
     ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(6)) 
         step3_indexDelay (.clk(aclk), .in(step2_index), .out(step3_index));
@@ -379,6 +372,10 @@ module PixelPipeline
         step3_depthDelay (.clk(aclk), .in(step2_depth), .out(step3_depth));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
         step3_validDelay (.clk(aclk), .in(step2_valid), .out(step3_valid));
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(6)) 
+        step3_keepDelay (.clk(aclk), .in(step2_keep), .out(step3_keep));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
+        step3_lastDelay (.clk(aclk), .in(step2_last), .out(step3_last));
 
     Fog #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
@@ -401,61 +398,15 @@ module PixelPipeline
         .color(step3_fragmentColor)
     );
 
-    ////////////////////////////////////////////////////////////////////////////
-    // STEP 4
-    // Access framebuffer, blend, test and save pixel in framebuffer
-    // Clocks: 5
-    ////////////////////////////////////////////////////////////////////////////
-    PerFragmentPipeline #(
-        .FRAMEBUFFER_INDEX_WIDTH(FRAMEBUFFER_INDEX_WIDTH),
-        .SCREEN_POS_WIDTH(SCREEN_POS_WIDTH),
-        .DEPTH_WIDTH(DEPTH_WIDTH),
-        .STENCIL_WIDTH(STENCIL_WIDTH),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) perFragmentPipeline (
-        .aclk(aclk),
-        .resetn(resetn),
+    assign m_framebuffer_fragmentColor = step3_fragmentColor;
+    assign m_framebuffer_index = step3_index;
+    assign m_framebuffer_screenPosX = step3_screenPosX;
+    assign m_framebuffer_screenPosY = step3_screenPosY;
+    assign m_framebuffer_depth = step3_depth;
+    assign m_framebuffer_valid = step3_valid;
+    assign m_framebuffer_keep = step3_keep;
+    assign m_framebuffer_last = step3_last;
 
-        .conf(confFragmentPipelineConfig),
-        .confFeatureEnable(confFeatureEnable),
-        .confStencilBufferConfig(confStencilBufferConfig),
-
-        .valid(step3_valid),
-        .fragmentColor(step3_fragmentColor),
-        .depth(step3_depth),
-        .index(step3_index),
-        .screenPosX(step3_screenPosX),
-        .screenPosY(step3_screenPosY),
-
-        .fragmentProcessed(fragmentProcessed),
-
-        .colorIndexRead(colorIndexRead),
-        .colorIn(colorIn),
-
-        .colorIndexWrite(colorIndexWrite),
-        .colorWriteEnable(colorWriteEnable),
-        .colorOut(colorOut),
-        .colorOutScreenPosX(colorOutScreenPosX),
-        .colorOutScreenPosY(colorOutScreenPosY),
-
-        .depthIndexRead(depthIndexRead),
-        .depthIn(depthIn),
-        
-        .depthIndexWrite(depthIndexWrite),
-        .depthWriteEnable(depthWriteEnable),
-        .depthOut(depthOut),
-        .depthOutScreenPosX(depthOutScreenPosX),
-        .depthOutScreenPosY(depthOutScreenPosY),
-
-        .stencilIndexRead(stencilIndexRead),
-        .stencilIn(stencilIn),
-        
-        .stencilIndexWrite(stencilIndexWrite),
-        .stencilWriteEnable(stencilWriteEnable),
-        .stencilOut(stencilOut),
-        .stencilOutScreenPosX(stencilOutScreenPosX),
-        .stencilOutScreenPosY(stencilOutScreenPosY)
-    );
 endmodule
 
 

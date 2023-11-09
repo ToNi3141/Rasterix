@@ -37,9 +37,14 @@ module top #(
     parameter FRAMEBUFFER_SIZE_IN_WORDS = `FRAMEBUFFER_SIZE_IN_WORDS;
     parameter TEXTURE_BUFFER_SIZE = 17;
 
+    initial
+    begin
+        $dumpfile("rr.vcd");
+        $dumpvars();
+    end
 
     localparam ID_WIDTH = 8;
-    localparam ADDR_WIDTH = 24;
+    localparam ADDR_WIDTH = 25;
     localparam DATA_WIDTH = CMD_STREAM_WIDTH;
     localparam STRB_WIDTH = CMD_STREAM_WIDTH / 8;
     wire [ID_WIDTH-1:0]    s_axi_awid;
@@ -122,13 +127,14 @@ module top #(
         .s_axi_rready(s_axi_rready)
     );
 
-    Rasterix #(
+    RasterixIF #(
         .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ENABLE_STENCIL_BUFFER(1),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
-        .TMU_COUNT(2)
+        .TMU_COUNT(2),
+        .ADDR_WIDTH(ADDR_WIDTH)
     ) rasterix (
         .aclk(aclk),
         .resetn(resetn),

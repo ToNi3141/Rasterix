@@ -50,6 +50,7 @@ static constexpr SCT OP_LOAD { 0xB000'0000 };
 static constexpr SCT OP_STREAM { 0x9000'0000 };
 static constexpr SCT OP_COMMIT_TO_STREAM { 0x6000'0000 };
 static constexpr SCT OP_COMMIT_TO_MEMORY { 0xE000'0000 };
+static constexpr SCT OP_STREAM_FROM_MEMORY { 0x7000'0000 };
 
 static constexpr std::size_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size and 4 byte aligned.
 

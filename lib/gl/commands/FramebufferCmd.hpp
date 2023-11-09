@@ -27,7 +27,6 @@
 namespace rr
 {
 
-template <typename RenderConfig>
 class FramebufferCmd
 {
     static constexpr uint32_t OP_FRAMEBUFFER { 0x2000'0000 };
@@ -54,7 +53,18 @@ public:
         }
     }
 
-    void enableCommit(const uint32_t size, const uint32_t addr, const bool commitToStream) 
+    void enableExternalFramebufferSwap()
+    {
+        m_op |= OP_FRAMEBUFFER_COMMIT;
+        m_dseOp = DSEC::OP_NOP;
+    }
+    void enableExternalCommit(const uint32_t size, const uint32_t addr)
+    {
+        m_op = 0;
+        m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
+        m_dseData = { { addr, size } };
+    }
+    void enableInternalCommit(const uint32_t size, const uint32_t addr, const bool commitToStream) 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
@@ -65,8 +75,7 @@ public:
         {
             m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
-        m_dseData = { { RenderConfig::GRAM_MEMORY_LOC + addr, size } };
-
+        m_dseData = { { addr, size } };
     }
     void enableMemset() 
     { 

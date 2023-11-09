@@ -1,6 +1,23 @@
 PROJ = Rasterizer
 
-all: dmaStreamEngine simulationILI9486 simulationILI9341 attributeInterpolator functionInterpolator textureSampler colorInterpolator texEnv stencilOp
+all: \
+	dmaStreamEngine  \
+	simulationILI9486 \
+	simulationILI9341 \
+	attributeInterpolator \
+	functionInterpolator \
+	textureSampler \
+	colorInterpolator \
+	texEnv \
+	stencilOp \
+	memoryReadRequestGenerator \
+	framebufferSerializer \
+	streamConcatFifo \
+	framebufferWriter \
+	framebufferWriterStrobeGen \
+	framebufferWriterClear \
+	framebufferReader \
+	streamSemaphore
  
 clean:
 	rm -rf obj_dir
@@ -49,6 +66,46 @@ stencilOp:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StencilOp.v --top-module StencilOp cpp/sim_StencilOp.cpp -I../rtl/Rasterix/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VStencilOp.mk
 	./obj_dir/VStencilOp
+
+memoryReadRequestGenerator:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/MemoryReadRequestGenerator.v --top-module MemoryReadRequestGenerator cpp/sim_MemoryReadRequestGenerator.cpp -I../rtl/Rasterix/
+	-make -C obj_dir -f VMemoryReadRequestGenerator.mk
+	./obj_dir/VMemoryReadRequestGenerator
+
+framebufferSerializer:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferSerializer.v --top-module FramebufferSerializer cpp/sim_FramebufferSerializer.cpp -I../rtl/Rasterix/
+	-make -C obj_dir -f VFramebufferSerializer.mk
+	./obj_dir/VFramebufferSerializer
+
+streamConcatFifo:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamConcatFifo.v --top-module StreamConcatFifo cpp/sim_StreamConcatFifo.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VStreamConcatFifo.mk
+	./obj_dir/VStreamConcatFifo
+
+framebufferWriter:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferWriter.v --top-module FramebufferWriter cpp/sim_FramebufferWriter.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VFramebufferWriter.mk
+	./obj_dir/VFramebufferWriter
+
+framebufferWriterStrobeGen:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferWriterStrobeGen.v --top-module FramebufferWriterStrobeGen cpp/sim_FramebufferWriterStrobeGen.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VFramebufferWriterStrobeGen.mk
+	./obj_dir/VFramebufferWriterStrobeGen
+
+framebufferWriterClear:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferWriterClear.v --top-module FramebufferWriterClear cpp/sim_FramebufferWriterClear.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/
+	-make -C obj_dir -f VFramebufferWriterClear.mk
+	./obj_dir/VFramebufferWriterClear
+
+framebufferReader:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/3rdParty/verilog-axis
+	-make -C obj_dir -f VFramebufferReader.mk
+	./obj_dir/VFramebufferReader
+
+streamSemaphore:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
+	-make -C obj_dir -f VStreamSemaphore.mk
+	./obj_dir/VStreamSemaphore
 
 .SECONDARY:
 .PHONY: all clean

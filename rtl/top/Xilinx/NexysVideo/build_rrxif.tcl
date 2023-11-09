@@ -1,4 +1,4 @@
-set SYNTH_OUT ./synth
+set SYNTH_OUT ./synth_if
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 file delete -force $SYNTH_OUT
@@ -32,12 +32,16 @@ read_verilog ./../../../../Rasterix/FunctionInterpolator.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
-read_verilog ./../../../../Rasterix/Rasterix.v
+read_verilog ./../../../../Rasterix/RasterixIF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerDefines.vh
 read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../Rasterix/RegisterBank.v
+read_verilog ./../../../../Rasterix/StencilOp.v
+read_verilog ./../../../../Rasterix/StreamBarrier.v
+read_verilog ./../../../../Rasterix/StreamConcatFifo.v
+read_verilog ./../../../../Rasterix/StreamSemaphore.v
 read_verilog ./../../../../Rasterix/TestFunc.v
 read_verilog ./../../../../Rasterix/TexEnv.v
 read_verilog ./../../../../Rasterix/TextureBuffer.v
@@ -57,6 +61,9 @@ read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/FT245S2AXIS.v
+read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
+read_verilog ./../../../../3rdParty/sfifo.v
+read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/ftdi_245fifo.sv
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/stream_async_fifo.sv
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/stream_wtrans.sv
@@ -70,7 +77,7 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_d
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
 read_xdc ./../Nexys-Video-Master.xdc
 
-source ../design_1.tcl
+source ../bd_rrxif/design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

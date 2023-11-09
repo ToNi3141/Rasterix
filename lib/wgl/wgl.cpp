@@ -11,7 +11,7 @@ using namespace rr;
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 FT60XBusConnector m_busConnector;
-Renderer<RenderConfigRasterixNexys> m_renderer{m_busConnector};
+Renderer<RenderConfigRRXIFNexys> m_renderer{m_busConnector};
 
 // Wiggle API
 // -------------------------------------------------------

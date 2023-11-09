@@ -22,5 +22,13 @@ if (CMAKE_HOST_APPLE)
     configure_file(${FTDI_DYNAMIC_LIBRARY_PATH} ${CMAKE_BINARY_DIR}/ COPYONLY)
 endif()
 
+if (CMAKE_HOST_UNIX)
+    set(FTDI_LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ftd3xx/linux-x86_64)
+    set(FTDI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ftd3xx/linux-x86_64)
+    set(FTDI_DYNAMIC_LIBRARY_PATH ${FTDI_LIBRARY_DIR}/libftd3xx.so)
+    set(FTDI_LIB_PATH ${FTDI_DYNAMIC_LIBRARY_PATH})
+    configure_file(${FTDI_DYNAMIC_LIBRARY_PATH} ${CMAKE_BINARY_DIR}/ COPYONLY)
+endif()
+
 target_link_libraries(ft60x PRIVATE ${FTDI_LIB_PATH} gl)
 target_include_directories(ft60x PUBLIC ${FTDI_INCLUDE_DIR} .)

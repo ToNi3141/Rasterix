@@ -27,7 +27,7 @@
 
 // Gets an signed integer S1.X and clamps and satureates it to a S0.Y number.
 `define ReduceAndSaturateSigned(FuncName, SubPixelWidthIn, SubPixelWidthOut) \
-    function [SubPixelWidthOut - 1 : 0] FuncName; \
+    function automatic [SubPixelWidthOut - 1 : 0] FuncName; \
         input [SubPixelWidthIn - 1 : 0] subpixel; \
         localparam Diff = SubPixelWidthIn - SubPixelWidthOut; \
         if (subpixel[SubPixelWidthIn - 1]) // check sign \
@@ -70,7 +70,7 @@
     endfunction
 
 `define Expand(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
-    function [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
+    function automatic [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
         input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
         localparam PIXEL_WIDTH = ElementWidth * NumberOfElements; \
         localparam DIFF_SUB_PIXEL_WIDTH = NewElementWidth - ElementWidth; \
@@ -201,12 +201,24 @@
 `define XXX2RGB565(FuncName, ElementWidth, NumberOfPixels) \
     function [(16 * NumberOfPixels) - 1 : 0] FuncName; \
         input [(ElementWidth * 3 * NumberOfPixels) - 1 : 0] pixels; \
-        integer i = 0; \
+        integer i; \
         for (i = 0; i < NumberOfPixels; i = i + 1) \
         begin \
             FuncName[(i * 16) + 0  +: 5] = pixels[(i * ElementWidth * 3) +                      (ElementWidth - 5) +: ElementWidth - (ElementWidth - 5)]; \
             FuncName[(i * 16) + 5  +: 6] = pixels[(i * ElementWidth * 3) + ElementWidth +       (ElementWidth - 6) +: ElementWidth - (ElementWidth - 6)]; \
             FuncName[(i * 16) + 11 +: 5] = pixels[(i * ElementWidth * 3) + (ElementWidth * 2) + (ElementWidth - 5) +: ElementWidth - (ElementWidth - 5)]; \
+        end \
+    endfunction
+
+`define RGB5652XXX(FuncName, ElementWidth, NumberOfPixels) \
+    function [(ElementWidth * 3 * NumberOfPixels) - 1 : 0] FuncName; \
+        input [15 : 0] pixels; \
+        integer i; \
+        for (i = 0; i < NumberOfPixels; i = i + 1) \
+        begin \
+            FuncName[(i * ElementWidth * 3)                      +: ElementWidth] = { pixels[(i * 16) + 0  +: 5], pixels[(i * 16) + 0  + (ElementWidth - 6) +: (ElementWidth - 5)] }; \
+            FuncName[(i * ElementWidth * 3) + ElementWidth       +: ElementWidth] = { pixels[(i * 16) + 5  +: 6], pixels[(i * 16) + 5  + (ElementWidth - 5) +: (ElementWidth - 6)] }; \
+            FuncName[(i * ElementWidth * 3) + (ElementWidth * 2) +: ElementWidth] = { pixels[(i * 16) + 11 +: 5], pixels[(i * 16) + 11 + (ElementWidth - 6) +: (ElementWidth - 5)] }; \
         end \
     endfunction
 
