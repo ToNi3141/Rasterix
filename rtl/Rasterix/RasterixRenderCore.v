@@ -617,7 +617,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
-    // Clocks: 45
+    // Clocks: 41 + n
     ////////////////////////////////////////////////////////////////////////////
     wire [(RASTERIZER_AXIS_PARAMETER_SIZE * 4) - 1 : 0] mem_index;
     wire [ 3 : 0]                                       mem_valid;
@@ -719,11 +719,12 @@ module RasterixRenderCore #(
         .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
     );
+    defparam attributeInterpolator.FLOAT_SIZE = 24;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 32
+    // Clocks: 30
     ////////////////////////////////////////////////////////////////////////////
     PixelPipeline pixelPipeline (    
         .aclk(aclk),
@@ -836,7 +837,10 @@ module RasterixRenderCore #(
         .m_stream_tdata(fragment_stream_out_tdata),
         .m_stream_tready(fragment_stream_out_tready)
     );
-    defparam streamConcatFifo.FIFO_DEPTH_POW2 = MAX_NUMBER_OF_PIXELS_LG;
+    defparam streamConcatFifo.FIFO_DEPTH0_POW2 = (ENABLE_FLOW_CTRL) ? MAX_NUMBER_OF_PIXELS_LG : 0;
+    defparam streamConcatFifo.FIFO_DEPTH1_POW2 = MAX_NUMBER_OF_PIXELS_LG;
+    defparam streamConcatFifo.FIFO_DEPTH2_POW2 = MAX_NUMBER_OF_PIXELS_LG;
+    defparam streamConcatFifo.FIFO_DEPTH3_POW2 = MAX_NUMBER_OF_PIXELS_LG;
     defparam streamConcatFifo.STREAM0_WIDTH = FRAGMENT_STREAM_WIDTH;
     defparam streamConcatFifo.STREAM1_WIDTH = PIXEL_WIDTH;
     defparam streamConcatFifo.STREAM2_WIDTH = DEPTH_WIDTH;

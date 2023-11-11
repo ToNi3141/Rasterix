@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 32 cycles
+// Depth: 30 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -135,50 +135,52 @@ module PixelPipeline
     wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
     wire                        step_convert_tlast;
 
+    parameter CONV_DELAY = 0;
+
     // Framebuffer Index
-    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE), .DELAY(2 + CONV_DELAY)) 
         convert_framebuffer_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_FRAMEBUFFER_INDEX_POS +: ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE]), .out(step_convert_framebuffer_index));
 
     // Screen Poisition
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2 + CONV_DELAY)) 
         convert_screen_pos_x_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_X_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_x));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2 + CONV_DELAY)) 
         convert_screen_pos_y_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_SCREEN_XY_POS + ATTR_INTERP_AXIS_SCREEN_Y_POS +: SCREEN_POS_WIDTH]), .out(step_convert_sreen_pos_y));
 
     // Fragment stream flags
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(2 + CONV_DELAY)) 
         convert_valid_delay (.clk(aclk), .in(s_axis_tvalid), .out(step_convert_tvalid));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(2 + CONV_DELAY)) 
         convert_keep_delay (.clk(aclk), .in(s_axis_tkeep), .out(step_convert_tkeep));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(2 + CONV_DELAY)) 
         convert_last_delay (.clk(aclk), .in(s_axis_tlast), .out(step_convert_tlast));
 
     // Depth
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(4)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(2 + CONV_DELAY)) 
         convert_depth_delay (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_W_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-DEPTH_WIDTH))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-DEPTH_WIDTH), .DELAY(CONV_DELAY))
         convert_floatToInt_DepthZ (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_DEPTH_Z_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_depth_z)); 
 
     // Tex Coords TMU0
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_tmu0_textureS (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE0_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture0_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu0_textureS (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE0_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture0_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
         convert_floatToInt_tmu0_textureT (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE0_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture0_t));   
 
     // Tex Coords TMU1
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
-        convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE1_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE)+: FLOAT_SIZE]), .out(step_convert_texture1_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE1_S_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture1_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
         convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_TEXTURE1_T_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_texture1_t));   
   
     // Fragment Color
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
         convert_floatToInt_ColorR (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_R_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_r));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
         convert_floatToInt_ColorG (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_G_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_g));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
         convert_floatToInt_ColorB (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_B_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_b));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16))
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
         convert_floatToInt_ColorA (.clk(aclk), .in(s_axis_tdata[ATTR_INTERP_AXIS_COLOR_A_POS + (ATTR_INTERP_AXIS_VERTEX_ATTRIBUTE_SIZE - FLOAT_SIZE) +: FLOAT_SIZE]), .out(step_convert_color_a));   
 
     wire [PIXEL_WIDTH - 1 : 0] convert_primary_color = {
@@ -199,7 +201,7 @@ module PixelPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosY;
     wire [31 : 0]                           step1_depth;
-    wire [31 : 0]                           step1_depthWFloat;
+    wire [FLOAT_SIZE - 1 : 0]               step1_depthWFloat;
     wire                                    step1_valid;
     wire [PIXEL_WIDTH - 1 : 0]              step1_primaryColor;
     wire [31 : 0]                           step1_texture1S;
@@ -216,7 +218,7 @@ module PixelPipeline
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
         step1_screenPosYDelay (.clk(aclk), .in(step_convert_sreen_pos_y), .out(step1_screenPosY));
 
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
@@ -274,7 +276,7 @@ module PixelPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosY;
     wire [31 : 0]                           step2_depth;
-    wire [31 : 0]                           step2_depthWFloat;
+    wire [FLOAT_SIZE : 0]                   step2_depthWFloat;
     wire                                    step2_valid;
     wire [KEEP_WIDTH - 1 : 0]               step2_keep;
     wire                                    step2_last;
@@ -290,7 +292,7 @@ module PixelPipeline
             ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
                 step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
 
-            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
                 step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
             ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
                 step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
@@ -368,7 +370,7 @@ module PixelPipeline
         step3_screenPosXDelay (.clk(aclk), .in(step2_screenPosX), .out(step3_screenPosX));
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(6)) 
         step3_screenPosYDelay (.clk(aclk), .in(step2_screenPosY), .out(step3_screenPosY));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(6)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(6)) 
         step3_depthDelay (.clk(aclk), .in(step2_depth), .out(step3_depth));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(6)) 
         step3_validDelay (.clk(aclk), .in(step2_valid), .out(step3_valid));
@@ -392,7 +394,7 @@ module PixelPipeline
         .confFogColor(confFragmentPipelineFogColor),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_FOG_POS]),
 
-        .depth(step2_depthWFloat),
+        .depth({step2_depthWFloat, {(32 - FLOAT_SIZE){1'b0}}}), // Fullup mantissa to cast back to 32 bit float
         .texelColor(step2_fragmentColor),
 
         .color(step3_fragmentColor)

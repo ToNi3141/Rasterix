@@ -176,7 +176,7 @@ void calculateVertexAttributes(Attributes attr,
 
 TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolator]")
 {
-    static const uint32_t CLOCK_DELAY = 45;
+    static const uint32_t CLOCK_DELAY = 41;
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
     // The output port is always ready. We don't test interrupted transfers right now.
