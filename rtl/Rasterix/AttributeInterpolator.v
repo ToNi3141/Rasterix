@@ -21,6 +21,8 @@
 // Depth: 41 cycles
 module AttributeInterpolator #(
     parameter FLOAT_SIZE = 32,
+    parameter INDEX_WIDTH = 32,
+    parameter SCREEN_POS_WIDTH = 11,
 
     localparam ATTRIBUTE_SIZE = 32,
     localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
@@ -35,18 +37,34 @@ module AttributeInterpolator #(
     output wire                             pixelInPipeline,
 
     // Pixel Stream
-    input  wire                             s_axis_tvalid,
-    output wire                             s_axis_tready,
-    input  wire                             s_axis_tlast,
-    input  wire [KEEP_WIDTH - 1 : 0]        s_axis_tkeep,
-    input  wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] s_axis_tdata,
+    input  wire                             s_attrb_tvalid,
+    output wire                             s_attrb_tready,
+    input  wire                             s_attrb_tlast,
+    input  wire [KEEP_WIDTH - 1 : 0]        s_attrb_tkeep,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tbbx,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tbby,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspx,
+    input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspy,
+    input  wire [INDEX_WIDTH - 1 : 0]       s_attrb_tindex,
 
     // Pixel Stream Interpolated
-    output wire                             m_axis_tvalid,
-    input  wire                             m_axis_tready,
-    output wire                             m_axis_tlast,
-    output wire [KEEP_WIDTH - 1 : 0]        m_axis_tkeep,
-    output wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
+    output wire                             m_attrb_tvalid,
+    input  wire                             m_attrb_tready,
+    output wire                             m_attrb_tlast,
+    output wire [KEEP_WIDTH - 1 : 0]        m_attrb_tkeep,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspx,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspy,
+    output wire [INDEX_WIDTH - 1 : 0]       m_attrb_tindex,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_w,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_z,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_t,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_s,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_t,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_s,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_a,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_b,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_g,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_r,
 
     // Attributes
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex0_s,
@@ -86,18 +104,11 @@ module AttributeInterpolator #(
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_b_inc_y,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_a_inc_y
 );
-    localparam SCREEN_X_POS = 0;
-    localparam SCREEN_Y_POS = 16;
-    localparam AXIS_SCREEN_POS_SIZE = 16;
-    localparam AXIS_BOUNDING_BOX_POS = 0;
-    localparam AXIS_SCREEN_POS = 32;
-    localparam AXIS_FRAMEBUFFER_INDEX_POS = 64;
-
     localparam EXPONENT_SIZE = 8; // Size of a IEEE 754 32 bit float
     localparam MANTISSA_SIZE = FLOAT_SIZE - 1 - EXPONENT_SIZE; // Calculate the mantissa size by substracting from the FLOAT_SIZE the sign and exponent
     localparam FLOAT_SIZE_DIFF = ATTRIBUTE_SIZE - FLOAT_SIZE;
 
-    localparam INT_32_DIFF = ATTRIBUTE_SIZE - AXIS_SCREEN_POS_SIZE;
+    localparam INT_32_DIFF = ATTRIBUTE_SIZE - SCREEN_POS_WIDTH;
 
     localparam FLOAT_MUL_DELAY = 0;
     localparam RECIP_DELAY = 25;
@@ -143,52 +154,52 @@ module AttributeInterpolator #(
     wire [FLOAT_SIZE - 1 : 0] inc_color_a_y     = color_a_inc_y[FLOAT_SIZE_DIFF +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
 
     // Screen position
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] screen_pos_x = s_axis_tdata[AXIS_SCREEN_POS + SCREEN_X_POS +: AXIS_SCREEN_POS_SIZE];
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] screen_pos_y = s_axis_tdata[AXIS_SCREEN_POS + SCREEN_Y_POS +: AXIS_SCREEN_POS_SIZE];
+    wire [SCREEN_POS_WIDTH - 1 : 0] screen_pos_x = s_attrb_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] screen_pos_y = s_attrb_tspy;
 
     // Bounding box position
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] bounding_box_pos_x = s_axis_tdata[AXIS_BOUNDING_BOX_POS + SCREEN_X_POS +: AXIS_SCREEN_POS_SIZE];
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] bounding_box_pos_y = s_axis_tdata[AXIS_BOUNDING_BOX_POS + SCREEN_Y_POS +: AXIS_SCREEN_POS_SIZE];
+    wire [SCREEN_POS_WIDTH - 1 : 0] bounding_box_pos_x = s_attrb_tbbx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] bounding_box_pos_y = s_attrb_tbby;
 
     // Static attributes
-    wire [ATTRIBUTE_SIZE - 1 : 0] framebuffer_index = s_axis_tdata[AXIS_FRAMEBUFFER_INDEX_POS +: ATTRIBUTE_SIZE];
+    wire [INDEX_WIDTH - 1 : 0] framebuffer_index = s_attrb_tindex;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0 Setup delays for pass through values
     ////////////////////////////////////////////////////////////////////////////
-    wire [ATTRIBUTE_SIZE - 1 : 0] step_0_framebuffer_index; 
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] step_0_screen_pos_x; 
-    wire [AXIS_SCREEN_POS_SIZE - 1 : 0] step_0_screen_pos_y; 
+    wire [INDEX_WIDTH - 1 : 0] step_0_framebuffer_index; 
+    wire [SCREEN_POS_WIDTH - 1 : 0] step_0_screen_pos_x; 
+    wire [SCREEN_POS_WIDTH - 1 : 0] step_0_screen_pos_y; 
     wire step_0_tvalid;
     wire step_0_tlast;
     wire [KEEP_WIDTH - 1 : 0] step_0_tkeep;
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_framebuffer_index (.clk(aclk), .in(framebuffer_index), .out(step_0_framebuffer_index));
 
-    ValueDelay #(.VALUE_SIZE(AXIS_SCREEN_POS_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_screen_pos_x (.clk(aclk), .in(screen_pos_x), .out(step_0_screen_pos_x));
-    ValueDelay #(.VALUE_SIZE(AXIS_SCREEN_POS_SIZE), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_screen_pos_y (.clk(aclk), .in(screen_pos_y), .out(step_0_screen_pos_y));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
-        step_0_delay_tvalid (.clk(aclk), .in(s_axis_tvalid), .out(step_0_tvalid));
+        step_0_delay_tvalid (.clk(aclk), .in(s_attrb_tvalid), .out(step_0_tvalid));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
-        step_0_delay_tlast (.clk(aclk), .in(s_axis_tlast), .out(step_0_tlast));
+        step_0_delay_tlast (.clk(aclk), .in(s_attrb_tlast), .out(step_0_tlast));
 
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY))
-        step_0_delay_tkeep(.clk(aclk), .in(s_axis_tkeep), .out(step_0_tkeep));
+        step_0_delay_tkeep(.clk(aclk), .in(s_attrb_tkeep), .out(step_0_tkeep));
 
     ValueTrack pixelTracker (
         .aclk(aclk),
         .resetn(resetn),
         
-        .sigIncommingValue(s_axis_tvalid & s_axis_tready),
-        .sigOutgoingValue(m_axis_tvalid & m_axis_tready),
+        .sigIncommingValue(s_attrb_tvalid & s_attrb_tready),
+        .sigOutgoingValue(m_attrb_tvalid & m_attrb_tready),
         .valueInPipeline(pixelInPipeline)
     );
 
-    assign s_axis_tready = 1;
+    assign s_attrb_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1 Convert bounding box positions integers to float 
@@ -472,22 +483,21 @@ module AttributeInterpolator #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7 Output calculated values
     ////////////////////////////////////////////////////////////////////////////
-    assign m_axis_tvalid = step_0_tvalid;
-    assign m_axis_tlast = step_0_tlast;
-    assign m_axis_tkeep = step_0_tkeep;
-    assign m_axis_tdata = {
-        step_0_framebuffer_index,
-        {step_0_screen_pos_y, step_0_screen_pos_x},
-        {step_6_depth_w, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_texture0_t, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_texture0_s, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_texture1_t, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_texture1_s, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_depth_z, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_color_a, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_color_b, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_color_g, {FLOAT_SIZE_DIFF{1'b0}}},
-        {step_6_color_r, {FLOAT_SIZE_DIFF{1'b0}}}
-    };
+    assign m_attrb_tvalid = step_0_tvalid;
+    assign m_attrb_tlast = step_0_tlast;
+    assign m_attrb_tkeep = step_0_tkeep;
+    assign m_attrb_tspx = step_0_screen_pos_x;
+    assign m_attrb_tspy = step_0_screen_pos_y;
+    assign m_attrb_tindex = step_0_framebuffer_index;
+    assign m_attrb_tdepth_w = {step_6_depth_w, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_tdepth_z = {step_6_depth_z, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_ttexture0_t = {step_6_texture0_t, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_ttexture0_s = {step_6_texture0_s, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_ttexture1_t = {step_6_texture1_t, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_ttexture1_s = {step_6_texture1_s, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_tcolor_a = {step_6_color_a, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_tcolor_b = {step_6_color_b, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_tcolor_g = {step_6_color_g, {FLOAT_SIZE_DIFF{1'b0}}};
+    assign m_attrb_tcolor_r = {step_6_color_r, {FLOAT_SIZE_DIFF{1'b0}}};
 
 endmodule

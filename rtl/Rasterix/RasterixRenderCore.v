@@ -163,6 +163,7 @@ module RasterixRenderCore #(
 
 
     localparam TEX_ADDR_WIDTH = 16;
+    localparam ATTRIBUTE_SIZE = 32;
     
 
     // The bit width of the texture stream
@@ -245,30 +246,54 @@ module RasterixRenderCore #(
     wire            rasterizerRunning;
 
     // Attribute interpolator
-    wire            m_attr_inter_axis_tvalid;
-    wire            m_attr_inter_axis_tready;
-    wire            m_attr_inter_axis_tlast;
-    wire            m_attr_inter_axis_tkeep;
-    wire [ATTR_INTERP_AXIS_PARAMETER_SIZE - 1 : 0] m_attr_inter_axis_tdata;
+    wire                            alrp_tvalid;
+    wire                            alrp_tready;
+    wire                            alrp_tlast;
+    wire                            alrp_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspy;
+    wire [INDEX_WIDTH - 1 : 0]      alrp_tindex;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_w;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_z;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_a;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_b;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_g;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_r;
 
     // Rasterizer
-    wire            m_rasterizer_axis_tvalid;
-    wire            m_rasterizer_axis_tready;
-    wire            m_rasterizer_axis_tlast;
-    wire            m_rasterizer_axis_tkeep;
-    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_axis_tdata;
+    wire                            rasterizer_tvalid;
+    wire                            rasterizer_tready;
+    wire                            rasterizer_tlast;
+    wire                            rasterizer_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tbbx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tbby;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspy;
+    wire [INDEX_WIDTH - 1 : 0]      rasterizer_tindex;
 
-    wire            m_rasterizer_sem_axis_tvalid;
-    wire            m_rasterizer_sem_axis_tlast;
-    wire            m_rasterizer_sem_axis_tkeep;
-    wire            m_rasterizer_sem_axis_tready;
-    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_sem_axis_tdata;
+    wire                            rasterizer_sem_tvalid;
+    wire                            rasterizer_sem_tlast;
+    wire                            rasterizer_sem_tkeep;
+    wire                            rasterizer_sem_tready;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tbbx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tbby;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tspy;
+    wire [INDEX_WIDTH - 1 : 0]      rasterizer_sem_tindex;;
 
-    wire            m_rasterizer_sbr_axis_tvalid;
-    wire            m_rasterizer_sbr_axis_tready;
-    wire            m_rasterizer_sbr_axis_tlast;
-    wire            m_rasterizer_sbr_axis_tkeep;
-    wire [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_rasterizer_sbr_axis_tdata;
+    wire                            rasterizer_sbr_tvalid;
+    wire                            rasterizer_sbr_tready;
+    wire                            rasterizer_sbr_tlast;
+    wire                            rasterizer_sbr_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tbbx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tbby;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tspy;
+    wire [INDEX_WIDTH - 1 : 0]      rasterizer_sbr_tindex;
 
     // Steams
     wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_xxx_axis_tdata;
@@ -511,14 +536,8 @@ module RasterixRenderCore #(
         .startRendering(startRendering),
 
         .yOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-        .xResolution(confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE]),
-        .yResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
-
-        .m_axis_tvalid(m_rasterizer_axis_tvalid),
-        .m_axis_tready(m_rasterizer_axis_tready),
-        .m_axis_tlast(m_rasterizer_axis_tlast),
-        .m_axis_tkeep(m_rasterizer_axis_tkeep),
-        .m_axis_tdata(m_rasterizer_axis_tdata),
+        .xResolution(confRenderResolution[RENDER_CONFIG_X_POS +: SCREEN_POS_WIDTH]),
+        .yResolution(confRenderResolution[RENDER_CONFIG_Y_POS +: SCREEN_POS_WIDTH]),
 
         .bbStart(triangleParams[TRIANGLE_STREAM_BB_START * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .bbEnd(triangleParams[TRIANGLE_STREAM_BB_END * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -530,11 +549,21 @@ module RasterixRenderCore #(
         .w2IncX(triangleParams[TRIANGLE_STREAM_INC_W2_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .w0IncY(triangleParams[TRIANGLE_STREAM_INC_W0_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .w1IncY(triangleParams[TRIANGLE_STREAM_INC_W1_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
+        .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+
+        .m_rr_tvalid(rasterizer_tvalid),
+        .m_rr_tready(rasterizer_tready),
+        .m_rr_tlast(rasterizer_tlast),
+        .m_rr_tkeep(rasterizer_tkeep),
+        .m_rr_tbbx(rasterizer_tbbx),
+        .m_rr_tbby(rasterizer_tbby),
+        .m_rr_tspx(rasterizer_tspx),
+        .m_rr_tspy(rasterizer_tspy),
+        .m_rr_tindex(rasterizer_tindex)
     );
-    defparam rop.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-    defparam rop.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam rop.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
+    defparam rop.X_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rop.INDEX_WIDTH = INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -556,23 +585,35 @@ module RasterixRenderCore #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_axis_tvalid(m_rasterizer_sem_axis_tvalid),
-        .m_axis_tlast(m_rasterizer_sem_axis_tlast),
-        .m_axis_tdata(m_rasterizer_sem_axis_tdata),
-        .m_axis_tkeep(m_rasterizer_sem_axis_tkeep),
-        .m_axis_tready(m_rasterizer_sem_axis_tready),
+        .s_axis_tvalid(rasterizer_tvalid),
+        .s_axis_tready(rasterizer_tready),
+        .s_axis_tlast(rasterizer_tlast),
+        .s_axis_tdata({
+            rasterizer_tbbx,
+            rasterizer_tbby,
+            rasterizer_tspx,
+            rasterizer_tspy,
+            rasterizer_tindex
+        }),
+        .s_axis_tkeep(rasterizer_tkeep),
 
-        .s_axis_tvalid(m_rasterizer_axis_tvalid),
-        .s_axis_tready(m_rasterizer_axis_tready),
-        .s_axis_tlast(m_rasterizer_axis_tlast),
-        .s_axis_tdata(m_rasterizer_axis_tdata),
-        .s_axis_tkeep(m_rasterizer_axis_tkeep),
+        .m_axis_tvalid(rasterizer_sem_tvalid),
+        .m_axis_tready(rasterizer_sem_tready),
+        .m_axis_tlast(rasterizer_sem_tlast),
+        .m_axis_tdata({
+            rasterizer_sem_tbbx,
+            rasterizer_sem_tbby,
+            rasterizer_sem_tspx,
+            rasterizer_sem_tspy,
+            rasterizer_sem_tindex
+        }),
+        .m_axis_tkeep(rasterizer_sem_tkeep),
 
         .sigRelease(fragmentProcessed),
         .released(pipelineEmpty)
     );
     defparam ssem.MAX_NUMBER_OF_ELEMENTS = 2 ** MAX_NUMBER_OF_PIXELS_LG;
-    defparam ssem.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
     defparam ssem.KEEP_WIDTH = 1;
 
     generate
@@ -587,30 +628,46 @@ module RasterixRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .m_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
-                .m_axis_tready(m_rasterizer_sbr_axis_tready),
-                .m_axis_tlast(m_rasterizer_sbr_axis_tlast),
-                .m_axis_tdata(m_rasterizer_sbr_axis_tdata),
-                .m_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
+                .s_axis_tvalid(rasterizer_sem_tvalid),
+                .s_axis_tready(rasterizer_sem_tready),
+                .s_axis_tlast(rasterizer_sem_tlast),
+                .s_axis_tdata({
+                    rasterizer_sem_tbbx,
+                    rasterizer_sem_tbby,
+                    rasterizer_sem_tspx,
+                    rasterizer_sem_tspy,
+                    rasterizer_sem_tindex
+                }),
+                .s_axis_tkeep(rasterizer_sem_tkeep),
 
-                .s_axis_tvalid(m_rasterizer_sem_axis_tvalid),
-                .s_axis_tready(m_rasterizer_sem_axis_tready),
-                .s_axis_tlast(m_rasterizer_sem_axis_tlast),
-                .s_axis_tdata(m_rasterizer_sem_axis_tdata),
-                .s_axis_tkeep(m_rasterizer_sem_axis_tkeep),
+                .m_axis_tvalid(rasterizer_sbr_tvalid),
+                .m_axis_tready(rasterizer_sbr_tready),
+                .m_axis_tlast(rasterizer_sbr_tlast),
+                .m_axis_tdata({
+                    rasterizer_sbr_tbbx,
+                    rasterizer_sbr_tbby,
+                    rasterizer_sbr_tspx,
+                    rasterizer_sbr_tspy,
+                    rasterizer_sbr_tindex
+                }),
+                .m_axis_tkeep(rasterizer_sbr_tkeep),
 
                 .stall(fifosAlmostFull)
             );
-            defparam sbr.STREAM_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
             defparam sbr.KEEP_WIDTH = 1;
         end
         else
         begin
-            assign m_rasterizer_sbr_axis_tvalid = m_rasterizer_sem_axis_tvalid;
-            assign m_rasterizer_sem_axis_tready = m_rasterizer_sbr_axis_tready;
-            assign m_rasterizer_sbr_axis_tlast = m_rasterizer_sem_axis_tlast;
-            assign m_rasterizer_sbr_axis_tdata = m_rasterizer_sem_axis_tdata;
-            assign m_rasterizer_sbr_axis_tkeep = m_rasterizer_sem_axis_tkeep;
+            assign rasterizer_sbr_tvalid = rasterizer_sem_tvalid;
+            assign rasterizer_sem_tready = rasterizer_sbr_tready;
+            assign rasterizer_sbr_tlast = rasterizer_sem_tlast;
+            assign rasterizer_sbr_tbbx = rasterizer_sem_tbbx;
+            assign rasterizer_sbr_tbby = rasterizer_sem_tbby;
+            assign rasterizer_sbr_tspx = rasterizer_sem_tspx;
+            assign rasterizer_sbr_tspy = rasterizer_sem_tspy;
+            assign rasterizer_sbr_tindex = rasterizer_sem_tindex;
+            assign rasterizer_sbr_tkeep = rasterizer_sem_tkeep;
         end
     endgenerate
     
@@ -619,45 +676,81 @@ module RasterixRenderCore #(
     // Interpolation of attributes
     // Clocks: 41 + n
     ////////////////////////////////////////////////////////////////////////////
-    wire [(RASTERIZER_AXIS_PARAMETER_SIZE * 4) - 1 : 0] mem_index;
-    wire [ 3 : 0]                                       mem_valid;
-    wire [ 3 : 0]                                       mem_last;
-    wire [ 3 : 0]                                       mem_keep;
-    wire                                                mem_arready_attrib;
-    assign m_color_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 3) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign m_depth_araddr     = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 2) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign m_stencil_araddr   = mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 1) + RASTERIZER_AXIS_FRAMEBUFFER_INDEX_POS +: INDEX_WIDTH];
-    assign m_color_arvalid    = mem_valid[3] & colorBufferEnable;
-    assign m_depth_arvalid    = mem_valid[2] & depthBufferEnable;
-    assign m_stencil_arvalid  = mem_valid[1] & stencilBufferEnable;
-    assign m_color_arlast     = mem_last[3];
-    assign m_depth_arlast     = mem_last[2];
-    assign m_stencil_arlast   = mem_last[1];
+    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   mem_tbbx;
+    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   mem_tbby;
+    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   mem_tspx;
+    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   mem_tspy;
+    wire [(INDEX_WIDTH * 4) - 1 : 0]        mem_tindex;
+    wire [ 3 : 0]                           mem_tvalid;
+    wire [ 3 : 0]                           mem_tlast;
+    wire [ 3 : 0]                           mem_tkeep;
+    wire                                    mem_arready_attrib;
+    assign m_color_araddr     = mem_tindex[INDEX_WIDTH * 3 +: INDEX_WIDTH];
+    assign m_depth_araddr     = mem_tindex[INDEX_WIDTH * 2 +: INDEX_WIDTH];
+    assign m_stencil_araddr   = mem_tindex[INDEX_WIDTH * 1 +: INDEX_WIDTH];
+    assign m_color_arvalid    = mem_tvalid[3] & colorBufferEnable;
+    assign m_depth_arvalid    = mem_tvalid[2] & depthBufferEnable;
+    assign m_stencil_arvalid  = mem_tvalid[1] & stencilBufferEnable;
+    assign m_color_arlast     = mem_tlast[3];
+    assign m_depth_arlast     = mem_tlast[2];
+    assign m_stencil_arlast   = mem_tlast[1];
 
     axis_broadcast axisBroadcast (
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata(m_rasterizer_sbr_axis_tdata),
-        .s_axis_tlast(m_rasterizer_sbr_axis_tlast),
-        .s_axis_tvalid(m_rasterizer_sbr_axis_tvalid),
-        .s_axis_tready(m_rasterizer_sbr_axis_tready),
-        .s_axis_tkeep(m_rasterizer_sbr_axis_tkeep),
+        .s_axis_tdata({
+            rasterizer_sbr_tbbx,
+            rasterizer_sbr_tbby,
+            rasterizer_sbr_tspx,
+            rasterizer_sbr_tspy,
+            rasterizer_sbr_tindex
+        }),
+        .s_axis_tlast(rasterizer_sbr_tlast),
+        .s_axis_tvalid(rasterizer_sbr_tvalid),
+        .s_axis_tready(rasterizer_sbr_tready),
+        .s_axis_tkeep(rasterizer_sbr_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
 
-        .m_axis_tdata(mem_index),
-        .m_axis_tvalid(mem_valid),
-        .m_axis_tready({ m_color_arready | !colorBufferEnable, m_depth_arready | !depthBufferEnable, m_stencil_arready | !stencilBufferEnable, mem_arready_attrib }),
-        .m_axis_tlast(mem_last),
-        .m_axis_tkeep(mem_keep),
+        .m_axis_tdata({
+            mem_tbbx[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tbby[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspx[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspy[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tindex[3 * INDEX_WIDTH +: INDEX_WIDTH],
+            mem_tbbx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tbby[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tindex[2 * INDEX_WIDTH +: INDEX_WIDTH],
+            mem_tbbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tbby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tindex[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            mem_tbbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tbby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tspy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            mem_tindex[0 * INDEX_WIDTH +: INDEX_WIDTH]
+        }),
+        .m_axis_tvalid(mem_tvalid),
+        .m_axis_tready({ 
+            m_color_arready | !colorBufferEnable, 
+            m_depth_arready | !depthBufferEnable, 
+            m_stencil_arready | !stencilBufferEnable, 
+            mem_arready_attrib 
+        }),
+        .m_axis_tlast(mem_tlast),
+        .m_axis_tkeep(mem_tkeep),
         .m_axis_tid(),
         .m_axis_tdest(),
         .m_axis_tuser()
     );
     defparam axisBroadcast.M_COUNT = 4;
-    defparam axisBroadcast.DATA_WIDTH = RASTERIZER_AXIS_PARAMETER_SIZE;
+    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
     defparam axisBroadcast.KEEP_ENABLE = 1;
     defparam axisBroadcast.KEEP_WIDTH = 1;
     defparam axisBroadcast.LAST_ENABLE = 1;
@@ -670,17 +763,15 @@ module RasterixRenderCore #(
         .resetn(resetn),
         .pixelInPipeline(),
 
-        .s_axis_tvalid(mem_valid[0]),
-        .s_axis_tready(mem_arready_attrib),
-        .s_axis_tlast(mem_last[0]),
-        .s_axis_tkeep(mem_keep[0]),
-        .s_axis_tdata(mem_index[(RASTERIZER_AXIS_PARAMETER_SIZE * 0) +: RASTERIZER_AXIS_PARAMETER_SIZE]),
-
-        .m_axis_tvalid(m_attr_inter_axis_tvalid),
-        .m_axis_tready(m_attr_inter_axis_tready),
-        .m_axis_tlast(m_attr_inter_axis_tlast),
-        .m_axis_tkeep(m_attr_inter_axis_tkeep),
-        .m_axis_tdata(m_attr_inter_axis_tdata),
+        .s_attrb_tvalid(mem_tvalid[0]),
+        .s_attrb_tready(mem_arready_attrib),
+        .s_attrb_tlast(mem_tlast[0]),
+        .s_attrb_tkeep(mem_tkeep[0]),
+        .s_attrb_tbbx(mem_tbbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_attrb_tbby(mem_tbby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_attrb_tspx(mem_tspx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_attrb_tspy(mem_tspy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_attrb_tindex(mem_tindex[0 * INDEX_WIDTH +: INDEX_WIDTH]),
 
         .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -717,9 +808,29 @@ module RasterixRenderCore #(
         .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE])
+        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+
+        .m_attrb_tvalid(alrp_tvalid),
+        .m_attrb_tready(alrp_tready),
+        .m_attrb_tlast(alrp_tlast),
+        .m_attrb_tkeep(alrp_tkeep),
+        .m_attrb_tspx(alrp_tspx),
+        .m_attrb_tspy(alrp_tspy),
+        .m_attrb_tindex(alrp_tindex),
+        .m_attrb_tdepth_w(alrp_tdepth_w),
+        .m_attrb_tdepth_z(alrp_tdepth_z),
+        .m_attrb_ttexture0_t(alrp_ttexture0_t),
+        .m_attrb_ttexture0_s(alrp_ttexture0_s),
+        .m_attrb_ttexture1_t(alrp_ttexture1_t),
+        .m_attrb_ttexture1_s(alrp_ttexture1_s),
+        .m_attrb_tcolor_a(alrp_tcolor_a),
+        .m_attrb_tcolor_b(alrp_tcolor_b),
+        .m_attrb_tcolor_g(alrp_tcolor_g),
+        .m_attrb_tcolor_r(alrp_tcolor_r)
     );
     defparam attributeInterpolator.FLOAT_SIZE = 24;
+    defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
+    defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
@@ -746,11 +857,23 @@ module RasterixRenderCore #(
         .confTMU1TextureConfig(confTMU1TextureConfig),
         .confTMU1TexEnvColor(confTMU1TexEnvColor),
 
-        .s_axis_tvalid(m_attr_inter_axis_tvalid),
-        .s_axis_tready(m_attr_inter_axis_tready),
-        .s_axis_tlast(m_attr_inter_axis_tlast),
-        .s_axis_tkeep(m_attr_inter_axis_tkeep),
-        .s_axis_tdata(m_attr_inter_axis_tdata),
+        .s_attrb_tvalid(alrp_tvalid),
+        .s_attrb_tready(alrp_tready),
+        .s_attrb_tlast(alrp_tlast),
+        .s_attrb_tkeep(alrp_tkeep),
+        .s_attrb_tspx(alrp_tspx),
+        .s_attrb_tspy(alrp_tspy),
+        .s_attrb_tindex(alrp_tindex),
+        .s_attrb_tdepth_w(alrp_tdepth_w),
+        .s_attrb_tdepth_z(alrp_tdepth_z),
+        .s_attrb_ttexture0_t(alrp_ttexture0_t),
+        .s_attrb_ttexture0_s(alrp_ttexture0_s),
+        .s_attrb_ttexture1_t(alrp_ttexture1_t),
+        .s_attrb_ttexture1_s(alrp_ttexture1_s),
+        .s_attrb_tcolor_a(alrp_tcolor_a),
+        .s_attrb_tcolor_b(alrp_tcolor_b),
+        .s_attrb_tcolor_g(alrp_tcolor_g),
+        .s_attrb_tcolor_r(alrp_tcolor_r),
 
         .texel0Addr00(texel0Addr00),
         .texel0Addr01(texel0Addr01),
@@ -781,7 +904,7 @@ module RasterixRenderCore #(
         .m_framebuffer_screenPosX(framebuffer_screenPosX),
         .m_framebuffer_screenPosY(framebuffer_screenPosY)
     );
-    defparam pixelPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
+    defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
