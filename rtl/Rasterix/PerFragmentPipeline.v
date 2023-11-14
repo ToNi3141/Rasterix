@@ -48,7 +48,6 @@ module PerFragmentPipeline
     input  wire [31 : 0]                            confStencilBufferConfig,
 
     // Fragment input
-    output wire                                     s_frag_tready,
     input  wire                                     s_frag_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]                s_frag_tkeep,
     input  wire                                     s_frag_tvalid,
@@ -63,7 +62,6 @@ module PerFragmentPipeline
 
     // Frame buffer access
     // Read
-    output wire                                     s_color_rready,
     input  wire                                     s_color_rvalid,
     input  wire [PIXEL_WIDTH - 1 : 0]               s_color_rdata,
     // Write
@@ -77,7 +75,6 @@ module PerFragmentPipeline
 
     // ZBuffer buffer access
     // Read
-    output wire                                     s_depth_rready,
     input  wire                                     s_depth_rvalid,
     input  wire [DEPTH_WIDTH - 1 : 0]               s_depth_rdata,
     // Write
@@ -91,7 +88,6 @@ module PerFragmentPipeline
 
     // ZBuffer buffer access
     // Read
-    output wire                                     s_stencil_rready,
     input  wire                                     s_stencil_rvalid,
     input  wire [STENCIL_WIDTH - 1 : 0]             s_stencil_rdata,
     // Write
@@ -124,11 +120,6 @@ module PerFragmentPipeline
     endfunction
 
     wire rready_sig = s_frag_tvalid & s_color_rvalid & s_depth_rvalid & s_stencil_rvalid;
-
-    assign s_color_rready = rready_sig;
-    assign s_depth_rready = rready_sig;
-    assign s_stencil_rready = rready_sig;
-    assign s_frag_tready = rready_sig;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0

@@ -647,7 +647,7 @@ module RasterixRenderCore #(
     wire [ 3 : 0]                           bc_valid;
     wire [ 3 : 0]                           bc_last;
     wire [ 3 : 0]                           bc_keep;
-    wire                                    mem_arready_attrib;
+    wire                                    bc_arready_attrib;
     assign m_color_araddr     = bc_index[INDEX_WIDTH * 3 +: INDEX_WIDTH];
     assign m_depth_araddr     = bc_index[INDEX_WIDTH * 2 +: INDEX_WIDTH];
     assign m_stencil_araddr   = bc_index[INDEX_WIDTH * 1 +: INDEX_WIDTH];
@@ -704,7 +704,7 @@ module RasterixRenderCore #(
             m_color_arready | !colorBufferEnable, 
             m_depth_arready | !depthBufferEnable, 
             m_stencil_arready | !stencilBufferEnable, 
-            mem_arready_attrib 
+            bc_arready_attrib 
         }),
         .m_axis_tlast(bc_last),
         .m_axis_tkeep(bc_keep),
@@ -727,7 +727,6 @@ module RasterixRenderCore #(
     // Clocks: 41
     ////////////////////////////////////////////////////////////////////////////
     wire                            alrp_tvalid;
-    wire                            alrp_tready;
     wire                            alrp_tlast;
     wire                            alrp_tkeep;
     wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspx;
@@ -750,7 +749,6 @@ module RasterixRenderCore #(
         .pixelInPipeline(),
 
         .s_attrb_tvalid(bc_valid[0]),
-        .s_attrb_tready(mem_arready_attrib),
         .s_attrb_tlast(bc_last[0]),
         .s_attrb_tkeep(bc_keep[0]),
         .s_attrb_tbbx(bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
@@ -797,7 +795,6 @@ module RasterixRenderCore #(
         .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
         .m_attrb_tvalid(alrp_tvalid),
-        .m_attrb_tready(alrp_tready),
         .m_attrb_tlast(alrp_tlast),
         .m_attrb_tkeep(alrp_tkeep),
         .m_attrb_tspx(alrp_tspx),
@@ -817,6 +814,8 @@ module RasterixRenderCore #(
     defparam attributeInterpolator.FLOAT_SIZE = 24;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
     defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+
+    assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
@@ -853,7 +852,6 @@ module RasterixRenderCore #(
         .confTMU1TexEnvColor(confTMU1TexEnvColor),
 
         .s_attrb_tvalid(alrp_tvalid),
-        .s_attrb_tready(alrp_tready),
         .s_attrb_tlast(alrp_tlast),
         .s_attrb_tkeep(alrp_tkeep),
         .s_attrb_tspx(alrp_tspx),
@@ -1000,7 +998,6 @@ module RasterixRenderCore #(
         .confFeatureEnable(confFeatureEnable),
         .confStencilBufferConfig(confStencilBufferConfig),
 
-        .s_frag_tready(fragment_stream_out_tready),
         .s_frag_tlast(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) +: 1]),
         .s_frag_tkeep(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 +: 1]),
         .s_frag_tvalid(fragment_stream_out_tvalid),
@@ -1012,7 +1009,6 @@ module RasterixRenderCore #(
 
         .fragmentProcessed(fragmentProcessed),
 
-        .s_color_rready(),
         .s_color_rvalid(fragment_stream_out_tvalid),
         .s_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
         .m_color_waddr(color_fifo_waddr),
@@ -1023,7 +1019,6 @@ module RasterixRenderCore #(
         .m_color_wscreenPosX(color_fifo_wscreenPosX),
         .m_color_wscreenPosY(color_fifo_wscreenPosY),
 
-        .s_depth_rready(),
         .s_depth_rvalid(fragment_stream_out_tvalid),
         .s_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
         .m_depth_waddr(depth_fifo_waddr),
@@ -1034,7 +1029,6 @@ module RasterixRenderCore #(
         .m_depth_wscreenPosX(depth_fifo_wscreenPosX),
         .m_depth_wscreenPosY(depth_fifo_wscreenPosY),
 
-        .s_stencil_rready(),
         .s_stencil_rvalid(fragment_stream_out_tvalid),
         .s_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
         .m_stencil_waddr(stencil_fifo_waddr),
@@ -1050,6 +1044,7 @@ module RasterixRenderCore #(
     defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    assign fragment_stream_out_tready = 1; // No flow ctrl -> always active
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7

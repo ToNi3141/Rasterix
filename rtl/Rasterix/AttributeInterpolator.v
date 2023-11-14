@@ -36,7 +36,6 @@ module AttributeInterpolator #(
 
     // Pixel Stream
     input  wire                             s_attrb_tvalid,
-    output wire                             s_attrb_tready,
     input  wire                             s_attrb_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]        s_attrb_tkeep,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tbbx,
@@ -44,25 +43,6 @@ module AttributeInterpolator #(
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspx,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspy,
     input  wire [INDEX_WIDTH - 1 : 0]       s_attrb_tindex,
-
-    // Pixel Stream Interpolated
-    output wire                             m_attrb_tvalid,
-    input  wire                             m_attrb_tready,
-    output wire                             m_attrb_tlast,
-    output wire [KEEP_WIDTH - 1 : 0]        m_attrb_tkeep,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspx,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspy,
-    output wire [INDEX_WIDTH - 1 : 0]       m_attrb_tindex,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_w,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_z,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_t,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_s,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_t,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_s,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_a,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_b,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_g,
-    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_r,
 
     // Attributes
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    tex0_s,
@@ -100,7 +80,25 @@ module AttributeInterpolator #(
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_r_inc_y,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_g_inc_y,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_b_inc_y,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_a_inc_y
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    color_a_inc_y,
+
+    // Pixel Stream Interpolated
+    output wire                             m_attrb_tvalid,
+    output wire                             m_attrb_tlast,
+    output wire [KEEP_WIDTH - 1 : 0]        m_attrb_tkeep,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspx,
+    output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspy,
+    output wire [INDEX_WIDTH - 1 : 0]       m_attrb_tindex,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_w,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tdepth_z,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_t,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture0_s,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_t,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_ttexture1_s,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_a,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_b,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_g,
+    output wire [ATTRIBUTE_SIZE - 1 : 0]    m_attrb_tcolor_r
 );
     localparam EXPONENT_SIZE = 8; // Size of a IEEE 754 32 bit float
     localparam MANTISSA_SIZE = FLOAT_SIZE - 1 - EXPONENT_SIZE; // Calculate the mantissa size by substracting from the FLOAT_SIZE the sign and exponent
@@ -188,6 +186,8 @@ module AttributeInterpolator #(
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY))
         step_0_delay_tkeep(.clk(aclk), .in(s_attrb_tkeep), .out(step_0_tkeep));
 
+    wire s_attrb_tready = 1; // No flow ctrl -> always active
+    wire m_attrb_tready = 1; // No flow ctrl -> always active
     ValueTrack pixelTracker (
         .aclk(aclk),
         .resetn(resetn),
@@ -196,8 +196,6 @@ module AttributeInterpolator #(
         .sigOutgoingValue(m_attrb_tvalid & m_attrb_tready),
         .valueInPipeline(pixelInPipeline)
     );
-
-    assign s_attrb_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1 Convert bounding box positions integers to float 

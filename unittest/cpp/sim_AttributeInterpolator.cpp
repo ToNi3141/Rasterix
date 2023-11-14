@@ -162,9 +162,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     static const uint32_t CLOCK_DELAY = 41;
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
-    // The output port is always ready. We don't test interrupted transfers right now.
-    top->m_attrb_tready = 1;
-
     // Reset cycle
     top->resetn = 0;
     clk(top);

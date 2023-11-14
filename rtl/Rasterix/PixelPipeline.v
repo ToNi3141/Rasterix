@@ -73,7 +73,6 @@ module PixelPipeline
 
     // Fragment Stream
     input  wire                                     s_attrb_tvalid,
-    output wire                                     s_attrb_tready,
     input  wire                                     s_attrb_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]                s_attrb_tkeep,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_attrb_tspx,
@@ -123,8 +122,6 @@ module PixelPipeline
 
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
-
-    assign s_attrb_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
