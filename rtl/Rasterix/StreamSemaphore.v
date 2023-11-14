@@ -27,9 +27,9 @@ module StreamSemaphore #(
     input  wire                         resetn,
 
     output wire                         m_axis_tvalid,
-    output reg                          m_axis_tlast,
-    output reg  [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
-    output reg  [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,
+    output wire                         m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
+    output wire [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,
     input  wire                         m_axis_tready,
 
     input  wire                         s_axis_tvalid,
@@ -41,10 +41,8 @@ module StreamSemaphore #(
     input  wire                         sigRelease,
     output reg                          released
 );
-    localparam SKID_WIDTH = 1 + KEEP_WIDTH + STREAM_WIDTH;
-    reg  [7 : 0]                valuesCounter = 0;
-    wire [SKID_WIDTH - 1 : 0]   skidOutData;
-    wire                        skidInReady;
+    reg  [7 : 0]    valuesCounter = 0;
+    wire            skidInReady;
 
     wire sigOutgoingValue   = sigRelease;
     wire sigIncommingValue  = s_axis_tvalid && s_axis_tready;
@@ -54,7 +52,7 @@ module StreamSemaphore #(
         .OPT_OUTREG(1),
         .OPT_PASSTHROUGH(0),
         .OPT_INITIAL(1),
-        .DW(SKID_WIDTH)
+        .DW(1 + KEEP_WIDTH + STREAM_WIDTH)
     ) skb (
         .i_clk(aclk),
         .i_reset(!resetn),
@@ -65,7 +63,7 @@ module StreamSemaphore #(
 
         .o_valid(m_axis_tvalid),
         .i_ready(m_axis_tready),
-        .o_data(skidOutData)
+        .o_data({ m_axis_tlast, m_axis_tkeep, m_axis_tdata })
     );
 
     always @(posedge aclk)
@@ -95,8 +93,5 @@ module StreamSemaphore #(
     always @(*)
     begin
         s_axis_tready = skidInReady && free;
-        m_axis_tdata = skidOutData[0 +: STREAM_WIDTH];
-        m_axis_tkeep = skidOutData[STREAM_WIDTH +: KEEP_WIDTH];
-        m_axis_tlast = skidOutData[STREAM_WIDTH + KEEP_WIDTH +: 1];
     end
 endmodule

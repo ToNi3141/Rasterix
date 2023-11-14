@@ -25,8 +25,6 @@ module AttributeInterpolator #(
     parameter SCREEN_POS_WIDTH = 11,
 
     localparam ATTRIBUTE_SIZE = 32,
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
-    localparam ATTR_INTERP_AXIS_PARAMETER_SIZE = 12 * ATTRIBUTE_SIZE,
     localparam KEEP_WIDTH = 1
 )
 (
@@ -114,7 +112,7 @@ module AttributeInterpolator #(
     localparam RECIP_DELAY = 25;
     localparam FRAMEBUFFER_INDEX_DELAY = 16 + (FLOAT_MUL_DELAY * 2) + RECIP_DELAY; // 6 steps
 
-    // Selecting the vertex attributes from the axis
+    // Selecting the vertex attributes
     // Convert them from a 32 bit float to a FLOAT_SIZE float. It can easily be done by cutting off bits from the mantissa as long as the exponent keeps it size.
     wire [FLOAT_SIZE - 1 : 0] inc_texture0_s    = tex0_s[FLOAT_SIZE_DIFF        +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];
     wire [FLOAT_SIZE - 1 : 0] inc_texture0_s_x  = tex0_s_inc_x[FLOAT_SIZE_DIFF  +: ATTRIBUTE_SIZE - FLOAT_SIZE_DIFF];

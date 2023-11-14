@@ -149,7 +149,7 @@ module PixelPipeline
     wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
     wire                        step_convert_tlast;
 
-    parameter CONV_DELAY = 0;
+    localparam CONV_DELAY = 0;
 
     // Framebuffer Index
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(2 + CONV_DELAY)) 
@@ -290,7 +290,7 @@ module PixelPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step2_screenPosY;
     wire [31 : 0]                           step2_depth;
-    wire [FLOAT_SIZE : 0]                   step2_depthWFloat;
+    wire [FLOAT_SIZE - 1 : 0]               step2_depthWFloat;
     wire                                    step2_valid;
     wire [KEEP_WIDTH - 1 : 0]               step2_keep;
     wire                                    step2_last;
@@ -408,7 +408,7 @@ module PixelPipeline
         .confFogColor(confFragmentPipelineFogColor),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_FOG_POS]),
 
-        .depth({step2_depthWFloat, {(32 - FLOAT_SIZE){1'b0}}}), // Fullup mantissa to cast back to 32 bit float
+        .depth({step2_depthWFloat, {(32 - FLOAT_SIZE){1'b0}}}), // Fillup mantissa to cast back to 32 bit float
         .texelColor(step2_fragmentColor),
 
         .color(step3_fragmentColor)

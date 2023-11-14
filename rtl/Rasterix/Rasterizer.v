@@ -27,9 +27,7 @@ module Rasterizer
     parameter CMD_STREAM_WIDTH = 32,
 
     localparam ATTRIBUTE_SIZE = 32,
-    localparam ATTRIBUTE_POS_SIZE = 16,
 
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
     localparam KEEP_WIDTH = 1
 )
 (
@@ -95,8 +93,7 @@ module Rasterizer
     reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0] x;
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
-    wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
-    reg  [INDEX_WIDTH - 1 : 0] fbIndex;
+    wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW0;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW1;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW2;
@@ -366,17 +363,13 @@ module Rasterizer
                         RASTERIZER_EDGEWALKER_WALK:
                         begin
                             // Render pixels
-                            if (isInTriangleAndInBounds)
-                            begin
-                                m_rr_tvalid <= 1;
-                            end
-                            else
+                            if (!isInTriangleAndInBounds)
                             begin
                                 // Now we are outside on the left side of the triangle.
                                 // The edge walker will now search again the left edge
-                                m_rr_tvalid <= 0;
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR;
                             end
+                            m_rr_tvalid <= isInTriangleAndInBounds;
                         end
                         endcase
                     end
@@ -391,17 +384,16 @@ module Rasterizer
                     end
 
                     /* verilator lint_off WIDTH */
-                    // Check that the fbIndex never exceeds the borders of the view port
+                    // Check that the index never exceeds the borders of the view port
                     if ((y < yResolution) && (x < xResolution))
                     begin
-                        fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
+                        m_rr_tindex <= (((yLineResolution - 1) - y) * xResolution) + x;
                     end
                     /* verilator lint_on WIDTH */
                     
                     // Arguments for the shader
-                    m_rr_tindex <= fbIndex;
-                    m_rr_tbbx <= x - bbStart[BB_X_POS +: X_BIT_WIDTH];
-                    m_rr_tbby <= yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                    m_rr_tbbx <= (x - bbStart[BB_X_POS +: X_BIT_WIDTH]);
+                    m_rr_tbby <= (yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
                     m_rr_tspx <= x;
                     m_rr_tspy <= yScreen;
                 end

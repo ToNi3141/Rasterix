@@ -61,17 +61,17 @@ module StreamConcatFifo
     output wire [STREAMO_WIDTH - 1 : 0] m_stream_tdata,
     input  wire                         m_stream_tready
 );
-    wire                            stream_full [NUMBER_OF_STREAMS - 1 : 0];
-    wire                            stream_empty [NUMBER_OF_STREAMS - 1 : 0];
-    wire [STREAM0_WIDTH - 1 : 0]    s_stream0_data;
-    wire [STREAM1_WIDTH - 1 : 0]    s_stream1_data;
-    wire [STREAM2_WIDTH - 1 : 0]    s_stream2_data;
-    wire [STREAM3_WIDTH - 1 : 0]    s_stream3_data;
-    wire                            complete_transfer_available =   ((!stream_empty[0] | !s_stream0_tenable) 
-                                                                    & (!stream_empty[1] | !s_stream1_tenable)
-                                                                    & (!stream_empty[2] | !s_stream2_tenable)
-                                                                    & (!stream_empty[3] | !s_stream3_tenable));
-    wire                            stream_out_read = m_stream_tready && complete_transfer_available;
+    wire [NUMBER_OF_STREAMS - 1 : 0]    stream_full;
+    wire [NUMBER_OF_STREAMS - 1 : 0]    stream_empty;
+    wire [STREAM0_WIDTH - 1 : 0]        s_stream0_data;
+    wire [STREAM1_WIDTH - 1 : 0]        s_stream1_data;
+    wire [STREAM2_WIDTH - 1 : 0]        s_stream2_data;
+    wire [STREAM3_WIDTH - 1 : 0]        s_stream3_data;
+    wire                                complete_transfer_available =   ((!stream_empty[0] | !s_stream0_tenable) 
+                                                                        & (!stream_empty[1] | !s_stream1_tenable)
+                                                                        & (!stream_empty[2] | !s_stream2_tenable)
+                                                                        & (!stream_empty[3] | !s_stream3_tenable));
+    wire                                stream_out_read = m_stream_tready && complete_transfer_available;
 
     assign s_stream0_tready = !stream_full[0];
     assign s_stream1_tready = !stream_full[1];
