@@ -120,7 +120,6 @@ module PixelPipeline
     output wire                                     m_framebuffer_keep
 );
 `include "RegisterAndDescriptorDefines.vh"
-`include "AttributeInterpolatorDefines.vh"
 
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
     localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };

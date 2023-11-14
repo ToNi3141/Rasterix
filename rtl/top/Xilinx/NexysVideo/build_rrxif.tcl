@@ -18,7 +18,6 @@ set_property source_mgmt_mode All [current_project]
 
 # Load verilog source
 read_verilog ./../../../../Rasterix/AttributeInterpolator.v
-read_verilog ./../../../../Rasterix/AttributeInterpolatorDefines.vh
 read_verilog ./../../../../Rasterix/ColorBlender.v
 read_verilog ./../../../../Rasterix/ColorInterpolator.v
 read_verilog ./../../../../Rasterix/ColorMixer.v
@@ -35,7 +34,6 @@ read_verilog ./../../../../Rasterix/PixelUtil.vh
 read_verilog ./../../../../Rasterix/RasterixIF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
-read_verilog ./../../../../Rasterix/RasterizerDefines.vh
 read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../Rasterix/RegisterBank.v
 read_verilog ./../../../../Rasterix/StencilOp.v
