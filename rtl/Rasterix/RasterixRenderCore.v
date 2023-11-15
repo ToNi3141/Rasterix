@@ -811,7 +811,7 @@ module RasterixRenderCore #(
         .m_attrb_tcolor_g(alrp_tcolor_g),
         .m_attrb_tcolor_r(alrp_tcolor_r)
     );
-    defparam attributeInterpolator.FLOAT_SIZE = 24;
+    defparam attributeInterpolator.INTERNAL_FLOAT_PRECISSION = 32;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
     defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
 
