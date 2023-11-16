@@ -38,6 +38,14 @@ module RasterixRenderCore #(
     // Enables the flow control. Disabling can safe logic resources.
     parameter ENABLE_FLOW_CTRL = 1,
 
+    // Configures the precision of the float calculations (interpolation of textures, depth, ...)
+    // A lower value can significant reduce the logic consumption but can cause visible 
+    // distortions in the rendered image.
+    // 4 bit reducing can safe around 1k LUTs.
+    // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
+    // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
+    parameter INTERNAL_FLOAT_PRECISION = 32,
+
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
 
@@ -811,7 +819,7 @@ module RasterixRenderCore #(
         .m_attrb_tcolor_g(alrp_tcolor_g),
         .m_attrb_tcolor_r(alrp_tcolor_r)
     );
-    defparam attributeInterpolator.INTERNAL_FLOAT_PRECISSION = 32;
+    defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
     defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
 
