@@ -65,7 +65,7 @@ public:
 
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
     {
-        bool ret = false;
+        bool ret = true;
         uint32_t textureSlot = m_textureLut[texId];
         const uint32_t textureSlotOld = m_textureLut[texId];
         const uint32_t textureSizeInBytes = textureObject.width * textureObject.height * 2;
@@ -107,6 +107,7 @@ public:
                 SPDLOG_ERROR("Run out of memory during texture allocation");
             }
         }
+
         m_textures[textureSlot].tmuConfig.setWarpModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
         m_textures[textureSlot].tmuConfig.setWarpModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
