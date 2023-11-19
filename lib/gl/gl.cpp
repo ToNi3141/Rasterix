@@ -26,6 +26,14 @@
 
 using namespace rr;
 
+template <uint8_t ColorPos, uint8_t ComponentSize, uint8_t Mask>
+uint8_t convertColorComponentToUint8(const uint16_t color)
+{
+    static constexpr uint8_t ComponentShift = 8 - ComponentSize;
+    static constexpr uint8_t ComponentShiftFill = ComponentSize - ComponentShift;
+    return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
+}
+
 GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
 {
     GLint ret = GL_NO_ERROR;
@@ -3654,10 +3662,11 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 {
                                     const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
                                     texMemShared.get()[texPos] = texObj.convertColor(
-                                        ((color >> 11) & 0x1f) << 3, 
-                                        ((color >> 5) & 0x3f) << 2, 
-                                        (color & 0x1f) << 3, 
-                                        0xff);
+                                        convertColorComponentToUint8<11, 5, 0x1f>(color),
+                                        convertColorComponentToUint8<5, 6, 0x3f>(color),
+                                        convertColorComponentToUint8<0, 5, 0x1f>(color), 
+                                        0xff
+                                    );
                                     i++;
                                 }
                                 break;
@@ -3666,7 +3675,8 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
-                                    0xff);
+                                    0xff
+                                );
                                 i += 3;
                                 break;
                             case GL_BYTE:
@@ -3704,10 +3714,11 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 {
                                     const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
                                     texMemShared.get()[texPos] = texObj.convertColor(
-                                        ((color >> 11) & 0x1f) << 3, 
-                                        ((color >> 6) & 0x1f) << 3, 
-                                        ((color >> 1) & 0x1f) << 3, 
-                                        (color & 0x1) << 7);
+                                        convertColorComponentToUint8<11, 5, 0x1f>(color),
+                                        convertColorComponentToUint8<6, 5, 0x1f>(color),
+                                        convertColorComponentToUint8<1, 5, 0x1f>(color),
+                                        (color & 0x1) ? 0xff : 0
+                                    );
                                     i++;
                                 }
                                 break;
@@ -3715,10 +3726,11 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 {
                                     const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
                                     texMemShared.get()[texPos] = texObj.convertColor(
-                                        ((color >> 12) & 0xf) << 4, 
-                                        ((color >> 8) & 0xf) << 4, 
-                                        ((color >> 4) & 0xf) << 4, 
-                                        (color & 0xf) << 4);
+                                        convertColorComponentToUint8<12, 4, 0xf>(color),
+                                        convertColorComponentToUint8<8, 4, 0xf>(color),
+                                        convertColorComponentToUint8<4, 4, 0xf>(color),
+                                        convertColorComponentToUint8<0, 4, 0xf>(color)
+                                    );
                                     i++;
                                 }
                                 break;
@@ -3727,8 +3739,9 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 0], 
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 1], 
                                     reinterpret_cast<const uint8_t*>(pixels)[i + 2], 
-                                    reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                                    i += 4;
+                                    reinterpret_cast<const uint8_t*>(pixels)[i + 3]
+                                );
+                                i += 4;
                                 break;
                             case GL_BYTE:
                             case GL_BITMAP:
@@ -3769,10 +3782,10 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 {
                                     const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
                                     texMemShared.get()[texPos] = texObj.convertColor(
-                                        ((color >> 10) & 0x1f) << 3, 
-                                        ((color >> 5) & 0x1f) << 3, 
-                                        ((color >> 0) & 0x1f) << 3,
-                                        ((color >> 15) & 0x1) << 7);
+                                        convertColorComponentToUint8<10, 5, 0x1f>(color),
+                                        convertColorComponentToUint8<5, 5, 0x1f>(color),
+                                        convertColorComponentToUint8<0, 5, 0x1f>(color),
+                                        ((color >> 15) & 0x1) ? 0xff : 0);
                                     i++;
                                 }
                                 break;
@@ -3780,10 +3793,10 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 {
                                     const uint16_t color = reinterpret_cast< const uint16_t*>(pixels)[i];
                                     texMemShared.get()[texPos] = texObj.convertColor(
-                                        ((color >> 8) & 0xf) << 4, 
-                                        ((color >> 4) & 0xf) << 4, 
-                                        ((color >> 0) & 0xf) << 4, 
-                                        ((color >> 12) & 0xf) << 4);
+                                        convertColorComponentToUint8<8, 4, 0xf>(color),
+                                        convertColorComponentToUint8<4, 4, 0xf>(color),
+                                        convertColorComponentToUint8<0, 4, 0xf>(color),
+                                        convertColorComponentToUint8<12, 4, 0xf>(color));
                                     i++;
                                 }
                                 break;
@@ -3821,6 +3834,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
                                 IceGL::getInstance().setError(GL_INVALID_ENUM);
                                 return;
                         }
+                        break;
                     case GL_LUMINANCE:
                     case GL_LUMINANCE_ALPHA:
                         SPDLOG_WARN("glTexSubImage2D unsupported format");

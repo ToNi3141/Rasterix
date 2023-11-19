@@ -59,7 +59,15 @@ module RasterixEF #(
 
     // Memory strobe width
     parameter CMD_MEM_STRB_WIDTH = CMD_STREAM_WIDTH / 8,
-    parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8
+    parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8,
+
+    // Configures the precision of the float calculations (interpolation of textures, depth, ...)
+    // A lower value can significant reduce the logic consumption but can cause visible 
+    // distortions in the rendered image.
+    // 4 bit reducing can safe around 1k LUTs.
+    // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
+    // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
+    parameter INTERNAL_FLOAT_PRECISION = 32
 )
 (
     input  wire                             aclk,
@@ -704,7 +712,8 @@ module RasterixEF #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
-        .TMU_COUNT(TMU_COUNT)
+        .TMU_COUNT(TMU_COUNT),
+        .INTERNAL_FLOAT_PRECISION(INTERNAL_FLOAT_PRECISION)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

@@ -21,14 +21,13 @@ module Rasterizer
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,
 
-    parameter FRAMEBUFFER_INDEX_WIDTH = 14,
+    parameter INDEX_WIDTH = 14,
 
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256
     parameter CMD_STREAM_WIDTH = 32,
 
     localparam ATTRIBUTE_SIZE = 32,
 
-    localparam RASTERIZER_AXIS_PARAMETER_SIZE = 3 * ATTRIBUTE_SIZE,
     localparam KEEP_WIDTH = 1
 )
 (
@@ -44,13 +43,6 @@ module Rasterizer
     input  wire [X_BIT_WIDTH - 1 : 0]       xResolution,
     input  wire [Y_BIT_WIDTH - 1 : 0]       yResolution,
 
-    // Fragment Stream
-    output reg                              m_axis_tvalid,
-    input  wire                             m_axis_tready,
-    output reg                              m_axis_tlast,
-    output reg  [RASTERIZER_AXIS_PARAMETER_SIZE - 1 : 0] m_axis_tdata,
-    output reg  [KEEP_WIDTH - 1 : 0]        m_axis_tkeep,
-
     // Triangle Attributes
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbStart,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    bbEnd,
@@ -62,7 +54,18 @@ module Rasterizer
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2IncX,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    w0IncY,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]    w1IncY,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2IncY
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]    w2IncY,
+
+    // Fragment Stream
+    output reg                              m_rr_tvalid,
+    input  wire                             m_rr_tready,
+    output reg                              m_rr_tlast,
+    output reg  [X_BIT_WIDTH - 1 : 0]       m_rr_tbbx,
+    output reg  [Y_BIT_WIDTH - 1 : 0]       m_rr_tbby,
+    output reg  [X_BIT_WIDTH - 1 : 0]       m_rr_tspx,
+    output reg  [Y_BIT_WIDTH - 1 : 0]       m_rr_tspy,
+    output reg  [INDEX_WIDTH - 1 : 0]       m_rr_tindex,
+    output reg  [KEEP_WIDTH - 1 : 0]        m_rr_tkeep
 );
     localparam BB_X_POS = 0;
     localparam BB_Y_POS = 16;
@@ -90,8 +93,7 @@ module Rasterizer
     reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0] x;
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
-    wire isInTriangleAndInBounds = isInTriangle & (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) & (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
-    reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0] fbIndex;
+    wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW0;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW1;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW2;
@@ -107,9 +109,9 @@ module Rasterizer
     begin
         if (reset)
         begin
-            m_axis_tlast <= 0;
-            m_axis_tvalid <= 0;
-            m_axis_tkeep <= ~0;
+            m_rr_tlast <= 0;
+            m_rr_tvalid <= 0;
+            m_rr_tkeep <= ~0;
             rasterizerRunning <= 0;
             rasterizerState <= RASTERIZER_WAITFORCOMMAND;
         end
@@ -118,9 +120,9 @@ module Rasterizer
             case (rasterizerState)
             RASTERIZER_WAITFORCOMMAND:
             begin
-                m_axis_tvalid <= 0;
-                m_axis_tkeep <= ~0;
-                m_axis_tlast <= 0;
+                m_rr_tvalid <= 0;
+                m_rr_tkeep <= ~0;
+                m_rr_tlast <= 0;
                 rasterizerRunning <= 0;
                 if (startRendering)
                 begin
@@ -178,14 +180,14 @@ module Rasterizer
                 edgeWalkTryOtherside <= 0;
 
                 // Start rasterization
-                m_axis_tvalid <= 0;
+                m_rr_tvalid <= 0;
                 edgeWalkingState <= RASTERIZER_EDGEWALKER_INIT;
                 rasterizerState <= RASTERIZER_TEST;
             end
             RASTERIZER_TEST:
             begin
                 // A rasterization cycle is only executed if the shader is free. Otherwise the rasterizer will stall
-                if (m_axis_tready)
+                if (m_rr_tready)
                 begin
                     // General walking algorithm diagram:
                     //
@@ -257,13 +259,13 @@ module Rasterizer
                             if (isInTriangle)
                             begin
                                 // If yes, then there is nothing to do. We are already at position (0, 0)
-                                m_axis_tvalid <= 1;
+                                m_rr_tvalid <= 1;
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
                             end
                             else
                             begin
                                 // If not, search the edge
-                                m_axis_tvalid <= 0;
+                                m_rr_tvalid <= 0;
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_EDGE;
                             end
                         end
@@ -292,7 +294,7 @@ module Rasterizer
                             begin
                                 // The triangle is withing it bounds and everything is fine. So, just shade the pixel
                                 edgeWalkTryOtherside <= 0;
-                                m_axis_tvalid <= 1; // To prevent, that the first pixel of the triangle is skipped
+                                m_rr_tvalid <= 1; // To prevent, that the first pixel of the triangle is skipped
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
                             end
                             else if (x == bbEnd[BB_X_POS +: X_BIT_WIDTH])
@@ -361,17 +363,13 @@ module Rasterizer
                         RASTERIZER_EDGEWALKER_WALK:
                         begin
                             // Render pixels
-                            if (isInTriangleAndInBounds)
-                            begin
-                                m_axis_tvalid <= 1;
-                            end
-                            else
+                            if (!isInTriangleAndInBounds)
                             begin
                                 // Now we are outside on the left side of the triangle.
                                 // The edge walker will now search again the left edge
-                                m_axis_tvalid <= 0;
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR;
                             end
+                            m_rr_tvalid <= isInTriangleAndInBounds;
                         end
                         endcase
                     end
@@ -379,26 +377,25 @@ module Rasterizer
                     begin
                         // Now the edge walker is below the triangle. No Triangle hit is expected anymore.
                         // That means, the edge walking is aborted.
-                        m_axis_tvalid <= 1;
-                        m_axis_tkeep <= 0;
-                        m_axis_tlast <= 1;
+                        m_rr_tvalid <= 1;
+                        m_rr_tkeep <= 0;
+                        m_rr_tlast <= 1;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
 
                     /* verilator lint_off WIDTH */
-                    // Check that the fbIndex never exceeds the borders of the view port
+                    // Check that the index never exceeds the borders of the view port
                     if ((y < yResolution) && (x < xResolution))
                     begin
-                        fbIndex = (((yLineResolution - 1) - y) * xResolution) + x;
+                        m_rr_tindex <= (((yLineResolution - 1) - y) * xResolution) + x;
                     end
                     /* verilator lint_on WIDTH */
                     
                     // Arguments for the shader
-                    m_axis_tdata <= {
-                        {{(ATTRIBUTE_SIZE - FRAMEBUFFER_INDEX_WIDTH){1'b0}}, fbIndex},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen}, {{(16 - X_BIT_WIDTH){1'b0}}, x}},
-                        {{{(16 - Y_BIT_WIDTH){1'b0}}, yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]}, {{(16 - X_BIT_WIDTH){1'b0}}, x} - bbStart[BB_X_POS +: X_BIT_WIDTH]}
-                    };
+                    m_rr_tbbx <= (x - bbStart[BB_X_POS +: X_BIT_WIDTH]);
+                    m_rr_tbby <= (yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+                    m_rr_tspx <= x;
+                    m_rr_tspy <= yScreen;
                 end
             end
             endcase 

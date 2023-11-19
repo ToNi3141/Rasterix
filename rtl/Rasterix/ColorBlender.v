@@ -37,7 +37,7 @@
 //  ONE_MINUS_DST_ALPHA = 9
 // Source and dest color are in the RGBA format, See RegisterAndDescriptorDefines.vh
 // Pipelined: yes
-// Depth: 2 cycles
+// Depth: 3 cycles
 module ColorBlender 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
