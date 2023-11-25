@@ -32,6 +32,11 @@ private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::FT60XBusConnector m_busConnector;
+#if VARIANT_RRXIF == 1
     rr::Renderer<rr::RenderConfigRRXIFNexys> m_renderer { m_busConnector };
+#endif // VARIANT_RRXIF
+#if VARIANT_RRXEF == 1
+    rr::Renderer<rr::RenderConfigRRXEFNexys> m_renderer { m_busConnector };
+#endif // VARIANT_RRXEF
     Scene m_scene {};
 };

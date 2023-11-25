@@ -66,9 +66,7 @@ git submodule update
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
 
-This builds the `RasterixIF` and uses two TMU. The framebuffers have a size of 256kB + 256kB + 64kB. You can build it in two variants, `rrxif` and `rrxef`. 
-
-__The `rrxif` variant is the default.__ If you want to use the `rrxef` variant, please note that you need to manually adapt the examples (use `RenderConfigRRXEFNexys` instead of `RenderConfigRRXIFNexys`).
+This builds the `RasterixIF` and uses two TMU. The framebuffers have a size of 256kB + 256kB + 64kB. You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must enable the `VARIANT_RRXIF` or `VARIANT_RRXEF` for the library build.
 
 To build the binaries use the following commands.
 ```sh
@@ -102,12 +100,12 @@ Also the following solder bridges must be applied:
 # Arty Z7-20 Build
 The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petalinux running on the board. It will by default output a 1024x600px video signal on the HDMI OUT. Just connect there a monitor which can handle this resolution.
 
-This builds the `RasterixEF` and uses two TMU.
+This builds the `RasterixEF` and uses two TMU. A `RasterixIF` variant with one TMU and a framebuffer size of 128kB + 128kB + 32kB is also available.
 
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxef.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -192,10 +190,10 @@ Before configuring and starting the build, download from FTDI (https://ftdichip.
 To build the library an the minimal example, switch to the source directory and type
 ```sh
 cd <rasterix_directory>
-cmake --preset native
+cmake --preset native -DVARIANT_RRXIF=ON
 cmake --build build/native --config Release --parallel
 ```
-Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
+Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native -G "Visual Studio 16 2019" -A Win32 -DVARIANT_RRXIF=ON` otherwise the build might fail.
 
 To run the minimal example, type
 ```
@@ -212,7 +210,7 @@ This is a more specific preset for windows which also builds WGL. Please refer t
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
-cmake --preset win32
+cmake --preset win32 -DVARIANT_RRXIF=ON
 cmake --build .\build\win32\ --config Release --parallel
 ```
 
@@ -331,7 +329,7 @@ Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
-cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake
+cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake -DVARIANT_RRXEF=ON
 cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
