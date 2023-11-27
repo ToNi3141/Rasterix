@@ -52,6 +52,9 @@ public:
     const char *getLibExtensions() const;
     const void *getLibProcedure(std::string name) const;
 
+    void addProcedure(std::string name, const void *address);
+    void addExtension(std::string extension);
+
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
     uint16_t getMaxTextureSize() const { return m_renderer.getMaxTextureSize(); }
@@ -71,8 +74,6 @@ private:
     IceGL(IRenderer& renderer);
 
     // OpenGL extensions 
-    void addProcedure(std::string name, const void *address);
-    void addExtension(std::string extension);
     std::map<std::string, const void *> m_glProcedures;
     std::string m_glExtensions;
 };

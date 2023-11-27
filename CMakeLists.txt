@@ -55,6 +55,10 @@ if (CMAKE_HOST_APPLE AND BUILD_NATIVE)
     set(CMAKE_OSX_ARCHITECTURES "x86_64") # The FTDI library is only available for X86 (at least for mac os)
 endif()
 
+if (BUILD_ZYNQ_EMBEDDED_LINUX AND BUILD_SHARED_LIBRARY)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
+
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
 
 add_subdirectory(lib)

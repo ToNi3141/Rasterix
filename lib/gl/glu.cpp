@@ -43,7 +43,7 @@ GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, 
     m[2][3] = -1.0f;
     m[3][2] = -2.0f * zNear * zFar / deltaZ;
     m[3][3] = 0.0f;
-    impl_glMultMatrixf(&m[0][0]);
+    glMultMatrixf(&m[0][0]);
 }
 
 GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
@@ -81,6 +81,6 @@ GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat 
     m[1][2] = -forward[1];
     m[2][2] = -forward[2];
 
-    impl_glMultMatrixf(&m[0][0]);
-    impl_glTranslatef(-eyex, -eyey, -eyez);
+    glMultMatrixf(&m[0][0]);
+    glTranslatef(-eyex, -eyey, -eyez);
 }
