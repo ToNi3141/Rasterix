@@ -624,42 +624,14 @@ bool VertexPipeline::drawLineArray(
     return true;
 }
 
-void VertexPipeline::viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2)
-{
-    v0[0] = ((v0[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
-    v1[0] = ((v1[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
-    v2[0] = ((v2[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX;
-
-    v0[1] = ((v0[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
-    v1[1] = ((v1[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
-    v2[1] = ((v2[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY;
-
-    v0[2] = (((v0[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v1[2] = (((v1[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
-    v2[2] = (((v2[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
-
-    // This is a possibility just to calculate the real z value but is not needed for the rasterizer
-    //    float n = 0.1;
-    //    float f = 100;
-    //    float z_ndc0 = 2.0 * v0f[2] - 1.0;
-    //    v0f[2] = 2.0 * n * f / (f + n - z_ndc0 * (f - n));
-    //    float z_ndc1 = 2.0 * v1f[2] - 1.0;
-    //    v1f[2] = 2.0 * n * f / (f + n - z_ndc1 * (f - n));
-    //    float z_ndc2 = 2.0 * v2f[2] - 1.0;
-    //    v2f[2] = 2.0 * n * f / (f + n - z_ndc2 * (f - n));
-
-}
-
 void VertexPipeline::viewportTransform(Vec4 &v)
 {
     // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
     // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
     v[0] = (((v[0] * m_viewportWidthHalf)) + m_viewportXShift);
     v[1] = (((v[1] * m_viewportHeightHalf)) + m_viewportYShift);
-    // Alternative implementation which is basically doing the same but without precomputed variables
-    // v[0] = (((v[0] + 1.0f) * m_viewportWidth * 0.5f) + m_viewportX);
-    // v[1] = (((v[1] + 1.0f) * m_viewportHeight * 0.5f) + m_viewportY);
-    v[2] = (((v[2] + 1.0f) * 0.25f)) * (m_depthRangeZFar - m_depthRangeZNear);
+    v[2] = (m_depthRangeScale * v[2]) + m_depthRangeOffset;
+    v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
 }
 
 
@@ -685,6 +657,9 @@ void VertexPipeline::setDepthRange(const float zNear, const float zFar)
 {
     m_depthRangeZFar = zFar;
     m_depthRangeZNear = zNear;
+
+    m_depthRangeScale = ((m_depthRangeZFar - m_depthRangeZNear) / 2.0f);
+    m_depthRangeOffset = ((m_depthRangeZNear + m_depthRangeZFar) / 2.0f);
 }
 
 void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
