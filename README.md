@@ -24,6 +24,7 @@
   - [Build Kernel Driver](#build-kernel-driver)
   - [Build SDK](#build-sdk)
   - [Build Examples](#build-examples)
+    - [glX](#glx)
   - [Reload FPGA content without rebuilding the File System](#reload-fpga-content-without-rebuilding-the-file-system)
 - [Port to a new platform](#port-to-a-new-platform)
   - [Port the driver](#port-the-driver)
@@ -214,7 +215,7 @@ cmake --preset win32 -DVARIANT_RRXIF=ON
 cmake --build .\build\win32\ --config Release --parallel
 ```
 
-You will find a `wgl.dll`. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
+You will find the `OpenGL32.dll` in the build directory. The DLL is build for 32bit targets because games from that era are usually 32bit builds. To test the build, type
 ```sh
 cd build\win32
 .\example\minimal\Release\minimal.exe
@@ -225,7 +226,7 @@ Note: You need the `FTD3xx.dll` in you execution directory. It is automatically 
 ## Run Warcraft 3 
 Only classic Warcraft 3 will work. Reforged does not. 
 - Prepare Warcraft 3. Set the resolution to something like 800x600 or below and set the texture quality to low (currently the Renderer supports only textures with a maximum size of 256x256).
-- Rename `wgl.dll` into `OpenGL32.dll` and copy it together with the 32bit version of the `FTD3XX.dll` in the root directory of your Warcraft 3 installation. 
+- Copy the `OpenGL32.dll` together with the 32bit version of the `FTD3XX.dll` in the root directory of your Warcraft 3 installation. 
 - Add a shortcut to the `Frozen Throne.exe` or `Warcraft III.exe` on your desktop. Edit the shortcut and write `-opengl` after the path of the exe (`"C:\path\to\warcraft3\Frozen Throne.exe" -opengl`) to start Warcraft 3 in OpenGL mode.
 - Open Warcraft 3 via the shortcut. You should now see the menu on the screen connected to the FPGA.
 
@@ -333,6 +334,9 @@ cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_z
 cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.
+
+### glX
+It also builds the `libGL.so` library, which implements a very basic glX API and exposes the OpenGL API. The current implementation of the glX API should be sufficient to play games like Quake3e without modifications, or to use it with SDL.
 
 ## Reload FPGA content without rebuilding the File System
 To reload the FPGA content, copy the bin file (`scp synth/rasterix.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
