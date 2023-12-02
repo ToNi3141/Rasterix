@@ -169,19 +169,6 @@ private:
         *argDl = arg;
     }
 
-    template <typename TArg>
-    bool hasDisplayListEnoughSpace()
-    {
-        static constexpr std::size_t expectedSize = List::template sizeOf<uint32_t>() + List::template sizeOf<TArg>() ;
-
-        if (expectedSize >= m_displayList.getFreeSpace())
-        {
-            // Not enough memory to finish the operation
-            return false;
-        }
-        return true;
-    }
-
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
@@ -189,7 +176,9 @@ private:
         using DescValueType = typename DescArray::value_type::element_type;
 
         // Check if the display list contains enough space
-        std::size_t expectedSize = List::template sizeOf<uint32_t>() + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>());
+        std::size_t expectedSize = List::template sizeOf<uint32_t>() 
+                                    + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>()) 
+                                    + List::template sizeOf<DSEC::SCT>(); // Additional memory for a stream section (just in case)
         if constexpr (HasDseOp<decltype(cmd)>::value)
         {
             expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
