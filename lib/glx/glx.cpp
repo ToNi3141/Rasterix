@@ -309,7 +309,7 @@ GLAPI void APIENTRY glXGetSelectedEvent( Display *dpy, GLXDrawable drawable,
 
 GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB (const GLubyte *s)
 {
-    // SPDLOG_DEBUG("glXGetProcAddressARB {} called", s); // Too verbose
+    SPDLOG_DEBUG("glXGetProcAddressARB {} called", s);
     static bool lazy = false;
     if (!lazy)
     {
