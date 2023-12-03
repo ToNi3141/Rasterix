@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <array>
+#include <optional>
 #include "Vec.hpp"
 #include "IRenderer.hpp"
 #include "IBusConnector.hpp"
@@ -114,7 +115,7 @@ public:
 
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
         {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
             enableColorBufferInMemory();
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
@@ -134,6 +135,17 @@ public:
         m_renderThread = std::async([&](){
             return true;
         });
+    }
+
+    virtual ~Renderer()
+    {
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+        render();
+        if (m_renderThread.valid() && (m_renderThread.get() != true))
+        {
+            // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
+            return;
+        }
     }
 
     virtual bool drawTriangle(const Triangle& triangle) override
@@ -174,7 +186,18 @@ public:
         // Commit/swap frame 
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(createCommitFramebufferCommand(i));
+            auto cmd = creatSwapFramebufferCommand();
+            if (cmd)
+            {
+                m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(*cmd);
+            }
+
+            cmd = createCommitFramebufferCommand(i);
+            if (cmd)
+            {
+                m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(*cmd);
+            }
+
             m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].closeStream();
         }
 
@@ -465,7 +488,7 @@ private:
         });
     }
 
-    FramebufferCmd createCommitFramebufferCommand(const uint32_t i)
+    std::optional<FramebufferCmd> createCommitFramebufferCommand(const uint32_t i)
     {
         FramebufferCmd cmd { false, false, false };
         const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
@@ -475,17 +498,20 @@ private:
             cmd.selectColorBuffer();
             cmd.selectDepthBuffer();
             cmd.selectStencilBuffer();
-            cmd.enableInternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            cmd.commitFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
         {
-            cmd.enableExternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
+            cmd.streamFromFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
         }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-        {
-            cmd.selectColorBuffer();
-            cmd.enableExternalFramebufferSwap();
-        }
+        return cmd;
+    }
+
+    std::optional<FramebufferCmd> creatSwapFramebufferCommand()
+    {
+        FramebufferCmd cmd { false, false, false };
+        cmd.selectColorBuffer();
+        cmd.swapFramebuffer();
         return cmd;
     }
 

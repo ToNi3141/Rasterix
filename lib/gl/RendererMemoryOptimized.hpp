@@ -394,16 +394,16 @@ private:
             cmd.selectColorBuffer();
             cmd.selectDepthBuffer();
             cmd.selectStencilBuffer();
-            cmd.enableInternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            cmd.commitFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
         {
-            cmd.enableExternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
+            cmd.streamFromFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
         {
             cmd.selectColorBuffer();
-            cmd.enableExternalFramebufferSwap();
+            cmd.swapFramebuffer();
         }
         return cmd;
     }

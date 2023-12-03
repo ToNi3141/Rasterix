@@ -87,6 +87,11 @@ module RasterixIF #(
     output wire                             m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
 
+    // Color
+    output wire                             swap_fb,
+    output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
+    input  wire                             fb_swapped,
+
     // Memory interface
     output wire [ID_WIDTH - 1 : 0]          m_mem_axi_awid,
     output wire [ADDR_WIDTH - 1 : 0]        m_mem_axi_awaddr,
@@ -234,10 +239,12 @@ module RasterixIF #(
 
     // Color buffer access
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              colorBufferClearColor;
+    wire [ADDR_WIDTH - 1 : 0]                        colorBufferAddr;
     wire                                             colorBufferApply;
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
+    wire                                             colorBufferCmdSwap;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire                                             m_color_arvalid;
@@ -371,7 +378,7 @@ module RasterixIF #(
         .wscreenPosX(m_color_wscreenPosX),
         .wscreenPosY(m_color_wscreenPosY),
         
-        .apply(colorBufferApply),
+        .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdMemset)),
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
@@ -485,10 +492,12 @@ module RasterixIF #(
         .framebufferParamYResolution(framebufferParamYResolution),
 
         .colorBufferClearColor(colorBufferClearColor),
+        .colorBufferAddr(colorBufferAddr),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied),
+        .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
@@ -553,5 +562,8 @@ module RasterixIF #(
         .m_stencil_wscreenPosX(m_stencil_wscreenPosX),
         .m_stencil_wscreenPosY(m_stencil_wscreenPosY)
     );
+
+    assign swap_fb = colorBufferApply && colorBufferCmdSwap;
+    assign fb_addr = colorBufferAddr;
 
 endmodule

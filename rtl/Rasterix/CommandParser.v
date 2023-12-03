@@ -52,6 +52,7 @@ module CommandParser #(
     input  wire         colorBufferApplied,
     output reg          colorBufferCmdCommit,
     output reg          colorBufferCmdMemset,
+    output reg          colorBufferCmdSwap,
     output reg          depthBufferApply,
     input  wire         depthBufferApplied,
     output reg          depthBufferCmdCommit,
@@ -201,6 +202,7 @@ module CommandParser #(
                         s_cmd_axis_tready <= 0;
                         colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         colorBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
+                        colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
                         depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         depthBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
                         stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
@@ -209,8 +211,8 @@ module CommandParser #(
                         depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
                         stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
                         apply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS] 
-                            | s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] 
-                            | s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
+                            | (s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS])
+                            | (s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]);
                         state <= WAIT_FOR_IDLE;
                     end
                     OP_NOP_STREAM:

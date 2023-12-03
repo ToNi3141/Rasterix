@@ -32,6 +32,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER { 0x2000'0000 };
     static constexpr uint32_t OP_FRAMEBUFFER_COMMIT { OP_FRAMEBUFFER | 0x0000'0001 };
     static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
+    static constexpr uint32_t OP_FRAMEBUFFER_SWAP { OP_FRAMEBUFFER | 0x0000'0004 };
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
@@ -53,18 +54,18 @@ public:
         }
     }
 
-    void enableExternalFramebufferSwap()
+    void swapFramebuffer()
     {
-        m_op |= OP_FRAMEBUFFER_COMMIT;
+        m_op |= OP_FRAMEBUFFER_SWAP;
         m_dseOp = DSEC::OP_NOP;
     }
-    void enableExternalCommit(const uint32_t size, const uint32_t addr)
+    void streamFromFramebuffer(const uint32_t size, const uint32_t addr)
     {
         m_op = 0;
         m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
         m_dseData = { { addr, size } };
     }
-    void enableInternalCommit(const uint32_t size, const uint32_t addr, const bool commitToStream) 
+    void commitFramebuffer(const uint32_t size, const uint32_t addr, const bool commitToStream) 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
