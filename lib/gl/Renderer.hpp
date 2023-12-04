@@ -183,22 +183,27 @@ public:
             return;
         }
 
-        // Commit/swap frame 
+        // Commit frame 
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            auto cmd = creatSwapFramebufferCommand();
-            if (cmd)
+            if (auto cmd = createCommitFramebufferCommand(i); cmd)
             {
                 m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(*cmd);
             }
+        }
 
-            cmd = createCommitFramebufferCommand(i);
-            if (cmd)
-            {
-                m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(*cmd);
-            }
+        // Swap frame
+        if (auto cmd = creatSwapFramebufferCommand(); cmd)
+        {
+            // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
+            // the address for the display output
+            m_displayListAssembler[(DISPLAY_LINES * m_backList)].addCommand(*cmd); 
+        }
 
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].closeStream();
+        // Finish display list to prepare it for upload
+        for (uint32_t i = 0; i < m_displayLines; i++)
+        {
+            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].finish();
         }
 
         // Switch the display lists

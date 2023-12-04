@@ -79,7 +79,7 @@ public:
         m_displayList.resetToCheckpoint();
     }
 
-    void closeStream()
+    void finish()
     {
         closeStreamSection();
     }
