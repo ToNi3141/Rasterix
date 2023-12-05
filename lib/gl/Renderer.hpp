@@ -193,12 +193,9 @@ public:
         }
 
         // Swap frame
-        if (auto cmd = creatSwapFramebufferCommand(); cmd)
-        {
-            // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
-            // the address for the display output
-            m_displayListAssembler[(DISPLAY_LINES * m_backList)].addCommand(*cmd); 
-        }
+        // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
+        // the address for the display output
+        m_displayListAssembler[(DISPLAY_LINES * m_backList)].addCommand(createSwapFramebufferCommand()); 
 
         // Finish display list to prepare it for upload
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -512,7 +509,7 @@ private:
         return cmd;
     }
 
-    std::optional<FramebufferCmd> creatSwapFramebufferCommand()
+    FramebufferCmd createSwapFramebufferCommand()
     {
         FramebufferCmd cmd { false, false, false };
         cmd.selectColorBuffer();
