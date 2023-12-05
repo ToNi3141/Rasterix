@@ -136,6 +136,7 @@ xilinx.com:ip:axis_data_fifo:2.0\
 xilinx.com:ip:axis_dwidth_converter:1.1\
 xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:proc_sys_reset:5.0\
+xilinx.com:ip:util_vector_logic:2.0\
 "
 
    set list_ips_missing ""
@@ -375,6 +376,14 @@ proc create_root_design { parentCell } {
   ] $proc_sys_reset_0
 
 
+  # Create instance: util_vector_logic_0, and set properties
+  set util_vector_logic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_0 ]
+  set_property -dict [list \
+    CONFIG.C_OPERATION {not} \
+    CONFIG.C_SIZE {1} \
+  ] $util_vector_logic_0
+
+
   # Create interface connections
   connect_bd_intf_net -intf_net RasterixIF_0_m_framebuffer_axis [get_bd_intf_pins RasterixIF_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_1/S_AXIS]
   connect_bd_intf_net -intf_net RasterixIF_0_m_mem_axi [get_bd_intf_pins RasterixIF_0/m_mem_axi] [get_bd_intf_pins axi_emc_0/S_AXI_MEM]
@@ -390,6 +399,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net DisplayController8Bi_1_rd [get_bd_ports dispRd] [get_bd_pins DisplayController8Bi_1/rd]
   connect_bd_net -net DisplayController8Bi_1_rst [get_bd_ports dispRst] [get_bd_pins DisplayController8Bi_1/rst]
   connect_bd_net -net DisplayController8Bi_1_wr [get_bd_ports dispWr] [get_bd_pins DisplayController8Bi_1/wr]
+  connect_bd_net -net RasterixIF_0_swap_fb [get_bd_pins RasterixIF_0/swap_fb] [get_bd_pins util_vector_logic_0/Op1]
   connect_bd_net -net Serial2AXIS_0_serial_cts [get_bd_ports serCts] [get_bd_pins Serial2AXIS_0/serial_cts]
   connect_bd_net -net Serial2AXIS_0_serial_miso [get_bd_ports serMiso] [get_bd_pins Serial2AXIS_0/serial_miso]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins DisplayController8Bi_1/aclk] [get_bd_pins RasterixIF_0/aclk] [get_bd_pins Serial2AXIS_0/aclk] [get_bd_pins axi_emc_0/rdclk] [get_bd_pins axi_emc_0/s_axi_aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins axis_dwidth_converter_1/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
@@ -400,6 +410,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net serMosi_1 [get_bd_ports serMosi] [get_bd_pins Serial2AXIS_0/serial_mosi]
   connect_bd_net -net serSck_1 [get_bd_ports serSck] [get_bd_pins Serial2AXIS_0/serial_sck]
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz_0/clk_in1]
+  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins RasterixIF_0/fb_swapped] [get_bd_pins util_vector_logic_0/Res]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces RasterixIF_0/m_mem_axi] [get_bd_addr_segs axi_emc_0/S_AXI_MEM/Mem0] -force
