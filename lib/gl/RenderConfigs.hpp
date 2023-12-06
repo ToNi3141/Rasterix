@@ -132,7 +132,7 @@ struct RenderConfigRRXIFNexys
     // Framebuffer Memory Location
     static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
     static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
-    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01E00000 }; // Second section is required from the software, not from the hardware -> use same address again
     static constexpr uint32_t DEPTH_BUFFER_LOC { 0 };
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
 };
