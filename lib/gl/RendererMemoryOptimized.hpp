@@ -103,7 +103,7 @@ public:
 
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
         {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
             enableColorBufferInMemory();
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
@@ -119,6 +119,12 @@ public:
         }
 
         setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
+    }
+
+    virtual ~RendererMemoryOptimized()
+    {
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+        render();
     }
 
     virtual bool drawTriangle(const Triangle& triangle) override
@@ -147,6 +153,11 @@ public:
             m_backList = 0;
             m_frontList = 1;
         }
+
+        // Swap frame
+        // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
+        // the address for the display output
+        m_displayListAssembler[m_frontList].addCommand(createSwapFramebufferCommand()); 
 
         uploadTextures();
         uploadDisplayList();
@@ -394,17 +405,20 @@ private:
             cmd.selectColorBuffer();
             cmd.selectDepthBuffer();
             cmd.selectStencilBuffer();
-            cmd.enableInternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
+            cmd.commitFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
         }
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
         {
-            cmd.enableExternalCommit(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
+            cmd.streamFromFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
         }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-        {
-            cmd.selectColorBuffer();
-            cmd.enableExternalFramebufferSwap();
-        }
+        return cmd;
+    }
+
+    FramebufferCmd createSwapFramebufferCommand()
+    {
+        FramebufferCmd cmd { false, false, false };
+        cmd.selectColorBuffer();
+        cmd.swapFramebuffer();
         return cmd;
     }
 
@@ -443,7 +457,7 @@ private:
                 reg.setY((i - 1) * m_yLineResolution);
             }
             m_displayListAssembler[m_frontList].addCommand(WriteRegisterCmd { reg });
-            m_displayListAssembler[m_frontList].closeStream();
+            m_displayListAssembler[m_frontList].finish();
             const typename ListAssembler::List *list = m_displayListAssembler[m_frontList].getDisplayList();
             m_busConnector.writeData(m_frontList, list->getSize());
             m_displayListAssembler[m_frontList].resetToCheckpoint();

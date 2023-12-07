@@ -140,7 +140,6 @@ private:
     bool drawTriangle(const Triangle& triangle);
     bool drawLine(const Line& line);
 
-    inline void viewportTransform(Vec4 &v0, Vec4 &v1, Vec4 &v2);
     inline void viewportTransform(Vec4 &v);
 
     void getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj& obj, const uint32_t index);
@@ -184,6 +183,8 @@ private:
 
     float m_depthRangeZNear { 0.0f };
     float m_depthRangeZFar { 1.0f };
+    float m_depthRangeOffset { 0.0f };
+    float m_depthRangeScale { 1.0f };
     int16_t m_viewportX { 0 };
     int16_t m_viewportY { 0 };
     int16_t m_viewportHeight { 0 };

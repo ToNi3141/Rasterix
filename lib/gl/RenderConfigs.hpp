@@ -132,7 +132,7 @@ struct RenderConfigRRXIFNexys
     // Framebuffer Memory Location
     static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
     static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
-    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01E00000 }; // Second section is required from the software, not from the hardware -> use same address again
     static constexpr uint32_t DEPTH_BUFFER_LOC { 0 };
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
 };
@@ -214,7 +214,7 @@ struct RenderConfigRRXIFZynq
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
 
     // Texture Memory Settings
-    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 7680 };
+    static constexpr uint32_t NUMBER_OF_TEXTURE_PAGES { 7280 };
     static constexpr uint32_t NUMBER_OF_TEXTURES { NUMBER_OF_TEXTURE_PAGES };
     static constexpr uint32_t TEXTURE_PAGE_SIZE { 4096 };
 
@@ -225,7 +225,7 @@ struct RenderConfigRRXIFZynq
     // Framebuffer Memory Location
     static constexpr FramebufferType FRAMEBUFFER_TYPE { FramebufferType::INTERNAL_TO_MEMORY };
     static constexpr uint32_t COLOR_BUFFER_LOC_1 { 0x01E00000 };
-    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0 };
+    static constexpr uint32_t COLOR_BUFFER_LOC_2 { 0x01C00000 };
     static constexpr uint32_t DEPTH_BUFFER_LOC { 0 };
     static constexpr uint32_t STENCIL_BUFFER_LOC { 0 };
 };

@@ -140,7 +140,6 @@ xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:processing_system7:5.5\
 xilinx.com:ip:util_ds_buf:2.2\
 xilinx.com:ip:xlconcat:2.1\
-xilinx.com:ip:xlconstant:1.1\
 "
 
    set list_ips_missing ""
@@ -930,11 +929,6 @@ proc create_root_design { parentCell } {
   # Create instance: xlconcat_0, and set properties
   set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0 ]
 
-  # Create instance: xlconstant_0, and set properties
-  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
-  set_property CONFIG.CONST_VAL {0} $xlconstant_0
-
-
   # Create interface connections
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_dwidth_converter_0/S_AXI]
   connect_bd_intf_net -intf_net RasterixIF_0_m_framebuffer_axis [get_bd_intf_pins RasterixIF_0/m_framebuffer_axis] [get_bd_intf_pins axi_dma_0/S_AXIS_S2MM]
@@ -958,6 +952,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_dvi_clock [get_bd_pins Dvi_0/dvi_clock] [get_bd_pins util_ds_buf_3/OBUF_IN]
   connect_bd_net -net Dvi_0_dvi_green [get_bd_pins Dvi_0/dvi_green] [get_bd_pins util_ds_buf_1/OBUF_IN]
   connect_bd_net -net Dvi_0_dvi_red [get_bd_pins Dvi_0/dvi_red] [get_bd_pins util_ds_buf_0/OBUF_IN]
+  connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterixIF_0/fb_swapped]
+  connect_bd_net -net RasterixIF_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterixIF_0/fb_addr]
+  connect_bd_net -net RasterixIF_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterixIF_0/swap_fb]
   connect_bd_net -net axi_dma_0_mm2s_introut [get_bd_pins axi_dma_0/mm2s_introut] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net axi_dma_0_s2mm_introut [get_bd_pins axi_dma_0/s2mm_introut] [get_bd_pins xlconcat_0/In1]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_dwidth_converter_0/s_axi_aclk] [get_bd_pins axi_protocol_convert_0/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins processing_system7_0/S_AXI_HP1_ACLK]
@@ -976,7 +973,6 @@ proc create_root_design { parentCell } {
   connect_bd_net -net util_ds_buf_3_OBUF_DS_N [get_bd_ports hdmi_tx_clk_n] [get_bd_pins util_ds_buf_3/OBUF_DS_N]
   connect_bd_net -net util_ds_buf_3_OBUF_DS_P [get_bd_ports hdmi_tx_clk_p] [get_bd_pins util_ds_buf_3/OBUF_DS_P]
   connect_bd_net -net xlconcat_0_dout [get_bd_pins processing_system7_0/IRQ_F2P] [get_bd_pins xlconcat_0/dout]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins Dvi_0/swap] [get_bd_pins xlconstant_0/dout]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces Dvi_0/m_mem_axi] [get_bd_addr_segs processing_system7_0/S_AXI_HP1/HP1_DDR_LOWOCM] -force

@@ -62,7 +62,8 @@
                 "BUILD_ZYNQ_EMBEDDED_LINUX" : "ON",
                 "ENABLE_SPDLOG": "ON",
                 "DRIVER_DMA_PROXY": "ON",
-                "BUILD_EXAMPLES": "ON"
+                "BUILD_EXAMPLES": "ON",
+                "BUILD_SHARED_LIBRARY": "ON"
             }
         }
     ]

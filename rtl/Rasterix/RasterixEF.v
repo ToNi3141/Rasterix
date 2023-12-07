@@ -365,6 +365,7 @@ module RasterixEF #(
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
+    wire                                             colorBufferCmdSwap;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire                                             m_color_arvalid;
@@ -738,6 +739,7 @@ module RasterixEF #(
         .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(m_color_arready),
@@ -805,6 +807,6 @@ module RasterixEF #(
         .m_stencil_wscreenPosY(m_stencil_wscreenPosY)
     );
 
-    assign swap_fb = colorBufferApply && colorBufferCmdCommit;
+    assign swap_fb = colorBufferApply && colorBufferCmdSwap;
 
 endmodule

@@ -83,6 +83,8 @@ module top #(
     wire                   s_axi_rvalid;
     wire                   s_axi_rready;
 
+    wire                   fb_swap;
+
     axi_ram #(
         .DATA_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
@@ -148,6 +150,10 @@ module top #(
         .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
         .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
         .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
+
+        .swap_fb(fb_swap),
+        .fb_addr(),
+        .fb_swapped(!fb_swap),
 
         .m_mem_axi_awid(s_axi_awid),
         .m_mem_axi_awaddr(s_axi_awaddr),

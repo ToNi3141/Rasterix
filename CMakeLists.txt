@@ -13,7 +13,7 @@ option(DRIVER_FT60X "Includes a driver for a FT60X bus connector" OFF)
 option(DRIVER_VERILATOR "Includes a driver for the Verilator simulation" OFF)
 option(DRIVER_DMA_PROXY "Includes a driver for the DMA Proxy bus connector" OFF)
 # Selects the hardware variant
-option(VARIANT_RRXIF "The renderer uses an internal framebuffer for rendering" ON)
+option(VARIANT_RRXIF "The renderer uses an internal framebuffer for rendering" OFF)
 option(VARIANT_RRXEF "The renderer uses an external framebuffer for rendering" OFF)
 # Enables logging
 option(ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
@@ -53,6 +53,10 @@ endif()
 
 if (CMAKE_HOST_APPLE AND BUILD_NATIVE)
     set(CMAKE_OSX_ARCHITECTURES "x86_64") # The FTDI library is only available for X86 (at least for mac os)
+endif()
+
+if (BUILD_ZYNQ_EMBEDDED_LINUX AND BUILD_SHARED_LIBRARY)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
