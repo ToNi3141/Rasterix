@@ -313,16 +313,6 @@ GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB (const GLubyte *);
 
 #endif /* GLX_ARB_get_proc_address */
 
-
-
-/* GLX 1.4 and later */
-// GLAPI void APIENTRY (*glXGetProcAddress(const GLubyte *procname))( void );
-
-/* GLX 1.4 function pointer typedefs */
-typedef __GLXextFuncPtr (* PFNGLXGETPROCADDRESSPROC) (const GLubyte *procName);
-
-
-
 #ifdef __cplusplus
 }
 #endif

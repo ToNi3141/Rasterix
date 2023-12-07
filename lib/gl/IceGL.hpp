@@ -52,8 +52,8 @@ public:
     const char *getLibExtensions() const;
     const void *getLibProcedure(std::string name) const;
 
-    void addProcedure(std::string name, const void *address);
-    void addExtension(std::string extension);
+    void addLibProcedure(std::string name, const void *address);
+    void addLibExtension(std::string extension);
 
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel

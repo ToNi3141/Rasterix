@@ -1,3 +1,20 @@
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2023 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include "glx.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
@@ -46,30 +63,20 @@ GLAPI GLXContext APIENTRY glXCreateContext( Display *dpy, XVisualInfo *vis,
 				    GLXContext shareList, Bool direct )
 {
     SPDLOG_DEBUG("glXCreateContext called");
-    // static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("IceGL.log", "basic-log.txt");
-    // file_sink->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    // auto logger = std::make_shared<spdlog::logger>("IceGL", file_sink);
-    // logger->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    // logger->info("IceGL started");
 
-    // // or you can even set multi_sink logger as default logger
-    // spdlog::set_default_logger(logger);
-
-    // rr::IceGL::createInstance(m_renderer);
-
-    #if SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_TRACE
+#if SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_TRACE
     spdlog::set_level(spdlog::level::trace);
-    #elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_DEBUG
+#elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_DEBUG
     spdlog::set_level(spdlog::level::debug);
-    #elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_INFO
+#elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_INFO
     spdlog::set_level(spdlog::level::info);
-    #elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_WARN
+#elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_WARN
     spdlog::set_level(spdlog::level::warn);
-    #elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_ERROR
+#elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_ERROR
     spdlog::set_level(spdlog::level::err);
-    #elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_CRITICAL
+#elif SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_CRITICAL
     spdlog::set_level(spdlog::level::critical);
-    #endif
+#endif
 
     m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     return reinterpret_cast<GLXContext>(&rr::IceGL::getInstance());
@@ -310,28 +317,20 @@ GLAPI void APIENTRY glXGetSelectedEvent( Display *dpy, GLXDrawable drawable,
 GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB (const GLubyte *s)
 {
     SPDLOG_DEBUG("glXGetProcAddressARB {} called", s);
-    static bool lazy = false;
-    if (!lazy)
+    static bool lazyInit = false;
+    if (!lazyInit)
     {
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
-        rr::IceGL::getInstance().addProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
-        rr::IceGL::getInstance().addProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
-        rr::IceGL::getInstance().addProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
-        rr::IceGL::getInstance().addProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
-        rr::IceGL::getInstance().addProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
-        rr::IceGL::getInstance().addProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
-        rr::IceGL::getInstance().addProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
-        rr::IceGL::getInstance().addProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
-        lazy = true;
+        rr::IceGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
+        rr::IceGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
+        rr::IceGL::getInstance().addLibProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
+        rr::IceGL::getInstance().addLibProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
+        rr::IceGL::getInstance().addLibProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
+        rr::IceGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
+        rr::IceGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
+        rr::IceGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
+        lazyInit = true;
 #undef ADDRESS_OF
     }
     return reinterpret_cast<__GLXextFuncPtr>(rr::IceGL::getInstance().getLibProcedure(reinterpret_cast<const char*>(s)));
 }
-
-
-
-/* GLX 1.4 and later */
-// GLAPI void APIENTRY (*glXGetProcAddress(const GLubyte *procname))( void )
-// {
-//     SPDLOG_WARN("glXGetProcAddress not implemented");
-// }
