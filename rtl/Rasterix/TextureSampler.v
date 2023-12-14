@@ -30,8 +30,8 @@ module TextureSampler #(
 
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
-    input  wire [ 7 : 0]                textureSizeWidth, 
-    input  wire [ 7 : 0]                textureSizeHeight,
+    input  wire [ 3 : 0]                textureSizeWidth, 
+    input  wire [ 3 : 0]                textureSizeHeight,
     input  wire                         enableHalfPixelOffset,
 
     // Texture memory access of a texel quad
@@ -156,17 +156,17 @@ module TextureSampler #(
 
         if (enableHalfPixelOffset)
         begin
-            texelS0WithOffset = texelS - convertToZeroPointFive(textureSizeWidth);
-            texelS1WithOffset = texelS + convertToZeroPointFive(textureSizeWidth);
-            texelT0WithOffset = texelT - convertToZeroPointFive(textureSizeHeight);
-            texelT1WithOffset = texelT + convertToZeroPointFive(textureSizeHeight);
+            texelS0WithOffset = texelS - convertToZeroPointFive(1 << (textureSizeWidth - 1));
+            texelS1WithOffset = texelS + convertToZeroPointFive(1 << (textureSizeWidth - 1));
+            texelT0WithOffset = texelT - convertToZeroPointFive(1 << (textureSizeHeight - 1));
+            texelT1WithOffset = texelT + convertToZeroPointFive(1 << (textureSizeHeight - 1));
         end
         else
         begin
             texelS0WithOffset = texelS;
-            texelS1WithOffset = texelS + convertToOnePointZero(textureSizeWidth);
+            texelS1WithOffset = texelS + convertToOnePointZero(1 << (textureSizeWidth - 1));
             texelT0WithOffset = texelT;
-            texelT1WithOffset = texelT + convertToOnePointZero(textureSizeHeight);
+            texelT1WithOffset = texelT + convertToOnePointZero(1 << (textureSizeHeight - 1));
         end
 
         step0_texelT0 = clampTexture(texelT0WithOffset, clampT);
@@ -174,141 +174,15 @@ module TextureSampler #(
         step0_texelT1 = clampTexture(texelT1WithOffset, clampT);
         step0_texelS1 = clampTexture(texelS1WithOffset, clampS);
 
-        // Select Y coordinate
-        case (textureSizeHeight)
-            8'b00000001: // 2px
-            begin
-                addrT0 = {7'h0, step0_texelT0[14 +: 1]};
-                addrT1 = {7'h0, step0_texelT1[14 +: 1]};
-                step0_subCoordT <= {step0_texelT0[0 +: 14], 2'h0};
-            end
-            8'b00000010: // 4px
-            begin
-                addrT0 = {6'h0, step0_texelT0[13 +: 2]};
-                addrT1 = {6'h0, step0_texelT1[13 +: 2]};
-                step0_subCoordT <= {step0_texelT0[0 +: 13], 3'h0};
-            end
-            8'b00000100: // 8px
-            begin
-                addrT0 = {5'h0, step0_texelT0[12 +: 3]};
-                addrT1 = {5'h0, step0_texelT1[12 +: 3]};
-                step0_subCoordT <= {step0_texelT0[0 +: 12], 4'h0};
-            end
-            8'b00001000: // 16px
-            begin
-                addrT0 = {4'h0, step0_texelT0[11 +: 4]};
-                addrT1 = {4'h0, step0_texelT1[11 +: 4]};
-                step0_subCoordT <= {step0_texelT0[0 +: 11], 5'h0};
-            end
-            8'b00010000: // 32px
-            begin  
-                addrT0 = {3'h0, step0_texelT0[10 +: 5]};
-                addrT1 = {3'h0, step0_texelT1[10 +: 5]};
-                step0_subCoordT <= {step0_texelT0[0 +: 10], 6'h0};
-            end
-            8'b00100000: // 64px
-            begin
-                addrT0 = {2'h0, step0_texelT0[9 +: 6]};
-                addrT1 = {2'h0, step0_texelT1[9 +: 6]};
-                step0_subCoordT <= {step0_texelT0[0 +:  9], 7'h0};
-            end
-            8'b01000000: // 128px
-            begin
-                addrT0 = {1'h0, step0_texelT0[ 8 +: 7]};
-                addrT1 = {1'h0, step0_texelT1[ 8 +: 7]};
-                step0_subCoordT <= {step0_texelT0[0 +:  8], 8'h0};
-            end
-            8'b10000000: // 256px
-            begin
-                addrT0 = {      step0_texelT0[ 7 +: 8]};
-                addrT1 = {      step0_texelT1[ 7 +: 8]};
-                step0_subCoordT <= {step0_texelT0[0 +:  7], 9'h0};
-            end
-            default: // 1px
-            begin   
-                step0_texelT1 = step0_texelT0;
-                addrT0 = 0;
-                addrT1 = 0;
-                step0_subCoordT <= 16'h0;
-            end
-        endcase
+        addrT0 = step0_texelT0[7 +: 8] >> (8 - textureSizeHeight);
+        addrT1 = step0_texelT1[7 +: 8] >> (8 - textureSizeHeight);
+        step0_subCoordT <= { step0_texelT0[0 +: 15], 1'b0 } << textureSizeHeight;
 
-        // Select X coordinate
-        case (textureSizeWidth)
-            8'b00000001: // 2px
-            begin
-                texelAddr00 <= {7'h0, addrT0, step0_texelS0[14 +: 1]};
-                texelAddr01 <= {7'h0, addrT0, step0_texelS1[14 +: 1]};
-                texelAddr10 <= {7'h0, addrT1, step0_texelS0[14 +: 1]};
-                texelAddr11 <= {7'h0, addrT1, step0_texelS1[14 +: 1]};
-                step0_subCoordS <= {step0_texelS0[0 +: 14], 2'h0};
-            end
-            8'b00000010: // 4px
-            begin
-                texelAddr00 <= {6'h0, addrT0, step0_texelS0[13 +: 2]};
-                texelAddr01 <= {6'h0, addrT0, step0_texelS1[13 +: 2]};
-                texelAddr10 <= {6'h0, addrT1, step0_texelS0[13 +: 2]};
-                texelAddr11 <= {6'h0, addrT1, step0_texelS1[13 +: 2]};
-                step0_subCoordS <= {step0_texelS0[0 +: 13], 3'h0};
-            end
-            8'b00000100: // 8px
-            begin
-                texelAddr00 <= {5'h0, addrT0, step0_texelS0[12 +: 3]};
-                texelAddr01 <= {5'h0, addrT0, step0_texelS1[12 +: 3]};
-                texelAddr10 <= {5'h0, addrT1, step0_texelS0[12 +: 3]};
-                texelAddr11 <= {5'h0, addrT1, step0_texelS1[12 +: 3]};
-                step0_subCoordS <= {step0_texelS0[0 +: 12], 4'h0};
-            end
-            8'b00001000: // 16px
-            begin
-                texelAddr00 <= {4'h0, addrT0, step0_texelS0[11 +: 4]};
-                texelAddr01 <= {4'h0, addrT0, step0_texelS1[11 +: 4]};
-                texelAddr10 <= {4'h0, addrT1, step0_texelS0[11 +: 4]};
-                texelAddr11 <= {4'h0, addrT1, step0_texelS1[11 +: 4]};
-                step0_subCoordS <= {step0_texelS0[0 +: 11], 5'h0};
-            end
-            8'b00010000: // 32px
-            begin
-                texelAddr00 <= {3'h0, addrT0, step0_texelS0[10 +: 5]};
-                texelAddr01 <= {3'h0, addrT0, step0_texelS1[10 +: 5]};
-                texelAddr10 <= {3'h0, addrT1, step0_texelS0[10 +: 5]};
-                texelAddr11 <= {3'h0, addrT1, step0_texelS1[10 +: 5]};
-                step0_subCoordS <= {step0_texelS0[0 +: 10], 6'h0};
-            end
-            8'b00100000: // 64px
-            begin
-                texelAddr00 <= {2'h0, addrT0, step0_texelS0[ 9 +: 6]};
-                texelAddr01 <= {2'h0, addrT0, step0_texelS1[ 9 +: 6]};
-                texelAddr10 <= {2'h0, addrT1, step0_texelS0[ 9 +: 6]};
-                texelAddr11 <= {2'h0, addrT1, step0_texelS1[ 9 +: 6]};
-                step0_subCoordS <= {step0_texelS0[0 +:  9], 7'h0};
-            end
-            8'b01000000: // 128px
-            begin
-                texelAddr00 <= {1'h0, addrT0, step0_texelS0[ 8 +: 7]};
-                texelAddr01 <= {1'h0, addrT0, step0_texelS1[ 8 +: 7]};
-                texelAddr10 <= {1'h0, addrT1, step0_texelS0[ 8 +: 7]};
-                texelAddr11 <= {1'h0, addrT1, step0_texelS1[ 8 +: 7]};
-                step0_subCoordS <= {step0_texelS0[0 +:  8], 8'h0};
-            end
-            8'b10000000: // 256px
-            begin
-                texelAddr00 <= {      addrT0, step0_texelS0[ 7 +: 8]};
-                texelAddr01 <= {      addrT0, step0_texelS1[ 7 +: 8]};
-                texelAddr10 <= {      addrT1, step0_texelS0[ 7 +: 8]};
-                texelAddr11 <= {      addrT1, step0_texelS1[ 7 +: 8]};
-                step0_subCoordS <= {step0_texelS0[0 +:  7], 9'h0};
-            end
-            default: // 1px
-            begin
-                step0_texelS1 = step0_texelS0;
-                texelAddr00 <= {8'h0, addrT0};
-                texelAddr01 <= {8'h0, addrT0};
-                texelAddr10 <= {8'h0, addrT1};
-                texelAddr11 <= {8'h0, addrT1};
-                step0_subCoordS <= 16'h0;
-            end
-        endcase
+        texelAddr00 <= ({ 8'h0, addrT0 } << textureSizeWidth) | ({ 8'h0, step0_texelS0[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr01 <= ({ 8'h0, addrT0 } << textureSizeWidth) | ({ 8'h0, step0_texelS1[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr10 <= ({ 8'h0, addrT1 } << textureSizeWidth) | ({ 8'h0, step0_texelS0[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr11 <= ({ 8'h0, addrT1 } << textureSizeWidth) | ({ 8'h0, step0_texelS1[7 +: 8] } >> (8 - textureSizeWidth));
+        step0_subCoordS <= { step0_texelS0[0 +: 15], 1'b0 } << textureSizeWidth;
     end
 
     //////////////////////////////////////////////
