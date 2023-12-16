@@ -164,46 +164,37 @@ module TextureSampler #(
     // the texel quad
     always @(posedge aclk)
     begin : TexAddrCalc
-        reg [31 : 0]    texelS0WithOffset; // S16.15
-        reg [31 : 0]    texelS1WithOffset; // S16.15
-        reg [31 : 0]    texelT0WithOffset; // S16.15
-        reg [31 : 0]    texelT1WithOffset; // S16.15
-        reg [14 : 0]    texelU0; // Q8.7 (in uv coordinates)
-        reg [14 : 0]    texelU1; // Q8.7 (in uv coordinates)
-        reg [14 : 0]    texelV0; // Q8.7 (in uv coordinates)
-        reg [14 : 0]    texelV1; // Q8.7 (in uv coordinates)
+        reg [31 : 0] texelS0; // S16.15
+        reg [31 : 0] texelS1; // S16.15
+        reg [31 : 0] texelT0; // S16.15
+        reg [31 : 0] texelT1; // S16.15
 
         if (enableHalfPixelOffset)
         begin
-            texelS0WithOffset = texelS - convertToZeroPointFive(1 << textureSizeWidth);
-            texelS1WithOffset = texelS + convertToZeroPointFive(1 << textureSizeWidth);
-            texelT0WithOffset = texelT - convertToZeroPointFive(1 << textureSizeHeight);
-            texelT1WithOffset = texelT + convertToZeroPointFive(1 << textureSizeHeight);
+            texelS0 = texelS - convertToZeroPointFive(1 << textureSizeWidth);
+            texelS1 = texelS + convertToZeroPointFive(1 << textureSizeWidth);
+            texelT0 = texelT - convertToZeroPointFive(1 << textureSizeHeight);
+            texelT1 = texelT + convertToZeroPointFive(1 << textureSizeHeight);
         end
         else
         begin
-            texelS0WithOffset = texelS;
-            texelS1WithOffset = texelS + convertToOnePointZero(1 << textureSizeWidth);
-            texelT0WithOffset = texelT;
-            texelT1WithOffset = texelT + convertToOnePointZero(1 << textureSizeHeight);
+            texelS0 = texelS;
+            texelS1 = texelS + convertToOnePointZero(1 << textureSizeWidth);
+            texelT0 = texelT;
+            texelT1 = texelT + convertToOnePointZero(1 << textureSizeHeight);
         end
 
-        texelU0 = texelS0WithOffset[0 +: 15];
-        texelV0 = texelT0WithOffset[0 +: 15];
-        texelU1 = texelS1WithOffset[0 +: 15];
-        texelV1 = texelT1WithOffset[0 +: 15];
+        step0_texelU0Valid <= !isPixelOutside(texelS0, clampS);
+        step0_texelU1Valid <= !isPixelOutside(texelS1, clampS);
+        step0_texelV0Valid <= !isPixelOutside(texelT0, clampT);
+        step0_texelV1Valid <= !isPixelOutside(texelT1, clampT);
 
-        step0_texelU0Valid <= !isPixelOutside(texelS0WithOffset, clampS);
-        step0_texelV0Valid <= !isPixelOutside(texelT0WithOffset, clampT);
-        step0_texelU1Valid <= !isPixelOutside(texelS1WithOffset, clampS);
-        step0_texelV1Valid <= !isPixelOutside(texelT1WithOffset, clampT);
-
-        texelAddr00 <= ({ 8'h0, texelV0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU0[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr01 <= ({ 8'h0, texelV0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU1[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr10 <= ({ 8'h0, texelV1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU0[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr11 <= ({ 8'h0, texelV1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU1[7 +: 8] } >> (8 - textureSizeWidth));
-        step0_subCoordU <= { texelU0[0 +: 15], 1'b0 } << textureSizeWidth;
-        step0_subCoordV <= { texelV0[0 +: 15], 1'b0 } << textureSizeHeight;
+        texelAddr00 <= ({ 8'h0, texelT0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS0[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr01 <= ({ 8'h0, texelT0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS1[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr10 <= ({ 8'h0, texelT1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS0[7 +: 8] } >> (8 - textureSizeWidth));
+        texelAddr11 <= ({ 8'h0, texelT1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS1[7 +: 8] } >> (8 - textureSizeWidth));
+        step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << textureSizeWidth;
+        step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << textureSizeHeight;
     end
 
     //////////////////////////////////////////////
@@ -268,33 +259,29 @@ module TextureSampler #(
             // Imagine a pixel quad as
             // 0 1 
             // 2 3
-            // Lets observe 0. Now whe following cases can exist:
-            // 0 z : in all cases where 0 is valid -> use 0
-            // z z 
-            4'bzzz1: ti00 = 0; // Pixel of the quad is in bounds
+            // Lets observe 0. Now the following cases can exist:
+            // 0 ? : in all cases where 0 is valid -> use 0
+            // ? ? 
+            4'b???1: ti00 = 0; // Pixel of the quad is in bounds
             // shift out in x direction
-            // o|1 : 0 is outside, clamp s requires to use the right side -> use 1
-            // o|3 
+            // o 1 : 0 is outside, clamp s requires to use the right side -> use 1
+            // o 3 
             4'b1010: ti00 = 1; // Quad is shiftet out in x direction
             // shift out in y direction
             // o o : 0 is outside, clamp t requires to use the bottom -> use 2
-            // ---
             // 2 3 
             4'b1100: ti00 = 2; // Quad is shiftet out in y direction
             // shift out on top left corner
-            // o|o : 0 is outside only 3 is inside -> use 3
-            // ---
-            // o|3 
+            // o o : 0 is outside only 3 is inside -> use 3
+            // o 3 
             4'b1000: ti00 = 3; // Quad is on the corner
             // shift out on top right corner
-            // o|o : 0 is outside only 2 is inside -> use 2
-            // ---
-            // 2|o 
+            // o o : 0 is outside only 2 is inside -> use 2
+            // 2 o 
             4'b0100: ti00 = 2; // Quad is on the corner
             // shift out on bottom left corner
-            // o|1 : 0 is outside only 1 is inside -> use 1
-            // ---
-            // o|o 
+            // o 1 : 0 is outside only 1 is inside -> use 1
+            // o o 
             4'b0010: ti00 = 1; // Quad is on the corner
             // There should never be a case where this default is required.
             // There should be always a valid texel in the quad and they should always clamp on multiple of 90°
@@ -302,7 +289,7 @@ module TextureSampler #(
         endcase
 
         casez ({t11, t10, t01, t00})
-            4'bzz1z: ti01 = 1; // Pixel of the quad is in bounds
+            4'b??1?: ti01 = 1; // Pixel of the quad is in bounds
             4'b0101: ti01 = 0; // Quad is shiftet out in x direction
             4'b1100: ti01 = 3; // Quad is shiftet out in y direction
             4'b1000: ti01 = 3; // Quad is on the corner
@@ -312,7 +299,7 @@ module TextureSampler #(
         endcase
 
         casez ({t11, t10, t01, t00})
-            4'bz1zz: ti10 = 2; // Pixel of the quad is in bounds
+            4'b?1??: ti10 = 2; // Pixel of the quad is in bounds
             4'b1010: ti10 = 3; // Quad is shiftet out in x direction
             4'b0011: ti10 = 0; // Quad is shiftet out in y direction
             4'b1000: ti10 = 3; // Quad is on the corner
@@ -322,7 +309,7 @@ module TextureSampler #(
         endcase
 
         casez ({t11, t10, t01, t00})
-            4'b1zzz: ti11 = 3; // Pixel of the quad is in bounds
+            4'b1???: ti11 = 3; // Pixel of the quad is in bounds
             4'b0101: ti11 = 2; // Quad is shiftet out in x direction
             4'b0011: ti11 = 1; // Quad is shiftet out in y direction
             4'b0100: ti11 = 2; // Quad is on the corner
