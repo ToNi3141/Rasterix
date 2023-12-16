@@ -62,22 +62,45 @@ module TextureSampler #(
     output wire [15 : 0]                texelSubCoordT // Q0.16
 );
 `include "RegisterAndDescriptorDefines.vh"
-    
-    function [15 : 0] clampTexture;
-        input [31 : 0] texCoord;
-        input [ 0 : 0] mode; 
+
+    function [PIXEL_WIDTH - 1 : 0] texelMux;
+        input [ 1 : 0] sel;
+        input [PIXEL_WIDTH - 1 : 0] t00;
+        input [PIXEL_WIDTH - 1 : 0] t01;
+        input [PIXEL_WIDTH - 1 : 0] t10;
+        input [PIXEL_WIDTH - 1 : 0] t11;
         begin
-            clampTexture = texCoord[0 +: 16];
+            case (sel)
+                2'd0: texelMux = t00;
+                2'd1: texelMux = t01;
+                2'd2: texelMux = t10;
+                2'd3: texelMux = t11;
+            endcase
+        end
+    endfunction
+
+    function isPixelOutside;
+        input [31 : 0] texCoord;
+        input [ 0 : 0] mode;
+        begin
             if (mode == CLAMP_TO_EDGE)
             begin
                 if (texCoord[31]) // Check if it lower than 0 by only checking the sign bit
                 begin
-                    clampTexture = 0;
+                    isPixelOutside = 1;
                 end
                 else if ((texCoord >> 15) != 0) // Check if it is greater than one by checking if the integer part is unequal to zero
                 begin
-                    clampTexture = 16'h7fff;
-                end  
+                    isPixelOutside = 1;
+                end 
+                else
+                begin
+                    isPixelOutside = 0;
+                end
+            end
+            else
+            begin
+                isPixelOutside = 0;
             end
         end
     endfunction
@@ -94,26 +117,6 @@ module TextureSampler #(
         {
             1'h0, // sign
             16'h0, // integer part
-            1'h0,
-            texSize[0],
-            texSize[1],
-            texSize[2],
-            texSize[3],
-            texSize[4],
-            texSize[5],
-            texSize[6],
-            texSize[7],
-            6'h0
-        };
-    endfunction
-
-    // See convertToZeroPointFive. It is basically the same just for 1.0
-    function [31 : 0] convertToOnePointZero;
-        input [7 : 0] texSize;
-        convertToOnePointZero = 
-        {
-            1'h0, // sign
-            16'h0, // integer part
             texSize[0],
             texSize[1],
             texSize[2],
@@ -126,17 +129,34 @@ module TextureSampler #(
         };
     endfunction
 
+    // See convertToZeroPointFive. It is basically the same just for 1.0
+    function [31 : 0] convertToOnePointZero;
+        input [7 : 0] texSize;
+        convertToOnePointZero = 
+        {
+            1'h0, // sign
+            15'h0, // integer part
+            texSize[0], // integer part
+            texSize[1], // fraction part
+            texSize[2],
+            texSize[3],
+            texSize[4],
+            texSize[5],
+            texSize[6],
+            texSize[7],
+            8'h0
+        };
+    endfunction
+
     //////////////////////////////////////////////
     // STEP 0
     // Build RAM adresses
     // Clocks: 1
     //////////////////////////////////////////////
-    reg             step0_clampS;
-    reg             step0_clampT;
-    reg  [15 : 0]   step0_texelS0; // Q1.15
-    reg  [15 : 0]   step0_texelS1; // Q1.15
-    reg  [15 : 0]   step0_texelT0; // Q1.15
-    reg  [15 : 0]   step0_texelT1; // Q1.15
+    reg             step0_texelS0Valid;
+    reg             step0_texelS1Valid;
+    reg             step0_texelT0Valid;
+    reg             step0_texelT1Valid;
     reg  [15 : 0]   step0_subCoordS; // Q0.16
     reg  [15 : 0]   step0_subCoordT; // Q0.16
     
@@ -144,45 +164,51 @@ module TextureSampler #(
     // the texel quad
     always @(posedge aclk)
     begin : TexAddrCalc
-        reg [ 7 : 0] addrT0;
-        reg [ 7 : 0] addrT1;
-        reg [31 : 0] texelS0WithOffset;
-        reg [31 : 0] texelS1WithOffset;
-        reg [31 : 0] texelT0WithOffset;
-        reg [31 : 0] texelT1WithOffset;
-
-        step0_clampS <= clampS;
-        step0_clampT <= clampT;
+        reg [ 7 : 0]    addrT0;
+        reg [ 7 : 0]    addrT1;
+        reg [31 : 0]    texelS0WithOffset; // S16.15
+        reg [31 : 0]    texelS1WithOffset; // S16.15
+        reg [31 : 0]    texelT0WithOffset; // S16.15
+        reg [31 : 0]    texelT1WithOffset; // S16.15
+        reg [14 : 0]    step0_texelS0; // Q0.15
+        reg [14 : 0]    step0_texelS1; // Q0.15
+        reg [14 : 0]    step0_texelT0; // Q0.15
+        reg [14 : 0]    step0_texelT1; // Q0.15
 
         if (enableHalfPixelOffset)
         begin
-            texelS0WithOffset = texelS - convertToZeroPointFive(1 << (textureSizeWidth - 1));
-            texelS1WithOffset = texelS + convertToZeroPointFive(1 << (textureSizeWidth - 1));
-            texelT0WithOffset = texelT - convertToZeroPointFive(1 << (textureSizeHeight - 1));
-            texelT1WithOffset = texelT + convertToZeroPointFive(1 << (textureSizeHeight - 1));
+            texelS0WithOffset = texelS - convertToZeroPointFive(1 << textureSizeWidth);
+            texelS1WithOffset = texelS + convertToZeroPointFive(1 << textureSizeWidth);
+            texelT0WithOffset = texelT - convertToZeroPointFive(1 << textureSizeHeight);
+            texelT1WithOffset = texelT + convertToZeroPointFive(1 << textureSizeHeight);
         end
         else
         begin
             texelS0WithOffset = texelS;
-            texelS1WithOffset = texelS + convertToOnePointZero(1 << (textureSizeWidth - 1));
+            texelS1WithOffset = texelS + convertToOnePointZero(1 << textureSizeWidth);
             texelT0WithOffset = texelT;
-            texelT1WithOffset = texelT + convertToOnePointZero(1 << (textureSizeHeight - 1));
+            texelT1WithOffset = texelT + convertToOnePointZero(1 << textureSizeHeight);
         end
 
-        step0_texelT0 = clampTexture(texelT0WithOffset, clampT);
-        step0_texelS0 = clampTexture(texelS0WithOffset, clampS);
-        step0_texelT1 = clampTexture(texelT1WithOffset, clampT);
-        step0_texelS1 = clampTexture(texelS1WithOffset, clampS);
+        step0_texelT0 = texelT0WithOffset[0 +: 15];
+        step0_texelS0 = texelS0WithOffset[0 +: 15];
+        step0_texelT1 = texelT1WithOffset[0 +: 15];
+        step0_texelS1 = texelS1WithOffset[0 +: 15];
+
+        step0_texelT0Valid <= !isPixelOutside(texelT0WithOffset, clampT);
+        step0_texelS0Valid <= !isPixelOutside(texelS0WithOffset, clampS);
+        step0_texelT1Valid <= !isPixelOutside(texelT1WithOffset, clampT);
+        step0_texelS1Valid <= !isPixelOutside(texelS1WithOffset, clampS);
 
         addrT0 = step0_texelT0[7 +: 8] >> (8 - textureSizeHeight);
         addrT1 = step0_texelT1[7 +: 8] >> (8 - textureSizeHeight);
-        step0_subCoordT <= { step0_texelT0[0 +: 15], 1'b0 } << textureSizeHeight;
 
         texelAddr00 <= ({ 8'h0, addrT0 } << textureSizeWidth) | ({ 8'h0, step0_texelS0[7 +: 8] } >> (8 - textureSizeWidth));
         texelAddr01 <= ({ 8'h0, addrT0 } << textureSizeWidth) | ({ 8'h0, step0_texelS1[7 +: 8] } >> (8 - textureSizeWidth));
         texelAddr10 <= ({ 8'h0, addrT1 } << textureSizeWidth) | ({ 8'h0, step0_texelS0[7 +: 8] } >> (8 - textureSizeWidth));
         texelAddr11 <= ({ 8'h0, addrT1 } << textureSizeWidth) | ({ 8'h0, step0_texelS1[7 +: 8] } >> (8 - textureSizeWidth));
         step0_subCoordS <= { step0_texelS0[0 +: 15], 1'b0 } << textureSizeWidth;
+        step0_subCoordT <= { step0_texelT0[0 +: 15], 1'b0 } << textureSizeHeight;
     end
 
     //////////////////////////////////////////////
@@ -190,18 +216,12 @@ module TextureSampler #(
     // Wait for data
     // Clocks: 1
     //////////////////////////////////////////////
-    wire            step1_clampS;
-    wire            step1_clampT;
+    wire            step1_texelS0Valid;
+    wire            step1_texelS1Valid;
+    wire            step1_texelT0Valid;
+    wire            step1_texelT1Valid;
     wire [15 : 0]   step1_subCoordS; // Q0.16
     wire [15 : 0]   step1_subCoordT; // Q0.16
-
-    // Check if we have to clamp
-    // Check if the texel coordinate is smaller than texel+1. If so, we have an overflow and we have to clamp.
-    // OR, since the texel coordinate is a Q1.15 number, we need a dedicated check for the integer part. Could be, 
-    // that just the fraction part overflows but not the whole variable. Therefor also check for it by checking the
-    // most significant bit.
-    wire step1_clampSCalc = step0_clampS && ((step0_texelS0 > step0_texelS1) || (!step0_texelS0[15] && step0_texelS1[15]));
-    wire step1_clampTCalc = step0_clampT && ((step0_texelT0 > step0_texelT1) || (!step0_texelT0[15] && step0_texelT1[15]));
 
     ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
         step1_subCoordSDelay ( .clk(aclk), .in(step0_subCoordS), .out(step1_subCoordS));
@@ -210,10 +230,16 @@ module TextureSampler #(
         step1_subCoordTDelay ( .clk(aclk), .in(step0_subCoordT), .out(step1_subCoordT));
 
     ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_clampSDelay ( .clk(aclk), .in(step1_clampSCalc), .out(step1_clampS));
+        step1_texelS0ValidDelay ( .clk(aclk), .in(step0_texelS0Valid), .out(step1_texelS0Valid));
 
     ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_clampTDelay ( .clk(aclk), .in(step1_clampTCalc), .out(step1_clampT));
+        step1_texelS1ValidDelay ( .clk(aclk), .in(step0_texelS1Valid), .out(step1_texelS1Valid));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step1_texelT0ValidDelay ( .clk(aclk), .in(step0_texelT0Valid), .out(step1_texelT0Valid));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step1_texelT1ValidDelay ( .clk(aclk), .in(step0_texelT1Valid), .out(step1_texelT1Valid));
 
     //////////////////////////////////////////////
     // STEP 2
@@ -227,21 +253,102 @@ module TextureSampler #(
     reg  [PIXEL_WIDTH - 1 : 0]  step2_texel10; 
     reg  [PIXEL_WIDTH - 1 : 0]  step2_texel11; 
 
+    wire            step2_texelS0Valid;
+    wire            step2_texelS1Valid;
+    wire            step2_texelT0Valid;
+    wire            step2_texelT1Valid;
+
     always @(posedge aclk)
-    begin
-        step2_subCoordS <= step1_subCoordS;
-        step2_subCoordT <= step1_subCoordT;
+    begin : ClampTexelQuad
+        reg         t00;
+        reg         t01;
+        reg         t10;
+        reg         t11;
+        reg [1 : 0] ti00;
+        reg [1 : 0] ti01;
+        reg [1 : 0] ti10;
+        reg [1 : 0] ti11;
+
+        t00 = step1_texelS0Valid & step1_texelT0Valid;
+        t01 = step1_texelS1Valid & step1_texelT0Valid;
+        t10 = step1_texelS0Valid & step1_texelT1Valid;
+        t11 = step1_texelS1Valid & step1_texelT1Valid;
+    
+        casez ({t11, t10, t01, t00})
+            // Imagine a pixel quad as
+            // 0 1 
+            // 2 3
+            // Lets observe 0. Now whe following cases can exist:
+            // 0 z : in all cases where 0 is valid -> use 0
+            // z z 
+            4'bzzz1: ti00 = 0; // Pixel of the quad is in bounds
+            // shift out in x direction
+            // o|1 : 0 is outside, clamp s requires to use the right side -> use 1
+            // o|3 
+            4'b0110: ti00 = 1; // Quad is shiftet out in x direction
+            // shift out in y direction
+            // o o : 0 is outside, clamp t requires to use the bottom -> use 2
+            // ---
+            // 2 3 
+            4'b1100: ti00 = 2; // Quad is shiftet out in y direction
+            // shift out on top left corner
+            // o|o : 0 is outside only 3 is inside -> use 3
+            // ---
+            // o|3 
+            4'b1000: ti00 = 3; // Quad is on the corner
+            // shift out on top right corner
+            // o|o : 0 is outside only 2 is inside -> use 2
+            // ---
+            // 2|o 
+            4'b0100: ti00 = 2; // Quad is on the corner
+            // shift out on bottom left corner
+            // o|1 : 0 is outside only 1 is inside -> use 1
+            // ---
+            // o|o 
+            4'b0010: ti00 = 1; // Quad is on the corner
+            // There should never be a case where this default is required.
+            // There should be always a valid texel in the quad and they should always clamp on multiple of 90°
+            default: ti00 = 0; // Default all invalid cases
+        endcase
+
+        casez ({t11, t10, t01, t00})
+            4'bzz1z: ti01 = 1; // Pixel of the quad is in bounds
+            4'b0101: ti01 = 0; // Quad is shiftet out in x direction
+            4'b1100: ti01 = 3; // Quad is shiftet out in y direction
+            4'b1000: ti01 = 3; // Quad is on the corner
+            4'b0100: ti01 = 2; // Quad is on the corner
+            4'b0001: ti01 = 0; // Quad is on the corner
+            default: ti01 = 1; // Default all invalid cases
+        endcase
+
+        casez ({t11, t10, t01, t00})
+            4'bz1zz: ti10 = 2; // Pixel of the quad is in bounds
+            4'b1010: ti10 = 3; // Quad is shiftet out in x direction
+            4'b0011: ti10 = 0; // Quad is shiftet out in y direction
+            4'b1000: ti10 = 3; // Quad is on the corner
+            4'b0010: ti10 = 1; // Quad is on the corner
+            4'b0001: ti10 = 0; // Quad is on the corner
+            default: ti10 = 2; // Default all invalid cases
+        endcase
+
+        casez ({t11, t10, t01, t00})
+            4'b1zzz: ti11 = 3; // Pixel of the quad is in bounds
+            4'b0101: ti11 = 2; // Quad is shiftet out in x direction
+            4'b0011: ti11 = 1; // Quad is shiftet out in y direction
+            4'b0100: ti11 = 2; // Quad is on the corner
+            4'b0010: ti11 = 1; // Quad is on the corner
+            4'b0001: ti11 = 0; // Quad is on the corner
+            default: ti11 = 3; // Default all invalid cases
+        endcase
 
         // Clamp texel quad
-        step2_texel00 <= texelInput00;
-        step2_texel01 <= (step1_clampS) ? texelInput00 
-                                        : texelInput01;
-        step2_texel10 <= (step1_clampT) ? texelInput00 
-                                        : texelInput10;
-        step2_texel11 <= (step1_clampS) ? (step1_clampT) ? texelInput00 
-                                                         : texelInput10
-                                        : (step1_clampT) ? texelInput01 
-                                                         : texelInput11;
+        step2_texel00 <= texelMux(ti00, texelInput00, texelInput01, texelInput10, texelInput11);
+        step2_texel01 <= texelMux(ti01, texelInput00, texelInput01, texelInput10, texelInput11);
+        step2_texel10 <= texelMux(ti10, texelInput00, texelInput01, texelInput10, texelInput11);
+        step2_texel11 <= texelMux(ti11, texelInput00, texelInput01, texelInput10, texelInput11);
+
+        step2_subCoordS <= step1_subCoordS;
+        step2_subCoordT <= step1_subCoordT;
     end
 
     //////////////////////////////////////////////
