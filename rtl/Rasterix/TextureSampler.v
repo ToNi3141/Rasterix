@@ -188,15 +188,15 @@ module TextureSampler #(
             texelT1WithOffset = texelT + convertToOnePointZero(1 << textureSizeHeight);
         end
 
-        texelV0 = texelT0WithOffset[0 +: 15];
         texelU0 = texelS0WithOffset[0 +: 15];
-        texelV1 = texelT1WithOffset[0 +: 15];
+        texelV0 = texelT0WithOffset[0 +: 15];
         texelU1 = texelS1WithOffset[0 +: 15];
+        texelV1 = texelT1WithOffset[0 +: 15];
 
-        step0_texelV0Valid <= !isPixelOutside(texelT0WithOffset, clampT);
         step0_texelU0Valid <= !isPixelOutside(texelS0WithOffset, clampS);
-        step0_texelV1Valid <= !isPixelOutside(texelT1WithOffset, clampT);
+        step0_texelV0Valid <= !isPixelOutside(texelT0WithOffset, clampT);
         step0_texelU1Valid <= !isPixelOutside(texelS1WithOffset, clampS);
+        step0_texelV1Valid <= !isPixelOutside(texelT1WithOffset, clampT);
 
         texelAddr00 <= ({ 8'h0, texelV0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU0[7 +: 8] } >> (8 - textureSizeWidth));
         texelAddr01 <= ({ 8'h0, texelV0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelU1[7 +: 8] } >> (8 - textureSizeWidth));
@@ -275,7 +275,7 @@ module TextureSampler #(
             // shift out in x direction
             // o|1 : 0 is outside, clamp s requires to use the right side -> use 1
             // o|3 
-            4'b0110: ti00 = 1; // Quad is shiftet out in x direction
+            4'b1010: ti00 = 1; // Quad is shiftet out in x direction
             // shift out in y direction
             // o o : 0 is outside, clamp t requires to use the bottom -> use 2
             // ---
