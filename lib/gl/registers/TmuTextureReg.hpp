@@ -75,8 +75,8 @@ private:
                 , pixelFormat(static_cast<uint32_t>(PixelFormat::RGBA4444))
             { }
 
-            uint32_t texWidth : 8;
-            uint32_t texHeight : 8;
+            uint32_t texWidth : 4;
+            uint32_t texHeight : 4;
             uint32_t wrapModeS : 1;
             uint32_t wrapModeT : 1;
             uint32_t enableMagFilter : 1;
