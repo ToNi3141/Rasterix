@@ -32,6 +32,7 @@ module TextureSampler #(
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 3 : 0]                textureSizeWidth, 
     input  wire [ 3 : 0]                textureSizeHeight,
+    input  wire [ 3 : 0]                textureLod,
     input  wire                         enableHalfPixelOffset,
 
     // Texture memory access of a texel quad
@@ -168,20 +169,27 @@ module TextureSampler #(
         reg [31 : 0] texelS1; // S16.15
         reg [31 : 0] texelT0; // S16.15
         reg [31 : 0] texelT1; // S16.15
+        reg [ 3 : 0] width;
+        reg [ 3 : 0] height;
+        reg [ADDR_WIDTH - 1 : 0] offset;
+
+        width = (textureLod < textureSizeWidth) ? textureSizeWidth - textureLod : 0;
+        height = (textureLod < textureSizeHeight) ? textureSizeHeight - textureLod : 0;
+        offset = { { (ADDR_WIDTH - 8) { 1'b0 } }, 8'b10101010 & (((8'h1 << (textureSizeWidth + textureSizeHeight + 1)) - 8'h1) ^ (((8'h1 << (width + height + 1)) - 8'h1))) };
 
         if (enableHalfPixelOffset)
         begin
-            texelS0 = texelS - convertToZeroPointFive(1 << textureSizeWidth);
-            texelS1 = texelS + convertToZeroPointFive(1 << textureSizeWidth);
-            texelT0 = texelT - convertToZeroPointFive(1 << textureSizeHeight);
-            texelT1 = texelT + convertToZeroPointFive(1 << textureSizeHeight);
+            texelS0 = texelS - convertToZeroPointFive(1 << width);
+            texelS1 = texelS + convertToZeroPointFive(1 << width);
+            texelT0 = texelT - convertToZeroPointFive(1 << height);
+            texelT1 = texelT + convertToZeroPointFive(1 << height);
         end
         else
         begin
             texelS0 = texelS;
-            texelS1 = texelS + convertToOnePointZero(1 << textureSizeWidth);
+            texelS1 = texelS + convertToOnePointZero(1 << width);
             texelT0 = texelT;
-            texelT1 = texelT + convertToOnePointZero(1 << textureSizeHeight);
+            texelT1 = texelT + convertToOnePointZero(1 << height);
         end
 
         step0_texelU0Valid <= !isPixelOutside(texelS0, clampS);
@@ -189,12 +197,12 @@ module TextureSampler #(
         step0_texelV0Valid <= !isPixelOutside(texelT0, clampT);
         step0_texelV1Valid <= !isPixelOutside(texelT1, clampT);
 
-        texelAddr00 <= ({ 8'h0, texelT0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS0[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr01 <= ({ 8'h0, texelT0[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS1[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr10 <= ({ 8'h0, texelT1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS0[7 +: 8] } >> (8 - textureSizeWidth));
-        texelAddr11 <= ({ 8'h0, texelT1[7 +: 8] >> (8 - textureSizeHeight) } << textureSizeWidth) | ({ 8'h0, texelS1[7 +: 8] } >> (8 - textureSizeWidth));
-        step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << textureSizeWidth;
-        step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << textureSizeHeight;
+        texelAddr00 <= offset + (({ 8'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr01 <= offset + (({ 8'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS1[7 +: 8] >> (8 - width) });
+        texelAddr10 <= offset + (({ 8'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr11 <= offset + (({ 8'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS1[7 +: 8] >> (8 - width) });
+        step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << width;
+        step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << height;
     end
 
     //////////////////////////////////////////////

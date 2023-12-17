@@ -68,6 +68,90 @@ void uploadTexture(VTextureSamplerTestModule* top)
     top->clampT = 0;
 }
 
+void uploadMipMapTexture(VTextureSamplerTestModule* top) 
+{
+    // 4x8 texture
+    // |   1 |   2 |   3 |   4 |
+    // |   5 |   6 |   7 |   8 |
+    // |   9 |   A |   B |   C |
+    // |   D |   E |   F |  10 |
+    // |  11 |  12 |  13 |  14 |
+    // |  15 |  16 |  17 |  18 |
+    // |  19 |  1A |  1B |  1C |
+    // |  1D |  1E |  1F |  20 |
+    // 2x4 texture
+    // |  31 |  32 |
+    // |  33 |  34 |
+    // |  35 |  36 |
+    // |  37 |  38 |
+    // 1x2 texture
+    // |  41 |
+    // |  42 |
+    // 1x1 texture
+    // |  51 |
+    top->textureSizeWidth = 0x2;
+    top->textureSizeHeight = 0x3;
+    top->textureLod = 0;
+
+    top->s_axis_tvalid = 1;
+    top->s_axis_tlast = 0;
+    top->s_axis_tdata = 0x0002'0001;
+    clk(top);
+    top->s_axis_tdata = 0x0004'0003;
+    clk(top);
+    top->s_axis_tdata = 0x0006'0005;
+    clk(top);
+    top->s_axis_tdata = 0x0008'0007;
+    clk(top);
+    top->s_axis_tdata = 0x000A'0009;
+    clk(top);
+    top->s_axis_tdata = 0x000C'000B;
+    clk(top);
+    top->s_axis_tdata = 0x000E'000D;
+    clk(top);
+    top->s_axis_tdata = 0x0010'000F;
+    clk(top);
+    top->s_axis_tdata = 0x0012'0011;
+    clk(top);
+    top->s_axis_tdata = 0x0014'0013;
+    clk(top);
+    top->s_axis_tdata = 0x0016'0015;
+    clk(top);
+    top->s_axis_tdata = 0x0018'0017;
+    clk(top);
+    top->s_axis_tdata = 0x001A'0019;
+    clk(top);
+    top->s_axis_tdata = 0x001C'001B;
+    clk(top);
+    top->s_axis_tdata = 0x001E'001D;
+    clk(top);
+    top->s_axis_tdata = 0x0020'001F;
+    clk(top);
+
+    top->s_axis_tdata = 0x0032'0031;
+    clk(top);
+    top->s_axis_tdata = 0x0034'0033;
+    clk(top);
+    top->s_axis_tdata = 0x0036'0035;
+    clk(top);
+    top->s_axis_tdata = 0x0038'0037;
+    clk(top);
+
+    top->s_axis_tdata = 0x0042'0041;
+    clk(top);
+
+    top->s_axis_tvalid = 1;
+    top->s_axis_tlast = 1;
+    top->s_axis_tdata = 0x0000'0051;
+    clk(top);
+
+    top->s_axis_tvalid = 0;
+    top->s_axis_tlast = 0;
+
+    top->clampS = 0;
+    top->clampT = 0;
+}
+
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
@@ -438,6 +522,85 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x000000ff);
     REQUIRE(top->texel11 == 0x000000ff);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Get various values from the mipmap texture", "[TextureBuffer]")
+{
+    // 4x8 texture
+    // |   1 |   2 |   3 |   4 |
+    // |   5 |   6 |   7 |   8 |
+    // |   9 |   A |   B |   C |
+    // |   D |   E |   F |  10 |
+    // |  11 |  12 |  13 |  14 |
+    // |  15 |  16 |  17 |  18 |
+    // |  19 |  1A |  1B |  1C |
+    // |  1D |  1E |  1F |  20 |
+    // 2x4 texture
+    // |  31 |  32 |
+    // |  33 |  34 |
+    // |  35 |  36 |
+    // |  37 |  38 |
+    // 1x2 texture
+    // |  41 |
+    // |  42 |
+    // 1x1 texture
+    // |  51 |
+
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    reset(top);
+
+    uploadMipMapTexture(top);
+
+    // (0, 0)
+    top->textureLod = 0;
+    top->texelS = 0;
+    top->texelT = 0;
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->texel00 == 0x11);
+    REQUIRE(top->texel01 == 0x22);
+    REQUIRE(top->texel10 == 0x55);
+    REQUIRE(top->texel11 == 0x66);
+
+    // (0, 0)
+    top->textureLod = 1;
+    top->texelS = 0;
+    top->texelT = 0;
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->texel00 == 0x3311);
+    REQUIRE(top->texel01 == 0x3322);
+    REQUIRE(top->texel10 == 0x3333);
+    REQUIRE(top->texel11 == 0x3344);
+
+    // (0, 0)
+    top->textureLod = 2;
+    top->texelS = 0;
+    top->texelT = 0;
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->texel00 == 0x4411);
+    REQUIRE(top->texel01 == 0x4411);
+    REQUIRE(top->texel10 == 0x4422);
+    REQUIRE(top->texel11 == 0x4422);
+
+    // (0, 0)
+    top->textureLod = 3;
+    top->texelS = 0;
+    top->texelT = 0;
+    clk(top);
+    clk(top);
+    clk(top);
+    REQUIRE(top->texel00 == 0x5511);
+    REQUIRE(top->texel01 == 0x5511);
+    REQUIRE(top->texel10 == 0x5511);
+    REQUIRE(top->texel11 == 0x5511);
 
     // Destroy model
     delete top;

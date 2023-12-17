@@ -31,6 +31,7 @@ module TextureSamplerTestModule #(
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 3 : 0]                textureSizeWidth, 
     input  wire [ 3 : 0]                textureSizeHeight,
+    input  wire [ 3 : 0]                textureLod,
     input  wire                         enableHalfPixelOffset,
     input  wire [ 3 : 0]                confPixelFormat,
 
@@ -98,6 +99,7 @@ module TextureSamplerTestModule #(
 
         .textureSizeWidth(textureSizeWidth),
         .textureSizeHeight(textureSizeHeight),
+        .textureLod(textureLod),
         .enableHalfPixelOffset(enableHalfPixelOffset),
 
         .texelAddr00(texelAddr00),
