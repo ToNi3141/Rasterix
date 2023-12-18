@@ -172,10 +172,27 @@ module TextureSampler #(
         reg [ 3 : 0] width;
         reg [ 3 : 0] height;
         reg [ADDR_WIDTH - 1 : 0] offset;
+        reg [ 8 : 0] wMask;
+        reg [ 8 : 0] hMask;
+        reg [15 : 0] lodMask;
+        reg [15 : 0] mask;
+        reg [15 : 0] maskFin;
+        integer i;
 
         width = (textureLod < textureSizeWidth) ? textureSizeWidth - textureLod : 0;
         height = (textureLod < textureSizeHeight) ? textureSizeHeight - textureLod : 0;
-        offset = { { (ADDR_WIDTH - 8) { 1'b0 } }, 8'b10101010 & (((8'h1 << (textureSizeWidth + textureSizeHeight + 1)) - 8'h1) ^ (((8'h1 << (width + height + 1)) - 8'h1))) };
+        lodMask = ~((16'h1 << ((width + height + 1))) - 16'h1);
+
+        wMask = ((9'h1 << textureSizeWidth) - 9'h1);
+        hMask = ((9'h1 << textureSizeHeight) - 9'h1);
+        for (i = 0; i < 8; i = i + 1)
+        begin
+            mask[15 - ((i * 2) + 1)] = wMask[i] ^ hMask[i];
+            mask[15 - ((i * 2) + 0)] = wMask[i] | hMask[i];
+        end
+        maskFin = mask >> (16 - (textureSizeWidth + textureSizeHeight + 1));
+        
+        offset = maskFin & lodMask;
 
         if (enableHalfPixelOffset)
         begin
