@@ -32,8 +32,8 @@ module RasterixRenderCore #(
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
 
-    // The size of the texture in bytes in power of two
-    parameter TEXTURE_BUFFER_SIZE = 15,
+    // The size of the texture in bytes
+    parameter TEXTURE_BUFFER_SIZE = 131072,
 
     // Enables the flow control. Disabling can safe logic resources.
     parameter ENABLE_FLOW_CTRL = 1,
@@ -168,7 +168,7 @@ module RasterixRenderCore #(
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam TEX_ADDR_WIDTH = 16;
+    localparam TEX_ADDR_WIDTH = 17;
     localparam ATTRIBUTE_SIZE = 32;
     
     // The bit width of the texture stream
@@ -409,7 +409,7 @@ module RasterixRenderCore #(
         .s_axis_tdata(cmd_xxx_axis_tdata)
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -450,7 +450,7 @@ module RasterixRenderCore #(
                 .s_axis_tdata(cmd_xxx_axis_tdata)
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-            defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
+            defparam textureBufferTMU1.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
             defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
         end
         else

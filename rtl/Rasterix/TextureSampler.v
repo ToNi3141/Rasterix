@@ -22,7 +22,7 @@
 module TextureSampler #(
     parameter MEMORY_DELAY = 1,
     parameter PIXEL_WIDTH = 32,
-    localparam ADDR_WIDTH = 16 // Based on the maximum texture size, which is 256x256 (8 bit x 8 bit) in PIXEL_WIDTH word addresses
+    localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in PIXEL_WIDTH word addresses
 )
 (
     input  wire                         aclk,
@@ -171,7 +171,7 @@ module TextureSampler #(
         reg [31 : 0] texelT1; // S16.15
         reg [ 3 : 0] width;
         reg [ 3 : 0] height;
-        reg [ADDR_WIDTH - 1 : 0] offset;
+        reg [15 : 0] offset;
         reg [ 8 : 0] wMask;
         reg [ 8 : 0] hMask;
         reg [15 : 0] lodMask;
@@ -214,10 +214,10 @@ module TextureSampler #(
         step0_texelV0Valid <= !isPixelOutside(texelT0, clampT);
         step0_texelV1Valid <= !isPixelOutside(texelT1, clampT);
 
-        texelAddr00 <= offset + (({ 8'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr01 <= offset + (({ 8'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS1[7 +: 8] >> (8 - width) });
-        texelAddr10 <= offset + (({ 8'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr11 <= offset + (({ 8'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 8'h0, texelS1[7 +: 8] >> (8 - width) });
+        texelAddr00 <= offset + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr01 <= offset + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
+        texelAddr10 <= offset + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr11 <= offset + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
         step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << width;
         step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << height;
     end

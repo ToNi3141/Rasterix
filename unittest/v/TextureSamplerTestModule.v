@@ -20,7 +20,7 @@
 module TextureSamplerTestModule #(
     parameter STREAM_WIDTH = 32,
 
-    localparam TEX_ADDR_WIDTH = 16,
+    localparam TEX_ADDR_WIDTH = 17,
     localparam PIXEL_WIDTH = 32
 ) 
 (

@@ -39,7 +39,7 @@ module PixelPipeline
 
     localparam FLOAT_SIZE = 32,
 
-    localparam TEX_ADDR_WIDTH = 16,
+    localparam TEX_ADDR_WIDTH = 17,
 
     parameter ENABLE_SECOND_TMU = 1,
     

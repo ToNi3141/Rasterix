@@ -27,7 +27,8 @@ module TextureBuffer #(
     parameter STREAM_WIDTH = 32,
 
     // Size in bytes in power of two
-    parameter SIZE = 14,
+    parameter SIZE_IN_BYTES = 131072,
+    localparam SIZE = $clog2(SIZE_IN_BYTES),
 
     localparam NUMBER_OF_SUB_PIXELS = 4,
 
@@ -43,7 +44,7 @@ module TextureBuffer #(
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
     localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH,
 
-    localparam TEX_ADDR_WIDTH = 16
+    localparam TEX_ADDR_WIDTH = 17
 )
 (
     input  wire                             aclk,
@@ -90,6 +91,7 @@ module TextureBuffer #(
             $error("RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE must be 4. If not, adapt confPixelFormat.");
             $finish;
         end
+        $monitor("Texture buffer SIZE: %d (SIZE_IN_BYTES %d)", SIZE, SIZE_IN_BYTES);
     end
 
     function [PIXEL_WIDTH - 1 : 0] RGBA5551TO8888; 
@@ -141,8 +143,8 @@ module TextureBuffer #(
     TrueDualPortRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
-        //.MEMORY_PRIMITIVE("distributed")
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
+        .MEMORY_SIZE((SIZE_IN_BYTES / 2) * 8)
     ) texCacheEvenS
     (
         .clk(aclk),
@@ -161,8 +163,8 @@ module TextureBuffer #(
     TrueDualPortRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
-        //.MEMORY_PRIMITIVE("distributed")
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
+        .MEMORY_SIZE((SIZE_IN_BYTES / 2) * 8)
     ) texCacheOddS
     (
         .clk(aclk),

@@ -34,7 +34,7 @@ module top #(
     output wire         m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
-    parameter TEXTURE_BUFFER_SIZE = 17;
+    parameter TEXTURE_BUFFER_SIZE = 131072;
 
     initial
     begin

@@ -446,7 +446,7 @@ proc create_root_design { parentCell } {
     CONFIG.ADDR_WIDTH {28} \
     CONFIG.CMD_STREAM_WIDTH {128} \
     CONFIG.STRB_WIDTH {16} \
-    CONFIG.TEXTURE_BUFFER_SIZE {17} \
+    CONFIG.TEXTURE_BUFFER_SIZE {131072} \
   ] $RasterixIF_0
 
 
