@@ -22,6 +22,7 @@
 #include "Renderer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
+#include "../../mipmap/Mipmap.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -65,7 +66,7 @@ private:
 
     QTimer m_timer;
     QImage m_image;
-    Minimal m_testScene;
+    Mipmap m_testScene;
 };
 
 #endif // MAINWINDOW_H
