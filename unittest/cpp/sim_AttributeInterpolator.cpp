@@ -88,6 +88,12 @@ struct AttributesResult
     float s1 = 0.0f;
     float t1 = 0.0f;
     float q1 = 0.0f;
+    float ms0 = 0.0f;
+    float mt0 = 0.0f;
+    float mq0 = 0.0f;
+    float ms1 = 0.0f;
+    float mt1 = 0.0f;
+    float mq1 = 0.0f;
     float w = 0.0f;
     float z = 0.0f;
     float r = 0.0f;
@@ -100,6 +106,13 @@ void calculateVertexAttributes(Attributes attr,
                                uint16_t x, uint16_t y, 
                                AttributesResult& res)
 {
+    res.ms0 = attr.sx0 + attr.sy0;
+    res.mt0 = attr.tx0 + attr.ty0;
+    res.mq0 = attr.qx0 + attr.qy0;
+    res.ms1 = attr.sx1 + attr.sy1;
+    res.mt1 = attr.tx1 + attr.ty1;
+    res.mq1 = attr.qx1 + attr.qy1;
+    
     attr.sx0 *= x;
     attr.sy0 *= y;
     attr.tx0 *= x;
@@ -138,17 +151,32 @@ void calculateVertexAttributes(Attributes attr,
     res.b = attr.bb + (attr.bx + attr.by);
     res.a = attr.ab + (attr.ax + attr.ay);
 
+    res.ms0 += res.s0;
+    res.mt0 += res.t0;
+    res.mq0 += res.q0;
+    res.ms1 += res.s1;
+    res.mt1 += res.t1;
+    res.mq1 += res.q1;
+
     res.w = 1.0f / res.w;
     res.q0 = 1.0f / res.q0;
     res.q1 = 1.0f / res.q1;
+    res.mq0 = 1.0f / res.mq0;
+    res.mq1 = 1.0f / res.mq1;
 
     res.s0 *= res.q0;
     res.t0 *= res.q0;
     res.q0 *= res.q0;
+    res.ms0 *= res.mq0;
+    res.mt0 *= res.mq0;
+    res.mq0 *= res.mq0;
 
     res.s1 *= res.q1;
     res.t1 *= res.q1;
     res.q1 *= res.q1;
+    res.ms1 *= res.mq1;
+    res.mt1 *= res.mq1;
+    res.mq1 *= res.mq1;
 
     // Perspective correction for colors is currently disabled
     // res.r *= res.w;
@@ -159,7 +187,7 @@ void calculateVertexAttributes(Attributes attr,
 
 TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolator]")
 {
-    static const uint32_t CLOCK_DELAY = 41;
+    static const uint32_t CLOCK_DELAY = 45;
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
     // Reset cycle
@@ -328,8 +356,12 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             float z = *(float*)&(top->m_attrb_tdepth_z);
             float s0 = *(float*)&(top->m_attrb_ttexture0_s);
             float t0 = *(float*)&(top->m_attrb_ttexture0_t);
+            float ms0 = *(float*)&(top->m_attrb_tmipmap0_s);
+            float mt0 = *(float*)&(top->m_attrb_tmipmap0_t);
             float s1 = *(float*)&(top->m_attrb_ttexture1_s);
             float t1 = *(float*)&(top->m_attrb_ttexture1_t);
+            float ms1 = *(float*)&(top->m_attrb_tmipmap1_s);
+            float mt1 = *(float*)&(top->m_attrb_tmipmap1_t);
             float r = *(float*)&(top->m_attrb_tcolor_r);
             float g = *(float*)&(top->m_attrb_tcolor_g);
             float b = *(float*)&(top->m_attrb_tcolor_b);
@@ -345,10 +377,14 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             
             REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
             REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
-            REQUIRE(Approx(s0).epsilon(0.01) == expectedResult.s0);
-            REQUIRE(Approx(t0).epsilon(0.01) == expectedResult.t0);
-            REQUIRE(Approx(s1).epsilon(0.01) == expectedResult.s1);
-            REQUIRE(Approx(t1).epsilon(0.01) == expectedResult.t1);
+            REQUIRE(Approx(s0).epsilon(0.005) == expectedResult.s0);
+            REQUIRE(Approx(t0).epsilon(0.005) == expectedResult.t0);
+            REQUIRE(Approx(ms0).epsilon(0.005) == expectedResult.ms0);
+            REQUIRE(Approx(mt0).epsilon(0.005) == expectedResult.mt0);
+            REQUIRE(Approx(s1).epsilon(0.005) == expectedResult.s1);
+            REQUIRE(Approx(t1).epsilon(0.005) == expectedResult.t1);
+            REQUIRE(Approx(ms1).epsilon(0.005) == expectedResult.ms1);
+            REQUIRE(Approx(mt1).epsilon(0.005) == expectedResult.mt1);
             REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);
             REQUIRE(Approx(g).epsilon(0.01) == expectedResult.g);
             REQUIRE(Approx(b).epsilon(0.01) == expectedResult.b);
@@ -393,8 +429,12 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         float z = *(float*)&(top->m_attrb_tdepth_z);
         float s0 = *(float*)&(top->m_attrb_ttexture0_s);
         float t0 = *(float*)&(top->m_attrb_ttexture0_t);
+        float ms0 = *(float*)&(top->m_attrb_tmipmap0_s);
+        float mt0 = *(float*)&(top->m_attrb_tmipmap0_t);
         float s1 = *(float*)&(top->m_attrb_ttexture1_s);
         float t1 = *(float*)&(top->m_attrb_ttexture1_t);
+        float ms1 = *(float*)&(top->m_attrb_tmipmap1_s);
+        float mt1 = *(float*)&(top->m_attrb_tmipmap1_t);
         float r = *(float*)&(top->m_attrb_tcolor_r);
         float g = *(float*)&(top->m_attrb_tcolor_g);
         float b = *(float*)&(top->m_attrb_tcolor_b);
@@ -406,10 +446,14 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
                                   bb.val.x, bb.val.y, 
                                   expectedResult);
         
-        REQUIRE(Approx(s0).epsilon(0.01) == expectedResult.s0);
-        REQUIRE(Approx(t0).epsilon(0.01) == expectedResult.t0);
-        REQUIRE(Approx(s1).epsilon(0.01) == expectedResult.s1);
-        REQUIRE(Approx(t1).epsilon(0.01) == expectedResult.t1);
+        REQUIRE(Approx(s0).epsilon(0.005) == expectedResult.s0);
+        REQUIRE(Approx(t0).epsilon(0.005) == expectedResult.t0);
+        REQUIRE(Approx(ms0).epsilon(0.005) == expectedResult.ms0);
+        REQUIRE(Approx(mt0).epsilon(0.005) == expectedResult.mt0);
+        REQUIRE(Approx(s1).epsilon(0.005) == expectedResult.s1);
+        REQUIRE(Approx(t1).epsilon(0.005) == expectedResult.t1);
+        REQUIRE(Approx(ms1).epsilon(0.005) == expectedResult.ms1);
+        REQUIRE(Approx(mt1).epsilon(0.005) == expectedResult.mt1);
         REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
         REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
         REQUIRE(Approx(r).epsilon(0.01) == expectedResult.r);
