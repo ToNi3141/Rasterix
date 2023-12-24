@@ -186,3 +186,28 @@ TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
         REQUIRE(t->lod == 0);
     }
 }
+
+TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
+{
+    VLodCalculator* t = new VLodCalculator();
+
+    t->textureSizeWidth = 4;
+    t->textureSizeHeight = 4;
+
+    t->texelS = 0x1 << (15 - 4);
+    t->texelT = 0x1 << (15 - 4);
+
+    for (uint32_t i = 0; i < 16; i++)
+    {
+        t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
+        t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
+        clk(t);
+        REQUIRE(t->lod == 0);
+    }
+
+    // Check that the overflow causes a LOD increment
+    t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
+    t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
+    clk(t);
+    REQUIRE(t->lod == 1);
+}
