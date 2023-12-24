@@ -154,6 +154,12 @@ module TextureSampler #(
     // Build RAM adresses
     // Clocks: 1
     //////////////////////////////////////////////
+    localparam TEX_SIZE = 8;
+    localparam TEX_SIZE_ST = TEX_SIZE * 2;
+    localparam TEX_MASK_SIZE = TEX_SIZE + 1;
+    localparam TEX_MASK_SIZE_ST = TEX_SIZE_ST + 2;
+    localparam TEX_MASK_ONE = { { TEX_SIZE { 1'b0 } }, 1'b1 };
+    localparam TEX_MASK_ST_ONE = { { TEX_SIZE_ST { 1'b0 } }, 2'b1 };
     reg             step0_texelU0Valid;
     reg             step0_texelU1Valid;
     reg             step0_texelV0Valid;
@@ -165,32 +171,32 @@ module TextureSampler #(
     // the texel quad
     always @(posedge aclk)
     begin : TexAddrCalc
-        reg [31 : 0] texelS0; // S16.15
-        reg [31 : 0] texelS1; // S16.15
-        reg [31 : 0] texelT0; // S16.15
-        reg [31 : 0] texelT1; // S16.15
-        reg [ 3 : 0] width;
-        reg [ 3 : 0] height;
-        reg [15 : 0] offset;
-        reg [ 8 : 0] wMask;
-        reg [ 8 : 0] hMask;
-        reg [15 : 0] lodMask;
-        reg [15 : 0] mask;
-        reg [15 : 0] maskFin;
+        reg [31 : 0]                    texelS0; // S16.15
+        reg [31 : 0]                    texelS1; // S16.15
+        reg [31 : 0]                    texelT0; // S16.15
+        reg [31 : 0]                    texelT1; // S16.15
+        reg [ 3 : 0]                    width;
+        reg [ 3 : 0]                    height;
+        reg [TEX_MASK_SIZE_ST - 1 : 0]  offset;
+        reg [TEX_MASK_SIZE - 1 : 0]     wMask;
+        reg [TEX_MASK_SIZE - 1 : 0]     hMask;
+        reg [TEX_MASK_SIZE_ST - 1 : 0]  lodMask;
+        reg [TEX_MASK_SIZE_ST - 1 : 0]  mask;
+        reg [TEX_MASK_SIZE_ST - 1 : 0]  maskFin;
         integer i;
 
         width = (textureLod < textureSizeWidth) ? textureSizeWidth - textureLod : 0;
         height = (textureLod < textureSizeHeight) ? textureSizeHeight - textureLod : 0;
-        lodMask = ~((16'h1 << ((width + height + 1))) - 16'h1);
+        lodMask = ~((TEX_MASK_ST_ONE << ((width + height + 1))) - TEX_MASK_ST_ONE);
 
-        wMask = ((9'h1 << textureSizeWidth) - 9'h1);
-        hMask = ((9'h1 << textureSizeHeight) - 9'h1);
-        for (i = 0; i < 8; i = i + 1)
+        wMask = ((TEX_MASK_ONE << textureSizeWidth) - TEX_MASK_ONE);
+        hMask = ((TEX_MASK_ONE << textureSizeHeight) - TEX_MASK_ONE);
+        for (i = 0; i < TEX_MASK_SIZE; i = i + 1)
         begin
-            mask[15 - ((i * 2) + 1)] = wMask[i] ^ hMask[i];
-            mask[15 - ((i * 2) + 0)] = wMask[i] | hMask[i];
+            mask[(TEX_MASK_SIZE_ST - 1) - ((i * 2) + 1)] = wMask[i] ^ hMask[i];
+            mask[(TEX_MASK_SIZE_ST - 1) - ((i * 2) + 0)] = wMask[i] | hMask[i];
         end
-        maskFin = mask >> (16 - (textureSizeWidth + textureSizeHeight + 1));
+        maskFin = mask >> (TEX_MASK_SIZE_ST - (textureSizeWidth + textureSizeHeight + 1));
         
         offset = maskFin & lodMask;
 
@@ -214,10 +220,10 @@ module TextureSampler #(
         step0_texelV0Valid <= !isPixelOutside(texelT0, clampT);
         step0_texelV1Valid <= !isPixelOutside(texelT1, clampT);
 
-        texelAddr00 <= offset + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr01 <= offset + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
-        texelAddr10 <= offset + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr11 <= offset + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
+        texelAddr00 <= offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr01 <= offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
+        texelAddr10 <= offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
+        texelAddr11 <= offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
         step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << width;
         step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << height;
     end

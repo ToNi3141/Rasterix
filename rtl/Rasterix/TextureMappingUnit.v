@@ -54,6 +54,8 @@ module TextureMappingUnit
     input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // PRIMARY_COLOR
     input  wire [31 : 0]                textureS,
     input  wire [31 : 0]                textureT,
+    input  wire [31 : 0]                mipmapS,
+    input  wire [31 : 0]                mipmapT,
     
     input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // PREVIOUS
     
@@ -65,18 +67,42 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Request texel from texture buffer and filter it
-    // Clocks: 7
+    // Clocks: 8
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
     wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(8)) 
         step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(7)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(8)) 
         step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
-        
+
+    wire [31 : 0] textureSDly;
+    wire [31 : 0] textureTDly;
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
+        step1_textureSDelay (.clk(aclk), .in(textureS), .out(textureSDly));
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
+        step1_textureTDelay (.clk(aclk), .in(textureT), .out(textureTDly));
+
+    reg [ 3 : 0] lod;
+    LodCalculator lodCalculator (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
+        .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
+
+        .texelS(textureS),
+        .texelT(textureT),
+
+        .texelSxy(mipmapS),
+        .texelTxy(mipmapT),
+
+        .lod(lod)
+    );
+
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel10Tmp;
@@ -91,7 +117,7 @@ module TextureMappingUnit
 
         .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
         .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
-        .textureLod(0),
+        .textureLod(lod),
         .enableHalfPixelOffset(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]), 
 
         .texelAddr00(texelAddr00),
@@ -103,8 +129,8 @@ module TextureMappingUnit
         .texelInput10(texelInput10),
         .texelInput11(texelInput11),
 
-        .texelS(textureS),
-        .texelT(textureT),
+        .texelS(textureSDly),
+        .texelT(textureTDly),
         .clampS(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_S_SIZE]),
         .clampT(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS +: RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE]),
         .texel00(step1_texel00Tmp),

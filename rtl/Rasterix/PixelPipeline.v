@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 30 cycles
+// Depth: 32 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -82,8 +82,12 @@ module PixelPipeline
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tdepth_z,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture0_t,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture0_s,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap0_t,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap0_s,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture1_t,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture1_s,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap1_t,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap1_s,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_a,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_b,
     input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_g,
@@ -134,8 +138,12 @@ module PixelPipeline
     wire [FLOAT_SIZE - 1 : 0]   step_convert_depth_w_float;
     wire [31 : 0]               step_convert_texture0_s;
     wire [31 : 0]               step_convert_texture0_t;
+    wire [31 : 0]               step_convert_mipmap0_s;
+    wire [31 : 0]               step_convert_mipmap0_t;
     wire [31 : 0]               step_convert_texture1_s;
     wire [31 : 0]               step_convert_texture1_t;
+    wire [31 : 0]               step_convert_mipmap1_s;
+    wire [31 : 0]               step_convert_mipmap1_t;
     wire [31 : 0]               step_convert_depth_z;
     wire [31 : 0]               step_convert_color_r;
     wire [31 : 0]               step_convert_color_g;
@@ -177,11 +185,21 @@ module PixelPipeline
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
         convert_floatToInt_tmu0_textureT (.clk(aclk), .in(s_attrb_ttexture0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture0_t));   
 
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu0_mipmapS (.clk(aclk), .in(s_attrb_tmipmap0_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu0_mipmapT (.clk(aclk), .in(s_attrb_tmipmap0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_t));   
+
     // Tex Coords TMU1
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
         convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_attrb_ttexture1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_s));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_attrb_ttexture1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_t));   
+        convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_attrb_ttexture1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_t));
+
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu1_mipmapS (.clk(aclk), .in(s_attrb_tmipmap1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+        convert_floatToInt_tmu1_mipmapT (.clk(aclk), .in(s_attrb_tmipmap1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_t));  
   
     // Fragment Color
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
@@ -204,7 +222,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // TMU0
-    // Clocks: 11
+    // Clocks: 12
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]              step1_index;
@@ -216,34 +234,40 @@ module PixelPipeline
     wire [PIXEL_WIDTH - 1 : 0]              step1_primaryColor;
     wire [31 : 0]                           step1_texture1S;
     wire [31 : 0]                           step1_texture1T;
+    wire [31 : 0]                           step1_mipmap1S;
+    wire [31 : 0]                           step1_mipmap1T;
     wire [KEEP_WIDTH - 1 : 0]               step1_keep;
     wire                                    step1_last;
 
 
-    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(12)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
 
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
         step1_screenPosXDelay (.clk(aclk), .in(step_convert_screen_pos_x), .out(step1_screenPosX));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
         step1_screenPosYDelay (.clk(aclk), .in(step_convert_screen_pos_y), .out(step1_screenPosY));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(12)) 
         step1_keepDelay (.clk(aclk), .in(step_convert_tkeep), .out(step1_keep));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
         step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
         step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
         step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+        step1_mipmap1SDelay (.clk(aclk), .in(step_convert_mipmap1_s), .out(step1_mipmap1S));
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+        step1_mipmap1TDelay (.clk(aclk), .in(step_convert_mipmap1_t), .out(step1_mipmap1T));
 
     TextureMappingUnit #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -270,6 +294,8 @@ module PixelPipeline
         .primaryColor(convert_primary_color),
         .textureS(step_convert_texture0_s),
         .textureT(step_convert_texture0_t),
+        .mipmapS(step_convert_mipmap0_s),
+        .mipmapT(step_convert_mipmap0_t),
 
         .previousColor(convert_primary_color), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
 
@@ -279,7 +305,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // TMU1
-    // Clocks: 11
+    // Clocks: 12
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]              step2_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]              step2_index;
@@ -294,24 +320,24 @@ module PixelPipeline
     generate
         if (ENABLE_SECOND_TMU)
         begin
-            ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(12)) 
                 step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
 
-            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
                 step2_screenPosXDelay (.clk(aclk), .in(step1_screenPosX), .out(step2_screenPosX));
-            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
                 step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
 
-            ValueDelay #(.VALUE_SIZE(32), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
                 step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
-            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) 
                 step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
 
-            ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
                 step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
-            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(12)) 
                 step2_keepDelay (.clk(aclk), .in(step1_keep), .out(step2_keep));
-            ValueDelay #(.VALUE_SIZE(1), .DELAY(11)) 
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
                 step2_lastDelay (.clk(aclk), .in(step1_last), .out(step2_last));
 
             TextureMappingUnit #(
@@ -339,6 +365,8 @@ module PixelPipeline
                 .primaryColor(step1_primaryColor),
                 .textureS(step1_texture1S),
                 .textureT(step1_texture1T),
+                .mipmapS(step1_mipmap1S),
+                .mipmapT(step1_mipmap1T),
 
                 .previousColor(step1_fragmentColor),
 

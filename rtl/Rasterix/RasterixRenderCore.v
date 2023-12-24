@@ -746,8 +746,12 @@ module RasterixRenderCore #(
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_z;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_t;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_s;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_t;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_s;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_a;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_b;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_g;
@@ -814,8 +818,12 @@ module RasterixRenderCore #(
         .m_attrb_tdepth_z(alrp_tdepth_z),
         .m_attrb_ttexture0_t(alrp_ttexture0_t),
         .m_attrb_ttexture0_s(alrp_ttexture0_s),
+        .m_attrb_tmipmap0_t(alrp_tmipmap0_t),
+        .m_attrb_tmipmap0_s(alrp_tmipmap0_s),
         .m_attrb_ttexture1_t(alrp_ttexture1_t),
         .m_attrb_ttexture1_s(alrp_ttexture1_s),
+        .m_attrb_tmipmap1_t(alrp_tmipmap1_t),
+        .m_attrb_tmipmap1_s(alrp_tmipmap1_s),
         .m_attrb_tcolor_a(alrp_tcolor_a),
         .m_attrb_tcolor_b(alrp_tcolor_b),
         .m_attrb_tcolor_g(alrp_tcolor_g),
@@ -830,7 +838,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 30
+    // Clocks: 32
     ////////////////////////////////////////////////////////////////////////////
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;
@@ -871,8 +879,12 @@ module RasterixRenderCore #(
         .s_attrb_tdepth_z(alrp_tdepth_z),
         .s_attrb_ttexture0_t(alrp_ttexture0_t),
         .s_attrb_ttexture0_s(alrp_ttexture0_s),
+        .s_attrb_tmipmap0_t(alrp_tmipmap0_t),
+        .s_attrb_tmipmap0_s(alrp_tmipmap0_s),
         .s_attrb_ttexture1_t(alrp_ttexture1_t),
         .s_attrb_ttexture1_s(alrp_ttexture1_s),
+        .s_attrb_tmipmap1_t(alrp_tmipmap1_t),
+        .s_attrb_tmipmap1_s(alrp_tmipmap1_s),
         .s_attrb_tcolor_a(alrp_tcolor_a),
         .s_attrb_tcolor_b(alrp_tcolor_b),
         .s_attrb_tcolor_g(alrp_tcolor_g),
