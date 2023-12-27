@@ -81,6 +81,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -89,6 +90,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.99.., 0.0)
     top->texelS = 0x7fff;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -103,6 +105,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0xff000000);
@@ -111,6 +114,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -126,6 +130,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -137,6 +142,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -145,6 +151,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (1.0, 1.0)
     top->texelS = 0x8000;
     top->texelT = 0x8000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -179,18 +186,20 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     top->texelT = 0x7fff;
     clk(top);
 
-    // Result of (0, 0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
-
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
     clk(top);
 
     // Result of (0, 0)
+    REQUIRE(top->texel00 == 0xff000000);
+    REQUIRE(top->texel01 == 0x00ff0000);
+    REQUIRE(top->texel10 == 0x0000ff00);
+    REQUIRE(top->texel11 == 0x000000ff);
+
+    clk(top);
+
+    // (0.99.., 0.0)
     REQUIRE(top->texel00 == 0x00ff0000);
     REQUIRE(top->texel01 == 0xff000000);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -230,6 +239,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -251,6 +261,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -265,6 +276,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -276,6 +288,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.375, 0.125) 
     top->texelS = 0x3000;
     top->texelT = 0x1000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -307,6 +320,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -318,6 +332,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x00ff0000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -326,6 +341,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -354,6 +370,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -365,6 +382,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -373,6 +391,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -401,6 +420,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -409,6 +429,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -423,6 +444,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -431,6 +453,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -541,6 +564,7 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -550,6 +574,7 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 1;
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -565,6 +590,7 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x4411);
     REQUIRE(top->texel01 == 0x4411);
     REQUIRE(top->texel10 == 0x4422);
@@ -574,6 +600,7 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 3;
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -652,6 +679,7 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -664,6 +692,7 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x3311);
     REQUIRE(top->texel01 == 0x3322);
     REQUIRE(top->texel10 == 0x3333);
@@ -673,6 +702,7 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     top->textureLod = 2;
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -845,6 +875,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -854,6 +885,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 1;
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);
@@ -869,6 +901,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x4411);
     REQUIRE(top->texel01 == 0x4411);
     REQUIRE(top->texel10 == 0x4422);
@@ -881,6 +914,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     clk(top);
     clk(top);
     clk(top);
+    clk(top);
     REQUIRE(top->texel00 == 0x5511);
     REQUIRE(top->texel01 == 0x5511);
     REQUIRE(top->texel10 == 0x5522);
@@ -890,6 +924,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 4;
     top->texelS = 0;
     top->texelT = 0;
+    clk(top);
     clk(top);
     clk(top);
     clk(top);

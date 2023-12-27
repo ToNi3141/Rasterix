@@ -838,7 +838,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 32
+    // Clocks: 34
     ////////////////////////////////////////////////////////////////////////////
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;

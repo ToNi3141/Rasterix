@@ -151,7 +151,7 @@ module TextureSampler #(
 
     //////////////////////////////////////////////
     // STEP 0
-    // Build RAM adresses
+    // Calculate the offset of the texture address based on the LOD
     // Clocks: 1
     //////////////////////////////////////////////
     localparam TEX_SIZE = 8;
@@ -160,24 +160,19 @@ module TextureSampler #(
     localparam TEX_MASK_SIZE_ST = TEX_SIZE_ST + 2;
     localparam TEX_MASK_ONE = { { TEX_SIZE { 1'b0 } }, 1'b1 };
     localparam TEX_MASK_ST_ONE = { { TEX_SIZE_ST { 1'b0 } }, 2'b1 };
-    reg             step0_texelU0Valid;
-    reg             step0_texelU1Valid;
-    reg             step0_texelV0Valid;
-    reg             step0_texelV1Valid;
-    reg  [15 : 0]   step0_subCoordU; // Q0.16
-    reg  [15 : 0]   step0_subCoordV; // Q0.16
-    
-    // Build the RAM adress of the given (s, t) coordinate and also generate the address of 
-    // the texel quad
+    reg [TEX_MASK_SIZE_ST - 1 : 0]  step0_offset;
+    reg [ 3 : 0]                    step0_width;
+    reg [ 3 : 0]                    step0_height;
+    reg [31 : 0]                    step0_texelS; // S16.15
+    reg [31 : 0]                    step0_texelT; // S16.15
+    reg                             step0_clampS;
+    reg                             step0_clampT;
+
     always @(posedge aclk)
-    begin : TexAddrCalc
-        reg [31 : 0]                    texelS0; // S16.15
-        reg [31 : 0]                    texelS1; // S16.15
-        reg [31 : 0]                    texelT0; // S16.15
-        reg [31 : 0]                    texelT1; // S16.15
+    begin : LodOffsetCalc
         reg [ 3 : 0]                    width;
         reg [ 3 : 0]                    height;
-        reg [TEX_MASK_SIZE_ST - 1 : 0]  offset;
+        
         reg [TEX_MASK_SIZE - 1 : 0]     wMask;
         reg [TEX_MASK_SIZE - 1 : 0]     hMask;
         reg [TEX_MASK_SIZE_ST - 1 : 0]  lodMask;
@@ -198,77 +193,103 @@ module TextureSampler #(
         end
         maskFin = mask >> (TEX_MASK_SIZE_ST - (textureSizeWidth + textureSizeHeight + 1));
         
-        offset = maskFin & lodMask;
-
-        if (enableHalfPixelOffset)
-        begin
-            texelS0 = texelS - convertToZeroPointFive(1 << width);
-            texelS1 = texelS + convertToZeroPointFive(1 << width);
-            texelT0 = texelT - convertToZeroPointFive(1 << height);
-            texelT1 = texelT + convertToZeroPointFive(1 << height);
-        end
-        else
-        begin
-            texelS0 = texelS;
-            texelS1 = texelS + convertToOnePointZero(1 << width);
-            texelT0 = texelT;
-            texelT1 = texelT + convertToOnePointZero(1 << height);
-        end
-
-        step0_texelU0Valid <= !isPixelOutside(texelS0, clampS);
-        step0_texelU1Valid <= !isPixelOutside(texelS1, clampS);
-        step0_texelV0Valid <= !isPixelOutside(texelT0, clampT);
-        step0_texelV1Valid <= !isPixelOutside(texelT1, clampT);
-
-        texelAddr00 <= offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr01 <= offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
-        texelAddr10 <= offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS0[7 +: 8] >> (8 - width) });
-        texelAddr11 <= offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - height) } << width) | { 9'h0, texelS1[7 +: 8] >> (8 - width) });
-        step0_subCoordU <= { texelS0[0 +: 15], 1'b0 } << width;
-        step0_subCoordV <= { texelT0[0 +: 15], 1'b0 } << height;
+        step0_offset <= maskFin & lodMask;
+        step0_width <= width;
+        step0_height <= height;
+        step0_texelS <= texelS;
+        step0_texelT <= texelT;
+        step0_clampS <= clampS;
+        step0_clampT <= clampT;
     end
 
     //////////////////////////////////////////////
     // STEP 1
-    // Wait for data
+    // Build RAM adresses
     // Clocks: 1
     //////////////////////////////////////////////
-    wire            step1_texelU0Valid;
-    wire            step1_texelU1Valid;
-    wire            step1_texelV0Valid;
-    wire            step1_texelV1Valid;
-    wire [15 : 0]   step1_subCoordU; // Q0.16
-    wire [15 : 0]   step1_subCoordV; // Q0.16
+    reg             step1_texelU0Valid;
+    reg             step1_texelU1Valid;
+    reg             step1_texelV0Valid;
+    reg             step1_texelV1Valid;
+    reg  [15 : 0]   step1_subCoordU; // Q0.16
+    reg  [15 : 0]   step1_subCoordV; // Q0.16
+    
+    always @(posedge aclk)
+    begin : TexAddrCalc
+        reg [31 : 0]                    texelS0; // S16.15
+        reg [31 : 0]                    texelS1; // S16.15
+        reg [31 : 0]                    texelT0; // S16.15
+        reg [31 : 0]                    texelT1; // S16.15
 
-    ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
-        step1_subCoordUDelay ( .clk(aclk), .in(step0_subCoordU), .out(step1_subCoordU));
+        if (enableHalfPixelOffset)
+        begin
+            texelS0 = step0_texelS - convertToZeroPointFive(1 << step0_width);
+            texelS1 = step0_texelS + convertToZeroPointFive(1 << step0_width);
+            texelT0 = step0_texelT - convertToZeroPointFive(1 << step0_height);
+            texelT1 = step0_texelT + convertToZeroPointFive(1 << step0_height);
+        end
+        else
+        begin
+            texelS0 = step0_texelS;
+            texelS1 = step0_texelS + convertToOnePointZero(1 << step0_width);
+            texelT0 = step0_texelT;
+            texelT1 = step0_texelT + convertToOnePointZero(1 << step0_height);
+        end
 
-    ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
-        step1_subCoordVDelay ( .clk(aclk), .in(step0_subCoordV), .out(step1_subCoordV));
+        step1_texelU0Valid <= !isPixelOutside(texelS0, step0_clampS);
+        step1_texelU1Valid <= !isPixelOutside(texelS1, step0_clampS);
+        step1_texelV0Valid <= !isPixelOutside(texelT0, step0_clampT);
+        step1_texelV1Valid <= !isPixelOutside(texelT1, step0_clampT);
 
-    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_texelU0ValidDelay ( .clk(aclk), .in(step0_texelU0Valid), .out(step1_texelU0Valid));
-
-    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_texelU1ValidDelay ( .clk(aclk), .in(step0_texelU1Valid), .out(step1_texelU1Valid));
-
-    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_texelV0ValidDelay ( .clk(aclk), .in(step0_texelV0Valid), .out(step1_texelV0Valid));
-
-    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step1_texelV1ValidDelay ( .clk(aclk), .in(step0_texelV1Valid), .out(step1_texelV1Valid));
+        texelAddr00 <= step0_offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, texelS0[7 +: 8] >> (8 - step0_width) });
+        texelAddr01 <= step0_offset[0 +: 17] + (({ 9'h0, texelT0[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, texelS1[7 +: 8] >> (8 - step0_width) });
+        texelAddr10 <= step0_offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, texelS0[7 +: 8] >> (8 - step0_width) });
+        texelAddr11 <= step0_offset[0 +: 17] + (({ 9'h0, texelT1[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, texelS1[7 +: 8] >> (8 - step0_width) });
+        step1_subCoordU <= { texelS0[0 +: 15], 1'b0 } << step0_width;
+        step1_subCoordV <= { texelT0[0 +: 15], 1'b0 } << step0_height;
+    end
 
     //////////////////////////////////////////////
     // STEP 2
+    // Wait for data
+    // Clocks: 1
+    //////////////////////////////////////////////
+    wire            step2_texelU0Valid;
+    wire            step2_texelU1Valid;
+    wire            step2_texelV0Valid;
+    wire            step2_texelV1Valid;
+    wire [15 : 0]   step2_subCoordU; // Q0.16
+    wire [15 : 0]   step2_subCoordV; // Q0.16
+
+    ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
+        step2_subCoordUDelay ( .clk(aclk), .in(step1_subCoordU), .out(step2_subCoordU));
+
+    ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
+        step2_subCoordVDelay ( .clk(aclk), .in(step1_subCoordV), .out(step2_subCoordV));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step2_texelU0ValidDelay ( .clk(aclk), .in(step1_texelU0Valid), .out(step2_texelU0Valid));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step2_texelU1ValidDelay ( .clk(aclk), .in(step1_texelU1Valid), .out(step2_texelU1Valid));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step2_texelV0ValidDelay ( .clk(aclk), .in(step1_texelV0Valid), .out(step2_texelV0Valid));
+
+    ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
+        step2_texelV1ValidDelay ( .clk(aclk), .in(step1_texelV1Valid), .out(step2_texelV1Valid));
+
+    //////////////////////////////////////////////
+    // STEP 3
     // Clamp texel quad
     // Clocks: 1
     //////////////////////////////////////////////
-    reg  [15 : 0]               step2_subCoordU; // Q0.16
-    reg  [15 : 0]               step2_subCoordV; // Q0.16
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel00;
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel01; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel10; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel11; 
+    reg  [15 : 0]               step3_subCoordU; // Q0.16
+    reg  [15 : 0]               step3_subCoordV; // Q0.16
+    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel00;
+    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel01; 
+    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel10; 
+    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel11; 
 
     always @(posedge aclk)
     begin : ClampTexelQuad
@@ -281,10 +302,10 @@ module TextureSampler #(
         reg [1 : 0] ti10;
         reg [1 : 0] ti11;
 
-        t00 = step1_texelU0Valid & step1_texelV0Valid;
-        t01 = step1_texelU1Valid & step1_texelV0Valid;
-        t10 = step1_texelU0Valid & step1_texelV1Valid;
-        t11 = step1_texelU1Valid & step1_texelV1Valid;
+        t00 = step2_texelU0Valid & step2_texelV0Valid;
+        t01 = step2_texelU1Valid & step2_texelV0Valid;
+        t10 = step2_texelU0Valid & step2_texelV1Valid;
+        t11 = step2_texelU1Valid & step2_texelV1Valid;
     
         casez ({t11, t10, t01, t00})
             // Imagine a pixel quad as
@@ -350,13 +371,13 @@ module TextureSampler #(
         endcase
 
         // Clamp texel quad
-        step2_texel00 <= texelMux(ti00, texelInput00, texelInput01, texelInput10, texelInput11);
-        step2_texel01 <= texelMux(ti01, texelInput00, texelInput01, texelInput10, texelInput11);
-        step2_texel10 <= texelMux(ti10, texelInput00, texelInput01, texelInput10, texelInput11);
-        step2_texel11 <= texelMux(ti11, texelInput00, texelInput01, texelInput10, texelInput11);
+        step3_texel00 <= texelMux(ti00, texelInput00, texelInput01, texelInput10, texelInput11);
+        step3_texel01 <= texelMux(ti01, texelInput00, texelInput01, texelInput10, texelInput11);
+        step3_texel10 <= texelMux(ti10, texelInput00, texelInput01, texelInput10, texelInput11);
+        step3_texel11 <= texelMux(ti11, texelInput00, texelInput01, texelInput10, texelInput11);
 
-        step2_subCoordU <= step1_subCoordU;
-        step2_subCoordV <= step1_subCoordV;
+        step3_subCoordU <= step2_subCoordU;
+        step3_subCoordV <= step2_subCoordV;
     end
 
     //////////////////////////////////////////////
@@ -364,12 +385,12 @@ module TextureSampler #(
     // Output
     // Clocks: 0
     //////////////////////////////////////////////
-    assign texel00 = step2_texel00;
-    assign texel01 = step2_texel01;
-    assign texel10 = step2_texel10;
-    assign texel11 = step2_texel11;
+    assign texel00 = step3_texel00;
+    assign texel01 = step3_texel01;
+    assign texel10 = step3_texel10;
+    assign texel11 = step3_texel11;
 
-    assign texelSubCoordS = step2_subCoordU;
-    assign texelSubCoordT = step2_subCoordV;
+    assign texelSubCoordS = step3_subCoordU;
+    assign texelSubCoordT = step3_subCoordV;
 
 endmodule 

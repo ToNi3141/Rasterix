@@ -19,7 +19,7 @@
 // It samples a texel from the texture memory, filters it and 
 // executes the texture environment.
 // Pipelined: yes
-// Depth: 11 cycles
+// Depth: 13 cycles
 module TextureMappingUnit
 #(
     parameter CMD_STREAM_WIDTH = 64,
@@ -67,16 +67,16 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Request texel from texture buffer and filter it
-    // Clocks: 8
+    // Clocks: 9
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
     wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(8)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
         step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(8)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
         step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
 
     wire [31 : 0] textureSDly;
@@ -86,7 +86,7 @@ module TextureMappingUnit
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
         step1_textureTDelay (.clk(aclk), .in(textureT), .out(textureTDly));
 
-    reg [ 3 : 0] lod;
+    wire [ 3 : 0] lod;
     LodCalculator lodCalculator (
         .aclk(aclk),
         .resetn(resetn),

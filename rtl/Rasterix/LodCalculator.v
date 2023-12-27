@@ -44,11 +44,11 @@ module LodCalculator
 );
     wire [31 : 0] diffS = texelS - texelSxy;
     wire [31 : 0] diffT = texelT - texelTxy;
-    wire [31 : 0] diffUnsignedS = diffS[31] ? ~diffS + 1 : diffS;
-    wire [31 : 0] diffUnsignedT = diffT[31] ? ~diffT + 1 : diffT;
+    wire [14 : 0] diffUnsignedS = diffS[31] ? ~diffS[0 +: 15] + 1 : diffS[0 +: 15];
+    wire [14 : 0] diffUnsignedT = diffT[31] ? ~diffT[0 +: 15] + 1 : diffT[0 +: 15];
     wire [ 7 : 0] diffU = diffUnsignedS[7 +: 8] >> (8 - textureSizeWidth);
     wire [ 7 : 0] diffV = diffUnsignedT[7 +: 8] >> (8 - textureSizeHeight);
-    wire [ 7 : 0] diffMax = (diffU < diffV) ? diffV : diffU;
+    wire [ 7 : 0] diffMax = diffV | diffU;
     always @(posedge aclk)
     begin
         casez (diffMax)

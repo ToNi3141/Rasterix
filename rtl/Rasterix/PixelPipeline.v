@@ -222,7 +222,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // TMU0
-    // Clocks: 12
+    // Clocks: 13
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]              step1_index;
@@ -240,33 +240,33 @@ module PixelPipeline
     wire                                    step1_last;
 
 
-    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(13)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
 
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
         step1_screenPosXDelay (.clk(aclk), .in(step_convert_screen_pos_x), .out(step1_screenPosX));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
         step1_screenPosYDelay (.clk(aclk), .in(step_convert_screen_pos_y), .out(step1_screenPosY));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
         step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(13)) 
         step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
         step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(13)) 
         step1_keepDelay (.clk(aclk), .in(step_convert_tkeep), .out(step1_keep));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
         step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
         step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
         step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
         step1_mipmap1SDelay (.clk(aclk), .in(step_convert_mipmap1_s), .out(step1_mipmap1S));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
         step1_mipmap1TDelay (.clk(aclk), .in(step_convert_mipmap1_t), .out(step1_mipmap1T));
 
     TextureMappingUnit #(
@@ -305,7 +305,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // TMU1
-    // Clocks: 12
+    // Clocks: 13
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]              step2_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]              step2_index;
@@ -320,24 +320,24 @@ module PixelPipeline
     generate
         if (ENABLE_SECOND_TMU)
         begin
-            ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(13)) 
                 step2_indexDelay (.clk(aclk), .in(step1_index), .out(step2_index));
 
-            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
                 step2_screenPosXDelay (.clk(aclk), .in(step1_screenPosX), .out(step2_screenPosX));
-            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
                 step2_screenPosYDelay (.clk(aclk), .in(step1_screenPosY), .out(step2_screenPosY));
 
-            ValueDelay #(.VALUE_SIZE(32), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
                 step2_depthDelay (.clk(aclk), .in(step1_depth), .out(step2_depth));
-            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(13)) 
                 step2_depthWDelay (.clk(aclk), .in(step1_depthWFloat), .out(step2_depthWFloat));
 
-            ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
                 step2_validDelay (.clk(aclk), .in(step1_valid), .out(step2_valid));
-            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(13)) 
                 step2_keepDelay (.clk(aclk), .in(step1_keep), .out(step2_keep));
-            ValueDelay #(.VALUE_SIZE(1), .DELAY(12)) 
+            ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
                 step2_lastDelay (.clk(aclk), .in(step1_last), .out(step2_last));
 
             TextureMappingUnit #(
