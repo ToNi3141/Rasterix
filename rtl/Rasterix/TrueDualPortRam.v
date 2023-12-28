@@ -24,7 +24,6 @@ module TrueDualPortRam #(
     parameter WRITE_STROBE_WIDTH = 4, // Write strobe in bits
     parameter MEMORY_PRIMITIVE = "block", // "distribute" or "block"
     parameter ADDR_WIDTH = 8,
-    parameter MEMORY_SIZE = (2**ADDR_WIDTH) * WRITE_STROBE_WIDTH,
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
 (
@@ -61,7 +60,7 @@ module TrueDualPortRam #(
                 .MEMORY_INIT_PARAM("0"),        // String
                 .MEMORY_OPTIMIZATION("true"),   // String
                 .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE),      // String
-                .MEMORY_SIZE(MEMORY_SIZE / WRITE_MASK_SIZE),             // DECIMAL
+                .MEMORY_SIZE((2**ADDR_WIDTH) * WRITE_STROBE_WIDTH),             // DECIMAL
                 .MESSAGE_CONTROL(0),            // DECIMAL
                 .READ_DATA_WIDTH_A(WRITE_STROBE_WIDTH),         // DECIMAL
                 .READ_DATA_WIDTH_B(WRITE_STROBE_WIDTH),         // DECIMAL

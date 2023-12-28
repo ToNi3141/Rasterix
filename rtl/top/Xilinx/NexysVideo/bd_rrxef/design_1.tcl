@@ -448,7 +448,7 @@ proc create_root_design { parentCell } {
     CONFIG.CMD_STREAM_WIDTH {128} \
     CONFIG.FB_MEM_DATA_WIDTH {128} \
     CONFIG.FB_MEM_STRB_WIDTH {16} \
-    CONFIG.TEXTURE_BUFFER_SIZE {131072} \
+    CONFIG.TEXTURE_BUFFER_SIZE {17} \
   ] $RasterixEF_0
 
 

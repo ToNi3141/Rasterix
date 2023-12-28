@@ -35,7 +35,7 @@ module top #(
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
     parameter FRAMEBUFFER_SIZE_IN_WORDS = `FRAMEBUFFER_SIZE_IN_WORDS;
-    parameter TEXTURE_BUFFER_SIZE = 174326;
+    parameter TEXTURE_BUFFER_SIZE = 17;
 
     initial
     begin
