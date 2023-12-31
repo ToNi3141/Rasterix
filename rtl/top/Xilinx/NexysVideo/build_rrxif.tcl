@@ -28,6 +28,8 @@ read_verilog ./../../../../Rasterix/DualPortRam.v
 read_verilog ./../../../../Rasterix/Fog.v
 read_verilog ./../../../../Rasterix/FrameBuffer.v
 read_verilog ./../../../../Rasterix/FunctionInterpolator.v
+read_verilog ./../../../../Rasterix/LodCalculator.v
+read_verilog ./../../../../Rasterix/MipmapOptimizedRam.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh

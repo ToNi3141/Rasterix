@@ -49,7 +49,7 @@ module RasterixEF #(
     parameter FB_MEM_DATA_WIDTH = CMD_STREAM_WIDTH,
 
     // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 131072,
+    parameter TEXTURE_BUFFER_SIZE = 17,
 
     // Memory address witdth
     parameter ADDR_WIDTH = 32,

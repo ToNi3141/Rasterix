@@ -82,22 +82,33 @@ bool PixelPipeline::updatePipeline()
         ret = ret && updateFogLut();
         m_fogDirty = false;
     }
+
+    ret = ret && uploadTexture();
     return ret;
 }
 
-bool PixelPipeline::uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat)
-{        
-    return uploadTexture({ pixels, sizeX, sizeY, intendedPixelFormat });
-}
-
-bool PixelPipeline::uploadTexture(const TextureObject& texObj)
+bool PixelPipeline::uploadTexture()
 {
-    bool ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, texObj);
-            
-    // Rebind texture to update the rasterizer with the new texture meta information
-    // TODO: Check if this is still required
-    ret = ret && useTexture();
+    bool ret { true };
+    if (m_textureObjectMipmap)
+    {
+        ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, *m_textureObjectMipmap);
+        m_textureObjectMipmap = std::nullopt;
+
+        // Rebind texture to update the rasterizer with the new texture meta information
+        // TODO: Check if this is still required
+        ret = ret && useTexture();
+    }
     return ret;
+}
+
+PixelPipeline::TextureObjectMipmap& PixelPipeline::getTexture() 
+{
+    if (!m_textureObjectMipmap)
+    {
+        m_textureObjectMipmap = std::make_optional<PixelPipeline::TextureObjectMipmap>(m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture));
+    }
+    return *m_textureObjectMipmap;
 }
 
 void PixelPipeline::setFogMode(const FogMode val)

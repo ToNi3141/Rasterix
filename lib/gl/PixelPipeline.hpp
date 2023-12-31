@@ -21,6 +21,7 @@
 
 #include "IRenderer.hpp"
 #include "Vec.hpp"
+#include <optional>
 
 namespace rr
 {
@@ -63,6 +64,7 @@ public:
     using Combine = TexEnvReg::Combine;
     using TexEnv = TexEnvReg;
     using TextureObject = IRenderer::TextureObject;
+    using TextureObjectMipmap = IRenderer::TextureObjectMipmap;
     using StencilConfig = StencilReg;
     
     using FeatureEnable = FeatureEnableReg;
@@ -90,13 +92,12 @@ public:
     bool getEnableStencil() const { return m_featureEnable.getEnableStencilTest(); }
 
     // Textures
-    bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
-    bool uploadTexture(const TextureObject& texObj);
-    TextureObject getTexture() { return m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture); }
+    bool uploadTexture();
+    TextureObjectMipmap& getTexture();
     bool useTexture();
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { m_tmuConf[m_tmu].boundTexture = val; }
+    void setBoundTexture(const uint32_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
@@ -121,7 +122,7 @@ public:
     bool setTexEnvMode(const TexEnvMode mode);
     TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
-    void activateTmu(const IRenderer::TMU tmu) { m_tmu = tmu; }
+    void activateTmu(const IRenderer::TMU tmu) { uploadTexture(); m_tmu = tmu; }
 
     // Fog
     void setFogMode(const FogMode val);
@@ -146,6 +147,7 @@ private:
        TexEnv texEnvConf {};
        TexEnv texEnvConfUploaded {};
     };
+    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 
     bool updateFogLut();
 

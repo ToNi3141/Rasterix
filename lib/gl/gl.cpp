@@ -3436,12 +3436,6 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    if (level != 0)
-    {
-        SPDLOG_WARN("glTexImage2d mip mapping not supported. Only level 0 is used.");
-        return;
-    }
-
     // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
     // without crashing the software. But it is likely that it will produce graphical errors.
     const uint16_t widthRounded = powf(2.0f, ceilf(logf(width)/logf(2.0f)));
@@ -3520,12 +3514,10 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
             return;
     }
 
-    if (!IceGL::getInstance().pixelPipeline().uploadTexture(std::shared_ptr<const uint16_t>(), widthRounded, heightRounded, intentedInternalPixelFormat))
-    {
-        SPDLOG_ERROR("glTexImage2D uploadTexture() failed");
-        IceGL::getInstance().setError(GL_INVALID_VALUE);
-        return;
-    }
+    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    texObj.width = widthRounded;
+    texObj.height = heightRounded;
+    texObj.intendedPixelFormat = intentedInternalPixelFormat;
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -4029,15 +4021,9 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     IceGL::getInstance().setError(GL_NO_ERROR);
 
-    PixelPipeline::TextureObject texObj { IceGL::getInstance().pixelPipeline().getTexture() };
+    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
 
-    if (level != 0)
-    {
-        SPDLOG_WARN("glTexSubImage2D mip mapping not supported. Only level 0 is used.");
-        return;
-    }
-
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; }); // TODO: make_shared
     if (!texMemShared)
     {
         SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
@@ -4268,12 +4254,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         }
     }
 
-    texObj.pixels = texMemShared;       
-    if (!IceGL::getInstance().pixelPipeline().uploadTexture(texObj))
-    {
-        IceGL::getInstance().setError(GL_INVALID_VALUE);
-        return;
-    }
+    texObj.pixels = texMemShared;
 }
 
 GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
@@ -4968,7 +4949,7 @@ GLAPI_WRAPPER void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xo
 GLAPI_WRAPPER void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer){ impl_glVertexPointer(size, type, stride, pointer); }
 // -------------------------------------------------------
 // Open GL 1.2
-// --R-----------------------------------------------------
+// -------------------------------------------------------
 GLAPI_WRAPPER void APIENTRY glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices){ impl_glDrawRangeElements(mode, start, end, count, type, indices); }
 GLAPI_WRAPPER void APIENTRY glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *data){ impl_glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, data); }
 GLAPI_WRAPPER void APIENTRY glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid *pixels){ impl_glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels); }

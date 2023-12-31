@@ -20,14 +20,16 @@ set_property source_mgmt_mode All [current_project]
 read_verilog ./../../../../Rasterix/AttributeInterpolator.v
 read_verilog ./../../../../Rasterix/ColorBlender.v
 read_verilog ./../../../../Rasterix/ColorInterpolator.v
-read_verilog ./../../../../Rasterix/ColorMixer.v
 read_verilog ./../../../../Rasterix/ColorMixerSigned.v
+read_verilog ./../../../../Rasterix/ColorMixer.v
 read_verilog ./../../../../Rasterix/CommandParser.v
 read_verilog ./../../../../Rasterix/DmaStreamEngine.v
 read_verilog ./../../../../Rasterix/DualPortRam.v
 read_verilog ./../../../../Rasterix/Fog.v
 read_verilog ./../../../../Rasterix/FrameBuffer.v
 read_verilog ./../../../../Rasterix/FunctionInterpolator.v
+read_verilog ./../../../../Rasterix/LodCalculator.v
+read_verilog ./../../../../Rasterix/MipmapOptimizedRam.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
@@ -47,7 +49,6 @@ read_verilog ./../../../../Rasterix/TextureFilter.v
 read_verilog ./../../../../Rasterix/TextureMappingUnit.v
 read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
-read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
 read_verilog ./../../../../Float/rtl/float/FloatFastRecip.v

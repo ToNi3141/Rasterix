@@ -23,6 +23,7 @@
 #include <functional>
 #include <spdlog/spdlog.h>
 #include <span>
+#include <optional>
 
 namespace rr
 {
@@ -30,7 +31,7 @@ template <class RenderConfig>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE { RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 };
+    static constexpr uint32_t MAX_TEXTURE_SIZE { RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 2 };
     static constexpr uint32_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
 
     TextureMemoryManager()
@@ -41,19 +42,17 @@ public:
             texture.requiresDelete = false;
             texture.requiresUpload = false;
         }
-
-        for (auto& t : m_textureLut)
-        {
-            t = 0;
-        }
     }
 
     virtual std::pair<bool, uint16_t> createTexture() 
     {
         for (uint32_t i = 1; i < m_textureLut.size(); i++)
         {
-            if (m_textureLut[i] == 0)
+            if (!m_textureLut[i])
             {
+                m_textureLut[i] = allocTexture();
+                m_textures[i].requiresUpload = false;
+                m_textures[i].requiresDelete = false;
                 setTextureWrapModeS(i, IRenderer::TextureWrapMode::REPEAT);
                 setTextureWrapModeT(i, IRenderer::TextureWrapMode::REPEAT);
                 enableTextureMagFiltering(i, true);
@@ -63,94 +62,80 @@ public:
         return {false, 0};
     }
 
-    bool updateTexture(const uint16_t texId, const IRenderer::TextureObject& textureObject) 
+    bool updateTexture(const uint16_t texId, const IRenderer::TextureObjectMipmap& textureObject) 
     {
         bool ret = true;
-        uint32_t textureSlot = m_textureLut[texId];
-        const uint32_t textureSlotOld = m_textureLut[texId];
-        const uint32_t textureSizeInBytes = textureObject.width * textureObject.height * 2;
+        uint32_t textureSlot = *m_textureLut[texId];
+        const uint32_t textureSlotOld = *m_textureLut[texId];
 
-        // Check if the current texture contains any pixels. If yes, a new texture must be allocated because the current texture
-        // might be used in the display list. If it does not contain any pixels, then this texture will for sure not be used
-        // in a display list and the current object can be safely reused.
-        if (m_textures[textureSlot].pixels || (textureSlot == 0))
+        if (m_textures[textureSlot].requiresUpload)
         {
-            // Slot 0 has a special meaning. It will never be used and never be deleted.
-            if (textureSlot != 0)
-            {
-                m_textures[textureSlot].requiresDelete = true;
-            }
-            
-            // Search new texture
-            for (uint32_t i = 1; i < m_textures.size(); i++)
-            {
-                if (m_textures[i].inUse == false)
-                {
-                    textureSlot = i;
-                    m_textureLut[texId] = textureSlot;
-                    SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
+            m_textures[textureSlot].requiresDelete = true;
+            std::optional<uint32_t> newTextureSlot = allocTexture();
 
-                    // Allocate memory pages
-                    const uint32_t texturePages = (std::max)(static_cast<uint32_t>(1), (textureSizeInBytes / TEXTURE_PAGE_SIZE));
-                    SPDLOG_DEBUG("Use number of pages: {}", texturePages);
-                    ret = allocPages(m_textures[textureSlot], texturePages);
-                    if (!ret)
-                    {
-                        SPDLOG_ERROR("Run out of memory during page allocation");
-                        deallocPages(m_textures[textureSlot]);
-                    }
-                    break;
-                }
-            }
-            if (!ret)
+            if (!newTextureSlot)
             {
-                SPDLOG_ERROR("Run out of memory during texture allocation");
+                return false;
             }
+
+            textureSlot = *newTextureSlot;
+            m_textureLut[texId] = newTextureSlot;
+            SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
         }
+        m_textures[textureSlot].textures = textureObject;
+
+        m_textures[textureSlot].requiresUpload = true;
+        m_textures[textureSlot].requiresDelete = false;
 
         m_textures[textureSlot].tmuConfig.setWarpModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
         m_textures[textureSlot].tmuConfig.setWarpModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
 
-        m_textures[textureSlot].pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textureObject.pixels);
-        m_textures[textureSlot].size = textureSizeInBytes;
-        m_textures[textureSlot].inUse = true;
-        m_textures[textureSlot].requiresUpload = true;
-        m_textures[textureSlot].requiresDelete = false;
-        m_textures[textureSlot].intendedPixelFormat = textureObject.intendedPixelFormat;
-        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject.getPixelFormat());
-        m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject.width);
-        m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject.height);
+        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getPixelFormat());
+        m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject[0].width);
+        m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject[0].height);
+ 
+        // Allocate memory pages
+        const uint32_t textureSize = m_textures[textureSlot].getTextureSize();
+        const uint32_t texturePages = (textureSize/ TEXTURE_PAGE_SIZE) + 1;
+        SPDLOG_DEBUG("Use number of pages: {}", texturePages);
+        ret = allocPages(m_textures[textureSlot], texturePages);
+        if (!ret)
+        {
+            SPDLOG_ERROR("Run out of memory during page allocation");
+            deallocPages(m_textures[textureSlot]);
+        }
+
         return ret;
     }
 
     void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
-        Texture& tex = m_textures[m_textureLut[texId]];
+        Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setWarpModeS(mode);
     }
 
     void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
-        Texture& tex = m_textures[m_textureLut[texId]];
+        Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setWarpModeT(mode);
     }
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
     {
-        Texture& tex = m_textures[m_textureLut[texId]];
+        Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setEnableMagFilter(filter);
     }
 
     bool textureValid(const uint16_t texId) const 
     {
-        const Texture& tex = m_textures[m_textureLut[texId]];
+        const Texture& tex = m_textures[*m_textureLut[texId]];
         return (texId != 0) && tex.inUse;
     }
 
     TmuTextureReg getTmuConfig(const uint16_t texId) const
     {
-        const Texture& tex = m_textures[m_textureLut[texId]];
+        const Texture& tex = m_textures[*m_textureLut[texId]];
         return tex.tmuConfig;
     }
 
@@ -158,7 +143,7 @@ public:
     {
         if (textureValid(texId))
         {
-            const Texture& tex = m_textures[m_textureLut[texId]];
+            const Texture& tex = m_textures[*m_textureLut[texId]];
             return { tex.pageTable.data(), tex.pages };
         }
         return {};
@@ -168,29 +153,26 @@ public:
     {
         if (textureValid(texId))
         {
-            const Texture& tex = m_textures[m_textureLut[texId]];
-            return tex.size;
+            const Texture& tex = m_textures[*m_textureLut[texId]];
+            return tex.pages * TEXTURE_PAGE_SIZE;
         }
         return 0;
     }
 
-    IRenderer::TextureObject getTexture(const uint16_t texId)
+    IRenderer::TextureObjectMipmap getTexture(const uint16_t texId)
     {
-        const uint32_t textureSlot = m_textureLut[texId];
+        const uint32_t textureSlot = *m_textureLut[texId];
         if (!m_textures[textureSlot].inUse)
         {
             return {};
         }
-        return { std::reinterpret_pointer_cast<const uint16_t, const uint8_t>(m_textures[textureSlot].pixels),
-            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.getTextureWidth()),
-            static_cast<uint16_t>(m_textures[textureSlot].tmuConfig.getTextureHeight()),
-            static_cast<IRenderer::TextureObject::IntendedInternalPixelFormat>(m_textures[textureSlot].intendedPixelFormat) };
+        return m_textures[textureSlot].textures;
     }
 
     bool deleteTexture(const uint16_t texId) 
     {
-        const uint32_t texLutId = m_textureLut[texId];
-        m_textureLut[texId] = 0;
+        const uint32_t texLutId = *m_textureLut[texId];
+        m_textureLut[texId] = std::nullopt;
         m_textures[texLutId].requiresDelete = true;
         return true;
     }
@@ -201,13 +183,14 @@ public:
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
             Texture& texture = m_textures[i];
-            if (texture.requiresUpload && texture.pixels)
+            if (texture.requiresUpload)
             {
                 bool ret { true };
-                const uint32_t texturePageSize = (std::min)(texture.size, TEXTURE_PAGE_SIZE);
-                for (std::size_t j = 0; j < texture.pages; j++)
+                std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
+                uint32_t j = 0;
+                for (std::span<const uint8_t> b = texture.getPageData(j, { buffer} ); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
-                    ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { texture.pixels.get() + (j * TEXTURE_PAGE_SIZE), texturePageSize });
+                    ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
                 }
                 texture.requiresUpload = !ret;
             }
@@ -221,7 +204,7 @@ public:
             {
                 texture.requiresDelete = false;
                 texture.inUse = false;
-                texture.pixels = std::shared_ptr<const uint8_t>();
+                texture.textures = {};
                 deallocPages(texture);
             }
         }
@@ -242,10 +225,55 @@ private:
         bool requiresDelete;
         std::array<uint16_t, MAX_NUMBER_OF_PAGES> pageTable {};
         uint8_t pages { 0 };
-        std::shared_ptr<const uint8_t> pixels;
-        uint32_t size;
-        IRenderer::TextureObject::IntendedInternalPixelFormat intendedPixelFormat; // Stores the intended pixel format. Has no actual effect here other than to cache a value.
-        TmuTextureReg tmuConfig;
+        IRenderer::TextureObjectMipmap textures {};
+        TmuTextureReg tmuConfig {};
+
+        uint32_t getTextureSize() const
+        {
+            uint32_t counter = 0;
+            for (auto &e : textures)
+            {
+                counter += e.width * e.height * 2;
+            }
+            return counter;
+        }
+
+        std::span<const uint8_t> getPageData(uint32_t page, const std::span<uint8_t>& buffer)
+        {
+            const uint32_t addr = page * buffer.size();
+            uint32_t level = 0;
+            uint32_t mipMapAddr = 0;
+            for (level = 0; level < textures.size(); level++)
+            {
+                if (addr < (mipMapAddr + textures[level].width * textures[level].height * 2))
+                {
+                    mipMapAddr = addr - mipMapAddr;
+                    break;
+                }
+                mipMapAddr += textures[level].width * textures[level].height * 2;
+            }
+
+            std::span<const uint8_t> ret {};
+            uint32_t bufferSize = 0;
+            for (; level < textures.size(); level++)
+            {
+                const uint32_t texSize = textures[level].width * textures[level].height * 2;
+                const uint8_t *pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
+                const uint32_t dataSize = std::min(texSize - mipMapAddr, static_cast<uint32_t>(buffer.size()) - bufferSize);
+                std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
+                bufferSize += dataSize;
+                if (bufferSize == buffer.size())
+                {
+                    break;
+                }
+                mipMapAddr = 0; // When arriving to this point, then the current mipmap is fully in the buffer and the next mipmap is selected.
+            }
+            if (bufferSize != 0)
+            {
+                ret = { buffer.data(), bufferSize };
+            }
+            return ret;
+        }
     };
 
     bool allocPages(Texture& tex, const uint32_t numberOfPages)
@@ -283,9 +311,25 @@ private:
         tex.pages = 0;
     }
 
+    std::optional<uint32_t> allocTexture()
+    {
+        for (uint32_t i = 1; i < m_textures.size(); i++)
+        {
+            if (m_textures[i].inUse == false)
+            {
+                m_textures[i].inUse = true;
+                SPDLOG_DEBUG("Allocating texture {}", i);
+
+                return std::make_optional(i);
+            }
+        }
+        SPDLOG_ERROR("Run out of memory during texture allocation");
+        return std::nullopt;
+    }
+
     // Texture memory allocator
     std::array<Texture, RenderConfig::NUMBER_OF_TEXTURES> m_textures;
-    std::array<uint32_t, RenderConfig::NUMBER_OF_TEXTURES> m_textureLut;
+    std::array<std::optional<uint32_t>, RenderConfig::NUMBER_OF_TEXTURES> m_textureLut {};
     std::array<PageEntry, RenderConfig::NUMBER_OF_TEXTURE_PAGES> m_pageTable {};
 };
 

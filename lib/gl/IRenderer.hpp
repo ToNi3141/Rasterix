@@ -136,10 +136,12 @@ public:
         }
 
         std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by PixelFormat
-        const uint16_t width {}; ///< The width of the texture
-        const uint16_t height {}; ///< The height of the texture
-        const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
+        uint16_t width {}; ///< The width of the texture
+        uint16_t height {}; ///< The height of the texture
+        IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
+
+    using TextureObjectMipmap = std::array<TextureObject, 9>;
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
@@ -157,12 +159,12 @@ public:
     /// @param texId The texture id which texture has to be updated
     /// @param textureObject The object which contains the texture and all its meta data
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) = 0;
+    virtual bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) = 0;
 
     /// @brief Returns a texture associated to the texId
     /// @param texId The texture id of the texture to get the data from
     /// @return The texture object
-    virtual TextureObject getTexture(const uint16_t texId) = 0;
+    virtual TextureObjectMipmap getTexture(const uint16_t texId) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param target The used TMU

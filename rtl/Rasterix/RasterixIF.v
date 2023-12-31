@@ -53,7 +53,7 @@ module RasterixIF #(
     parameter CMD_STREAM_WIDTH = 32,
 
     // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 131072, // 128kB enough for 256x256px textures
+    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
 
     // Memory address witdth
     parameter ADDR_WIDTH = 24,

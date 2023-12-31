@@ -306,12 +306,12 @@ public:
         return m_textureManager.createTexture();
     }
 
-    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) override
+    virtual bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) override
     {
         return m_textureManager.updateTexture(texId, textureObject);
     }
 
-    virtual TextureObject getTexture(const uint16_t texId) override
+    virtual TextureObjectMipmap getTexture(const uint16_t texId) override
     {
         return m_textureManager.getTexture(texId);
     }

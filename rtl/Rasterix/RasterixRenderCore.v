@@ -33,7 +33,7 @@ module RasterixRenderCore #(
     parameter CMD_STREAM_WIDTH = 16,
 
     // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 131072,
+    parameter TEXTURE_BUFFER_SIZE = 17,
 
     // Enables the flow control. Disabling can safe logic resources.
     parameter ENABLE_FLOW_CTRL = 1,

@@ -30,10 +30,10 @@ namespace rr
 template <class RenderConfig>
 class TextureStreamCmd
 {
-    static constexpr uint32_t MAX_PAGES { (RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2) / RenderConfig::TEXTURE_PAGE_SIZE };
+    static constexpr uint32_t MAX_PAGES { (RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 2) / RenderConfig::TEXTURE_PAGE_SIZE };
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
-    static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 8 bit
-    static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 8 }; // size: 8 bit
+    static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
+    static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
     using DseTransferType = std::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const uint8_t tmu,
@@ -57,9 +57,9 @@ public:
     void serialize(Desc&) const {}
     uint32_t command() const 
     { 
-        const uint32_t texSizeLog2 = static_cast<uint32_t>(std::log2(static_cast<float>(m_texSize))) << TEXTURE_STREAM_SIZE_POS;
+        const uint32_t texSize = static_cast<uint32_t>(m_texSize) << TEXTURE_STREAM_SIZE_POS;
         const uint32_t tmuShifted = static_cast<uint32_t>(m_tmu) << TEXTURE_STREAM_TMU_NR_POS;
-        return OP_TEXTURE_STREAM | texSizeLog2 | tmuShifted;
+        return OP_TEXTURE_STREAM | texSize | tmuShifted;
     }
 
     DSEC::SCT dseOp() const { return DSEC::OP_LOAD; }
