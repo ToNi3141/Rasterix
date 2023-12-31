@@ -118,6 +118,7 @@ module TextureSampler #(
         {
             1'h0, // sign
             16'h0, // integer part
+            1'h0,
             texSize[0],
             texSize[1],
             texSize[2],
@@ -126,7 +127,7 @@ module TextureSampler #(
             texSize[5],
             texSize[6],
             texSize[7],
-            7'h0
+            6'h0
         };
     endfunction
 
@@ -136,7 +137,7 @@ module TextureSampler #(
         convertToOnePointZero = 
         {
             1'h0, // sign
-            15'h0, // integer part
+            16'h0, // integer part
             texSize[0], // integer part
             texSize[1], // fraction part
             texSize[2],
@@ -145,7 +146,7 @@ module TextureSampler #(
             texSize[5],
             texSize[6],
             texSize[7],
-            8'h0
+            7'h0
         };
     endfunction
 
@@ -223,17 +224,17 @@ module TextureSampler #(
 
         if (enableHalfPixelOffset)
         begin
-            texelS0 = step0_texelS - convertToZeroPointFive(1 << step0_width);
-            texelS1 = step0_texelS + convertToZeroPointFive(1 << step0_width);
-            texelT0 = step0_texelT - convertToZeroPointFive(1 << step0_height);
-            texelT1 = step0_texelT + convertToZeroPointFive(1 << step0_height);
+            texelS0 = step0_texelS - convertToZeroPointFive(1 << (step0_width - 1));
+            texelS1 = step0_texelS + convertToZeroPointFive(1 << (step0_width - 1));
+            texelT0 = step0_texelT - convertToZeroPointFive(1 << (step0_height - 1));
+            texelT1 = step0_texelT + convertToZeroPointFive(1 << (step0_height - 1));
         end
         else
         begin
             texelS0 = step0_texelS;
-            texelS1 = step0_texelS + convertToOnePointZero(1 << step0_width);
+            texelS1 = step0_texelS + convertToOnePointZero(1 << (step0_width - 1));
             texelT0 = step0_texelT;
-            texelT1 = step0_texelT + convertToOnePointZero(1 << step0_height);
+            texelT1 = step0_texelT + convertToOnePointZero(1 << (step0_height - 1));
         end
 
         step1_texelU0Valid <= !isPixelOutside(texelS0, step0_clampS);
