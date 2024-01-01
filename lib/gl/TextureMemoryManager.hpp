@@ -75,12 +75,13 @@ public:
 
             if (!newTextureSlot)
             {
+                SPDLOG_WARN("Was not able to allocate new texture");
                 return false;
             }
 
             textureSlot = *newTextureSlot;
             m_textureLut[texId] = newTextureSlot;
-            SPDLOG_DEBUG("Use new texture slot {} for texId {}", i, texId);
+            SPDLOG_DEBUG("Use new texture slot {} for texId {}", *newTextureSlot, texId);
         }
         m_textures[textureSlot].textures = textureObject;
 

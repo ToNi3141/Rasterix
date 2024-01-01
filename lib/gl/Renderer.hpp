@@ -325,11 +325,10 @@ public:
         }
         bool ret { true };
         const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
-        const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             using Command = TextureStreamCmd<RenderConfig>;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages, texSize });
+            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages });
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
             ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });

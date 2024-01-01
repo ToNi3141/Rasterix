@@ -37,16 +37,13 @@ class TextureStreamCmd
     using DseTransferType = std::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const uint8_t tmu,
-                    const std::span<const uint16_t>& pages,
-                    const uint32_t texSize)
+                    const std::span<const uint16_t>& pages)
         : m_tmu { tmu }
-        , m_texSize { texSize }
+        , m_texSize { pages.size() * RenderConfig::TEXTURE_PAGE_SIZE }
     {
-        m_texSize = (std::max)(m_texSize, DSEC::DEVICE_MIN_TRANSFER_SIZE); // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        uint32_t pageSize = (m_texSize > RenderConfig::TEXTURE_PAGE_SIZE) ? RenderConfig::TEXTURE_PAGE_SIZE : m_texSize;
         for (uint32_t i = 0; i < pages.size(); i++)
         {
-            m_pages[i] = { RenderConfig::GRAM_MEMORY_LOC + (pages[i] * RenderConfig::TEXTURE_PAGE_SIZE), pageSize };
+            m_pages[i] = { RenderConfig::GRAM_MEMORY_LOC + (pages[i] * RenderConfig::TEXTURE_PAGE_SIZE), RenderConfig::TEXTURE_PAGE_SIZE };
         }
         m_dseData = { m_pages.data(), pages.size() };  
     }
