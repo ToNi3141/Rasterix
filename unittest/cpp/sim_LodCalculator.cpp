@@ -47,6 +47,8 @@ TEST_CASE("Check max lod", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
 
+    t->confEnable = true;
+
     t->textureSizeWidth = 8;
     t->textureSizeHeight = 8;
 
@@ -64,6 +66,8 @@ TEST_CASE("Check max lod", "[LodCalculator]")
 TEST_CASE("Check lod xy", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+
+    t->confEnable = true;
 
     t->textureSizeWidth = 8;
     t->textureSizeHeight = 8;
@@ -86,6 +90,8 @@ TEST_CASE("Check lod x", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
 
+    t->confEnable = true;
+
     t->textureSizeWidth = 8;
     t->textureSizeHeight = 8;
 
@@ -106,6 +112,8 @@ TEST_CASE("Check lod x", "[LodCalculator]")
 TEST_CASE("Check lod y", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+
+    t->confEnable = true;
 
     t->textureSizeWidth = 8;
     t->textureSizeHeight = 8;
@@ -128,6 +136,8 @@ TEST_CASE("Check lod xy negative", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
 
+    t->confEnable = true;
+
     t->textureSizeWidth = 8;
     t->textureSizeHeight = 8;
 
@@ -148,6 +158,8 @@ TEST_CASE("Check lod xy negative", "[LodCalculator]")
 TEST_CASE("Check lod xy max with varying texture size", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+
+    t->confEnable = true;
 
     for (uint32_t i = 0; i < 8; i++)
     {
@@ -170,6 +182,8 @@ TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
 
+    t->confEnable = true;
+
     for (uint32_t i = 0; i < 8; i++)
     {
         t->textureSizeWidth = i;
@@ -191,6 +205,8 @@ TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
 
+    t->confEnable = true;
+
     t->textureSizeWidth = 4;
     t->textureSizeHeight = 4;
 
@@ -210,4 +226,27 @@ TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
     t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
     clk(t);
     REQUIRE(t->lod == 1);
+}
+
+TEST_CASE("Check lod xy when calculation is disabled", "[LodCalculator]")
+{
+    VLodCalculator* t = new VLodCalculator();
+
+    t->confEnable = false;
+
+    for (uint32_t i = 0; i < 8; i++)
+    {
+        t->textureSizeWidth = i;
+        t->textureSizeHeight = i;
+
+        t->texelS = 0x1 << (15 - i);
+        t->texelT = 0x1 << (15 - i);
+
+        t->texelSxy = 0x1 << (15 + 0);
+        t->texelTxy = 0x1 << (15 + 0);
+
+        clk(t);
+
+        REQUIRE(t->lod == 0);
+    }
 }

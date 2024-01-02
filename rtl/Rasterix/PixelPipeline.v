@@ -42,6 +42,7 @@ module PixelPipeline
     localparam TEX_ADDR_WIDTH = 17,
 
     parameter ENABLE_SECOND_TMU = 1,
+    parameter ENABLE_LOD_CALC = 1,
     
     parameter SCREEN_POS_WIDTH = 11,
 
@@ -271,7 +272,8 @@ module PixelPipeline
 
     TextureMappingUnit #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
     ) tmu0 (
         .aclk(aclk),
         .resetn(resetn),
@@ -342,7 +344,8 @@ module PixelPipeline
 
             TextureMappingUnit #(
                 .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
-                .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+                .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+                .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
             ) tmu1 (
                 .aclk(aclk),
                 .resetn(resetn),

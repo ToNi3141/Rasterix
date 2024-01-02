@@ -101,6 +101,7 @@ public:
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
+    void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmuConf[m_tmu].boundTexture, val); }
 
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);

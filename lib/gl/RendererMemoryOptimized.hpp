@@ -301,6 +301,12 @@ public:
         return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
+    virtual bool enableTextureMinFiltering(const uint16_t texId, bool filter) override
+    {
+        m_textureManager.enableTextureMinFiltering(texId, filter);
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
+    }
+
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
     {
         const uint32_t framebufferSize = x * y * 2;

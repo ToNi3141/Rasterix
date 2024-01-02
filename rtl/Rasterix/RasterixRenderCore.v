@@ -27,6 +27,7 @@ module RasterixRenderCore #(
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
+    parameter ENABLE_LOD_CALC = 1,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -926,6 +927,7 @@ module RasterixRenderCore #(
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+    defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_LOD_CALC;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5

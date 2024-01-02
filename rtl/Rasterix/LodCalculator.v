@@ -26,10 +26,14 @@
 //
 // Pipelined: yes
 // Depth: 1 cycles
-module LodCalculator 
+module LodCalculator #(
+    parameter ENABLE_LOD_CALC = 1
+)
 (
     input  wire                         aclk,
     input  wire                         resetn,
+
+    input  wire                         confEnable,
 
     input  wire [ 3 : 0]                textureSizeWidth, 
     input  wire [ 3 : 0]                textureSizeHeight,
@@ -50,17 +54,27 @@ module LodCalculator
     wire [ 7 : 0] diffV = diffUnsignedT[7 +: 8] >> (8 - textureSizeHeight);
     wire [ 7 : 0] diffMax = diffV | diffU;
     always @(posedge aclk)
-    begin
+    begin : Mux
+        reg [ 3 : 0] lodReg;
         casez (diffMax)
-            8'b00000000: lod <= 0;
-            8'b00000001: lod <= 1;
-            8'b0000001?: lod <= 2;
-            8'b000001??: lod <= 3;
-            8'b00001???: lod <= 4;
-            8'b0001????: lod <= 5;
-            8'b001?????: lod <= 6;
-            8'b01??????: lod <= 7;
-            8'b1???????: lod <= 8;
+            8'b00000000: lodReg = 0;
+            8'b00000001: lodReg = 1;
+            8'b0000001?: lodReg = 2;
+            8'b000001??: lodReg = 3;
+            8'b00001???: lodReg = 4;
+            8'b0001????: lodReg = 5;
+            8'b001?????: lodReg = 6;
+            8'b01??????: lodReg = 7;
+            8'b1???????: lodReg = 8;
         endcase
+
+        if (ENABLE_LOD_CALC && confEnable)
+        begin
+            lod <= lodReg;
+        end
+        else
+        begin
+            lod <= 0;
+        end
     end
 endmodule

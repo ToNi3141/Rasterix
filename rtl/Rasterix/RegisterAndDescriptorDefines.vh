@@ -264,9 +264,9 @@ localparam RENDER_CONFIG_TMU_TEX_ENV_SHIFT_ALPHA_SIZE = 2;
 
 // OP_RENDER_CONFIG_TMU0_TEXTURE_CONFIG
 // OP_RENDER_CONFIG_TMU1_TEXTURE_CONFIG
-//  +--------------------------------------------------------------------------------------------------------------+
-//  | 17'hx reserved | 4'hx pixel format | 1'hx mag filter | 1'hx clamp t | 1'hx clamp s | 4'hx height | 4'hx width |
-//  +--------------------------------------------------------------------------------------------------------------+
+//  +---------------------------------------------------------------------------------------------------------------------------------+
+//  | 16'hx reserved | 4'hx pixel format | 1'hx min filter | 1'hx mag filter | 1'hx clamp t | 1'hx clamp s | 4'hx height | 4'hx width |
+//  +---------------------------------------------------------------------------------------------------------------------------------+
 // Texture hight and width are in power of two minus one, means: 4'b0 = 1px, 4'b1 = 2px, 4'b10 = 8px ...
 localparam RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS = 0;
 localparam RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE = 4;
@@ -278,7 +278,9 @@ localparam RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS = RENDER_CONFIG_TMU_TEXTURE_CLA
 localparam RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE = 1;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS = RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_POS + RENDER_CONFIG_TMU_TEXTURE_CLAMP_T_SIZE;
 localparam RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE = 1;
-localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS = RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS + RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE;
+localparam RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS = RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS + RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE;
+localparam RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE = 1;
+localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS = RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS + RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE;
 localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE = 4;
 
 localparam RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_RGBA4444 = 0;

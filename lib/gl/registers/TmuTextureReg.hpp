@@ -47,6 +47,7 @@ public:
     void setWarpModeS(const TextureWrapMode val) { m_regVal.fields.wrapModeS = static_cast<uint32_t>(val); }
     void setWarpModeT(const TextureWrapMode val) { m_regVal.fields.wrapModeT = static_cast<uint32_t>(val); }
     void setEnableMagFilter(const bool val) { m_regVal.fields.enableMagFilter = val; }
+    void setEnableMinFilter(const bool val) { m_regVal.fields.enableMinFilter = val; }
     void setPixelFormat(const PixelFormat val) { m_regVal.fields.pixelFormat = static_cast<uint32_t>(val); }
 
     uint16_t getTextureWidth() const { return powf(2.0f, m_regVal.fields.texWidth); }
@@ -54,6 +55,7 @@ public:
     TextureWrapMode getWrapModeS() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeS); }
     TextureWrapMode getWrapModeT() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeT); }
     bool getEnableMagFilter() const { return m_regVal.fields.enableMagFilter; }
+    bool getEnableMinFilter() const { return m_regVal.fields.enableMinFilter; }
     PixelFormat getPixelFormat() const { return static_cast<PixelFormat>(m_regVal.fields.pixelFormat); }
 
     void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
@@ -72,6 +74,7 @@ private:
                 , wrapModeS(static_cast<uint32_t>(TextureWrapMode::REPEAT))
                 , wrapModeT(static_cast<uint32_t>(TextureWrapMode::REPEAT))
                 , enableMagFilter(false)
+                , enableMinFilter(true)
                 , pixelFormat(static_cast<uint32_t>(PixelFormat::RGBA4444))
             { }
 
@@ -80,6 +83,7 @@ private:
             uint32_t wrapModeS : 1;
             uint32_t wrapModeT : 1;
             uint32_t enableMagFilter : 1;
+            uint32_t enableMinFilter : 1;
             uint32_t pixelFormat : 4;
         } fields {};
         uint32_t data;

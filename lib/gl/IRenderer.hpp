@@ -184,11 +184,17 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) = 0;
 
-    /// @brief Enables the texture filtering
+    /// @brief Enables the texture filtering for magnification
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) = 0;
+
+    /// @brief Enables the texture filtering for minification (mipmapping)
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool enableTextureMinFiltering(const uint16_t texId, bool filter) = 0;
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete

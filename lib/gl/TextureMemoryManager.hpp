@@ -128,6 +128,12 @@ public:
         tex.tmuConfig.setEnableMagFilter(filter);
     }
 
+    void enableTextureMinFiltering(const uint16_t texId, bool filter)
+    {
+        Texture& tex = m_textures[*m_textureLut[texId]];
+        tex.tmuConfig.setEnableMinFilter(filter);
+    }
+
     bool textureValid(const uint16_t texId) const 
     {
         const Texture& tex = m_textures[*m_textureLut[texId]];

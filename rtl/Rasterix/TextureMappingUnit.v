@@ -25,6 +25,9 @@ module TextureMappingUnit
     parameter CMD_STREAM_WIDTH = 64,
 
     parameter SUB_PIXEL_WIDTH = 8,
+
+    parameter ENABLE_LOD_CALC = 1,
+
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32,
@@ -87,9 +90,13 @@ module TextureMappingUnit
         step1_textureTDelay (.clk(aclk), .in(textureT), .out(textureTDly));
 
     wire [ 3 : 0] lod;
-    LodCalculator lodCalculator (
+    LodCalculator #(
+        .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
+    ) lodCalculator (
         .aclk(aclk),
         .resetn(resetn),
+
+        .confEnable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE]),
 
         .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
         .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),

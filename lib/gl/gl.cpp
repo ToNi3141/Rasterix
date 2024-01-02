@@ -3569,6 +3569,24 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
             }
             break;
+        case GL_TEXTURE_MIN_FILTER:
+            switch (param)
+            {
+                case GL_NEAREST:
+                case GL_LINEAR:
+                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(false);
+                    break;
+                case GL_NEAREST_MIPMAP_NEAREST:
+                case GL_LINEAR_MIPMAP_NEAREST:
+                case GL_NEAREST_MIPMAP_LINEAR:
+                case GL_LINEAR_MIPMAP_LINEAR:
+                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(true);
+                    break;
+                default:
+                    IceGL::getInstance().setError(GL_INVALID_ENUM);
+                    break;
+            }
+            break;
         default:
             SPDLOG_WARN("glTexParameteri pname 0x{:X} not supported", pname);
             IceGL::getInstance().setError(GL_INVALID_ENUM);
