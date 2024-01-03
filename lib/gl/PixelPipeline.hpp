@@ -95,7 +95,9 @@ public:
     bool uploadTexture();
     TextureObjectMipmap& getTexture();
     bool useTexture();
+    bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
+    bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint32_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
@@ -148,7 +150,6 @@ private:
        TexEnv texEnvConf {};
        TexEnv texEnvConfUploaded {};
     };
-    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 
     bool updateFogLut();
 
@@ -161,6 +162,7 @@ private:
     // TMU
     std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
     uint8_t m_tmu { 0 };
+    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};

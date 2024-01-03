@@ -44,22 +44,31 @@ public:
         }
     }
 
-    virtual std::pair<bool, uint16_t> createTexture() 
+    std::pair<bool, uint16_t> createTexture() 
     {
         for (uint32_t i = 1; i < m_textureLut.size(); i++)
         {
             if (!m_textureLut[i])
             {
-                m_textureLut[i] = allocTexture();
-                m_textures[i].requiresUpload = false;
-                m_textures[i].requiresDelete = false;
-                setTextureWrapModeS(i, IRenderer::TextureWrapMode::REPEAT);
-                setTextureWrapModeT(i, IRenderer::TextureWrapMode::REPEAT);
-                enableTextureMagFiltering(i, true);
-                return {true, i};
+                return { createTextureWithName(i), i };
             }
         }
-        return {false, 0};
+        return { false, 0 };
+    }
+
+    bool createTextureWithName(const uint16_t texId) 
+    {
+        m_textureLut[texId] = allocTexture();
+        if (m_textureLut[texId])
+        {
+            m_textures[*m_textureLut[texId]].requiresUpload = false;
+            m_textures[*m_textureLut[texId]].requiresDelete = false;
+            setTextureWrapModeS(texId, IRenderer::TextureWrapMode::REPEAT);
+            setTextureWrapModeT(texId, IRenderer::TextureWrapMode::REPEAT);
+            enableTextureMagFiltering(texId, true);
+            return true;
+        }
+        return false;
     }
 
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObjectMipmap& textureObject) 
@@ -75,13 +84,18 @@ public:
 
             if (!newTextureSlot)
             {
-                SPDLOG_WARN("Was not able to allocate new texture");
+                SPDLOG_ERROR("Was not able to allocate new texture");
                 return false;
             }
 
             textureSlot = *newTextureSlot;
             m_textureLut[texId] = newTextureSlot;
             SPDLOG_DEBUG("Use new texture slot {} for texId {}", *newTextureSlot, texId);
+        }
+        else
+        {
+            // If it is already uploaded, then it is safe to delete the pages to free them for the reallocation.
+            deallocPages(m_textures[textureSlot]);
         }
         m_textures[textureSlot].textures = textureObject;
 
@@ -91,6 +105,7 @@ public:
         m_textures[textureSlot].tmuConfig.setWarpModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
         m_textures[textureSlot].tmuConfig.setWarpModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
+        m_textures[textureSlot].tmuConfig.setEnableMinFilter(m_textures[textureSlotOld].tmuConfig.getEnableMinFilter());
 
         m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getPixelFormat());
         m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject[0].width);
@@ -98,12 +113,12 @@ public:
  
         // Allocate memory pages
         const uint32_t textureSize = m_textures[textureSlot].getTextureSize();
-        const uint32_t texturePages = (textureSize/ TEXTURE_PAGE_SIZE) + 1;
+        const uint32_t texturePages = (textureSize / TEXTURE_PAGE_SIZE) + ((textureSize % TEXTURE_PAGE_SIZE) ? 1 : 0);
         SPDLOG_DEBUG("Use number of pages: {}", texturePages);
         ret = allocPages(m_textures[textureSlot], texturePages);
         if (!ret)
         {
-            SPDLOG_ERROR("Run out of memory during page allocation");
+            SPDLOG_ERROR("Ran out of memory during page allocation");
             deallocPages(m_textures[textureSlot]);
         }
 
@@ -156,16 +171,6 @@ public:
         return {};
     }
 
-    uint32_t getTextureDataSize(const uint16_t texId) const
-    {
-        if (textureValid(texId))
-        {
-            const Texture& tex = m_textures[*m_textureLut[texId]];
-            return tex.pages * TEXTURE_PAGE_SIZE;
-        }
-        return 0;
-    }
-
     IRenderer::TextureObjectMipmap getTexture(const uint16_t texId)
     {
         const uint32_t textureSlot = *m_textureLut[texId];
@@ -195,7 +200,7 @@ public:
                 bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
                 uint32_t j = 0;
-                for (std::span<const uint8_t> b = texture.getPageData(j, { buffer} ); !b.empty(); b = texture.getPageData(++j, buffer))
+                for (std::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
                     ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
                 }
@@ -273,7 +278,7 @@ private:
                 {
                     break;
                 }
-                mipMapAddr = 0; // When arriving to this point, then the current mipmap is fully in the buffer and the next mipmap is selected.
+                mipMapAddr = 0; // When arriving at this point, then the current mipmap is completely in the buffer and the next mipmap is selected.
             }
             if (bufferSize != 0)
             {
@@ -286,6 +291,11 @@ private:
     bool allocPages(Texture& tex, const uint32_t numberOfPages)
     {
         std::size_t cp = 0;
+        if (numberOfPages == 0)
+        {
+            SPDLOG_ERROR("Called allocPages with numberOfPages == 0");
+            return false;
+        }
         for (std::size_t p = 0; p < m_pageTable.size(); p++)
         {
             if (m_pageTable[p].inUse == false)
@@ -305,6 +315,11 @@ private:
                     return false;
                 }
             }
+        }
+        if (cp != numberOfPages)
+        {
+            SPDLOG_ERROR("Not enough pages available for texture");
+            return false;
         }
         return true;
     }
@@ -326,7 +341,6 @@ private:
             {
                 m_textures[i].inUse = true;
                 SPDLOG_DEBUG("Allocating texture {}", i);
-
                 return std::make_optional(i);
             }
         }

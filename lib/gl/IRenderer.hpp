@@ -155,6 +155,16 @@ public:
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     virtual std::pair<bool, uint16_t> createTexture() = 0;
 
+    /// @brief Creates a new texture for a given texture id
+    /// @param texId the name of the new texture
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    virtual bool createTextureWithName(const uint16_t texId) = 0;
+
+    /// @brief Queries if the current texture id is a valid texture
+    /// @param texId Texture id to query
+    /// @return true if the current texture id is mapped to a valid texture
+    virtual bool isTextureValid(const uint16_t texId) const = 0;
+
     /// @brief This will update the texture data of the texture with the given id
     /// @param texId The texture id which texture has to be updated
     /// @param textureObject The object which contains the texture and all its meta data

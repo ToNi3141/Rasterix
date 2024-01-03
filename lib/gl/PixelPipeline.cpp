@@ -200,6 +200,7 @@ bool PixelPipeline::updateFogLut()
 
 bool PixelPipeline::useTexture()
 {
+    uploadTexture();
     return m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
 }
 

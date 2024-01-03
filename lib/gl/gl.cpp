@@ -3424,22 +3424,29 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 {
     SPDLOG_DEBUG("glTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} width {} height {} border 0x{:X} format 0x{:X} type 0x{:X} called", target, level, internalformat, width, height, border, format, type);
 
-    (void)border;// Border is not supported and is ignored for now. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    (void)border;// Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
 
     IceGL::getInstance().setError(GL_NO_ERROR);
     const uint16_t maxTexSize { IceGL::getInstance().getMaxTextureSize() }; 
 
-    if ((width > maxTexSize)|| (height > maxTexSize))
+    if ((width > maxTexSize) || (height > maxTexSize))
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_WARN("glTexImage2d texture is too big.");
+        SPDLOG_ERROR("glTexImage2d texture is too big.");
         return;
     }
 
     // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
     // without crashing the software. But it is likely that it will produce graphical errors.
-    const uint16_t widthRounded = powf(2.0f, ceilf(logf(width)/logf(2.0f)));
-    const uint16_t heightRounded = powf(2.0f, ceilf(logf(height)/logf(2.0f)));
+    const uint16_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
+    const uint16_t heightRounded = powf(2.0f, ceilf(logf(height) / logf(2.0f)));
+
+    if ((widthRounded == 0) || (heightRounded == 0))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
+        return;
+    }
 
     PixelPipeline::IntendedInternalPixelFormat intentedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
     
@@ -3509,7 +3516,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
             break;
         default:
-            SPDLOG_WARN("glTexImage2D invalid internalformat");
+            SPDLOG_ERROR("glTexImage2D invalid internalformat");
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             return;
     }
@@ -3804,6 +3811,17 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
+    if (!IceGL::getInstance().pixelPipeline().isTextureValid(texture))
+    {
+        bool ret { IceGL::getInstance().pixelPipeline().createTextureWithName(texture) };
+        if (!ret)
+        {
+            // TODO: Free allocated textures to avoid leaks
+            SPDLOG_ERROR("glBindTexture cannot create texture {}", texture);
+            return;
+        }
+    }
+        
     // TODO: Validate if the texture is valid
     IceGL::getInstance().pixelPipeline().setBoundTexture(texture);
 
@@ -3939,6 +3957,7 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint *textures)
     if (n < 0)
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glGenTextures n < 0");
         return;
     }
 

@@ -316,6 +316,16 @@ public:
         return m_textureManager.getTexture(texId);
     }
 
+    virtual bool isTextureValid(const uint16_t texId) const override
+    {
+        return m_textureManager.textureValid(texId);
+    }
+
+    virtual bool createTextureWithName(const uint16_t texId) override 
+    {
+        return m_textureManager.createTextureWithName(texId);
+    }
+
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
         m_boundTextures[target] = texId;
