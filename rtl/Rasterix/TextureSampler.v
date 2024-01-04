@@ -141,6 +141,10 @@ module TextureSampler #(
     reg [TEX_MASK_SIZE_ST - 1 : 0]  step0_offset;
     reg [ 3 : 0]                    step0_width;
     reg [ 3 : 0]                    step0_height;
+    reg [ 3 : 0]                    step0_widthShift;
+    reg [ 3 : 0]                    step0_heightShift;
+    reg [ 7 : 0]                    step0_widthPow2minus1;
+    reg [ 7 : 0]                    step0_heightPow2minus1;
     reg [31 : 0]                    step0_texelS; // S16.15
     reg [31 : 0]                    step0_texelT; // S16.15
     reg                             step0_clampS;
@@ -174,6 +178,10 @@ module TextureSampler #(
         step0_offset <= maskFin & lodMask;
         step0_width <= width;
         step0_height <= height;
+        step0_widthShift <= 8 - width;
+        step0_heightShift <= 8 - height;
+        step0_widthPow2minus1 <= 1 << (width - 1);
+        step0_heightPow2minus1 <= 1 << (height - 1);
         step0_texelS <= texelS;
         step0_texelT <= texelT;
         step0_clampS <= clampS;
@@ -206,17 +214,17 @@ module TextureSampler #(
 
         if (enableHalfPixelOffset)
         begin
-            texelS0 = step0_texelS - convertToZeroPointFive(1 << (step0_width - 1));
-            texelS1 = step0_texelS + convertToZeroPointFive(1 << (step0_width - 1));
-            texelT0 = step0_texelT - convertToZeroPointFive(1 << (step0_height - 1));
-            texelT1 = step0_texelT + convertToZeroPointFive(1 << (step0_height - 1));
+            texelS0 = step0_texelS - convertToZeroPointFive(step0_widthPow2minus1);
+            texelS1 = step0_texelS + convertToZeroPointFive(step0_widthPow2minus1);
+            texelT0 = step0_texelT - convertToZeroPointFive(step0_heightPow2minus1);
+            texelT1 = step0_texelT + convertToZeroPointFive(step0_heightPow2minus1);
         end
         else
         begin
             texelS0 = step0_texelS;
-            texelS1 = step0_texelS + convertToOnePointZero(1 << (step0_width - 1));
+            texelS1 = step0_texelS + convertToOnePointZero(step0_widthPow2minus1);
             texelT0 = step0_texelT;
-            texelT1 = step0_texelT + convertToOnePointZero(1 << (step0_height - 1));
+            texelT1 = step0_texelT + convertToOnePointZero(step0_heightPow2minus1);
         end
 
         step1_texelU0 = clampTexture(texelS0, clampS);
@@ -224,10 +232,10 @@ module TextureSampler #(
         step1_texelV0 = clampTexture(texelT0, clampT);
         step1_texelV1 = clampTexture(texelT1, clampT);
 
-        texelAddr00 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> (8 - step0_width) });
-        texelAddr01 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> (8 - step0_width) });
-        texelAddr10 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> (8 - step0_width) });
-        texelAddr11 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> (8 - step0_height) } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> (8 - step0_width) });
+        texelAddr00 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
+        texelAddr01 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> step0_widthShift });
+        texelAddr10 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
+        texelAddr11 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> step0_widthShift });
         step1_subCoordU <= { texelS0[0 +: 15], 1'b0 } << step0_width;
         step1_subCoordV <= { texelT0[0 +: 15], 1'b0 } << step0_height;
     end
