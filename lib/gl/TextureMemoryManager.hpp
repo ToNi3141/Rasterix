@@ -271,7 +271,7 @@ private:
             {
                 const uint32_t texSize = textures[level].width * textures[level].height * 2;
                 const uint8_t *pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
-                const uint32_t dataSize = std::min(texSize - mipMapAddr, static_cast<uint32_t>(buffer.size()) - bufferSize);
+                const uint32_t dataSize = (std::min)(texSize - mipMapAddr, static_cast<uint32_t>(buffer.size()) - bufferSize);
                 std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
                 bufferSize += dataSize;
                 if (bufferSize == buffer.size())
