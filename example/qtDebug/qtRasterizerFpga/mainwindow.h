@@ -66,7 +66,7 @@ private:
 
     QTimer m_timer;
     QImage m_image;
-    Mipmap m_testScene;
+    Minimal m_testScene;
 };
 
 #endif // MAINWINDOW_H

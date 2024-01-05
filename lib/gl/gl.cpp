@@ -3436,6 +3436,13 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
+    if (!IceGL::getInstance().isMipmappingAvailable() && (level != 0))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        return;
+    }
+
     // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
     // without crashing the software. But it is likely that it will produce graphical errors.
     const uint16_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
@@ -4057,6 +4064,13 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     SPDLOG_DEBUG("glTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} width {} height {} format 0x{:X} type 0x{:X} called", target, level, xoffset, yoffset, width, height, format, type);
 
     IceGL::getInstance().setError(GL_NO_ERROR);
+
+    if (!IceGL::getInstance().isMipmappingAvailable() && (level != 0))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        return;
+    }
 
     PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
 

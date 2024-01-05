@@ -288,6 +288,10 @@ public:
     /// @brief The number of TMUs available
     virtual TMU getTmuCount() const = 0;
 
+    /// @brief Queries of mip mapping is available on hardware
+    /// @return true when mipmapping is available
+    virtual bool isMipmappingAvailable() const = 0;
+
     /// @brief Configures the stencil buffer
     /// @param stencilConf The config of the stencil buffer
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)

@@ -18,6 +18,7 @@ struct RenderConfigRRXIFSimulation
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
 
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
@@ -49,6 +50,7 @@ struct RenderConfigRRXEFSimulation
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
 
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
@@ -80,6 +82,7 @@ struct RenderConfigRRXIFCModA7
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 1 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 128 };
+    static constexpr bool ENABLE_MIPMAPPING { false };
 
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 320 };
@@ -111,6 +114,7 @@ struct RenderConfigRRXIFNexys
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
     
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
@@ -142,6 +146,7 @@ struct RenderConfigRRXEFNexys
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
     
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
@@ -173,6 +178,7 @@ struct RenderConfigRRXEFZynq
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 2 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
     
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
@@ -204,6 +210,7 @@ struct RenderConfigRRXIFZynq
     // TMU settings
     static constexpr uint8_t TMU_COUNT { 1 };
     static constexpr uint16_t MAX_TEXTURE_SIZE { 256 };
+    static constexpr bool ENABLE_MIPMAPPING { true };
     
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };

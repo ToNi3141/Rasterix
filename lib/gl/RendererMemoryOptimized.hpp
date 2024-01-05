@@ -347,6 +347,11 @@ public:
         return RenderConfig::TMU_COUNT;
     }
 
+    virtual bool isMipmappingAvailable() const override
+    {
+        return RenderConfig::ENABLE_MIPMAPPING;
+    }
+
     virtual bool setStencilBufferConfig(const StencilReg& stencilConf) override
     {
         return writeReg(stencilConf);
