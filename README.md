@@ -48,11 +48,11 @@ The used memory is decoupled from the actual framebuffer size. If a framebuffer 
 `RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem since all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance but the the number of memory request the system can execute, is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around two times slower that the `RasterixIF`). Contrary to the `RasterixIF`, it don't uses FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests.
 
 # Working Games
-Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`)
+Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`), Quake 3 Arena with SDL2 and glX (https://github.com/ToNi3141/Quake3e) and others.
 
 ![race screenshot](screenshots/tuxracerRaceStart.png)
 
-and under Windows Warcraft 3 (with WGL).
+Warcraft 3 (with WGL) under windows is also working.
 
 # Checkout Repository
 Use the following commands to checkout the repository:
@@ -67,7 +67,18 @@ git submodule update
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
 
-This builds the `RasterixIF` and uses two TMU. The framebuffers have a size of 256kB + 256kB + 64kB. You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must enable the `VARIANT_RRXIF` or `VARIANT_RRXEF` for the library build.
+There are two variants available:
+
+`rrxif`:  
+  - 2 TMU (max res: 256x256)
+  - Mip mapping
+  - Framebuffer size: 256kB + 256kB + 64 kB
+
+`rrxef`:
+  - 2 TMU (max res: 256x256)
+  - Mip mapping
+
+You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must enable the `VARIANT_RRXIF` or `VARIANT_RRXEF` for the library build.
 
 To build the binaries use the following commands.
 ```sh
@@ -101,7 +112,16 @@ Also the following solder bridges must be applied:
 # Arty Z7-20 Build
 The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petalinux running on the board. It will by default output a 1024x600px video signal on the HDMI OUT. Just connect there a monitor which can handle this resolution.
 
-This builds the `RasterixEF` and uses two TMU. A `RasterixIF` variant with one TMU and a framebuffer size of 128kB + 128kB + 32kB is also available.
+There are two variants available:
+
+`rrxif`:  
+  - 1 TMU (max res: 256x256)
+  - Mip mapping
+  - Framebuffer size: 128kB + 128kB + 32 kB
+
+`rrxef`:
+  - 2 TMU (max res: 256x256)
+  - Mip mapping
 
 To build the binaries use the following commands.
 ```sh
@@ -114,6 +134,14 @@ You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
 This builds the `RasterixIF` and uses one TMU with a maximum texture resolution of 128x128px. The framebuffers have a size of 64kB + 64kB + 16kB. 
+
+There is one variant available:
+
+`rrxif`:  
+  - 1 TMU (max res: 128x128)
+  - No mip mapping
+  - Framebuffer size: 64kB + 64kB + 16kB
+
 
 To build the binaries, use the following commands.
 ```sh
@@ -369,12 +397,10 @@ Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look 
 # Missing Features
 The following features are currently missing compared to a real OpenGL implementation
 - Logic Ops
-- Mip Mapping
 - ...
 
 # Next Possible Steps
 - Add the possibility to use more than one render context
-- Implement Mip Mapping
 - Implement Logic Ops
 - Implement a texture cache to reduce the memory consuption by omitting the `TextureBuffer`
 - Implement higher texture resolutions

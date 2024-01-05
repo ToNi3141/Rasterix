@@ -90,6 +90,7 @@ The texture mapping unit gets the texture coordinates from the `AttributeInterpo
 
 If the TMU is disabled, it doesn't forward the calculated color, instead it forwards the previous color.
 
+- `LodCalculator`: Calculates the LOD for a texture. The texel used for the LOD calculation is the texel with the coordinates (textureS + 1, textureT + 1) in screen space.
 - `TextureSampler`: Samples a texture from the `TextureBuffer`.
 - `TextureFilter`: Filters the texel from the `TextureSampler`.
 - `TexEnv`: Calculates the texture environment.
