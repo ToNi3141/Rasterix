@@ -42,18 +42,20 @@ public:
     };
 
     TmuTextureReg() = default;
-    void setTextureWidth(const uint16_t val) { m_regVal.fields.texWidth = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(val))) - 1)); }
-    void setTextureHeight(const uint16_t val) { m_regVal.fields.texHeight = (1 << (static_cast<uint32_t>(log2f(static_cast<float>(val))) - 1)); }
+    void setTextureWidth(const uint16_t val) { m_regVal.fields.texWidth = static_cast<uint32_t>(log2f(static_cast<float>(val))); }
+    void setTextureHeight(const uint16_t val) { m_regVal.fields.texHeight = static_cast<uint32_t>(log2f(static_cast<float>(val))); }
     void setWarpModeS(const TextureWrapMode val) { m_regVal.fields.wrapModeS = static_cast<uint32_t>(val); }
     void setWarpModeT(const TextureWrapMode val) { m_regVal.fields.wrapModeT = static_cast<uint32_t>(val); }
     void setEnableMagFilter(const bool val) { m_regVal.fields.enableMagFilter = val; }
+    void setEnableMinFilter(const bool val) { m_regVal.fields.enableMinFilter = val; }
     void setPixelFormat(const PixelFormat val) { m_regVal.fields.pixelFormat = static_cast<uint32_t>(val); }
 
-    uint16_t getTextureWidth() const { return m_regVal.fields.texWidth * 2; }
-    uint16_t getTextureHeight() const { return m_regVal.fields.texHeight * 2; }
+    uint16_t getTextureWidth() const { return powf(2.0f, m_regVal.fields.texWidth); }
+    uint16_t getTextureHeight() const { return powf(2.0f, m_regVal.fields.texHeight); }
     TextureWrapMode getWrapModeS() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeS); }
     TextureWrapMode getWrapModeT() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeT); }
     bool getEnableMagFilter() const { return m_regVal.fields.enableMagFilter; }
+    bool getEnableMinFilter() const { return m_regVal.fields.enableMinFilter; }
     PixelFormat getPixelFormat() const { return static_cast<PixelFormat>(m_regVal.fields.pixelFormat); }
 
     void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
@@ -72,14 +74,16 @@ private:
                 , wrapModeS(static_cast<uint32_t>(TextureWrapMode::REPEAT))
                 , wrapModeT(static_cast<uint32_t>(TextureWrapMode::REPEAT))
                 , enableMagFilter(false)
+                , enableMinFilter(true)
                 , pixelFormat(static_cast<uint32_t>(PixelFormat::RGBA4444))
             { }
 
-            uint32_t texWidth : 8;
-            uint32_t texHeight : 8;
+            uint32_t texWidth : 4;
+            uint32_t texHeight : 4;
             uint32_t wrapModeS : 1;
             uint32_t wrapModeT : 1;
             uint32_t enableMagFilter : 1;
+            uint32_t enableMinFilter : 1;
             uint32_t pixelFormat : 4;
         } fields {};
         uint32_t data;

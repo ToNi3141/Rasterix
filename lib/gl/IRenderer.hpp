@@ -136,10 +136,12 @@ public:
         }
 
         std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by PixelFormat
-        const uint16_t width {}; ///< The width of the texture
-        const uint16_t height {}; ///< The height of the texture
-        const IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
+        uint16_t width {}; ///< The width of the texture
+        uint16_t height {}; ///< The height of the texture
+        IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
+
+    using TextureObjectMipmap = std::array<TextureObject, 9>;
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
@@ -153,16 +155,26 @@ public:
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     virtual std::pair<bool, uint16_t> createTexture() = 0;
 
+    /// @brief Creates a new texture for a given texture id
+    /// @param texId the name of the new texture
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    virtual bool createTextureWithName(const uint16_t texId) = 0;
+
+    /// @brief Queries if the current texture id is a valid texture
+    /// @param texId Texture id to query
+    /// @return true if the current texture id is mapped to a valid texture
+    virtual bool isTextureValid(const uint16_t texId) const = 0;
+
     /// @brief This will update the texture data of the texture with the given id
     /// @param texId The texture id which texture has to be updated
     /// @param textureObject The object which contains the texture and all its meta data
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) = 0;
+    virtual bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) = 0;
 
     /// @brief Returns a texture associated to the texId
     /// @param texId The texture id of the texture to get the data from
     /// @return The texture object
-    virtual TextureObject getTexture(const uint16_t texId) = 0;
+    virtual TextureObjectMipmap getTexture(const uint16_t texId) = 0;
     
     /// @brief Activates a texture which then is used for rendering
     /// @param target The used TMU
@@ -182,11 +194,17 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) = 0;
 
-    /// @brief Enables the texture filtering
+    /// @brief Enables the texture filtering for magnification
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) = 0;
+
+    /// @brief Enables the texture filtering for minification (mipmapping)
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    virtual bool enableTextureMinFiltering(const uint16_t texId, bool filter) = 0;
 
     /// @brief Deletes a texture 
     /// @param texId The id of the texture to delete
@@ -269,6 +287,10 @@ public:
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
     virtual TMU getTmuCount() const = 0;
+
+    /// @brief Queries of mip mapping is available on hardware
+    /// @return true when mipmapping is available
+    virtual bool isMipmappingAvailable() const = 0;
 
     /// @brief Configures the stencil buffer
     /// @param stencilConf The config of the stencil buffer

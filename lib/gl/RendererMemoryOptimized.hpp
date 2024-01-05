@@ -223,14 +223,24 @@ public:
         return m_textureManager.createTexture();
     }
 
-    virtual bool updateTexture(const uint16_t texId, const TextureObject& textureObject) override
+    virtual bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) override
     {
         return m_textureManager.updateTexture(texId, textureObject);
     }
 
-    virtual TextureObject getTexture(const uint16_t texId) override
+    virtual TextureObjectMipmap getTexture(const uint16_t texId) override
     {
         return m_textureManager.getTexture(texId);
+    }
+
+    virtual bool isTextureValid(const uint16_t texId) const override
+    {
+        return m_textureManager.textureValid(texId);
+    }
+
+    virtual bool createTextureWithName(const uint16_t texId) override 
+    {
+        return m_textureManager.createTextureWithName(texId);
     }
 
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
@@ -242,9 +252,8 @@ public:
         }
         bool ret { true };
         const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
-        const uint32_t texSize = m_textureManager.getTextureDataSize(texId);
         using Command = TextureStreamCmd<RenderConfig>;
-        ret = ret && m_displayListAssembler[m_backList].addCommand(Command { target, pages, texSize });
+        ret = ret && m_displayListAssembler[m_backList].addCommand(Command { target, pages });
         TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
         reg.setTmu(target);
         ret = ret && m_displayListAssembler[m_backList].addCommand(WriteRegisterCmd { reg });
@@ -302,6 +311,12 @@ public:
         return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
     }
 
+    virtual bool enableTextureMinFiltering(const uint16_t texId, bool filter) override
+    {
+        m_textureManager.enableTextureMinFiltering(texId, filter);
+        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
+    }
+
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
     {
         const uint32_t framebufferSize = x * y * 2;
@@ -330,6 +345,11 @@ public:
     virtual TMU getTmuCount() const override
     {
         return RenderConfig::TMU_COUNT;
+    }
+
+    virtual bool isMipmappingAvailable() const override
+    {
+        return RenderConfig::ENABLE_MIPMAPPING;
     }
 
     virtual bool setStencilBufferConfig(const StencilReg& stencilConf) override

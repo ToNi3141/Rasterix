@@ -3424,28 +3424,36 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 {
     SPDLOG_DEBUG("glTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} width {} height {} border 0x{:X} format 0x{:X} type 0x{:X} called", target, level, internalformat, width, height, border, format, type);
 
-    (void)border;// Border is not supported and is ignored for now. What does border mean: //https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    (void)border;// Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
 
     IceGL::getInstance().setError(GL_NO_ERROR);
     const uint16_t maxTexSize { IceGL::getInstance().getMaxTextureSize() }; 
 
-    if ((width > maxTexSize)|| (height > maxTexSize))
+    if ((width > maxTexSize) || (height > maxTexSize))
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_WARN("glTexImage2d texture is too big.");
+        SPDLOG_ERROR("glTexImage2d texture is too big.");
         return;
     }
 
-    if (level != 0)
+    if (!IceGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
-        SPDLOG_WARN("glTexImage2d mip mapping not supported. Only level 0 is used.");
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Mipmapping on hardware not supported.");
         return;
     }
 
     // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
     // without crashing the software. But it is likely that it will produce graphical errors.
-    const uint16_t widthRounded = powf(2.0f, ceilf(logf(width)/logf(2.0f)));
-    const uint16_t heightRounded = powf(2.0f, ceilf(logf(height)/logf(2.0f)));
+    const uint16_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
+    const uint16_t heightRounded = powf(2.0f, ceilf(logf(height) / logf(2.0f)));
+
+    if ((widthRounded == 0) || (heightRounded == 0))
+    {
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
+        return;
+    }
 
     PixelPipeline::IntendedInternalPixelFormat intentedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
     
@@ -3515,17 +3523,15 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
             break;
         default:
-            SPDLOG_WARN("glTexImage2D invalid internalformat");
+            SPDLOG_ERROR("glTexImage2D invalid internalformat");
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             return;
     }
 
-    if (!IceGL::getInstance().pixelPipeline().uploadTexture(std::shared_ptr<const uint16_t>(), widthRounded, heightRounded, intentedInternalPixelFormat))
-    {
-        SPDLOG_ERROR("glTexImage2D uploadTexture() failed");
-        IceGL::getInstance().setError(GL_INVALID_VALUE);
-        return;
-    }
+    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    texObj.width = widthRounded;
+    texObj.height = heightRounded;
+    texObj.intendedPixelFormat = intentedInternalPixelFormat;
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -3575,6 +3581,24 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
+            }
+            break;
+        case GL_TEXTURE_MIN_FILTER:
+            switch (param)
+            {
+                case GL_NEAREST:
+                case GL_LINEAR:
+                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(false);
+                    break;
+                case GL_NEAREST_MIPMAP_NEAREST:
+                case GL_LINEAR_MIPMAP_NEAREST:
+                case GL_NEAREST_MIPMAP_LINEAR:
+                case GL_LINEAR_MIPMAP_LINEAR:
+                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(true);
+                    break;
+                default:
+                    IceGL::getInstance().setError(GL_INVALID_ENUM);
+                    break;
             }
             break;
         default:
@@ -3794,7 +3818,17 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
-    // TODO: Validate if the texture is valid
+    if (!IceGL::getInstance().pixelPipeline().isTextureValid(texture))
+    {
+        bool ret { IceGL::getInstance().pixelPipeline().createTextureWithName(texture) };
+        if (!ret)
+        {
+            // TODO: Free allocated textures to avoid leaks
+            SPDLOG_ERROR("glBindTexture cannot create texture {}", texture);
+            return;
+        }
+    }
+
     IceGL::getInstance().pixelPipeline().setBoundTexture(texture);
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
@@ -3929,6 +3963,7 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint *textures)
     if (n < 0)
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glGenTextures n < 0");
         return;
     }
 
@@ -4029,13 +4064,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     IceGL::getInstance().setError(GL_NO_ERROR);
 
-    PixelPipeline::TextureObject texObj { IceGL::getInstance().pixelPipeline().getTexture() };
-
-    if (level != 0)
+    if (!IceGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
-        SPDLOG_WARN("glTexSubImage2D mip mapping not supported. Only level 0 is used.");
+        IceGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Mipmapping on hardware not supported.");
         return;
     }
+
+    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
 
     std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
     if (!texMemShared)
@@ -4268,12 +4304,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         }
     }
 
-    texObj.pixels = texMemShared;       
-    if (!IceGL::getInstance().pixelPipeline().uploadTexture(texObj))
-    {
-        IceGL::getInstance().setError(GL_INVALID_VALUE);
-        return;
-    }
+    texObj.pixels = texMemShared;
 }
 
 GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
@@ -4968,7 +4999,7 @@ GLAPI_WRAPPER void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xo
 GLAPI_WRAPPER void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer){ impl_glVertexPointer(size, type, stride, pointer); }
 // -------------------------------------------------------
 // Open GL 1.2
-// --R-----------------------------------------------------
+// -------------------------------------------------------
 GLAPI_WRAPPER void APIENTRY glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices){ impl_glDrawRangeElements(mode, start, end, count, type, indices); }
 GLAPI_WRAPPER void APIENTRY glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid *data){ impl_glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, data); }
 GLAPI_WRAPPER void APIENTRY glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid *pixels){ impl_glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels); }

@@ -164,7 +164,7 @@ module CommandParser #(
                     end
                     OP_TEXTURE_STREAM:
                     begin
-                        streamCounter <= 1 << (s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE] - DATABUS_SCALE_FACTOR_LOG2);
+                        streamCounter <= s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS + DATABUS_SCALE_FACTOR_LOG2 +: TEXTURE_STREAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin

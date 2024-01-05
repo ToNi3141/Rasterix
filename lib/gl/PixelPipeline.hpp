@@ -21,6 +21,7 @@
 
 #include "IRenderer.hpp"
 #include "Vec.hpp"
+#include <optional>
 
 namespace rr
 {
@@ -63,6 +64,7 @@ public:
     using Combine = TexEnvReg::Combine;
     using TexEnv = TexEnvReg;
     using TextureObject = IRenderer::TextureObject;
+    using TextureObjectMipmap = IRenderer::TextureObjectMipmap;
     using StencilConfig = StencilReg;
     
     using FeatureEnable = FeatureEnableReg;
@@ -90,16 +92,18 @@ public:
     bool getEnableStencil() const { return m_featureEnable.getEnableStencilTest(); }
 
     // Textures
-    bool uploadTexture(const std::shared_ptr<const uint16_t> pixels, uint16_t sizeX, uint16_t sizeY, IntendedInternalPixelFormat intendedPixelFormat);
-    bool uploadTexture(const TextureObject& texObj);
-    TextureObject getTexture() { return m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture); }
+    bool uploadTexture();
+    TextureObjectMipmap& getTexture();
     bool useTexture();
+    bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
+    bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
     bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { m_tmuConf[m_tmu].boundTexture = val; }
+    void setBoundTexture(const uint32_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
+    void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmuConf[m_tmu].boundTexture, val); }
 
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
@@ -121,7 +125,7 @@ public:
     bool setTexEnvMode(const TexEnvMode mode);
     TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
-    void activateTmu(const IRenderer::TMU tmu) { m_tmu = tmu; }
+    void activateTmu(const IRenderer::TMU tmu) { uploadTexture(); m_tmu = tmu; }
 
     // Fog
     void setFogMode(const FogMode val);
@@ -158,6 +162,7 @@ private:
     // TMU
     std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
     uint8_t m_tmu { 0 };
+    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};

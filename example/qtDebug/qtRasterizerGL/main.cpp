@@ -1,6 +1,7 @@
 #include <GLUT/glut.h>
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
+#include "../../mipmap/Mipmap.hpp"
 
 #include <chrono>
 #include <thread>
@@ -9,8 +10,9 @@
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 
-StencilShadow m_testScene;
+//StencilShadow m_testScene;
 //Minimal m_testScene;
+Mipmap m_testScene;
 static int window;
 void scene_render()
 {

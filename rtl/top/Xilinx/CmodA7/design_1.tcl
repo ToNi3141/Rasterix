@@ -279,10 +279,11 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.CMD_STREAM_WIDTH {32} \
+    CONFIG.ENABLE_MIPMAPPING {0} \
     CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {14} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
     CONFIG.STRB_WIDTH {4} \
-    CONFIG.TEXTURE_BUFFER_SIZE {14} \
+    CONFIG.TEXTURE_BUFFER_SIZE {15} \
     CONFIG.TMU_COUNT {1} \
   ] $RasterixIF_0
 

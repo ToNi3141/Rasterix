@@ -26,8 +26,10 @@ module TextureBuffer #(
     // Width of the write port
     parameter STREAM_WIDTH = 32,
 
-    // Size in bytes in power of two
-    parameter SIZE = 14,
+    // Size in bytes in log2
+    parameter SIZE_IN_BYTES = 17,
+
+    parameter ENABLE_LOD = 1,
 
     localparam NUMBER_OF_SUB_PIXELS = 4,
 
@@ -39,11 +41,11 @@ module TextureBuffer #(
 
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
 
-    localparam SIZE_IN_WORDS = SIZE - $clog2(PIXEL_WIDTH_INT / 8),
+    localparam SIZE_IN_WORDS = (SIZE_IN_BYTES + 1) - $clog2(PIXEL_WIDTH_INT / 8),
     localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
     localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH,
 
-    localparam TEX_ADDR_WIDTH = 16
+    localparam TEX_ADDR_WIDTH = 17
 )
 (
     input  wire                             aclk,
@@ -138,13 +140,13 @@ module TextureBuffer #(
     wire [PIXEL_WIDTH_INT - 1 : 0]      texelSelect10;
     wire [PIXEL_WIDTH_INT - 1 : 0]      texelSelect11;
 
-    TrueDualPortRam #(
+    MipmapOptimizedRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
-        //.MEMORY_PRIMITIVE("distributed")
-    ) texCacheEvenS
-    (
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
+        .MEMORY_PRIMITIVE("block"),
+        .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
+    ) texCacheEvenS (
         .clk(aclk),
         .reset(!resetn),
 
@@ -158,13 +160,13 @@ module TextureBuffer #(
         .readAddr(memReadAddrEven0)
     );
 
-    TrueDualPortRam #(
+    MipmapOptimizedRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
-        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT)
-        //.MEMORY_PRIMITIVE("distributed")
-    ) texCacheOddS
-    (
+        .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
+        .MEMORY_PRIMITIVE("block"),
+        .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
+    ) texCacheOddS (
         .clk(aclk),
         .reset(!resetn),
 

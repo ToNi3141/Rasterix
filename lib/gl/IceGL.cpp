@@ -47,9 +47,6 @@ IceGL::IceGL(IRenderer &renderer)
     , m_pixelPipeline(renderer)
     , m_vertexPipeline(m_pixelPipeline)
 {
-    // Preallocate the first texture. This is the default texture which also can't be deleted.
-    m_renderer.createTexture();
-
     // Set initial values
     m_renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
     m_renderer.setClearColor({ {0, 0, 0, 0 } });

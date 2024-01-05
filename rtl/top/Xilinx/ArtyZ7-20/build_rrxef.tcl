@@ -33,6 +33,8 @@ read_verilog ./../../../../Rasterix/FramebufferWriter.v
 read_verilog ./../../../../Rasterix/FramebufferWriterClear.v
 read_verilog ./../../../../Rasterix/FramebufferWriterStrobeGen.v
 read_verilog ./../../../../Rasterix/FunctionInterpolator.v
+read_verilog ./../../../../Rasterix/LodCalculator.v
+read_verilog ./../../../../Rasterix/MipmapOptimizedRam.v
 read_verilog ./../../../../Rasterix/MemoryReadRequestGenerator.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v

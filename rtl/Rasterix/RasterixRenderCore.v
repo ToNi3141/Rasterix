@@ -27,13 +27,14 @@ module RasterixRenderCore #(
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
+    parameter ENABLE_MIPMAPPING = 1,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
     parameter CMD_STREAM_WIDTH = 16,
 
-    // The size of the texture in bytes in power of two
-    parameter TEXTURE_BUFFER_SIZE = 15,
+    // The size of the texture in bytes
+    parameter TEXTURE_BUFFER_SIZE = 17,
 
     // Enables the flow control. Disabling can safe logic resources.
     parameter ENABLE_FLOW_CTRL = 1,
@@ -168,7 +169,7 @@ module RasterixRenderCore #(
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam TEX_ADDR_WIDTH = 16;
+    localparam TEX_ADDR_WIDTH = 17;
     localparam ATTRIBUTE_SIZE = 32;
     
     // The bit width of the texture stream
@@ -409,8 +410,9 @@ module RasterixRenderCore #(
         .s_axis_tdata(cmd_xxx_axis_tdata)
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    defparam textureBufferTMU0.SIZE = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+    defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
 
     ////////////////////////////////////////////////////////////////////////////
     // Texture Mapping Unit Buffer 1
@@ -450,8 +452,9 @@ module RasterixRenderCore #(
                 .s_axis_tdata(cmd_xxx_axis_tdata)
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-            defparam textureBufferTMU1.SIZE = TEXTURE_BUFFER_SIZE;
+            defparam textureBufferTMU1.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
             defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+            defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
         end
         else
         begin
@@ -734,7 +737,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
-    // Clocks: 41
+    // Clocks: 45
     ////////////////////////////////////////////////////////////////////////////
     wire                            alrp_tvalid;
     wire                            alrp_tlast;
@@ -746,8 +749,12 @@ module RasterixRenderCore #(
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_z;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_t;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_s;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_t;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_s;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_a;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_b;
     wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_g;
@@ -814,8 +821,12 @@ module RasterixRenderCore #(
         .m_attrb_tdepth_z(alrp_tdepth_z),
         .m_attrb_ttexture0_t(alrp_ttexture0_t),
         .m_attrb_ttexture0_s(alrp_ttexture0_s),
+        .m_attrb_tmipmap0_t(alrp_tmipmap0_t),
+        .m_attrb_tmipmap0_s(alrp_tmipmap0_s),
         .m_attrb_ttexture1_t(alrp_ttexture1_t),
         .m_attrb_ttexture1_s(alrp_ttexture1_s),
+        .m_attrb_tmipmap1_t(alrp_tmipmap1_t),
+        .m_attrb_tmipmap1_s(alrp_tmipmap1_s),
         .m_attrb_tcolor_a(alrp_tcolor_a),
         .m_attrb_tcolor_b(alrp_tcolor_b),
         .m_attrb_tcolor_g(alrp_tcolor_g),
@@ -824,13 +835,15 @@ module RasterixRenderCore #(
     defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
     defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+    defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+    defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
 
     assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 30
+    // Clocks: 34
     ////////////////////////////////////////////////////////////////////////////
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;
@@ -871,8 +884,12 @@ module RasterixRenderCore #(
         .s_attrb_tdepth_z(alrp_tdepth_z),
         .s_attrb_ttexture0_t(alrp_ttexture0_t),
         .s_attrb_ttexture0_s(alrp_ttexture0_s),
+        .s_attrb_tmipmap0_t(alrp_tmipmap0_t),
+        .s_attrb_tmipmap0_s(alrp_tmipmap0_s),
         .s_attrb_ttexture1_t(alrp_ttexture1_t),
         .s_attrb_ttexture1_s(alrp_ttexture1_s),
+        .s_attrb_tmipmap1_t(alrp_tmipmap1_t),
+        .s_attrb_tmipmap1_s(alrp_tmipmap1_s),
         .s_attrb_tcolor_a(alrp_tcolor_a),
         .s_attrb_tcolor_b(alrp_tcolor_b),
         .s_attrb_tcolor_g(alrp_tcolor_g),
@@ -914,6 +931,7 @@ module RasterixRenderCore #(
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+    defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5

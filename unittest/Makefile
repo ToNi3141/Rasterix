@@ -17,7 +17,8 @@ all: \
 	framebufferWriterStrobeGen \
 	framebufferWriterClear \
 	framebufferReader \
-	streamSemaphore
+	streamSemaphore \
+	lodCalculator
  
 clean:
 	rm -rf obj_dir
@@ -106,6 +107,11 @@ streamSemaphore:
 	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
 	-make -C obj_dir -f VStreamSemaphore.mk
 	./obj_dir/VStreamSemaphore
+
+lodCalculator:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/LodCalculator.v --top-module LodCalculator cpp/sim_LodCalculator.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
+	-make -C obj_dir -f VLodCalculator.mk
+	./obj_dir/VLodCalculator
 
 .SECONDARY:
 .PHONY: all clean
