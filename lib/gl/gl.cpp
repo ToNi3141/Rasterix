@@ -3828,8 +3828,7 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
             return;
         }
     }
-        
-    // TODO: Validate if the texture is valid
+
     IceGL::getInstance().pixelPipeline().setBoundTexture(texture);
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
@@ -4074,7 +4073,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; }); // TODO: make_shared
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
     if (!texMemShared)
     {
         SPDLOG_ERROR("glTexSubImage2D Out Of Memory");

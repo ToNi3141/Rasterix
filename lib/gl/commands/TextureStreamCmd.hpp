@@ -30,7 +30,7 @@ namespace rr
 template <class RenderConfig>
 class TextureStreamCmd
 {
-    static constexpr uint32_t MAX_PAGES { (RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 2) / RenderConfig::TEXTURE_PAGE_SIZE };
+    static constexpr uint32_t MAX_PAGES { static_cast<uint32_t>(std::ceil(static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)))};
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit

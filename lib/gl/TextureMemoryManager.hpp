@@ -24,6 +24,7 @@
 #include <spdlog/spdlog.h>
 #include <span>
 #include <optional>
+#include <cmath>
 
 namespace rr
 {
@@ -31,8 +32,8 @@ template <class RenderConfig>
 class TextureMemoryManager 
 {
 public:
-    static constexpr uint32_t MAX_TEXTURE_SIZE { RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 2 };
     static constexpr uint32_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
+    static constexpr uint32_t MAX_PAGES_PER_TEXTURE { static_cast<uint32_t>(std::ceil(static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)))};
 
     TextureMemoryManager()
     {
@@ -231,11 +232,10 @@ private:
 
     struct Texture
     {
-        static constexpr std::size_t MAX_NUMBER_OF_PAGES { MAX_TEXTURE_SIZE / TEXTURE_PAGE_SIZE };
         bool inUse;
         bool requiresUpload;
         bool requiresDelete;
-        std::array<uint16_t, MAX_NUMBER_OF_PAGES> pageTable {};
+        std::array<uint16_t, MAX_PAGES_PER_TEXTURE> pageTable {};
         uint8_t pages { 0 };
         IRenderer::TextureObjectMipmap textures {};
         TmuTextureReg tmuConfig {};
@@ -278,7 +278,7 @@ private:
                 {
                     break;
                 }
-                mipMapAddr = 0; // When arriving at this point, then the current mipmap is completely in the buffer and the next mipmap is selected.
+                mipMapAddr = 0; // When arriving at this point, then the current mipmap level is completely in the buffer and the next mipmap level is selected.
             }
             if (bufferSize != 0)
             {
@@ -344,7 +344,7 @@ private:
                 return std::make_optional(i);
             }
         }
-        SPDLOG_ERROR("Run out of memory during texture allocation");
+        SPDLOG_ERROR("Ran out of memory during texture allocation");
         return std::nullopt;
     }
 

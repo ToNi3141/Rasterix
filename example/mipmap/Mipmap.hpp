@@ -4,13 +4,9 @@
 
 class Mipmap
 {
-    static constexpr bool ENABLE_LIGHT = true;
-    static constexpr bool ENABLE_BLACK_WHITE = false;
 public:
     void init(const uint32_t resolutionW, const uint32_t resolutionH)
     {
-        glGetIntegerv(GL_MAX_TEXTURE_UNITS, &m_tmuCount);
-
         m_textureId = generateLodTexture();
 
         // Setup viewport, depth range, and projection matrix
@@ -23,46 +19,6 @@ public:
         // Enable depth test and depth mask
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
-
-        // Setup one light which will lighten the plane
-        GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 0.0 };
-        GLfloat light_diffuse[] = { 1.5, 1.5, 1.5, 1.0 };
-        GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-        GLfloat light_position[] = { 1.0, 3.0, 6.0, 0.0 };
-
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 8.0f);
-        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-        if constexpr (ENABLE_LIGHT)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glEnable(GL_LIGHT0);
-            glEnable(GL_LIGHTING);
-
-            static constexpr float colors[4] = {0.0, 0.0, 0.0, 0.0};
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-            glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        }
-
-        if constexpr (ENABLE_BLACK_WHITE)
-        {
-            static constexpr float colors[4] = {.7, .7, .7, 0.0};
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-            glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
-            glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-            glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_CONSTANT);
-            glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_DOT3_RGB);
-            glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-            glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
-        }
     }
 
     void draw()
@@ -201,7 +157,5 @@ private:
         return textureID;
     }
 
-    GLint  m_tmuCount = 0;
     GLuint m_textureId = 0;
-    GLuint m_multiTextureId = 0;
 };
