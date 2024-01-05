@@ -25,6 +25,7 @@ module MipmapOptimizedRam #(
     parameter WRITE_STROBE_WIDTH = MEM_WIDTH, // Write strobe in bits
     parameter MEMORY_PRIMITIVE = "block", // "distribute" or "block"
     parameter ADDR_WIDTH = 8,
+    parameter ENABLE_LOD_OPTIMIZATION = 1,
     localparam WRITE_MASK_SIZE = MEM_WIDTH / WRITE_STROBE_WIDTH
 )
 (
@@ -67,24 +68,34 @@ module MipmapOptimizedRam #(
         .readAddr(readAddr[0 +: ADDR_WIDTH - 1])
     );
 
-    TrueDualPortRam #(
-        .ADDR_WIDTH(ADDR_WIDTH - 2),
-        .MEM_WIDTH(MEM_WIDTH),
-        .WRITE_STROBE_WIDTH(WRITE_STROBE_WIDTH),
-        .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE)
-    ) ram1 (
-        .clk(clk),
-        .reset(reset),
+    generate 
+        if (ENABLE_LOD_OPTIMIZATION)
+        begin
+            TrueDualPortRam #(
+                .ADDR_WIDTH(ADDR_WIDTH - 2),
+                .MEM_WIDTH(MEM_WIDTH),
+                .WRITE_STROBE_WIDTH(WRITE_STROBE_WIDTH),
+                .MEMORY_PRIMITIVE(MEMORY_PRIMITIVE)
+            ) ram1 (
+                .clk(clk),
+                .reset(reset),
 
-        .writeData(writeData),
-        .write(writeAddr[ADDR_WIDTH - 1] && write),
-        .writeAddr(writeAddr[0 +: ADDR_WIDTH - 2]),
-        .writeMask(writeMask),
-        .writeDataOut(memWriteDataOut[1]),
+                .writeData(writeData),
+                .write(writeAddr[ADDR_WIDTH - 1] && write),
+                .writeAddr(writeAddr[0 +: ADDR_WIDTH - 2]),
+                .writeMask(writeMask),
+                .writeDataOut(memWriteDataOut[1]),
 
-        .readData(memReadData[1]),
-        .readAddr(readAddr[0 +: ADDR_WIDTH - 2])
-    );
+                .readData(memReadData[1]),
+                .readAddr(readAddr[0 +: ADDR_WIDTH - 2])
+            );
+        end
+        else
+        begin
+            assign memReadData[1] = memReadData[0];
+            assign memWriteDataOut[1] = memWriteDataOut[0];
+        end
+    endgenerate
 
     always @(posedge clk)
     begin

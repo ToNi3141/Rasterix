@@ -186,22 +186,36 @@ module PixelPipeline
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
         convert_floatToInt_tmu0_textureT (.clk(aclk), .in(s_attrb_ttexture0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture0_t));   
 
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu0_mipmapS (.clk(aclk), .in(s_attrb_tmipmap0_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu0_mipmapT (.clk(aclk), .in(s_attrb_tmipmap0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_t));   
+    generate 
+        if (ENABLE_LOD_CALC)
+        begin
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .in(s_attrb_tmipmap0_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_s));
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .in(s_attrb_tmipmap0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_t));   
+        end
+    endgenerate
 
     // Tex Coords TMU1
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_attrb_ttexture1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_attrb_ttexture1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_t));
+    generate 
+        if (ENABLE_SECOND_TMU)
+        begin
 
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu1_mipmapS (.clk(aclk), .in(s_attrb_tmipmap1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu1_mipmapT (.clk(aclk), .in(s_attrb_tmipmap1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_t));  
-  
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_attrb_ttexture1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_s));
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_attrb_ttexture1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_t));
+
+            if (ENABLE_LOD_CALC)
+            begin
+                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .in(s_attrb_tmipmap1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_s));
+                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
+                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .in(s_attrb_tmipmap1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_t));        
+            end
+        end
+    endgenerate
+
     // Fragment Color
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
         convert_floatToInt_ColorR (.clk(aclk), .in(s_attrb_tcolor_r[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_color_r));
@@ -240,7 +254,6 @@ module PixelPipeline
     wire [KEEP_WIDTH - 1 : 0]               step1_keep;
     wire                                    step1_last;
 
-
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(13)) 
         step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
 
@@ -261,14 +274,19 @@ module PixelPipeline
     ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
         step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-        step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-        step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-        step1_mipmap1SDelay (.clk(aclk), .in(step_convert_mipmap1_s), .out(step1_mipmap1S));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-        step1_mipmap1TDelay (.clk(aclk), .in(step_convert_mipmap1_t), .out(step1_mipmap1T));
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
+                step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
+                step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
+                step1_mipmap1SDelay (.clk(aclk), .in(step_convert_mipmap1_s), .out(step1_mipmap1S));
+            ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
+                step1_mipmap1TDelay (.clk(aclk), .in(step_convert_mipmap1_t), .out(step1_mipmap1T));
+        end
+    endgenerate
 
     TextureMappingUnit #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),

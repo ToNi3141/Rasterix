@@ -29,6 +29,8 @@ module TextureBuffer #(
     // Size in bytes in log2
     parameter SIZE_IN_BYTES = 17,
 
+    parameter ENABLE_LOD = 1,
+
     localparam NUMBER_OF_SUB_PIXELS = 4,
 
     parameter PIXEL_WIDTH = 32,
@@ -142,7 +144,8 @@ module TextureBuffer #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
-        .MEMORY_PRIMITIVE("block")
+        .MEMORY_PRIMITIVE("block"),
+        .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
     ) texCacheEvenS (
         .clk(aclk),
         .reset(!resetn),
@@ -161,7 +164,8 @@ module TextureBuffer #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .MEM_WIDTH(STREAM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
-        .MEMORY_PRIMITIVE("block")
+        .MEMORY_PRIMITIVE("block"),
+        .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
     ) texCacheOddS (
         .clk(aclk),
         .reset(!resetn),

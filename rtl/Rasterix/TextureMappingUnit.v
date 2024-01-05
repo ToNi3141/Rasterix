@@ -90,25 +90,32 @@ module TextureMappingUnit
         step1_textureTDelay (.clk(aclk), .in(textureT), .out(textureTDly));
 
     wire [ 3 : 0] lod;
-    LodCalculator #(
-        .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
-    ) lodCalculator (
-        .aclk(aclk),
-        .resetn(resetn),
+    generate 
+        if (ENABLE_LOD_CALC)
+        begin
+            LodCalculator lodCalculator (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .confEnable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE]),
+                .confEnable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE]),
 
-        .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
-        .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
+                .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
+                .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
 
-        .texelS(textureS),
-        .texelT(textureT),
+                .texelS(textureS),
+                .texelT(textureT),
 
-        .texelSxy(mipmapS),
-        .texelTxy(mipmapT),
+                .texelSxy(mipmapS),
+                .texelTxy(mipmapT),
 
-        .lod(lod)
-    );
+                .lod(lod)
+            );
+        end
+        else
+        begin
+            assign lod = 0;
+        end
+    endgenerate
 
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel00Tmp;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel01Tmp;

@@ -27,7 +27,7 @@ module RasterixRenderCore #(
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
-    parameter ENABLE_LOD_CALC = 1,
+    parameter ENABLE_MIPMAPPING = 1,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -412,6 +412,7 @@ module RasterixRenderCore #(
     defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
     defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+    defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
 
     ////////////////////////////////////////////////////////////////////////////
     // Texture Mapping Unit Buffer 1
@@ -453,6 +454,7 @@ module RasterixRenderCore #(
             defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
             defparam textureBufferTMU1.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
             defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+            defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
         end
         else
         begin
@@ -833,6 +835,8 @@ module RasterixRenderCore #(
     defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
     defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+    defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+    defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
 
     assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
 
@@ -927,7 +931,7 @@ module RasterixRenderCore #(
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
-    defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_LOD_CALC;
+    defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5

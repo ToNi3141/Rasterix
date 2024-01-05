@@ -26,9 +26,7 @@
 //
 // Pipelined: yes
 // Depth: 1 cycles
-module LodCalculator #(
-    parameter ENABLE_LOD_CALC = 1
-)
+module LodCalculator
 (
     input  wire                         aclk,
     input  wire                         resetn,
@@ -68,7 +66,7 @@ module LodCalculator #(
             8'b1???????: lodReg = 8;
         endcase
 
-        if (ENABLE_LOD_CALC && confEnable)
+        if (confEnable)
         begin
             lod <= lodReg;
         end

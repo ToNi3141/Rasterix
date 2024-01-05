@@ -47,7 +47,7 @@ module RasterixIF #(
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
-    parameter ENABLE_LOD_CALC = 1,
+    parameter ENABLE_MIPMAPPING = 1,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -472,7 +472,7 @@ module RasterixIF #(
         .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .TMU_COUNT(TMU_COUNT),
-        .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
+        .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_FLOW_CTRL(0),
         .INTERNAL_FLOAT_PRECISION(INTERNAL_FLOAT_PRECISION)
     ) graphicCore (

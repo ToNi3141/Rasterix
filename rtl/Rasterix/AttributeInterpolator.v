@@ -23,6 +23,8 @@ module AttributeInterpolator #(
     parameter INTERNAL_FLOAT_PRECISION = 32,
     parameter INDEX_WIDTH = 32,
     parameter SCREEN_POS_WIDTH = 11,
+    parameter ENABLE_LOD_CALC = 1,
+    parameter ENABLE_SECOND_TMU = 1,
 
     localparam ATTRIBUTE_SIZE = 32,
     localparam KEEP_WIDTH = 1
@@ -112,7 +114,7 @@ module AttributeInterpolator #(
 
     localparam FLOAT_MUL_DELAY = 0;
     localparam RECIP_DELAY = 25;
-    localparam FRAMEBUFFER_INDEX_DELAY = 20 + (FLOAT_MUL_DELAY * 2) + RECIP_DELAY; // 7 steps
+    localparam FRAMEBUFFER_INDEX_DELAY = 16 + ((ENABLE_LOD_CALC) ? 4 : 0) + (FLOAT_MUL_DELAY * 2) + RECIP_DELAY; // 7 steps
 
     // Selecting the vertex attributes
     // Convert them from a 32 bit float to a INTERNAL_FLOAT_PRECISION float. It can easily be done by cutting off bits from the mantissa as long as the exponent keeps it size.
@@ -256,18 +258,23 @@ module AttributeInterpolator #(
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
         inc_step_tex0_q_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture0_q_y), .prod(step_2_inc_texture0_q_y)); 
 
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tmu1_s_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_s_x), .prod(step_2_inc_texture1_s_x));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tmu1_s_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_s_y), .prod(step_2_inc_texture1_s_y));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tmu1_t_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_t_x), .prod(step_2_inc_texture1_t_x));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tmu1_t_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_t_y), .prod(step_2_inc_texture1_t_y));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tex1_q_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_q_x), .prod(step_2_inc_texture1_q_x));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        inc_step_tex1_q_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_q_y), .prod(step_2_inc_texture1_q_y)); 
+    generate 
+        if (ENABLE_SECOND_TMU)
+        begin
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tmu1_s_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_s_x), .prod(step_2_inc_texture1_s_x));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tmu1_s_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_s_y), .prod(step_2_inc_texture1_s_y));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tmu1_t_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_t_x), .prod(step_2_inc_texture1_t_x));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tmu1_t_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_t_y), .prod(step_2_inc_texture1_t_y));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tex1_q_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_texture1_q_x), .prod(step_2_inc_texture1_q_x));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                inc_step_tex1_q_y(.clk(aclk), .facAIn(step_1_bounding_box_pos_y_float), .facBIn(inc_texture1_q_y), .prod(step_2_inc_texture1_q_y)); 
+        end
+    endgenerate
 
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
         inc_step_depth_w_x(.clk(aclk), .facAIn(step_1_bounding_box_pos_x_float), .facBIn(inc_depth_w_x), .prod(step_2_inc_depth_w_x));
@@ -327,26 +334,39 @@ module AttributeInterpolator #(
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_final_inc_tmu0_q (.clk(aclk), .aIn(step_2_inc_texture0_q_x), .bIn(step_2_inc_texture0_q_y), .sum(step_3_texture0_q));
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu0_s (.clk(aclk), .aIn(inc_texture0_s_x), .bIn(inc_texture0_s_y), .sum(step_3_mipmap0_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu0_t (.clk(aclk), .aIn(inc_texture0_t_x), .bIn(inc_texture0_t_y), .sum(step_3_mipmap0_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu0_q (.clk(aclk), .aIn(inc_texture0_q_x), .bIn(inc_texture0_q_y), .sum(step_3_mipmap0_q));
+    generate 
+        if (ENABLE_LOD_CALC)
+        begin
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_mipmap_tmu0_s (.clk(aclk), .aIn(inc_texture0_s_x), .bIn(inc_texture0_s_y), .sum(step_3_mipmap0_s));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_mipmap_tmu0_t (.clk(aclk), .aIn(inc_texture0_t_x), .bIn(inc_texture0_t_y), .sum(step_3_mipmap0_t));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_mipmap_tmu0_q (.clk(aclk), .aIn(inc_texture0_q_x), .bIn(inc_texture0_q_y), .sum(step_3_mipmap0_q));
+        end
+    endgenerate
+    
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_tmu1_s (.clk(aclk), .aIn(step_2_inc_texture1_s_x), .bIn(step_2_inc_texture1_s_y), .sum(step_3_texture1_s));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_tmu1_t (.clk(aclk), .aIn(step_2_inc_texture1_t_x), .bIn(step_2_inc_texture1_t_y), .sum(step_3_texture1_t));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_final_inc_tmu1_q (.clk(aclk), .aIn(step_2_inc_texture1_q_x), .bIn(step_2_inc_texture1_q_y), .sum(step_3_texture1_q));
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_tmu1_s (.clk(aclk), .aIn(step_2_inc_texture1_s_x), .bIn(step_2_inc_texture1_s_y), .sum(step_3_texture1_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_tmu1_t (.clk(aclk), .aIn(step_2_inc_texture1_t_x), .bIn(step_2_inc_texture1_t_y), .sum(step_3_texture1_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_tmu1_q (.clk(aclk), .aIn(step_2_inc_texture1_q_x), .bIn(step_2_inc_texture1_q_y), .sum(step_3_texture1_q));
-
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu1_s (.clk(aclk), .aIn(inc_texture1_s_x), .bIn(inc_texture1_s_y), .sum(step_3_mipmap1_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu1_t (.clk(aclk), .aIn(inc_texture1_t_x), .bIn(inc_texture1_t_y), .sum(step_3_mipmap1_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_final_inc_mipmap_tmu1_q (.clk(aclk), .aIn(inc_texture1_q_x), .bIn(inc_texture1_q_y), .sum(step_3_mipmap1_q));
+            if (ENABLE_LOD_CALC)
+            begin
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_final_inc_mipmap_tmu1_s (.clk(aclk), .aIn(inc_texture1_s_x), .bIn(inc_texture1_s_y), .sum(step_3_mipmap1_s));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_final_inc_mipmap_tmu1_t (.clk(aclk), .aIn(inc_texture1_t_x), .bIn(inc_texture1_t_y), .sum(step_3_mipmap1_t));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_final_inc_mipmap_tmu1_q (.clk(aclk), .aIn(inc_texture1_q_x), .bIn(inc_texture1_q_y), .sum(step_3_mipmap1_q));
+            end
+        end
+    endgenerate
 
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_final_inc_d_w (.clk(aclk), .aIn(step_2_inc_depth_w_x), .bIn(step_2_inc_depth_w_y), .sum(step_3_depth_w));
@@ -394,27 +414,39 @@ module AttributeInterpolator #(
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_base_tmu0_q (.clk(aclk), .aIn(step_3_texture0_q), .bIn(inc_texture0_q), .sum(step_4_texture0_q_inv));
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu0_s (.clk(aclk), .aIn(step_3_mipmap0_s), .bIn(step_3_texture0_s), .sum(step_4_mipmap0_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu0_t (.clk(aclk), .aIn(step_3_mipmap0_t), .bIn(step_3_texture0_t), .sum(step_4_mipmap0_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu0_q (.clk(aclk), .aIn(step_3_mipmap0_q), .bIn(step_3_texture0_q), .sum(step_4_mipmap0_q));
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_mipmap_tmu0_s (.clk(aclk), .aIn(step_3_mipmap0_s), .bIn(step_3_texture0_s), .sum(step_4_mipmap0_s));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_mipmap_tmu0_t (.clk(aclk), .aIn(step_3_mipmap0_t), .bIn(step_3_texture0_t), .sum(step_4_mipmap0_t));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_mipmap_tmu0_q (.clk(aclk), .aIn(step_3_mipmap0_q), .bIn(step_3_texture0_q), .sum(step_4_mipmap0_q));
+        end
+    endgenerate
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_tmu1_s (.clk(aclk), .aIn(step_3_texture1_s), .bIn(inc_texture1_s), .sum(step_4_texture1_s_inv));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_tmu1_t (.clk(aclk), .aIn(step_3_texture1_t), .bIn(inc_texture1_t), .sum(step_4_texture1_t_inv));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_tmu1_q (.clk(aclk), .aIn(step_3_texture1_q), .bIn(inc_texture1_q), .sum(step_4_texture1_q_inv));
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_tmu1_s (.clk(aclk), .aIn(step_3_texture1_s), .bIn(inc_texture1_s), .sum(step_4_texture1_s_inv));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_tmu1_t (.clk(aclk), .aIn(step_3_texture1_t), .bIn(inc_texture1_t), .sum(step_4_texture1_t_inv));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                add_to_base_tmu1_q (.clk(aclk), .aIn(step_3_texture1_q), .bIn(inc_texture1_q), .sum(step_4_texture1_q_inv));
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu1_s (.clk(aclk), .aIn(step_3_mipmap1_s), .bIn(step_3_texture1_s), .sum(step_4_mipmap1_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu1_t (.clk(aclk), .aIn(step_3_mipmap1_t), .bIn(step_3_texture1_t), .sum(step_4_mipmap1_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        add_to_base_mipmap_tmu1_q (.clk(aclk), .aIn(step_3_mipmap1_q), .bIn(step_3_texture1_q), .sum(step_4_mipmap1_q));
-
+            if (ENABLE_LOD_CALC)
+            begin
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_base_mipmap_tmu1_s (.clk(aclk), .aIn(step_3_mipmap1_s), .bIn(step_3_texture1_s), .sum(step_4_mipmap1_s));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_base_mipmap_tmu1_t (.clk(aclk), .aIn(step_3_mipmap1_t), .bIn(step_3_texture1_t), .sum(step_4_mipmap1_t));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    add_to_base_mipmap_tmu1_q (.clk(aclk), .aIn(step_3_mipmap1_q), .bIn(step_3_texture1_q), .sum(step_4_mipmap1_q));
+            end
+        end
+    endgenerate
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
         add_to_base_d_w (.clk(aclk), .aIn(step_3_depth_w), .bIn(inc_depth_w), .sum(step_4_depth_w_inv));
     FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
@@ -454,35 +486,74 @@ module AttributeInterpolator #(
     wire [INTERNAL_FLOAT_PRECISION - 1 : 0] step_5_color_b_inv;
     wire [INTERNAL_FLOAT_PRECISION - 1 : 0] step_5_color_a_inv;
 
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_s (.clk(aclk), .in(step_4_texture0_s_inv), .out(step_5_texture0_s_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_t (.clk(aclk), .in(step_4_texture0_t_inv), .out(step_5_texture0_t_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_q (.clk(aclk), .in(step_4_texture0_q_inv), .out(step_5_texture0_q_inv));
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_s (.clk(aclk), .in(step_4_texture0_s_inv), .out(step_5_texture0_s_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_t (.clk(aclk), .in(step_4_texture0_t_inv), .out(step_5_texture0_t_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture0_q (.clk(aclk), .in(step_4_texture0_q_inv), .out(step_5_texture0_q_inv));
+            
+            if (ENABLE_SECOND_TMU)
+            begin
+                ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_s (.clk(aclk), .in(step_4_texture1_s_inv), .out(step_5_texture1_s_inv));
+                ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_t (.clk(aclk), .in(step_4_texture1_t_inv), .out(step_5_texture1_t_inv));
+                ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_q (.clk(aclk), .in(step_4_texture1_q_inv), .out(step_5_texture1_q_inv));
+            end
+            
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_depth_z (.clk(aclk), .in(step_4_depth_z_inv), .out(step_5_depth_z_inv));
 
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_s (.clk(aclk), .in(step_4_texture1_s_inv), .out(step_5_texture1_s_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_t (.clk(aclk), .in(step_4_texture1_t_inv), .out(step_5_texture1_t_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_texture1_q (.clk(aclk), .in(step_4_texture1_q_inv), .out(step_5_texture1_q_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_r (.clk(aclk), .in(step_4_color_r_inv), .out(step_5_color_r_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_g (.clk(aclk), .in(step_4_color_g_inv), .out(step_5_color_g_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_b (.clk(aclk), .in(step_4_color_b_inv), .out(step_5_color_b_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_a (.clk(aclk), .in(step_4_color_a_inv), .out(step_5_color_a_inv));
 
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_depth_w (.clk(aclk), .in(step_4_depth_w_inv), .out(step_5_depth_w_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_depth_z (.clk(aclk), .in(step_4_depth_z_inv), .out(step_5_depth_z_inv));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                step_5_inst_mipmap_tmu0_s (.clk(aclk), .aIn(step_4_mipmap0_s), .bIn(inc_texture0_s), .sum(step_5_mipmap0_s));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                step_5_inst_mipmap_tmu0_t (.clk(aclk), .aIn(step_4_mipmap0_t), .bIn(inc_texture0_t), .sum(step_5_mipmap0_t));
+            FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                step_5_inst_mipmap_tmu0_q (.clk(aclk), .aIn(step_4_mipmap0_q), .bIn(inc_texture0_q), .sum(step_5_mipmap0_q));
 
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_r (.clk(aclk), .in(step_4_color_r_inv), .out(step_5_color_r_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_g (.clk(aclk), .in(step_4_color_g_inv), .out(step_5_color_g_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_b (.clk(aclk), .in(step_4_color_b_inv), .out(step_5_color_b_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(4)) step_5_inst_color_a (.clk(aclk), .in(step_4_color_a_inv), .out(step_5_color_a_inv));
+            if (ENABLE_SECOND_TMU)
+            begin
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    step_5_inst_mipmap_tmu1_s (.clk(aclk), .aIn(step_4_mipmap1_s), .bIn(inc_texture1_s), .sum(step_5_mipmap1_s));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    step_5_inst_mipmap_tmu1_t (.clk(aclk), .aIn(step_4_mipmap1_t), .bIn(inc_texture1_t), .sum(step_5_mipmap1_t));
+                FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
+                    step_5_inst_mipmap_tmu1_q (.clk(aclk), .aIn(step_4_mipmap1_q), .bIn(inc_texture1_q), .sum(step_5_mipmap1_q));
+            end
+        end
+        else
+        begin
+            assign step_5_texture0_s_inv = step_4_texture0_s_inv;
+            assign step_5_texture0_t_inv = step_4_texture0_t_inv;
+            assign step_5_texture0_q_inv = step_4_texture0_q_inv;
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu0_s (.clk(aclk), .aIn(step_4_mipmap0_s), .bIn(inc_texture0_s), .sum(step_5_mipmap0_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu0_t (.clk(aclk), .aIn(step_4_mipmap0_t), .bIn(inc_texture0_t), .sum(step_5_mipmap0_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu0_q (.clk(aclk), .aIn(step_4_mipmap0_q), .bIn(inc_texture0_q), .sum(step_5_mipmap0_q));
+            assign step_5_texture1_s_inv = step_4_texture1_s_inv;
+            assign step_5_texture1_t_inv = step_4_texture1_t_inv;
+            assign step_5_texture1_q_inv = step_4_texture1_q_inv;
 
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu1_s (.clk(aclk), .aIn(step_4_mipmap1_s), .bIn(inc_texture1_s), .sum(step_5_mipmap1_s));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu1_t (.clk(aclk), .aIn(step_4_mipmap1_t), .bIn(inc_texture1_t), .sum(step_5_mipmap1_t));
-    FloatAdd #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .ENABLE_OPTIMIZATION(1))
-        step_5_inst_mipmap_tmu1_q (.clk(aclk), .aIn(step_4_mipmap1_q), .bIn(inc_texture1_q), .sum(step_5_mipmap1_q));
+            assign step_5_depth_w_inv = step_4_depth_w_inv;
+            assign step_5_depth_z_inv = step_4_depth_z_inv;
+
+            assign step_5_color_r_inv = step_4_color_r_inv;
+            assign step_5_color_g_inv = step_4_color_g_inv;
+            assign step_5_color_b_inv = step_4_color_b_inv;
+            assign step_5_color_a_inv = step_4_color_a_inv;
+
+            assign step_5_mipmap0_s = 0;
+            assign step_5_mipmap0_t = 0;
+            assign step_5_mipmap0_q = 0;
+
+            assign step_5_mipmap1_s = 0;
+            assign step_5_mipmap1_t = 0;
+            assign step_5_mipmap1_q = 0;
+        end
+    endgenerate
+
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 6 Calculate w reciprocal
     ////////////////////////////////////////////////////////////////////////////
@@ -494,13 +565,27 @@ module AttributeInterpolator #(
 
     FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
         recip_tex0_q (.clk(aclk), .in(step_5_texture0_q_inv), .out(step_6_texture0_q));
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
-        recip_mipmap0_q (.clk(aclk), .in(step_5_mipmap0_q), .out(step_6_mipmap0_q));
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+                recip_mipmap0_q (.clk(aclk), .in(step_5_mipmap0_q), .out(step_6_mipmap0_q));
+        end
+    endgenerate
 
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
-        recip_tex1_q (.clk(aclk), .in(step_5_texture1_q_inv), .out(step_6_texture1_q));
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
-        recip_mipmap1_q (.clk(aclk), .in(step_5_mipmap1_q), .out(step_6_mipmap1_q));
+    generate 
+        if (ENABLE_SECOND_TMU)
+        begin
+            FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+                recip_tex1_q (.clk(aclk), .in(step_5_texture1_q_inv), .out(step_6_texture1_q));
+        
+            if (ENABLE_LOD_CALC)
+            begin
+                FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+                    recip_mipmap1_q (.clk(aclk), .in(step_5_mipmap1_q), .out(step_6_mipmap1_q));
+            end
+        end
+    endgenerate
     
     // Use the cheap reciprocal calculation. It should be sufficient for fog.
     wire [INTERNAL_FLOAT_PRECISION - 1 : 0] step_6_depth_w_tmp;
@@ -527,13 +612,27 @@ module AttributeInterpolator #(
 
     ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu0_delay_s (.clk(aclk), .in(step_5_texture0_s_inv), .out(step_6_texture0_s_inv));
     ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu0_delay_t (.clk(aclk), .in(step_5_texture0_t_inv), .out(step_6_texture0_t_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu0_delay_s (.clk(aclk), .in(step_5_mipmap0_s), .out(step_6_mipmap0_s_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu0_delay_t (.clk(aclk), .in(step_5_mipmap0_t), .out(step_6_mipmap0_t_inv));
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu0_delay_s (.clk(aclk), .in(step_5_mipmap0_s), .out(step_6_mipmap0_s_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu0_delay_t (.clk(aclk), .in(step_5_mipmap0_t), .out(step_6_mipmap0_t_inv));
+        end
+    endgenerate
 
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu1_delay_s (.clk(aclk), .in(step_5_texture1_s_inv), .out(step_6_texture1_s_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu1_delay_t (.clk(aclk), .in(step_5_texture1_t_inv), .out(step_6_texture1_t_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu1_delay_s (.clk(aclk), .in(step_5_mipmap1_s), .out(step_6_mipmap1_s_inv));
-    ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu1_delay_t (.clk(aclk), .in(step_5_mipmap1_t), .out(step_6_mipmap1_t_inv));
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu1_delay_s (.clk(aclk), .in(step_5_texture1_s_inv), .out(step_6_texture1_s_inv));
+            ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_tmu1_delay_t (.clk(aclk), .in(step_5_texture1_t_inv), .out(step_6_texture1_t_inv));
+            
+            if (ENABLE_LOD_CALC)
+            begin
+                ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu1_delay_s (.clk(aclk), .in(step_5_mipmap1_s), .out(step_6_mipmap1_s_inv));
+                ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_mipmap_tmu1_delay_t (.clk(aclk), .in(step_5_mipmap1_t), .out(step_6_mipmap1_t_inv));
+            end
+        end
+    endgenerate
 
     ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_delay_d_z (.clk(aclk), .in(step_5_depth_z_inv), .out(step_6_depth_z_inv));
 
@@ -568,20 +667,32 @@ module AttributeInterpolator #(
     FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
         mul_texture0_t_w (.clk(aclk), .facAIn(step_6_texture0_t_inv), .facBIn(step_6_texture0_q), .prod(step_7_texture0_t));
 
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_mipmap0_s_w (.clk(aclk), .facAIn(step_6_mipmap0_s_inv), .facBIn(step_6_mipmap0_q), .prod(step_7_mipmap0_s));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_mipmap0_t_w (.clk(aclk), .facAIn(step_6_mipmap0_t_inv), .facBIn(step_6_mipmap0_q), .prod(step_7_mipmap0_t));
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                mul_mipmap0_s_w (.clk(aclk), .facAIn(step_6_mipmap0_s_inv), .facBIn(step_6_mipmap0_q), .prod(step_7_mipmap0_s));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                mul_mipmap0_t_w (.clk(aclk), .facAIn(step_6_mipmap0_t_inv), .facBIn(step_6_mipmap0_q), .prod(step_7_mipmap0_t));
+        end
+    endgenerate
 
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_texture1_s_w (.clk(aclk), .facAIn(step_6_texture1_s_inv), .facBIn(step_6_texture1_q), .prod(step_7_texture1_s));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_texture1_t_w (.clk(aclk), .facAIn(step_6_texture1_t_inv), .facBIn(step_6_texture1_q), .prod(step_7_texture1_t));
-
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_mipmap1_s_w (.clk(aclk), .facAIn(step_6_mipmap1_s_inv), .facBIn(step_6_mipmap1_q), .prod(step_7_mipmap1_s));
-    FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
-        mul_mipmap1_t_w (.clk(aclk), .facAIn(step_6_mipmap1_t_inv), .facBIn(step_6_mipmap1_q), .prod(step_7_mipmap1_t));
+    generate
+        if (ENABLE_SECOND_TMU)
+        begin
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                mul_texture1_s_w (.clk(aclk), .facAIn(step_6_texture1_s_inv), .facBIn(step_6_texture1_q), .prod(step_7_texture1_s));
+            FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                mul_texture1_t_w (.clk(aclk), .facAIn(step_6_texture1_t_inv), .facBIn(step_6_texture1_q), .prod(step_7_texture1_t));
+            if (ENABLE_LOD_CALC)
+            begin
+                FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                    mul_mipmap1_s_w (.clk(aclk), .facAIn(step_6_mipmap1_s_inv), .facBIn(step_6_mipmap1_q), .prod(step_7_mipmap1_s));
+                FloatMul #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .DELAY(FLOAT_MUL_DELAY))
+                    mul_mipmap1_t_w (.clk(aclk), .facAIn(step_6_mipmap1_t_inv), .facBIn(step_6_mipmap1_q), .prod(step_7_mipmap1_t));
+            end
+        end
+    endgenerate
 
     ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(2 + FLOAT_MUL_DELAY)) step_7_delay_w (.clk(aclk), .in(step_6_depth_w), .out(step_7_depth_w));
     ValueDelay #(.VALUE_SIZE(INTERNAL_FLOAT_PRECISION), .DELAY(2 + FLOAT_MUL_DELAY)) step_7_delay_d_z (.clk(aclk), .in(step_6_depth_z_inv), .out(step_7_depth_z));
@@ -616,12 +727,32 @@ module AttributeInterpolator #(
     assign m_attrb_tdepth_z = {step_7_depth_z, {FLOAT_SIZE_DIFF{1'b0}}};
     assign m_attrb_ttexture0_t = {step_7_texture0_t, {FLOAT_SIZE_DIFF{1'b0}}};
     assign m_attrb_ttexture0_s = {step_7_texture0_s, {FLOAT_SIZE_DIFF{1'b0}}};
-    assign m_attrb_tmipmap0_t = {step_7_mipmap0_t, {FLOAT_SIZE_DIFF{1'b0}}};
-    assign m_attrb_tmipmap0_s = {step_7_mipmap0_s, {FLOAT_SIZE_DIFF{1'b0}}};
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            assign m_attrb_tmipmap0_t = {step_7_mipmap0_t, {FLOAT_SIZE_DIFF{1'b0}}};
+            assign m_attrb_tmipmap0_s = {step_7_mipmap0_s, {FLOAT_SIZE_DIFF{1'b0}}};
+        end
+        else
+        begin
+            assign m_attrb_tmipmap0_t = {step_7_texture0_t, {FLOAT_SIZE_DIFF{1'b0}}};
+            assign m_attrb_tmipmap0_s = {step_7_texture0_s, {FLOAT_SIZE_DIFF{1'b0}}};
+        end
+    endgenerate
     assign m_attrb_ttexture1_t = {step_7_texture1_t, {FLOAT_SIZE_DIFF{1'b0}}};
     assign m_attrb_ttexture1_s = {step_7_texture1_s, {FLOAT_SIZE_DIFF{1'b0}}};
-    assign m_attrb_tmipmap1_t = {step_7_mipmap1_t, {FLOAT_SIZE_DIFF{1'b0}}};
-    assign m_attrb_tmipmap1_s = {step_7_mipmap1_s, {FLOAT_SIZE_DIFF{1'b0}}};
+    generate
+        if (ENABLE_LOD_CALC)
+        begin
+            assign m_attrb_tmipmap1_t = {step_7_mipmap1_t, {FLOAT_SIZE_DIFF{1'b0}}};
+            assign m_attrb_tmipmap1_s = {step_7_mipmap1_s, {FLOAT_SIZE_DIFF{1'b0}}};
+        end
+        else
+        begin
+            assign m_attrb_tmipmap1_t = {step_7_texture1_t, {FLOAT_SIZE_DIFF{1'b0}}};
+            assign m_attrb_tmipmap1_s = {step_7_texture1_s, {FLOAT_SIZE_DIFF{1'b0}}};
+        end
+    endgenerate
     assign m_attrb_tcolor_a = {step_7_color_a, {FLOAT_SIZE_DIFF{1'b0}}};
     assign m_attrb_tcolor_b = {step_7_color_b, {FLOAT_SIZE_DIFF{1'b0}}};
     assign m_attrb_tcolor_g = {step_7_color_g, {FLOAT_SIZE_DIFF{1'b0}}};
