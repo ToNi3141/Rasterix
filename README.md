@@ -1,5 +1,6 @@
 
 - [About this Project](#about-this-project)
+  - [Area](#area)
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Nexys Video Build](#nexys-video-build)
@@ -46,6 +47,27 @@ For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB mem
 The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
 
 `RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem since all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance but the the number of memory request the system can execute, is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around two times slower that the `RasterixIF`). Contrary to the `RasterixIF`, it don't uses FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests.
+
+## Area
+With the following settings: 
+  - 32 bit command bus / memory bus
+  - 128px textures
+  - 1 TMU
+  - no mip mapping
+  - float precision of 24 bit
+  - internal framebuffer (rrxif)
+
+Then the core requires __around 14k LUTs__ on a Xilinx Series 7 device. More is possible by reducing the float precision even more, but then the interpolation errors will come more and more visible.
+
+A high configuration 
+  - 128 bit command / memory bus
+  - 256px textures
+  - 2 TMUs
+  - mip mapping
+  - float precision of 32 bit
+  - external frame buffer (rrxef)
+
+Then the core requires __around 36k LUTs__ on a Xilinx Series 7 device.
 
 # Working Games
 Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`), Quake 3 Arena with SDL2 and glX (https://github.com/ToNi3141/Quake3e) and others.

@@ -51,8 +51,8 @@ read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
+read_verilog ./../../../../Float/rtl/float/FloatRecip.v
 read_verilog ./../../../../Float/rtl/float/FloatFastRecip.v
-read_verilog ./../../../../Float/rtl/float/FloatFastRecip2.v
 read_verilog ./../../../../Float/rtl/float/FloatMul.v
 read_verilog ./../../../../Float/rtl/float/FloatSub.v
 read_verilog ./../../../../Float/rtl/float/FloatToInt.v
@@ -93,6 +93,7 @@ opt_design
 place_design
 phys_opt_design
 route_design
+phys_opt_design
 
 # Create reports
 report_timing_summary -file $REPORT_PATH/post_route_timing_summary.rpt

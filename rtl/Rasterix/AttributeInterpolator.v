@@ -18,7 +18,7 @@
 // This module is used to interpolate the triagle attributes based 
 // on the data from the rasterizer
 // Pipelined: yes
-// Depth: 45 cycles
+// Depth: 31 cycles
 module AttributeInterpolator #(
     parameter INTERNAL_FLOAT_PRECISION = 32,
     parameter INDEX_WIDTH = 32,
@@ -113,7 +113,7 @@ module AttributeInterpolator #(
     localparam INT_32_DIFF = ATTRIBUTE_SIZE - SCREEN_POS_WIDTH;
 
     localparam FLOAT_MUL_DELAY = 0;
-    localparam RECIP_DELAY = 25;
+    localparam RECIP_DELAY = 11;
     localparam FRAMEBUFFER_INDEX_DELAY = 16 + ((ENABLE_LOD_CALC) ? 4 : 0) + (FLOAT_MUL_DELAY * 2) + RECIP_DELAY; // 7 steps
 
     // Selecting the vertex attributes
@@ -563,12 +563,12 @@ module AttributeInterpolator #(
     wire [INTERNAL_FLOAT_PRECISION - 1 : 0] step_6_mipmap1_q;
     wire [INTERNAL_FLOAT_PRECISION - 1 : 0] step_6_depth_w;
 
-    FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+    FloatRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
         recip_tex0_q (.clk(aclk), .in(step_5_texture0_q_inv), .out(step_6_texture0_q));
     generate
         if (ENABLE_LOD_CALC)
         begin
-            FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+            FloatRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
                 recip_mipmap0_q (.clk(aclk), .in(step_5_mipmap0_q), .out(step_6_mipmap0_q));
         end
     endgenerate
@@ -576,12 +576,12 @@ module AttributeInterpolator #(
     generate 
         if (ENABLE_SECOND_TMU)
         begin
-            FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+            FloatRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
                 recip_tex1_q (.clk(aclk), .in(step_5_texture1_q_inv), .out(step_6_texture1_q));
         
             if (ENABLE_LOD_CALC)
             begin
-                FloatFastRecip2 #(.MANTISSA_SIZE(MANTISSA_SIZE), .ITERATIONS(3))
+                FloatRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
                     recip_mipmap1_q (.clk(aclk), .in(step_5_mipmap1_q), .out(step_6_mipmap1_q));
             end
         end
