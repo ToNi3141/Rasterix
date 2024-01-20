@@ -59,8 +59,8 @@ read_verilog ./../../../../Rasterix/TrueDualPortRam.v
 read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
+read_verilog ./../../../../Float/rtl/float/FloatRecip.v
 read_verilog ./../../../../Float/rtl/float/FloatFastRecip.v
-read_verilog ./../../../../Float/rtl/float/FloatFastRecip2.v
 read_verilog ./../../../../Float/rtl/float/FloatMul.v
 read_verilog ./../../../../Float/rtl/float/FloatSub.v
 read_verilog ./../../../../Float/rtl/float/FloatToInt.v

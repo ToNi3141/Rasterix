@@ -737,7 +737,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
-    // Clocks: 45
+    // Clocks: 31
     ////////////////////////////////////////////////////////////////////////////
     wire                            alrp_tvalid;
     wire                            alrp_tlast;
