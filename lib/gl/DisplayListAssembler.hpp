@@ -55,7 +55,7 @@ public:
     {
         const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;
-        if (expectedSize > m_displayList.getFreeSpace())
+        if (expectedSize > m_displayList.getFreeSpace()) [[unlikely]]
         {
             return false;
         }
@@ -87,7 +87,7 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (!hasDisplayListEnoughSpace(cmd))
+        if (!hasDisplayListEnoughSpace(cmd)) [[unlikely]]
         {
             return false;
         }
@@ -104,14 +104,14 @@ public:
         if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
         {
             const uint8_t tmu = cmd.getTmu();
-            if (tmu >= m_wasLastCommandATextureCommand.size())
+            if (tmu >= m_wasLastCommandATextureCommand.size()) [[unlikely]]
             {
                 return false;
             }
             // Close the current stream to avoid and undefined behaviour 
             closeStreamSection();
             // Check if the last command was a texture command. If so, remove the commands from the display list
-            if (m_wasLastCommandATextureCommand[tmu])
+            if (m_wasLastCommandATextureCommand[tmu]) [[unlikely]]
             {
                 m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
             }
@@ -184,7 +184,7 @@ private:
             expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
         }
 
-        if (expectedSize >= m_displayList.getFreeSpace())
+        if (expectedSize >= m_displayList.getFreeSpace()) [[unlikely]]
         {
             // Not enough memory to finish the operation
             return false;
@@ -197,7 +197,7 @@ private:
     {
         using DescArray = typename TCommand::Desc;
         using DescValueType = typename DescArray::value_type::element_type;
-        if (openNewStreamSection())
+        if (openNewStreamSection()) [[likely]]
         {
             // Write command
             uint32_t *opDl = m_displayList.template create<uint32_t>();
@@ -229,7 +229,7 @@ private:
 
     bool openNewStreamSection()
     {
-        if (m_streamCommand == nullptr)
+        if (m_streamCommand == nullptr) [[unlikely]]
         {
             m_streamCommand = m_displayList.template create<DSEC::SCT>();
             m_displayList.template create<DSEC::SCT>(); // Dummy

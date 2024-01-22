@@ -132,7 +132,7 @@ public:
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f)
+        if (tmp == 0.0f) [[unlikely]]
             return;
 
         tmp = 1.0f / tmp;
@@ -156,7 +156,7 @@ public:
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f)
+        if (tmp == 0.0f) [[unlikely]]
             return;
 
         tmp = 1.0f / tmp;

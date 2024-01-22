@@ -35,9 +35,9 @@ public:
 
     // Interface for writing the display list
 
-    void* alloc(const uint32_t size)
+    void* __restrict alloc(const uint32_t size) __attribute__((malloc))
     {
-        if ((size + writePos) <= mem.size())
+        if ((size + writePos) <= mem.size()) [[likely]]
         {
             void* memPlace = &mem[writePos];
             writePos += size;
@@ -47,17 +47,17 @@ public:
     }
 
     template <typename GET_TYPE>
-    GET_TYPE* create()
+    GET_TYPE* __restrict create()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        return reinterpret_cast<GET_TYPE*>(alloc(size));
+        return reinterpret_cast<GET_TYPE* __restrict>(alloc(size));
     }
 
     template <typename GET_TYPE>
     void remove()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if (size <= writePos)
+        if (size <= writePos) [[likely]]
         {
             writePos -= size;
         }
@@ -113,10 +113,10 @@ public:
     // Interface for reading the display list
 
     template <typename GET_TYPE>
-    GET_TYPE* lookAhead()
+    GET_TYPE* __restrict lookAhead()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos)
+        if ((size + readPos) <= writePos) [[likely]]
         {
             return reinterpret_cast<GET_TYPE*>(&mem[readPos]);
         }
@@ -124,10 +124,10 @@ public:
     }
 
     template <typename GET_TYPE>
-    GET_TYPE* getNext()
+    GET_TYPE* __restrict getNext()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos)
+        if ((size + readPos) <= writePos) [[likely]]
         {
             void* memPlace = &mem[readPos];
             readPos += size;
