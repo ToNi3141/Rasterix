@@ -33,7 +33,7 @@ class TextureMemoryManager
 {
 public:
     static constexpr uint32_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
-    static constexpr uint32_t MAX_PAGES_PER_TEXTURE { static_cast<uint32_t>(std::ceil(static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)))};
+    static constexpr uint32_t MAX_PAGES_PER_TEXTURE { static_cast<uint32_t>((static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2.0f * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)) + 1.0f) };
 
     TextureMemoryManager()
     {

@@ -35,7 +35,7 @@ public:
 
     // Interface for writing the display list
 
-    void* __restrict alloc(const uint32_t size) __attribute__((malloc))
+    void* __restrict alloc(const uint32_t size)
     {
         if ((size + writePos) <= mem.size()) [[likely]]
         {
@@ -118,7 +118,7 @@ public:
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
         if ((size + readPos) <= writePos) [[likely]]
         {
-            return reinterpret_cast<GET_TYPE*>(&mem[readPos]);
+            return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
         }
         return nullptr;
     }
@@ -131,7 +131,7 @@ public:
         {
             void* memPlace = &mem[readPos];
             readPos += size;
-            return reinterpret_cast<GET_TYPE*>(memPlace);
+            return reinterpret_cast<GET_TYPE* __restrict>(memPlace);
         }
         return nullptr;
     }
