@@ -22,7 +22,7 @@ namespace rr
 {
 void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
 {
-    if (m_texGenEnableS || m_texGenEnableT)
+    if (m_texGenEnableS || m_texGenEnableT) [[unlikely]]
     {
         Vec4 v0Transformed;
         if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))

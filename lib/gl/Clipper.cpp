@@ -132,18 +132,19 @@ std::tuple<const uint32_t,
                                           ClipVertList& colorListBuffer)
 {
     // Check if the triangle is completely outside by checking if all vertices have the same outcode
-    OutCode oc0 = outCode(vertList[0]);
-    OutCode oc1 = outCode(vertList[1]);
-    OutCode oc2 = outCode(vertList[2]);
-    if (oc0 & oc1 & oc2)
-    {
-        return {0u, vertList, texCoordList, colorList};
-    }
+    const OutCode oc0 = outCode(vertList[0]);
+    const OutCode oc1 = outCode(vertList[1]);
+    const OutCode oc2 = outCode(vertList[2]);
 
     // Checking if the triangle is completely inside by checking, if no vertex has an outcode
-    if ((oc0 | oc1 | oc2) == OutCode::OC_NONE)
+    if ((oc0 | oc1 | oc2) == OutCode::OC_NONE) [[likely]]
     {
         return {3u, vertList, texCoordList, colorList};
+    }
+
+    if (oc0 & oc1 & oc2) [[likely]]
+    {
+        return {0u, vertList, texCoordList, colorList};
     }
 
     ClipVertList* currentVertListBufferIn = &vertList;

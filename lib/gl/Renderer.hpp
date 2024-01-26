@@ -152,20 +152,22 @@ public:
     {
         TriangleStreamCmd<IRenderer::MAX_TMU_COUNT> triangleCmd { m_rasterizer, triangle };
 
-        if (!triangleCmd.isVisible())
+        if (!triangleCmd.isVisible()) [[unlikely]]
         {
             // Triangle is not visible
             return true;
         }
 
-        for (uint32_t i = 0; i < m_displayLines; i++)
+        const uint32_t displayLines = m_displayLines;
+        const uint32_t yLineResolution = m_yLineResolution;
+        for (uint32_t i = 0; i < displayLines; i++)
         {
-            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
+            const uint16_t currentScreenPositionStart = i * yLineResolution;
+            const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
                 bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
-                if (ret == false)
+                if (ret == false) [[unlikely]]
                 {
                     return false;
                 }
@@ -177,7 +179,7 @@ public:
     virtual void render() override
     {
         // Check if the previous rendering has finished. If not, block till it is finished.
-        if (m_renderThread.valid() && (m_renderThread.get() != true))
+        if (m_renderThread.valid() && (m_renderThread.get() != true)) [[unlikely]]
         {
             // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
             return;
@@ -329,7 +331,7 @@ public:
     virtual bool useTexture(const TMU target, const uint16_t texId) override 
     {
         m_boundTextures[target] = texId;
-        if (!m_textureManager.textureValid(texId))
+        if (!m_textureManager.textureValid(texId)) [[unlikely]]
         {
             return false;
         }

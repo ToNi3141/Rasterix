@@ -33,7 +33,7 @@ class TextureMemoryManager
 {
 public:
     static constexpr uint32_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
-    static constexpr uint32_t MAX_PAGES_PER_TEXTURE { static_cast<uint32_t>(std::ceil(static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2 * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)))};
+    static constexpr uint32_t MAX_PAGES_PER_TEXTURE { static_cast<uint32_t>((static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2.0f * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)) + 1.0f) };
 
     TextureMemoryManager()
     {
@@ -123,6 +123,8 @@ public:
             deallocPages(m_textures[textureSlot]);
         }
 
+        m_textureUpdateRequired = true;
+
         return ret;
     }
 
@@ -164,7 +166,7 @@ public:
 
     std::span<const uint16_t> getPages(const uint16_t texId) const
     {
-        if (textureValid(texId))
+        if (textureValid(texId)) [[likely]]
         {
             const Texture& tex = m_textures[*m_textureLut[texId]];
             return { tex.pageTable.data(), tex.pages };
@@ -175,7 +177,7 @@ public:
     IRenderer::TextureObjectMipmap getTexture(const uint16_t texId)
     {
         const uint32_t textureSlot = *m_textureLut[texId];
-        if (!m_textures[textureSlot].inUse)
+        if (!m_textures[textureSlot].inUse) [[unlikely]]
         {
             return {};
         }
@@ -187,16 +189,20 @@ public:
         const uint32_t texLutId = *m_textureLut[texId];
         m_textureLut[texId] = std::nullopt;
         m_textures[texLutId].requiresDelete = true;
+        m_textureUpdateRequired = true;
         return true;
     }
 
     bool uploadTextures(const std::function<bool(uint32_t gramAddr, const std::span<const uint8_t> data)> uploader) 
     {
+        if (!m_textureUpdateRequired) [[likely]]
+            return true;
+
         // Upload textures
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
             Texture& texture = m_textures[i];
-            if (texture.requiresUpload)
+            if (texture.requiresUpload) [[unlikely]]
             {
                 bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
@@ -207,13 +213,8 @@ public:
                 }
                 texture.requiresUpload = !ret;
             }
-        }
 
-        // Collect garbage textures
-        for (uint32_t i = 0; i < m_textures.size(); i++)
-        {
-            Texture& texture = m_textures[i];
-            if (texture.requiresDelete)
+            if (texture.requiresDelete) [[unlikely]]
             {
                 texture.requiresDelete = false;
                 texture.inUse = false;
@@ -221,6 +222,7 @@ public:
                 deallocPages(texture);
             }
         }
+
         return true;
     }
 
@@ -352,6 +354,8 @@ private:
     std::array<Texture, RenderConfig::NUMBER_OF_TEXTURES> m_textures;
     std::array<std::optional<uint32_t>, RenderConfig::NUMBER_OF_TEXTURES> m_textureLut {};
     std::array<PageEntry, RenderConfig::NUMBER_OF_TEXTURE_PAGES> m_pageTable {};
+
+    bool m_textureUpdateRequired { false };
 };
 
 } // namespace rr

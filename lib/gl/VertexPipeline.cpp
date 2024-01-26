@@ -57,7 +57,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
     // TODO: Check if this required? The standard requires but is it really used?
     //m_c[j].transform(c, c); // Calculate this in one batch to improve performance
 
-    if (obj.vertexArrayEnabled())
+    if (obj.vertexArrayEnabled()) [[likely]]
     {
         obj.getVertex(v, pos);
         m_t.transform(vertex, v);
@@ -82,12 +82,12 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
         obj.getNormal(n, pos);
         m_n.transform(nl, n);
 
-        if (m_enableNormalizing)
+        if (m_enableNormalizing) [[unlikely]]
         {
             nl.normalize();
         }
 
-        if (obj.vertexArrayEnabled())
+        if (obj.vertexArrayEnabled()) [[likely]]
         {
             m_m.transform(vl, v);
         }
@@ -103,7 +103,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
 bool VertexPipeline::drawObj(const RenderObj &obj)
 {
     recalculateMatrices();
-    if (!m_renderer.updatePipeline()) 
+    if (!m_renderer.updatePipeline()) [[unlikely]]
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
@@ -143,7 +143,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
                 obj.getDrawMode(),
                 cnt <= VERTEX_BUFFER_SIZE + VERTEX_OVERLAP);
         }
-        else
+        else [[likely]]
         {
             ret = drawTriangleArray(
                 transformedVertex,
@@ -153,7 +153,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
                 obj.getDrawMode());
         }
         
-        if (!ret)
+        if (!ret) [[unlikely]]
         {
             return false;
         }
@@ -164,7 +164,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 // bool VertexPipeline::drawObj(const RenderObj &obj)
 // {
 //     recalculateMatrices();
-//     if (!m_renderer.updatePipeline()) 
+//     if (!m_renderer.updatePipeline()) [[unlikely]]
 //     {
 //         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
 //         return false;
@@ -216,7 +216,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 //         );
 
 //         bool ret = false;
-//         if (lines)
+//         if (lines) [[unlikely]]
 //         {
 //             ret = drawLineArray(
 //                 transformedVertex,
@@ -235,7 +235,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 //                 cnt,
 //                 obj.getDrawMode());
 //         }
-//         if (!ret)
+//         if (!ret) [[unlikely]]
 //         {
 //             SPDLOG_ERROR("drawObj(): Cannot draw triangle array");
 //             return false;
@@ -250,7 +250,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 //     {
 //         const uint32_t index = obj.getIndex(o);
 //         obj.getColor(color[i], index);
-//         if (obj.vertexArrayEnabled())
+//         if (obj.vertexArrayEnabled()) [[likely]]
 //         {
 //             obj.getVertex(vertex[i], index);
 //         }
@@ -280,7 +280,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 // {
 //     if (m_lighting.lightingEnabled())
 //     {
-//         if (enableVertexArray)
+//         if (enableVertexArray) [[likely]]
 //             m_m.transform(transformedVertex.data(), vertex.data(), count);
 
 //         // TODO: Increase the performance by only transform one normal when enableNormalArray is false.
@@ -337,7 +337,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 //         }
 //     }
 
-//     if (enableVertexArray)
+//     if (enableVertexArray) [[likely]]
 //         m_t.transform(transformedVertex.data(), vertex.data(), count);
 // }
 
@@ -398,11 +398,11 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // facing backwards, then all in the clipping list will do this and vice versa.
         const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
         const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
-        if (currentOrientation != m_cullMode) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+        if (currentOrientation != m_cullMode) [[unlikely]] // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
             return true;
     }
     
-    if (m_renderer.getEnableTwoSideStencil())
+    if (m_renderer.getEnableTwoSideStencil()) [[unlikely]]
     {
         const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
         const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
@@ -414,11 +414,11 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         {
             m_renderer.selectStencilTwoSideBackForDevice();
         }
-         if (!m_renderer.updatePipeline())
-         {
-             SPDLOG_ERROR("drawTriangle(): Cannot update pixel pipeline");
-             return false;
-         }
+        if (!m_renderer.updatePipeline()) [[unlikely]]
+        {
+            SPDLOG_ERROR("drawTriangle(): Cannot update pixel pipeline");
+            return false;
+        }
     }
 
     // Render the triangle
@@ -440,7 +440,7 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
                 colorListClipped[0],
                 colorListClipped[i - 2],
                 colorListClipped[i - 1] });
-        if (!success)
+        if (!success) [[unlikely]]
         {
             return false;
         }
@@ -481,12 +481,12 @@ bool VertexPipeline::drawLine(const Line& line)
     v[3][0] += (-nx * line.v1[3]) * rcpViewportScaleX;
     v[3][1] += (-ny * line.v1[3]) * rcpViewportScaleY;
 
-    if (!drawTriangle({ v[0], v[1], v[2], line.tc0, line.tc0, line.tc1, line.color0, line.color0, line.color1 })) 
+    if (!drawTriangle({ v[0], v[1], v[2], line.tc0, line.tc0, line.tc1, line.color0, line.color0, line.color1 })) [[unlikely]]
     {
         return false;
     }
 
-    if (!drawTriangle({ v[2], v[1], v[3], line.tc1, line.tc0, line.tc1, line.color1, line.color0, line.color1 }))
+    if (!drawTriangle({ v[2], v[1], v[3], line.tc1, line.tc0, line.tc1, line.color1, line.color0, line.color1 })) [[unlikely]]
     {
         return false;
     }
@@ -567,12 +567,12 @@ bool VertexPipeline::drawTriangleArray(
             }
             i += 1;
             break;
-        default:
+        [[unlikely]] default:
             return false;
         }
 
         static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-        if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] }))
+        if (!drawTriangle({ vertex[i0], vertex[i1], vertex[i2], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, { tex[i2][0], tex[i2][1] }, color[i0], color[i1], color[i2] })) [[unlikely]]
         {
             return false;
         }
@@ -611,12 +611,12 @@ bool VertexPipeline::drawLineArray(
             i1 = i + 1;
             i += 1;
             break;
-        default:
+        [[unlikely]] default:
             return false;
         }
 
         static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-        if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] }))
+        if (!drawLine({ vertex[i0], vertex[i1], { tex[i0][0], tex[i0][1] }, { tex[i1][0], tex[i1][1] }, color[i0], color[i1] })) [[unlikely]]
         {
             return false;
         }
@@ -720,7 +720,7 @@ void VertexPipeline::multiply(const Mat44& mat)
         case MatrixMode::COLOR:
             setColorMatrix(mat * m_c);
             break;
-        default:
+        [[unlikely]] default:
             break;
     }
 }

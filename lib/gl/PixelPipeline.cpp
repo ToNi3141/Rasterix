@@ -43,7 +43,7 @@ bool PixelPipeline::updatePipeline()
     bool ret { true };
     for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
     {
-        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize()))
+        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize())) [[unlikely]]
         {
             m_tmuConf[i].texEnvConf.setTmu(i);
             ret = ret && m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
@@ -51,33 +51,33 @@ bool PixelPipeline::updatePipeline()
         }
     }
     
-    if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize())
+    if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize()) [[unlikely]]
     {
         ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
         m_featureEnableUploaded = m_featureEnable;
     }
-    if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize())
+    if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize()) [[unlikely]]
     {
         ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
         m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;
     }
     if (m_enableTwoSideStencil)
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize())
+        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize()) [[unlikely]]
         {
             ret = ret && m_renderer.setStencilBufferConfig(*m_stencilConfTwoSide);
             m_stencilConfUploaded = *m_stencilConfTwoSide;
         }
     }
-    else
+    else 
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
+        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize()) [[unlikely]]
         {
             ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
             m_stencilConfUploaded = m_stencilConf;
         }
     }
-    if (m_fogDirty)
+    if (m_fogDirty) [[unlikely]]
     {
         ret = ret && updateFogLut();
         m_fogDirty = false;

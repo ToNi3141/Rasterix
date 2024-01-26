@@ -128,7 +128,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     VecInt sign = -1; // 1 backface culling; -1 frontface culling
     sign = (area <= 0) ? -1 : 1; // No culling
     area *= sign;
-    if (area <= 0x0)
+    if (area <= 0x0) [[unlikely]]
         return false;
 
     // Interpolate triangle
