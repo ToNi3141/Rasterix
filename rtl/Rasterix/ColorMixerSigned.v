@@ -43,24 +43,24 @@ module ColorMixerSigned #(
 );
     localparam SUB_PIXEL_UNSIGNED_WIDTH = SUB_PIXEL_WIDTH - 1;
     localparam SIGN_WIDTH = 1;
-    localparam SUB_PIXEL_WIDTH_BIG = (SUB_PIXEL_UNSIGNED_WIDTH * 2) + SIGN_WIDTH;
-    localparam SUB_PIXEL_WIDTH_OVERSIZE = SUB_PIXEL_WIDTH_BIG + 1;
+    localparam SUB_PIXEL_WIDTH_2X = (SUB_PIXEL_UNSIGNED_WIDTH * 2) + SIGN_WIDTH;
+    localparam SUB_PIXEL_WIDTH_2X_WITH_CARRY = SUB_PIXEL_WIDTH_2X + 1;
     localparam SUB_PIXEL_0_POS = SUB_PIXEL_WIDTH * 0;
     localparam SUB_PIXEL_1_POS = SUB_PIXEL_WIDTH * 1;
     localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
-    localparam signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_UNSIGNED_WIDTH{1'b0} }, { SUB_PIXEL_UNSIGNED_WIDTH{1'b1} } };
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_OVERSIZE, SUB_PIXEL_WIDTH);  
+    localparam signed [SUB_PIXEL_WIDTH_2X - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_UNSIGNED_WIDTH { 1'b0 } }, { SUB_PIXEL_UNSIGNED_WIDTH { 1'b1 } } };
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_2X_WITH_CARRY, SUB_PIXEL_WIDTH);  
 
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V00;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V01;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V02;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V03;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V10;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V11;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V12;
-    reg signed [SUB_PIXEL_WIDTH_BIG - 1 : 0] V13;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V00;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V01;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V02;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V03;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V10;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V11;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V12;
+    reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V13;
     always @(posedge aclk)
     begin : Blending
         reg signed [SUB_PIXEL_WIDTH - 1 : 0] ca0;
@@ -113,10 +113,10 @@ module ColorMixerSigned #(
 
     always @(posedge aclk)
     begin : Result
-        reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c0;
-        reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c1;
-        reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c2;
-        reg signed [SUB_PIXEL_WIDTH_OVERSIZE - 1 : 0] c3;
+        reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c0;
+        reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c1;
+        reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c2;
+        reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c3;
 
         c0 = ((V00 + V10) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
         c1 = ((V01 + V11) + ONE_DOT_ZERO) >>> SUB_PIXEL_UNSIGNED_WIDTH;
