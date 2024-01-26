@@ -536,7 +536,7 @@ bool VertexPipeline::drawTriangleArray(
             }
             i += 1;
             break;
-        [[unlikely]] case RenderObj::DrawMode::QUADS:
+        case RenderObj::DrawMode::QUADS:
             if (i & 0x1)
             {
                 i0 = i - 1;
@@ -552,7 +552,7 @@ bool VertexPipeline::drawTriangleArray(
                 i += 1;
             }
             break;
-        [[unlikely]] case RenderObj::DrawMode::QUAD_STRIP:
+        case RenderObj::DrawMode::QUAD_STRIP:
             if (i & 0x2)
             {
                 i0 = i + 1;
