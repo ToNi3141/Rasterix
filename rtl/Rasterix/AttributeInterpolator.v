@@ -30,8 +30,8 @@ module AttributeInterpolator #(
     localparam KEEP_WIDTH = 1
 )
 (
-    input wire                              aclk,
-    input wire                              resetn,
+    input  wire                             aclk,
+    input  wire                             resetn,
     
     // Interpolation Control
     output wire                             pixelInPipeline,

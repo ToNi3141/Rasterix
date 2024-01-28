@@ -737,28 +737,49 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
-    // Clocks: 31
+    // Clocks: 33
     ////////////////////////////////////////////////////////////////////////////
-    wire                            alrp_tvalid;
-    wire                            alrp_tlast;
-    wire                            alrp_tkeep;
-    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspy;
-    wire [INDEX_WIDTH - 1 : 0]      alrp_tindex;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_w;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_z;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_a;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_b;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_g;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_r;
+    wire                                    alrp_tvalid;
+    wire                                    alrp_tlast;
+    wire                                    alrp_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         alrp_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         alrp_tspy;
+    wire [INDEX_WIDTH - 1 : 0]              alrp_tindex;
+    wire [ATTRIBUTE_SIZE - 1 : 0]           alrp_tdepth_w;
+    wire [32 - 1 : 0]                       alrp_tdepth_z;
+    wire [32 - 1 : 0]                       alrp_ttexture0_t;
+    wire [32 - 1 : 0]                       alrp_ttexture0_s;
+    wire [32 - 1 : 0]                       alrp_tmipmap0_t;
+    wire [32 - 1 : 0]                       alrp_tmipmap0_s;
+    wire [32 - 1 : 0]                       alrp_ttexture1_t;
+    wire [32 - 1 : 0]                       alrp_ttexture1_s;
+    wire [32 - 1 : 0]                       alrp_tmipmap1_t;
+    wire [32 - 1 : 0]                       alrp_tmipmap1_s;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_a;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_b;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_g;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_r;
+
+    wire                            ftx_tvalid;
+    wire                            ftx_tlast;
+    wire                            ftx_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0] ftx_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0] ftx_tspy;
+    wire [INDEX_WIDTH - 1 : 0]      ftx_tindex;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tdepth_w;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tdepth_z;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture0_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap0_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_a;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_b;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_g;
+    wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_r;
 
     AttributeInterpolator attributeInterpolator (
         .aclk(aclk),
@@ -811,26 +832,26 @@ module RasterixRenderCore #(
         .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
         .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
-        .m_attrb_tvalid(alrp_tvalid),
-        .m_attrb_tlast(alrp_tlast),
-        .m_attrb_tkeep(alrp_tkeep),
-        .m_attrb_tspx(alrp_tspx),
-        .m_attrb_tspy(alrp_tspy),
-        .m_attrb_tindex(alrp_tindex),
-        .m_attrb_tdepth_w(alrp_tdepth_w),
-        .m_attrb_tdepth_z(alrp_tdepth_z),
-        .m_attrb_ttexture0_t(alrp_ttexture0_t),
-        .m_attrb_ttexture0_s(alrp_ttexture0_s),
-        .m_attrb_tmipmap0_t(alrp_tmipmap0_t),
-        .m_attrb_tmipmap0_s(alrp_tmipmap0_s),
-        .m_attrb_ttexture1_t(alrp_ttexture1_t),
-        .m_attrb_ttexture1_s(alrp_ttexture1_s),
-        .m_attrb_tmipmap1_t(alrp_tmipmap1_t),
-        .m_attrb_tmipmap1_s(alrp_tmipmap1_s),
-        .m_attrb_tcolor_a(alrp_tcolor_a),
-        .m_attrb_tcolor_b(alrp_tcolor_b),
-        .m_attrb_tcolor_g(alrp_tcolor_g),
-        .m_attrb_tcolor_r(alrp_tcolor_r)
+        .m_attrb_tvalid(ftx_tvalid),
+        .m_attrb_tlast(ftx_tlast),
+        .m_attrb_tkeep(ftx_tkeep),
+        .m_attrb_tspx(ftx_tspx),
+        .m_attrb_tspy(ftx_tspy),
+        .m_attrb_tindex(ftx_tindex),
+        .m_attrb_tdepth_w(ftx_tdepth_w),
+        .m_attrb_tdepth_z(ftx_tdepth_z),
+        .m_attrb_ttexture0_t(ftx_ttexture0_t),
+        .m_attrb_ttexture0_s(ftx_ttexture0_s),
+        .m_attrb_tmipmap0_t(ftx_tmipmap0_t),
+        .m_attrb_tmipmap0_s(ftx_tmipmap0_s),
+        .m_attrb_ttexture1_t(ftx_ttexture1_t),
+        .m_attrb_ttexture1_s(ftx_ttexture1_s),
+        .m_attrb_tmipmap1_t(ftx_tmipmap1_t),
+        .m_attrb_tmipmap1_s(ftx_tmipmap1_s),
+        .m_attrb_tcolor_a(ftx_tcolor_a),
+        .m_attrb_tcolor_b(ftx_tcolor_b),
+        .m_attrb_tcolor_g(ftx_tcolor_g),
+        .m_attrb_tcolor_r(ftx_tcolor_r)
     );
     defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
     defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
@@ -840,10 +861,64 @@ module RasterixRenderCore #(
 
     assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
 
+
+    AttributeF2XConverter af2x (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_ftx_tvalid(ftx_tvalid),
+        .s_ftx_tlast(ftx_tlast),
+        .s_ftx_tkeep(ftx_tkeep),
+        .s_ftx_tspx(ftx_tspx),
+        .s_ftx_tspy(ftx_tspy),
+        .s_ftx_tindex(ftx_tindex),
+        .s_ftx_tdepth_w(ftx_tdepth_w),
+        .s_ftx_tdepth_z(ftx_tdepth_z),
+        .s_ftx_ttexture0_t(ftx_ttexture0_t),
+        .s_ftx_ttexture0_s(ftx_ttexture0_s),
+        .s_ftx_tmipmap0_t(ftx_tmipmap0_t),
+        .s_ftx_tmipmap0_s(ftx_tmipmap0_s),
+        .s_ftx_ttexture1_t(ftx_ttexture1_t),
+        .s_ftx_ttexture1_s(ftx_ttexture1_s),
+        .s_ftx_tmipmap1_t(ftx_tmipmap1_t),
+        .s_ftx_tmipmap1_s(ftx_tmipmap1_s),
+        .s_ftx_tcolor_a(ftx_tcolor_a),
+        .s_ftx_tcolor_b(ftx_tcolor_b),
+        .s_ftx_tcolor_g(ftx_tcolor_g),
+        .s_ftx_tcolor_r(ftx_tcolor_r),
+
+        .m_ftx_tvalid(alrp_tvalid),
+        .m_ftx_tlast(alrp_tlast),
+        .m_ftx_tkeep(alrp_tkeep),
+        .m_ftx_tspx(alrp_tspx),
+        .m_ftx_tspy(alrp_tspy),
+        .m_ftx_tindex(alrp_tindex),
+        .m_ftx_tdepth_w(alrp_tdepth_w),
+        .m_ftx_tdepth_z(alrp_tdepth_z),
+        .m_ftx_ttexture0_t(alrp_ttexture0_t),
+        .m_ftx_ttexture0_s(alrp_ttexture0_s),
+        .m_ftx_tmipmap0_t(alrp_tmipmap0_t),
+        .m_ftx_tmipmap0_s(alrp_tmipmap0_s),
+        .m_ftx_ttexture1_t(alrp_ttexture1_t),
+        .m_ftx_ttexture1_s(alrp_ttexture1_s),
+        .m_ftx_tmipmap1_t(alrp_tmipmap1_t),
+        .m_ftx_tmipmap1_s(alrp_tmipmap1_s),
+        .m_ftx_tcolor_a(alrp_tcolor_a),
+        .m_ftx_tcolor_b(alrp_tcolor_b),
+        .m_ftx_tcolor_g(alrp_tcolor_g),
+        .m_ftx_tcolor_r(alrp_tcolor_r)
+    );
+    defparam af2x.INDEX_WIDTH = INDEX_WIDTH;
+    defparam af2x.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+    defparam af2x.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+    defparam af2x.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+    defparam af2x.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam af2x.DEPTH_WIDTH = DEPTH_WIDTH;
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 34
+    // Clocks: 28
     ////////////////////////////////////////////////////////////////////////////
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;
@@ -929,7 +1004,6 @@ module RasterixRenderCore #(
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
-    defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 

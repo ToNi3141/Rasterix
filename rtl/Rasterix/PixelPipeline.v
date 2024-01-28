@@ -22,15 +22,13 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 32 cycles
+// Depth: 28 cycles
 module PixelPipeline
 #(
     parameter CMD_STREAM_WIDTH = 64,
 
     // The minimum bit width which is required to contain the resolution
     parameter INDEX_WIDTH = 14,
-
-    parameter DEPTH_WIDTH = 16,
 
     parameter STENCIL_WIDTH = 4,
 
@@ -79,20 +77,20 @@ module PixelPipeline
     input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_attrb_tspx,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_attrb_tspy,
     input  wire [INDEX_WIDTH - 1 : 0]               s_attrb_tindex,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tdepth_w,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tdepth_z,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture0_t,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture0_s,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap0_t,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap0_s,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture1_t,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_ttexture1_s,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap1_t,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tmipmap1_s,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_a,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_b,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_g,
-    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tcolor_r,
+    input  wire [ATTRIBUTE_SIZE - 1 : 0]            s_attrb_tdepth_w, // Float
+    input  wire [31 : 0]                            s_attrb_tdepth_z, // Q16.16
+    input  wire [31 : 0]                            s_attrb_ttexture0_t, // S16.15
+    input  wire [31 : 0]                            s_attrb_ttexture0_s, // S16.15
+    input  wire [31 : 0]                            s_attrb_tmipmap0_t, // S16.15
+    input  wire [31 : 0]                            s_attrb_tmipmap0_s, // S16.15
+    input  wire [31 : 0]                            s_attrb_ttexture1_t, // S16.15
+    input  wire [31 : 0]                            s_attrb_ttexture1_s, // S16.15
+    input  wire [31 : 0]                            s_attrb_tmipmap1_t, // S16.15
+    input  wire [31 : 0]                            s_attrb_tmipmap1_s, // S16.15
+    input  wire [SUB_PIXEL_WIDTH - 1 : 0]           s_attrb_tcolor_a, // Qn
+    input  wire [SUB_PIXEL_WIDTH - 1 : 0]           s_attrb_tcolor_b, // Qn
+    input  wire [SUB_PIXEL_WIDTH - 1 : 0]           s_attrb_tcolor_g, // Qn
+    input  wire [SUB_PIXEL_WIDTH - 1 : 0]           s_attrb_tcolor_r, // Qn
 
     // Texture access
     // TMU0 texel quad access
@@ -125,115 +123,6 @@ module PixelPipeline
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
-    localparam [(SUB_PIXEL_WIDTH * 2) - 1 : 0] ONE_POINT_ZERO_BIG = { { SUB_PIXEL_WIDTH{1'h0} }, ONE_POINT_ZERO };
-
-    ////////////////////////////////////////////////////////////////////////////
-    // STEP 0
-    // Convert float to integer
-    // Clocks: 4
-    ////////////////////////////////////////////////////////////////////////////
-    wire [INDEX_WIDTH - 1 : 0]  step_convert_framebuffer_index;
-    wire [SCREEN_POS_WIDTH - 1 : 0] step_convert_screen_pos_x;
-    wire [SCREEN_POS_WIDTH - 1 : 0] step_convert_screen_pos_y;
-    wire [FLOAT_SIZE - 1 : 0]   step_convert_depth_w_float;
-    wire [31 : 0]               step_convert_texture0_s;
-    wire [31 : 0]               step_convert_texture0_t;
-    wire [31 : 0]               step_convert_mipmap0_s;
-    wire [31 : 0]               step_convert_mipmap0_t;
-    wire [31 : 0]               step_convert_texture1_s;
-    wire [31 : 0]               step_convert_texture1_t;
-    wire [31 : 0]               step_convert_mipmap1_s;
-    wire [31 : 0]               step_convert_mipmap1_t;
-    wire [31 : 0]               step_convert_depth_z;
-    wire [31 : 0]               step_convert_color_r;
-    wire [31 : 0]               step_convert_color_g;
-    wire [31 : 0]               step_convert_color_b;
-    wire [31 : 0]               step_convert_color_a;
-    wire                        step_convert_tvalid;
-    wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
-    wire                        step_convert_tlast;
-
-    localparam CONV_DELAY = 0;
-
-    // Framebuffer Index
-    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(2 + CONV_DELAY)) 
-        convert_framebuffer_delay (.clk(aclk), .in(s_attrb_tindex), .out(step_convert_framebuffer_index));
-
-    // Screen Poisition
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2 + CONV_DELAY)) 
-        convert_screen_pos_x_delay (.clk(aclk), .in(s_attrb_tspx), .out(step_convert_screen_pos_x));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(2 + CONV_DELAY)) 
-        convert_screen_pos_y_delay (.clk(aclk), .in(s_attrb_tspy), .out(step_convert_screen_pos_y));
-
-    // Fragment stream flags
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(2 + CONV_DELAY)) 
-        convert_valid_delay (.clk(aclk), .in(s_attrb_tvalid), .out(step_convert_tvalid));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(2 + CONV_DELAY)) 
-        convert_keep_delay (.clk(aclk), .in(s_attrb_tkeep), .out(step_convert_tkeep));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(2 + CONV_DELAY)) 
-        convert_last_delay (.clk(aclk), .in(s_attrb_tlast), .out(step_convert_tlast));
-
-    // Depth
-    ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(2 + CONV_DELAY)) 
-        convert_depth_delay (.clk(aclk), .in(s_attrb_tdepth_w[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_depth_w_float));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-DEPTH_WIDTH), .DELAY(CONV_DELAY))
-        convert_floatToInt_DepthZ (.clk(aclk), .in(s_attrb_tdepth_z[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_depth_z)); 
-
-    // Tex Coords TMU0
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu0_textureS (.clk(aclk), .in(s_attrb_ttexture0_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture0_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-        convert_floatToInt_tmu0_textureT (.clk(aclk), .in(s_attrb_ttexture0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture0_t));   
-
-    generate 
-        if (ENABLE_LOD_CALC)
-        begin
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .in(s_attrb_tmipmap0_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_s));
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .in(s_attrb_tmipmap0_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap0_t));   
-        end
-    endgenerate
-
-    // Tex Coords TMU1
-    generate 
-        if (ENABLE_SECOND_TMU)
-        begin
-
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_attrb_ttexture1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_s));
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_attrb_ttexture1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_texture1_t));
-
-            if (ENABLE_LOD_CALC)
-            begin
-                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .in(s_attrb_tmipmap1_s[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_s));
-                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(CONV_DELAY))
-                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .in(s_attrb_tmipmap1_t[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_mipmap1_t));        
-            end
-        end
-    endgenerate
-
-    // Fragment Color
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
-        convert_floatToInt_ColorR (.clk(aclk), .in(s_attrb_tcolor_r[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_color_r));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
-        convert_floatToInt_ColorG (.clk(aclk), .in(s_attrb_tcolor_g[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_color_g));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
-        convert_floatToInt_ColorB (.clk(aclk), .in(s_attrb_tcolor_b[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_color_b));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(CONV_DELAY))
-        convert_floatToInt_ColorA (.clk(aclk), .in(s_attrb_tcolor_a[ATTRIBUTE_SIZE - FLOAT_SIZE +: FLOAT_SIZE]), .out(step_convert_color_a));   
-
-    wire [PIXEL_WIDTH - 1 : 0] convert_primary_color = {
-        // clamp colors 
-        (|step_convert_color_r[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_r[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-        (|step_convert_color_g[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_g[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-        (|step_convert_color_b[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_b[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
-        (|step_convert_color_a[16 +: 16]) ? ONE_POINT_ZERO : step_convert_color_a[16 - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
-    };
-
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // TMU0
@@ -254,37 +143,44 @@ module PixelPipeline
     wire [KEEP_WIDTH - 1 : 0]               step1_keep;
     wire                                    step1_last;
 
+    wire [PIXEL_WIDTH - 1 : 0]  step_1_primary_color = {
+        s_attrb_tcolor_r,
+        s_attrb_tcolor_g,
+        s_attrb_tcolor_b,
+        s_attrb_tcolor_a
+    };
+
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(13)) 
-        step1_indexDelay (.clk(aclk), .in(step_convert_framebuffer_index), .out(step1_index));
+        step1_indexDelay (.clk(aclk), .in(s_attrb_tindex), .out(step1_index));
 
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
-        step1_screenPosXDelay (.clk(aclk), .in(step_convert_screen_pos_x), .out(step1_screenPosX));
+        step1_screenPosXDelay (.clk(aclk), .in(s_attrb_tspx), .out(step1_screenPosX));
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(13)) 
-        step1_screenPosYDelay (.clk(aclk), .in(step_convert_screen_pos_y), .out(step1_screenPosY));
+        step1_screenPosYDelay (.clk(aclk), .in(s_attrb_tspy), .out(step1_screenPosY));
 
     ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-        step1_depthDelay (.clk(aclk), .in(step_convert_depth_z), .out(step1_depth));
+        step1_depthDelay (.clk(aclk), .in(s_attrb_tdepth_z), .out(step1_depth));
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(13)) 
-        step1_depthWDelay (.clk(aclk), .in(step_convert_depth_w_float), .out(step1_depthWFloat));
+        step1_depthWDelay (.clk(aclk), .in(s_attrb_tdepth_w), .out(step1_depthWFloat));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
-        step1_validDelay (.clk(aclk), .in(step_convert_tvalid), .out(step1_valid));
+        step1_validDelay (.clk(aclk), .in(s_attrb_tvalid), .out(step1_valid));
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(13)) 
-        step1_keepDelay (.clk(aclk), .in(step_convert_tkeep), .out(step1_keep));
+        step1_keepDelay (.clk(aclk), .in(s_attrb_tkeep), .out(step1_keep));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(13)) 
-        step1_lastDelay (.clk(aclk), .in(step_convert_tlast), .out(step1_last));
+        step1_lastDelay (.clk(aclk), .in(s_attrb_tlast), .out(step1_last));
 
     generate
         if (ENABLE_SECOND_TMU)
         begin
             ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-                step1_texture1SDelay (.clk(aclk), .in(step_convert_texture1_s), .out(step1_texture1S));
+                step1_texture1SDelay (.clk(aclk), .in(s_attrb_ttexture1_s), .out(step1_texture1S));
             ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-                step1_texture1TDelay (.clk(aclk), .in(step_convert_texture1_t), .out(step1_texture1T));
+                step1_texture1TDelay (.clk(aclk), .in(s_attrb_ttexture1_t), .out(step1_texture1T));
             ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-                step1_mipmap1SDelay (.clk(aclk), .in(step_convert_mipmap1_s), .out(step1_mipmap1S));
+                step1_mipmap1SDelay (.clk(aclk), .in(s_attrb_tmipmap1_s), .out(step1_mipmap1S));
             ValueDelay #(.VALUE_SIZE(32), .DELAY(13)) 
-                step1_mipmap1TDelay (.clk(aclk), .in(step_convert_mipmap1_t), .out(step1_mipmap1T));
+                step1_mipmap1TDelay (.clk(aclk), .in(s_attrb_tmipmap1_t), .out(step1_mipmap1T));
         end
     endgenerate
 
@@ -311,13 +207,13 @@ module PixelPipeline
         .texelInput10(texel0Input10),
         .texelInput11(texel0Input11),
 
-        .primaryColor(convert_primary_color),
-        .textureS(step_convert_texture0_s),
-        .textureT(step_convert_texture0_t),
-        .mipmapS(step_convert_mipmap0_s),
-        .mipmapT(step_convert_mipmap0_t),
+        .primaryColor(step_1_primary_color),
+        .textureS(s_attrb_ttexture0_s),
+        .textureT(s_attrb_ttexture0_t),
+        .mipmapS(s_attrb_tmipmap0_s),
+        .mipmapT(s_attrb_tmipmap0_t),
 
-        .previousColor(convert_primary_color), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
+        .previousColor(step_1_primary_color), // For TMU0 it is the primary color, for TMUn-1 it is the output of the previous one
 
         .fragmentColor(step1_fragmentColor)
     );
