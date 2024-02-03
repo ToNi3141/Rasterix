@@ -18,6 +18,7 @@
 #define RASTERIZER_HPP
 #include <stdint.h>
 #include <array>
+#include <span>
 #include "Vec.hpp"
 #include "Triangle.hpp"
 #include "IRenderer.hpp"
@@ -44,6 +45,11 @@ public:
     static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
                                           const uint16_t lineStart,
                                           const uint16_t lineEnd);
+
+    static bool increment(TriangleStreamTypes::StaticParams& params, 
+                          const std::span<TriangleStreamTypes::Texture>& texture,
+                          const uint16_t lineStart,
+                          const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);

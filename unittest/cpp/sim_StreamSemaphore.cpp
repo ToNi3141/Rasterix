@@ -55,6 +55,7 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
     CHECK(t->released == 1);
 
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x12345678;
     t->s_axis_tkeep = 1;
@@ -67,6 +68,7 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
+    t->sigLock = 0;
     clk(t);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
@@ -90,6 +92,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
         t->s_axis_tvalid = 1;
+        t->sigLock = 1;
         t->s_axis_tlast = 0;
         t->s_axis_tdata = i;
         t->s_axis_tkeep = 0;
@@ -104,6 +107,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
+    t->sigLock = 0;
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
         clk(t);
@@ -130,6 +134,7 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 0;
     t->m_axis_tready = 0;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x12345678;
     t->s_axis_tkeep = 1;
@@ -143,6 +148,7 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 0;
     t->m_axis_tready = 0;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x87654321;
     t->s_axis_tkeep = 1;
@@ -156,6 +162,7 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 1;
     t->m_axis_tready = 1;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x87654321;
     t->s_axis_tkeep = 1;
@@ -168,6 +175,7 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
+    t->sigLock = 0;
     clk(t);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);

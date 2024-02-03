@@ -92,6 +92,7 @@ public:
     RendererMemoryOptimized(IBusConnector& busConnector)
         : m_busConnector(busConnector)
     {
+        static_assert(RenderConfig::ENABLE_AUTOMATIC_Y_OFFSET_CALC == true, "Only automatic offset calculation possible with only one display list");
         for (auto& entry : m_displayListAssembler)
         {
             entry.clearAssembler();
@@ -129,7 +130,7 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible())
         {

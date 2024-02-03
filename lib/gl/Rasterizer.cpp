@@ -43,6 +43,68 @@ bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticPara
     return false;
 }
 
+bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
+                           const std::span<TriangleStreamTypes::Texture>& texture,
+                           const uint16_t lineStart,
+                           const uint16_t lineEnd)
+{
+    
+    if ((lineStart == 0) && (params.bbStartY < lineEnd))
+    {
+        // If the triangle completely in the current line, then nothing has to be done here.
+        return true;
+    }
+    else
+    {
+        // Check if the triangle is in the current area by checking if the end position is below the start line
+        // and if the start of the triangle is within this area
+        if ((params.bbEndY >= lineStart) &&
+                (params.bbStartY < lineEnd))
+        {
+            // The triangle is within the current display area
+            // Check if the triangle started in the previous area. If so, we have to move the interpolation factors
+            // to the current area
+            if (params.bbStartY < lineStart)
+            {
+                const int32_t bbDiff = lineStart - params.bbStartY;
+                params.bbStartY = 0;
+                params.bbEndY -= lineStart;
+
+                const auto wInitTmp = params.wInit;
+                params.wInit = params.wYInc;
+                params.wInit *= bbDiff;
+                params.wInit += wInitTmp;
+
+                // paramsInc.depthW = params.depthW;
+                params.depthW += params.depthWYInc * bbDiff;
+                params.depthZ += params.depthZYInc * bbDiff;
+
+                const auto colorTmp = params.color;
+                params.color = params.colorYInc;
+                params.color *= bbDiff;
+                params.color += colorTmp;
+
+                for (uint32_t i = 0; i < texture.size(); i++)
+                {
+                    const auto texStqTmp = texture[i].texStq;
+                    texture[i].texStq = texture[i].texStqYInc;
+                    texture[i].texStq *= bbDiff;
+                    texture[i].texStq += texStqTmp;
+                }
+            }
+            // The triangle starts in this area. So we just have to readjust the bounding box
+            else
+            {
+                params.bbStartY -= lineStart;
+                params.bbEndY -= lineStart;
+            }
+
+            return true;
+        }
+    }
+    return false;
+}
+
 
 VecInt Rasterizer::calcRecip(VecInt val)
 {

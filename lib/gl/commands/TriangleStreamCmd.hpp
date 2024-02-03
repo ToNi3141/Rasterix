@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <array>
 #include <span>
+#include <type_traits>
+#include <typeinfo>
 #include "Vec.hpp"
 #include "Veci.hpp"
 #include "Triangle.hpp"
@@ -31,7 +33,7 @@
 namespace rr
 {
 
-template <uint8_t MAX_TMU_COUNT>
+template <uint8_t MAX_TMU_COUNT, bool ENABLE_FLOAT_INTERPOLATION>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -43,7 +45,24 @@ public:
         std::array<TriangleStreamTypes::Texture, MAX_TMU_COUNT> texture;
 #pragma pack(pop)
     };
+    struct TriangleDescX
+    {
+#pragma pack(push, 4)
+        TriangleStreamTypes::StaticParamsX param;
+        std::array<TriangleStreamTypes::TextureX, MAX_TMU_COUNT> texture;
+        void operator=(const TriangleDesc& t)
+        {
+            param = t.param;
+            for (uint32_t i = 0; i < texture.size(); i++)
+            {
+                texture[i] = t.texture[i];
+            }
+        };
+#pragma pack(pop)
+    };
 
+    using TrDesc = std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
+    
     TriangleStreamCmd(const Rasterizer& rasterizer, const Triangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
@@ -54,12 +73,17 @@ public:
         return Rasterizer::checkIfTriangleIsInBounds(m_desc.param, lineStart, lineEnd);
     }
 
+    bool increment(const uint16_t lineStart, const uint16_t lineEnd)
+    {
+        return Rasterizer::increment(m_desc.param, { m_desc.texture }, lineStart, lineEnd);
+    }
+
     bool isVisible() const { return m_visible; };
 
-    using Desc = std::array<std::span<TriangleDesc>, 1>;
+    using Desc = std::array<std::span<TrDesc>, 1>;
     void serialize(Desc& desc) const 
     { 
-        std::memcpy(desc[0].data(), &m_desc, sizeof(TriangleDesc));
+        desc[0][0] = m_desc;
     }
     static constexpr uint32_t command() { return TRIANGLE_STREAM | sizeof(TriangleDesc); }
 

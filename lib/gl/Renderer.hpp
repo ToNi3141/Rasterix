@@ -150,7 +150,7 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible()) [[unlikely]]
         {
@@ -166,7 +166,17 @@ public:
             const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                bool ret { false };
+                if constexpr (!RenderConfig::ENABLE_AUTOMATIC_Y_OFFSET_CALC)
+                {
+                    TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
+                }
+                else
+                {
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                }
                 if (ret == false) [[unlikely]]
                 {
                     return false;

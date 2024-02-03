@@ -25,6 +25,10 @@ struct RenderConfigRRXIFSimulation
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 480 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 64 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
 
@@ -56,6 +60,10 @@ struct RenderConfigRRXEFSimulation
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 480 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -89,6 +97,10 @@ struct RenderConfigRRXIFCModA7
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 240 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 32 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 32 };
 
@@ -121,6 +133,10 @@ struct RenderConfigRRXIFNexys
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 256 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
 
@@ -153,6 +169,10 @@ struct RenderConfigRRXEFNexys
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 600 * 2 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
 
@@ -185,6 +205,10 @@ struct RenderConfigRRXEFZynq
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
 
@@ -216,6 +240,10 @@ struct RenderConfigRRXIFZynq
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 128 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };

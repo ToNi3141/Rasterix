@@ -38,6 +38,7 @@ module StreamSemaphore #(
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata,
     input  wire [KEEP_WIDTH - 1 : 0]    s_axis_tkeep,
 
+    input  wire                         sigLock,
     input  wire                         sigRelease,
     output reg                          released
 );
@@ -45,7 +46,7 @@ module StreamSemaphore #(
     wire            skidInReady;
 
     wire sigOutgoingValue   = sigRelease;
-    wire sigIncommingValue  = s_axis_tvalid && s_axis_tready;
+    wire sigIncommingValue  = s_axis_tvalid && s_axis_tready && sigLock;
     wire free               = (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
 
     skidbuffer #(
