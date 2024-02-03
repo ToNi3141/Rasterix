@@ -150,8 +150,7 @@ void PixelPipeline::setFogDensity(const float val)
 bool PixelPipeline::setFogColor(const Vec4& val)
 {
     Vec4i color;
-    color.fromVec(val.vec);
-    color.mul<0>(255);
+    color.fromVec<8>(val.vec);
     return m_renderer.setFogColor(color);
 }
 
