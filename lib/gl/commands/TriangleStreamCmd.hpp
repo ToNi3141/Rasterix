@@ -85,7 +85,7 @@ public:
     { 
         desc[0][0] = m_desc;
     }
-    static constexpr uint32_t command() { return TRIANGLE_STREAM | sizeof(TriangleDesc); }
+    static constexpr uint32_t command() { return TRIANGLE_STREAM | sizeof(TrDesc); }
 
 private:
     TriangleDesc m_desc;

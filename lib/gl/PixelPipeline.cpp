@@ -151,6 +151,7 @@ bool PixelPipeline::setFogColor(const Vec4& val)
 {
     Vec4i color;
     color.fromVec<8>(val.vec);
+    color.clamp(0, 255);
     return m_renderer.setFogColor(color);
 }
 

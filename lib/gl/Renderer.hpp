@@ -150,7 +150,7 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamCmd<RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible()) [[unlikely]]
         {

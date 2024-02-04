@@ -1650,9 +1650,7 @@ GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat *params)
         break;
     case GL_FOG_COLOR:
     {
-        Vec4 fogColor {};
-        fogColor.fromArray(params, 4);
-        IceGL::getInstance().pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        IceGL::getInstance().pixelPipeline().setFogColor({ { params[0], params[1], params[2], params[3] } });
     }
         break;
     default:
