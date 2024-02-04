@@ -67,8 +67,6 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
             if (params.bbStartY < lineStart)
             {
                 const int32_t bbDiff = lineStart - params.bbStartY;
-                params.bbStartY = 0;
-                params.bbEndY -= lineStart;
 
                 const auto wInitTmp = params.wInit;
                 params.wInit = params.wYInc;
@@ -91,12 +89,6 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
                     texture[i].texStq *= bbDiff;
                     texture[i].texStq += texStqTmp;
                 }
-            }
-            // The triangle starts in this area. So we just have to readjust the bounding box
-            else
-            {
-                params.bbStartY -= lineStart;
-                params.bbEndY -= lineStart;
             }
 
             return true;
