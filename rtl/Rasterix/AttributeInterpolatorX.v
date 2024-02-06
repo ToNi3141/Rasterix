@@ -557,8 +557,8 @@ module AttributeInterpolatorX #(
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
         step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_r[0 +: SUB_PIXEL_WIDTH];
 
-        step2_tex0_s_reg = (step1_tex0_s * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
-        step2_tex0_t_reg = (step1_tex0_t * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT;
+        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
+        step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT;
         if (ENABLE_LOD_CALC)
         begin
             step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q })) >>> PERSP_CORR_SHIFT;
