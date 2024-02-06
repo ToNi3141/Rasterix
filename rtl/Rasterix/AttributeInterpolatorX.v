@@ -18,7 +18,7 @@
 // This module is used to interpolate the triagle attributes based 
 // on the data from the rasterizer. It expects numbers in fix point format.
 // Pipelined: yes
-// Depth: 5 cycles
+// Depth: 6 cycles
 module AttributeInterpolatorX #(
     parameter INTERNAL_FLOAT_PRECISION = 32,
     parameter INDEX_WIDTH = 32,
@@ -108,10 +108,11 @@ module AttributeInterpolatorX #(
 );
 `include "RasterizerCommands.vh"
 
+    localparam POINT_POS = 9;
     localparam CALC_PRECISION = 18;
-    localparam RECIP_DENOMINATOR = { { ((32 - CALC_PRECISION - 1) - 9) { 1'b0 } }, { ((CALC_PRECISION - 1) + 9) { 1'b1 } } };
-    localparam PERSP_CORR_SHIFT = ((CALC_PRECISION - 2) + 9) - 15;
-    // Example of the texture interpolation. Assume CALC_PRECISION = 18:
+    localparam RECIP_DENOMINATOR = { { ((32 - CALC_PRECISION - 1) - POINT_POS) { 1'b0 } }, { ((CALC_PRECISION - 1) + POINT_POS) { 1'b1 } } };
+    localparam PERSP_CORR_SHIFT = ((CALC_PRECISION - 2) + POINT_POS) - 15;
+    // Example of the texture interpolation. Assume CALC_PRECISION = 18 and POINT_POS = 9:
     // Initial: s = S1.30, q = S1.30
     // When when q is divided, a number in the format Qn.9 is expected.
     // 1. Convert q into a unsigned Q1.17 number
@@ -534,64 +535,64 @@ module AttributeInterpolatorX #(
     ValueDelay #(.VALUE_SIZE(16), .DELAY(I2F_DELAY)) 
         step2_tdepth_z_delay (.clk(aclk), .in(step1_depth_z), .out(step2_depth_z));
 
-    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-9))
+    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-POINT_POS))
         step2_tdepth_w_i2f (.clk(aclk), .in({ { (32 - CALC_PRECISION) { 1'b0 } }, step1_depth_w }), .out(step2_depth_w));
 
-    reg  [32 - 1 : 0]                step2_tex0_s_reg; // S16.15
-    reg  [32 - 1 : 0]                step2_tex0_t_reg;
-    reg  [32 - 1 : 0]                step2_tex0_mipmap_s_reg;
-    reg  [32 - 1 : 0]                step2_tex0_mipmap_t_reg;
-    reg  [32 - 1 : 0]                step2_tex1_s_reg;
-    reg  [32 - 1 : 0]                step2_tex1_t_reg;
-    reg  [32 - 1 : 0]                step2_tex1_mipmap_s_reg;
-    reg  [32 - 1 : 0]                step2_tex1_mipmap_t_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_t_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_mipmap_s_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_mipmap_t_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_s_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_t_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_s_reg;
+    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_t_reg;
     reg  [ 8 - 1 : 0]                step2_color_r_reg;
     reg  [ 8 - 1 : 0]                step2_color_g_reg;
     reg  [ 8 - 1 : 0]                step2_color_b_reg;
     reg  [ 8 - 1 : 0]                step2_color_a_reg;
     always @(posedge aclk)
-    begin
+    begin : PerspCorrection
         step2_color_a_reg <= (step1_color_a[15]) ? 0 : (|step1_color_a[8 +: 7]) ? 8'hff : step1_color_a[0 +: 8];
         step2_color_b_reg <= (step1_color_b[15]) ? 0 : (|step1_color_b[8 +: 7]) ? 8'hff : step1_color_b[0 +: 8];
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[8 +: 7]) ? 8'hff : step1_color_g[0 +: 8];
         step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[8 +: 7]) ? 8'hff : step1_color_r[0 +: 8];
 
-        step2_tex0_s_reg <= (step1_tex0_s * step1_tex0_q) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
-        step2_tex0_t_reg <= (step1_tex0_t * step1_tex0_q) >>> PERSP_CORR_SHIFT;
+        step2_tex0_s_reg = (step1_tex0_s * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
+        step2_tex0_t_reg = (step1_tex0_t * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT;
         if (ENABLE_LOD_CALC)
         begin
-            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * step1_tex0_mipmap_q) >>> PERSP_CORR_SHIFT;
-            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * step1_tex0_mipmap_q) >>> PERSP_CORR_SHIFT;
+            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q })) >>> PERSP_CORR_SHIFT;
+            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q })) >>> PERSP_CORR_SHIFT;
         end
 
         if (ENABLE_SECOND_TMU)
         begin
-            step2_tex1_s_reg <= (step1_tex1_s * step1_tex1_q) >>> PERSP_CORR_SHIFT;
-            step2_tex1_t_reg <= (step1_tex1_t * step1_tex1_q) >>> PERSP_CORR_SHIFT;
+            step2_tex1_s_reg <= (step1_tex1_s * $signed({ 1'b0, step1_tex1_q })) >>> PERSP_CORR_SHIFT;
+            step2_tex1_t_reg <= (step1_tex1_t * $signed({ 1'b0, step1_tex1_q })) >>> PERSP_CORR_SHIFT;
             if (ENABLE_LOD_CALC)
             begin
-                step2_tex1_mipmap_s_reg <= (step1_tex1_mipmap_s * step1_tex1_mipmap_q) >>> PERSP_CORR_SHIFT;
-                step2_tex1_mipmap_t_reg <= (step1_tex1_mipmap_t * step1_tex1_mipmap_q) >>> PERSP_CORR_SHIFT;
+                step2_tex1_mipmap_s_reg <= (step1_tex1_mipmap_s * $signed({ 1'b0, step1_tex1_mipmap_q })) >>> PERSP_CORR_SHIFT;
+                step2_tex1_mipmap_t_reg <= (step1_tex1_mipmap_t * $signed({ 1'b0, step1_tex1_mipmap_q })) >>> PERSP_CORR_SHIFT;
             end
         end
     end
 
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_s_delay (.clk(aclk), .in(step2_tex0_s_reg), .out(step2_tex0_s));
+        step2_ttex0_s_delay (.clk(aclk), .in(step2_tex0_s_reg[0 +: 32]), .out(step2_tex0_s));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_t_delay (.clk(aclk), .in(step2_tex0_t_reg), .out(step2_tex0_t));
+        step2_ttex0_t_delay (.clk(aclk), .in(step2_tex0_t_reg[0 +: 32]), .out(step2_tex0_t));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_s_delay (.clk(aclk), .in(step2_tex0_mipmap_s_reg), .out(step2_tex0_mipmap_s));
+        step2_ttex0_mipmap_s_delay (.clk(aclk), .in(step2_tex0_mipmap_s_reg[0 +: 32]), .out(step2_tex0_mipmap_s));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_t_delay (.clk(aclk), .in(step2_tex0_mipmap_t_reg), .out(step2_tex0_mipmap_t));
+        step2_ttex0_mipmap_t_delay (.clk(aclk), .in(step2_tex0_mipmap_t_reg[0 +: 32]), .out(step2_tex0_mipmap_t));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_s_delay (.clk(aclk), .in(step2_tex1_s_reg), .out(step2_tex1_s));
+        step2_ttex1_s_delay (.clk(aclk), .in(step2_tex1_s_reg[0 +: 32]), .out(step2_tex1_s));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_t_delay (.clk(aclk), .in(step2_tex1_t_reg), .out(step2_tex1_t));
+        step2_ttex1_t_delay (.clk(aclk), .in(step2_tex1_t_reg[0 +: 32]), .out(step2_tex1_t));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_s_delay (.clk(aclk), .in(step2_tex1_mipmap_s_reg), .out(step2_tex1_mipmap_s));
+        step2_ttex1_mipmap_s_delay (.clk(aclk), .in(step2_tex1_mipmap_s_reg[0 +: 32]), .out(step2_tex1_mipmap_s));
     ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_t_delay (.clk(aclk), .in(step2_tex1_mipmap_t_reg), .out(step2_tex1_mipmap_t));
+        step2_ttex1_mipmap_t_delay (.clk(aclk), .in(step2_tex1_mipmap_t_reg[0 +: 32]), .out(step2_tex1_mipmap_t));
     ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
         step2_tcolor_r_delay (.clk(aclk), .in(step2_color_r_reg), .out(step2_color_r));
     ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
