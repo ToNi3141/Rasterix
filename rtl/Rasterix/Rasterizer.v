@@ -26,7 +26,7 @@ module Rasterizer
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256
     parameter CMD_STREAM_WIDTH = 32,
 
-    parameter ENABLE_INITIAL_Y_INC = 1,
+    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
 
     localparam ATTRIBUTE_SIZE = 32,
 
@@ -143,7 +143,7 @@ module Rasterizer
             begin
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
 
-                if (ENABLE_INITIAL_Y_INC)
+                if (RASTERIZER_ENABLE_INITIAL_Y_INC)
                 begin
                     
                     if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])

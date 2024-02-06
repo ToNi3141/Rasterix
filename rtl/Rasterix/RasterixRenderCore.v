@@ -45,9 +45,12 @@ module RasterixRenderCore #(
     // 4 bit reducing can safe around 1k LUTs.
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
-    parameter INTERNAL_FLOAT_PRECISION = 32, // Add RASTERITZER_ prefix to the following configs
-    parameter FLOATING_POINT_INTERPOLATION = 0,
-    parameter ENABLE_INITIAL_Y_INC = 0,
+    parameter RASTERIZER_FLOAT_PRECISION = 32,
+    // Enables the floating point interpolation. If this is disabled, it falls back
+    // to the fix point interpolation
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+    // Enables the automatic Y increment (only available when RASTERIZER_ENABLE_FLOAT_INTERPOLATION is set)
+    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
@@ -524,7 +527,7 @@ module RasterixRenderCore #(
     defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.INDEX_WIDTH = INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam rop.ENABLE_INITIAL_Y_INC = ENABLE_INITIAL_Y_INC;
+    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_INITIAL_Y_INC;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -795,7 +798,7 @@ module RasterixRenderCore #(
     wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_r;
 
     generate
-        if (!FLOATING_POINT_INTERPOLATION)
+        if (!RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
         begin
             AttributeInterpolatorX attributeInterpolator (
                 .aclk(aclk),
@@ -868,7 +871,6 @@ module RasterixRenderCore #(
                 .m_attrb_tcolor_g(alrp_tcolor_g),
                 .m_attrb_tcolor_r(alrp_tcolor_r)
             );
-            defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
             defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
             defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
             defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
@@ -971,7 +973,7 @@ module RasterixRenderCore #(
                 .m_attrb_tcolor_g(ftx_tcolor_g),
                 .m_attrb_tcolor_r(ftx_tcolor_r)
             );
-            defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
+            defparam attributeInterpolator.RASTERIZER_FLOAT_PRECISION = RASTERIZER_FLOAT_PRECISION;
             defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
             defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
             defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;

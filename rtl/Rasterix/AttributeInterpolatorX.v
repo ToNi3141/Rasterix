@@ -20,13 +20,13 @@
 // Pipelined: yes
 // Depth: 6 cycles
 module AttributeInterpolatorX #(
-    parameter INTERNAL_FLOAT_PRECISION = 32,
     parameter INDEX_WIDTH = 32,
     parameter SCREEN_POS_WIDTH = 11,
     parameter ENABLE_LOD_CALC = 1,
     parameter ENABLE_SECOND_TMU = 1,
     parameter SUB_PIXEL_WIDTH = 8,
 
+    localparam DEPTH_WIDTH = 16,
     localparam ATTRIBUTE_SIZE = 32,
     localparam KEEP_WIDTH = 1,
     localparam FLOAT_SIZE = 32
@@ -92,15 +92,15 @@ module AttributeInterpolatorX #(
     output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspy,
     output wire [INDEX_WIDTH - 1 : 0]       m_attrb_tindex,
     output wire [FLOAT_SIZE - 1 : 0]        m_attrb_tdepth_w, // Float
-    output wire [31 : 0]                    m_attrb_tdepth_z, // Q16.16
-    output wire [31 : 0]                    m_attrb_ttexture0_t, // S16.15
-    output wire [31 : 0]                    m_attrb_ttexture0_s, // S16.15
-    output wire [31 : 0]                    m_attrb_tmipmap0_t, // S16.15
-    output wire [31 : 0]                    m_attrb_tmipmap0_s, // S16.15
-    output wire [31 : 0]                    m_attrb_ttexture1_t, // S16.15
-    output wire [31 : 0]                    m_attrb_ttexture1_s, // S16.15
-    output wire [31 : 0]                    m_attrb_tmipmap1_t, // S16.15
-    output wire [31 : 0]                    m_attrb_tmipmap1_s, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tdepth_z, // Q16.16
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_ttexture0_t, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_ttexture0_s, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap0_t, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap0_s, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_ttexture1_t, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_ttexture1_s, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap1_t, // S16.15
+    output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap1_s, // S16.15
     output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_a, // Qn
     output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_b, // Qn
     output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_g, // Qn
@@ -296,7 +296,7 @@ module AttributeInterpolatorX #(
     wire signed [CALC_PRECISION - 1 : 0]    step1_tex1_mipmap_t;
     wire        [CALC_PRECISION - 1 : 0]    step1_tex1_mipmap_q;
     wire        [CALC_PRECISION - 1 : 0]    step1_depth_w; // U9.9
-    wire        [16 - 1 : 0]                step1_depth_z; // U0.16
+    wire        [DEPTH_WIDTH - 1 : 0]       step1_depth_z; // U0.16
     wire        [16 - 1 : 0]                step1_color_r; // S7.8
     wire        [16 - 1 : 0]                step1_color_g;
     wire        [16 - 1 : 0]                step1_color_b;
@@ -357,11 +357,11 @@ module AttributeInterpolatorX #(
     );
 
     ValueDelay #(
-        .VALUE_SIZE(16), 
+        .VALUE_SIZE(DEPTH_WIDTH), 
         .DELAY(RECIP_DELAY)
     ) step1_depth_z_delay (
         .clk(aclk), 
-        .in((reg_depth_z[31]) ? 0 : (reg_depth_z[30]) ? 16'hffff : reg_depth_z[14 +: 16]), 
+        .in((reg_depth_z[31]) ? 0 : (reg_depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : reg_depth_z[14 +: DEPTH_WIDTH]), 
         .out(step1_depth_z)
     );
     Recip #(
@@ -370,7 +370,7 @@ module AttributeInterpolatorX #(
         .LOOKUP_PRECISION(11)
     ) step1_depth_w_recip (
         .aclk(aclk), 
-        .x(reg_depth_w[32 - CALC_PRECISION - 1 +: CALC_PRECISION]), 
+        .x(reg_depth_w[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
         .y(step1_depth_w)
     );
 
@@ -379,7 +379,7 @@ module AttributeInterpolatorX #(
         .DELAY(RECIP_DELAY)
     ) step1_tex0_s_delay (
         .clk(aclk), 
-        .in(reg_tex0_s[32 - CALC_PRECISION +: CALC_PRECISION]), 
+        .in(reg_tex0_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
         .out(step1_tex0_s)
     );
     ValueDelay #(
@@ -387,7 +387,7 @@ module AttributeInterpolatorX #(
         .DELAY(RECIP_DELAY)
     ) step1_tex0_t_delay (
         .clk(aclk), 
-        .in(reg_tex0_t[32 - CALC_PRECISION +: CALC_PRECISION]), 
+        .in(reg_tex0_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
         .out(step1_tex0_t)
     );
     Recip #(
@@ -397,7 +397,7 @@ module AttributeInterpolatorX #(
     ) step1_tex0_q_recip (
         .aclk(aclk), 
         // S1.30 >> 15 = U1.15 Clamp to 16 bit and remove sign, because the value is normalized between 1.0 and 0.0
-        .x(reg_tex0_q[32 - CALC_PRECISION - 1 +: CALC_PRECISION]), 
+        .x(reg_tex0_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
         .y(step1_tex0_q)
     );
     generate
@@ -408,7 +408,7 @@ module AttributeInterpolatorX #(
                 .DELAY(RECIP_DELAY)
             ) step1_tex0_mipmap_s_delay (
                 .clk(aclk), 
-                .in(reg_tex0_mipmap_s[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex0_mipmap_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                 .out(step1_tex0_mipmap_s)
             );
             ValueDelay #(
@@ -416,7 +416,7 @@ module AttributeInterpolatorX #(
                 .DELAY(RECIP_DELAY)
             ) step1_tex0_mipmap_t_delay (
                 .clk(aclk), 
-                .in(reg_tex0_mipmap_t[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex0_mipmap_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                 .out(step1_tex0_mipmap_t)
             );
             Recip #(
@@ -425,7 +425,7 @@ module AttributeInterpolatorX #(
                 .LOOKUP_PRECISION(11)
             ) step1_tex0_mipmap_q_recip (
                 .aclk(aclk), 
-                .x(reg_tex0_mipmap_q[32 - CALC_PRECISION - 1 +: CALC_PRECISION]), 
+                .x(reg_tex0_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
                 .y(step1_tex0_mipmap_q)
             );
         end
@@ -439,7 +439,7 @@ module AttributeInterpolatorX #(
                 .DELAY(RECIP_DELAY)
             ) step1_tex1_s_delay (
                 .clk(aclk), 
-                .in(reg_tex1_s[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex1_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                 .out(step1_tex1_s)
             );
             ValueDelay #(
@@ -447,7 +447,7 @@ module AttributeInterpolatorX #(
                 .DELAY(RECIP_DELAY)
             ) step1_tex1_t_delay (
                 .clk(aclk), 
-                .in(reg_tex1_t[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex1_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                 .out(step1_tex1_t)
             );
             Recip #(
@@ -456,7 +456,7 @@ module AttributeInterpolatorX #(
                 .LOOKUP_PRECISION(11)
             ) step1_tex1_q_recip (
                 .aclk(aclk), 
-                .x(reg_tex1_q[32 - CALC_PRECISION - 1 +: CALC_PRECISION]), 
+                .x(reg_tex1_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
                 .y(step1_tex1_q)
             );
             if (ENABLE_LOD_CALC)
@@ -466,7 +466,7 @@ module AttributeInterpolatorX #(
                     .DELAY(RECIP_DELAY)
                 ) step1_tex1_mipmap_s_delay (
                     .clk(aclk), 
-                    .in(reg_tex1_mipmap_s[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                    .in(reg_tex1_mipmap_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                     .out(step1_tex1_mipmap_s)
                 );
                 ValueDelay #(
@@ -474,7 +474,7 @@ module AttributeInterpolatorX #(
                     .DELAY(RECIP_DELAY)
                 ) step1_tex1_mipmap_t_delay (
                     .clk(aclk), 
-                    .in(reg_tex1_mipmap_t[32 - CALC_PRECISION +: CALC_PRECISION]), 
+                    .in(reg_tex1_mipmap_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
                     .out(step1_tex1_mipmap_t)
                 );
                 Recip #(
@@ -483,7 +483,7 @@ module AttributeInterpolatorX #(
                     .LOOKUP_PRECISION(11)
                 ) step1_tex1_mipmap_q_recip (
                     .aclk(aclk), 
-                    .x(reg_tex1_mipmap_q[32 - CALC_PRECISION - 1 +: CALC_PRECISION]), 
+                    .x(reg_tex1_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
                     .y(step1_tex1_mipmap_q)
                 );
             end
@@ -496,20 +496,20 @@ module AttributeInterpolatorX #(
     // Clocks: 4
     ///////////////////////////////////////////////////////////////////////////
     localparam I2F_DELAY = 4;
-    wire [32 - 1 : 0]                step2_tex0_s; // S16.15
-    wire [32 - 1 : 0]                step2_tex0_t;
-    wire [32 - 1 : 0]                step2_tex0_mipmap_s;
-    wire [32 - 1 : 0]                step2_tex0_mipmap_t;
-    wire [32 - 1 : 0]                step2_tex1_s;
-    wire [32 - 1 : 0]                step2_tex1_t;
-    wire [32 - 1 : 0]                step2_tex1_mipmap_s;
-    wire [32 - 1 : 0]                step2_tex1_mipmap_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex0_s; // S16.15
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex0_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex0_mipmap_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex0_mipmap_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex1_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex1_t;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex1_mipmap_s;
+    wire [ATTRIBUTE_SIZE - 1 : 0]    step2_tex1_mipmap_t;
     wire [FLOAT_SIZE - 1 : 0]        step2_depth_w;
-    wire [16 - 1 : 0]                step2_depth_z;
-    wire [ 8 - 1 : 0]                step2_color_r;
-    wire [ 8 - 1 : 0]                step2_color_g;
-    wire [ 8 - 1 : 0]                step2_color_b;
-    wire [ 8 - 1 : 0]                step2_color_a;
+    wire [DEPTH_WIDTH - 1 : 0]       step2_depth_z;
+    wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_r;
+    wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_g;
+    wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_b;
+    wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_a;
     wire                             step2_tvalid;
     wire                             step2_tlast;
     wire [KEEP_WIDTH - 1 : 0]        step2_tkeep;
@@ -532,11 +532,11 @@ module AttributeInterpolatorX #(
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(I2F_DELAY)) 
         step2_tindex_delay (.clk(aclk), .in(step1_tindex), .out(step2_tindex));
 
-    ValueDelay #(.VALUE_SIZE(16), .DELAY(I2F_DELAY)) 
+    ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(I2F_DELAY)) 
         step2_tdepth_z_delay (.clk(aclk), .in(step1_depth_z), .out(step2_depth_z));
 
-    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-POINT_POS))
-        step2_tdepth_w_i2f (.clk(aclk), .in({ { (32 - CALC_PRECISION) { 1'b0 } }, step1_depth_w }), .out(step2_depth_w));
+    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE), .EXPONENT_BIAS_OFFSET(-POINT_POS))
+        step2_tdepth_w_i2f (.clk(aclk), .in({ { (ATTRIBUTE_SIZE - CALC_PRECISION) { 1'b0 } }, step1_depth_w }), .out(step2_depth_w));
 
     reg  [CALC_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
     reg  [CALC_PRECISION * 2 : 0]    step2_tex0_t_reg;
@@ -546,16 +546,16 @@ module AttributeInterpolatorX #(
     reg  [CALC_PRECISION * 2 : 0]    step2_tex1_t_reg;
     reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_s_reg;
     reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_t_reg;
-    reg  [ 8 - 1 : 0]                step2_color_r_reg;
-    reg  [ 8 - 1 : 0]                step2_color_g_reg;
-    reg  [ 8 - 1 : 0]                step2_color_b_reg;
-    reg  [ 8 - 1 : 0]                step2_color_a_reg;
+    reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_r_reg;
+    reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_g_reg;
+    reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_b_reg;
+    reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_a_reg;
     always @(posedge aclk)
     begin : PerspCorrection
-        step2_color_a_reg <= (step1_color_a[15]) ? 0 : (|step1_color_a[8 +: 7]) ? 8'hff : step1_color_a[0 +: 8];
-        step2_color_b_reg <= (step1_color_b[15]) ? 0 : (|step1_color_b[8 +: 7]) ? 8'hff : step1_color_b[0 +: 8];
-        step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[8 +: 7]) ? 8'hff : step1_color_g[0 +: 8];
-        step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[8 +: 7]) ? 8'hff : step1_color_r[0 +: 8];
+        step2_color_a_reg <= (step1_color_a[15]) ? 0 : (|step1_color_a[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_a[0 +: SUB_PIXEL_WIDTH];
+        step2_color_b_reg <= (step1_color_b[15]) ? 0 : (|step1_color_b[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_b[0 +: SUB_PIXEL_WIDTH];
+        step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
+        step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_r[0 +: SUB_PIXEL_WIDTH];
 
         step2_tex0_s_reg = (step1_tex0_s * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
         step2_tex0_t_reg = (step1_tex0_t * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT;
@@ -577,29 +577,29 @@ module AttributeInterpolatorX #(
         end
     end
 
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_s_delay (.clk(aclk), .in(step2_tex0_s_reg[0 +: 32]), .out(step2_tex0_s));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_t_delay (.clk(aclk), .in(step2_tex0_t_reg[0 +: 32]), .out(step2_tex0_t));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_s_delay (.clk(aclk), .in(step2_tex0_mipmap_s_reg[0 +: 32]), .out(step2_tex0_mipmap_s));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_t_delay (.clk(aclk), .in(step2_tex0_mipmap_t_reg[0 +: 32]), .out(step2_tex0_mipmap_t));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_s_delay (.clk(aclk), .in(step2_tex1_s_reg[0 +: 32]), .out(step2_tex1_s));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_t_delay (.clk(aclk), .in(step2_tex1_t_reg[0 +: 32]), .out(step2_tex1_t));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_s_delay (.clk(aclk), .in(step2_tex1_mipmap_s_reg[0 +: 32]), .out(step2_tex1_mipmap_s));
-    ValueDelay #(.VALUE_SIZE(32), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_t_delay (.clk(aclk), .in(step2_tex1_mipmap_t_reg[0 +: 32]), .out(step2_tex1_mipmap_t));
-    ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex0_s_delay (.clk(aclk), .in(step2_tex0_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_s));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex0_t_delay (.clk(aclk), .in(step2_tex0_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_t));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex0_mipmap_s_delay (.clk(aclk), .in(step2_tex0_mipmap_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_mipmap_s));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex0_mipmap_t_delay (.clk(aclk), .in(step2_tex0_mipmap_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_mipmap_t));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex1_s_delay (.clk(aclk), .in(step2_tex1_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_s));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex1_t_delay (.clk(aclk), .in(step2_tex1_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_t));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex1_mipmap_s_delay (.clk(aclk), .in(step2_tex1_mipmap_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_mipmap_s));
+    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
+        step2_ttex1_mipmap_t_delay (.clk(aclk), .in(step2_tex1_mipmap_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_mipmap_t));
+    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
         step2_tcolor_r_delay (.clk(aclk), .in(step2_color_r_reg), .out(step2_color_r));
-    ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
+    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
         step2_tcolor_g_delay (.clk(aclk), .in(step2_color_g_reg), .out(step2_color_g));
-    ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
+    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
         step2_tcolor_b_delay (.clk(aclk), .in(step2_color_b_reg), .out(step2_color_b));
-    ValueDelay #(.VALUE_SIZE(8), .DELAY(I2F_DELAY - 1)) 
+    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
         step2_tcolor_a_delay (.clk(aclk), .in(step2_color_a_reg), .out(step2_color_a));
 
     ////////////////////////////////////////////////////////////////////////////

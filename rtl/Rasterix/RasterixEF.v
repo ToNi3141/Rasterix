@@ -68,7 +68,12 @@ module RasterixEF #(
     // 4 bit reducing can safe around 1k LUTs.
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
-    parameter INTERNAL_FLOAT_PRECISION = 32
+    parameter RASTERIZER_FLOAT_PRECISION = 32,
+    // Enables the floating point interpolation. If this is disabled, it falls back
+    // to the fix point interpolation
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+    // Enables the automatic Y increment (only available when RASTERIZER_ENABLE_FLOAT_INTERPOLATION is set)
+    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1
 )
 (
     input  wire                             aclk,
@@ -716,7 +721,9 @@ module RasterixEF #(
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
-        .INTERNAL_FLOAT_PRECISION(INTERNAL_FLOAT_PRECISION)
+        .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+        .RASTERIZER_ENABLE_INITIAL_Y_INC(RASTERIZER_ENABLE_INITIAL_Y_INC)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
