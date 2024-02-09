@@ -71,9 +71,7 @@ module RasterixEF #(
     parameter RASTERIZER_FLOAT_PRECISION = 32,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
-    // Enables the automatic Y increment (only available when RASTERIZER_ENABLE_FLOAT_INTERPOLATION is set)
-    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1
 )
 (
     input  wire                             aclk,
@@ -722,8 +720,7 @@ module RasterixEF #(
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
-        .RASTERIZER_ENABLE_INITIAL_Y_INC(RASTERIZER_ENABLE_INITIAL_Y_INC)
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

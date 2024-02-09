@@ -49,8 +49,6 @@ module RasterixRenderCore #(
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
-    // Enables the automatic Y increment (only available when RASTERIZER_ENABLE_FLOAT_INTERPOLATION is set)
-    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
@@ -527,7 +525,7 @@ module RasterixRenderCore #(
     defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.INDEX_WIDTH = INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
-    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_INITIAL_Y_INC;
+    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1

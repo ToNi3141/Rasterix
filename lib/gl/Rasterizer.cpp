@@ -73,7 +73,6 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
                 params.wInit *= bbDiff;
                 params.wInit += wInitTmp;
 
-                // paramsInc.depthW = params.depthW;
                 params.depthW += params.depthWYInc * bbDiff;
                 params.depthZ += params.depthZYInc * bbDiff;
 

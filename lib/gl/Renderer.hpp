@@ -167,15 +167,19 @@ public:
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
                 bool ret { false };
-                if constexpr (!RenderConfig::ENABLE_AUTOMATIC_Y_OFFSET_CALC)
+                
+                // The floating point rasterizer can automatically increment all attributes to the current screen position
+                // Therefor no further computing is necessary
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
                 {
-                    TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
                 }
                 else
                 {
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                    // The fix point interpolator needs the triangle incremented to the current line
+                    TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
                 }
                 if (ret == false) [[unlikely]]
                 {

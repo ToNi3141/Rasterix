@@ -26,6 +26,8 @@ module Rasterizer
     // The bit width of the command interface. Allowed values: 32, 64, 128, 256
     parameter CMD_STREAM_WIDTH = 32,
 
+    // Automatically increments the weights during the initialization of the triangle 
+    // to the current screen position
     parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
 
     localparam ATTRIBUTE_SIZE = 32,

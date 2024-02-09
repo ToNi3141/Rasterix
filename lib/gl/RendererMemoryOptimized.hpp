@@ -92,7 +92,7 @@ public:
     RendererMemoryOptimized(IBusConnector& busConnector)
         : m_busConnector(busConnector)
     {
-        static_assert(RenderConfig::ENABLE_AUTOMATIC_Y_OFFSET_CALC == true, "Only automatic offset calculation possible with only one display list");
+        static_assert(RenderConfig::USE_FLOAT_INTERPOLATION == true, "Only the floating point version is possible here, because it calculates the increments based on the current screen position.");
         for (auto& entry : m_displayListAssembler)
         {
             entry.clearAssembler();

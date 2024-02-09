@@ -26,7 +26,6 @@ struct RenderConfigRRXIFSimulation
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 64 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
@@ -62,7 +61,6 @@ struct RenderConfigRRXEFSimulation
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
@@ -98,7 +96,6 @@ struct RenderConfigRRXIFCModA7
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 32 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
@@ -134,7 +131,6 @@ struct RenderConfigRRXIFNexys
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 256 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
     
     // Bus Settings
@@ -170,7 +166,6 @@ struct RenderConfigRRXEFNexys
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 600 * 2 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
     
     // Bus Settings
@@ -206,7 +201,6 @@ struct RenderConfigRRXEFZynq
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
@@ -242,7 +236,6 @@ struct RenderConfigRRXIFZynq
     static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 128 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool ENABLE_AUTOMATIC_Y_OFFSET_CALC { true };
     static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
