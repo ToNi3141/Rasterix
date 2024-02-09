@@ -1631,6 +1631,8 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         IceGL::getInstance().pixelPipeline().setFogEnd(param);
         break;
     default:
+        SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artefacts.");
+        impl_glDisable(GL_FOG);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
         break;
     }
