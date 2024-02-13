@@ -31,7 +31,10 @@ class Rasterizer
 {
 public:  
 
-    Rasterizer();
+    Rasterizer(const bool enableScaling)
+        : m_enableScaling(enableScaling)
+    {}
+
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
                    const std::span<TriangleStreamTypes::Texture>& texture, 
                    const Triangle& triangle) const;
@@ -60,6 +63,7 @@ private:
     uint32_t m_scissorWidth { 0 };
     uint32_t m_scissorHeight { 0 };
     bool m_enableScissor { false };
+    bool m_enableScaling { false };
     std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
 
 };

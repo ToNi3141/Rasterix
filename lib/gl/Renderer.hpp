@@ -618,7 +618,7 @@ private:
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
-    Rasterizer m_rasterizer;
+    Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
     std::future<bool> m_renderThread;
 
     // Mapping of texture id and TMU

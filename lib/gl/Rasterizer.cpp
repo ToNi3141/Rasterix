@@ -25,9 +25,6 @@
 
 namespace rr
 {
-Rasterizer::Rasterizer()
-{
-}
 
 bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
                                            const uint16_t lineStart,
@@ -220,6 +217,12 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     wIncYNorm.fromArray(&(wIncY.vec[0]), 3);
     wIncYNorm.mul(areaInv);
 
+    Vec3 w = triangle.oow;
+    if (m_enableScaling)
+    {
+        w.normalize();
+    }
+
     // Interpolate texture
     for (uint8_t i = 0; i < texture.size(); i++)
     {
@@ -228,6 +231,33 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
             Vec3 texS { { triangle.texture0[i][0], triangle.texture1[i][0], triangle.texture2[i][0] } };
             Vec3 texT { { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] } };
             Vec3 texQ { { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] } };
+            
+            if (m_enableScaling)
+            {
+                const float minS = min(texS[0], min(texS[1], texS[2]));
+                const float minT = min(texT[0], min(texT[1], texT[2]));
+                const float maxS = max(texS[0], max(texS[1], texS[2]));
+                const float maxT = max(texT[0], max(texT[1], texT[2]));
+
+                const float minSG = static_cast<int32_t>(minS);
+                const float minTG = static_cast<int32_t>(minT);
+                const float maxSG = static_cast<int32_t>(maxS);
+                const float maxTG = static_cast<int32_t>(maxT);
+
+                if (minS < -4.0f)
+                    texS -= { { minSG, minSG, minSG } };
+                if (minT < -4.0f)
+                    texT -= { { minTG, minTG, minTG } };
+                if (maxS > 4.0f)
+                    texS -= { { maxSG, maxSG, maxSG } };
+                if (maxT > 4.0f)
+                    texT -= { { maxTG, maxTG, maxTG } };
+            }
+
+            // Perspective correction
+            texQ.mul(w);
+            texS.mul(w);
+            texT.mul(w);
 
             texture[i].texStq[0] = texS.dot(wNorm);
             texture[i].texStq[1] = texT.dot(wNorm);

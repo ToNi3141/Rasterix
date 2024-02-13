@@ -371,21 +371,25 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
 
     auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 
+    std::array<float, vertList.size()> oowList;
+
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     for (uint8_t i = 0; i < vertListSize; i++)
     {
         // Perspective division
         vertListClipped[i].perspectiveDivide();
+        oowList[i] = vertListClipped[i][3];
 
-        for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
-        {
-            // Perspective correction of the texture coordinates
-            if (m_renderer.getEnableTmu(j))
-                texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
-            // TODO: Perspective correction of the color 
-            // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
-            // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
-        }
+        // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
+        // for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
+        // {
+        //     // Perspective correction of the texture coordinates
+        //     if (m_renderer.getEnableTmu(j))
+        //         texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
+        //     // TODO: Perspective correction of the color 
+        //     // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
+        //     // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
+        // }
 
         // Viewport transformation of the vertex
         viewportTransform(vertListClipped[i]);
@@ -434,6 +438,7 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
                 vertListClipped[0],
                 vertListClipped[i - 2],
                 vertListClipped[i - 1],
+                { { oowList[0], oowList[i - 2], oowList[i - 1] } },
                 { *(texture0.data()), texture0.size() },
                 { *(texture1.data()), texture1.size() },
                 { *(texture2.data()), texture2.size() },

@@ -108,9 +108,10 @@ module AttributeInterpolatorX #(
 );
 `include "RasterizerCommands.vh"
 
-    localparam POINT_POS = 9;
+    localparam RECIP_PRECISION = 11;
+    localparam POINT_POS = 11;
     localparam CALC_PRECISION = 18;
-    localparam RECIP_DENOMINATOR = { { ((32 - CALC_PRECISION - 1) - POINT_POS) { 1'b0 } }, { ((CALC_PRECISION - 1) + POINT_POS) { 1'b1 } } };
+    localparam RECIP_DENOMINATOR = { ((CALC_PRECISION - 1) + POINT_POS) { 1'b1 } };
     localparam PERSP_CORR_SHIFT = ((CALC_PRECISION - 2) + POINT_POS) - 15;
     // Example of the texture interpolation. Assume CALC_PRECISION = 18 and POINT_POS = 9:
     // Initial: s = S1.30, q = S1.30
@@ -367,7 +368,7 @@ module AttributeInterpolatorX #(
     Recip #(
         .NUMERATOR(RECIP_DENOMINATOR), 
         .NUMBER_WIDTH(CALC_PRECISION), 
-        .LOOKUP_PRECISION(11)
+        .LOOKUP_PRECISION(RECIP_PRECISION)
     ) step1_depth_w_recip (
         .aclk(aclk), 
         .x(reg_depth_w[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
@@ -393,7 +394,7 @@ module AttributeInterpolatorX #(
     Recip #(
         .NUMERATOR(RECIP_DENOMINATOR), 
         .NUMBER_WIDTH(CALC_PRECISION), 
-        .LOOKUP_PRECISION(11)
+        .LOOKUP_PRECISION(RECIP_PRECISION)
     ) step1_tex0_q_recip (
         .aclk(aclk), 
         // S1.30 >> 15 = U1.15 Clamp to 16 bit and remove sign, because the value is normalized between 1.0 and 0.0
@@ -422,7 +423,7 @@ module AttributeInterpolatorX #(
             Recip #(
                 .NUMERATOR(RECIP_DENOMINATOR), 
                 .NUMBER_WIDTH(CALC_PRECISION), 
-                .LOOKUP_PRECISION(11)
+                .LOOKUP_PRECISION(RECIP_PRECISION)
             ) step1_tex0_mipmap_q_recip (
                 .aclk(aclk), 
                 .x(reg_tex0_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
@@ -453,7 +454,7 @@ module AttributeInterpolatorX #(
             Recip #(
                 .NUMERATOR(RECIP_DENOMINATOR), 
                 .NUMBER_WIDTH(CALC_PRECISION), 
-                .LOOKUP_PRECISION(11)
+                .LOOKUP_PRECISION(RECIP_PRECISION)
             ) step1_tex1_q_recip (
                 .aclk(aclk), 
                 .x(reg_tex1_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
@@ -480,7 +481,7 @@ module AttributeInterpolatorX #(
                 Recip #(
                     .NUMERATOR(RECIP_DENOMINATOR), 
                     .NUMBER_WIDTH(CALC_PRECISION), 
-                    .LOOKUP_PRECISION(11)
+                    .LOOKUP_PRECISION(RECIP_PRECISION)
                 ) step1_tex1_mipmap_q_recip (
                     .aclk(aclk), 
                     .x(reg_tex1_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 

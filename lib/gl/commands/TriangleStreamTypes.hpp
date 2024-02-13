@@ -65,9 +65,9 @@ struct TextureX
 
     void operator=(const Texture& t)
     {
-        texStq.fromVec<30>(t.texStq.vec);
-        texStqXInc.fromVec<30>(t.texStqXInc.vec);
-        texStqYInc.fromVec<30>(t.texStqYInc.vec);
+        texStq.fromVec<28>(t.texStq.vec);
+        texStqXInc.fromVec<28>(t.texStqXInc.vec);
+        texStqYInc.fromVec<28>(t.texStqYInc.vec);
     }
 };
 
