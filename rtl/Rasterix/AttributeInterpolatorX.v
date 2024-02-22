@@ -107,22 +107,11 @@ module AttributeInterpolatorX #(
     output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_r // Qn
 );
 `include "RasterizerCommands.vh"
-
-    localparam RECIP_PRECISION = 11;
-    localparam POINT_POS = 11;
-    localparam CALC_PRECISION = 18;
-    localparam RECIP_DENOMINATOR = { ((CALC_PRECISION - 1) + POINT_POS) { 1'b1 } };
-    localparam PERSP_CORR_SHIFT = ((CALC_PRECISION - 2) + POINT_POS) - 15;
-    // Example of the texture interpolation. Assume CALC_PRECISION = 18 and POINT_POS = 9:
-    // Initial: s = S1.30, q = S1.30
-    // When when q is divided, a number in the format Qn.9 is expected.
-    // 1. Convert q into a unsigned Q1.17 number
-    // 2. Divide through a Qn.26 number (RECIP_DENOMINATOR)
-    //  Qn.26 / Q1.17 = Qn.9. When using 18 bit, the n will be 18 - 9 = 9 -> resulting in q' = Q9.9
-    // Multiply by s by q'
-    // 1. Convert s to a S1.16 number (18 bit)
-    // 2. Multiply with q'
-    //  Q9.9 * S1.16 = S10.25 >>> 10 (PERSP_CORR_SHIFT) = S16.15 (cast to a 32 bit number)
+    localparam FOG_PRECISION = 17;
+    localparam FOG_ITERATIONS = 2;
+    localparam TEXQ_PRECISION = 17;
+    localparam TEXQ_ITERATIONS = 2;
+    localparam TEX_PERSP_CORR_SHIFT = TEXQ_PRECISION - 8;
 
     ////////////////////////////////////////////////////////////////////////////
     // Calculate the increment depending on the command of the rasterizer
@@ -283,31 +272,31 @@ module AttributeInterpolatorX #(
     // Calculate the reciprocal
     // Clocks: 2
     ///////////////////////////////////////////////////////////////////////////
-    localparam RECIP_DELAY = 2;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex0_s; // S1.16
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex0_t;
-    wire        [CALC_PRECISION - 1 : 0]    step1_tex0_q; // U9.9
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex0_mipmap_s;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex0_mipmap_t;
-    wire        [CALC_PRECISION - 1 : 0]    step1_tex0_mipmap_q;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex1_s;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex1_t;
-    wire        [CALC_PRECISION - 1 : 0]    step1_tex1_q;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex1_mipmap_s;
-    wire signed [CALC_PRECISION - 1 : 0]    step1_tex1_mipmap_t;
-    wire        [CALC_PRECISION - 1 : 0]    step1_tex1_mipmap_q;
-    wire        [CALC_PRECISION - 1 : 0]    step1_depth_w; // U9.9
-    wire        [DEPTH_WIDTH - 1 : 0]       step1_depth_z; // U0.16
-    wire        [16 - 1 : 0]                step1_color_r; // S7.8
-    wire        [16 - 1 : 0]                step1_color_g;
-    wire        [16 - 1 : 0]                step1_color_b;
-    wire        [16 - 1 : 0]                step1_color_a;
-    wire                                    step1_tvalid;
-    wire                                    step1_tlast;
-    wire        [KEEP_WIDTH - 1 : 0]        step1_tkeep;
-    wire        [SCREEN_POS_WIDTH - 1 : 0]  step1_tspx;
-    wire        [SCREEN_POS_WIDTH - 1 : 0]  step1_tspy;
-    wire        [INDEX_WIDTH - 1 : 0]       step1_tindex;
+    localparam RECIP_DELAY = 7 + (TEXQ_ITERATIONS * 3);
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_s; // S1.16
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_t;
+    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex0_q; // U17.19
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_mipmap_s;
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_mipmap_t;
+    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex0_mipmap_q;
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_s;
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_t;
+    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex1_q;
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_s;
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_t;
+    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex1_mipmap_q;
+    wire        [(FOG_PRECISION * 2) - 1 : 0]   step1_depth_w; // U17.19
+    wire        [DEPTH_WIDTH - 1 : 0]           step1_depth_z; // U0.16
+    wire        [16 - 1 : 0]                    step1_color_r; // S7.8
+    wire        [16 - 1 : 0]                    step1_color_g;
+    wire        [16 - 1 : 0]                    step1_color_b;
+    wire        [16 - 1 : 0]                    step1_color_a;
+    wire                                        step1_tvalid;
+    wire                                        step1_tlast;
+    wire        [KEEP_WIDTH - 1 : 0]            step1_tkeep;
+    wire        [SCREEN_POS_WIDTH - 1 : 0]      step1_tspx;
+    wire        [SCREEN_POS_WIDTH - 1 : 0]      step1_tspy;
+    wire        [INDEX_WIDTH - 1 : 0]           step1_tindex;
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(RECIP_DELAY)) 
         step1_tvalid_delay (.clk(aclk), .in(s_attrb_tvalid & s_attrb_tpixel), .out(step1_tvalid));
@@ -365,69 +354,66 @@ module AttributeInterpolatorX #(
         .in((reg_depth_z[31]) ? 0 : (reg_depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : reg_depth_z[14 +: DEPTH_WIDTH]), 
         .out(step1_depth_z)
     );
-    Recip #(
-        .NUMERATOR(RECIP_DENOMINATOR), 
-        .NUMBER_WIDTH(CALC_PRECISION), 
-        .LOOKUP_PRECISION(RECIP_PRECISION)
+    XRecip #(
+        .NUMBER_WIDTH(FOG_PRECISION),
+        .ITERATIONS(FOG_ITERATIONS)
     ) step1_depth_w_recip (
-        .aclk(aclk), 
-        .x(reg_depth_w[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
-        .y(step1_depth_w)
+        .clk(aclk), 
+        .in(reg_depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 1 +: FOG_PRECISION]), 
+        .out(step1_depth_w)
     );
 
     ValueDelay #(
-        .VALUE_SIZE(CALC_PRECISION), 
+        .VALUE_SIZE(TEXQ_PRECISION), 
         .DELAY(RECIP_DELAY)
     ) step1_tex0_s_delay (
         .clk(aclk), 
-        .in(reg_tex0_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+        .in(reg_tex0_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
         .out(step1_tex0_s)
     );
     ValueDelay #(
-        .VALUE_SIZE(CALC_PRECISION), 
+        .VALUE_SIZE(TEXQ_PRECISION), 
         .DELAY(RECIP_DELAY)
     ) step1_tex0_t_delay (
         .clk(aclk), 
-        .in(reg_tex0_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+        .in(reg_tex0_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
         .out(step1_tex0_t)
     );
-    Recip #(
-        .NUMERATOR(RECIP_DENOMINATOR), 
-        .NUMBER_WIDTH(CALC_PRECISION), 
-        .LOOKUP_PRECISION(RECIP_PRECISION)
+    XRecip #(
+        .NUMBER_WIDTH(TEXQ_PRECISION),
+        .ITERATIONS(TEXQ_ITERATIONS)
     ) step1_tex0_q_recip (
-        .aclk(aclk), 
+        .clk(aclk), 
         // S1.30 >> 15 = U1.15 Clamp to 16 bit and remove sign, because the value is normalized between 1.0 and 0.0
-        .x(reg_tex0_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
-        .y(step1_tex0_q)
+        .in(reg_tex0_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
+        .out(step1_tex0_q)
     );
     generate
         if (ENABLE_LOD_CALC)
         begin
             ValueDelay #(
-                .VALUE_SIZE(CALC_PRECISION), 
+                .VALUE_SIZE(TEXQ_PRECISION), 
                 .DELAY(RECIP_DELAY)
             ) step1_tex0_mipmap_s_delay (
                 .clk(aclk), 
-                .in(reg_tex0_mipmap_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex0_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                 .out(step1_tex0_mipmap_s)
             );
             ValueDelay #(
-                .VALUE_SIZE(CALC_PRECISION), 
+                .VALUE_SIZE(TEXQ_PRECISION), 
                 .DELAY(RECIP_DELAY)
             ) step1_tex0_mipmap_t_delay (
                 .clk(aclk), 
-                .in(reg_tex0_mipmap_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex0_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                 .out(step1_tex0_mipmap_t)
             );
-            Recip #(
-                .NUMERATOR(RECIP_DENOMINATOR), 
-                .NUMBER_WIDTH(CALC_PRECISION), 
-                .LOOKUP_PRECISION(RECIP_PRECISION)
+            XRecip #(
+                .NUMBER_WIDTH(TEXQ_PRECISION),
+                .ITERATIONS(TEXQ_ITERATIONS)
             ) step1_tex0_mipmap_q_recip (
-                .aclk(aclk), 
-                .x(reg_tex0_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
-                .y(step1_tex0_mipmap_q)
+                .clk(aclk), 
+                .in(reg_tex0_mipmap_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
+                .out(step1_tex0_mipmap_q)
             );
         end
     endgenerate
@@ -436,56 +422,54 @@ module AttributeInterpolatorX #(
         if (ENABLE_SECOND_TMU)
         begin
             ValueDelay #(
-                .VALUE_SIZE(CALC_PRECISION), 
+                .VALUE_SIZE(TEXQ_PRECISION), 
                 .DELAY(RECIP_DELAY)
             ) step1_tex1_s_delay (
                 .clk(aclk), 
-                .in(reg_tex1_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex1_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                 .out(step1_tex1_s)
             );
             ValueDelay #(
-                .VALUE_SIZE(CALC_PRECISION), 
+                .VALUE_SIZE(TEXQ_PRECISION), 
                 .DELAY(RECIP_DELAY)
             ) step1_tex1_t_delay (
                 .clk(aclk), 
-                .in(reg_tex1_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                .in(reg_tex1_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                 .out(step1_tex1_t)
             );
-            Recip #(
-                .NUMERATOR(RECIP_DENOMINATOR), 
-                .NUMBER_WIDTH(CALC_PRECISION), 
-                .LOOKUP_PRECISION(RECIP_PRECISION)
+            XRecip #(
+                .NUMBER_WIDTH(TEXQ_PRECISION),
+                .ITERATIONS(TEXQ_ITERATIONS)
             ) step1_tex1_q_recip (
-                .aclk(aclk), 
-                .x(reg_tex1_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
-                .y(step1_tex1_q)
+                .clk(aclk), 
+                .in(reg_tex1_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
+                .out(step1_tex1_q)
             );
             if (ENABLE_LOD_CALC)
             begin
                 ValueDelay #(
-                    .VALUE_SIZE(CALC_PRECISION), 
+                    .VALUE_SIZE(TEXQ_PRECISION), 
                     .DELAY(RECIP_DELAY)
                 ) step1_tex1_mipmap_s_delay (
                     .clk(aclk), 
-                    .in(reg_tex1_mipmap_s[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                    .in(reg_tex1_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                     .out(step1_tex1_mipmap_s)
                 );
                 ValueDelay #(
-                    .VALUE_SIZE(CALC_PRECISION), 
+                    .VALUE_SIZE(TEXQ_PRECISION), 
                     .DELAY(RECIP_DELAY)
                 ) step1_tex1_mipmap_t_delay (
                     .clk(aclk), 
-                    .in(reg_tex1_mipmap_t[ATTRIBUTE_SIZE - CALC_PRECISION +: CALC_PRECISION]), 
+                    .in(reg_tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
                     .out(step1_tex1_mipmap_t)
                 );
-                Recip #(
-                    .NUMERATOR(RECIP_DENOMINATOR), 
-                    .NUMBER_WIDTH(CALC_PRECISION), 
-                    .LOOKUP_PRECISION(RECIP_PRECISION)
+                XRecip #(
+                    .NUMBER_WIDTH(TEXQ_PRECISION),
+                    .ITERATIONS(TEXQ_ITERATIONS)
                 ) step1_tex1_mipmap_q_recip (
-                    .aclk(aclk), 
-                    .x(reg_tex1_mipmap_q[ATTRIBUTE_SIZE - CALC_PRECISION - 1 +: CALC_PRECISION]), 
-                    .y(step1_tex1_mipmap_q)
+                    .clk(aclk), 
+                    .in(reg_tex1_mipmap_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
+                    .out(step1_tex1_mipmap_q)
                 );
             end
         end
@@ -536,17 +520,23 @@ module AttributeInterpolatorX #(
     ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(I2F_DELAY)) 
         step2_tdepth_z_delay (.clk(aclk), .in(step1_depth_z), .out(step2_depth_z));
 
-    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE), .EXPONENT_BIAS_OFFSET(-POINT_POS))
-        step2_tdepth_w_i2f (.clk(aclk), .in({ { (ATTRIBUTE_SIZE - CALC_PRECISION) { 1'b0 } }, step1_depth_w }), .out(step2_depth_w));
+    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE), .EXPONENT_BIAS_OFFSET(-9))
+        step2_tdepth_w_i2f (.clk(aclk), .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), .out(step2_depth_w));
 
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_t_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_mipmap_s_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex0_mipmap_t_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_s_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_t_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_s_reg;
-    reg  [CALC_PRECISION * 2 : 0]    step2_tex1_mipmap_t_reg;
+    // always @(posedge aclk)
+    // begin
+    //     $display("%f", $bitstoreal({step2_depth_w[31], step2_depth_w[30], {3{~step2_depth_w[30]}}, step2_depth_w[29:23], step2_depth_w[22:0], {29{1'b0}}}));
+    // end
+
+
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_t_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_mipmap_s_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_mipmap_t_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex1_s_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex1_t_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex1_mipmap_s_reg;
+    reg  [TEXQ_PRECISION * 2 : 0]    step2_tex1_mipmap_t_reg;
     reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_r_reg;
     reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_g_reg;
     reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_b_reg;
@@ -558,22 +548,22 @@ module AttributeInterpolatorX #(
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
         step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_r[0 +: SUB_PIXEL_WIDTH];
 
-        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT; // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
-        step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q })) >>> PERSP_CORR_SHIFT;
+        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT); // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
+        step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
         if (ENABLE_LOD_CALC)
         begin
-            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q })) >>> PERSP_CORR_SHIFT;
-            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q })) >>> PERSP_CORR_SHIFT;
+            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
+            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
         end
 
         if (ENABLE_SECOND_TMU)
         begin
-            step2_tex1_s_reg <= (step1_tex1_s * $signed({ 1'b0, step1_tex1_q })) >>> PERSP_CORR_SHIFT;
-            step2_tex1_t_reg <= (step1_tex1_t * $signed({ 1'b0, step1_tex1_q })) >>> PERSP_CORR_SHIFT;
+            step2_tex1_s_reg <= (step1_tex1_s * $signed({ 1'b0, step1_tex1_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
+            step2_tex1_t_reg <= (step1_tex1_t * $signed({ 1'b0, step1_tex1_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
             if (ENABLE_LOD_CALC)
             begin
-                step2_tex1_mipmap_s_reg <= (step1_tex1_mipmap_s * $signed({ 1'b0, step1_tex1_mipmap_q })) >>> PERSP_CORR_SHIFT;
-                step2_tex1_mipmap_t_reg <= (step1_tex1_mipmap_t * $signed({ 1'b0, step1_tex1_mipmap_q })) >>> PERSP_CORR_SHIFT;
+                step2_tex1_mipmap_s_reg <= (step1_tex1_mipmap_s * $signed({ 1'b0, step1_tex1_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
+                step2_tex1_mipmap_t_reg <= (step1_tex1_mipmap_t * $signed({ 1'b0, step1_tex1_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
             end
         end
     end
