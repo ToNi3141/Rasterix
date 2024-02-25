@@ -2010,7 +2010,7 @@ GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat *params)
 
 GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 {
-    SPDLOG_WARN("glLightModeli not implemented");
+    SPDLOG_WARN("glLightModeli pname 0x{:X} param 0x{:X} not implemented", pname, param);
 }
 
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint *params)
@@ -4017,7 +4017,7 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
 {
-    SPDLOG_WARN("glPolygonOffset not implemented");
+    SPDLOG_WARN("glPolygonOffset factor {} units {} not implemented", factor, units);
 }
 
 GLAPI void APIENTRY impl_glPopClientAttrib(void)
@@ -4095,11 +4095,12 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (pixels != nullptr)
     {
         int32_t i = 0;
-        for (int32_t y = yoffset; y < height; y++)
+        // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
+        for (int32_t y = yoffset; y < (height + yoffset); y++)
         {
-            for (int32_t x = xoffset; x < width; x++)
+            for (int32_t x = xoffset; x < (width + xoffset); x++)
             {
-                const int32_t texPos { (y * width) + x };
+                const int32_t texPos { (y * texObj.width) + x };
                 switch (format)
                 {
                     case GL_RGB:
