@@ -41,6 +41,37 @@ GLAPI BOOL APIENTRY impl_wglUseFontOutlinesW(HDC hdc, DWORD dw1, DWORD dw2, DWOR
 GLAPI BOOL APIENTRY impl_wglSetDeviceGammaRamp(HDC hdc, LPVOID lpRamp);
 GLAPI BOOL APIENTRY impl_wglGetDeviceGammaRamp(HDC hdc, LPVOID lpRamp);
 GLAPI const char * APIENTRY impl_wglGetExtensionsString(HDC hdc);
+DECLARE_HANDLE(HPBUFFERARB);
+GLAPI HPBUFFERARB APIENTRY impl_wglCreatePbufferARB(HDC hDC,
+                                int iPixelFormat,
+                                int iWidth,
+                                int iHeight,
+                                const int *piAttribList);
+GLAPI HDC APIENTRY impl_wglGetPbufferDCARB(HPBUFFERARB hPbuffer);
+GLAPI int APIENTRY impl_wglReleasePbufferDCARB(HPBUFFERARB hPbuffer, HDC hDC);
+GLAPI BOOL APIENTRY impl_wglDestroyPbufferARB(HPBUFFERARB hPbuffer);
+GLAPI BOOL APIENTRY impl_wglQueryPbufferARB(HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
+GLAPI BOOL APIENTRY impl_wglGetPixelFormatAttribivARB(HDC hdc,
+                                      int iPixelFormat,
+                                      int iLayerPlane,
+                                      UINT nAttributes,
+                                      const int *piAttributes,
+                                      int *piValues);
+GLAPI BOOL APIENTRY impl_wglGetPixelFormatAttribfvARB(HDC hdc,
+                                      int iPixelFormat,
+                                      int iLayerPlane,
+                                      UINT nAttributes,
+                                      const int *piAttributes,
+                                      FLOAT *pfValues);
+GLAPI BOOL APIENTRY impl_wglChoosePixelFormatARB(HDC hdc,
+                                 const int *piAttribIList,
+                                 const FLOAT *pfAttribFList,
+                                 UINT nMaxFormats,
+                                 int *piFormats,
+                                 UINT *nNumFormats);
+GLAPI BOOL APIENTRY impl_wglBindTexImageARB(HPBUFFERARB hPbuffer, int iBuffer);
+GLAPI BOOL APIENTRY impl_wglReleaseTexImageARB(HPBUFFERARB hPbuffer, int iBuffer);
+GLAPI BOOL APIENTRY impl_wglSetPbufferAttribARB(HPBUFFERARB hPbuffer, const int *piAttribList);
 // -------------------------------------------------------
 
 #ifdef __cplusplus

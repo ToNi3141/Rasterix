@@ -37,6 +37,7 @@ class IRenderer
 {
 public:
     static constexpr std::size_t MAX_TMU_COUNT { 2 };
+    static constexpr std::size_t MAX_LOD { 9 };
 
     using TMU = uint8_t;
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
@@ -141,7 +142,7 @@ public:
         IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
     };
 
-    using TextureObjectMipmap = std::array<TextureObject, 9>;
+    using TextureObjectMipmap = std::array<TextureObject, MAX_LOD>;
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added

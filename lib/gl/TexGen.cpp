@@ -63,6 +63,22 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
                 break;
             }
         }
+        if (m_texGenEnableR)
+        {
+            switch (m_texGenModeR) {
+            case TexGenMode::OBJECT_LINEAR:
+                st0[2] = m_texGenVecObjR.dot(v0);
+                break;
+            case TexGenMode::EYE_LINEAR:
+                st0[2] = m_texGenVecEyeR.dot(v0Transformed);
+                break;
+            case TexGenMode::SPHERE_MAP:
+                // TODO: Implement
+                break;
+            default:
+                break;
+            }
+        }
     }
 }
 
@@ -86,6 +102,11 @@ void TexGen::enableTexGenT(bool enable)
     m_texGenEnableT = enable;
 }
 
+void TexGen::enableTexGenR(bool enable)
+{
+    m_texGenEnableR = enable;
+}
+
 void TexGen::setTexGenModeS(TexGenMode mode)
 {
     m_texGenModeS = mode;
@@ -94,6 +115,11 @@ void TexGen::setTexGenModeS(TexGenMode mode)
 void TexGen::setTexGenModeT(TexGenMode mode)
 {
     m_texGenModeT = mode;
+}
+
+void TexGen::setTexGenModeR(TexGenMode mode)
+{
+    m_texGenModeR = mode;
 }
 
 void TexGen::setTexGenVecObjS(const Vec4 &val)
@@ -106,6 +132,11 @@ void TexGen::setTexGenVecObjT(const Vec4 &val)
     m_texGenVecObjT = val;
 }
 
+void TexGen::setTexGenVecObjR(const Vec4 &val)
+{
+    m_texGenVecObjR = val;
+}
+
 void TexGen::setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4 &val)
 {
     m_texGenVecEyeS = calcTexGenEyePlane(modelMatrix, val);
@@ -114,6 +145,11 @@ void TexGen::setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4 &val)
 void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4 &val)
 {
     m_texGenVecEyeT = calcTexGenEyePlane(modelMatrix, val);
+}
+
+void TexGen::setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4 &val)
+{
+    m_texGenVecEyeR = calcTexGenEyePlane(modelMatrix, val);
 }
 
 } // namespace rr
