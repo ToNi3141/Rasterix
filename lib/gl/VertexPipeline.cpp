@@ -633,8 +633,8 @@ void VertexPipeline::viewportTransform(Vec4 &v)
 {
     // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
     // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
-    v[0] = (((v[0] * m_viewportWidthHalf)) + m_viewportXShift);
-    v[1] = (((v[1] * m_viewportHeightHalf)) + m_viewportYShift);
+    v[0] = ((((v[0] + 1.0f) * m_viewportWidthHalf)) + m_viewportX);
+    v[1] = ((((v[1] + 1.0f) * m_viewportHeightHalf)) + m_viewportY);
     v[2] = (m_depthRangeScale * v[2]) + m_depthRangeOffset;
     v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
 }
@@ -642,20 +642,13 @@ void VertexPipeline::viewportTransform(Vec4 &v)
 
 void VertexPipeline::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
 {
-    // Note: The screen resolution is width and height. But during view port transformation we are clamping between
-    // 0 and height which means a effective screen resolution of height + 1. For instance, we have a resolution of
-    // 480 x 272. The view port transformation would go from 0 to 480 which are then 481px. Thats the reason why we
-    // decrement here the resolution by one.
-    m_viewportHeight = height - 1;
-    m_viewportWidth = width - 1;
+    m_viewportHeight = height;
+    m_viewportWidth = width;
     m_viewportX = x;
     m_viewportY = y;
 
     m_viewportHeightHalf = m_viewportHeight / 2.0f;
     m_viewportWidthHalf = m_viewportWidth / 2.0f;
-    m_viewportXShift = m_viewportX + m_viewportWidthHalf;
-    m_viewportYShift = m_viewportY + m_viewportHeightHalf;
-
 }
 
 void VertexPipeline::setDepthRange(const float zNear, const float zFar)
