@@ -175,6 +175,7 @@ module RasterixRenderCore #(
     output wire                                 dbgRasterizerRunning
 );
 `include "RegisterAndDescriptorDefines.vh"
+`include "RasterizerCommands.vh"
 
     localparam TEX_ADDR_WIDTH = 17;
     localparam ATTRIBUTE_SIZE = 32;
@@ -488,7 +489,7 @@ module RasterixRenderCore #(
     wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspx;
     wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspy;
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_tindex;
-    wire [ 1 : 0]                   rasterizer_tcmd;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_tcmd;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -545,7 +546,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     wire                            rasterizer_sem_tvalid;
     wire                            rasterizer_sem_tpixel;
-    wire [ 1 : 0]                   rasterizer_sem_tcmd;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sem_tcmd;
     wire                            rasterizer_sem_tlast;
     wire                            rasterizer_sem_tkeep;
     wire                            rasterizer_sem_tready;
@@ -556,7 +557,7 @@ module RasterixRenderCore #(
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_sem_tindex;
     wire                            rasterizer_sbr_tvalid;
     wire                            rasterizer_sbr_tpixel;
-    wire [ 1 : 0]                   rasterizer_sbr_tcmd;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sbr_tcmd;
     wire                            rasterizer_sbr_tready;
     wire                            rasterizer_sbr_tlast;
     wire                            rasterizer_sbr_tkeep;
@@ -609,7 +610,7 @@ module RasterixRenderCore #(
         .released(pipelineEmpty)
     );
     defparam ssem.MAX_NUMBER_OF_ELEMENTS = 2 ** MAX_NUMBER_OF_PIXELS_LG;
-    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + 2;
+    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     defparam ssem.KEEP_WIDTH = 1;
 
     generate
@@ -654,7 +655,7 @@ module RasterixRenderCore #(
 
                 .stall(fifosAlmostFull)
             );
-            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + 2;
+            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
             defparam sbr.KEEP_WIDTH = 1;
         end
         else
@@ -686,7 +687,7 @@ module RasterixRenderCore #(
     wire [(INDEX_WIDTH * 4) - 1 : 0]        bc_index;
     wire [ 3 : 0]                           bc_valid;
     wire [ 3 : 0]                           bc_pixel;
-    wire [(2 * 4) - 1 : 0]                  bc_cmd;
+    wire [(RR_CMD_SIZE * 4) - 1 : 0]        bc_cmd;
     wire [ 3 : 0]                           bc_last;
     wire [ 3 : 0]                           bc_keep;
     wire                                    bc_arready_attrib;
@@ -728,28 +729,28 @@ module RasterixRenderCore #(
             bc_spy[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[3 * INDEX_WIDTH +: INDEX_WIDTH],
             bc_pixel[3],
-            bc_cmd[3 * 2 +: 2],
+            bc_cmd[3 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[2 * INDEX_WIDTH +: INDEX_WIDTH],
             bc_pixel[2],
-            bc_cmd[2 * 2 +: 2],
+            bc_cmd[2 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
             bc_pixel[1],
-            bc_cmd[1 * 2 +: 2],
+            bc_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
             bc_pixel[0],
-            bc_cmd[0 * 2 +: 2]
+            bc_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
         }),
         .m_axis_tvalid(bc_valid),
         .m_axis_tready({ 
@@ -765,7 +766,7 @@ module RasterixRenderCore #(
         .m_axis_tuser()
     );
     defparam axisBroadcast.M_COUNT = 4;
-    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + 2;
+    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     defparam axisBroadcast.KEEP_ENABLE = 1;
     defparam axisBroadcast.KEEP_WIDTH = 1;
     defparam axisBroadcast.LAST_ENABLE = 1;
@@ -813,7 +814,7 @@ module RasterixRenderCore #(
                 .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
                 .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
                 .s_attrb_tpixel(bc_pixel[0]),
-                .s_attrb_tcmd(bc_cmd[0 +: 2]),
+                .s_attrb_tcmd(bc_cmd[0 +: RR_CMD_SIZE]),
 
                 .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
                 .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),

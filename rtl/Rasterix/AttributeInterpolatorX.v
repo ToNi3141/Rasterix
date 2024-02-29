@@ -44,7 +44,7 @@ module AttributeInterpolatorX #(
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspy,
     input  wire [INDEX_WIDTH - 1 : 0]       s_attrb_tindex,
     input  wire                             s_attrb_tpixel,
-    input  wire [ 1 : 0]                    s_attrb_tcmd,
+    input  wire [RR_CMD_SIZE - 1 : 0]       s_attrb_tcmd,
 
 
     // Attributes
