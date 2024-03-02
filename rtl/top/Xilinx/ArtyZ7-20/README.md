@@ -1,5 +1,5 @@
 - [Arty Z7-20 Build](#arty-z7-20-build)
-- [Zynq Build](#zynq-build)
+- [Library Build](#library-build)
   - [Preparation SD Card](#preparation-sd-card)
   - [Build Petalinux](#build-petalinux)
   - [Build Kernel Driver](#build-kernel-driver)
@@ -32,8 +32,8 @@ cd rtl/top/Xilinx/ArtyZ7-20
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
-# Zynq Build
-The Zynq build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
+# Library Build
+The library build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
 
 ## Preparation SD Card
 Use the following layout:

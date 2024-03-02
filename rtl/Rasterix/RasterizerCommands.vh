@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+localparam RR_CMD_SIZE = 2;
 
 localparam RR_CMD_INIT = 0;
 localparam RR_CMD_X_INC = 1;

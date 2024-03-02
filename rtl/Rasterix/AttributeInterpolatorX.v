@@ -15,16 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// This module is used to interpolate the triagle attributes based 
+// This module is used to interpolate the triangle attributes based 
 // on the data from the rasterizer. It expects numbers in fix point format.
 // Pipelined: yes
-// Depth: 6 cycles
+// Depth: 17 cycles
 module AttributeInterpolatorX #(
     parameter INDEX_WIDTH = 32,
     parameter SCREEN_POS_WIDTH = 11,
     parameter ENABLE_LOD_CALC = 1,
     parameter ENABLE_SECOND_TMU = 1,
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter CALC_PRECISION = 25, // The pricision of a signed multiplication
 
     localparam DEPTH_WIDTH = 16,
     localparam ATTRIBUTE_SIZE = 32,
@@ -43,13 +44,13 @@ module AttributeInterpolatorX #(
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tspy,
     input  wire [INDEX_WIDTH - 1 : 0]       s_attrb_tindex,
     input  wire                             s_attrb_tpixel,
-    input  wire [ 1 : 0]                    s_attrb_tcmd,
+    input  wire [RR_CMD_SIZE - 1 : 0]       s_attrb_tcmd,
 
 
     // Attributes
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_s, // S1.30
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_t, // S1.30
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_q, // S1.30
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_s, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_t, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_q, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_s_inc_x,
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_t_inc_x,
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0]    tex0_q_inc_x,
@@ -101,15 +102,15 @@ module AttributeInterpolatorX #(
     output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_ttexture1_s, // S16.15
     output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap1_t, // S16.15
     output wire [ATTRIBUTE_SIZE -1 : 0]     m_attrb_tmipmap1_s, // S16.15
-    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_a, // Qn
-    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_b, // Qn
-    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_g, // Qn
-    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_r // Qn
+    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_a, // Qn.0
+    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_b, // Qn.0
+    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_g, // Qn.0
+    output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_attrb_tcolor_r // Qn.0
 );
 `include "RasterizerCommands.vh"
-    localparam FOG_PRECISION = 17;
+    localparam FOG_PRECISION = CALC_PRECISION - 1; // Converts the size from signed to unsigned
     localparam FOG_ITERATIONS = 2;
-    localparam TEXQ_PRECISION = 17;
+    localparam TEXQ_PRECISION = CALC_PRECISION - 1; // Converts the size from signed to unsigned
     localparam TEXQ_ITERATIONS = 2;
     localparam TEX_PERSP_CORR_SHIFT = TEXQ_PRECISION - 8;
 
@@ -270,12 +271,12 @@ module AttributeInterpolatorX #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Calculate the reciprocal
-    // Clocks: 2
+    // Clocks: 13
     ///////////////////////////////////////////////////////////////////////////
     localparam RECIP_DELAY = 7 + (TEXQ_ITERATIONS * 3);
-    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_s; // S1.16
-    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_t;
-    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex0_q; // U17.19
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_s; // S3.20
+    wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_t; // S3.20
+    wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex0_q; // U21.27
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_mipmap_s;
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex0_mipmap_t;
     wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex0_mipmap_q;
@@ -285,7 +286,7 @@ module AttributeInterpolatorX #(
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_s;
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_t;
     wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex1_mipmap_q;
-    wire        [(FOG_PRECISION * 2) - 1 : 0]   step1_depth_w; // U17.19
+    wire        [(FOG_PRECISION * 2) - 1 : 0]   step1_depth_w; // U21.27
     wire        [DEPTH_WIDTH - 1 : 0]           step1_depth_z; // U0.16
     wire        [16 - 1 : 0]                    step1_color_r; // S7.8
     wire        [16 - 1 : 0]                    step1_color_g;
@@ -384,7 +385,7 @@ module AttributeInterpolatorX #(
         .ITERATIONS(TEXQ_ITERATIONS)
     ) step1_tex0_q_recip (
         .clk(aclk), 
-        // S1.30 >> 15 = U1.15 Clamp to 16 bit and remove sign, because the value is normalized between 1.0 and 0.0
+        // S3.30 >> 7 = U3.21 Clamp to 24 bit and remove sign, because the value is normalized between 1.0 and 0.0
         .in(reg_tex0_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
         .out(step1_tex0_q)
     );
@@ -523,12 +524,6 @@ module AttributeInterpolatorX #(
     IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE), .EXPONENT_BIAS_OFFSET(-9))
         step2_tdepth_w_i2f (.clk(aclk), .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), .out(step2_depth_w));
 
-    // always @(posedge aclk)
-    // begin
-    //     $display("%f", $bitstoreal({step2_depth_w[31], step2_depth_w[30], {3{~step2_depth_w[30]}}, step2_depth_w[29:23], step2_depth_w[22:0], {29{1'b0}}}));
-    // end
-
-
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_t_reg;
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_mipmap_s_reg;
@@ -548,7 +543,7 @@ module AttributeInterpolatorX #(
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
         step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_r[0 +: SUB_PIXEL_WIDTH];
 
-        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT); // U9.9 * S1.16 = S10.25 >>> 10 = S16.15
+        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT); // U13.11 * S3.20 = 16.31 >>> 16 = S16.15
         step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
         if (ENABLE_LOD_CALC)
         begin
