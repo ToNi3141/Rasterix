@@ -20,6 +20,8 @@ set_property source_mgmt_mode All [current_project]
 read_verilog ./../../../../Rasterix/AttributeInterpolator.v
 read_verilog ./../../../../Rasterix/AttributeF2XConverter.v
 read_verilog ./../../../../Rasterix/AttributeInterpolatorX.v
+read_verilog ./../../../../Rasterix/AttributeInterpolationX.v
+read_verilog ./../../../../Rasterix/AttributePerspectiveCorrectionX.v
 read_verilog ./../../../../Rasterix/ColorBlender.v
 read_verilog ./../../../../Rasterix/ColorInterpolator.v
 read_verilog ./../../../../Rasterix/ColorMixerSigned.v
