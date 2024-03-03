@@ -89,7 +89,7 @@ namespace rr
 template <class RenderConfig>
 class Renderer : public IRenderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT * 2) / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + 1 };
+    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
@@ -158,7 +158,7 @@ public:
             return true;
         }
 
-        const uint32_t displayLines = m_displayLines;
+                const uint32_t displayLines = m_displayLines;
         const uint32_t yLineResolution = m_yLineResolution;
         for (uint32_t i = 0; i < displayLines; i++)
         {
@@ -425,8 +425,8 @@ public:
 
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
     {
-        const uint32_t framebufferSize = x * y * 2;
-        const uint32_t framebufferLines = (framebufferSize / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + ((framebufferSize % RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) ? 1 : 0);
+        const uint32_t framebufferSize = x * y;
+        const uint32_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
         if (framebufferLines > DISPLAY_LINES)
         {
             // More lines required than lines available

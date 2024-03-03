@@ -1,6 +1,6 @@
 
 - [About this Project](#about-this-project)
-  - [Area](#area)
+  - [Area Usage](#area-usage)
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Platforms](#platforms)
@@ -8,7 +8,6 @@
   - [Port the driver](#port-the-driver)
   - [Port the FPGA implementation](#port-the-fpga-implementation)
 - [Missing Features](#missing-features)
-- [Next Possible Steps](#next-possible-steps)
 
 # About this Project
 The Rasterix project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
@@ -27,8 +26,8 @@ The used memory is decoupled from the actual framebuffer size. If a framebuffer 
 
 Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires a fraction of the logic of the floating point configuration. To start, it might be reasonable to try the floating point version first to bring everything up and to avoid pitfalls. Later, when there is the need to optimize, try the fixed point version.
 
-## Area
-With a normal configuration: 
+## Area Usage
+With a generic configuration: 
   - 64 bit command bus / memory bus
   - 256px textures
   - 1 TMU
@@ -49,11 +48,9 @@ A full configuration
 Then the core requires __around 36k LUTs__ on a Xilinx Series 7 device.
 
 # Working Games
-Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`), Quake 3 Arena with SDL2 and glX (https://github.com/ToNi3141/Quake3e) and others.
+Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`), Quake 3 Arena with SDL2 and glX (https://github.com/ToNi3141/Quake3e), Warcraft 3 with WGL and others.
 
 ![race screenshot](screenshots/tuxracerRaceStart.png)
-
-Warcraft 3 (with WGL) under windows is also working.
 
 # Checkout Repository
 Use the following commands to checkout the repository:
@@ -75,12 +72,39 @@ The rasterizer is running on the following platforms:
 
 # Port to a new platform 
 Please have a look at `lib/driver`. There are already a few implementations to get inspired.
+
 ## Port the driver
 To port the driver to a new interface (like SPI, async FT245, or others) use the following steps:
 1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods.
-2. Instantiate and use this class for the `Renderer`. If you use a microcontroller, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
-3. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system.
-4. Build
+2. Instantiate and use this class for the `Renderer`. If you use a MCU, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
+3. Create a `RenderConfig` which fits to the configuration of your hardware.
+4. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system.
+5. Build
+
+See also the example [here](/example/util/native/Runner.hpp).
+
+The `Renderer` needs a `RenderConfig`. It contains the following information about the hardware:
+
+| Property                  | Description |
+|---------------------------|-------------|
+| TMU_COUNT                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
+| MAX_TEXTURE_SIZE          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in TEXTURE_BUFFER_SIZE of the FPGA. |
+| ENABLE_MIPMAPPING         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
+| MAX_DISPLAY_WIDTH         | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
+| MAX_DISPLAY_HEIGHT        | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
+| FRAMEBUFFER_SIZE_IN_WORDS | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
+| USE_FLOAT_INTERPOLATION   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
+| CMD_STREAM_WIDTH          | Width of the command stream. Must be equal to the FPGA configuration. |
+| NUMBER_OF_TEXTURE_PAGES   | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
+| NUMBER_OF_TEXTURES        | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
+| TEXTURE_PAGE_SIZE         | The size of a texture page in bytes. Typical value is 4096. |
+| GRAM_MEMORY_LOC           | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
+| FRAMEBUFFER_TYPE          | Configures the destination of the framebuffer. Must fit to the chosen variant. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
+| COLOR_BUFFER_LOC_1        | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
+| COLOR_BUFFER_LOC_2        | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
+| DEPTH_BUFFER_LOC          | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| STENCIL_BUFFER_LOC        | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
+
 
 ## Port the FPGA implementation
 Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look at the build script and the block diagram from the Nexys Video in `rtl/top/Xilinx/NexysVideo` to have a real world example.
@@ -93,14 +117,29 @@ Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look 
 6. Connect `resetn` to your reset line and `aclk` to your clock domain.
 7. Synthesize.
 
+The hardware has the following configuration options:
+
+| Property                                | Description |
+|-----------------------------------------|-------------|
+| FRAMEBUFFER_SIZE_IN_WORDS               | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
+| FB_MEM_DATA_WIDTH                       | `rrxef` only. Width of the framebuffer memory channel. |
+| FRAMEBUFFER_SUB_PIXEL_WIDTH             | `rrxif` only. Sub pixel width in the internal framebuffer. |
+| FRAMEBUFFER_ENABLE_ALPHA_CHANNEL        | `rrxif` only. Enables the alpha channel in the framebuffer. |
+| ENABLE_STENCIL_BUFFER                   | Enables the stencil buffer. |
+| TMU_COUNT                               | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
+| ENABLE_MIPMAPPING                       | Enables the mip mapping. |
+| CMD_STREAM_WIDTH                        | Width of the AXIS command stream. |
+| TEXTURE_BUFFER_SIZE                     | Size of the texture buffer in lg2(bytes). |
+| ADDR_WIDTH                              | Width of the AXI address channel. |
+| ID_WIDTH                                | Width of the AXI id property. |
+| STRB_WIDTH                              | Width of the AXI strobe property. |
+| FB_MEM_STRB_WIDTH                       | `rrxef` only. Width of the framebuffer AXI strobe property. |
+| RASTERIZER_FLOAT_PRECISION              | `true` enables the floating point interpolation. `false` enables the fixed point interpolation. |
+| RASTERIZER_FIXPOINT_PRECISION           | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
+| RASTERIZER_ENABLE_FLOAT_INTERPOLATION   | Precision of the floating point arithmetic. Valid range: 20-32. |
+
+
 # Missing Features
 The following features are currently missing compared to a real OpenGL implementation
 - Logic Ops
-- ...
-
-# Next Possible Steps
-- Add the possibility to use more than one render context
-- Implement Logic Ops
-- Implement a texture cache to reduce the memory consuption by omitting the `TextureBuffer`
-- Implement higher texture resolutions
 - ...

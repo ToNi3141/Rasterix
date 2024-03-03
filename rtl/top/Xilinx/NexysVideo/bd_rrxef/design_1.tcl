@@ -444,7 +444,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {28} \
-    CONFIG.CMD_MEM_STRB_WIDTH {16} \
+    CONFIG.STRB_WIDTH {16} \
     CONFIG.CMD_STREAM_WIDTH {128} \
     CONFIG.FB_MEM_DATA_WIDTH {128} \
     CONFIG.FB_MEM_STRB_WIDTH {16} \

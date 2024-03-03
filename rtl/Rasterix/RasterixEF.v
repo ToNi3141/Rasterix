@@ -59,7 +59,7 @@ module RasterixEF #(
     parameter ID_WIDTH = 8,
 
     // Memory strobe width
-    parameter CMD_MEM_STRB_WIDTH = CMD_STREAM_WIDTH / 8,
+    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8,
     parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
@@ -110,7 +110,7 @@ module RasterixEF #(
     input  wire                             m_common_axi_awready,
 
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_common_axi_wdata,
-    output wire [CMD_MEM_STRB_WIDTH - 1 : 0]m_common_axi_wstrb,
+    output wire [STRB_WIDTH - 1 : 0]        m_common_axi_wstrb,
     output wire                             m_common_axi_wlast,
     output wire                             m_common_axi_wvalid,
     input  wire                             m_common_axi_wready,

@@ -269,7 +269,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {32} \
-    CONFIG.CMD_MEM_STRB_WIDTH {8} \
+    CONFIG.STRB_WIDTH {8} \
     CONFIG.CMD_STREAM_WIDTH {64} \
     CONFIG.ENABLE_MIPMAPPING {1} \
     CONFIG.ENABLE_STENCIL_BUFFER {1} \
