@@ -18,7 +18,9 @@ all: \
 	framebufferWriterClear \
 	framebufferReader \
 	streamSemaphore \
-	lodCalculator
+	lodCalculator \
+	attributeInterpolationX \
+	attributePerspectiveCorrectionX
  
 clean:
 	rm -rf obj_dir
@@ -112,6 +114,16 @@ lodCalculator:
 	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/LodCalculator.v --top-module LodCalculator cpp/sim_LodCalculator.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
 	-make -C obj_dir -f VLodCalculator.mk
 	./obj_dir/VLodCalculator
+
+attributeInterpolationX:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributeInterpolationX.v --top-module AttributeInterpolationX cpp/sim_AttributeInterpolationX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAttributeInterpolationX.mk
+	./obj_dir/VAttributeInterpolationX
+
+attributePerspectiveCorrectionX:
+	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributePerspectiveCorrectionX.v --top-module AttributePerspectiveCorrectionX cpp/sim_AttributePerspectiveCorrectionX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAttributePerspectiveCorrectionX.mk
+	./obj_dir/VAttributePerspectiveCorrectionX
 
 .SECONDARY:
 .PHONY: all clean

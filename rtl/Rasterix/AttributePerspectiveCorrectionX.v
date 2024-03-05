@@ -73,15 +73,15 @@ module AttributePerspectiveCorrectionX #(
     output wire [SCREEN_POS_WIDTH - 1 : 0]      m_attrb_tspy,
     output wire [INDEX_WIDTH - 1 : 0]           m_attrb_tindex,
     output wire [FLOAT_SIZE - 1 : 0]            m_attrb_tdepth_w, // Float
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_tdepth_z, // Q16.16
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_ttexture0_t, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_ttexture0_s, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_tmipmap0_t, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_tmipmap0_s, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_ttexture1_t, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_ttexture1_s, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_tmipmap1_t, // S16.15
-    output wire [ATTRIBUTE_SIZE -1 : 0]         m_attrb_tmipmap1_s, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_tdepth_z, // Q16.16
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_ttexture0_t, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_ttexture0_s, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_tmipmap0_t, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_tmipmap0_s, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_ttexture1_t, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_ttexture1_s, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_tmipmap1_t, // S16.15
+    output wire [ATTRIBUTE_SIZE - 1 : 0]        m_attrb_tmipmap1_s, // S16.15
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_a, // Qn.0
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_b, // Qn.0
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_g, // Qn.0
