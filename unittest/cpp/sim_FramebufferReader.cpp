@@ -18,30 +18,10 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VFramebufferReader.h"
-
-void clk(VFramebufferReader* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VFramebufferReader* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
 {
@@ -53,7 +33,7 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     t->m_mem_axi_arready = 0;
     t->m_mem_axi_rvalid = 0;
 
-    reset(t);
+    rr::ut::reset(t);
     CHECK(t->s_fetch_tready == 1);
     CHECK(t->m_frag_tvalid == 0);
     CHECK(t->m_mem_axi_arvalid == 0);
@@ -65,12 +45,12 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     t->s_fetch_tvalid = 1;
     t->s_fetch_tlast = 1;
     t->s_fetch_taddr = 0x100;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 0);
     t->s_fetch_tvalid = 0;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 0);
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 0);
 
     // Check for addr request
@@ -81,14 +61,14 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     // Read Data
     t->m_mem_axi_rdata = 0x12345678;
     t->m_mem_axi_rvalid = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 1);
     CHECK(t->m_frag_tdata == 0x5678);
     CHECK(t->m_mem_axi_rready == 1);
 
     // Check that the data is don't read twice
     t->m_mem_axi_rvalid = 0;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 1);
 
     delete t;
@@ -104,7 +84,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     t->m_mem_axi_arready = 1; // Ignore the address channel
     t->m_mem_axi_rvalid = 0;
 
-    reset(t);
+    rr::ut::reset(t);
     CHECK(t->s_fetch_tready == 1);
     CHECK(t->m_frag_tvalid == 0);
     CHECK(t->m_mem_axi_arvalid == 0);
@@ -118,7 +98,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
         t->s_fetch_tvalid = 1;
         t->s_fetch_tlast = 0;
         t->s_fetch_taddr = i;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->s_fetch_tready == 1);
     }
 
@@ -126,7 +106,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     t->s_fetch_tvalid = 1;
     t->s_fetch_tlast = 0; 
     t->s_fetch_taddr = 300;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->s_fetch_tready == 0);
 
     t->s_fetch_tvalid = 0;
@@ -138,7 +118,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     // Readout the data from the fifo
     for (uint32_t i = 0; i <= 129; i++)
     {
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_frag_tvalid == 1);
         CHECK(t->m_frag_taddr == i);
         if (i > 1) // Start checking this when the first two pixels are fetched. That is required till the ready is back propagated
@@ -146,7 +126,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     }
 
     // Read the last data
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->s_fetch_tready == 1);
     CHECK(t->m_frag_tvalid == 1);
     CHECK(t->m_frag_taddr == 300);

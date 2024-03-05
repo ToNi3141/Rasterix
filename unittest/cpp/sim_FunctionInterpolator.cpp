@@ -15,33 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
+#include "general.hpp"
+
 #include <math.h>
 #include <array>
 #include <algorithm>
 
-// Include common routines
-#include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VFunctionInterpolator.h"
 
-void clk(VFunctionInterpolator* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VFunctionInterpolator* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 float clamp(float v, float lo, float hi)
 {
@@ -72,9 +55,9 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
     t->s_axis_tvalid = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutLowerBound);
-    clk(t);
+    rr::ut::clk(t);
     t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutUpperBound);
-    clk(t);
+    rr::ut::clk(t);
     // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
     for (int i = 0; i < (int)LUT_SIZE; i++)
     {
@@ -89,10 +72,10 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
         // printf("%d z: %f f: %f fn: %f step: %f axi: 0x%llX\r\n", i, z, f, fn, step, lutEntry.axiVal);
 
         t->s_axis_tdata = static_cast<int32_t>(step * powf(2, 30));
-        clk(t);
+        rr::ut::clk(t);
         t->s_axis_tlast = (i + 1 < (int)LUT_SIZE) ? 0 : 1;
         t->s_axis_tdata = static_cast<int32_t>(f * powf(2, 30));
-        clk(t);
+        rr::ut::clk(t);
     }
     t->s_axis_tlast = 0;
     t->s_axis_tvalid = 0;
@@ -103,7 +86,7 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
     const float start = 0;
     const float end = 100000;
     VFunctionInterpolator* top = new VFunctionInterpolator();
-    reset(top);
+    rr::ut::reset(top);
     generateLinearTable(top, start, end);
 
     uint32_t pipelineSteps = 0;
@@ -112,7 +95,7 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
     for (float i = start; i < (end + 200); i += STEPS)
     {
         top->x = *((uint32_t*)&i);
-        clk(top);
+        rr::ut::clk(top);
 
         pipelineSteps++;
         if (pipelineSteps >= PIPELINE_STEPS)

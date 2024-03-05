@@ -18,30 +18,11 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VLodCalculator.h"
 
-void clk(VLodCalculator* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VLodCalculator* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 TEST_CASE("Check max lod", "[LodCalculator]")
 {
@@ -58,7 +39,7 @@ TEST_CASE("Check max lod", "[LodCalculator]")
     t->texelSxy = 0x1 << (15 + 16);
     t->texelTxy = 0x1 << (15 + 16);
 
-    clk(t);
+    rr::ut::clk(t);
 
     REQUIRE(t->lod == 8);
 }
@@ -80,7 +61,7 @@ TEST_CASE("Check lod xy", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 - i);
         t->texelTxy = 0x1 << (15 - i);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 8 - i);
     }
@@ -103,7 +84,7 @@ TEST_CASE("Check lod x", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 - i);
         t->texelTxy = 0x1 << (15 - 8);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 8 - i);
     }
@@ -126,7 +107,7 @@ TEST_CASE("Check lod y", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 - 8);
         t->texelTxy = 0x1 << (15 - i);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 8 - i);
     }
@@ -149,7 +130,7 @@ TEST_CASE("Check lod xy negative", "[LodCalculator]")
         t->texelSxy = 0x80000000 | (0x1 << (15 - i));
         t->texelTxy = 0x80000000 | (0x1 << (15 - i));
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 8 - i);
     }
@@ -172,7 +153,7 @@ TEST_CASE("Check lod xy max with varying texture size", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 + 0);
         t->texelTxy = 0x1 << (15 + 0);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == i);
     }
@@ -195,7 +176,7 @@ TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 - i);
         t->texelTxy = 0x1 << (15 - i);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 0);
     }
@@ -217,14 +198,14 @@ TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
     {
         t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
         t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
-        clk(t);
+        rr::ut::clk(t);
         REQUIRE(t->lod == 0);
     }
 
     // Check that the overflow causes a LOD increment
     t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
     t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
-    clk(t);
+    rr::ut::clk(t);
     REQUIRE(t->lod == 1);
 }
 
@@ -245,7 +226,7 @@ TEST_CASE("Check lod xy when calculation is disabled", "[LodCalculator]")
         t->texelSxy = 0x1 << (15 + 0);
         t->texelTxy = 0x1 << (15 + 0);
 
-        clk(t);
+        rr::ut::clk(t);
 
         REQUIRE(t->lod == 0);
     }
