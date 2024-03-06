@@ -447,6 +447,7 @@ proc create_root_design { parentCell } {
     CONFIG.CMD_STREAM_WIDTH {128} \
     CONFIG.STRB_WIDTH {16} \
     CONFIG.TEXTURE_BUFFER_SIZE {17} \
+    CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
   ] $RasterixIF_0
 
 

@@ -218,6 +218,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     wIncYNorm.mul(areaInv);
 
     Vec3 w = triangle.oow;
+    // Avoid that the w gets too small/big by normalizing it
     if (m_enableScaling)
     {
         w.normalize();
@@ -232,6 +233,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
             Vec3 texT { { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] } };
             Vec3 texQ { { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] } };
             
+            // Avoid overflowing the integer part by adding an offset 
             if (m_enableScaling)
             {
                 const float minS = min(texS[0], min(texS[1], texS[2]));
@@ -239,19 +241,26 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
                 const float maxS = max(texS[0], max(texS[1], texS[2]));
                 const float maxT = max(texT[0], max(texT[1], texT[2]));
 
-                const float minSG = static_cast<int32_t>(minS);
-                const float minTG = static_cast<int32_t>(minT);
-                const float maxSG = static_cast<int32_t>(maxS);
-                const float maxTG = static_cast<int32_t>(maxT);
-
                 if (minS < -4.0f)
+                {
+                    const float minSG = static_cast<int32_t>(minS);
                     texS -= { { minSG, minSG, minSG } };
+                }
                 if (minT < -4.0f)
+                {
+                    const float minTG = static_cast<int32_t>(minT);
                     texT -= { { minTG, minTG, minTG } };
+                }
                 if (maxS > 4.0f)
+                {
+                    const float maxSG = static_cast<int32_t>(maxS);
                     texS -= { { maxSG, maxSG, maxSG } };
+                }
                 if (maxT > 4.0f)
+                {
+                    const float maxTG = static_cast<int32_t>(maxT);
                     texT -= { { maxTG, maxTG, maxTG } };
+                }
             }
 
             // Perspective correction

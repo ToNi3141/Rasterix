@@ -26,7 +26,7 @@ struct RenderConfigRRXIFSimulation
     static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 32 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -131,7 +131,7 @@ struct RenderConfigRRXIFNexys
     static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 128 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
     
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
@@ -166,7 +166,7 @@ struct RenderConfigRRXEFNexys
     static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 600 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
     
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
@@ -201,7 +201,7 @@ struct RenderConfigRRXEFZynq
     static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 1024 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -236,7 +236,7 @@ struct RenderConfigRRXIFZynq
     static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 64 * 1024 };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { true };
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
