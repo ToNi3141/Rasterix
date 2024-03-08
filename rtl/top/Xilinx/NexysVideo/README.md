@@ -19,12 +19,12 @@ There are two variants available:
   - 2 TMU (max res: 256x256)
   - Mip mapping
   - Framebuffer size: 256kB + 256kB + 64 kB
-  - 32 bit floating point
+  - 25 bit fix point
 
 `rrxef`:
   - 2 TMU (max res: 256x256)
   - Mip mapping
-  - 32 bit floating point
+  - 25 bit fix point
 
 You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must enable the `VARIANT_RRXIF` or `VARIANT_RRXEF` for the library build.
 

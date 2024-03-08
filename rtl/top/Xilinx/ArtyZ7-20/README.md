@@ -18,12 +18,12 @@ There are two variants available:
   - 1 TMU (max res: 256x256)
   - Mip mapping
   - Framebuffer size: 128kB + 128kB + 32 kB
-  - 32 bit floating point
+  - 25 bit fix point
 
 `rrxef`:
   - 2 TMU (max res: 256x256)
   - Mip mapping
-  - 32 bit floating point
+  - 25 bit fix point
 
 To build the binaries use the following commands.
 ```sh

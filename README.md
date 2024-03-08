@@ -4,9 +4,9 @@
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Platforms](#platforms)
-- [Port to a new platform](#port-to-a-new-platform)
-  - [Port the driver](#port-the-driver)
-  - [Port the FPGA implementation](#port-the-fpga-implementation)
+- [How to integrate](#how-to-integrate)
+  - [How to port the Driver](#how-to-port-the-driver)
+  - [How to use the Core](#how-to-use-the-core)
 - [Missing Features](#missing-features)
 
 # About this Project
@@ -70,11 +70,11 @@ The rasterizer is running on the following platforms:
 - [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md)
 - [Digilent ArtyZ7-20](/rtl/top/Xilinx/ArtyZ7-20/README.md)
 
-# Port to a new platform 
-Please have a look at `lib/driver`. There are already a few implementations to get inspired.
+# How to integrate
+To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7. It may be likely, that you can use the already existing code.
 
-## Port the driver
-To port the driver to a new interface (like SPI, async FT245, or others) use the following steps:
+## How to port the Driver
+To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:
 1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods.
 2. Instantiate and use this class for the `Renderer`. If you use a MCU, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
 3. Create a `RenderConfig` which fits to the configuration of your hardware.
@@ -106,14 +106,12 @@ The `Renderer` needs a `RenderConfig`. It contains the following information abo
 | STENCIL_BUFFER_LOC        | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
 
 
-## Port the FPGA implementation
-Please use `rtl/top/Verilator/topMemory.v` as an simple example. Or have a look at the build script and the block diagram from the Nexys Video in `rtl/top/Xilinx/NexysVideo` to have a real world example.
+## How to use the Core
 1. Add the following directories to your project: `rtl/Rasterix`, `rtl/Util`, and `rtl/Float`.
-2. Instantiate the `Rasterix` module. When configuring the module, make sure that the following parameters are equal to the template parameter from `Renderer.hpp`:
-   1. Write a RenderConfig specifically for your design. See `RenderConfigs.hpp` for examples and documentation.  
+2. Instantiate the `RasterixIF` or `RasterixEF` module.  
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
-4. Connect the `m_mem_axi` interface to a memory. Make sure to adapt the template parameter from the `Renderer.hpp` `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to the size of the connected memory. One page has 4 kB. If you have a connected memory with 512kB, you should set `Renderer::MAX_NUMBER_OF_TEXTURE_PAGES` to 128.
-5. Connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a framebuffer or a display for instance).
+4. Connect the `m_mem_axi` interface to a memory. In case of a configuration with external framebuffer, connect also the axi ports of the framebuffer to the memory.
+5. Optionally connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a display for instance). When using a memory mapped framebuffer, then this port is unused.
 6. Connect `resetn` to your reset line and `aclk` to your clock domain.
 7. Synthesize.
 
