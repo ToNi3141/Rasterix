@@ -15,11 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VAttributeInterpolator.h"
@@ -31,14 +27,6 @@ union ScreenPos {
         uint16_t y;
     } val;
 };
-
-void clk(VAttributeInterpolator* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
 
 struct Attributes 
 {
@@ -192,9 +180,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
     // Reset cycle
     top->resetn = 0;
-    clk(top);
+    rr::ut::clk(top);
     top->resetn = 1;
-    clk(top);
+    rr::ut::clk(top);
 
     // Reset the pipeline
     for (int i = 0; i < CLOCK_DELAY; i++)
@@ -343,7 +331,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     // Check the pipeline with 100 pixel
     for (int i = 0; i < 100; i++)
     {
-        clk(top);
+        rr::ut::clk(top);
         if (i >= CLOCK_DELAY)
         {
             REQUIRE(top->m_attrb_tindex == i - CLOCK_DELAY);
@@ -416,7 +404,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     // Check the pending pixels in the pipeline
     for (int i = 100 - CLOCK_DELAY; i < 100; i++)
     {
-        clk(top);
+        rr::ut::clk(top);
 
         REQUIRE(top->m_attrb_tindex == i);
         REQUIRE(top->m_attrb_tvalid == 1);
@@ -475,14 +463,14 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     }
 
     // Check again if the pipeline is now empty
-    clk(top);
+    rr::ut::clk(top);
 
     REQUIRE(top->m_attrb_tindex == 0);
     REQUIRE(top->m_attrb_tvalid == 0);
     REQUIRE(top->m_attrb_tlast == 0);
 
     // This signal is one clock delayed
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->pixelInPipeline == 0);
 
     // Destroy model

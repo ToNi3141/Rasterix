@@ -362,3 +362,14 @@ EXPORTS
     wglUseFontBitmapsW = impl_wglUseFontBitmapsW
     wglUseFontOutlinesA = impl_wglUseFontOutlinesA
     wglUseFontOutlinesW = impl_wglUseFontOutlinesW
+    wglCreatePbufferARB = impl_wglCreatePbufferARB
+    wglGetPbufferDCARB = impl_wglGetPbufferDCARB
+    wglReleasePbufferDCARB = impl_wglReleasePbufferDCARB
+    wglDestroyPbufferARB = impl_wglDestroyPbufferARB
+    wglQueryPbufferARB = impl_wglQueryPbufferARB
+    wglGetPixelFormatAttribivARB = impl_wglGetPixelFormatAttribivARB
+    wglGetPixelFormatAttribfvARB = impl_wglGetPixelFormatAttribfvARB
+    wglChoosePixelFormatARB = impl_wglChoosePixelFormatARB
+    wglBindTexImageARB = impl_wglBindTexImageARB
+    wglReleaseTexImageARB = impl_wglReleaseTexImageARB
+    wglSetPbufferAttribARB = impl_wglSetPbufferAttribARB

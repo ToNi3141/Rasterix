@@ -74,6 +74,11 @@ public:
 
     bool updateTexture(const uint16_t texId, const IRenderer::TextureObjectMipmap& textureObject) 
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("updateTexture with invalid texID called");
+            return false;
+        }
         bool ret = true;
         uint32_t textureSlot = *m_textureLut[texId];
         const uint32_t textureSlotOld = *m_textureLut[texId];
@@ -130,36 +135,66 @@ public:
 
     void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("setTextureWrapModeS with invalid texID called");
+            return;
+        }
         Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setWarpModeS(mode);
     }
 
     void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("setTextureWrapModeT with invalid texID called");
+            return;
+        }
         Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setWarpModeT(mode);
     }
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("enableTextureMagFiltering with invalid texID called");
+            return;
+        }
         Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setEnableMagFilter(filter);
     }
 
     void enableTextureMinFiltering(const uint16_t texId, bool filter)
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("enableTextureMinFiltering with invalid texID called");
+            return;
+        }
         Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setEnableMinFilter(filter);
     }
 
     bool textureValid(const uint16_t texId) const 
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("textureValid with invalid texID called");
+            return false;
+        }
         const Texture& tex = m_textures[*m_textureLut[texId]];
         return (texId != 0) && tex.inUse;
     }
 
     TmuTextureReg getTmuConfig(const uint16_t texId) const
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("getTmuConfig with invalid texID called");
+            return {};
+        }
         const Texture& tex = m_textures[*m_textureLut[texId]];
         return tex.tmuConfig;
     }
@@ -176,6 +211,11 @@ public:
 
     IRenderer::TextureObjectMipmap getTexture(const uint16_t texId)
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("getTexture with invalid texID called");
+            return {};
+        }
         const uint32_t textureSlot = *m_textureLut[texId];
         if (!m_textures[textureSlot].inUse) [[unlikely]]
         {
@@ -186,6 +226,11 @@ public:
 
     bool deleteTexture(const uint16_t texId) 
     {
+        if (!m_textureLut[texId]) [[unlikely]]
+        {
+            SPDLOG_ERROR("deleteTexture with invalid texID called");
+            return false;
+        }
         const uint32_t texLutId = *m_textureLut[texId];
         m_textureLut[texId] = std::nullopt;
         m_textures[texLutId].requiresDelete = true;

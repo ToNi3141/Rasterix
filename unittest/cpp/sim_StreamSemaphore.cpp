@@ -15,33 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
+#include "general.hpp"
 #include <math.h>
 #include <array>
 #include <algorithm>
 
-// Include common routines
-#include <verilated.h>
-
 // Include model header, generated from Verilating "top.v"
 #include "VStreamSemaphore.h"
-
-void clk(VStreamSemaphore* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VStreamSemaphore* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 {
@@ -49,16 +29,17 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
     
     t->sigRelease = 0;
     t->m_axis_tready = 1;
-    reset(t);
+    rr::ut::reset(t);
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
 
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x12345678;
     t->s_axis_tkeep = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tlast == 0);
     CHECK(t->m_axis_tdata == 0x12345678);
@@ -67,7 +48,8 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
-    clk(t);
+    t->sigLock = 0;
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
 
@@ -82,7 +64,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     
     t->sigRelease = 0;
     t->m_axis_tready = 1;
-    reset(t);
+    rr::ut::reset(t);
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
@@ -90,10 +72,11 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
         t->s_axis_tvalid = 1;
+        t->sigLock = 1;
         t->s_axis_tlast = 0;
         t->s_axis_tdata = i;
         t->s_axis_tkeep = 0;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_axis_tvalid == 1);
         CHECK(t->m_axis_tlast == 0);
         CHECK(t->m_axis_tdata == i);
@@ -104,9 +87,10 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
+    t->sigLock = 0;
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->s_axis_tready == 1);
         CHECK(t->m_axis_tvalid == 0);
         CHECK(t->released == !(i < (MAX_ITERATIONS - 1)));
@@ -122,7 +106,7 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     
     t->sigRelease = 0;
     t->m_axis_tready = 0;
-    reset(t);
+    rr::ut::reset(t);
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
@@ -130,10 +114,11 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 0;
     t->m_axis_tready = 0;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x12345678;
     t->s_axis_tkeep = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tlast == 0);
     CHECK(t->m_axis_tdata == 0x12345678);
@@ -143,10 +128,11 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 0;
     t->m_axis_tready = 0;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x87654321;
     t->s_axis_tkeep = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tlast == 0);
     CHECK(t->m_axis_tdata == 0x12345678);
@@ -156,10 +142,11 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
     t->sigRelease = 1;
     t->m_axis_tready = 1;
     t->s_axis_tvalid = 1;
+    t->sigLock = 1;
     t->s_axis_tlast = 0;
     t->s_axis_tdata = 0x87654321;
     t->s_axis_tkeep = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tlast == 0);
     CHECK(t->m_axis_tdata == 0x87654321);
@@ -168,7 +155,8 @@ TEST_CASE("Test flow control", "[VStreamSemaphore]")
 
     t->sigRelease = 1;
     t->s_axis_tvalid = 0;
-    clk(t);
+    t->sigLock = 0;
+    rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->released == 1);
 

@@ -69,7 +69,14 @@ module RasterixIF #(
     // 4 bit reducing can safe around 1k LUTs.
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
-    parameter INTERNAL_FLOAT_PRECISION = 32
+    parameter RASTERIZER_FLOAT_PRECISION = 32,
+    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
+    // Lower values can lead to distortions of the fog and texels.
+    parameter RASTERIZER_FIXPOINT_PRECISION = 25,
+    // Enables the floating point interpolation. If this is disabled, it falls back
+    // to the fix point interpolation
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1
 )
 (
     input  wire                             aclk,
@@ -474,7 +481,9 @@ module RasterixIF #(
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_FLOW_CTRL(0),
-        .INTERNAL_FLOAT_PRECISION(INTERNAL_FLOAT_PRECISION)
+        .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
+        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

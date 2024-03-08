@@ -25,9 +25,6 @@
 
 namespace rr
 {
-Rasterizer::Rasterizer()
-{
-}
 
 bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
                                            const uint16_t lineStart,
@@ -39,6 +36,59 @@ bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticPara
             (params.bbStartY < lineEnd))
     {
         return true;
+    }
+    return false;
+}
+
+bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
+                           const std::span<TriangleStreamTypes::Texture>& texture,
+                           const uint16_t lineStart,
+                           const uint16_t lineEnd)
+{
+    
+    if ((lineStart == 0) && (params.bbStartY < lineEnd))
+    {
+        // If the triangle completely in the current line, then nothing has to be done here.
+        return true;
+    }
+    else
+    {
+        // Check if the triangle is in the current area by checking if the end position is below the start line
+        // and if the start of the triangle is within this area
+        if ((params.bbEndY >= lineStart) &&
+                (params.bbStartY < lineEnd))
+        {
+            // The triangle is within the current display area
+            // Check if the triangle started in the previous area. If so, we have to move the interpolation factors
+            // to the current area
+            if (params.bbStartY < lineStart)
+            {
+                const int32_t bbDiff = lineStart - params.bbStartY;
+
+                const auto wInitTmp = params.wInit;
+                params.wInit = params.wYInc;
+                params.wInit *= bbDiff;
+                params.wInit += wInitTmp;
+
+                params.depthW += params.depthWYInc * bbDiff;
+                params.depthZ += params.depthZYInc * bbDiff;
+
+                const auto colorTmp = params.color;
+                params.color = params.colorYInc;
+                params.color *= bbDiff;
+                params.color += colorTmp;
+
+                for (uint32_t i = 0; i < texture.size(); i++)
+                {
+                    const auto texStqTmp = texture[i].texStq;
+                    texture[i].texStq = texture[i].texStqYInc;
+                    texture[i].texStq *= bbDiff;
+                    texture[i].texStq += texStqTmp;
+                }
+            }
+
+            return true;
+        }
     }
     return false;
 }
@@ -167,6 +217,13 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     wIncYNorm.fromArray(&(wIncY.vec[0]), 3);
     wIncYNorm.mul(areaInv);
 
+    Vec3 w = triangle.oow;
+    // Avoid that the w gets too small/big by normalizing it
+    if (m_enableScaling)
+    {
+        w.normalize();
+    }
+
     // Interpolate texture
     for (uint8_t i = 0; i < texture.size(); i++)
     {
@@ -175,6 +232,41 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
             Vec3 texS { { triangle.texture0[i][0], triangle.texture1[i][0], triangle.texture2[i][0] } };
             Vec3 texT { { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] } };
             Vec3 texQ { { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] } };
+            
+            // Avoid overflowing the integer part by adding an offset 
+            if (m_enableScaling)
+            {
+                const float minS = min(texS[0], min(texS[1], texS[2]));
+                const float minT = min(texT[0], min(texT[1], texT[2]));
+                const float maxS = max(texS[0], max(texS[1], texS[2]));
+                const float maxT = max(texT[0], max(texT[1], texT[2]));
+
+                if (minS < -4.0f)
+                {
+                    const float minSG = static_cast<int32_t>(minS);
+                    texS -= { { minSG, minSG, minSG } };
+                }
+                if (minT < -4.0f)
+                {
+                    const float minTG = static_cast<int32_t>(minT);
+                    texT -= { { minTG, minTG, minTG } };
+                }
+                if (maxS > 4.0f)
+                {
+                    const float maxSG = static_cast<int32_t>(maxS);
+                    texS -= { { maxSG, maxSG, maxSG } };
+                }
+                if (maxT > 4.0f)
+                {
+                    const float maxTG = static_cast<int32_t>(maxT);
+                    texT -= { { maxTG, maxTG, maxTG } };
+                }
+            }
+
+            // Perspective correction
+            texQ.mul(w);
+            texS.mul(w);
+            texT.mul(w);
 
             texture[i].texStq[0] = texS.dot(wNorm);
             texture[i].texStq[1] = texT.dot(wNorm);

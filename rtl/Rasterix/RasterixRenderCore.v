@@ -45,7 +45,14 @@ module RasterixRenderCore #(
     // 4 bit reducing can safe around 1k LUTs.
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
-    parameter INTERNAL_FLOAT_PRECISION = 32,
+    parameter RASTERIZER_FLOAT_PRECISION = 32,
+    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
+    // Lower values can lead to distortions of the fog and texels.
+    parameter RASTERIZER_FIXPOINT_PRECISION = 25,
+    // Enables the floating point interpolation. If this is disabled, it falls back
+    // to the fix point interpolation
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
@@ -168,6 +175,7 @@ module RasterixRenderCore #(
     output wire                                 dbgRasterizerRunning
 );
 `include "RegisterAndDescriptorDefines.vh"
+`include "RasterizerCommands.vh"
 
     localparam TEX_ADDR_WIDTH = 17;
     localparam ATTRIBUTE_SIZE = 32;
@@ -472,6 +480,7 @@ module RasterixRenderCore #(
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
     wire                            rasterizer_tvalid;
+    wire                            rasterizer_tpixel;
     wire                            rasterizer_tready;
     wire                            rasterizer_tlast;
     wire                            rasterizer_tkeep;
@@ -480,6 +489,7 @@ module RasterixRenderCore #(
     wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspx;
     wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_tspy;
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_tindex;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_tcmd;
 
     Rasterizer rop (
         .clk(aclk), 
@@ -505,6 +515,7 @@ module RasterixRenderCore #(
         .w2IncY(triangleParams[TRIANGLE_STREAM_INC_W2_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
         .m_rr_tvalid(rasterizer_tvalid),
+        .m_rr_tpixel(rasterizer_tpixel),
         .m_rr_tready(rasterizer_tready),
         .m_rr_tlast(rasterizer_tlast),
         .m_rr_tkeep(rasterizer_tkeep),
@@ -512,12 +523,14 @@ module RasterixRenderCore #(
         .m_rr_tbby(rasterizer_tbby),
         .m_rr_tspx(rasterizer_tspx),
         .m_rr_tspy(rasterizer_tspy),
-        .m_rr_tindex(rasterizer_tindex)
+        .m_rr_tindex(rasterizer_tindex),
+        .m_rr_tcmd(rasterizer_tcmd)
     );
     defparam rop.X_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.INDEX_WIDTH = INDEX_WIDTH;
     defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -532,6 +545,8 @@ module RasterixRenderCore #(
     // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
     wire                            rasterizer_sem_tvalid;
+    wire                            rasterizer_sem_tpixel;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sem_tcmd;
     wire                            rasterizer_sem_tlast;
     wire                            rasterizer_sem_tkeep;
     wire                            rasterizer_sem_tready;
@@ -541,6 +556,8 @@ module RasterixRenderCore #(
     wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tspy;
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_sem_tindex;
     wire                            rasterizer_sbr_tvalid;
+    wire                            rasterizer_sbr_tpixel;
+    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sbr_tcmd;
     wire                            rasterizer_sbr_tready;
     wire                            rasterizer_sbr_tlast;
     wire                            rasterizer_sbr_tkeep;
@@ -568,7 +585,9 @@ module RasterixRenderCore #(
             rasterizer_tbby,
             rasterizer_tspx,
             rasterizer_tspy,
-            rasterizer_tindex
+            rasterizer_tindex,
+            rasterizer_tpixel,
+            rasterizer_tcmd
         }),
         .s_axis_tkeep(rasterizer_tkeep),
 
@@ -580,15 +599,18 @@ module RasterixRenderCore #(
             rasterizer_sem_tbby,
             rasterizer_sem_tspx,
             rasterizer_sem_tspy,
-            rasterizer_sem_tindex
+            rasterizer_sem_tindex,
+            rasterizer_sem_tpixel,
+            rasterizer_sem_tcmd
         }),
         .m_axis_tkeep(rasterizer_sem_tkeep),
 
+        .sigLock(rasterizer_tpixel),
         .sigRelease(fragmentProcessed),
         .released(pipelineEmpty)
     );
     defparam ssem.MAX_NUMBER_OF_ELEMENTS = 2 ** MAX_NUMBER_OF_PIXELS_LG;
-    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
+    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     defparam ssem.KEEP_WIDTH = 1;
 
     generate
@@ -611,7 +633,9 @@ module RasterixRenderCore #(
                     rasterizer_sem_tbby,
                     rasterizer_sem_tspx,
                     rasterizer_sem_tspy,
-                    rasterizer_sem_tindex
+                    rasterizer_sem_tindex,
+                    rasterizer_sem_tpixel,
+                    rasterizer_sem_tcmd
                 }),
                 .s_axis_tkeep(rasterizer_sem_tkeep),
 
@@ -623,18 +647,21 @@ module RasterixRenderCore #(
                     rasterizer_sbr_tbby,
                     rasterizer_sbr_tspx,
                     rasterizer_sbr_tspy,
-                    rasterizer_sbr_tindex
+                    rasterizer_sbr_tindex,
+                    rasterizer_sbr_tpixel,
+                    rasterizer_sbr_tcmd
                 }),
                 .m_axis_tkeep(rasterizer_sbr_tkeep),
 
                 .stall(fifosAlmostFull)
             );
-            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
+            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
             defparam sbr.KEEP_WIDTH = 1;
         end
         else
         begin
             assign rasterizer_sbr_tvalid = rasterizer_sem_tvalid;
+            assign rasterizer_sbr_tpixel = rasterizer_sem_tpixel;
             assign rasterizer_sem_tready = rasterizer_sbr_tready;
             assign rasterizer_sbr_tlast = rasterizer_sem_tlast;
             assign rasterizer_sbr_tbbx = rasterizer_sem_tbbx;
@@ -643,6 +670,7 @@ module RasterixRenderCore #(
             assign rasterizer_sbr_tspy = rasterizer_sem_tspy;
             assign rasterizer_sbr_tindex = rasterizer_sem_tindex;
             assign rasterizer_sbr_tkeep = rasterizer_sem_tkeep;
+            assign rasterizer_sbr_tcmd = rasterizer_sem_tcmd;
         end
     endgenerate
     
@@ -658,15 +686,17 @@ module RasterixRenderCore #(
     wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   bc_spy;
     wire [(INDEX_WIDTH * 4) - 1 : 0]        bc_index;
     wire [ 3 : 0]                           bc_valid;
+    wire [ 3 : 0]                           bc_pixel;
+    wire [(RR_CMD_SIZE * 4) - 1 : 0]        bc_cmd;
     wire [ 3 : 0]                           bc_last;
     wire [ 3 : 0]                           bc_keep;
     wire                                    bc_arready_attrib;
     assign m_color_araddr     = bc_index[INDEX_WIDTH * 3 +: INDEX_WIDTH];
     assign m_depth_araddr     = bc_index[INDEX_WIDTH * 2 +: INDEX_WIDTH];
     assign m_stencil_araddr   = bc_index[INDEX_WIDTH * 1 +: INDEX_WIDTH];
-    assign m_color_arvalid    = bc_valid[3] & colorBufferEnable;
-    assign m_depth_arvalid    = bc_valid[2] & depthBufferEnable;
-    assign m_stencil_arvalid  = bc_valid[1] & stencilBufferEnable;
+    assign m_color_arvalid    = bc_valid[3] & colorBufferEnable & bc_pixel[3];
+    assign m_depth_arvalid    = bc_valid[2] & depthBufferEnable & bc_pixel[2];
+    assign m_stencil_arvalid  = bc_valid[1] & stencilBufferEnable & bc_pixel[1];
     assign m_color_arlast     = bc_last[3];
     assign m_depth_arlast     = bc_last[2];
     assign m_stencil_arlast   = bc_last[1];
@@ -680,7 +710,9 @@ module RasterixRenderCore #(
             rasterizer_sbr_tbby,
             rasterizer_sbr_tspx,
             rasterizer_sbr_tspy,
-            rasterizer_sbr_tindex
+            rasterizer_sbr_tindex,
+            rasterizer_sbr_tpixel,
+            rasterizer_sbr_tcmd
         }),
         .s_axis_tlast(rasterizer_sbr_tlast),
         .s_axis_tvalid(rasterizer_sbr_tvalid),
@@ -696,21 +728,29 @@ module RasterixRenderCore #(
             bc_spx[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[3 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_pixel[3],
+            bc_cmd[3 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[2 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_pixel[2],
+            bc_cmd[2 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_pixel[1],
+            bc_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]
+            bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_pixel[0],
+            bc_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
         }),
         .m_axis_tvalid(bc_valid),
         .m_axis_tready({ 
@@ -726,7 +766,7 @@ module RasterixRenderCore #(
         .m_axis_tuser()
     );
     defparam axisBroadcast.M_COUNT = 4;
-    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH;
+    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     defparam axisBroadcast.KEEP_ENABLE = 1;
     defparam axisBroadcast.KEEP_WIDTH = 1;
     defparam axisBroadcast.LAST_ENABLE = 1;
@@ -737,113 +777,274 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
-    // Clocks: 31
+    // Clocks: 33
     ////////////////////////////////////////////////////////////////////////////
-    wire                            alrp_tvalid;
-    wire                            alrp_tlast;
-    wire                            alrp_tkeep;
-    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] alrp_tspy;
-    wire [INDEX_WIDTH - 1 : 0]      alrp_tindex;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_w;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tdepth_z;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture0_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap0_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_ttexture1_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_t;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tmipmap1_s;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_a;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_b;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_g;
-    wire [ATTRIBUTE_SIZE - 1 : 0]   alrp_tcolor_r;
+    wire                                    alrp_tvalid;
+    wire                                    alrp_tlast;
+    wire                                    alrp_tkeep;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         alrp_tspx;
+    wire [SCREEN_POS_WIDTH - 1 : 0]         alrp_tspy;
+    wire [INDEX_WIDTH - 1 : 0]              alrp_tindex;
+    wire [ATTRIBUTE_SIZE - 1 : 0]           alrp_tdepth_w;
+    wire [32 - 1 : 0]                       alrp_tdepth_z;
+    wire [32 - 1 : 0]                       alrp_ttexture0_t;
+    wire [32 - 1 : 0]                       alrp_ttexture0_s;
+    wire [32 - 1 : 0]                       alrp_tmipmap0_t;
+    wire [32 - 1 : 0]                       alrp_tmipmap0_s;
+    wire [32 - 1 : 0]                       alrp_ttexture1_t;
+    wire [32 - 1 : 0]                       alrp_ttexture1_s;
+    wire [32 - 1 : 0]                       alrp_tmipmap1_t;
+    wire [32 - 1 : 0]                       alrp_tmipmap1_s;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_a;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_b;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_g;
+    wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_r;
 
-    AttributeInterpolator attributeInterpolator (
-        .aclk(aclk),
-        .resetn(resetn),
-        .pixelInPipeline(),
+    generate
+        if (!RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        begin
+            AttributeInterpolatorX attributeInterpolator (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .s_attrb_tvalid(bc_valid[0]),
-        .s_attrb_tlast(bc_last[0]),
-        .s_attrb_tkeep(bc_keep[0]),
-        .s_attrb_tbbx(bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-        .s_attrb_tbby(bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-        .s_attrb_tspx(bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-        .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-        .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
+                .s_attrb_tvalid(bc_valid[0]),
+                .s_attrb_tlast(bc_last[0]),
+                .s_attrb_tkeep(bc_keep[0]),
+                .s_attrb_tspx(bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
+                .s_attrb_tpixel(bc_pixel[0]),
+                .s_attrb_tcmd(bc_cmd[0 +: RR_CMD_SIZE]),
 
-        .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex0_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s(triangleParams[TRIANGLE_STREAM_INC_TEX1_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t(triangleParams[TRIANGLE_STREAM_INC_TEX1_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .tex1_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
-        .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s(triangleParams[TRIANGLE_STREAM_INC_TEX1_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t(triangleParams[TRIANGLE_STREAM_INC_TEX1_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
-        .m_attrb_tvalid(alrp_tvalid),
-        .m_attrb_tlast(alrp_tlast),
-        .m_attrb_tkeep(alrp_tkeep),
-        .m_attrb_tspx(alrp_tspx),
-        .m_attrb_tspy(alrp_tspy),
-        .m_attrb_tindex(alrp_tindex),
-        .m_attrb_tdepth_w(alrp_tdepth_w),
-        .m_attrb_tdepth_z(alrp_tdepth_z),
-        .m_attrb_ttexture0_t(alrp_ttexture0_t),
-        .m_attrb_ttexture0_s(alrp_ttexture0_s),
-        .m_attrb_tmipmap0_t(alrp_tmipmap0_t),
-        .m_attrb_tmipmap0_s(alrp_tmipmap0_s),
-        .m_attrb_ttexture1_t(alrp_ttexture1_t),
-        .m_attrb_ttexture1_s(alrp_ttexture1_s),
-        .m_attrb_tmipmap1_t(alrp_tmipmap1_t),
-        .m_attrb_tmipmap1_s(alrp_tmipmap1_s),
-        .m_attrb_tcolor_a(alrp_tcolor_a),
-        .m_attrb_tcolor_b(alrp_tcolor_b),
-        .m_attrb_tcolor_g(alrp_tcolor_g),
-        .m_attrb_tcolor_r(alrp_tcolor_r)
-    );
-    defparam attributeInterpolator.INTERNAL_FLOAT_PRECISION = INTERNAL_FLOAT_PRECISION;
-    defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
-    defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
-    defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
-    defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+                .m_attrb_tvalid(alrp_tvalid),
+                .m_attrb_tlast(alrp_tlast),
+                .m_attrb_tkeep(alrp_tkeep),
+                .m_attrb_tspx(alrp_tspx),
+                .m_attrb_tspy(alrp_tspy),
+                .m_attrb_tindex(alrp_tindex),
+                .m_attrb_tdepth_w(alrp_tdepth_w),
+                .m_attrb_tdepth_z(alrp_tdepth_z),
+                .m_attrb_ttexture0_t(alrp_ttexture0_t),
+                .m_attrb_ttexture0_s(alrp_ttexture0_s),
+                .m_attrb_tmipmap0_t(alrp_tmipmap0_t),
+                .m_attrb_tmipmap0_s(alrp_tmipmap0_s),
+                .m_attrb_ttexture1_t(alrp_ttexture1_t),
+                .m_attrb_ttexture1_s(alrp_ttexture1_s),
+                .m_attrb_tmipmap1_t(alrp_tmipmap1_t),
+                .m_attrb_tmipmap1_s(alrp_tmipmap1_s),
+                .m_attrb_tcolor_a(alrp_tcolor_a),
+                .m_attrb_tcolor_b(alrp_tcolor_b),
+                .m_attrb_tcolor_g(alrp_tcolor_g),
+                .m_attrb_tcolor_r(alrp_tcolor_r)
+            );
+            defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
+            defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+            defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+            defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+            defparam attributeInterpolator.CALC_PRECISION = RASTERIZER_FIXPOINT_PRECISION;
 
-    assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
+            assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
+        end
+        else
+        begin
+            wire                            ftx_tvalid;
+            wire                            ftx_tlast;
+            wire                            ftx_tkeep;
+            wire [SCREEN_POS_WIDTH - 1 : 0] ftx_tspx;
+            wire [SCREEN_POS_WIDTH - 1 : 0] ftx_tspy;
+            wire [INDEX_WIDTH - 1 : 0]      ftx_tindex;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tdepth_w;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tdepth_z;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture0_t;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture0_s;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap0_t;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap0_s;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture1_t;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_ttexture1_s;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap1_t;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tmipmap1_s;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_a;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_b;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_g;
+            wire [ATTRIBUTE_SIZE - 1 : 0]   ftx_tcolor_r;
+
+            AttributeInterpolator attributeInterpolator (
+                .aclk(aclk),
+                .resetn(resetn),
+                .pixelInPipeline(),
+
+                .s_attrb_tvalid(bc_valid[0] & bc_pixel[0]),
+                .s_attrb_tlast(bc_last[0]),
+                .s_attrb_tkeep(bc_keep[0]),
+                .s_attrb_tbbx(bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tbby(bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspx(bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
+
+                .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex0_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX0_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s(triangleParams[TRIANGLE_STREAM_INC_TEX1_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t(triangleParams[TRIANGLE_STREAM_INC_TEX1_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q_inc_x(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_s_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_S_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_t_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_T_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .tex1_q_inc_y(triangleParams[TRIANGLE_STREAM_INC_TEX1_Q_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_w_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_W_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z_inc_x(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .depth_z_inc_y(triangleParams[TRIANGLE_STREAM_INC_DEPTH_Z_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r(triangleParams[TRIANGLE_STREAM_INC_COLOR_R * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_r_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_R_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g(triangleParams[TRIANGLE_STREAM_INC_COLOR_G * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_g_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_G_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b(triangleParams[TRIANGLE_STREAM_INC_COLOR_B * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_b_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_B_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a(triangleParams[TRIANGLE_STREAM_INC_COLOR_A * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+                .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
+
+                .m_attrb_tvalid(ftx_tvalid),
+                .m_attrb_tlast(ftx_tlast),
+                .m_attrb_tkeep(ftx_tkeep),
+                .m_attrb_tspx(ftx_tspx),
+                .m_attrb_tspy(ftx_tspy),
+                .m_attrb_tindex(ftx_tindex),
+                .m_attrb_tdepth_w(ftx_tdepth_w),
+                .m_attrb_tdepth_z(ftx_tdepth_z),
+                .m_attrb_ttexture0_t(ftx_ttexture0_t),
+                .m_attrb_ttexture0_s(ftx_ttexture0_s),
+                .m_attrb_tmipmap0_t(ftx_tmipmap0_t),
+                .m_attrb_tmipmap0_s(ftx_tmipmap0_s),
+                .m_attrb_ttexture1_t(ftx_ttexture1_t),
+                .m_attrb_ttexture1_s(ftx_ttexture1_s),
+                .m_attrb_tmipmap1_t(ftx_tmipmap1_t),
+                .m_attrb_tmipmap1_s(ftx_tmipmap1_s),
+                .m_attrb_tcolor_a(ftx_tcolor_a),
+                .m_attrb_tcolor_b(ftx_tcolor_b),
+                .m_attrb_tcolor_g(ftx_tcolor_g),
+                .m_attrb_tcolor_r(ftx_tcolor_r)
+            );
+            defparam attributeInterpolator.RASTERIZER_FLOAT_PRECISION = RASTERIZER_FLOAT_PRECISION;
+            defparam attributeInterpolator.INDEX_WIDTH = INDEX_WIDTH;
+            defparam attributeInterpolator.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+            defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+            defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+
+            assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
+
+
+            AttributeF2XConverter af2x (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .s_ftx_tvalid(ftx_tvalid),
+                .s_ftx_tlast(ftx_tlast),
+                .s_ftx_tkeep(ftx_tkeep),
+                .s_ftx_tspx(ftx_tspx),
+                .s_ftx_tspy(ftx_tspy),
+                .s_ftx_tindex(ftx_tindex),
+                .s_ftx_tdepth_w(ftx_tdepth_w),
+                .s_ftx_tdepth_z(ftx_tdepth_z),
+                .s_ftx_ttexture0_t(ftx_ttexture0_t),
+                .s_ftx_ttexture0_s(ftx_ttexture0_s),
+                .s_ftx_tmipmap0_t(ftx_tmipmap0_t),
+                .s_ftx_tmipmap0_s(ftx_tmipmap0_s),
+                .s_ftx_ttexture1_t(ftx_ttexture1_t),
+                .s_ftx_ttexture1_s(ftx_ttexture1_s),
+                .s_ftx_tmipmap1_t(ftx_tmipmap1_t),
+                .s_ftx_tmipmap1_s(ftx_tmipmap1_s),
+                .s_ftx_tcolor_a(ftx_tcolor_a),
+                .s_ftx_tcolor_b(ftx_tcolor_b),
+                .s_ftx_tcolor_g(ftx_tcolor_g),
+                .s_ftx_tcolor_r(ftx_tcolor_r),
+
+                .m_ftx_tvalid(alrp_tvalid),
+                .m_ftx_tlast(alrp_tlast),
+                .m_ftx_tkeep(alrp_tkeep),
+                .m_ftx_tspx(alrp_tspx),
+                .m_ftx_tspy(alrp_tspy),
+                .m_ftx_tindex(alrp_tindex),
+                .m_ftx_tdepth_w(alrp_tdepth_w),
+                .m_ftx_tdepth_z(alrp_tdepth_z),
+                .m_ftx_ttexture0_t(alrp_ttexture0_t),
+                .m_ftx_ttexture0_s(alrp_ttexture0_s),
+                .m_ftx_tmipmap0_t(alrp_tmipmap0_t),
+                .m_ftx_tmipmap0_s(alrp_tmipmap0_s),
+                .m_ftx_ttexture1_t(alrp_ttexture1_t),
+                .m_ftx_ttexture1_s(alrp_ttexture1_s),
+                .m_ftx_tmipmap1_t(alrp_tmipmap1_t),
+                .m_ftx_tmipmap1_s(alrp_tmipmap1_s),
+                .m_ftx_tcolor_a(alrp_tcolor_a),
+                .m_ftx_tcolor_b(alrp_tcolor_b),
+                .m_ftx_tcolor_g(alrp_tcolor_g),
+                .m_ftx_tcolor_r(alrp_tcolor_r)
+            );
+            defparam af2x.INDEX_WIDTH = INDEX_WIDTH;
+            defparam af2x.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
+            defparam af2x.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+            defparam af2x.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
+            defparam af2x.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+            defparam af2x.DEPTH_WIDTH = DEPTH_WIDTH;
+        end
+    endgenerate
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 34
+    // Clocks: 28
     ////////////////////////////////////////////////////////////////////////////
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;
@@ -929,7 +1130,6 @@ module RasterixRenderCore #(
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
-    defparam pixelPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 

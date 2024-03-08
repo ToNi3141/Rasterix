@@ -19,6 +19,7 @@
 #define VECI_HPP
 #include <array>
 #include <cstdint>
+#include <algorithm>
 
 namespace rr
 {
@@ -113,6 +114,14 @@ public:
         for (uint32_t i = 0; i < VecSize; i++)
             retVal += (static_cast<int64_t>(vec[i]) * val[i]);
         return retVal >> shift;
+    }
+
+    void clamp(const T low, const T high)
+    {
+        for (uint32_t i = 0; i < VecSize; i++)
+        {
+            vec[i] = std::clamp(vec[i], low, high);
+        }
     }
 
     std::array<T, VecSize> vec;

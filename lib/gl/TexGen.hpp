@@ -38,23 +38,31 @@ public:
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
+    void enableTexGenR(bool enable);
     void setTexGenModeS(TexGenMode mode);
     void setTexGenModeT(TexGenMode mode);
+    void setTexGenModeR(TexGenMode mode);
     void setTexGenVecObjS(const Vec4& val);
     void setTexGenVecObjT(const Vec4& val);
+    void setTexGenVecObjR(const Vec4& val);
     void setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val);
     void setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val);
+    void setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val);
 private:
     Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const;
 
     bool m_texGenEnableS{false};
     bool m_texGenEnableT{false};
+    bool m_texGenEnableR{false};
     TexGenMode m_texGenModeS{TexGenMode::EYE_LINEAR};
     TexGenMode m_texGenModeT{TexGenMode::EYE_LINEAR};
+    TexGenMode m_texGenModeR{TexGenMode::EYE_LINEAR};
     Vec4 m_texGenVecObjS{{1.0f, 0.0f, 0.0f, 0.0f}};
     Vec4 m_texGenVecObjT{{0.0f, 1.0f, 0.0f, 0.0f}};
+    Vec4 m_texGenVecObjR{{0.0f, 0.0f, 1.0f, 0.0f}};
     Vec4 m_texGenVecEyeS{{1.0f, 0.0f, 0.0f, 0.0f}};
     Vec4 m_texGenVecEyeT{{0.0f, 1.0f, 0.0f, 0.0f}};
+    Vec4 m_texGenVecEyeR{{0.0f, 0.0f, 1.0f, 0.0f}};
 };
 
 } // namespace rr

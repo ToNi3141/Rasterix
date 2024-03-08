@@ -59,7 +59,7 @@ module RasterixEF #(
     parameter ID_WIDTH = 8,
 
     // Memory strobe width
-    parameter CMD_MEM_STRB_WIDTH = CMD_STREAM_WIDTH / 8,
+    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8,
     parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
@@ -68,7 +68,14 @@ module RasterixEF #(
     // 4 bit reducing can safe around 1k LUTs.
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
-    parameter INTERNAL_FLOAT_PRECISION = 32
+    parameter RASTERIZER_FLOAT_PRECISION = 32,
+    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
+    // Lower values can lead to distortions of the fog and texels.
+    parameter RASTERIZER_FIXPOINT_PRECISION = 25,
+    // Enables the floating point interpolation. If this is disabled, it falls back
+    // to the fix point interpolation
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1
 )
 (
     input  wire                             aclk,
@@ -103,7 +110,7 @@ module RasterixEF #(
     input  wire                             m_common_axi_awready,
 
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_common_axi_wdata,
-    output wire [CMD_MEM_STRB_WIDTH - 1 : 0]m_common_axi_wstrb,
+    output wire [STRB_WIDTH - 1 : 0]        m_common_axi_wstrb,
     output wire                             m_common_axi_wlast,
     output wire                             m_common_axi_wvalid,
     input  wire                             m_common_axi_wready,
@@ -716,7 +723,9 @@ module RasterixEF #(
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
-        .INTERNAL_FLOAT_PRECISION(INTERNAL_FLOAT_PRECISION)
+        .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
+        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

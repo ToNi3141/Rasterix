@@ -18,30 +18,10 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VStreamConcatFifo.h"
-
-void clk(VStreamConcatFifo* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VStreamConcatFifo* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
 {
@@ -59,7 +39,7 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
 
     t->m_stream_tready = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     CHECK(t->m_stream_tvalid == 0);
     CHECK(t->s_stream0_tready == 1);
@@ -74,7 +54,7 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
         // Push one byte into stream0
         t->s_stream0_tvalid = 1;
         t->s_stream0_tdata = 0;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream0_tready == 1);
 
@@ -82,7 +62,7 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
         t->s_stream0_tvalid = 0;
         t->s_stream1_tvalid = 1;
         t->s_stream1_tdata = 1;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream1_tready == 1);
 
@@ -90,7 +70,7 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
         t->s_stream1_tvalid = 0;
         t->s_stream2_tvalid = 1;
         t->s_stream2_tdata = 2;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream2_tready == 1);
 
@@ -98,13 +78,13 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
         t->s_stream2_tvalid = 0;
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 1);
         CHECK(t->m_stream_tdata == 0x03020100);
         CHECK(t->s_stream3_tready == 1);
 
         t->s_stream3_tvalid = 0;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
     }
 
@@ -127,7 +107,7 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
 
     t->m_stream_tready = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     // Trigger one transfer
     t->s_stream0_tvalid = 1;
@@ -138,7 +118,7 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
     t->s_stream2_tdata = 2;
     t->s_stream3_tvalid = 1;
     t->s_stream3_tdata = 3;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_stream_tvalid == 1);
     CHECK(t->m_stream_tdata == 0x03020100);
     CHECK(t->s_stream0_tready == 1);
@@ -148,14 +128,14 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
 
     // Cycle without read
     t->s_stream3_tvalid = 0;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_stream_tvalid == 1);
     CHECK(t->m_stream_tdata == 0x03020100);
     CHECK(t->s_stream3_tready == 1);
 
     // Set output (combinatorial). Must have a direct effect on the output.
     t->m_stream_tready = 1;
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_stream_tvalid == 0);
 
     delete t;
@@ -177,7 +157,7 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
 
     t->m_stream_tready = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     CHECK(t->m_stream_tvalid == 0);
     CHECK(t->s_stream0_tready == 1);
@@ -198,7 +178,7 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
         t->s_stream2_tdata = 2;
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 1);
         CHECK(t->s_stream0_tready == 1);
         CHECK(t->s_stream1_tready == 1);
@@ -207,7 +187,7 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
     }
 
     // Check that the fifos are full
-    clk(t);
+    rr::ut::clk(t);
     CHECK(t->m_stream_tvalid == 1);
     CHECK(t->s_stream0_tready == 0);
     CHECK(t->s_stream1_tready == 0);
@@ -233,7 +213,7 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
 
     t->m_stream_tready = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     CHECK(t->m_stream_tvalid == 0);
     CHECK(t->s_stream0_tready == 1);
@@ -248,7 +228,7 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
         // Push one byte into stream0
         t->s_stream0_tvalid = 1;
         t->s_stream0_tdata = 0;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream0_tready == 1);
 
@@ -256,7 +236,7 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
         t->s_stream0_tvalid = 0;
         t->s_stream1_tvalid = 1;
         t->s_stream1_tdata = 1;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream1_tready == 1);
 
@@ -264,7 +244,7 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
         t->s_stream1_tvalid = 0;
         t->s_stream2_tvalid = 0;
         t->s_stream2_tdata = 2;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream2_tready == 1);
 
@@ -272,13 +252,13 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
         t->s_stream2_tvalid = 0;
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 1);
         CHECK(t->m_stream_tdata == 0x03000100);
         CHECK(t->s_stream3_tready == 1);
 
         t->s_stream3_tvalid = 0;
-        clk(t);
+        rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
     }
 

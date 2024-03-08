@@ -18,6 +18,10 @@ set_property source_mgmt_mode All [current_project]
 
 # Load verilog source
 read_verilog ./../../../../Rasterix/AttributeInterpolator.v
+read_verilog ./../../../../Rasterix/AttributeF2XConverter.v
+read_verilog ./../../../../Rasterix/AttributeInterpolatorX.v
+read_verilog ./../../../../Rasterix/AttributeInterpolationX.v
+read_verilog ./../../../../Rasterix/AttributePerspectiveCorrectionX.v
 read_verilog ./../../../../Rasterix/ColorBlender.v
 read_verilog ./../../../../Rasterix/ColorInterpolator.v
 read_verilog ./../../../../Rasterix/ColorMixerSigned.v
@@ -36,6 +40,7 @@ read_verilog ./../../../../Rasterix/PixelUtil.vh
 read_verilog ./../../../../Rasterix/RasterixIF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
+read_verilog ./../../../../Rasterix/RasterizerCommands.vh
 read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../Rasterix/RegisterBank.v
 read_verilog ./../../../../Rasterix/StencilOp.v
@@ -49,6 +54,8 @@ read_verilog ./../../../../Rasterix/TextureFilter.v
 read_verilog ./../../../../Rasterix/TextureMappingUnit.v
 read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
+read_verilog ./../../../../Float/rtl/float/XRecip.v
+read_verilog ./../../../../Float/rtl/float/ComputeRecip.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
 read_verilog ./../../../../Float/rtl/float/FloatRecip.v

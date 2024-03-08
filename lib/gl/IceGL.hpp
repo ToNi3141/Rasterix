@@ -59,6 +59,10 @@ public:
     /// @return The maximum texture size in pixel
     uint16_t getMaxTextureSize() const { return m_renderer.getMaxTextureSize(); }
 
+    /// @brief Returns the maximum supported LOD level
+    /// @return The maximum supported LOD level
+    static std::size_t getMaxLOD() { return IRenderer::MAX_LOD; }
+
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
     IRenderer::TMU getTmuCount() const { return m_renderer.getTmuCount(); }

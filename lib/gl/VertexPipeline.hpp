@@ -189,8 +189,6 @@ private:
     int16_t m_viewportY { 0 };
     int16_t m_viewportHeight { 0 };
     int16_t m_viewportWidth { 0 };
-    float m_viewportXShift { 0.0f };
-    float m_viewportYShift { 0.0f };
     float m_viewportHeightHalf { 0.0f };
     float m_viewportWidthHalf { 0.0f };
 

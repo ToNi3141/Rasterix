@@ -23,7 +23,10 @@ struct RenderConfigRRXIFSimulation
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 480 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 64 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 32 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -55,7 +58,10 @@ struct RenderConfigRRXEFSimulation
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 640 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 480 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 1024 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -87,7 +93,10 @@ struct RenderConfigRRXIFCModA7
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 320 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 240 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 32 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 16 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { true };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 32 };
@@ -119,8 +128,11 @@ struct RenderConfigRRXIFNexys
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 256 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 128 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
+    
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
 
@@ -151,8 +163,11 @@ struct RenderConfigRRXEFNexys
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 600 * 2 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 600 * 1024 };
 
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
+    
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 128 };
 
@@ -183,7 +198,10 @@ struct RenderConfigRRXEFZynq
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 2 * 1024 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 1024 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };
@@ -215,7 +233,10 @@ struct RenderConfigRRXIFZynq
     // Display Settings
     static constexpr uint16_t MAX_DISPLAY_WIDTH { 1024 };
     static constexpr uint16_t MAX_DISPLAY_HEIGHT { 600 };
-    static constexpr uint32_t INTERNAL_FRAMEBUFFER_SIZE { 128 * 1024 };
+    static constexpr uint32_t FRAMEBUFFER_SIZE_IN_WORDS { 64 * 1024 };
+
+    // Rasterizer settings
+    static constexpr bool USE_FLOAT_INTERPOLATION { false };
 
     // Bus Settings
     static constexpr uint16_t CMD_STREAM_WIDTH { 64 };

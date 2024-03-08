@@ -1375,6 +1375,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_TEXTURE_GEN_T called");
         IceGL::getInstance().vertexPipeline().getTexGen().enableTexGenT(false);
         break;
+    case GL_TEXTURE_GEN_R:
+        SPDLOG_DEBUG("glDisable GL_TEXTURE_GEN_R called");
+        IceGL::getInstance().vertexPipeline().getTexGen().enableTexGenR(false);
+        break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glDisable GL_CULL_FACE called");
         IceGL::getInstance().vertexPipeline().enableCulling(false);
@@ -1472,6 +1476,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_TEXTURE_GEN_T:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_GEN_T called");
         IceGL::getInstance().vertexPipeline().getTexGen().enableTexGenT(true);
+        break;
+    case GL_TEXTURE_GEN_R:
+        SPDLOG_DEBUG("glEnable GL_TEXTURE_GEN_R called");
+        IceGL::getInstance().vertexPipeline().getTexGen().enableTexGenR(true);
         break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glEnable GL_CULL_FACE called");
@@ -1631,6 +1639,8 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         IceGL::getInstance().pixelPipeline().setFogEnd(param);
         break;
     default:
+        SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artefacts.");
+        impl_glDisable(GL_FOG);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
         break;
     }
@@ -1650,9 +1660,7 @@ GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat *params)
         break;
     case GL_FOG_COLOR:
     {
-        Vec4 fogColor {};
-        fogColor.fromArray(params, 4);
-        IceGL::getInstance().pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        IceGL::getInstance().pixelPipeline().setFogColor({ { params[0], params[1], params[2], params[3] } });
     }
         break;
     default:
@@ -1729,8 +1737,8 @@ GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble *params)
 
 GLAPI GLenum APIENTRY impl_glGetError(void)
 {
-    SPDLOG_WARN("glGetError not implemented");
-    return GL_INVALID_ENUM;
+    SPDLOG_DEBUG("glGetError called");
+    return IceGL::getInstance().getError();
 }
 
 GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat *params)
@@ -2002,7 +2010,7 @@ GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat *params)
 
 GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 {
-    SPDLOG_WARN("glLightModeli not implemented");
+    SPDLOG_WARN("glLightModeli pname 0x{:X} param 0x{:X} not implemented", pname, param);
 }
 
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint *params)
@@ -2497,32 +2505,13 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
     // TODO: Implement GL_UNPACK_ROW_LENGTH
     if (pname == GL_PACK_ALIGNMENT) [[unlikely]]
     {
-        SPDLOG_WARN("glPixelStorei pname not supported");
+        SPDLOG_WARN("glPixelStorei pname GL_PACK_ALIGNMENT not supported");
         IceGL::getInstance().setError(GL_INVALID_ENUM); 
         return;
     }
 
-    if (pname == GL_UNPACK_ALIGNMENT)
-    {
-        switch (param)
-        {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-            // m_unpackAlignment = param;
-            break;
-        default:
-            SPDLOG_WARN("glPixelStorei param not supported");
-            IceGL::getInstance().setError(GL_INVALID_VALUE); 
-            break;
-        }
-    }
-    else
-    {
-        SPDLOG_WARN("glPixelStorei pname not supported");
-        IceGL::getInstance().setError(GL_INVALID_ENUM); 
-    }
+    SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
+    IceGL::getInstance().setError(GL_INVALID_ENUM); 
 }
 
 GLAPI void APIENTRY impl_glPixelTransferf(GLenum pname, GLfloat param)
@@ -3313,8 +3302,7 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat *p
                 IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjT({ params });
                 break;
             case GL_R:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjR({ params });
                 break;
             case GL_Q:
                 SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
@@ -3334,8 +3322,7 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat *p
                 IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
                 break;
             case GL_R:
-                SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_R not implemented");
-                IceGL::getInstance().setError(GL_INVALID_ENUM);
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
                 break;
             case GL_Q:
                 SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
@@ -3384,8 +3371,7 @@ GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
             IceGL::getInstance().vertexPipeline().getTexGen().setTexGenModeT(mode);
             break;
         case GL_R:
-            SPDLOG_WARN("glTexGeni GL_R not implemented");
-            IceGL::getInstance().setError(GL_INVALID_ENUM);
+            IceGL::getInstance().vertexPipeline().getTexGen().setTexGenModeR(mode);
             break;
         case GL_Q:
             SPDLOG_WARN("glTexGeni GL_Q not implemented");
@@ -3429,6 +3415,12 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     IceGL::getInstance().setError(GL_NO_ERROR);
     const uint16_t maxTexSize { IceGL::getInstance().getMaxTextureSize() }; 
 
+    if (level > IceGL::getInstance().getMaxLOD())
+    {
+        SPDLOG_ERROR("glTexImage2d invalid lod.");
+        return;
+    }
+
     if ((width > maxTexSize) || (height > maxTexSize)) [[unlikely]]
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
@@ -3455,7 +3447,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    PixelPipeline::IntendedInternalPixelFormat intentedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
+    PixelPipeline::IntendedInternalPixelFormat intendedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
     
     switch (internalformat)
     {
@@ -3464,7 +3456,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_ALPHA8:
         case GL_ALPHA12:
         case GL_ALPHA16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::ALPHA;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::ALPHA;
             break;
         case GL_COMPRESSED_LUMINANCE:
         case GL_LUMINANCE:
@@ -3472,7 +3464,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_LUMINANCE8:
         case GL_LUMINANCE12:
         case GL_LUMINANCE16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE;
             break;
         case GL_COMPRESSED_INTENSITY:
         case GL_INTENSITY:
@@ -3480,7 +3472,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_INTENSITY8:
         case GL_INTENSITY12:
         case GL_INTENSITY16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::INTENSITY;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::INTENSITY;
             break;
         case 2:
         case GL_COMPRESSED_LUMINANCE_ALPHA:
@@ -3491,7 +3483,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_LUMINANCE12_ALPHA4:
         case GL_LUMINANCE12_ALPHA12:
         case GL_LUMINANCE16_ALPHA16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
             break;
         case 3:
         case GL_COMPRESSED_RGB:
@@ -3503,7 +3495,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_RGB10:
         case GL_RGB12:
         case GL_RGB16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGB;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGB;
             break;
         case 4:
         case GL_COMPRESSED_RGBA:
@@ -3514,10 +3506,10 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_RGB10_A2:
         case GL_RGBA12:
         case GL_RGBA16:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA;
             break;
         case GL_RGB5_A1:
-            intentedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA1;
+            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA1;
             break;
         case GL_DEPTH_COMPONENT:
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
@@ -3531,7 +3523,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
     texObj.width = widthRounded;
     texObj.height = heightRounded;
-    texObj.intendedPixelFormat = intentedInternalPixelFormat;
+    texObj.intendedPixelFormat = intendedInternalPixelFormat;
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -4025,7 +4017,7 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
 {
-    SPDLOG_WARN("glPolygonOffset not implemented");
+    SPDLOG_WARN("glPolygonOffset factor {} units {} not implemented", factor, units);
 }
 
 GLAPI void APIENTRY impl_glPopClientAttrib(void)
@@ -4064,6 +4056,12 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     IceGL::getInstance().setError(GL_NO_ERROR);
 
+    if (level > IceGL::getInstance().getMaxLOD())
+    {
+        SPDLOG_ERROR("glTexSubImage2D invalid lod.");
+        return;
+    }
+
     if (!IceGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
@@ -4097,11 +4095,12 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (pixels != nullptr)
     {
         int32_t i = 0;
-        for (int32_t y = yoffset; y < height; y++)
+        // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
+        for (int32_t y = yoffset; y < (height + yoffset); y++)
         {
-            for (int32_t x = xoffset; x < width; x++)
+            for (int32_t x = xoffset; x < (width + xoffset); x++)
             {
-                const int32_t texPos { (y * width) + x };
+                const int32_t texPos { (y * texObj.width) + x };
                 switch (format)
                 {
                     case GL_RGB:

@@ -57,6 +57,61 @@ struct StaticParams
     float depthZYInc;
 };
 
+struct TextureX
+{
+    Vec3i texStq;
+    Vec3i texStqXInc;
+    Vec3i texStqYInc;
+
+    void operator=(const Texture& t)
+    {
+        texStq.fromVec<28>(t.texStq.vec);
+        texStqXInc.fromVec<28>(t.texStqXInc.vec);
+        texStqYInc.fromVec<28>(t.texStqYInc.vec);
+    }
+};
+
+struct StaticParamsX
+{
+    uint32_t reserved;
+    uint16_t bbStartX;
+    uint16_t bbStartY;
+    uint16_t bbEndX;
+    uint16_t bbEndY;
+    Vec3i wInit;
+    Vec3i wXInc;
+    Vec3i wYInc;
+    Vec4i color;
+    Vec4i colorXInc;
+    Vec4i colorYInc;
+    int32_t depthW;
+    int32_t depthWXInc;
+    int32_t depthWYInc;
+    int32_t depthZ;
+    int32_t depthZXInc;
+    int32_t depthZYInc;
+
+    void operator=(const StaticParams& t)
+    {
+        bbStartX = t.bbStartX;
+        bbStartY = t.bbStartY;
+        bbEndX = t.bbEndX;
+        bbEndY = t.bbEndY;
+        wInit = t.wInit;
+        wXInc = t.wXInc;
+        wYInc = t.wYInc;
+        color.fromVec<24>(t.color.vec);
+        colorXInc.fromVec<24>(t.colorXInc.vec);
+        colorYInc.fromVec<24>(t.colorYInc.vec);
+        depthW = static_cast<int32_t>(t.depthW * (1 << 30));
+        depthWXInc = static_cast<int32_t>(t.depthWXInc * (1 << 30));
+        depthWYInc = static_cast<int32_t>(t.depthWYInc * (1 << 30));
+        depthZ = static_cast<int32_t>(t.depthZ * (1 << 30));
+        depthZXInc = static_cast<int32_t>(t.depthZXInc * (1 << 30));
+        depthZYInc = static_cast<int32_t>(t.depthZYInc * (1 << 30));
+    }
+};
+
 } // namespace TriangleStreamTypes
 
 } // namespace rr

@@ -15,14 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
+#include "general.hpp"
 #include <math.h>
 #include <array>
 #include <algorithm>
 
-// Include common routines
-#include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VStencilOp.h"
@@ -36,26 +33,10 @@ static constexpr uint8_t DECR = 5;
 static constexpr uint8_t DECR_WRAP = 6;
 static constexpr uint8_t INVERT = 7;
 
-void clk(VStencilOp* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VStencilOp* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
-
 TEST_CASE("Test stencil fail op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
-    reset(top);
+    rr::ut::reset(top);
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -68,49 +49,49 @@ TEST_CASE("Test stencil fail op", "[VStencilOp]")
 
     top->opFail = KEEP;
     top->sValIn = 1;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 1);
     REQUIRE(top->write == 1);
 
     top->opFail = ZERO;
     top->sValIn = 2;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     top->opFail = REPLACE;
     top->sValIn = 3;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opFail = INCR;
     top->sValIn = 4;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opFail = INCR_WRAP;
     top->sValIn = 5;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opFail = DECR;
     top->sValIn = 6;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opFail = DECR_WRAP;
     top->sValIn = 7;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opFail = INVERT;
     top->sValIn = 8;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 7);
     REQUIRE(top->write == 1);
 
@@ -121,7 +102,7 @@ TEST_CASE("Test stencil fail op", "[VStencilOp]")
 TEST_CASE("Test z fail op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
-    reset(top);
+    rr::ut::reset(top);
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -134,49 +115,49 @@ TEST_CASE("Test z fail op", "[VStencilOp]")
 
     top->opZFail = KEEP;
     top->sValIn = 1;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 1);
     REQUIRE(top->write == 1);
 
     top->opZFail = ZERO;
     top->sValIn = 2;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     top->opZFail = REPLACE;
     top->sValIn = 3;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZFail = INCR;
     top->sValIn = 4;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZFail = INCR_WRAP;
     top->sValIn = 5;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opZFail = DECR;
     top->sValIn = 6;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZFail = DECR_WRAP;
     top->sValIn = 7;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opZFail = INVERT;
     top->sValIn = 8;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 7);
     REQUIRE(top->write == 1);
 
@@ -187,7 +168,7 @@ TEST_CASE("Test z fail op", "[VStencilOp]")
 TEST_CASE("Test z pass op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
-    reset(top);
+    rr::ut::reset(top);
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -200,49 +181,49 @@ TEST_CASE("Test z pass op", "[VStencilOp]")
 
     top->opZPass = KEEP;
     top->sValIn = 1;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 1);
     REQUIRE(top->write == 1);
 
     top->opZPass = ZERO;
     top->sValIn = 2;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     top->opZPass = REPLACE;
     top->sValIn = 3;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZPass = INCR;
     top->sValIn = 4;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZPass = INCR_WRAP;
     top->sValIn = 5;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opZPass = DECR;
     top->sValIn = 6;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 5);
     REQUIRE(top->write == 1);
 
     top->opZPass = DECR_WRAP;
     top->sValIn = 7;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 6);
     REQUIRE(top->write == 1);
 
     top->opZPass = INVERT;
     top->sValIn = 8;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 7);
     REQUIRE(top->write == 1);
 
@@ -253,7 +234,7 @@ TEST_CASE("Test z pass op", "[VStencilOp]")
 TEST_CASE("Test wrapping", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
-    reset(top);
+    rr::ut::reset(top);
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -266,25 +247,25 @@ TEST_CASE("Test wrapping", "[VStencilOp]")
 
     top->opFail = INCR;
     top->sValIn = 0xf;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0xf);
     REQUIRE(top->write == 1);
 
     top->opFail = INCR_WRAP;
     top->sValIn = 0xf;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     top->opFail = DECR;
     top->sValIn = 0;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     top->opFail = DECR_WRAP;
     top->sValIn = 0;
-    clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->sValOut == 0xf);
     REQUIRE(top->write == 1);
 

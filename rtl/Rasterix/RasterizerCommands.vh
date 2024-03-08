@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,31 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+localparam RR_CMD_SIZE = 2;
 
-#ifndef _TRIANGLE_HPP_
-#define _TRIANGLE_HPP_
-
-#include <cstdint>
-#include <span>
-#include "Vec.hpp"
-
-namespace rr
-{
-
-struct Triangle
-{
-    const Vec4& vertex0;
-    const Vec4& vertex1;
-    const Vec4& vertex2;
-    const Vec3& oow; // Used for perspective correction
-    const std::span<const Vec4>& texture0;
-    const std::span<const Vec4>& texture1;
-    const std::span<const Vec4>& texture2;
-    const Vec4& color0;
-    const Vec4& color1;
-    const Vec4& color2;
-};
-
-} // namespace rr
-
-#endif // _TRIANGLE_HPP_
+localparam RR_CMD_INIT = 0;
+localparam RR_CMD_X_INC = 1;
+localparam RR_CMD_X_DEC = 2;
+localparam RR_CMD_Y_INC = 3;

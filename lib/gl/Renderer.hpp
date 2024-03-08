@@ -89,7 +89,7 @@ namespace rr
 template <class RenderConfig>
 class Renderer : public IRenderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT * 2) / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + 1 };
+    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
@@ -150,7 +150,7 @@ public:
 
     virtual bool drawTriangle(const Triangle& triangle) override
     {
-        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible()) [[unlikely]]
         {
@@ -158,7 +158,7 @@ public:
             return true;
         }
 
-        const uint32_t displayLines = m_displayLines;
+                const uint32_t displayLines = m_displayLines;
         const uint32_t yLineResolution = m_yLineResolution;
         for (uint32_t i = 0; i < displayLines; i++)
         {
@@ -166,7 +166,21 @@ public:
             const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
-                bool ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                bool ret { false };
+                
+                // The floating point rasterizer can automatically increment all attributes to the current screen position
+                // Therefor no further computing is necessary
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                }
+                else
+                {
+                    // The fix point interpolator needs the triangle incremented to the current line
+                    TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
+                }
                 if (ret == false) [[unlikely]]
                 {
                     return false;
@@ -411,8 +425,8 @@ public:
 
     virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
     {
-        const uint32_t framebufferSize = x * y * 2;
-        const uint32_t framebufferLines = (framebufferSize / RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) + ((framebufferSize % RenderConfig::INTERNAL_FRAMEBUFFER_SIZE) ? 1 : 0);
+        const uint32_t framebufferSize = x * y;
+        const uint32_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
         if (framebufferLines > DISPLAY_LINES)
         {
             // More lines required than lines available
@@ -604,7 +618,7 @@ private:
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
-    Rasterizer m_rasterizer;
+    Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
     std::future<bool> m_renderThread;
 
     // Mapping of texture id and TMU

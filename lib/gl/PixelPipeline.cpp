@@ -35,7 +35,7 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
 
 bool PixelPipeline::drawTriangle(const Triangle& triangle) 
 {
-    return m_renderer.drawTriangle(triangle);
+        return m_renderer.drawTriangle(triangle);
 }
 
 bool PixelPipeline::updatePipeline()
@@ -150,8 +150,8 @@ void PixelPipeline::setFogDensity(const float val)
 bool PixelPipeline::setFogColor(const Vec4& val)
 {
     Vec4i color;
-    color.fromVec(val.vec);
-    color.mul<0>(255);
+    color.fromVec<8>(val.vec);
+    color.clamp(0, 255);
     return m_renderer.setFogColor(color);
 }
 
@@ -215,6 +215,11 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
         texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        if (m_tmu != 0) // Is this the right mode?
+        {
+            texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+        }
         break;
     case TexEnvMode::REPLACE:
         texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
@@ -229,6 +234,11 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
         texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        if (m_tmu != 0) // Is this the right mode?
+        {
+            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PREVIOUS);
+        }
         break;
     case TexEnvMode::DECAL:
         texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
@@ -238,6 +248,11 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setOperandRgb2(TexEnvReg::Operand::SRC_ALPHA);
+        if (m_tmu != 0) // Is this the right mode? 
+        {
+            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+        }
         break;
     case TexEnvMode::BLEND:
         texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
@@ -247,6 +262,11 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::TEXTURE);
+        if (m_tmu != 0) // Is this the right mode?
+        {
+            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+        }
         break;
     case TexEnvMode::ADD:
         texEnvConf.setCombineRgb(TexEnvReg::Combine::ADD);
@@ -255,6 +275,11 @@ bool PixelPipeline::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
         texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        if (m_tmu != 0) // Is this the right mode?
+        {
+            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PREVIOUS);
+        }
         break;
     case TexEnvMode::COMBINE:
         // Nothing to do here.

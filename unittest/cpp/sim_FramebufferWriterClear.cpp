@@ -18,30 +18,10 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VFramebufferWriterClear.h"
-
-void clk(VFramebufferWriterClear* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VFramebufferWriterClear* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
 {
@@ -49,7 +29,7 @@ TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
 
     t->apply = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     CHECK(t->applied == 1);
 
@@ -88,7 +68,7 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
 
     t->apply = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     t->confClearColor = 0xabcd;
     t->confXResolution = X_RES;
@@ -101,7 +81,7 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     static constexpr uint32_t Y_RES_MAX_INDEX = Y_RES - 1;
     for (uint32_t x = 0, y = Y_RES_MAX_INDEX; x < X_RES && y == 0; x++)
     {
-        clk(t);
+        rr::ut::clk(t);
         t->apply = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
@@ -128,7 +108,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
 
     t->apply = 0;
 
-    reset(t);
+    rr::ut::reset(t);
 
     t->confClearColor = 0xabcd;
     t->confXResolution = X_RES;
@@ -142,10 +122,10 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     for (uint32_t x = 0, y = Y_RES_MAX_INDEX; x < X_RES && y > 0; x++)
     {
         t->m_frag_tready = 0;
-        clk(t);
+        rr::ut::clk(t);
         t->apply = 0;
-        clk(t);
-        clk(t);
+        rr::ut::clk(t);
+        rr::ut::clk(t);
         t->m_frag_tready = 1;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_frag_tvalid == 1);
@@ -155,7 +135,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
         CHECK(t->m_frag_taddr == x + ((Y_RES_MAX_INDEX - y) * Y_RES_MAX_INDEX));
         CHECK(t->m_frag_txpos == x);
         CHECK(t->m_frag_typos == y);
-        clk(t);
+        rr::ut::clk(t);
         if (x + 1 == X_RES)
         {
             y--;

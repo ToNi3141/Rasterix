@@ -18,22 +18,12 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VDisplayController8BitILI9341.h"
 
-void clk(VDisplayController8BitILI9341& t)
-{
-    t.aclk = 0;
-    t.eval();
-    t.aclk = 1;
-    t.eval();
-}
+
 
 void reset(VDisplayController8BitILI9341& t)
 {
@@ -43,12 +33,12 @@ void reset(VDisplayController8BitILI9341& t)
     t.s_axis_tlast = 0;
     t.s_axis_tdata = 0;
 
-    clk(t);
+    rr::ut::clk(&t);
     
     REQUIRE(t.rst == 0);
     t.resetn = 1;
 
-    clk(t);
+    rr::ut::clk(&t);
 
     REQUIRE(t.rst == 1);
 }
@@ -61,14 +51,14 @@ void initTest(VDisplayController8BitILI9341& t, const bool dc, const uint8_t dat
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == dc);
     REQUIRE(t.data == data);
-    clk(t);
+    rr::ut::clk(&t);
     REQUIRE(t.s_axis_tready == last);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == dc);
     REQUIRE(t.data == data);
-    clk(t);
+    rr::ut::clk(&t);
 }
 
 TEST_CASE("Stream data", "[Display]")
@@ -129,7 +119,7 @@ TEST_CASE("Stream data", "[Display]")
     //REQUIRE(t.data == 0x08);
     t.s_axis_tvalid = 1;
     t.s_axis_tdata = 0x550f;
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -137,7 +127,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0xff);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -145,7 +135,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0xff);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -153,7 +143,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0xaa);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 0 stream
     REQUIRE(t.s_axis_tready == 1);
     REQUIRE(t.rd == 1);
@@ -161,7 +151,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0xaa);
-    clk(t);
+    rr::ut::clk(top);
 
 
 
@@ -172,7 +162,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     //REQUIRE(t.dc == 1);
     //REQUIRE(t.data == 0x08);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -180,7 +170,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0x55);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -188,7 +178,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0x55);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -196,7 +186,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0x0f);
-    clk(t);
+    rr::ut::clk(top);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 1);
     REQUIRE(t.rd == 1);
@@ -204,7 +194,7 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.cs == 0);
     REQUIRE(t.dc == 1);
     REQUIRE(t.data == 0x0f);
-    clk(t);
+    rr::ut::clk(top);
 
     // Final model cleanup
     top->final();

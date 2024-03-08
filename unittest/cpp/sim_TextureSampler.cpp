@@ -15,33 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
+#include "general.hpp"
 #include <math.h>
 #include <array>
 #include <algorithm>
 
-// Include common routines
-#include <verilated.h>
-
 // Include model header, generated from Verilating "top.v"
 #include "VTextureSamplerTestModule.h"
-
-void clk(VTextureSamplerTestModule* t)
-{
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-void reset(VTextureSamplerTestModule* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
 
 void uploadTexture(VTextureSamplerTestModule* top) 
 {
@@ -54,12 +34,12 @@ void uploadTexture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
     top->s_axis_tdata = 0x0f00'f000;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 1;
     top->s_axis_tdata = 0x000f'00f0;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
@@ -71,17 +51,17 @@ void uploadTexture(VTextureSamplerTestModule* top)
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
     // (0, 0)
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -90,10 +70,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.99.., 0.0)
     top->texelS = 0x7fff;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x00ff0000);
     REQUIRE(top->texel01 == 0xff000000);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -102,10 +82,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.0, 0.99..)
     top->texelS = 0;
     top->texelT = 0x7fff;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0xff000000);
@@ -114,10 +94,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x000000ff);
     REQUIRE(top->texel01 == 0x0000ff00);
     REQUIRE(top->texel10 == 0x00ff0000);
@@ -127,10 +107,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (1.0, 0.0)
     top->texelS = 0x8000;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -139,10 +119,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (0.0, 1.0)
     top->texelS = 0;
     top->texelT = 0x8000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -151,10 +131,10 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     // (1.0, 1.0)
     top->texelS = 0x8000;
     top->texelT = 0x8000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -167,29 +147,29 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 TEST_CASE("Get various values from the texture buffer with pipeline test", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
     // (0, 0)
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
+    rr::ut::clk(top);
 
     // (0.99.., 0.0)
     top->texelS = 0x7fff;
     top->texelT = 0;
-    clk(top);
+    rr::ut::clk(top);
 
     // (0.0, 0.99..)
     top->texelS = 0;
     top->texelT = 0x7fff;
-    clk(top);
+    rr::ut::clk(top);
 
     // (0.99.., 0.99..)
     top->texelS = 0x7fff;
     top->texelT = 0x7fff;
-    clk(top);
+    rr::ut::clk(top);
 
     // Result of (0, 0)
     REQUIRE(top->texel00 == 0xff000000);
@@ -197,7 +177,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     REQUIRE(top->texel10 == 0x0000ff00);
     REQUIRE(top->texel11 == 0x000000ff);
 
-    clk(top);
+    rr::ut::clk(top);
 
     // (0.99.., 0.0)
     REQUIRE(top->texel00 == 0x00ff0000);
@@ -205,7 +185,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     REQUIRE(top->texel10 == 0x000000ff);
     REQUIRE(top->texel11 == 0x0000ff00);
 
-    clk(top);
+    rr::ut::clk(top);
 
     // Result of (0.0, 0.99..)
     REQUIRE(top->texel00 == 0x0000ff00);
@@ -213,7 +193,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     REQUIRE(top->texel10 == 0xff000000);
     REQUIRE(top->texel11 == 0x00ff0000);
 
-    clk(top);
+    rr::ut::clk(top);
 
     // Result of (0.99.., 0.99..)
     REQUIRE(top->texel00 == 0x000000ff);
@@ -229,17 +209,17 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
 TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
     // texel (0.0, 0.0)
     top->texelS = 0x0000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -258,10 +238,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.125, 0.125) 
     top->texelS = 0x1000;
     top->texelT = 0x1000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -273,10 +253,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.125, 0.375) 
     top->texelS = 0x1000;
     top->texelT = 0x3000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -288,10 +268,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // texel (0.375, 0.125) 
     top->texelS = 0x3000;
     top->texelT = 0x1000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -307,7 +287,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
@@ -317,10 +297,10 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     // texel (0.0, 0.0)
     top->texelS = 0x0000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -329,10 +309,10 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x00ff0000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -341,10 +321,10 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x000000ff);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x00ff0000);
@@ -357,7 +337,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
 TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
@@ -367,10 +347,10 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     // texel (0.0, 0.0)
     top->texelS = 0x0000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -379,10 +359,10 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     // texel (0.0, 0.5)
     top->texelS = 0x0000;
     top->texelT = 0x4000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -391,10 +371,10 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x000000ff);
     REQUIRE(top->texel01 == 0x0000ff00);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -407,7 +387,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
 TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadTexture(top);
 
@@ -417,10 +397,10 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.0, 0.0)
     top->texelS = 0x0000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0xff000000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -429,10 +409,10 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.0)
     top->texelS = 0x4000;
     top->texelT = 0x0000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x00ff0000);
     REQUIRE(top->texel01 == 0x00ff0000);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -441,10 +421,10 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.0, 0.5)
     top->texelS = 0x0000;
     top->texelT = 0x4000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x0000ff00);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x0000ff00);
@@ -453,10 +433,10 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     // texel (0.5, 0.5)
     top->texelS = 0x4000;
     top->texelT = 0x4000;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x000000ff);
     REQUIRE(top->texel01 == 0x000000ff);
     REQUIRE(top->texel10 == 0x000000ff);
@@ -494,54 +474,54 @@ void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
     top->s_axis_tdata = 0x0002'0001;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0004'0003;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0006'0005;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0008'0007;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000A'0009;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000C'000B;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000E'000D;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0010'000F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0012'0011;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0014'0013;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0016'0015;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0018'0017;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001A'0019;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001C'001B;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001E'001D;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0032'0031;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0034'0033;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0036'0035;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0038'0037;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0042'0041;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 1;
     top->s_axis_tdata = 0x0000'0051;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
@@ -553,7 +533,7 @@ void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
 TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadMipMap4x8Texture(top);
 
@@ -561,10 +541,10 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 0;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -574,10 +554,10 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 1;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x3311);
     REQUIRE(top->texel01 == 0x3322);
     REQUIRE(top->texel10 == 0x3333);
@@ -587,10 +567,10 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 2;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x4411);
     REQUIRE(top->texel01 == 0x4411);
     REQUIRE(top->texel10 == 0x4422);
@@ -600,10 +580,10 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     top->textureLod = 3;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x5511);
     REQUIRE(top->texel01 == 0x5511);
     REQUIRE(top->texel10 == 0x5511);
@@ -632,31 +612,31 @@ void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
     top->s_axis_tdata = 0x0002'0001;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0004'0003;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0006'0005;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0008'0007;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000A'0009;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000C'000B;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000E'000D;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0010'000F;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0032'0031;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0034'0033;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 1;
     top->s_axis_tdata = 0x0000'0051;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
@@ -668,7 +648,7 @@ void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
 TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadMipMap4x4Texture(top);
 
@@ -676,10 +656,10 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     top->textureLod = 0;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -689,10 +669,10 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     top->textureLod = 1;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x3311);
     REQUIRE(top->texel01 == 0x3322);
     REQUIRE(top->texel10 == 0x3333);
@@ -702,10 +682,10 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     top->textureLod = 2;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x5511);
     REQUIRE(top->texel01 == 0x5511);
     REQUIRE(top->texel10 == 0x5511);
@@ -760,99 +740,99 @@ void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
     top->s_axis_tdata = 0x0002'0001;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0004'0003;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0006'0005;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0008'0007;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000A'0009;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000C'000B;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x000E'000D;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0010'000F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0012'0011;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0014'0013;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0016'0015;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0018'0017;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001A'0019;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001C'001B;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x001E'001D;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0020'001F;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0032'0031;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0034'0033;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0036'0035;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0038'0037;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x003A'0039;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x003A'0039;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x003A'0039;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x003A'0039;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0042'0041;
-    clk(top);
+    rr::ut::clk(top);
     top->s_axis_tdata = 0x0044'0043;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tdata = 0x0052'0051;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 1;
     top->s_axis_tdata = 0x0000'0061;
-    clk(top);
+    rr::ut::clk(top);
 
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
@@ -864,7 +844,7 @@ void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
 TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
-    reset(top);
+    rr::ut::reset(top);
 
     uploadMipMap4x16Texture(top);
 
@@ -872,10 +852,10 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 0;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x11);
     REQUIRE(top->texel01 == 0x22);
     REQUIRE(top->texel10 == 0x55);
@@ -885,10 +865,10 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 1;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x3311);
     REQUIRE(top->texel01 == 0x3322);
     REQUIRE(top->texel10 == 0x3333);
@@ -898,10 +878,10 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 2;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x4411);
     REQUIRE(top->texel01 == 0x4411);
     REQUIRE(top->texel10 == 0x4422);
@@ -911,10 +891,10 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 3;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x5511);
     REQUIRE(top->texel01 == 0x5511);
     REQUIRE(top->texel10 == 0x5522);
@@ -924,10 +904,10 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
     top->textureLod = 4;
     top->texelS = 0;
     top->texelT = 0;
-    clk(top);
-    clk(top);
-    clk(top);
-    clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
     REQUIRE(top->texel00 == 0x6611);
     REQUIRE(top->texel01 == 0x6611);
     REQUIRE(top->texel10 == 0x6611);

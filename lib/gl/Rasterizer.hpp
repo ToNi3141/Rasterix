@@ -18,6 +18,7 @@
 #define RASTERIZER_HPP
 #include <stdint.h>
 #include <array>
+#include <span>
 #include "Vec.hpp"
 #include "Triangle.hpp"
 #include "IRenderer.hpp"
@@ -30,7 +31,10 @@ class Rasterizer
 {
 public:  
 
-    Rasterizer();
+    Rasterizer(const bool enableScaling)
+        : m_enableScaling(enableScaling)
+    {}
+
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
                    const std::span<TriangleStreamTypes::Texture>& texture, 
                    const Triangle& triangle) const;
@@ -44,6 +48,11 @@ public:
     static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
                                           const uint16_t lineStart,
                                           const uint16_t lineEnd);
+
+    static bool increment(TriangleStreamTypes::StaticParams& params, 
+                          const std::span<TriangleStreamTypes::Texture>& texture,
+                          const uint16_t lineStart,
+                          const uint16_t lineEnd);
 private:
     static constexpr uint64_t DECIMAL_POINT = 12;
     inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
@@ -54,6 +63,7 @@ private:
     uint32_t m_scissorWidth { 0 };
     uint32_t m_scissorHeight { 0 };
     bool m_enableScissor { false };
+    const bool m_enableScaling { false };
     std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
 
 };

@@ -15,31 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#include "3rdParty/catch.hpp"
 
-#ifndef _TRIANGLE_HPP_
-#define _TRIANGLE_HPP_
-
-#include <cstdint>
-#include <span>
-#include "Vec.hpp"
+// Include common routines
+#include <verilated.h>
 
 namespace rr
 {
 
-struct Triangle
+namespace ut
 {
-    const Vec4& vertex0;
-    const Vec4& vertex1;
-    const Vec4& vertex2;
-    const Vec3& oow; // Used for perspective correction
-    const std::span<const Vec4>& texture0;
-    const std::span<const Vec4>& texture1;
-    const std::span<const Vec4>& texture2;
-    const Vec4& color0;
-    const Vec4& color1;
-    const Vec4& color2;
-};
+
+template <typename T>
+void clk(T* t)
+{
+    t->aclk = 0;
+    t->eval();
+    t->aclk = 1;
+    t->eval();
+}
+
+template <typename T>
+void reset(T* t)
+{
+    t->resetn = 0;
+    clk(t);
+    t->resetn = 1;
+    clk(t);
+}
+
+} // namespace ut
 
 } // namespace rr
-
-#endif // _TRIANGLE_HPP_
