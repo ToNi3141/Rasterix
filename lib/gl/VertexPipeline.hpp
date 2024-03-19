@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "Mat44.hpp"
 #include "Clipper.hpp"
 #include "Lighting.hpp"
+#include "ViewPort.hpp"
 #include "TexGen.hpp"
 #include "RenderObj.hpp"
 #include "IRenderer.hpp"
@@ -60,9 +61,7 @@ public:
     VertexPipeline(PixelPipeline& renderer);
 
     bool drawObj(const RenderObj &obj);
-
-    void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
-    void setDepthRange(const float zNear, const float zFar);
+;
     void setModelProjectionMatrix(const Mat44& m);
     void setModelMatrix(const Mat44& m);
     void setNormalMatrix(const Mat44& m);
@@ -98,6 +97,7 @@ public:
 
     Lighting& getLighting();
     TexGen& getTexGen();
+    ViewPort& getViewPort();
 
     static uint8_t getModelMatrixStackDepth();
     static uint8_t getProjectionMatrixStackDepth();
@@ -139,8 +139,6 @@ private:
 
     bool drawTriangle(const Triangle& triangle);
     bool drawLine(const Line& line);
-
-    inline void viewportTransform(Vec4 &v);
 
     void getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj& obj, const uint32_t index);
 
@@ -225,6 +223,7 @@ private:
 
     PixelPipeline& m_renderer;
     Lighting m_lighting;
+    ViewPort m_viewPort;
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 

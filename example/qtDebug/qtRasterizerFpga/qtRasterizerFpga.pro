@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/PixelPipeline.cpp \
     $${ICEGL_PATH}/gl.cpp \
     $${ICEGL_PATH}/glu.cpp \
-    $${ICEGL_PATH}/Rasterizer.cpp
+    $${ICEGL_PATH}/Rasterizer.cpp \
+    $${ICEGL_PATH}/ViewPort.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \

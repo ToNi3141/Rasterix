@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -392,7 +392,7 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
         // }
 
         // Viewport transformation of the vertex
-        viewportTransform(vertListClipped[i]);
+        m_viewPort.transform(vertListClipped[i]);
     }
 
     // Cull triangle
@@ -627,37 +627,6 @@ bool VertexPipeline::drawLineArray(
         }
     }
     return true;
-}
-
-void VertexPipeline::viewportTransform(Vec4 &v)
-{
-    // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
-    // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
-    v[0] = ((((v[0] + 1.0f) * m_viewportWidthHalf)) + m_viewportX);
-    v[1] = ((((v[1] + 1.0f) * m_viewportHeightHalf)) + m_viewportY);
-    v[2] = (m_depthRangeScale * v[2]) + m_depthRangeOffset;
-    v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
-}
-
-
-void VertexPipeline::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
-{
-    m_viewportHeight = height;
-    m_viewportWidth = width;
-    m_viewportX = x;
-    m_viewportY = y;
-
-    m_viewportHeightHalf = m_viewportHeight / 2.0f;
-    m_viewportWidthHalf = m_viewportWidth / 2.0f;
-}
-
-void VertexPipeline::setDepthRange(const float zNear, const float zFar)
-{
-    m_depthRangeZFar = zFar;
-    m_depthRangeZNear = zNear;
-
-    m_depthRangeScale = ((m_depthRangeZFar - m_depthRangeZNear) / 2.0f);
-    m_depthRangeOffset = ((m_depthRangeZNear + m_depthRangeZFar) / 2.0f);
 }
 
 void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
@@ -903,6 +872,11 @@ Lighting& VertexPipeline::getLighting()
 TexGen& VertexPipeline::getTexGen()
 {
     return m_texGen[m_tmu];
+}
+
+ViewPort& VertexPipeline::getViewPort()
+{
+    return m_viewPort;
 }
 
 void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)

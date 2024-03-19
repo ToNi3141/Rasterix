@@ -1321,7 +1321,7 @@ GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
     if (zFar  > 1.0f) zFar  = 1.0f;
     if (zFar  < -1.0f) zFar  = -1.0f;
 
-    IceGL::getInstance().vertexPipeline().setDepthRange(zNear, zFar);
+    IceGL::getInstance().vertexPipeline().getViewPort().setDepthRange(zNear, zFar);
 }
 
 GLAPI void APIENTRY impl_glDisable(GLenum cap)
@@ -3781,7 +3781,7 @@ GLAPI void APIENTRY impl_glViewport(GLint x, GLint y, GLsizei width, GLsizei hei
     // 0 and height which means a effective screen resolution of height + 1. For instance, a resolution of
     // 480 x 272. The view port transformation would go from 0 to 480 which is then 481px. Thats the reason why the
     // resolution is decremented by one.
-    IceGL::getInstance().vertexPipeline().setViewport(x, y, width, height);
+    IceGL::getInstance().vertexPipeline().getViewPort().setViewport(x, y, width, height);
 }
 
 // -------------------------------------------------------
