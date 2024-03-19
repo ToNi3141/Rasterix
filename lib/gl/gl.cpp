@@ -21,6 +21,7 @@
 #include "IceGL.hpp"
 #include "IRenderer.hpp"
 #include <cstring>
+#include "MatrixStack.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -1746,7 +1747,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat *params)
     SPDLOG_DEBUG("glGetFloatv pname 0x{:X} called", pname);
     switch (pname) {
         case GL_MODELVIEW_MATRIX:
-            memcpy(params, IceGL::getInstance().vertexPipeline().getModelMatrix().mat.data(), 16 * 4);
+            memcpy(params, IceGL::getInstance().vertexPipeline().getMatrixStack().getModelView().mat.data(), 16 * 4);
             break;
         default:
             SPDLOG_DEBUG("glGetFloatv redirected to glGetIntegerv");
@@ -1765,10 +1766,10 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint *params)
         *params = IceGL::getInstance().vertexPipeline().getLighting().MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
-        *params = VertexPipeline::getModelMatrixStackDepth();
+        *params = MatrixStack::getModelMatrixStackDepth();
         break;
     case GL_MAX_PROJECTION_STACK_DEPTH:
-        *params = VertexPipeline::getProjectionMatrixStackDepth();
+        *params = MatrixStack::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
         *params = IceGL::getInstance().getMaxTextureSize();
@@ -2079,7 +2080,7 @@ GLAPI void APIENTRY impl_glLightfv(GLenum light, GLenum pname, const GLfloat *pa
     {
         Vec4 lightPos { params };
         Vec4 lightPosTransformed {};
-        IceGL::getInstance().vertexPipeline().getModelMatrix().transform(lightPosTransformed, lightPos);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().getModelView().transform(lightPosTransformed, lightPos);
         IceGL::getInstance().vertexPipeline().getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
     }
@@ -2132,7 +2133,7 @@ GLAPI void APIENTRY impl_glListBase(GLuint base)
 GLAPI void APIENTRY impl_glLoadIdentity(void)
 {
     SPDLOG_DEBUG("glLoadIdentity called");
-    IceGL::getInstance().vertexPipeline().loadIdentity();
+    IceGL::getInstance().vertexPipeline().getMatrixStack().loadIdentity();
 }
 
 GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble *m)
@@ -2143,7 +2144,7 @@ GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble *m)
 GLAPI void APIENTRY impl_glLoadMatrixf(const GLfloat *m)
 {
     SPDLOG_DEBUG("glLoadMatrixf called");
-    bool ret = IceGL::getInstance().vertexPipeline().loadMatrix(*reinterpret_cast<const Mat44*>(m));
+    bool ret = IceGL::getInstance().vertexPipeline().getMatrixStack().loadMatrix(*reinterpret_cast<const Mat44*>(m));
     if (ret == false)
     {
         SPDLOG_WARN("glLoadMatrixf matrix mode not supported");
@@ -2335,22 +2336,22 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
-        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::MODELVIEW);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::MODELVIEW);
     }
     else if (mode == GL_PROJECTION)
     {
         SPDLOG_DEBUG("glMatrixMode GL_PROJECTION called");
-        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::PROJECTION);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::PROJECTION);
     }
     else if (mode == GL_TEXTURE)
     {
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
-        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::TEXTURE);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::TEXTURE);
     }
     else if (mode == GL_COLOR)
     {
         SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
-        IceGL::getInstance().vertexPipeline().setMatrixMode(VertexPipeline::MatrixMode::COLOR);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::COLOR);
     }
     else
     {
@@ -2374,7 +2375,7 @@ GLAPI void APIENTRY impl_glMultMatrixf(const GLfloat *m)
 {
     SPDLOG_DEBUG("glMultMatrixf called");
     const Mat44 *m44 = reinterpret_cast<const Mat44*>(m);
-    IceGL::getInstance().vertexPipeline().multiply(*m44);
+    IceGL::getInstance().vertexPipeline().getMatrixStack().multiply(*m44);
 }
 
 GLAPI void APIENTRY impl_glNewList(GLuint list, GLenum mode)
@@ -2552,7 +2553,7 @@ GLAPI void APIENTRY impl_glPopAttrib(void)
 GLAPI void APIENTRY impl_glPopMatrix(void)
 {
     SPDLOG_DEBUG("glPopMatrix called");
-    if (IceGL::getInstance().vertexPipeline().popMatrix())
+    if (IceGL::getInstance().vertexPipeline().getMatrixStack().popMatrix())
     {
         IceGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -2576,7 +2577,7 @@ GLAPI void APIENTRY impl_glPushMatrix(void)
 {
     SPDLOG_DEBUG("glPushMatrix called");
     
-    if (IceGL::getInstance().vertexPipeline().pushMatrix())
+    if (IceGL::getInstance().vertexPipeline().getMatrixStack().pushMatrix())
     {
         IceGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -2782,7 +2783,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    IceGL::getInstance().vertexPipeline().rotate(static_cast<float>(angle),
+    IceGL::getInstance().vertexPipeline().getMatrixStack().rotate(static_cast<float>(angle),
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
@@ -2791,7 +2792,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
 GLAPI void APIENTRY impl_glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glRotatef ({}, {}, {}, {}) called", angle, x, y, z);
-    IceGL::getInstance().vertexPipeline().rotate(angle, x, y, z);
+    IceGL::getInstance().vertexPipeline().getMatrixStack().rotate(angle, x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
@@ -2800,7 +2801,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    IceGL::getInstance().vertexPipeline().scale(static_cast<float>(x),
+    IceGL::getInstance().vertexPipeline().getMatrixStack().scale(static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
 }
@@ -2808,7 +2809,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glScalef ({}, {}, {}) called", x, y, z);
-    IceGL::getInstance().vertexPipeline().scale(x, y, z);
+    IceGL::getInstance().vertexPipeline().getMatrixStack().scale(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -3316,13 +3317,13 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat *p
     case GL_EYE_PLANE:
         switch (coord) {
             case GL_S:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS(IceGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
                 break;
             case GL_T:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(IceGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
                 break;
             case GL_R:
-                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR(IceGL::getInstance().vertexPipeline().getModelMatrix(), { params });
+                IceGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR(IceGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
                 break;
             case GL_Q:
                 SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
@@ -3617,7 +3618,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z));
-    IceGL::getInstance().vertexPipeline().translate(static_cast<float>(x),
+    IceGL::getInstance().vertexPipeline().getMatrixStack().translate(static_cast<float>(x),
         static_cast<float>(y), 
         static_cast<float>(z));
 }
@@ -3625,7 +3626,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glTranslatef ({}, {}, {}) called", x, y, z);
-    IceGL::getInstance().vertexPipeline().translate(x, y, z);
+    IceGL::getInstance().vertexPipeline().getMatrixStack().translate(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glVertex2d(GLdouble x, GLdouble y)

@@ -28,20 +28,13 @@
 #include "RenderObj.hpp"
 #include "IRenderer.hpp"
 #include "Stack.hpp"
+#include "MatrixStack.hpp"
 
 namespace rr
 {
 class VertexPipeline
 {
 public:
-    enum MatrixMode
-    {
-        MODELVIEW,
-        PROJECTION,
-        TEXTURE,
-        COLOR
-    };
-
     enum class ColorMaterialTracking
     {
         AMBIENT,
@@ -61,43 +54,23 @@ public:
     VertexPipeline(PixelPipeline& renderer);
 
     bool drawObj(const RenderObj &obj);
-;
-    void setModelProjectionMatrix(const Mat44& m);
-    void setModelMatrix(const Mat44& m);
-    void setNormalMatrix(const Mat44& m);
-    void setProjectionMatrix(const Mat44& m);
-    void setTextureMatrix(const Mat44& m);
-    void setColorMatrix(const Mat44& m);
+
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
-
-    void multiply(const Mat44& mat);
-    void translate(const float x, const float y, const float z);
-    void scale(const float x, const float y, const float z);
-    void rotate(const float angle, const float x, const float y, const float z);
-    void loadIdentity();
-
-    bool pushMatrix();
-    bool popMatrix();
-
-    const Mat44& getModelMatrix() const;
-    const Mat44& getProjectionMatrix() const;
-
-    void setMatrixMode(const MatrixMode matrixMode);
-    bool loadMatrix(const Mat44& m);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
     
     void setLineWidth(const float width);
 
-    void activateTmu(const uint8_t tmu) { m_tmu = tmu; }
+    void activateTmu(const uint8_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
 
     Lighting& getLighting();
     TexGen& getTexGen();
     ViewPort& getViewPort();
+    MatrixStack& getMatrixStack();
 
     static uint8_t getModelMatrixStackDepth();
     static uint8_t getProjectionMatrixStackDepth();
@@ -109,10 +82,6 @@ private:
     using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using TexCoordArray = std::array<Clipper::ClipTexCoords, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
     using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
-    static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
-    static constexpr uint8_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
-    static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
-    static constexpr uint8_t COLOR_MATRIX_STACK_DEPTH { 16 };
 
     struct Triangle
     {
@@ -175,40 +144,10 @@ private:
         const bool lastRound
     );
 
-    void recalculateMatrices();
-    void recalculateModelProjectionMatrix();
-    void recalculateNormalMatrix();
-
-    float m_depthRangeZNear { 0.0f };
-    float m_depthRangeZFar { 1.0f };
-    float m_depthRangeOffset { 0.0f };
-    float m_depthRangeScale { 1.0f };
-    int16_t m_viewportX { 0 };
-    int16_t m_viewportY { 0 };
-    int16_t m_viewportHeight { 0 };
-    int16_t m_viewportWidth { 0 };
-    float m_viewportHeightHalf { 0.0f };
-    float m_viewportWidthHalf { 0.0f };
-
     bool m_enableCulling{ false };
     Face m_cullMode{ Face::BACK };
 
     bool m_enableNormalizing { true };
-
-    // Matrix modes
-    MatrixMode m_matrixMode { MatrixMode::PROJECTION };
-    Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
-    Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
-    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, IRenderer::MAX_TMU_COUNT> m_tmStack {};
-    Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
-    Mat44 m_p {}; // Projection 
-    Mat44 m_t {}; // ModelViewProjection
-    Mat44 m_m {}; // ModelView
-    Mat44 m_n {}; // Normal
-    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
-    Mat44 m_c {}; // Color
-    bool m_modelMatrixChanged { true };
-    bool m_projectionMatrixChanged { true };
 
     // Color material
     bool m_enableColorMaterial { false };
@@ -224,6 +163,7 @@ private:
     PixelPipeline& m_renderer;
     Lighting m_lighting;
     ViewPort m_viewPort;
+    MatrixStack m_matrixStack;
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 

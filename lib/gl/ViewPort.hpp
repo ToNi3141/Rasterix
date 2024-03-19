@@ -29,6 +29,9 @@ public:
     void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
     void setDepthRange(const float zNear, const float zFar);
 
+    int16_t getViewPortWidth() const { return m_viewportWidth; }
+    int16_t getViewPortHeight() const { return m_viewportHeight; }
+
 private:
     float m_depthRangeZNear { 0.0f };
     float m_depthRangeZFar { 1.0f };

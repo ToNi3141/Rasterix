@@ -10,6 +10,7 @@ add_library(gl STATIC
     TexGen.cpp
     VertexPipeline.cpp
     ViewPort.cpp
+    MatrixStack.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)

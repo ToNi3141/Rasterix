@@ -29,22 +29,12 @@
 #define max std::max
 #define min std::min
 
-#define __glPi 3.14159265358979323846f
 
 namespace rr
 {
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
-    m_t.identity();
-    m_m.identity();
-    m_p.identity();
-    m_n.identity();
-    for (auto& mat : m_tm)
-    {
-        mat.identity();
-    }
-    m_c.identity();
 }
 
 void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj &obj, const uint32_t index)
@@ -60,7 +50,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
     if (obj.vertexArrayEnabled()) [[likely]]
     {
         obj.getVertex(v, pos);
-        m_t.transform(vertex, v);
+        m_matrixStack.getModelViewProjection().transform(vertex, v);
     }
 
     for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
@@ -68,8 +58,8 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
         if (m_renderer.getEnableTmu(tu))
         {
             obj.getTexCoord(tu, tex[tu], pos);
-            m_texGen[tu].calculateTexGenCoords(m_m, tex[tu], v);
-            m_tm[tu].transform(tex[tu], tex[tu]); 
+            m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), tex[tu], v);
+            m_matrixStack.getTexture(tu).transform(tex[tu], tex[tu]); 
         }
     }
 
@@ -80,7 +70,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
         Vec3 n;
 
         obj.getNormal(n, pos);
-        m_n.transform(nl, n);
+        m_matrixStack.getNormal().transform(nl, n);
 
         if (m_enableNormalizing) [[unlikely]]
         {
@@ -89,7 +79,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
 
         if (obj.vertexArrayEnabled()) [[likely]]
         {
-            m_m.transform(vl, v);
+            m_matrixStack.getModelView().transform(vl, v);
         }
 
         m_lighting.calculateLights(color, c, vl, nl);
@@ -102,7 +92,7 @@ void VertexPipeline::getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, 
 
 bool VertexPipeline::drawObj(const RenderObj &obj)
 {
-    recalculateMatrices();
+    m_matrixStack.recalculateMatrices();
     if (!m_renderer.updatePipeline()) [[unlikely]]
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
@@ -458,8 +448,8 @@ bool VertexPipeline::drawLine(const Line& line)
     // Copied from swGL and adapted.
 
     // Get the reciprocal viewport scaling factor
-    float rcpViewportScaleX = 2.0f / static_cast<float>(m_viewportWidth);
-    float rcpViewportScaleY = 2.0f / static_cast<float>(m_viewportHeight);
+    float rcpViewportScaleX = 2.0f / static_cast<float>(m_viewPort.getViewPortWidth());
+    float rcpViewportScaleY = 2.0f / static_cast<float>(m_viewPort.getViewPortHeight());
 
     // Calculate the lines normal n = normalize(-dx, dy)
     float nx = -((line.v1[1] / line.v1[3]) - (line.v0[1] / line.v0[3]));
@@ -629,38 +619,6 @@ bool VertexPipeline::drawLineArray(
     return true;
 }
 
-void VertexPipeline::setModelProjectionMatrix(const Mat44 &m)
-{
-    m_t = m;
-}
-
-void VertexPipeline::setModelMatrix(const Mat44 &m)
-{
-    m_m = m;
-    m_modelMatrixChanged = true;
-}
-
-void VertexPipeline::setProjectionMatrix(const Mat44 &m)
-{
-    m_p = m;
-    m_projectionMatrixChanged = true;
-}
-
-void VertexPipeline::setColorMatrix(const Mat44& m)
-{
-    m_c = m;
-}
-
-void VertexPipeline::setTextureMatrix(const Mat44& m)
-{
-    m_tm[m_tmu] = m;
-}
-
-void VertexPipeline::setNormalMatrix(const Mat44& m)
-{
-    m_n = m;
-}
-
 void VertexPipeline::setCullMode(const VertexPipeline::Face mode)
 {
     m_cullMode = mode;
@@ -669,199 +627,6 @@ void VertexPipeline::setCullMode(const VertexPipeline::Face mode)
 void VertexPipeline::enableCulling(const bool enable)
 {
     m_enableCulling = enable;
-}
-
-void VertexPipeline::multiply(const Mat44& mat)
-{
-    switch (m_matrixMode)
-    {
-        case MatrixMode::MODELVIEW:
-            setModelMatrix(mat * m_m);
-            break;
-        case MatrixMode::PROJECTION:
-            setProjectionMatrix(mat * m_p);
-            break;
-        case MatrixMode::TEXTURE:
-            setTextureMatrix(mat * m_tm[m_tmu]);
-            break;
-        case MatrixMode::COLOR:
-            setColorMatrix(mat * m_c);
-            break;
-        [[unlikely]] default:
-            break;
-    }
-}
-
-void VertexPipeline::translate(const float x, const float y, const float z)
-{
-    Mat44 m;
-    m.identity();
-    m[3][0] = x;
-    m[3][1] = y;
-    m[3][2] = z;
-    multiply(m);
-}
-
-void VertexPipeline::scale(const float x, const float y, const float z)
-{
-    Mat44 m;
-    m.identity();
-    m[0][0] = x;
-    m[1][1] = y;
-    m[2][2] = z;
-    multiply(m);
-}
-
-void VertexPipeline::rotate(const float angle, const float x, const float y, const float z)
-{
-    float angle_rad = angle * (__glPi/180.0f);
-
-    float c = cosf(angle_rad);
-    float s = sinf(angle_rad);
-    float t = 1.0f - c;
-
-    Mat44 m
-    {{{
-        {c+x*x*t,   y*x*t+z*s,  z*x*t-y*s,  0.0f},
-        {x*y*t-z*s, c+y*y*t,    z*y*t+x*s,  0.0f},
-        {x*z*t+y*s, y*z*t-x*s,  z*z*t+c,    0.0f},
-        {0.0f,      0.0f,       0.0f,       1.0f}
-    }}};
-
-    multiply(m);
-}
-
-void VertexPipeline::loadIdentity()
-{
-    switch (m_matrixMode)
-    {
-        case MatrixMode::MODELVIEW:
-            m_m.identity();
-            m_modelMatrixChanged = true;
-            break;
-        case MatrixMode::PROJECTION:
-            m_p.identity();
-            m_projectionMatrixChanged = true;
-            break;
-        case MatrixMode::TEXTURE:
-            m_tm[m_tmu].identity();
-            break;
-        case MatrixMode::COLOR:
-            m_c.identity();
-            break;
-        default:
-            break;
-    }
-}
-
-bool VertexPipeline::pushMatrix()
-{
-    switch (m_matrixMode)
-    {
-        case MatrixMode::MODELVIEW:
-            return m_mStack.push(m_m);
-        case MatrixMode::PROJECTION:
-            return m_pStack.push(m_p);
-        case MatrixMode::COLOR:
-            return m_cStack.push(m_c);
-        case MatrixMode::TEXTURE:
-            return m_tmStack[m_tmu].push(m_tm[m_tmu]);
-        default:
-            return false;
-    }
-}
-
-bool VertexPipeline::popMatrix()
-{
-    switch (m_matrixMode)
-    {
-        case MatrixMode::MODELVIEW:
-            m_modelMatrixChanged = true;
-            return m_mStack.pop(m_m);
-        case MatrixMode::PROJECTION:
-            m_projectionMatrixChanged = true;
-            return m_pStack.pop(m_p);
-        case MatrixMode::COLOR:
-            return m_cStack.pop(m_c);
-        case MatrixMode::TEXTURE:
-            return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
-        default:
-            return false;
-    }
-}
-
-const Mat44& VertexPipeline::getModelMatrix() const
-{
-    return m_m;
-}
-
-const Mat44& VertexPipeline::getProjectionMatrix() const
-{
-    return m_p;
-}
-
-void VertexPipeline::recalculateMatrices()
-{
-    if (m_modelMatrixChanged)
-    {
-        recalculateNormalMatrix();
-    }
-    if (m_modelMatrixChanged || m_projectionMatrixChanged)
-    {
-        recalculateModelProjectionMatrix();
-    }
-    m_modelMatrixChanged = false;
-    m_projectionMatrixChanged = false;
-}
-
-void VertexPipeline::recalculateModelProjectionMatrix()
-{
-    // Update transformation matrix
-    setModelProjectionMatrix(m_m * m_p);
-}
-
-void VertexPipeline::recalculateNormalMatrix()
-{
-    m_n = m_m;
-    m_n.invert();
-    m_n.transpose();
-}
-
-void VertexPipeline::setMatrixMode(const MatrixMode matrixMode)
-{
-    m_matrixMode = matrixMode;
-}
-
-bool VertexPipeline::loadMatrix(const Mat44& m)
-{
-    switch (m_matrixMode)
-    {
-    case MatrixMode::MODELVIEW:
-        setModelMatrix(m);
-        return true;
-    case MatrixMode::PROJECTION:
-        setProjectionMatrix(m);
-        return true;
-    case MatrixMode::TEXTURE:
-        setTextureMatrix(m);
-        return true;
-    case MatrixMode::COLOR:
-        setColorMatrix(m);
-        return true;
-    default:
-        break;
-    }
-    return false;
-}
-
-uint8_t VertexPipeline::getModelMatrixStackDepth()
-{
-    return MODEL_MATRIX_STACK_DEPTH;
-}
-
-uint8_t VertexPipeline::getProjectionMatrixStackDepth()
-{
-    return PROJECTION_MATRIX_STACK_DEPTH;
 }
 
 Lighting& VertexPipeline::getLighting()
@@ -877,6 +642,11 @@ TexGen& VertexPipeline::getTexGen()
 ViewPort& VertexPipeline::getViewPort()
 {
     return m_viewPort;
+}
+
+MatrixStack& VertexPipeline::getMatrixStack()
+{
+    return m_matrixStack;
 }
 
 void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)
