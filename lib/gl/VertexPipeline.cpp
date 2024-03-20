@@ -619,7 +619,7 @@ bool VertexPipeline::drawLineArray(
     return true;
 }
 
-void VertexPipeline::setCullMode(const VertexPipeline::Face mode)
+void VertexPipeline::setCullMode(const Face mode)
 {
     m_cullMode = mode;
 }
@@ -647,51 +647,6 @@ ViewPort& VertexPipeline::getViewPort()
 MatrixStack& VertexPipeline::getMatrixStack()
 {
     return m_matrixStack;
-}
-
-void VertexPipeline::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)
-{
-    switch (material) {
-        case ColorMaterialTracking::AMBIENT:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(false, true, false, false);
-            break;
-        case ColorMaterialTracking::DIFFUSE:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(false, false, true, false);
-            break;
-        case ColorMaterialTracking::AMBIENT_AND_DIFFUSE:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(false, true, true, false);
-            break;
-        case ColorMaterialTracking::SPECULAR:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(false, false, false, true);
-            break;
-            case ColorMaterialTracking::EMISSION:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(true, false, false, false);
-            break;
-        default:
-            if (m_enableColorMaterial)
-                getLighting().enableColorMaterial(false, true, true, false);
-            break;
-    }
-    m_colorMaterialTracking = material;
-    m_colorMaterialFace = face;
-}
-
-void VertexPipeline::enableColorMaterial(const bool enable)
-{
-    m_enableColorMaterial = enable;
-    if (enable)
-    {
-        setColorMaterialTracking(m_colorMaterialFace, m_colorMaterialTracking);
-    }
-    else 
-    {
-        getLighting().enableColorMaterial(false, false, false, false);
-    }
 }
 
 void VertexPipeline::setLineWidth(const float width)

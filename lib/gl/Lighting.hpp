@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 
 #ifndef LIGHTING_HPP
 #define LIGHTING_HPP
+
 #include <array>
+#include "Types.hpp"
 #include "Vec.hpp"
 
 namespace rr
@@ -25,7 +27,7 @@ namespace rr
 class Lighting 
 {
 public:
-    static constexpr uint8_t MAX_LIGHTS = 8;
+    static constexpr uint8_t MAX_LIGHTS { 8 };
 
     Lighting();
 
@@ -51,33 +53,35 @@ public:
     void setConstantAttenuationLight(const uint8_t light, const float val);
     void setLinearAttenuationLight(const uint8_t light, const float val);
     void setQuadraticAttenuationLight(const uint8_t light, const float val);
-    void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
+
+    void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
+    void enableColorMaterial(const bool enable);
 private:
     struct MaterialConfig
     {
-        Vec4 emissiveColor{{0.0f, 0.0f, 0.0f, 1.0f}};
-        Vec4 ambientColor{{0.2f, 0.2f, 0.2f, 1.0}};
-        Vec4 ambientColorScene{{0.2f, 0.2f, 0.2f, 1.0f}};
-        Vec4 diffuseColor{{0.8f, 0.8f, 0.8f, 1.0}};
-        Vec4 specularColor{{0.0f, 0.0f, 0.0f, 1.0}};
-        float specularExponent{0.0f};
+        Vec4 emissiveColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        Vec4 ambientColor { { 0.2f, 0.2f, 0.2f, 1.0 } };
+        Vec4 ambientColorScene { { 0.2f, 0.2f, 0.2f, 1.0f } };
+        Vec4 diffuseColor { { 0.8f, 0.8f, 0.8f, 1.0 } };
+        Vec4 specularColor { { 0.0f, 0.0f, 0.0f, 1.0 } };
+        float specularExponent { 0.0f };
     };
 
     struct LightConfig
     {
-        bool enable{false};
-        Vec4 ambientColor{{0.0f, 0.0f, 0.0f, 1.0f}};
-        Vec4 diffuseColor{{1.0f, 1.0f, 1.0f, 1.0f}}; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
-        Vec4 specularColor{{1.0f, 1.0f, 1.0f, 1.0f}}; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
-        Vec4 position{{0.0f, 0.0f, 1.0f, 0.0f}};
-        Vec3 spotlightDirection{{0.0f, 0.0f, -1.0f}};
-        float spotlightExponent{0.0f};
-        float spotlightCutoff{180.0f};
-        float constantAttenuation{1.0f};
-        float linearAttenuation{0.0f};
-        float quadraticAttenuation{0.0f};
+        bool enable { false};
+        Vec4 ambientColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        Vec4 diffuseColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
+        Vec4 specularColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
+        Vec4 position { { 0.0f, 0.0f, 1.0f, 0.0f } };
+        Vec3 spotlightDirection { { 0.0f, 0.0f, -1.0f } };
+        float spotlightExponent { 0.0f };
+        float spotlightCutoff { 180.0f };
+        float constantAttenuation { 1.0f };
+        float linearAttenuation { 0.0f };
+        float quadraticAttenuation { 0.0f };
 
-        bool localViewer{false}; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
+        bool localViewer{ false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
         Vec4 preCalcDirectionalLightDir;
         Vec4 preCalcHalfWayVectorInfinite;
@@ -89,12 +93,13 @@ private:
             preCalcDirectionalLightDir.unit();
 
             // Half Way Vector from infinite viewer
-            const Vec4 pointEye{{0.0f, 0.0f, 1.0f, 1.0f}};
+            const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
             preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir + pointEye;
             preCalcHalfWayVectorInfinite.unit();
         }
     };
 
+    void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
     void calculateSceneLight(Vec4& sceneLight, const Vec4 &emissiveColor, const Vec4 &ambientColor, const Vec4 &ambientColorScene) const;
     void calculateLight(Vec4 &color,
                         const LightConfig& lightConfig,
@@ -107,11 +112,16 @@ private:
 
     std::array<LightConfig, MAX_LIGHTS> m_lights;
     MaterialConfig m_material{};
-    bool m_lightingEnabled{false};
-    bool m_enableColorMaterialEmission{false};
-    bool m_enableColorMaterialAmbient{false};
-    bool m_enableColorMaterialDiffuse{false};
-    bool m_enableColorMaterialSpecular{false};
+    bool m_lightingEnabled { false };
+    bool m_enableColorMaterialEmission { false };
+    bool m_enableColorMaterialAmbient { false };
+    bool m_enableColorMaterialDiffuse { false };
+    bool m_enableColorMaterialSpecular { false };
+
+    // Color material
+    bool m_enableColorMaterial { false };
+    ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
+    Face m_colorMaterialFace { Face::FRONT_AND_BACK };
 
 };
 

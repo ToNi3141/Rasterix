@@ -22,20 +22,13 @@
 #include "Mat44.hpp"
 #include "Stack.hpp"
 #include "IRenderer.hpp"
+#include "Types.hpp"
 
 namespace rr
 {
 class MatrixStack
 {
 public:
-    enum MatrixMode
-    {
-        MODELVIEW,
-        PROJECTION,
-        TEXTURE,
-        COLOR
-    };
-
     MatrixStack();
 
     const Mat44& getModelViewProjection() const { return m_t; }

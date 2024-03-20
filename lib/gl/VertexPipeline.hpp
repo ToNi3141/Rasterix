@@ -29,27 +29,13 @@
 #include "IRenderer.hpp"
 #include "Stack.hpp"
 #include "MatrixStack.hpp"
+#include "Types.hpp"
 
 namespace rr
 {
 class VertexPipeline
 {
 public:
-    enum class ColorMaterialTracking
-    {
-        AMBIENT,
-        DIFFUSE,
-        AMBIENT_AND_DIFFUSE,
-        SPECULAR,
-        EMISSION
-    };
-
-    enum class Face
-    {
-        BACK,
-        FRONT,
-        FRONT_AND_BACK
-    };
 
     VertexPipeline(PixelPipeline& renderer);
 
@@ -60,8 +46,7 @@ public:
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
 
-    void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
-    void enableColorMaterial(const bool enable);
+
     
     void setLineWidth(const float width);
 
@@ -72,8 +57,6 @@ public:
     ViewPort& getViewPort();
     MatrixStack& getMatrixStack();
 
-    static uint8_t getModelMatrixStackDepth();
-    static uint8_t getProjectionMatrixStackDepth();
 private:
     static constexpr std::size_t VERTEX_BUFFER_SIZE { 24 };
     static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
@@ -148,11 +131,6 @@ private:
     Face m_cullMode{ Face::BACK };
 
     bool m_enableNormalizing { true };
-
-    // Color material
-    bool m_enableColorMaterial { false };
-    ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
-    Face m_colorMaterialFace { Face::FRONT_AND_BACK };
 
     // Line width
     float m_lineWidth { 1.0f };

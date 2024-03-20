@@ -22,6 +22,7 @@
 #include "IRenderer.hpp"
 #include <cstring>
 #include "MatrixStack.hpp"
+#include "Types.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -1220,20 +1221,20 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
     SPDLOG_DEBUG("glColorMaterial face 0x{:X} mode 0x{:X} called", face, mode);
     IceGL::getInstance().setError(GL_NO_ERROR);
 
-    VertexPipeline::Face faceConverted {};
+    Face faceConverted {};
     switch (face) {
         case GL_FRONT:
-            faceConverted = VertexPipeline::Face::FRONT;
+            faceConverted = Face::FRONT;
             break;
         case GL_BACK:
-            faceConverted = VertexPipeline::Face::BACK;
+            faceConverted = Face::BACK;
             break;
         case GL_FRONT_AND_BACK:
-            faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+            faceConverted = Face::FRONT_AND_BACK;
             break;
         default:
             SPDLOG_WARN("glColorMaterial face 0x{:X} not supported", face);
-            faceConverted = VertexPipeline::Face::FRONT_AND_BACK;
+            faceConverted = Face::FRONT_AND_BACK;
             IceGL::getInstance().setError(GL_INVALID_ENUM);
             break;
     }
@@ -1242,24 +1243,24 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
     {
         switch (mode) {
         case GL_AMBIENT:
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT);
             break;
         case GL_DIFFUSE:
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::DIFFUSE);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         case GL_SPECULAR:
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::SPECULAR);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::SPECULAR);
             break;
         case GL_EMISSION:
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::EMISSION);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::EMISSION);
             break;
         default:
             SPDLOG_WARN("glColorMaterial mode 0x{:X} not supported", mode);
             IceGL::getInstance().setError(GL_INVALID_ENUM);
-            IceGL::getInstance().vertexPipeline().setColorMaterialTracking(faceConverted, VertexPipeline::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         }
     }
@@ -1276,13 +1277,13 @@ GLAPI void APIENTRY impl_glCullFace(GLenum mode)
 
     switch (mode) {
     case GL_BACK:
-        IceGL::getInstance().vertexPipeline().setCullMode(VertexPipeline::Face::BACK);
+        IceGL::getInstance().vertexPipeline().setCullMode(Face::BACK);
         break;
     case GL_FRONT:
-        IceGL::getInstance().vertexPipeline().setCullMode(VertexPipeline::Face::FRONT);
+        IceGL::getInstance().vertexPipeline().setCullMode(Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        IceGL::getInstance().vertexPipeline().setCullMode(VertexPipeline::Face::FRONT_AND_BACK);
+        IceGL::getInstance().vertexPipeline().setCullMode(Face::FRONT_AND_BACK);
         break;
     default:
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1386,7 +1387,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glDisable GL_COLOR_MATERIAL called");
-        IceGL::getInstance().vertexPipeline().enableColorMaterial(false);
+        IceGL::getInstance().vertexPipeline().getLighting().enableColorMaterial(false);
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glDisable GL_FOG called");
@@ -1488,7 +1489,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glEnable GL_COLOR_MATERIAL called");
-        IceGL::getInstance().vertexPipeline().enableColorMaterial(true);
+        IceGL::getInstance().vertexPipeline().getLighting().enableColorMaterial(true);
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glEnable GL_FOG called");
@@ -2336,22 +2337,22 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::MODELVIEW);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::MODELVIEW);
     }
     else if (mode == GL_PROJECTION)
     {
         SPDLOG_DEBUG("glMatrixMode GL_PROJECTION called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::PROJECTION);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::PROJECTION);
     }
     else if (mode == GL_TEXTURE)
     {
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::TEXTURE);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::TEXTURE);
     }
     else if (mode == GL_COLOR)
     {
         SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::COLOR);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::COLOR);
     }
     else
     {
