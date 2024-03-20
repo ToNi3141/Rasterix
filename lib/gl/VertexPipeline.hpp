@@ -29,6 +29,7 @@
 #include "IRenderer.hpp"
 #include "Stack.hpp"
 #include "MatrixStack.hpp"
+#include "Culling.hpp"
 #include "Types.hpp"
 
 namespace rr
@@ -42,11 +43,6 @@ public:
     bool drawObj(const RenderObj &obj);
 
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
-
-    void enableCulling(const bool enable);
-    void setCullMode(const Face mode);
-
-
     
     void setLineWidth(const float width);
 
@@ -56,6 +52,7 @@ public:
     TexGen& getTexGen();
     ViewPort& getViewPort();
     MatrixStack& getMatrixStack();
+    Culling& getCulling();
 
 private:
     static constexpr std::size_t VERTEX_BUFFER_SIZE { 24 };
@@ -127,9 +124,6 @@ private:
         const bool lastRound
     );
 
-    bool m_enableCulling{ false };
-    Face m_cullMode{ Face::BACK };
-
     bool m_enableNormalizing { true };
 
     // Line width
@@ -142,6 +136,7 @@ private:
     Lighting m_lighting;
     ViewPort m_viewPort;
     MatrixStack m_matrixStack;
+    Culling m_culling;
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
 };
 

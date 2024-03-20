@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/glu.cpp \
     $${ICEGL_PATH}/Rasterizer.cpp \
     $${ICEGL_PATH}/ViewPort.cpp \
-    $${ICEGL_PATH}/MatrixStack.cpp
+    $${ICEGL_PATH}/MatrixStack.cpp \
+    $${ICEGL_PATH}/Culling.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \

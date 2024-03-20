@@ -386,14 +386,11 @@ bool VertexPipeline::drawTriangle(const Triangle& triangle)
     }
 
     // Cull triangle
-    if (m_enableCulling)
+    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
+    // facing backwards, then all in the clipping list will do this and vice versa.
+    if (m_culling.cull(vertListClipped[0], vertListClipped[1], vertListClipped[2]))
     {
-        // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
-        // facing backwards, then all in the clipping list will do this and vice versa.
-        const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
-        const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
-        if (currentOrientation != m_cullMode) [[unlikely]] // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
-            return true;
+        return true;
     }
     
     if (m_renderer.getEnableTwoSideStencil()) [[unlikely]]
@@ -619,14 +616,9 @@ bool VertexPipeline::drawLineArray(
     return true;
 }
 
-void VertexPipeline::setCullMode(const Face mode)
+Culling& VertexPipeline::getCulling()
 {
-    m_cullMode = mode;
-}
-
-void VertexPipeline::enableCulling(const bool enable)
-{
-    m_enableCulling = enable;
+    return m_culling;
 }
 
 Lighting& VertexPipeline::getLighting()

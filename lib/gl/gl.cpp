@@ -1277,13 +1277,13 @@ GLAPI void APIENTRY impl_glCullFace(GLenum mode)
 
     switch (mode) {
     case GL_BACK:
-        IceGL::getInstance().vertexPipeline().setCullMode(Face::BACK);
+        IceGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::BACK);
         break;
     case GL_FRONT:
-        IceGL::getInstance().vertexPipeline().setCullMode(Face::FRONT);
+        IceGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        IceGL::getInstance().vertexPipeline().setCullMode(Face::FRONT_AND_BACK);
+        IceGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::FRONT_AND_BACK);
         break;
     default:
         IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1383,7 +1383,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glDisable GL_CULL_FACE called");
-        IceGL::getInstance().vertexPipeline().enableCulling(false);
+        IceGL::getInstance().vertexPipeline().getCulling().enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glDisable GL_COLOR_MATERIAL called");
@@ -1485,7 +1485,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glEnable GL_CULL_FACE called");
-        IceGL::getInstance().vertexPipeline().enableCulling(true);
+        IceGL::getInstance().vertexPipeline().getCulling().enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glEnable GL_COLOR_MATERIAL called");

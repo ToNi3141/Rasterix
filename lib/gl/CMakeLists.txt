@@ -11,6 +11,7 @@ add_library(gl STATIC
     VertexPipeline.cpp
     ViewPort.cpp
     MatrixStack.cpp
+    Culling.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
