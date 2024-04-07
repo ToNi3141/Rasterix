@@ -12,7 +12,7 @@ add_library(gl STATIC
     ViewPort.cpp
     MatrixStack.cpp
     Culling.cpp
-    PrimitiveAssmbler.cpp
+    PrimitiveAssembler.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
