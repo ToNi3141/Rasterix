@@ -31,6 +31,8 @@
 #include "MatrixStack.hpp"
 #include "Culling.hpp"
 #include "Types.hpp"
+#include "FixedSizeQueue.hpp"
+#include "PrimitiveAssembler.hpp"
 
 namespace rr
 {
@@ -55,79 +57,11 @@ public:
     Culling& getCulling();
 
 private:
-    static constexpr std::size_t VERTEX_BUFFER_SIZE { 24 };
-    static_assert(VERTEX_BUFFER_SIZE % 4 == 0, "VERTEX_BUFFER_SIZE must be dividable through 4 (used for GL_QUADS");
-    static_assert(VERTEX_BUFFER_SIZE % 3 == 0, "VERTEX_BUFFER_SIZE must be dividable through 3 (used for GL_TRIANGLES");
-    static constexpr std::size_t VERTEX_OVERLAP { 2 }; // The overlap makes it easier to use the array. The overlap is used to create triangles even if VERTEX_BUFFER_SIZE is exceeded
-    using Vec4Array = std::array<Vec4, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
-    using TexCoordArray = std::array<Clipper::ClipTexCoords, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
-    using Vec3Array = std::array<Vec3, VERTEX_BUFFER_SIZE + VERTEX_OVERLAP>;
-
-    struct Triangle
-    {
-        const Vec4& v0;
-        const Vec4& v1;
-        const Vec4& v2;
-        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc0;
-        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc1;
-        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc2;
-        const Vec4& color0;
-        const Vec4& color1;
-        const Vec4& color2;
-    };
-
-    struct Line
-    {
-        const Vec4& v0;
-        const Vec4& v1;
-        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc0;
-        const std::array<std::reference_wrapper<const Vec4>, IRenderer::MAX_TMU_COUNT>& tc1;
-        const Vec4& color0;
-        const Vec4& color1;
-    };
-
-    bool drawTriangle(const Triangle& triangle);
-    bool drawLine(const Line& line);
-
-    void getTransformed(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, const RenderObj& obj, const uint32_t index);
-
-    void loadVertexData(const RenderObj& obj, Vec4Array& vertex, Vec4Array& color, Vec3Array& normal, TexCoordArray& tex, const std::size_t offset, const std::size_t count);
-    void transform(
-        Vec4Array& transformedVertex, 
-        Vec4Array& transformedColor, 
-        Vec3Array& transformedNormal, 
-        TexCoordArray& transformedTex, 
-        const bool enableVertexArray,
-        const bool enableColorArray,
-        const bool enableNormalArray,
-        const std::bitset<IRenderer::MAX_TMU_COUNT> enableTexArray,
-        const Vec4Array& vertex, 
-        const Vec4Array& color, 
-        const Vec3Array& normal, 
-        const TexCoordArray& tex, 
-        const Vec4& vertexColor,
-        const std::size_t count
-    );
-    bool drawTriangleArray(        
-        const Vec4Array& vertex, 
-        const Vec4Array& color, 
-        const TexCoordArray& tex, 
-        const std::size_t count,
-        const RenderObj::DrawMode drawMode
-    );
-    bool drawLineArray(
-        const Vec4Array& vertex, 
-        const Vec4Array& color, 
-        const TexCoordArray& tex, 
-        const std::size_t count, 
-        const RenderObj::DrawMode drawMode,
-        const bool lastRound
-    );
+    bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
+    void fetch(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, Vec3& normal, const RenderObj &obj, const uint32_t index);
+    void transform(RenderObj::VertexParameter& parameter);
 
     bool m_enableNormalizing { true };
-
-    // Line width
-    float m_lineWidth { 1.0f };
 
     // Current active TMU
     uint8_t m_tmu {};
@@ -138,6 +72,7 @@ private:
     MatrixStack m_matrixStack;
     Culling m_culling;
     std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
+    PrimitiveAssembler m_primitiveAssembler { m_viewPort };
 };
 
 } // namespace rr

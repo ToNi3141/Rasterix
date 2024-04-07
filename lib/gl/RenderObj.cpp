@@ -18,6 +18,7 @@
 
 #include "RenderObj.hpp"
 #include <spdlog/spdlog.h>
+#include <functional>
 
 namespace rr
 {
@@ -26,14 +27,16 @@ bool RenderObj::isLine() const
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
 }
 
-bool RenderObj::getVertex(Vec4& vec, const uint32_t index) const
+std::optional<Vec4> RenderObj::getVertex(const uint32_t index) const
 {
+    Vec4 vec;
     vec.initHomogeneous();
     return getFromArray(vec, m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
-bool RenderObj::getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) const
+std::optional<Vec4> RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
 {
+    Vec4 vec;
     if (texCoordArrayEnabled()[tmu])
     {
         vec.initHomogeneous();
@@ -43,44 +46,46 @@ bool RenderObj::getTexCoord(const uint8_t tmu, Vec4& vec, const uint32_t index) 
     {
         vec = m_texCoord[tmu];
     }
-    return true;
+    return vec;
 }
 
-bool RenderObj::getColor(Vec4& vec, const uint32_t index) const
+std::optional<Vec4> RenderObj::getColor(const uint32_t index) const
 {
+    std::optional<Vec4> vec;
     if (colorArrayEnabled())
     {
-        bool retVal = getFromArray(vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
-        if (retVal)
+        vec = getFromArray(*vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
+        if (vec)
         {
             switch (m_colorType) {
             case Type::UNSIGNED_BYTE:
             case Type::UNSIGNED_SHORT:
             case Type::UNSIGNED_INT:
                 // Map unsigned values to 0.0 .. 1.0
-                vec *= 1.0f / 255.0f;
+                *vec *= 1.0f / 255.0f;
                 break;
             case Type::BYTE:
             case Type::SHORT:
                 // Map signed values to -1.0 .. 1.0
-                vec *= 1.0f / 127.0f;
+                *vec *= 1.0f / 127.0f;
                 break;
             default:
                 // Other types like floats can be used as they are
                 break;
             }
         }
-        return retVal;
+        return vec;
     }
     else
     {
         vec = m_vertexColor;
     }
-    return true;
+    return vec;
 }
 
-bool RenderObj::getNormal(Vec3& vec, const uint32_t index) const
+std::optional<Vec3> RenderObj::getNormal(const uint32_t index) const
 {
+    Vec3 vec;
     if (normalArrayEnabled())
     {
         return getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
@@ -89,7 +94,7 @@ bool RenderObj::getNormal(Vec3& vec, const uint32_t index) const
     {
         vec = m_normal;
     }
-    return true;
+    return vec;
 }
 
 uint32_t RenderObj::getIndex(const uint32_t index) const
@@ -111,6 +116,30 @@ uint32_t RenderObj::getIndex(const uint32_t index) const
         }
     }
     return index + m_arrayOffset;
+}
+
+void RenderObj::fetch(VertexParameter& parameter) const
+{
+    const uint32_t pos = getIndex(m_fetchCount);
+    parameter.color = getColor(pos).value();
+    parameter.vertex = getVertex(pos).value();
+    parameter.normal = getNormal(pos).value();
+
+    for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
+    {
+        parameter.tex[tu] = getTexCoord(tu, pos).value();
+    }
+}
+
+bool RenderObj::pop(VertexParameter& parameter) const
+{
+    if (m_fetchCount >= getCount())
+    {
+        return false;
+    }
+    fetch(parameter);
+    m_fetchCount++;
+    return true;
 }
 
 const char* RenderObj::drawModeToString(const DrawMode drawMode) const 

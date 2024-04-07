@@ -61,7 +61,7 @@ public:
 #pragma pack(pop)
     };
 
-    using TrDesc = std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
+    using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
     
     TriangleStreamCmd(const Rasterizer& rasterizer, const Triangle& triangle)
     {

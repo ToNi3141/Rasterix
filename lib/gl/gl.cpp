@@ -3900,6 +3900,8 @@ GLAPI void APIENTRY impl_glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
     SPDLOG_DEBUG("glDrawArrays mode 0x{:X} first {} count {} called", mode, first, count);
 
+    IceGL::getInstance().vertexQueue().reset();
+
     IceGL::getInstance().vertexQueue().setCount(count);
     IceGL::getInstance().vertexQueue().setArrayOffset(first);
     IceGL::getInstance().vertexQueue().setDrawMode(convertDrawMode(mode));
@@ -3927,6 +3929,8 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
         SPDLOG_WARN("glDrawElements type 0x{:X} not supported", type);
         return;
     }
+
+    IceGL::getInstance().vertexQueue().reset();
 
     IceGL::getInstance().vertexQueue().setCount(count);
     IceGL::getInstance().vertexQueue().setDrawMode(convertDrawMode(mode));

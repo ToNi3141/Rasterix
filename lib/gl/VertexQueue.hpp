@@ -54,6 +54,8 @@ public:
     void setMultiTexCoord(const uint8_t tmu, const Vec4& texCoord) { m_textureCoord[tmu] = texCoord; m_objPtr.setTexCoord(tmu, texCoord); }
     const RenderObj& end()
     {
+        m_objBeginEnd.reset();
+
         m_objBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
         m_objBeginEnd.setVertexSize(4);
         m_objBeginEnd.setVertexType(RenderObj::Type::FLOAT);
@@ -90,6 +92,8 @@ public:
     const Vec4 color() const { return m_vertexColor; }
 
     const RenderObj& renderObj() const { return m_objPtr; }
+
+    void reset() { m_objPtr.reset(); }
 
     void enableVertexArray(bool enable) { m_objPtr.enableVertexArray(enable); }
     void setVertexSize(uint8_t size) { m_objPtr.setVertexSize(size); }
