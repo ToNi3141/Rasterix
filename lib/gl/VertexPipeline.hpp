@@ -59,7 +59,7 @@ public:
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
     void fetch(Vec4& vertex, Vec4& color, std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tex, Vec3& normal, const RenderObj &obj, const uint32_t index);
-    void transform(RenderObj::VertexParameter& parameter);
+    void transform(RenderObj::VertexParameter& parameter, const RenderObj& obj);
 
     bool m_enableNormalizing { true };
 

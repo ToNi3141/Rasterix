@@ -27,74 +27,53 @@ bool RenderObj::isLine() const
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
 }
 
-std::optional<Vec4> RenderObj::getVertex(const uint32_t index) const
+Vec4 RenderObj::getVertex(const uint32_t index) const
 {
-    Vec4 vec;
-    vec.initHomogeneous();
-    return getFromArray(vec, m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
+    return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
-std::optional<Vec4> RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
+Vec4 RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
 {
-    Vec4 vec;
     if (texCoordArrayEnabled()[tmu])
     {
-        vec.initHomogeneous();
-        return getFromArray(vec, m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
+        return getFromArray<Vec4>(m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
     }
-    else
-    {
-        vec = m_texCoord[tmu];
-    }
-    return vec;
+    return m_texCoord[tmu];
 }
 
-std::optional<Vec4> RenderObj::getColor(const uint32_t index) const
+Vec4 RenderObj::getColor(const uint32_t index) const
 {
-    std::optional<Vec4> vec;
     if (colorArrayEnabled())
     {
-        vec = getFromArray(*vec, m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
-        if (vec)
-        {
-            switch (m_colorType) {
-            case Type::UNSIGNED_BYTE:
-            case Type::UNSIGNED_SHORT:
-            case Type::UNSIGNED_INT:
-                // Map unsigned values to 0.0 .. 1.0
-                *vec *= 1.0f / 255.0f;
-                break;
-            case Type::BYTE:
-            case Type::SHORT:
-                // Map signed values to -1.0 .. 1.0
-                *vec *= 1.0f / 127.0f;
-                break;
-            default:
-                // Other types like floats can be used as they are
-                break;
-            }
+        Vec4 vec = getFromArray<Vec4>(m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
+        switch (m_colorType) {
+        case Type::UNSIGNED_BYTE:
+        case Type::UNSIGNED_SHORT:
+        case Type::UNSIGNED_INT:
+            // Map unsigned values to 0.0 .. 1.0
+            vec *= 1.0f / 255.0f;
+            break;
+        case Type::BYTE:
+        case Type::SHORT:
+            // Map signed values to -1.0 .. 1.0
+            vec *= 1.0f / 127.0f;
+            break;
+        default:
+            // Other types like floats can be used as they are
+            break;
         }
         return vec;
     }
-    else
-    {
-        vec = m_vertexColor;
-    }
-    return vec;
+    return m_vertexColor;
 }
 
-std::optional<Vec3> RenderObj::getNormal(const uint32_t index) const
+Vec3 RenderObj::getNormal(const uint32_t index) const
 {
-    Vec3 vec;
     if (normalArrayEnabled())
     {
-        return getFromArray(vec, m_normalType, m_normalPointer, m_normalStride, 3, index);
+        return getFromArray<Vec3>(m_normalType, m_normalPointer, m_normalStride, 3, index);
     }
-    else
-    {
-        vec = m_normal;
-    }
-    return vec;
+    return m_normal;
 }
 
 uint32_t RenderObj::getIndex(const uint32_t index) const
@@ -121,22 +100,18 @@ uint32_t RenderObj::getIndex(const uint32_t index) const
 void RenderObj::fetch(VertexParameter& parameter) const
 {
     const uint32_t pos = getIndex(m_fetchCount);
-    parameter.color = getColor(pos).value();
-    parameter.vertex = getVertex(pos).value();
-    parameter.normal = getNormal(pos).value();
+    parameter.color = getColor(pos);
+    parameter.vertex = getVertex(pos);
+    parameter.normal = getNormal(pos);
 
     for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {
-        parameter.tex[tu] = getTexCoord(tu, pos).value();
+        parameter.tex[tu] = getTexCoord(tu, pos);
     }
 }
 
 bool RenderObj::pop(VertexParameter& parameter) const
 {
-    if (m_fetchCount >= getCount())
-    {
-        return false;
-    }
     fetch(parameter);
     m_fetchCount++;
     return true;

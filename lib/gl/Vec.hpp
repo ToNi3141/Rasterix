@@ -41,6 +41,15 @@ public:
         vec[VecSize - 1] = 1.0f;
     }
 
+    static Vec<VecSize> createHomogeneous()
+    {
+        Vec<VecSize> vec;
+        for (uint32_t i = 0; i < VecSize - 1; i++)
+            vec.vec[i] = 0.0f;
+        vec.vec[VecSize - 1] = 1.0f;
+        return vec;
+    }
+
     template <typename T>
     void fromArray(const T* arr, const uint8_t size)
     {

@@ -37,9 +37,9 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
 }
 
-void VertexPipeline::transform(RenderObj::VertexParameter& parameter)
+void VertexPipeline::transform(RenderObj::VertexParameter& parameter, const RenderObj& obj)
 {
-    for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
+    for (uint32_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {
         if (m_renderer.getEnableTmu(tu))
         {
@@ -60,10 +60,12 @@ void VertexPipeline::transform(RenderObj::VertexParameter& parameter)
         {
             parameter.normal.normalize();
         }
-        m_matrixStack.getModelView().transform(vl, parameter.vertex);
+        if (obj.vertexArrayEnabled())
+            m_matrixStack.getModelView().transform(vl, parameter.vertex);
         m_lighting.calculateLights(parameter.color, parameter.color, vl, parameter.normal);
     }
-    m_matrixStack.getModelViewProjection().transform(parameter.vertex, parameter.vertex);
+    if (obj.vertexArrayEnabled())
+        m_matrixStack.getModelViewProjection().transform(parameter.vertex, parameter.vertex);
 }
 
 bool VertexPipeline::drawObj(const RenderObj &obj)
@@ -78,21 +80,37 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     m_primitiveAssembler.clear();
     m_primitiveAssembler.setDrawMode(obj.getDrawMode());
     m_primitiveAssembler.setExpectedPrimitiveCount(obj.getCount());
-    for (uint32_t it = 0; it < obj.getCount(); it++)
+    uint32_t count = obj.getCount();
+    for (uint32_t it = 0; it < count; it++)
     {
         RenderObj::VertexParameter& param = m_primitiveAssembler.createParameter();
         obj.pop(param);
-        transform(param);
+        transform(param, obj);
 
         const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
         {
-            if (!drawTriangle(triangle))
+            if (!drawTriangle(triangle)) [[unlikely]]
             {
                 return false;
             }
         }
     }
+
+    // while (1)
+    // {
+    //     const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
+    //     for (const PrimitiveAssembler::Triangle& triangle : triangles)
+    //     {
+    //         if (!drawTriangle(triangle)) [[unlikely]]
+    //         {
+    //             return false;
+    //         }
+    //     }
+
+    //     if (triangles.size() == 0) [[unlikely]]
+    //         break;
+    // }
     return true;
 }
 
@@ -105,31 +123,31 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
     Clipper::ClipTexCoordList texCoordListBuffer;
     Clipper::ClipVertList colorListBuffer;
 
-    vertList[0] = *triangle.v0;
-    vertList[1] = *triangle.v1;
-    vertList[2] = *triangle.v2;
+    vertList[0] = triangle.p0.vertex;
+    vertList[1] = triangle.p1.vertex;
+    vertList[2] = triangle.p2.vertex;
 
-    for (uint8_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
+    for (uint32_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
     {
         if (m_renderer.getEnableTmu(i))
         {
-            texCoordList[0][i] = (*triangle.tc0)[i];
-            texCoordList[1][i] = (*triangle.tc1)[i];
-            texCoordList[2][i] = (*triangle.tc2)[i];
+            texCoordList[0][i] = triangle.p0.tex[i];
+            texCoordList[1][i] = triangle.p1.tex[i];
+            texCoordList[2][i] = triangle.p2.tex[i];
         }
     }
 
 
-    colorList[0] = *triangle.c0;
-    colorList[1] = *triangle.c1;
-    colorList[2] = *triangle.c2;
+    colorList[0] = triangle.p0.color;
+    colorList[1] = triangle.p1.color;
+    colorList[2] = triangle.p2.color;
 
     auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 
     std::array<float, vertList.size()> oowList;
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
-    for (uint8_t i = 0; i < vertListSize; i++)
+    for (uint32_t i = 0; i < vertListSize; i++)
     {
         // Perspective division
         vertListClipped[i].perspectiveDivide();
@@ -178,7 +196,7 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
     }
 
     // Render the triangle
-    for (uint8_t i = 3; i <= vertListSize; i++)
+    for (uint32_t i = 3; i <= vertListSize; i++)
     {
         // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
         // triangle fan where vert zero is always the center of this fan

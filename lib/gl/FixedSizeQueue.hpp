@@ -30,12 +30,12 @@ public:
 
     /// @brief Adds an element to the back of the queue.
     /// @param val The element to add.
-    void push_back(const T& val)
+    inline void push_back(const T& val)
     {
         create_back() = val;
     }
 
-    T& create_back()
+    inline T& create_back()
     {
         if (m_head >= Size)
         {
@@ -52,7 +52,7 @@ public:
     ///     Size - 1 is the last element added. 0 is the first element added.
     /// @param index The index of the element to return.
     /// @return The element at the specified index.
-    T& operator[](uint32_t index)
+    inline T& operator[](uint32_t index)
     {
         return m_data[calculateIndex(index)];
     }
@@ -60,14 +60,14 @@ public:
     /// @brief Returns the element at the specified index.
     /// @param index The index of the element to return.
     /// @return The element at the specified index.
-    const T& operator[](uint32_t index) const
+    inline const T& operator[](uint32_t index) const
     {
         return m_data[calculateIndex(index)];
     }
 
     /// @brief Returns the size of the queue.
     /// @return The size of the queue.
-    uint32_t size() const
+    inline uint32_t size() const
     {
         return m_size;
     }
@@ -81,7 +81,7 @@ public:
 
     /// @brief Decreases the size of the queue.
     /// @param count The number of elements to remove.
-    void decSize(uint32_t count)
+    inline void decSize(uint32_t count)
     {
         if (count > m_size)
         {
@@ -94,16 +94,12 @@ public:
     };
 
 private:
-    uint32_t calculateIndex(uint32_t index) const
+    inline uint32_t calculateIndex(uint32_t index) const
     {
-        if (index >= Size) [[unlikely]]
-        {
-            return 0;
-        }
-        const int32_t newIndex = (m_head - m_size) + index;
+        int32_t newIndex = (m_head - m_size) + index;
         if (newIndex >= Size)
         {
-            return newIndex + Size;
+            newIndex = newIndex + Size;
         }
         return newIndex;
     }

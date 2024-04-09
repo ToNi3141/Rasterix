@@ -65,21 +65,23 @@ public:
 
     void logCurrentConfig() const;
 
-    bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
-    std::optional<Vec4> getVertex(const uint32_t index) const;
-    std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
-    std::optional<Vec4> getTexCoord(const uint8_t tmu, const uint32_t index) const;
-    bool colorArrayEnabled() const { return m_colorArrayEnabled; }
-    std::optional<Vec4> getColor(const uint32_t index) const;
-    const Vec4& getVertexColor() const { return m_vertexColor; }
-    bool normalArrayEnabled() const { return m_normalArrayEnabled; }
-    std::optional<Vec3> getNormal(const uint32_t index) const;
+    inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
+    Vec4 getVertex(const uint32_t index) const;
+    inline std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
+    Vec4 getTexCoord(const uint8_t tmu, const uint32_t index) const;
+    inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }
+    Vec4 getColor(const uint32_t index) const;
+    inline const Vec4& getVertexColor() const { return m_vertexColor; }
+    inline bool normalArrayEnabled() const { return m_normalArrayEnabled; }
+    Vec3 getNormal(const uint32_t index) const;
     bool isLine() const;
 
     uint32_t getIndex(const uint32_t index) const;
-    DrawMode getDrawMode() const { return m_drawMode; }
-    std::size_t getCount() const { return m_count; }
-    void reset() { m_fetchCount = 0; }
+    inline DrawMode getDrawMode() const { return m_drawMode; }
+    inline std::size_t getCount() const { return m_count; }
+    inline void reset() { m_fetchCount = 0; }
+    inline std::size_t getFetchCount() const { return m_fetchCount; }
+    inline void incFetchCount() const { m_fetchCount++; }
 
     void fetch(VertexParameter& parameter) const;
     bool pop(VertexParameter& parameter) const;
@@ -120,8 +122,9 @@ public:
 
 private:
     template <typename T>
-    std::optional<std::reference_wrapper<T>> getFromArray(T& vec, const Type type, const void* arr, const uint32_t stride, uint8_t size, const uint32_t index) const
+    T getFromArray(const Type type, const void* arr, const uint32_t stride, uint8_t size, const uint32_t index) const
     {
+        T vec = T::createHomogeneous();
         if (arr)
         {
             const int8_t* a = reinterpret_cast<const int8_t*>(arr);
@@ -174,10 +177,8 @@ private:
                     break;
                 }
             }
-
-            return vec;
         }
-        return std::nullopt;
+        return vec;
     }
 
     const char* drawModeToString(const DrawMode drawMode) const;
