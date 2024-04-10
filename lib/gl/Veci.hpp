@@ -97,6 +97,15 @@ public:
     }
 
     template <uint8_t shift = 0>
+    static Veci<T, VecSize> createFromVec(const std::array<float, VecSize> val)
+    {
+        Veci<T, VecSize> vec;
+        for (uint32_t i = 0; i < VecSize; i++)
+            vec[i] = (val[i] * (1ul << shift)) + 0.5f;
+        return vec;
+    }
+
+    template <uint8_t shift = 0>
     void fromVec(const std::array<float, VecSize> val)
     {
         for (uint32_t i = 0; i < VecSize; i++)

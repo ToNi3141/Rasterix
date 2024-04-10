@@ -116,21 +116,16 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     static constexpr uint32_t EDGE_FUNC_SIZE = 5;
     static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
 
-    Vec2i v0, v1, v2;
-    v0.fromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
-    v1.fromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
-    v2.fromVec<EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
+    Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
+    Vec2i v1 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
+    Vec2i v2 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
     
     // Initialize Bounding box
     // Get the bounding box
-    int32_t bbStartX;
-    int32_t bbStartY;
-    int32_t bbEndX;
-    int32_t bbEndY;
-    bbStartX = min(min(v0[0], v1[0]), v2[0]);
-    bbStartY = min(min(v0[1], v1[1]), v2[1]);
-    bbEndX = max(max(v0[0], v1[0]), v2[0]);
-    bbEndY = max(max(v0[1], v1[1]), v2[1]);
+    int32_t bbStartX = min(min(v0[0], v1[0]), v2[0]);
+    int32_t bbStartY = min(min(v0[1], v1[1]), v2[1]);
+    int32_t bbEndX = max(max(v0[0], v1[0]), v2[0]);
+    int32_t bbEndY = max(max(v0[1], v1[1]), v2[1]);
 
     // Convert to integer values
     bbStartX = (bbStartX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
@@ -205,16 +200,13 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
 
     float areaInv = 1.0f / area;
 
-    Vec3 wNorm;
-    wNorm.fromArray(&(wi.vec[0]), 3);
+    Vec3 wNorm = Vec3::createFromArray(&(wi.vec[0]), 3);
     wNorm.mul(areaInv);
 
-    Vec3 wIncXNorm;
-    wIncXNorm.fromArray(&(wIncX.vec[0]), 3);
+    Vec3 wIncXNorm = Vec3::createFromArray(&(wIncX.vec[0]), 3);
     wIncXNorm.mul(areaInv);
 
-    Vec3 wIncYNorm;
-    wIncYNorm.fromArray(&(wIncY.vec[0]), 3);
+    Vec3 wIncYNorm = Vec3::createFromArray(&(wIncY.vec[0]), 3);
     wIncYNorm.mul(areaInv);
 
     Vec3 w = triangle.oow;

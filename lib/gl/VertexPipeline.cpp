@@ -37,12 +37,15 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
 }
 
-void VertexPipeline::transform(RenderObj::VertexParameter& parameter, const RenderObj& obj)
+void VertexPipeline::fetchAndTransform(RenderObj::VertexParameter& parameter, const RenderObj& obj, uint32_t i)
 {
+    const uint32_t pos = obj.getIndex(i);
+    parameter.vertex = obj.getVertex(pos);
     for (uint32_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {
         if (m_renderer.getEnableTmu(tu))
         {
+            parameter.tex[tu] = obj.getTexCoord(tu, pos);
             m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
             m_matrixStack.getTexture(tu).transform(parameter.tex[tu], parameter.tex[tu]); 
         }
@@ -50,19 +53,19 @@ void VertexPipeline::transform(RenderObj::VertexParameter& parameter, const Rend
 
     // TODO: Check if this required? The standard requires but is it really used?
     //m_c[j].transform(color, color); // Calculate this in one batch to improve performance
-
+    parameter.color = obj.getColor(pos);
     if (m_lighting.lightingEnabled())
     {
         Vec4 vl;
-        m_matrixStack.getNormal().transform(parameter.normal, parameter.normal);
+        Vec3 normal = m_matrixStack.getNormal().transform(obj.getNormal(pos));
 
         if (m_enableNormalizing) [[unlikely]]
         {
-            parameter.normal.normalize();
+            normal.normalize();
         }
         if (obj.vertexArrayEnabled())
             m_matrixStack.getModelView().transform(vl, parameter.vertex);
-        m_lighting.calculateLights(parameter.color, parameter.color, vl, parameter.normal);
+        m_lighting.calculateLights(parameter.color, parameter.color, vl, normal);
     }
     if (obj.vertexArrayEnabled())
         m_matrixStack.getModelViewProjection().transform(parameter.vertex, parameter.vertex);
@@ -84,8 +87,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     for (uint32_t it = 0; it < count; it++)
     {
         RenderObj::VertexParameter& param = m_primitiveAssembler.createParameter();
-        obj.pop(param);
-        transform(param, obj);
+        fetchAndTransform(param, obj, it);
 
         const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
@@ -123,24 +125,24 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
     Clipper::ClipTexCoordList texCoordListBuffer;
     Clipper::ClipVertList colorListBuffer;
 
-    vertList[0] = triangle.p0.vertex;
-    vertList[1] = triangle.p1.vertex;
-    vertList[2] = triangle.p2.vertex;
+    vertList[0] = triangle.p0->vertex;
+    vertList[1] = triangle.p1->vertex;
+    vertList[2] = triangle.p2->vertex;
 
     for (uint32_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
     {
         if (m_renderer.getEnableTmu(i))
         {
-            texCoordList[0][i] = triangle.p0.tex[i];
-            texCoordList[1][i] = triangle.p1.tex[i];
-            texCoordList[2][i] = triangle.p2.tex[i];
+            texCoordList[0][i] = triangle.p0->tex[i];
+            texCoordList[1][i] = triangle.p1->tex[i];
+            texCoordList[2][i] = triangle.p2->tex[i];
         }
     }
 
 
-    colorList[0] = triangle.p0.color;
-    colorList[1] = triangle.p1.color;
-    colorList[2] = triangle.p2.color;
+    colorList[0] = triangle.p0->color;
+    colorList[1] = triangle.p1->color;
+    colorList[2] = triangle.p2->color;
 
     auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
 

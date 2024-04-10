@@ -101,7 +101,7 @@ public:
         return true;
     }
 
-    void transform(Vec4& dst, const Vec4& src) const
+    inline void transform(Vec4& dst, const Vec4& src) const
     {
         const float src0 = src[0];
         const float src1 = src[1];
@@ -131,7 +131,14 @@ public:
         }
     }
 
-    void transform(Vec3& dst, const Vec3 &src) const
+    inline Vec4 transform(const Vec4& src) const
+    {
+        Vec4 dst;
+        transform(dst, src);
+        return dst;
+    }
+
+    inline void transform(Vec3& dst, const Vec3 &src) const
     {
         const float src0 = src[0];
         const float src1 = src[1];
@@ -140,6 +147,13 @@ public:
         dst[0] = src0 * mat[0][0] + src1 * mat[1][0] + src2 * mat[2][0];
         dst[1] = src0 * mat[0][1] + src1 * mat[1][1] + src2 * mat[2][1];
         dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2];
+    }
+
+    inline Vec3 transform(const Vec3& src) const
+    {
+        Vec3 dst;
+        transform(dst, src);
+        return dst;
     }
 
     void transform(Vec4* __restrict dst, const Vec4* const __restrict src, const std::size_t cnt)

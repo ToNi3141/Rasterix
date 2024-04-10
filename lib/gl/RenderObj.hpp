@@ -60,7 +60,7 @@ public:
         Vec4 vertex;
         Vec4 color;
         std::array<Vec4, MAX_TMU_COUNT> tex;
-        Vec3 normal;
+        // Vec3 normal;
     };
 
     void logCurrentConfig() const;

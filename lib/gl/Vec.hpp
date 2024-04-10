@@ -51,6 +51,16 @@ public:
     }
 
     template <typename T>
+    static Vec<VecSize> createFromArray(const T* arr, const uint8_t size)
+    {
+        Vec<VecSize> vec;
+        const uint32_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
+        for (uint8_t i = 0; i < len; i++)
+            vec[i] = arr[i];
+        return vec;
+    }
+
+    template <typename T>
     void fromArray(const T* arr, const uint8_t size)
     {
         const uint32_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 

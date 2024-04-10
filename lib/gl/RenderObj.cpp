@@ -102,7 +102,7 @@ void RenderObj::fetch(VertexParameter& parameter) const
     const uint32_t pos = getIndex(m_fetchCount);
     parameter.color = getColor(pos);
     parameter.vertex = getVertex(pos);
-    parameter.normal = getNormal(pos);
+    // parameter.normal = getNormal(pos);
 
     for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {

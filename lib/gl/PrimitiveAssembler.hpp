@@ -33,9 +33,9 @@ class PrimitiveAssembler
 public:
     struct Triangle
     {
-        RenderObj::VertexParameter p0;
-        RenderObj::VertexParameter p1;
-        RenderObj::VertexParameter p2;
+        RenderObj::VertexParameter* p0;
+        RenderObj::VertexParameter* p1;
+        RenderObj::VertexParameter* p2;
     };
 
     PrimitiveAssembler(ViewPort& viewPort) : m_viewPort(viewPort) { }
@@ -58,7 +58,7 @@ private:
     std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
-    FixedSizeQueue<RenderObj::VertexParameter, 3000> m_queue {};
+    FixedSizeQueue<RenderObj::VertexParameter, 3> m_queue {};
 
     std::size_t m_expectedPrimitiveCount { 0 };
     std::size_t m_count { 0 };
@@ -67,6 +67,12 @@ private:
     ViewPort& m_viewPort;
     float m_lineWidth { 1.0 };
     bool m_line { false };
+    RenderObj::VertexParameter m_p0;
+    RenderObj::VertexParameter m_p1;
+    RenderObj::VertexParameter m_p2;
+    RenderObj::VertexParameter m_p3;
+    RenderObj::VertexParameter m_p4;
+    RenderObj::VertexParameter m_p5;
 
     std::array<Vec4, 4> m_lineVertexBuffer {};
     std::array<PrimitiveAssembler::Triangle, 2> m_triangleBuffer;

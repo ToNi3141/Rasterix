@@ -1691,8 +1691,7 @@ GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint *params)
         break;
     case GL_FOG_COLOR:
     {
-        Vec4 fogColor {};
-        fogColor.fromArray(params, 4);
+        Vec4 fogColor = Vec4::createFromArray(params, 4);
         fogColor.div(255);
         IceGL::getInstance().pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
         break;
@@ -2018,8 +2017,7 @@ GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glLightModeliv redirected to glLightModefv");
-    Vec4 color {};
-    color.fromArray(params, 4);
+    Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
     impl_glLightModelfv(pname, color.vec.data());
 }
@@ -2105,8 +2103,7 @@ GLAPI void APIENTRY impl_glLighti(GLenum light, GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glLightiv(GLenum light, GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glLightiv redirected to glLightfv");
-    Vec4 color {};
-    color.fromArray(params, 4);
+    Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
     impl_glLightfv(light, pname, color.vec.data());
 }
@@ -2325,8 +2322,7 @@ GLAPI void APIENTRY impl_glMateriali(GLenum face, GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glMaterialiv redirected to glMaterialfv");
-    Vec4 color {};
-    color.fromArray(params, 4);
+    Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
     impl_glMaterialfv(face, pname, color.vec.data());
 }

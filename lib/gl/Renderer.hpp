@@ -158,7 +158,7 @@ public:
             return true;
         }
 
-                const uint32_t displayLines = m_displayLines;
+        const uint32_t displayLines = m_displayLines;
         const uint32_t yLineResolution = m_yLineResolution;
         for (uint32_t i = 0; i < displayLines; i++)
         {

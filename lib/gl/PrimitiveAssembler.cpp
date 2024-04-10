@@ -38,7 +38,7 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
 
     switch (m_drawMode) {
     case RenderObj::DrawMode::TRIANGLES:
-        m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
+        m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
         m_queue.decSize(3);
         break;
     case RenderObj::DrawMode::POLYGON:
@@ -47,30 +47,30 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         {
             m_pTmp = m_queue[0];
         }
-        m_triangleBuffer[0] = { m_pTmp, m_queue[1], m_queue[2] };
+        m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
         m_queue.decSize(1);
         break;
     case RenderObj::DrawMode::TRIANGLE_STRIP:
         if (m_count & 0x1)
         {
-            m_triangleBuffer[0] = { m_queue[1], m_queue[0], m_queue[2] };
+            m_triangleBuffer[0] = { &m_queue[1], &m_queue[0], &m_queue[2] };
         }
         else
         {
-            m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
+            m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
         }
         m_queue.decSize(1);
         break;
     case RenderObj::DrawMode::QUADS:
         if (m_count & 0x1)
         {
-            m_triangleBuffer[0] = { m_pTmp, m_queue[1], m_queue[2] };
+            m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
             m_queue.decSize(3);
         }
         else
         {
             m_pTmp = m_queue[0];
-            m_triangleBuffer[0] = { m_pTmp, m_queue[1], m_queue[2] };
+            m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
 
             m_queue.decSize(1);
         }
@@ -78,11 +78,11 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
     case RenderObj::DrawMode::QUAD_STRIP:
         if (m_count & 0x1)
         {
-            m_triangleBuffer[0] = { m_queue[0], m_queue[2], m_queue[1] };
+            m_triangleBuffer[0] = { &m_queue[0], &m_queue[2], &m_queue[1] };
         }
         else
         {
-            m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
+            m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
         }
         m_queue.decSize(1);
         break;
@@ -174,9 +174,17 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     m_lineVertexBuffer[3][0] += (-nx * v1[3]) * rcpViewportScaleX;
     m_lineVertexBuffer[3][1] += (-ny * v1[3]) * rcpViewportScaleY;
 
-    m_triangleBuffer[0] = { { m_lineVertexBuffer[0], c0, tc0 }, { m_lineVertexBuffer[1], c0, tc0 }, { m_lineVertexBuffer[2], c1, tc1 } };
-    m_triangleBuffer[1] = { { m_lineVertexBuffer[2], c1, tc1 }, { m_lineVertexBuffer[1], c0, tc0 }, { m_lineVertexBuffer[3], c1, tc1 } };
-    return { m_triangleBuffer.data(), 2 };
+    m_p0 = { m_lineVertexBuffer[0], c0, tc0 };
+    m_p1 = { m_lineVertexBuffer[1], c0, tc0 };
+    m_p2 = { m_lineVertexBuffer[2], c1, tc1 };
+    m_p3 = { m_lineVertexBuffer[2], c1, tc1 };
+    m_p4 = { m_lineVertexBuffer[1], c0, tc0 };
+    m_p5 = { m_lineVertexBuffer[3], c1, tc1 };
+
+    m_triangleBuffer[0] = { &m_p0, &m_p1, &m_p2 };
+    m_triangleBuffer[1] = { &m_p3, &m_p4, &m_p5 };
+
+   return { m_triangleBuffer.data(), 2 };
 }
 
 void PrimitiveAssembler::setDrawMode(const RenderObj::DrawMode mode)
