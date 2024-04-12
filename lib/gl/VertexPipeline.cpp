@@ -37,7 +37,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
 }
 
-void VertexPipeline::fetchAndTransform(RenderObj::VertexParameter& parameter, const RenderObj& obj, uint32_t i)
+void VertexPipeline::fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i)
 {
     const uint32_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
@@ -86,7 +86,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     uint32_t count = obj.getCount();
     for (uint32_t it = 0; it < count; it++)
     {
-        RenderObj::VertexParameter& param = m_primitiveAssembler.createParameter();
+        PrimitiveAssembler::Triangle::VertexParameter& param = m_primitiveAssembler.createParameter();
         fetchAndTransform(param, obj, it);
 
         const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
@@ -97,22 +97,12 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
                 return false;
             }
         }
+        if (!triangles.empty())
+        {
+            m_primitiveAssembler.removePrimitive();
+        }
     }
 
-    // while (1)
-    // {
-    //     const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
-    //     for (const PrimitiveAssembler::Triangle& triangle : triangles)
-    //     {
-    //         if (!drawTriangle(triangle)) [[unlikely]]
-    //         {
-    //             return false;
-    //         }
-    //     }
-
-    //     if (triangles.size() == 0) [[unlikely]]
-    //         break;
-    // }
     return true;
 }
 

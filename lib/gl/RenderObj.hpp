@@ -55,14 +55,6 @@ public:
         UNSIGNED_INT
     };
 
-    struct VertexParameter
-    {
-        Vec4 vertex;
-        Vec4 color;
-        std::array<Vec4, MAX_TMU_COUNT> tex;
-        // Vec3 normal;
-    };
-
     void logCurrentConfig() const;
 
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
@@ -82,9 +74,6 @@ public:
     inline void reset() { m_fetchCount = 0; }
     inline std::size_t getFetchCount() const { return m_fetchCount; }
     inline void incFetchCount() const { m_fetchCount++; }
-
-    void fetch(VertexParameter& parameter) const;
-    bool pop(VertexParameter& parameter) const;
 
     void enableVertexArray(bool enable) { m_vertexArrayEnabled = enable; }
     void setVertexSize(uint8_t size) { m_vertexSize = size; }

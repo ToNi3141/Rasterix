@@ -58,7 +58,7 @@ public:
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);;
-    void fetchAndTransform(RenderObj::VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    void fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i);
 
     bool m_enableNormalizing { true };
 

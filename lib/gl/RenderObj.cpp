@@ -97,26 +97,6 @@ uint32_t RenderObj::getIndex(const uint32_t index) const
     return index + m_arrayOffset;
 }
 
-void RenderObj::fetch(VertexParameter& parameter) const
-{
-    const uint32_t pos = getIndex(m_fetchCount);
-    parameter.color = getColor(pos);
-    parameter.vertex = getVertex(pos);
-    // parameter.normal = getNormal(pos);
-
-    for (uint8_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
-    {
-        parameter.tex[tu] = getTexCoord(tu, pos);
-    }
-}
-
-bool RenderObj::pop(VertexParameter& parameter) const
-{
-    fetch(parameter);
-    m_fetchCount++;
-    return true;
-}
-
 const char* RenderObj::drawModeToString(const DrawMode drawMode) const 
 {
     switch (drawMode)

@@ -39,7 +39,7 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
     switch (m_drawMode) {
     case RenderObj::DrawMode::TRIANGLES:
         m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
-        m_queue.decSize(3);
+        m_decrement = 3;
         break;
     case RenderObj::DrawMode::POLYGON:
     case RenderObj::DrawMode::TRIANGLE_FAN:
@@ -48,7 +48,7 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
             m_pTmp = m_queue[0];
         }
         m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
-        m_queue.decSize(1);
+        m_decrement = 1;
         break;
     case RenderObj::DrawMode::TRIANGLE_STRIP:
         if (m_count & 0x1)
@@ -59,20 +59,20 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         {
             m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
         }
-        m_queue.decSize(1);
+        m_decrement = 1;
         break;
     case RenderObj::DrawMode::QUADS:
         if (m_count & 0x1)
         {
             m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
-            m_queue.decSize(3);
+            m_decrement = 3;
         }
         else
         {
             m_pTmp = m_queue[0];
             m_triangleBuffer[0] = { &m_pTmp, &m_queue[1], &m_queue[2] };
 
-            m_queue.decSize(1);
+            m_decrement = 1;
         }
         break;
     case RenderObj::DrawMode::QUAD_STRIP:
@@ -84,7 +84,7 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         {
             m_triangleBuffer[0] = { &m_queue[0], &m_queue[1], &m_queue[2] };
         }
-        m_queue.decSize(1);
+        m_decrement = 1;
         break;
     [[unlikely]] default:
         return {};
@@ -102,14 +102,14 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
     }
 
     std::size_t last = (m_count == (m_expectedPrimitiveCount - 1));
-    RenderObj::VertexParameter* p0;
-    RenderObj::VertexParameter* p1;
+    Triangle::VertexParameter* p0;
+    Triangle::VertexParameter* p1;
 
     switch (m_drawMode) {
     case RenderObj::DrawMode::LINES:
         p0 = &m_queue[0];
         p1 = &m_queue[1];
-        m_queue.decSize(2);
+        m_decrement = 2;
         break;
     case RenderObj::DrawMode::LINE_LOOP:
         if (m_count == 0)
@@ -126,12 +126,12 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
             p0 = &m_queue[0];
             p1 = &m_queue[1];
         }
-        m_queue.decSize(1);
+        m_decrement = 1;
         break;
     case RenderObj::DrawMode::LINE_STRIP:
         p0 = &m_queue[0];
         p1 = &m_queue[1];
-        m_queue.decSize(1);
+        m_decrement = 1;
         break;
     [[unlikely]] default:
         return {};
@@ -162,24 +162,27 @@ std::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     ny *= halfLineWidth;
 
     // Now create the vertices that define two triangles which are used to draw the line
-    m_lineVertexBuffer = { { v0, v0, v1, v1 } };
+    Vec4 nv0 = v0;
+    Vec4 nv1 = v0;
+    Vec4 nv2 = v1;
+    Vec4 nv3 = v1;
 
-    m_lineVertexBuffer[0][0] += ( nx * v0[3]) * rcpViewportScaleX;
-    m_lineVertexBuffer[0][1] += ( ny * v0[3]) * rcpViewportScaleY;
-    m_lineVertexBuffer[1][0] += (-nx * v0[3]) * rcpViewportScaleX;
-    m_lineVertexBuffer[1][1] += (-ny * v0[3]) * rcpViewportScaleY;
+    nv0[0] += ( nx * v0[3]) * rcpViewportScaleX;
+    nv0[1] += ( ny * v0[3]) * rcpViewportScaleY;
+    nv1[0] += (-nx * v0[3]) * rcpViewportScaleX;
+    nv1[1] += (-ny * v0[3]) * rcpViewportScaleY;
 
-    m_lineVertexBuffer[2][0] += ( nx * v1[3]) * rcpViewportScaleX;
-    m_lineVertexBuffer[2][1] += ( ny * v1[3]) * rcpViewportScaleY;
-    m_lineVertexBuffer[3][0] += (-nx * v1[3]) * rcpViewportScaleX;
-    m_lineVertexBuffer[3][1] += (-ny * v1[3]) * rcpViewportScaleY;
+    nv2[0] += ( nx * v1[3]) * rcpViewportScaleX;
+    nv2[1] += ( ny * v1[3]) * rcpViewportScaleY;
+    nv3[0] += (-nx * v1[3]) * rcpViewportScaleX;
+    nv3[1] += (-ny * v1[3]) * rcpViewportScaleY;
 
-    m_p0 = { m_lineVertexBuffer[0], c0, tc0 };
-    m_p1 = { m_lineVertexBuffer[1], c0, tc0 };
-    m_p2 = { m_lineVertexBuffer[2], c1, tc1 };
-    m_p3 = { m_lineVertexBuffer[2], c1, tc1 };
-    m_p4 = { m_lineVertexBuffer[1], c0, tc0 };
-    m_p5 = { m_lineVertexBuffer[3], c1, tc1 };
+    m_p0 = { nv0, c0, tc0 };
+    m_p1 = { nv1, c0, tc0 };
+    m_p2 = { nv2, c1, tc1 };
+    m_p3 = { nv2, c1, tc1 };
+    m_p4 = { nv1, c0, tc0 };
+    m_p5 = { nv3, c1, tc1 };
 
     m_triangleBuffer[0] = { &m_p0, &m_p1, &m_p2 };
     m_triangleBuffer[1] = { &m_p3, &m_p4, &m_p5 };

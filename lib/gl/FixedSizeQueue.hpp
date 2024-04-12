@@ -81,7 +81,7 @@ public:
 
     /// @brief Decreases the size of the queue.
     /// @param count The number of elements to remove.
-    inline void decSize(uint32_t count)
+    inline void removeElements(uint32_t count)
     {
         if (count > m_size)
         {
