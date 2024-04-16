@@ -598,38 +598,38 @@ GLint convertSrcReg(PixelPipeline::TexEnv::SrcReg& conf, GLint val)
 }
 
 
-PixelPipeline::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+PixelPipeline::FragmentPipeline::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc) {
     case GL_ZERO:
-        return PixelPipeline::BlendFunc::ZERO;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
     case GL_ONE:
-        return PixelPipeline::BlendFunc::ONE;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ONE;
     case GL_DST_COLOR:
-        return PixelPipeline::BlendFunc::DST_COLOR;
+        return PixelPipeline::FragmentPipeline::BlendFunc::DST_COLOR;
     case GL_SRC_COLOR:
-        return PixelPipeline::BlendFunc::SRC_COLOR;
+        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_COLOR;
     case GL_ONE_MINUS_DST_COLOR:
-        return PixelPipeline::BlendFunc::ONE_MINUS_DST_COLOR;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_DST_COLOR;
     case GL_ONE_MINUS_SRC_COLOR:
-        return PixelPipeline::BlendFunc::ONE_MINUS_SRC_COLOR;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_SRC_COLOR;
     case GL_SRC_ALPHA:
-        return PixelPipeline::BlendFunc::SRC_ALPHA;
+        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_ALPHA;
     case GL_ONE_MINUS_SRC_ALPHA:
-        return PixelPipeline::BlendFunc::ONE_MINUS_SRC_ALPHA;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_SRC_ALPHA;
     case GL_DST_ALPHA:
-        return PixelPipeline::BlendFunc::DST_ALPHA;
+        return PixelPipeline::FragmentPipeline::BlendFunc::DST_ALPHA;
     case GL_ONE_MINUS_DST_ALPHA:
-        return PixelPipeline::BlendFunc::ONE_MINUS_DST_ALPHA;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_DST_ALPHA;
     case GL_SRC_ALPHA_SATURATE:
-        return PixelPipeline::BlendFunc::SRC_ALPHA_SATURATE;
+        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_ALPHA_SATURATE;
     default:
         SPDLOG_WARN("convertGlBlendFuncToRenderBlendFunc 0x{:X} not suppored", blendFunc);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
-        return PixelPipeline::BlendFunc::ZERO;
+        return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
     }
     IceGL::getInstance().setError(GL_INVALID_ENUM);
-    return PixelPipeline::BlendFunc::ZERO;
+    return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
 }
 
 void setClientState(const GLenum array, bool enable)
@@ -2158,58 +2158,58 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
 
-    PixelPipeline::LogicOp logicOp { PixelPipeline::LogicOp::COPY };
+    PixelPipeline::FragmentPipeline::LogicOp logicOp { PixelPipeline::FragmentPipeline::LogicOp::COPY };
     switch (opcode) {
     case GL_CLEAR:
-        logicOp = PixelPipeline::LogicOp::CLEAR;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = PixelPipeline::LogicOp::SET;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = PixelPipeline::LogicOp::COPY;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = PixelPipeline::LogicOp::COPY_INVERTED;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = PixelPipeline::LogicOp::NOOP;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NOOP;
         break;
 //    case GL_INVERTED:
-//        logicOp = PixelPipeline::LogicOp::INVERTED;
+//        logicOp = PixelPipeline::FragmentPipeline::LogicOp::INVERTED;
 //        break;
     case GL_AND:
-        logicOp = PixelPipeline::LogicOp::AND;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = PixelPipeline::LogicOp::NAND;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = PixelPipeline::LogicOp::OR;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = PixelPipeline::LogicOp::NOR;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = PixelPipeline::LogicOp::XOR;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = PixelPipeline::LogicOp::EQUIV;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = PixelPipeline::LogicOp::AND_REVERSE;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = PixelPipeline::LogicOp::AND_INVERTED;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = PixelPipeline::LogicOp::OR_REVERSE;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = PixelPipeline::LogicOp::OR_INVERTED;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = PixelPipeline::LogicOp::COPY;
+        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY;
         break;
     }
     // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented

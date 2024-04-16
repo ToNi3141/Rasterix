@@ -53,16 +53,12 @@ public:
         BACK
     };
 
-    using FragmentPipeline = FragmentPipelineReg;
-    using BlendFunc = FragmentPipelineReg::BlendFunc;
-    using LogicOp = FragmentPipelineReg::LogicOp;
-
     using TMU = IRenderer::TMU;
     using TextureWrapMode = IRenderer::TextureWrapMode;
-    using Combine = TexEnvReg::Combine;
+
+    using FragmentPipeline = FragmentPipelineReg;
     using TexEnv = TexEnvReg;
     using StencilConfig = StencilReg;
-    
     using FeatureEnable = FeatureEnableReg;
 
     PixelPipeline(IRenderer& renderer);
