@@ -102,11 +102,11 @@ bool PixelPipeline::uploadTexture()
     return ret;
 }
 
-PixelPipeline::TextureObjectMipmap& PixelPipeline::getTexture() 
+TextureObjectMipmap& PixelPipeline::getTexture()
 {
     if (!m_textureObjectMipmap)
     {
-        m_textureObjectMipmap = std::make_optional<PixelPipeline::TextureObjectMipmap>(m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture));
+        m_textureObjectMipmap = std::make_optional<TextureObjectMipmap>(m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture));
     }
     return *m_textureObjectMipmap;
 }

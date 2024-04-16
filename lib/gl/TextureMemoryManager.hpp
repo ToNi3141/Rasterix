@@ -20,6 +20,7 @@
 #define TEXTUREMEMORYMANAGER_HPP
 #include <array>
 #include "IRenderer.hpp"
+#include "TextureObject.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
 #include <span>
@@ -72,7 +73,7 @@ public:
         return false;
     }
 
-    bool updateTexture(const uint16_t texId, const IRenderer::TextureObjectMipmap& textureObject) 
+    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) 
     {
         if (!m_textureLut[texId]) [[unlikely]]
         {
@@ -209,7 +210,7 @@ public:
         return {};
     }
 
-    IRenderer::TextureObjectMipmap getTexture(const uint16_t texId)
+    TextureObjectMipmap getTexture(const uint16_t texId)
     {
         if (!m_textureLut[texId]) [[unlikely]]
         {
@@ -284,7 +285,7 @@ private:
         bool requiresDelete;
         std::array<uint16_t, MAX_PAGES_PER_TEXTURE> pageTable {};
         uint8_t pages { 0 };
-        IRenderer::TextureObjectMipmap textures {};
+        TextureObjectMipmap textures {};
         TmuTextureReg tmuConfig {};
 
         uint32_t getTextureSize() const

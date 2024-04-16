@@ -61,7 +61,7 @@ public:
 
     /// @brief Returns the maximum supported LOD level
     /// @return The maximum supported LOD level
-    static std::size_t getMaxLOD() { return IRenderer::MAX_LOD; }
+    static std::size_t getMaxLOD() { return TextureObject::MAX_LOD; }
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available

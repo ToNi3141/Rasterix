@@ -59,12 +59,8 @@ public:
 
     using TMU = IRenderer::TMU;
     using TextureWrapMode = IRenderer::TextureWrapMode;
-    using PixelFormat = IRenderer::TextureObject::PixelFormat;
-    using IntendedInternalPixelFormat = IRenderer::TextureObject::IntendedInternalPixelFormat;
     using Combine = TexEnvReg::Combine;
     using TexEnv = TexEnvReg;
-    using TextureObject = IRenderer::TextureObject;
-    using TextureObjectMipmap = IRenderer::TextureObjectMipmap;
     using StencilConfig = StencilReg;
     
     using FeatureEnable = FeatureEnableReg;

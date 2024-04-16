@@ -3445,7 +3445,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    PixelPipeline::IntendedInternalPixelFormat intendedInternalPixelFormat { PixelPipeline::IntendedInternalPixelFormat::RGBA };
+    TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureObject::IntendedInternalPixelFormat::RGBA };
     
     switch (internalformat)
     {
@@ -3454,7 +3454,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_ALPHA8:
         case GL_ALPHA12:
         case GL_ALPHA16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::ALPHA;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::ALPHA;
             break;
         case GL_COMPRESSED_LUMINANCE:
         case GL_LUMINANCE:
@@ -3462,7 +3462,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_LUMINANCE8:
         case GL_LUMINANCE12:
         case GL_LUMINANCE16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE;
             break;
         case GL_COMPRESSED_INTENSITY:
         case GL_INTENSITY:
@@ -3470,7 +3470,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_INTENSITY8:
         case GL_INTENSITY12:
         case GL_INTENSITY16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::INTENSITY;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::INTENSITY;
             break;
         case 2:
         case GL_COMPRESSED_LUMINANCE_ALPHA:
@@ -3481,7 +3481,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_LUMINANCE12_ALPHA4:
         case GL_LUMINANCE12_ALPHA12:
         case GL_LUMINANCE16_ALPHA16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
             break;
         case 3:
         case GL_COMPRESSED_RGB:
@@ -3493,7 +3493,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_RGB10:
         case GL_RGB12:
         case GL_RGB16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGB;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGB;
             break;
         case 4:
         case GL_COMPRESSED_RGBA:
@@ -3504,10 +3504,10 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         case GL_RGB10_A2:
         case GL_RGBA12:
         case GL_RGBA16:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA;
             break;
         case GL_RGB5_A1:
-            intendedInternalPixelFormat = PixelPipeline::IntendedInternalPixelFormat::RGBA1;
+            intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA1;
             break;
         case GL_DEPTH_COMPONENT:
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
@@ -3518,7 +3518,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
             return;
     }
 
-    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
     texObj.width = widthRounded;
     texObj.height = heightRounded;
     texObj.intendedPixelFormat = intendedInternalPixelFormat;
@@ -4071,7 +4071,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    PixelPipeline::TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
 
     std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
     if (!texMemShared)
