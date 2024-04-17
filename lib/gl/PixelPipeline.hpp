@@ -33,20 +33,15 @@ namespace rr
 class PixelPipeline
 {
 public:
-    
-
     PixelPipeline(IRenderer& renderer);
 
     bool drawTriangle(const Triangle& triangle);
     bool updatePipeline();
 
-    // Feature Enable
-
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
-
 
     Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }

@@ -45,16 +45,15 @@ public:
     bool drawObj(const RenderObj &obj);
 
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
-    
-    void setLineWidth(const float width);
 
     void activateTmu(const uint8_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
 
-    Lighting& getLighting();
-    TexGen& getTexGen();
-    ViewPort& getViewPort();
-    MatrixStack& getMatrixStack();
-    Culling& getCulling();
+    Lighting& getLighting() { return m_lighting; }
+    TexGen& getTexGen() { return m_texGen[m_tmu]; }
+    ViewPort& getViewPort() { return m_viewPort; }
+    MatrixStack& getMatrixStack() { return m_matrixStack; }
+    Culling& getCulling() { return m_culling; }
+    PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);;

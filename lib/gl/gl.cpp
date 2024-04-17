@@ -2120,7 +2120,7 @@ GLAPI void APIENTRY impl_glLineWidth(GLfloat width)
     {
         IceGL::getInstance().setError(GL_INVALID_VALUE);
     }
-    IceGL::getInstance().vertexPipeline().setLineWidth(width);
+    IceGL::getInstance().vertexPipeline().getPrimitiveAssembler().setLineWidth(width);
 }
 
 GLAPI void APIENTRY impl_glListBase(GLuint base)

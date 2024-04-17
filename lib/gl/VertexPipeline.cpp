@@ -215,34 +215,4 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
     return true;
 }
 
-Culling& VertexPipeline::getCulling()
-{
-    return m_culling;
-}
-
-Lighting& VertexPipeline::getLighting()
-{
-    return m_lighting;
-}
-
-TexGen& VertexPipeline::getTexGen()
-{
-    return m_texGen[m_tmu];
-}
-
-ViewPort& VertexPipeline::getViewPort()
-{
-    return m_viewPort;
-}
-
-MatrixStack& VertexPipeline::getMatrixStack()
-{
-    return m_matrixStack;
-}
-
-void VertexPipeline::setLineWidth(const float width)
-{
-    m_primitiveAssembler.setLineWidth(width);
-}
-
 } // namespace rr

@@ -27,7 +27,7 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
 
 bool PixelPipeline::drawTriangle(const Triangle& triangle) 
 {
-        return m_renderer.drawTriangle(triangle);
+    return m_renderer.drawTriangle(triangle);
 }
 
 bool PixelPipeline::updatePipeline()
@@ -42,7 +42,6 @@ bool PixelPipeline::updatePipeline()
 
     return ret;
 }
-
 
 bool PixelPipeline::setClearColor(const Vec4& color)
 {
@@ -64,7 +63,5 @@ bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer,
     bool ret = updatePipeline();
     return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer); 
 }
-
-
 
 } // namespace rr
