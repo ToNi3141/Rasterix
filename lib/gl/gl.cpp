@@ -449,62 +449,62 @@ uint8_t convertColorComponentToUint8(const uint16_t color)
     return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
 }
 
-GLint convertTexEnvMode(PixelPipeline::TexEnvMode& mode, const GLint param) 
+GLint convertTexEnvMode(Texture::TexEnvMode& mode, const GLint param)
 {
     GLint ret = GL_NO_ERROR;
     switch (param) {
 //    case GL_DISABLE:
-//        mode = PixelPipeline::TexEnvMode::DISABLE;
+//        mode = Texture::TexEnvMode::DISABLE;
 //        break;
     case GL_REPLACE:
-        mode = PixelPipeline::TexEnvMode::REPLACE;
+        mode = Texture::TexEnvMode::REPLACE;
         break;
     case GL_MODULATE:
-        mode = PixelPipeline::TexEnvMode::MODULATE;
+        mode = Texture::TexEnvMode::MODULATE;
         break;
     case GL_DECAL:
-        mode = PixelPipeline::TexEnvMode::DECAL;
+        mode = Texture::TexEnvMode::DECAL;
         break;
     case GL_BLEND:
-        mode = PixelPipeline::TexEnvMode::BLEND;
+        mode = Texture::TexEnvMode::BLEND;
         break;
     case GL_ADD:
-        mode = PixelPipeline::TexEnvMode::ADD;
+        mode = Texture::TexEnvMode::ADD;
         break;
     case GL_COMBINE:
-        mode = PixelPipeline::TexEnvMode::COMBINE;
+        mode = Texture::TexEnvMode::COMBINE;
         break;
     default:
         SPDLOG_WARN("convertTexEnvMode 0x{:X} not suppored", param);
         ret = GL_INVALID_ENUM;
-        mode = PixelPipeline::TexEnvMode::REPLACE;
+        mode = Texture::TexEnvMode::REPLACE;
         break;
     }
     return ret;
 }
 
-GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha) 
+GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val) 
     {
         case GL_REPLACE:
-            conv = PixelPipeline::TexEnv::Combine::REPLACE;
+            conv = Texture::TexEnv::Combine::REPLACE;
             break;
         case GL_MODULATE:
-            conv = PixelPipeline::TexEnv::Combine::MODULATE;
+            conv = Texture::TexEnv::Combine::MODULATE;
             break;
         case GL_ADD:
-            conv = PixelPipeline::TexEnv::Combine::ADD;
+            conv = Texture::TexEnv::Combine::ADD;
             break;
         case GL_ADD_SIGNED:
-            conv = PixelPipeline::TexEnv::Combine::ADD_SIGNED;
+            conv = Texture::TexEnv::Combine::ADD_SIGNED;
             break;
         case GL_INTERPOLATE:
-            conv = PixelPipeline::TexEnv::Combine::INTERPOLATE;
+            conv = Texture::TexEnv::Combine::INTERPOLATE;
             break;
         case GL_SUBTRACT:
-            conv = PixelPipeline::TexEnv::Combine::SUBTRACT;
+            conv = Texture::TexEnv::Combine::SUBTRACT;
             break;
         case GL_DOT3_RGB:
             if (alpha) 
@@ -513,7 +513,7 @@ GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha
             }
             else 
             {
-                conv = PixelPipeline::TexEnv::Combine::DOT3_RGB;
+                conv = Texture::TexEnv::Combine::DOT3_RGB;
             }
             break;
         case GL_DOT3_RGBA:
@@ -523,7 +523,7 @@ GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha
             }
             else 
             {
-                conv = PixelPipeline::TexEnv::Combine::DOT3_RGBA;
+                conv = Texture::TexEnv::Combine::DOT3_RGBA;
             }
             break;
         default:
@@ -534,16 +534,16 @@ GLint convertCombine(PixelPipeline::TexEnv::Combine& conv, GLint val, bool alpha
     return ret;
 }
 
-GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha)
+GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
         case GL_SRC_ALPHA:
-            conf = PixelPipeline::TexEnv::Operand::SRC_ALPHA;
+            conf = Texture::TexEnv::Operand::SRC_ALPHA;
             break;
         case GL_ONE_MINUS_SRC_ALPHA:
-            conf = PixelPipeline::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
+            conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
             break;
         case GL_SRC_COLOR:
             if (alpha)
@@ -552,7 +552,7 @@ GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha
             }
             else
             {
-                conf = PixelPipeline::TexEnv::Operand::SRC_COLOR;
+                conf = Texture::TexEnv::Operand::SRC_COLOR;
             }
             break;
         case GL_ONE_MINUS_SRC_COLOR:
@@ -562,7 +562,7 @@ GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha
             }
             else
             {
-                conf = PixelPipeline::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
+                conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
             }
             break;
         default:
@@ -572,22 +572,22 @@ GLint convertOperand(PixelPipeline::TexEnv::Operand& conf, GLint val, bool alpha
     return ret;
 }
 
-GLint convertSrcReg(PixelPipeline::TexEnv::SrcReg& conf, GLint val)
+GLint convertSrcReg(Texture::TexEnv::SrcReg& conf, GLint val)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
         case GL_TEXTURE:
-            conf = PixelPipeline::TexEnv::SrcReg::TEXTURE;
+            conf = Texture::TexEnv::SrcReg::TEXTURE;
             break;
         case GL_CONSTANT:
-            conf = PixelPipeline::TexEnv::SrcReg::CONSTANT;
+            conf = Texture::TexEnv::SrcReg::CONSTANT;
             break;
         case GL_PRIMARY_COLOR:
-            conf = PixelPipeline::TexEnv::SrcReg::PRIMARY_COLOR;
+            conf = Texture::TexEnv::SrcReg::PRIMARY_COLOR;
             break;
         case GL_PREVIOUS:
-            conf = PixelPipeline::TexEnv::SrcReg::PREVIOUS;
+            conf = Texture::TexEnv::SrcReg::PREVIOUS;
             break;
         default:
             SPDLOG_WARN("convertSrcReg 0x{:X} not suppored", val);
@@ -708,18 +708,18 @@ RenderObj::DrawMode convertDrawMode(GLenum drawMode)
     }
 }
 
-PixelPipeline::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
+Texture::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
 {
     switch (mode) {
     case GL_CLAMP_TO_EDGE:
     case GL_CLAMP:
-        return PixelPipeline::TextureWrapMode::CLAMP_TO_EDGE;
+        return Texture::TextureWrapMode::CLAMP_TO_EDGE;
     case GL_REPEAT:
-        return PixelPipeline::TextureWrapMode::REPEAT;
+        return Texture::TextureWrapMode::REPEAT;
     default:
         SPDLOG_WARN("convertGlTextureWarpMode 0x{:X} not suppored", mode);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
-        return PixelPipeline::TextureWrapMode::REPEAT;
+        return Texture::TextureWrapMode::REPEAT;
     }
 }
 
@@ -3074,7 +3074,7 @@ GLAPI void APIENTRY impl_glTexEnvfv(GLenum target, GLenum pname, const GLfloat *
 
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (IceGL::getInstance().pixelPipeline().setTexEnvColor({ { params[0], params[1], params[2], params[3] } }))
+        if (IceGL::getInstance().pixelPipeline().texture().setTexEnvColor({ { params[0], params[1], params[2], params[3] } }))
         {
             IceGL::getInstance().setError(GL_NO_ERROR);
         }
@@ -3101,122 +3101,122 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         {
             case GL_TEXTURE_ENV_MODE:
             {
-                PixelPipeline::TexEnvMode mode {};
+                Texture::TexEnvMode mode {};
                 error = convertTexEnvMode(mode, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().setTexEnvMode(mode); 
+                    IceGL::getInstance().pixelPipeline().texture().setTexEnvMode(mode);
                 break;
             }
             case GL_COMBINE_RGB:
             {
-                PixelPipeline::TexEnv::Combine c {};
+                Texture::TexEnv::Combine c {};
                 error = convertCombine(c, param, false);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setCombineRgb(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setCombineRgb(c);
                 break;
             }
             case GL_COMBINE_ALPHA:
             {
-                PixelPipeline::TexEnv::Combine c {};
+                Texture::TexEnv::Combine c {};
                 error = convertCombine(c, param, true);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setCombineAlpha(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setCombineAlpha(c);
                 break;
             }
             case GL_SOURCE0_RGB:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegRgb0(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb0(c);
                 break;
             }
             case GL_SOURCE1_RGB:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegRgb1(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb1(c);
                 break;            
             }
             case GL_SOURCE2_RGB:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegRgb2(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb2(c);
                 break;
             }
             case GL_SOURCE0_ALPHA:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegAlpha0(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha0(c);
                 break;
             }
             case GL_SOURCE1_ALPHA:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegAlpha1(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha1(c);
                 break;            
             }
             case GL_SOURCE2_ALPHA:
             {
-                PixelPipeline::TexEnv::SrcReg c {};
+                Texture::TexEnv::SrcReg c {};
                 error = convertSrcReg(c, param);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setSrcRegAlpha2(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha2(c);
                 break;
             }
             case GL_OPERAND0_RGB:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, false);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandRgb0(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb0(c);
                 break;
             }
             case GL_OPERAND1_RGB:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, false);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandRgb1(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb1(c);
                 break;
             }
             case GL_OPERAND2_RGB:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, false);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandRgb2(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb2(c);
                 break;
             }
             case GL_OPERAND0_ALPHA:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, true);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandAlpha0(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha0(c);
                 break;
             }
             case GL_OPERAND1_ALPHA:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, true);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandAlpha1(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha1(c);
                 break;
             }
             case GL_OPERAND2_ALPHA:
             {
-                PixelPipeline::TexEnv::Operand c {};
+                Texture::TexEnv::Operand c {};
                 error = convertOperand(c, param, true);
                 if (error == GL_NO_ERROR)
-                    IceGL::getInstance().pixelPipeline().texEnv().setOperandAlpha2(c);
+                    IceGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha2(c);
                 break;
             }
             case GL_RGB_SCALE:
@@ -3224,7 +3224,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = std::log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        IceGL::getInstance().pixelPipeline().texEnv().setShiftRgb(shift);
+                        IceGL::getInstance().pixelPipeline().texture().texEnv().setShiftRgb(shift);
                         error = GL_NO_ERROR;
                     }
                     else 
@@ -3238,7 +3238,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                     const uint8_t shift = std::log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
-                        IceGL::getInstance().pixelPipeline().texEnv().setShiftAlpha(shift);
+                        IceGL::getInstance().pixelPipeline().texture().texEnv().setShiftAlpha(shift);
                         error = GL_NO_ERROR;
                     }
                     else 
@@ -3518,7 +3518,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
             return;
     }
 
-    TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    TextureObject& texObj { IceGL::getInstance().pixelPipeline().texture().getTexture()[level] };
     texObj.width = widthRounded;
     texObj.height = heightRounded;
     texObj.intendedPixelFormat = intendedInternalPixelFormat;
@@ -3550,7 +3550,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (IceGL::getInstance().getError() == GL_NO_ERROR)
             {
-                IceGL::getInstance().pixelPipeline().setTexWrapModeS(mode);
+                IceGL::getInstance().pixelPipeline().texture().setTexWrapModeS(mode);
             }
             break;
         }
@@ -3559,14 +3559,14 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (IceGL::getInstance().getError() == GL_NO_ERROR)
             {
-                IceGL::getInstance().pixelPipeline().setTexWrapModeT(mode);
+                IceGL::getInstance().pixelPipeline().texture().setTexWrapModeT(mode);
             }
             break;
         }
         case GL_TEXTURE_MAG_FILTER:
             if ((param == GL_LINEAR) || (param == GL_NEAREST))
             {
-                IceGL::getInstance().pixelPipeline().setEnableMagFilter(param == GL_LINEAR);
+                IceGL::getInstance().pixelPipeline().texture().setEnableMagFilter(param == GL_LINEAR);
             }
             else
             {
@@ -3578,13 +3578,13 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             {
                 case GL_NEAREST:
                 case GL_LINEAR:
-                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(false);
+                    IceGL::getInstance().pixelPipeline().texture().setEnableMinFilter(false);
                     break;
                 case GL_NEAREST_MIPMAP_NEAREST:
                 case GL_LINEAR_MIPMAP_NEAREST:
                 case GL_NEAREST_MIPMAP_LINEAR:
                 case GL_LINEAR_MIPMAP_LINEAR:
-                    IceGL::getInstance().pixelPipeline().setEnableMinFilter(true);
+                    IceGL::getInstance().pixelPipeline().texture().setEnableMinFilter(true);
                     break;
                 default:
                     IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3808,9 +3808,9 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
-    if (!IceGL::getInstance().pixelPipeline().isTextureValid(texture))
+    if (!IceGL::getInstance().pixelPipeline().texture().isTextureValid(texture))
     {
-        bool ret { IceGL::getInstance().pixelPipeline().createTextureWithName(texture) };
+        bool ret { IceGL::getInstance().pixelPipeline().texture().createTextureWithName(texture) };
         if (!ret) [[unlikely]]
         {
             // TODO: Free allocated textures to avoid leaks
@@ -3819,11 +3819,11 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         }
     }
 
-    IceGL::getInstance().pixelPipeline().setBoundTexture(texture);
+    IceGL::getInstance().pixelPipeline().texture().setBoundTexture(texture);
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().pixelPipeline().useTexture();
+        IceGL::getInstance().pixelPipeline().texture().useTexture();
     }
     else 
     {
@@ -3880,7 +3880,7 @@ GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint *textures)
         if (textures[i] != 0) 
         {
             SPDLOG_DEBUG("glDeleteTextures delete 0x{:X}", textures[i]);
-            IceGL::getInstance().pixelPipeline().deleteTexture(textures[i]);
+            IceGL::getInstance().pixelPipeline().texture().deleteTexture(textures[i]);
         }
         
     }
@@ -3963,7 +3963,7 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint *textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::pair<bool, uint16_t> ret { IceGL::getInstance().pixelPipeline().createTexture() };
+        std::pair<bool, uint16_t> ret { IceGL::getInstance().pixelPipeline().texture().createTexture() };
         if (ret.first)
         {
             textures[i] = ret.second;
@@ -4071,7 +4071,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    TextureObject& texObj { IceGL::getInstance().pixelPipeline().getTexture()[level] };
+    TextureObject& texObj { IceGL::getInstance().pixelPipeline().texture().getTexture()[level] };
 
     std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [] (const uint16_t *p) { delete [] p; });
     if (!texMemShared)
@@ -4350,7 +4350,7 @@ GLAPI void APIENTRY impl_glActiveTexture(GLenum texture)
 {
     SPDLOG_DEBUG("glActiveTexture texture 0x{:X} called", texture - GL_TEXTURE0);
     // TODO: Check how many TMUs the hardware actually has
-    IceGL::getInstance().pixelPipeline().activateTmu(texture - GL_TEXTURE0);
+    IceGL::getInstance().pixelPipeline().texture().activateTmu(texture - GL_TEXTURE0);
     IceGL::getInstance().vertexPipeline().activateTmu(texture - GL_TEXTURE0);
 }
 

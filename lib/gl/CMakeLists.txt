@@ -14,6 +14,7 @@ add_library(gl STATIC
     Culling.cpp
     PrimitiveAssembler.cpp
     Fog.cpp
+    Texture.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)

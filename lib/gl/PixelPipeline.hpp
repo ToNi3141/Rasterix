@@ -23,34 +23,20 @@
 #include "Vec.hpp"
 #include <optional>
 #include "Fog.hpp"
+#include "Texture.hpp"
 
 namespace rr
 {
 class PixelPipeline
 {
 public:
-    enum class TexEnvMode
-    {
-        DISABLE,
-        REPLACE,
-        MODULATE,
-        DECAL,
-        BLEND,
-        ADD,
-        COMBINE
-    };
-
     enum class StencilFace 
     {
         FRONT,
         BACK
     };
 
-    using TMU = IRenderer::TMU;
-    using TextureWrapMode = IRenderer::TextureWrapMode;
-
     using FragmentPipeline = FragmentPipelineReg;
-    using TexEnv = TexEnvReg;
     using StencilConfig = StencilReg;
     using FeatureEnable = FeatureEnableReg;
 
@@ -60,14 +46,14 @@ public:
     bool updatePipeline();
 
     // Feature Enable
-    void setEnableTmu(const bool enable) { m_featureEnable.setEnableTmu(m_tmu, enable); }
+    void setEnableTmu(const bool enable) { m_featureEnable.setEnableTmu(m_texture.getActiveTmu(), enable); }
     void setEnableAlphaTest(const bool enable) { m_featureEnable.setEnableAlphaTest(enable); }
     void setEnableDepthTest(const bool enable) { m_featureEnable.setEnableDepthTest(enable); }
     void setEnableBlending(const bool enable) { m_featureEnable.setEnableBlending(enable); }
     void setEnableFog(const bool enable) { m_featureEnable.setEnableFog(enable); }
     void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
     void setEnableStencil(const bool enable) { m_featureEnable.setEnableStencilTest(enable); }
-    bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_tmu); }
+    bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_texture.getActiveTmu()); }
     bool getEnableTmu(const uint8_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
     bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
     bool getEnableDepthTest() const { return m_featureEnable.getEnableDepthTest(); }
@@ -75,20 +61,6 @@ public:
     bool getEnableFog() const { return m_featureEnable.getEnableFog(); }
     bool getEnableScissor() const { return m_featureEnable.getEnableScissor(); }
     bool getEnableStencil() const { return m_featureEnable.getEnableStencilTest(); }
-
-    // Textures
-    bool uploadTexture();
-    TextureObjectMipmap& getTexture();
-    bool useTexture();
-    bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
-    std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
-    bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
-    bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
-    void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
-    void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
-    void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
-    void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmuConf[m_tmu].boundTexture, val); }
 
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
@@ -106,32 +78,14 @@ public:
     void selectStencilTwoSideFrontForDevice();
     void selectStencilTwoSideBackForDevice();
 
-    // TMU
-    bool setTexEnvMode(const TexEnvMode mode);
-    TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
-    bool setTexEnvColor(const Vec4& color);
-    void activateTmu(const IRenderer::TMU tmu) { uploadTexture(); m_tmu = tmu; }
 
-    // Fog
     Fog& fog() { return m_fog; }
+    Texture& texture() { return m_texture; }
 
     // Scissor 
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:
-    static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
-
-    struct TmuConfig
-    {
-        // Textures
-        uint32_t boundTexture { 0 };
-
-        // TMU
-       TexEnvMode texEnvMode { TexEnvMode::REPLACE };
-       TexEnv texEnvConf {};
-       TexEnv texEnvConfUploaded {};
-    };
-
     bool updateFogLut();
 
     IRenderer& m_renderer;
@@ -140,10 +94,6 @@ private:
     FeatureEnable m_featureEnable {};
     FeatureEnable m_featureEnableUploaded {};
 
-    // TMU
-    std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
-    uint8_t m_tmu { 0 };
-    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 
     // Current fragment pipeline configuration 
     FragmentPipeline m_fragmentPipelineConf {};
@@ -159,6 +109,7 @@ private:
     StencilConfig m_stencilConfUploaded {};
 
     Fog m_fog { m_renderer };
+    Texture m_texture { m_renderer };
 };
 
 } // namespace rr
