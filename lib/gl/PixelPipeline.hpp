@@ -22,20 +22,13 @@
 #include "IRenderer.hpp"
 #include "Vec.hpp"
 #include <optional>
+#include "Fog.hpp"
 
 namespace rr
 {
 class PixelPipeline
 {
 public:
-    enum class FogMode
-    {
-        ONE,
-        LINEAR,
-        EXP,
-        EXP2
-    };
-
     enum class TexEnvMode
     {
         DISABLE,
@@ -120,11 +113,7 @@ public:
     void activateTmu(const IRenderer::TMU tmu) { uploadTexture(); m_tmu = tmu; }
 
     // Fog
-    void setFogMode(const FogMode val);
-    void setFogStart(const float val);
-    void setFogEnd(const float val);
-    void setFogDensity(const float val);
-    bool setFogColor(const Vec4& val);
+    Fog& fog() { return m_fog; }
 
     // Scissor 
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
@@ -169,12 +158,7 @@ private:
     StencilConfig* m_stencilConfTwoSide { &m_stencilConfFront };
     StencilConfig m_stencilConfUploaded {};
 
-    // Fog
-    bool m_fogDirty { false };
-    FogMode m_fogMode { FogMode::EXP };
-    float m_fogStart { 0.0f };
-    float m_fogEnd { 1.0f };
-    float m_fogDensity { 1.0f };
+    Fog m_fog { m_renderer };
 };
 
 } // namespace rr

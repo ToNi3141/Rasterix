@@ -13,6 +13,7 @@ add_library(gl STATIC
     MatrixStack.cpp
     Culling.cpp
     PrimitiveAssembler.cpp
+    Fog.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)

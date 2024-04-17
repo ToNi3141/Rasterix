@@ -31,7 +31,8 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/ViewPort.cpp \
     $${ICEGL_PATH}/MatrixStack.cpp \
     $${ICEGL_PATH}/Culling.cpp \
-    $${ICEGL_PATH}/PrimitiveAssembler.cpp
+    $${ICEGL_PATH}/PrimitiveAssembler.cpp \
+    $${ICEGL_PATH}/Fog.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \

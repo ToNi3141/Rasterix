@@ -1612,13 +1612,13 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
     case GL_FOG_MODE:
         switch (static_cast<GLenum>(param)) {
             case GL_EXP:
-                IceGL::getInstance().pixelPipeline().setFogMode(PixelPipeline::FogMode::EXP);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::EXP);
                 break;
             case GL_EXP2:
-                IceGL::getInstance().pixelPipeline().setFogMode(PixelPipeline::FogMode::EXP2);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::EXP2);
                 break;
             case GL_LINEAR:
-                IceGL::getInstance().pixelPipeline().setFogMode(PixelPipeline::FogMode::LINEAR);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::LINEAR);
                 break;
             default:
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1627,7 +1627,7 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
     case GL_FOG_DENSITY:
         if (param >= 0.0f)
         {
-            IceGL::getInstance().pixelPipeline().setFogDensity(param);
+            IceGL::getInstance().pixelPipeline().fog().setFogDensity(param);
         }
         else
         {
@@ -1635,10 +1635,10 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         }
         break;
     case GL_FOG_START:
-        IceGL::getInstance().pixelPipeline().setFogStart(param);
+        IceGL::getInstance().pixelPipeline().fog().setFogStart(param);
         break;
     case GL_FOG_END:
-        IceGL::getInstance().pixelPipeline().setFogEnd(param);
+        IceGL::getInstance().pixelPipeline().fog().setFogEnd(param);
         break;
     default:
         SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artefacts.");
@@ -1662,7 +1662,7 @@ GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat *params)
         break;
     case GL_FOG_COLOR:
     {
-        IceGL::getInstance().pixelPipeline().setFogColor({ { params[0], params[1], params[2], params[3] } });
+        IceGL::getInstance().pixelPipeline().fog().setFogColor({ { params[0], params[1], params[2], params[3] } });
     }
         break;
     default:
@@ -1693,7 +1693,7 @@ GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint *params)
     {
         Vec4 fogColor = Vec4::createFromArray(params, 4);
         fogColor.div(255);
-        IceGL::getInstance().pixelPipeline().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        IceGL::getInstance().pixelPipeline().fog().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
         break;
     }
     default:

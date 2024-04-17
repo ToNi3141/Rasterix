@@ -77,13 +77,10 @@ bool PixelPipeline::updatePipeline()
             m_stencilConfUploaded = m_stencilConf;
         }
     }
-    if (m_fogDirty) [[unlikely]]
-    {
-        ret = ret && updateFogLut();
-        m_fogDirty = false;
-    }
 
+    ret = ret && m_fog.updateFogLut();
     ret = ret && uploadTexture();
+
     return ret;
 }
 
@@ -111,91 +108,7 @@ TextureObjectMipmap& PixelPipeline::getTexture()
     return *m_textureObjectMipmap;
 }
 
-void PixelPipeline::setFogMode(const FogMode val)
-{
-    if (m_fogMode != val)
-    {
-        m_fogMode = val;
-        m_fogDirty = true;
-    }
-}
 
-void PixelPipeline::setFogStart(const float val)
-{
-    if (m_fogStart != val)
-    {
-        m_fogStart = val;
-        m_fogDirty = true;
-    }
-}
-
-void PixelPipeline::setFogEnd(const float val)
-{
-    if (m_fogEnd != val)
-    {
-        m_fogEnd = val;
-        m_fogDirty = true;
-    }
-}
-
-void PixelPipeline::setFogDensity(const float val)
-{
-    if (m_fogDensity != val)
-    {
-        m_fogDensity = val;
-        m_fogDirty = true;
-    }
-}
-
-bool PixelPipeline::setFogColor(const Vec4& val)
-{
-    Vec4i color = Vec4i::createFromVec<8>(val.vec);
-    color.clamp(0, 255);
-    return m_renderer.setFogColor(color);
-}
-
-bool PixelPipeline::updateFogLut()
-{
-    std::function <float(float)> fogFunction;
-
-    // Set fog function
-    switch (m_fogMode) {
-    case FogMode::LINEAR:
-        fogFunction = [&](float z) {
-            float f = (m_fogEnd - z) / (m_fogEnd - m_fogStart);
-            return f;
-        };
-        break;
-    case FogMode::EXP:
-        fogFunction = [&](float z) {
-            float f = expf(-(m_fogDensity * z));
-            return f;
-        };
-        break;
-    case FogMode::EXP2:
-        fogFunction = [&](float z) {
-            float f = expf(powf(-(m_fogDensity * z), 2));
-            return f;
-        };
-        break;
-    default:
-        fogFunction = [](float) {
-            return 1.0f;
-        };
-        break;
-    }
-
-    // Calculate fog LUT
-    std::array<float, 33> lut;
-    for (std::size_t i = 0; i < lut.size(); i++)
-    {
-        float f = fogFunction(powf(2, i));
-        lut[i] = f;
-    }
-
-    // Set fog LUT
-    return m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
-}
 
 bool PixelPipeline::useTexture()
 {
