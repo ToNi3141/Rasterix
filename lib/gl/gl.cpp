@@ -751,31 +751,31 @@ TestFunc convertTestFunc(const GLenum mode)
     }
 }
 
-PixelPipeline::StencilConfig::StencilOp convertStencilOp(const GLenum mode)
+Stencil::StencilConfig::StencilOp convertStencilOp(const GLenum mode)
 {
     switch (mode)
     {
     case GL_KEEP:
-        return PixelPipeline::StencilConfig::StencilOp::KEEP;
+        return Stencil::StencilConfig::StencilOp::KEEP;
     case GL_ZERO:
-        return PixelPipeline::StencilConfig::StencilOp::ZERO;
+        return Stencil::StencilConfig::StencilOp::ZERO;
     case GL_REPLACE:
-        return PixelPipeline::StencilConfig::StencilOp::REPLACE;
+        return Stencil::StencilConfig::StencilOp::REPLACE;
     case GL_INCR:
-        return PixelPipeline::StencilConfig::StencilOp::INCR;
+        return Stencil::StencilConfig::StencilOp::INCR;
     case GL_INCR_WRAP_EXT:
-        return PixelPipeline::StencilConfig::StencilOp::INCR_WRAP;
+        return Stencil::StencilConfig::StencilOp::INCR_WRAP;
     case GL_DECR:
-        return PixelPipeline::StencilConfig::StencilOp::DECR;
+        return Stencil::StencilConfig::StencilOp::DECR;
     case GL_DECR_WRAP_EXT:
-        return PixelPipeline::StencilConfig::StencilOp::DECR_WRAP;
+        return Stencil::StencilConfig::StencilOp::DECR_WRAP;
     case GL_INVERT:
-        return PixelPipeline::StencilConfig::StencilOp::INVERT;
+        return Stencil::StencilConfig::StencilOp::INVERT;
 
     default:
         SPDLOG_WARN("convertStencilOp 0x{:X} not suppored", mode);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
-        return PixelPipeline::StencilConfig::StencilOp::KEEP;
+        return Stencil::StencilConfig::StencilOp::KEEP;
     }
 }
 
@@ -910,7 +910,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    IceGL::getInstance().pixelPipeline().stencilConfig().setClearStencil(s);
+    IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble *equation)
@@ -1407,7 +1407,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        IceGL::getInstance().pixelPipeline().enableTwoSideStencil(false);
+        IceGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
@@ -1509,7 +1509,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        IceGL::getInstance().pixelPipeline().enableTwoSideStencil(true);
+        IceGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -1612,13 +1612,13 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
     case GL_FOG_MODE:
         switch (static_cast<GLenum>(param)) {
             case GL_EXP:
-                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::EXP);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::EXP);
                 break;
             case GL_EXP2:
-                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::EXP2);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::EXP2);
                 break;
             case GL_LINEAR:
-                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fog::FogMode::LINEAR);
+                IceGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::LINEAR);
                 break;
             default:
                 IceGL::getInstance().setError(GL_INVALID_ENUM);
@@ -2841,16 +2841,16 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().pixelPipeline().stencilConfig().setTestFunc(testFunc);
-        IceGL::getInstance().pixelPipeline().stencilConfig().setRef(ref);
-        IceGL::getInstance().pixelPipeline().stencilConfig().setMask(mask);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setTestFunc(testFunc);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setRef(ref);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setMask(mask);
     }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    IceGL::getInstance().pixelPipeline().stencilConfig().setStencilMask(mask);
+    IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2858,15 +2858,15 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
     SPDLOG_DEBUG("glStencilOp fail 0x{:X} zfail 0x{:X} zpass 0x{:X} called", fail, zfail, zpass);
     
     IceGL::getInstance().setError(GL_NO_ERROR);
-    const PixelPipeline::StencilConfig::StencilOp failOp { convertStencilOp(fail) };
-    const PixelPipeline::StencilConfig::StencilOp zfailOp { convertStencilOp(zfail) };
-    const PixelPipeline::StencilConfig::StencilOp zpassOp { convertStencilOp(zpass) };
+    const Stencil::StencilConfig::StencilOp failOp { convertStencilOp(fail) };
+    const Stencil::StencilConfig::StencilOp zfailOp { convertStencilOp(zfail) };
+    const Stencil::StencilConfig::StencilOp zpassOp { convertStencilOp(zpass) };
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().pixelPipeline().stencilConfig().setOpFail(failOp);
-        IceGL::getInstance().pixelPipeline().stencilConfig().setOpZFail(zfailOp);
-        IceGL::getInstance().pixelPipeline().stencilConfig().setOpZPass(zpassOp);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpFail(failOp);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZFail(zfailOp);
+        IceGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZPass(zpassOp);
     }
 }
 
@@ -4633,11 +4633,11 @@ GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
     IceGL::getInstance().setError(GL_NO_ERROR);
     if (face == GL_FRONT)
     {
-        IceGL::getInstance().pixelPipeline().setStencilFace(PixelPipeline::StencilFace::FRONT);
+        IceGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::FRONT);
     }
     else if (face == GL_BACK)
     {
-        IceGL::getInstance().pixelPipeline().setStencilFace(PixelPipeline::StencilFace::BACK);
+        IceGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::BACK);
     }
     else 
     {

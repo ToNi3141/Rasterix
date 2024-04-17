@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef FOG_HPP_
-#define FOG_HPP_
+#ifndef FOGGING_HPP_
+#define FOGGING_HPP_
 
 #include "IRenderer.hpp"
 #include "Vec.hpp"
@@ -24,7 +24,7 @@
 
 namespace rr
 {
-class Fog
+class Fogging
 {
 public:
     enum class FogMode
@@ -35,7 +35,7 @@ public:
         EXP2
     };
 
-    Fog(IRenderer& renderer);
+    Fogging(IRenderer& renderer);
 
     void setFogMode(const FogMode val);
     void setFogStart(const float val);
@@ -55,4 +55,4 @@ private:
 };
 
 } // namespace rr
-#endif // FOG_HPP_
+#endif // FOGGING_HPP_

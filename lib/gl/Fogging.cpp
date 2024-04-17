@@ -1,14 +1,31 @@
-#include "Fog.hpp"
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2024 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include "Fogging.hpp"
 
 namespace rr
 {
 
-Fog::Fog(IRenderer& renderer)
+Fogging::Fogging(IRenderer& renderer)
     : m_renderer(renderer)
 {
 }
 
-void Fog::setFogMode(const FogMode val)
+void Fogging::setFogMode(const FogMode val)
 {
     if (m_fogMode != val)
     {
@@ -17,7 +34,7 @@ void Fog::setFogMode(const FogMode val)
     }
 }
 
-void Fog::setFogStart(const float val)
+void Fogging::setFogStart(const float val)
 {
     if (m_fogStart != val)
     {
@@ -26,7 +43,7 @@ void Fog::setFogStart(const float val)
     }
 }
 
-void Fog::setFogEnd(const float val)
+void Fogging::setFogEnd(const float val)
 {
     if (m_fogEnd != val)
     {
@@ -35,7 +52,7 @@ void Fog::setFogEnd(const float val)
     }
 }
 
-void Fog::setFogDensity(const float val)
+void Fogging::setFogDensity(const float val)
 {
     if (m_fogDensity != val)
     {
@@ -44,14 +61,14 @@ void Fog::setFogDensity(const float val)
     }
 }
 
-bool Fog::setFogColor(const Vec4& val)
+bool Fogging::setFogColor(const Vec4& val)
 {
     Vec4i color = Vec4i::createFromVec<8>(val.vec);
     color.clamp(0, 255);
     return m_renderer.setFogColor(color);
 }
 
-bool Fog::updateFogLut()
+bool Fogging::updateFogLut()
 {
     if (!m_fogDirty) [[unlikely]]
     {

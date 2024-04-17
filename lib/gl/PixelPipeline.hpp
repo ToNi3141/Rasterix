@@ -22,22 +22,18 @@
 #include "IRenderer.hpp"
 #include "Vec.hpp"
 #include <optional>
-#include "Fog.hpp"
+#include "Fogging.hpp"
 #include "Texture.hpp"
+#include "Stencil.hpp"
 
 namespace rr
 {
 class PixelPipeline
 {
 public:
-    enum class StencilFace 
-    {
-        FRONT,
-        BACK
-    };
 
     using FragmentPipeline = FragmentPipelineReg;
-    using StencilConfig = StencilReg;
+    
     using FeatureEnable = FeatureEnableReg;
 
     PixelPipeline(IRenderer& renderer);
@@ -71,16 +67,10 @@ public:
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipelineConf; }
 
     // Stencil Buffer
-    StencilConfig& stencilConfig();
-    void enableTwoSideStencil(const bool enable);
-    bool getEnableTwoSideStencil() const;
-    void setStencilFace(const StencilFace face);
-    void selectStencilTwoSideFrontForDevice();
-    void selectStencilTwoSideBackForDevice();
 
-
-    Fog& fog() { return m_fog; }
+    Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }
+    Stencil& stencil() { return m_stencil; }
 
     // Scissor 
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
@@ -99,17 +89,9 @@ private:
     FragmentPipeline m_fragmentPipelineConf {};
     FragmentPipeline m_fragmentPipelineConfUploaded {};
 
-    // Current stencil buffer configuration
-    bool m_enableTwoSideStencil { false };
-    StencilFace m_stencilFace { StencilFace::FRONT };
-    StencilConfig m_stencilConf {};
-    StencilConfig m_stencilConfFront {};
-    StencilConfig m_stencilConfBack {};
-    StencilConfig* m_stencilConfTwoSide { &m_stencilConfFront };
-    StencilConfig m_stencilConfUploaded {};
-
-    Fog m_fog { m_renderer };
+    Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };
+    Stencil m_stencil { m_renderer };
 };
 
 } // namespace rr

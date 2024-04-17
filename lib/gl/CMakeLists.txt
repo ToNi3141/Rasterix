@@ -13,8 +13,9 @@ add_library(gl STATIC
     MatrixStack.cpp
     Culling.cpp
     PrimitiveAssembler.cpp
-    Fog.cpp
+    Fogging.cpp
     Texture.cpp
+    Stencil.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)

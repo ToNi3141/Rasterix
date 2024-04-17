@@ -168,17 +168,17 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
         return true;
     }
     
-    if (m_renderer.getEnableTwoSideStencil()) [[unlikely]]
+    if (m_renderer.stencil().getEnableTwoSideStencil()) [[unlikely]]
     {
         const float edgeVal = Rasterizer::edgeFunctionFloat(vertListClipped[0], vertListClipped[1], vertListClipped[2]);
         const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
         if (currentOrientation != Face::FRONT) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
         {
-            m_renderer.selectStencilTwoSideFrontForDevice();
+            m_renderer.stencil().selectStencilTwoSideFrontForDevice();
         }
         else
         {
-            m_renderer.selectStencilTwoSideBackForDevice();
+            m_renderer.stencil().selectStencilTwoSideBackForDevice();
         }
         if (!m_renderer.updatePipeline()) [[unlikely]]
         {
