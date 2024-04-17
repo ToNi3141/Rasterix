@@ -23,7 +23,6 @@ namespace rr
 PixelPipeline::PixelPipeline(IRenderer& renderer) 
     : m_renderer(renderer)
 {
-    m_renderer.setFeatureEnableConfig(m_featureEnable);
 }
 
 bool PixelPipeline::drawTriangle(const Triangle& triangle) 
@@ -35,13 +34,7 @@ bool PixelPipeline::updatePipeline()
 {
     bool ret { true };
 
-    
-    if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize()) [[unlikely]]
-    {
-        ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
-        m_featureEnableUploaded = m_featureEnable;
-    }
-
+    ret = ret && m_featureEnable.update();
     ret = ret && m_fragmentPipeline.update();
     ret = ret && m_stencil.update();
     ret = ret && m_fog.updateFogLut();

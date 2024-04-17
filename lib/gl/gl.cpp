@@ -1333,25 +1333,25 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
     case GL_TEXTURE_2D:
     {
         SPDLOG_DEBUG("glDisable GL_TEXTURE_2D called");
-        IceGL::getInstance().pixelPipeline().setEnableTmu(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
         SPDLOG_DEBUG("glDisable GL_ALPHA_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
         SPDLOG_DEBUG("glDisable GL_DEPTH_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableDepthTest(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
         SPDLOG_DEBUG("glDisable GL_BLEND called");
-        IceGL::getInstance().pixelPipeline().setEnableBlending(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
@@ -1391,11 +1391,11 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glDisable GL_FOG called");
-        IceGL::getInstance().pixelPipeline().setEnableFog(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
         break;
     case GL_SCISSOR_TEST:
         SPDLOG_DEBUG("glDisable GL_SCISSOR_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableScissor(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(false);
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
@@ -1403,7 +1403,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableStencil(false);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableStencil(false);
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
@@ -1442,19 +1442,19 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     {
     case GL_TEXTURE_2D:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_2D called");
-        IceGL::getInstance().pixelPipeline().setEnableTmu(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableTmu(true);
         break;
     case GL_ALPHA_TEST:
         SPDLOG_DEBUG("glEnable GL_ALPHA_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableAlphaTest(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
         SPDLOG_DEBUG("glEnable GL_DEPTH_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableDepthTest(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(true);
         break;
     case GL_BLEND:
         SPDLOG_DEBUG("glEnable GL_BLEND called");
-        IceGL::getInstance().pixelPipeline().setEnableBlending(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(true);
         break;
     case GL_LIGHTING:
         SPDLOG_DEBUG("glEnable GL_LIGHTING called");
@@ -1493,11 +1493,11 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glEnable GL_FOG called");
-        IceGL::getInstance().pixelPipeline().setEnableFog(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
         break;
     case GL_SCISSOR_TEST:
         SPDLOG_DEBUG("glEnable GL_SCISSOR_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableScissor(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(true);
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
@@ -1505,7 +1505,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST called");
-        IceGL::getInstance().pixelPipeline().setEnableStencil(true);
+        IceGL::getInstance().pixelPipeline().featureEnable().setEnableStencil(true);
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");

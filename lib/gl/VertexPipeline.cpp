@@ -43,7 +43,7 @@ void VertexPipeline::fetchAndTransform(PrimitiveAssembler::Triangle::VertexParam
     parameter.vertex = obj.getVertex(pos);
     for (uint32_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
     {
-        if (m_renderer.getEnableTmu(tu))
+        if (m_renderer.featureEnable().getEnableTmu(tu))
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
             m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
@@ -121,7 +121,7 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
 
     for (uint32_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
     {
-        if (m_renderer.getEnableTmu(i))
+        if (m_renderer.featureEnable().getEnableTmu(i))
         {
             texCoordList[0][i] = triangle.p0->tex[i];
             texCoordList[1][i] = triangle.p1->tex[i];
