@@ -24,7 +24,6 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
     : m_renderer(renderer)
 {
     m_renderer.setFeatureEnableConfig(m_featureEnable);
-    m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
 }
 
 bool PixelPipeline::drawTriangle(const Triangle& triangle) 
@@ -42,12 +41,8 @@ bool PixelPipeline::updatePipeline()
         ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
         m_featureEnableUploaded = m_featureEnable;
     }
-    if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize()) [[unlikely]]
-    {
-        ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
-        m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;
-    }
 
+    ret = ret && m_fragmentPipeline.update();
     ret = ret && m_stencil.update();
     ret = ret && m_fog.updateFogLut();
     ret = ret && m_texture.uploadTexture();

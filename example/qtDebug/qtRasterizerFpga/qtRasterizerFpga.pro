@@ -32,7 +32,7 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/MatrixStack.cpp \
     $${ICEGL_PATH}/Culling.cpp \
     $${ICEGL_PATH}/PrimitiveAssembler.cpp \
-    $${ICEGL_PATH}/Fog.cpp \
+    $${ICEGL_PATH}/Fogging.cpp \
     $${ICEGL_PATH}/Texture.cpp \
     $${ICEGL_PATH}/Stencil.cpp
 

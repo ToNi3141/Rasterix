@@ -598,38 +598,38 @@ GLint convertSrcReg(Texture::TexEnv::SrcReg& conf, GLint val)
 }
 
 
-PixelPipeline::FragmentPipeline::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+FragmentPipeline::PipelineConfig::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc) {
     case GL_ZERO:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
     case GL_ONE:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ONE;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ONE;
     case GL_DST_COLOR:
-        return PixelPipeline::FragmentPipeline::BlendFunc::DST_COLOR;
+        return FragmentPipeline::PipelineConfig::BlendFunc::DST_COLOR;
     case GL_SRC_COLOR:
-        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_COLOR;
+        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_COLOR;
     case GL_ONE_MINUS_DST_COLOR:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_DST_COLOR;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_DST_COLOR;
     case GL_ONE_MINUS_SRC_COLOR:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_SRC_COLOR;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_SRC_COLOR;
     case GL_SRC_ALPHA:
-        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_ALPHA;
+        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_ALPHA;
     case GL_ONE_MINUS_SRC_ALPHA:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_SRC_ALPHA;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_SRC_ALPHA;
     case GL_DST_ALPHA:
-        return PixelPipeline::FragmentPipeline::BlendFunc::DST_ALPHA;
+        return FragmentPipeline::PipelineConfig::BlendFunc::DST_ALPHA;
     case GL_ONE_MINUS_DST_ALPHA:
-        return PixelPipeline::FragmentPipeline::BlendFunc::ONE_MINUS_DST_ALPHA;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_DST_ALPHA;
     case GL_SRC_ALPHA_SATURATE:
-        return PixelPipeline::FragmentPipeline::BlendFunc::SRC_ALPHA_SATURATE;
+        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_ALPHA_SATURATE;
     default:
         SPDLOG_WARN("convertGlBlendFuncToRenderBlendFunc 0x{:X} not suppored", blendFunc);
         IceGL::getInstance().setError(GL_INVALID_ENUM);
-        return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
+        return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
     }
     IceGL::getInstance().setError(GL_INVALID_ENUM);
-    return PixelPipeline::FragmentPipeline::BlendFunc::ZERO;
+    return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
 }
 
 void setClientState(const GLenum array, bool enable)
@@ -805,8 +805,8 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
         {
             refFix = 0xff;
         }
-        IceGL::getInstance().pixelPipeline().fragmentPipeline().setAlphaFunc(testFunc);
-        IceGL::getInstance().pixelPipeline().fragmentPipeline().setRefAlphaValue(refFix);
+        IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setAlphaFunc(testFunc);
+        IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setRefAlphaValue(refFix);
     }
 }
 
@@ -831,8 +831,8 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
     }
     else
     {
-        IceGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
-        IceGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
+        IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
+        IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
     }
 }
 
@@ -1210,10 +1210,10 @@ GLAPI void APIENTRY impl_glColor4usv(const GLushort *v)
 GLAPI void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     SPDLOG_DEBUG("glColorMask red 0x{:X} green 0x{:X} blue 0x{:X} alpha 0x{:X} called", red, green, blue, alpha);
-    IceGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
-    IceGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
-    IceGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
-    IceGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
+    IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskR(red == GL_TRUE);
+    IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskG(green == GL_TRUE);
+    IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskB(blue == GL_TRUE);
+    IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskA(alpha == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
@@ -1305,14 +1305,14 @@ GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 
     if (IceGL::getInstance().getError() == GL_NO_ERROR)
     {
-        IceGL::getInstance().pixelPipeline().fragmentPipeline().setDepthFunc(testFunc);
+        IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthFunc(testFunc);
     }
 }
 
 GLAPI void APIENTRY impl_glDepthMask(GLboolean flag)
 {
     SPDLOG_DEBUG("glDepthMask flag 0x{:X} called", flag);
-    IceGL::getInstance().pixelPipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
+    IceGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthMask(flag == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
@@ -2158,58 +2158,58 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
 
-    PixelPipeline::FragmentPipeline::LogicOp logicOp { PixelPipeline::FragmentPipeline::LogicOp::COPY };
+    FragmentPipeline::PipelineConfig::LogicOp logicOp { FragmentPipeline::PipelineConfig::LogicOp::COPY };
     switch (opcode) {
     case GL_CLEAR:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::CLEAR;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::SET;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY_INVERTED;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NOOP;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOOP;
         break;
 //    case GL_INVERTED:
-//        logicOp = PixelPipeline::FragmentPipeline::LogicOp::INVERTED;
+//        logicOp = FragmentPipeline::PipelineConfig::LogicOp::INVERTED;
 //        break;
     case GL_AND:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NAND;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::NOR;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::XOR;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::EQUIV;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND_REVERSE;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::AND_INVERTED;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR_REVERSE;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::OR_INVERTED;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = PixelPipeline::FragmentPipeline::LogicOp::COPY;
+        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
         break;
     }
     // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented

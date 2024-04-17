@@ -25,15 +25,13 @@
 #include "Fogging.hpp"
 #include "Texture.hpp"
 #include "Stencil.hpp"
+#include "FragmentPipeline.hpp"
 
 namespace rr
 {
 class PixelPipeline
 {
 public:
-
-    using FragmentPipeline = FragmentPipelineReg;
-    
     using FeatureEnable = FeatureEnableReg;
 
     PixelPipeline(IRenderer& renderer);
@@ -63,14 +61,11 @@ public:
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
 
-    // Fragment Pipeline
-    FragmentPipeline& fragmentPipeline() { return m_fragmentPipelineConf; }
-
-    // Stencil Buffer
 
     Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }
     Stencil& stencil() { return m_stencil; }
+    FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
 
     // Scissor 
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
@@ -84,14 +79,10 @@ private:
     FeatureEnable m_featureEnable {};
     FeatureEnable m_featureEnableUploaded {};
 
-
-    // Current fragment pipeline configuration 
-    FragmentPipeline m_fragmentPipelineConf {};
-    FragmentPipeline m_fragmentPipelineConfUploaded {};
-
     Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };
     Stencil m_stencil { m_renderer };
+    FragmentPipeline m_fragmentPipeline { m_renderer };
 };
 
 } // namespace rr
