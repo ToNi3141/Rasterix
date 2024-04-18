@@ -17,8 +17,8 @@
 
 
 #include "glu.h"
-#include "Mat44.hpp"
-#include "Vec.hpp"
+#include "math/Mat44.hpp"
+#include "math/Vec.hpp"
 #include <cmath>
 
 #define __glPi 3.14159265358979323846f

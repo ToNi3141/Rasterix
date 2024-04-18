@@ -15,32 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#ifndef _SCISSOR_START_REG_
+#define _SCISSOR_START_REG_
+
+#include "renderer/registers/BaseXYReg.hpp"
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+class ScissorStartReg : public BaseXYReg<0x7ff, 0x7ff>
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
-
-    DMAProxyBusConnector();
-
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
-private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
-    };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    static constexpr uint32_t getAddr() { return 0x6; }
 };
-
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+
+#endif // _SCISSOR_START_REG_

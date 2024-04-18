@@ -15,32 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#ifndef _BASE_XY_REG_
+#define _BASE_XY_REG_
+
+#include <cstdint>
+#include "math/Veci.hpp"
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+template <uint16_t MASK_X, uint16_t MASK_Y>
+class BaseXYReg
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
+    BaseXYReg() = default;
 
-    DMAProxyBusConnector();
+    void setX(const uint16_t val) { m_regValX = val & MASK_X; }
+    void setY(const uint16_t val) { m_regValY = val & MASK_Y; }
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
+    uint32_t getX() const { return m_regValX; }
+    uint32_t getY() const { return m_regValY; }
+
+    uint32_t serialize() const { return (static_cast<uint32_t>(m_regValY) << 16) | (static_cast<uint32_t>(m_regValX)); }
 private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
-    };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    uint16_t m_regValX { 0 };
+    uint16_t m_regValY { 0 };
 };
-
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+
+#endif // _BASE_XY_REG_

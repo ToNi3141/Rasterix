@@ -15,32 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#ifndef _TEX_ENV_COLOR_REG_
+#define _TEX_ENV_COLOR_REG_
+
+#include "renderer/registers/BaseColorReg.hpp"
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+class TexEnvColorReg : public BaseColorReg
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
-
-    DMAProxyBusConnector();
-
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
+    void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    uint32_t getAddr() const { return 0xB + m_offset; }
 private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
-    };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    static constexpr uint8_t TMU_OFFSET { 3 };
+    uint8_t m_offset { 0 };
 };
-
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+
+#endif // _TEX_ENV_COLOR_REG_

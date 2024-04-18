@@ -5,8 +5,8 @@
 #include <QImage>
 #include <QTimer>
 #include "IceGL.hpp"
-#include "Renderer.hpp"
-#include "RendererMemoryOptimized.hpp"
+#include "renderer/Renderer.hpp"
+#include "renderer/RendererMemoryOptimized.hpp"
 #include "gl.h"
 #include "RenderConfigs.hpp"
 #if USE_SIMULATION
@@ -19,7 +19,7 @@
 
 #include "VerilatorBusConnector.hpp"
 #include "RenderConfigs.hpp"
-#include "Renderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 #include "../../mipmap/Mipmap.hpp"

@@ -15,32 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#ifndef _BASE_SINGLE_REG_
+#define _BASE_SINGLE_REG_
+
+#include <cstdint>
+#include "math/Veci.hpp"
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+template <uint32_t MASK>
+class BaseSingleReg
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
+    BaseSingleReg() = default;
+    BaseSingleReg(const uint32_t val) { setValue(val); }
 
-    DMAProxyBusConnector();
+    void setValue(const uint32_t val) { m_regVal = val & MASK; }
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
+    uint32_t getValue() const { return m_regVal; }
+
+    uint32_t serialize() const { return m_regVal; }
 private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
-    };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    uint32_t m_regVal { 0 };
 };
-
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+
+#endif // _BASE_SINGLE_REG_

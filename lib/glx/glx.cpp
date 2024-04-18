@@ -18,7 +18,7 @@
 #include "glx.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
-#include "Renderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "DMAProxyBusConnector.hpp"
 #include "RenderConfigs.hpp"
 #include <spdlog/sinks/basic_file_sink.h>

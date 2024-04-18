@@ -18,7 +18,7 @@
 #ifndef GENERICMEMORYBUSCONNECTOR_HPP
 #define GENERICMEMORYBUSCONNECTOR_HPP
 
-#include "IBusConnector.hpp"
+#include "renderer/IBusConnector.hpp"
 #include <array>
 #include <span>
 #include <cstdint>

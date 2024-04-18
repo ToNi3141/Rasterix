@@ -8,8 +8,6 @@
 #include <QThread>
 #include <spdlog/spdlog.h>
 #include "glu.h"
-#include "Vec.hpp"
-#include "Mat44.hpp"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),

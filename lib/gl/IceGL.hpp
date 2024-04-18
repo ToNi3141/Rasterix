@@ -21,14 +21,12 @@
 #include <vector>
 #include <array>
 #include <functional>
-#include "IRenderer.hpp"
-#include "VertexPipeline.hpp"
-#include "Vec.hpp"
-#include "Lighting.hpp"
-#include "TexGen.hpp"
-#include "RenderObj.hpp"
-#include "PixelPipeline.hpp"
-#include "VertexQueue.hpp"
+#include "renderer/IRenderer.hpp"
+#include "vertexpipeline/VertexPipeline.hpp"
+#include "math/Vec.hpp"
+#include "vertexpipeline/RenderObj.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/VertexQueue.hpp"
 #include "gl.h"
 #include <map>
 

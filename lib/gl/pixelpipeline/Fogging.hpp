@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,32 +15,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
+#ifndef FOGGING_HPP_
+#define FOGGING_HPP_
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#include "renderer/IRenderer.hpp"
+#include "math/Vec.hpp"
+#include <optional>
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+class Fogging
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
-
-    DMAProxyBusConnector();
-
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
-private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
+    enum class FogMode
+    {
+        ONE,
+        LINEAR,
+        EXP,
+        EXP2
     };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+
+    Fogging(IRenderer& renderer);
+
+    void setFogMode(const FogMode val);
+    void setFogStart(const float val);
+    void setFogEnd(const float val);
+    void setFogDensity(const float val);
+    bool setFogColor(const Vec4& val);
+
+    bool updateFogLut();
+
+private:
+    IRenderer& m_renderer;
+    bool m_fogDirty { false };
+    FogMode m_fogMode { FogMode::EXP };
+    float m_fogStart { 0.0f };
+    float m_fogEnd { 1.0f };
+    float m_fogDensity { 1.0f };
 };
 
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+#endif // FOGGING_HPP_

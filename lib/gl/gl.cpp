@@ -19,10 +19,10 @@
 #include "gl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
-#include "IRenderer.hpp"
+#include "renderer/IRenderer.hpp"
 #include <cstring>
-#include "MatrixStack.hpp"
-#include "Types.hpp"
+#include "vertexpipeline/MatrixStack.hpp"
+#include "vertexpipeline/Types.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 

@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,32 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DMAPROXYBUSCONNECTOR_HPP
-#define DMAPROXYBUSCONNECTOR_HPP
+#ifndef CULLING_HPP
+#define CULLING_HPP
 
-#include "renderer/IBusConnector.hpp"
-struct channel_buffer;
+#include "Types.hpp"
+#include "math/Vec.hpp"
+
 namespace rr
 {
-class DMAProxyBusConnector : public IBusConnector
+class Culling 
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
+    Culling();
 
-    DMAProxyBusConnector();
+    bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
+    void enableCulling(const bool enable);
+    void setCullMode(const Face mode);
+
 private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
-        int fd;
-    };
-    Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    bool m_enableCulling{ false };
+    Face m_cullMode{ Face::BACK };
 };
 
 } // namespace rr
-#endif // #ifndef DMAPROXYBUSCONNECTOR_HPP
+#endif // CULLING_HPP

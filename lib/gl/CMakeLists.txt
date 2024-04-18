@@ -1,21 +1,21 @@
 add_library(gl STATIC
-    Clipper.cpp
     gl.cpp
     glu.cpp
     IceGL.cpp
-    Lighting.cpp
-    PixelPipeline.cpp
-    Rasterizer.cpp
-    RenderObj.cpp
-    TexGen.cpp
-    VertexPipeline.cpp
-    ViewPort.cpp
-    MatrixStack.cpp
-    Culling.cpp
-    PrimitiveAssembler.cpp
-    Fogging.cpp
-    Texture.cpp
-    Stencil.cpp
+    vertexpipeline/Lighting.cpp
+    vertexpipeline/Clipper.cpp
+    vertexpipeline/TexGen.cpp
+    vertexpipeline/VertexPipeline.cpp
+    vertexpipeline/ViewPort.cpp
+    vertexpipeline/MatrixStack.cpp
+    vertexpipeline/Culling.cpp
+    vertexpipeline/PrimitiveAssembler.cpp
+    vertexpipeline/Stencil.cpp
+    vertexpipeline/RenderObj.cpp
+    pixelpipeline/PixelPipeline.cpp
+    pixelpipeline/Fogging.cpp
+    pixelpipeline/Texture.cpp
+    renderer/Rasterizer.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
