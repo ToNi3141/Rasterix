@@ -43,9 +43,7 @@ public:
     VertexPipeline(PixelPipeline& renderer);
 
     bool drawObj(const RenderObj &obj);
-
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
-
     void activateTmu(const uint8_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
 
     Lighting& getLighting() { return m_lighting; }
@@ -56,7 +54,7 @@ public:
     PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);;
+    bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
     void fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i);
 
     bool m_enableNormalizing { true };

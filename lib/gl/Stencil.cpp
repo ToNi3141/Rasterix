@@ -17,6 +17,8 @@
 
 
 #include "Stencil.hpp"
+#include "Rasterizer.hpp"
+#include <spdlog/spdlog.h>
 
 namespace rr
 {
@@ -61,6 +63,29 @@ bool Stencil::update()
     }
 
     return ret;
+}
+
+bool Stencil::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+{
+    if (m_enableTwoSideStencil)
+    {
+        const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
+        const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
+        if (currentOrientation != StencilFace::FRONT) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+        {
+            selectStencilTwoSideFrontForDevice();
+        }
+        else
+        {
+            selectStencilTwoSideBackForDevice();
+        }
+        if (!update()) [[unlikely]]
+        {
+            SPDLOG_ERROR("updateStencilFace(): Cannot update pixel pipeline");
+            return false;
+        }
+    }
+    return true;
 }
 
 } // namespace rr

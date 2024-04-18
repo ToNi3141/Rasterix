@@ -35,18 +35,19 @@ public:
         BACK
     };
 
-
     Stencil(IRenderer& renderer);
 
     StencilConfig& stencilConfig();
     void enableTwoSideStencil(const bool enable) { m_enableTwoSideStencil = enable; }
-    bool getEnableTwoSideStencil() const { return m_enableTwoSideStencil; }
     void setStencilFace(const StencilFace face) { m_stencilFace = face; }
+
+    bool updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2);
+    bool update();
+
+private:
     void selectStencilTwoSideFrontForDevice() { m_stencilConfTwoSide = &m_stencilConfFront; }
     void selectStencilTwoSideBackForDevice() { m_stencilConfTwoSide = &m_stencilConfBack; }
 
-    bool update();
-private:
     IRenderer& m_renderer;
 
     bool m_enableTwoSideStencil { false };
