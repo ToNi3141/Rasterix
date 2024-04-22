@@ -101,7 +101,33 @@ public:
         return true;
     }
 
-    inline void transform(Vec4& dst, const Vec4& src) const
+#if defined(__ARM_NEON)
+    // ARM NEON optimized version which is much faster than the compiler generated code
+    void transform(Vec4& __restrict dst, const Vec4& src) const
+    {
+        asm volatile (
+            "vld1.32    {d0, d1}, [%1]      \n" // q0 = src
+
+            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[0] (first column)
+            "vmul.f32   q13, q9, d0[0]      \n" // q13 = mat[0] * src
+
+            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[1] (second column)
+            "vmla.f32   q13, q9, d0[1]      \n" // q13 += mat[1] * src
+
+            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[2] (third column)
+            "vmla.f32   q13, q9, d1[0]      \n" // q13 += mat[2] * src
+ 
+            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[3] (fourth column)
+            "vmla.f32   q13, q9, d1[1]      \n" // q13 += mat[3] * src
+            
+            "vst1.32    {d26, d27}, [%2]    \n"	// dst = q13
+            : 
+            : "r"(&mat[0][0]), "r"(src.vec.data()), "r"(dst.vec.data()) 
+            : "q0", "q9", "q13", "memory"
+        );
+    }
+#else
+    void transform(Vec4& __restrict dst, const Vec4& src) const
     {
         const float src0 = src[0];
         const float src1 = src[1];
@@ -130,6 +156,7 @@ public:
             dst[3] += src3 * mat[3][3];
         }
     }
+#endif
 
     inline Vec4 transform(const Vec4& src) const
     {
@@ -154,29 +181,6 @@ public:
         Vec3 dst;
         transform(dst, src);
         return dst;
-    }
-
-    void transform(Vec4* __restrict dst, const Vec4* const __restrict src, const std::size_t cnt)
-    {
-        // __restrict to make it easier for the compiler to vectorize  
-        // See https://developer.arm.com/documentation/dht0002/a/Introducing-NEON/Developing-for-NEON/Automatic-vectorization
-        for (std::size_t i = 0; i < cnt; i += 1) 
-        {
-            dst[i][0] = src[i][0] * mat[0][0] + src[i][1] * mat[1][0] + src[i][2] * mat[2][0] + src[i][3] * mat[3][0];
-            dst[i][1] = src[i][0] * mat[0][1] + src[i][1] * mat[1][1] + src[i][2] * mat[2][1] + src[i][3] * mat[3][1];
-            dst[i][2] = src[i][0] * mat[0][2] + src[i][1] * mat[1][2] + src[i][2] * mat[2][2] + src[i][3] * mat[3][2];
-            dst[i][3] = src[i][0] * mat[0][3] + src[i][1] * mat[1][3] + src[i][2] * mat[2][3] + src[i][3] * mat[3][3];
-        }
-    }
-
-    void transform(Vec3* __restrict dst, const Vec3* const __restrict src, const std::size_t cnt)
-    {
-        for (std::size_t i = 0; i < cnt; i += 1)
-        {
-            dst[i][0] = src[i][0] * mat[0][0] + src[i][1] * mat[1][0] + src[i][2] * mat[2][0];
-            dst[i][1] = src[i][0] * mat[0][1] + src[i][1] * mat[1][1] + src[i][2] * mat[2][1];
-            dst[i][2] = src[i][0] * mat[0][2] + src[i][1] * mat[1][2] + src[i][2] * mat[2][2];
-        }
     }
 
     void operator*= (const Mat44& rhs)
