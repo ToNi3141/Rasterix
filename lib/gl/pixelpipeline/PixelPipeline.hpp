@@ -24,7 +24,7 @@
 #include <optional>
 #include "Fogging.hpp"
 #include "Texture.hpp"
-#include "vertexpipeline/Stencil.hpp"
+#include "Stencil.hpp"
 #include "FragmentPipeline.hpp"
 #include "FeatureEnable.hpp"
 

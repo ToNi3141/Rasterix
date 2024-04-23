@@ -34,7 +34,7 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
     $${ICEGL_PATH}/pixelpipeline/Fogging.cpp \
     $${ICEGL_PATH}/pixelpipeline/Texture.cpp \
-    $${ICEGL_PATH}/vertexpipeline/Stencil.cpp
+    $${ICEGL_PATH}/pixelpipeline/Stencil.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \
