@@ -106,21 +106,21 @@ public:
     void transform(Vec4& __restrict dst, const Vec4& src) const
     {
         asm volatile (
-            "vld1.32    {d0, d1}, [%1]      \n" // q0 = src
+            "vld1.32    {d0, d1}, [%1]      \n\t" // q0 = src
 
-            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[0] (first column)
-            "vmul.f32   q13, q9, d0[0]      \n" // q13 = mat[0] * src
+            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[0] (first column)
+            "vmul.f32   q13, q9, d0[0]      \n\t" // q13 = mat[0] * src
 
-            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[1] (second column)
-            "vmla.f32   q13, q9, d0[1]      \n" // q13 += mat[1] * src
+            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[1] (second column)
+            "vmla.f32   q13, q9, d0[1]      \n\t" // q13 += mat[1] * src
 
-            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[2] (third column)
-            "vmla.f32   q13, q9, d1[0]      \n" // q13 += mat[2] * src
+            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[2] (third column)
+            "vmla.f32   q13, q9, d1[0]      \n\t" // q13 += mat[2] * src
  
-            "vld1.32    {d18, d19}, [%0]!   \n" // q9 = mat[3] (fourth column)
-            "vmla.f32   q13, q9, d1[1]      \n" // q13 += mat[3] * src
+            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[3] (fourth column)
+            "vmla.f32   q13, q9, d1[1]      \n\t" // q13 += mat[3] * src
             
-            "vst1.32    {d26, d27}, [%2]    \n"	// dst = q13
+            "vst1.32    {d26, d27}, [%2]    \n\t"	// dst = q13
             : 
             : "r"(&mat[0][0]), "r"(src.vec.data()), "r"(dst.vec.data()) 
             : "q0", "q9", "q13", "memory"
