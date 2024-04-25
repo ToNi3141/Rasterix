@@ -21,28 +21,11 @@
 namespace rr
 {
 
-enum class ColorMaterialTracking
-{
-    AMBIENT,
-    DIFFUSE,
-    AMBIENT_AND_DIFFUSE,
-    SPECULAR,
-    EMISSION
-};
-
 enum class Face
 {
     BACK,
     FRONT,
     FRONT_AND_BACK
-};
-
-enum MatrixMode
-{
-    MODELVIEW,
-    PROJECTION,
-    TEXTURE,
-    COLOR
 };
 
 } // namespace rr

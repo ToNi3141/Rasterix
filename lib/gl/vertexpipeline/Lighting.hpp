@@ -19,8 +19,8 @@
 #define LIGHTING_HPP
 
 #include <array>
-#include "Types.hpp"
 #include "math/Vec.hpp"
+#include "Types.hpp"
 
 namespace rr
 {
@@ -28,6 +28,15 @@ class Lighting
 {
 public:
     static constexpr uint8_t MAX_LIGHTS { 8 };
+
+    enum class ColorMaterialTracking
+    {
+        AMBIENT,
+        DIFFUSE,
+        AMBIENT_AND_DIFFUSE,
+        SPECULAR,
+        EMISSION
+    };
 
     Lighting();
 

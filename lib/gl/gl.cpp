@@ -1243,24 +1243,24 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
     {
         switch (mode) {
         case GL_AMBIENT:
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT);
             break;
         case GL_DIFFUSE:
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::DIFFUSE);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         case GL_SPECULAR:
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::SPECULAR);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::SPECULAR);
             break;
         case GL_EMISSION:
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::EMISSION);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::EMISSION);
             break;
         default:
             SPDLOG_WARN("glColorMaterial mode 0x{:X} not supported", mode);
             IceGL::getInstance().setError(GL_INVALID_ENUM);
-            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            IceGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         }
     }
@@ -2333,22 +2333,22 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::MODELVIEW);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::MODELVIEW);
     }
     else if (mode == GL_PROJECTION)
     {
         SPDLOG_DEBUG("glMatrixMode GL_PROJECTION called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::PROJECTION);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::PROJECTION);
     }
     else if (mode == GL_TEXTURE)
     {
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::TEXTURE);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::TEXTURE);
     }
     else if (mode == GL_COLOR)
     {
         SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
-        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixMode::COLOR);
+        IceGL::getInstance().vertexPipeline().getMatrixStack().setMatrixMode(MatrixStack::MatrixMode::COLOR);
     }
     else
     {
