@@ -19,5 +19,5 @@ add_library(gl STATIC
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
-set_target_properties(gl PROPERTIES COMPILE_FLAGS "-save-temps -fverbose-asm")
+set_target_properties(gl PROPERTIES COMPILE_FLAGS "")
 target_include_directories(gl PUBLIC .)
