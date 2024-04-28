@@ -21,14 +21,12 @@
 #include <vector>
 #include <array>
 #include <functional>
-#include "IRenderer.hpp"
-#include "VertexPipeline.hpp"
-#include "Vec.hpp"
-#include "Lighting.hpp"
-#include "TexGen.hpp"
-#include "RenderObj.hpp"
-#include "PixelPipeline.hpp"
-#include "VertexQueue.hpp"
+#include "renderer/IRenderer.hpp"
+#include "vertexpipeline/VertexPipeline.hpp"
+#include "math/Vec.hpp"
+#include "vertexpipeline/RenderObj.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/VertexQueue.hpp"
 #include "gl.h"
 #include <map>
 
@@ -61,7 +59,7 @@ public:
 
     /// @brief Returns the maximum supported LOD level
     /// @return The maximum supported LOD level
-    static std::size_t getMaxLOD() { return IRenderer::MAX_LOD; }
+    static std::size_t getMaxLOD() { return TextureObject::MAX_LOD; }
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available

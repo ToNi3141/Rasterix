@@ -2,8 +2,8 @@
 #define _STENCILSHADOW_HPP_
 #include <span>
 #include "glu.h"
-#include "../../../lib/gl/Vec.hpp"
-#include "../../../lib/gl/Mat44.hpp"
+#include "../../../lib/gl/math/Vec.hpp"
+#include "../../../lib/gl/math/Mat44.hpp"
 
 // Example of stencil shadows using the zpass algorithm.
 // The following steps will be executed:

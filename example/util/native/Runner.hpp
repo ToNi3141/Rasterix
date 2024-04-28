@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 #include "FT60XBusConnector.hpp"
 #include "IceGL.hpp"
-#include "Renderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "RenderConfigs.hpp"
 #include "gl.h"
 #include "glu.h"

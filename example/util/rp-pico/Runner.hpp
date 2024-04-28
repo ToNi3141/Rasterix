@@ -1,5 +1,5 @@
 #include "IceGL.hpp"
-#include "RendererMemoryOptimized.hpp"
+#include "renderer/RendererMemoryOptimized.hpp"
 #include "RenderConfigs.hpp"
 #include "gl.h"
 #include "glu.h"

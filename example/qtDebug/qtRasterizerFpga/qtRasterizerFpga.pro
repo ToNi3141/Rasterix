@@ -17,24 +17,35 @@ TEMPLATE = app
 TARGET = qtRasterizerFpga
 
 SOURCES += main.cpp\
-    $${ICEGL_PATH}/VertexPipeline.cpp \
+    $${ICEGL_PATH}/vertexpipeline/VertexPipeline.cpp \
         mainwindow.cpp \
     $${ICEGL_PATH}/IceGL.cpp \
-    $${ICEGL_PATH}/Clipper.cpp \
-    $${ICEGL_PATH}/Lighting.cpp \
-    $${ICEGL_PATH}/TexGen.cpp \
-    $${ICEGL_PATH}/RenderObj.cpp \
-    $${ICEGL_PATH}/PixelPipeline.cpp \
+    $${ICEGL_PATH}/vertexpipeline/Clipper.cpp \
+    $${ICEGL_PATH}/vertexpipeline/Lighting.cpp \
+    $${ICEGL_PATH}/vertexpipeline/TexGen.cpp \
+    $${ICEGL_PATH}/vertexpipeline/RenderObj.cpp \
+    $${ICEGL_PATH}/pixelpipeline/PixelPipeline.cpp \
     $${ICEGL_PATH}/gl.cpp \
     $${ICEGL_PATH}/glu.cpp \
-    $${ICEGL_PATH}/Rasterizer.cpp
+    $${ICEGL_PATH}/renderer/Rasterizer.cpp \
+    $${ICEGL_PATH}/vertexpipeline/ViewPort.cpp \
+    $${ICEGL_PATH}/vertexpipeline/MatrixStack.cpp \
+    $${ICEGL_PATH}/vertexpipeline/Culling.cpp \
+    $${ICEGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
+    $${ICEGL_PATH}/pixelpipeline/Fogging.cpp \
+    $${ICEGL_PATH}/pixelpipeline/Texture.cpp \
+    $${ICEGL_PATH}/pixelpipeline/Stencil.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \
     $${ICEGL_PATH}/*.hpp \
+    $${ICEGL_PATH}/vertexpipeline/*.hpp \
+    $${ICEGL_PATH}/pixelpipeline/*.hpp \
+    $${ICEGL_PATH}/math/*.hpp \
+    $${ICEGL_PATH}/renderer/*.hpp \
     $${ICEGL_PATH}/*.h \
-    $${ICEGL_PATH}/registers/* \
-    $${ICEGL_PATH}/commands/*
+    $${ICEGL_PATH}/renderer/registers/* \
+    $${ICEGL_PATH}/renderer/commands/*
 
 
 DEFINES += SPDLOG_ACTIVE_LEVEL=3

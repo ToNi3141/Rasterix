@@ -1,7 +1,7 @@
 #include "wgl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
-#include "Renderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "FT60XBusConnector.hpp"
 #include "RenderConfigs.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
