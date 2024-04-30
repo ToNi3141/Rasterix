@@ -57,9 +57,10 @@ private:
     };
 
     static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
-    static void lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt);
-    static void lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt);
+    static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
+    static ClipTexCoords lerpTexCoord(const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt);
     static OutCode outCode(const Vec4 &v);
+    static bool hasOutCode(const Vec4& v, const OutCode oc);
     
     static uint32_t clipAgainstPlane(ClipVertList& vertListOut,
                                      ClipTexCoordList& texCoordListOut,

@@ -20,32 +20,24 @@
 namespace rr
 {
 
-void Clipper::lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt)
+Vec4 Clipper::lerpVert(const Vec4& v0, const Vec4& v1, const float amt)
 {
-#ifdef CLIP_UNITCUBE
-    vOut[3] = ((v0[3] - v1[3]) * amt) + v1[3];
-    vOut[2] = ((v0[2] - v1[2]) * amt) + v1[2];
-    vOut[1] = ((v0[1] - v1[1]) * amt) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * amt) + v1[0];
-#else
+    Vec4 vOut;
     vOut[3] = ((v0[3] - v1[3]) * (1-amt)) + v1[3];
     vOut[2] = ((v0[2] - v1[2]) * (1-amt)) + v1[2];
     vOut[1] = ((v0[1] - v1[1]) * (1-amt)) + v1[1];
     vOut[0] = ((v0[0] - v1[0]) * (1-amt)) + v1[0];
-    // float a1 = 1.0 - amt;
-    // vOut[3] = (a1 * v0[3]) + (amt * v1[3]);
-    // vOut[2] = (a1 * v0[2]) + (amt * v1[2]);
-    // vOut[1] = (a1 * v0[1]) + (amt * v1[1]);
-    // vOut[0] = (a1 * v0[0]) + (amt * v1[0]);
-#endif
+    return vOut;
 }
 
-void Clipper::lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt)
+Clipper::ClipTexCoords Clipper::lerpTexCoord(const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt)
 {
+    ClipTexCoords vOut;
     for (std::size_t i = 0; i < vOut.size(); i++)
     {
-        lerpVert(vOut[i], v0[i], v1[i], amt);
+        vOut[i] = lerpVert(v0[i], v1[i], amt);
     }
+    return vOut;
 }
 
 Clipper::OutCode Clipper::outCode(const Vec4& v)
@@ -67,6 +59,27 @@ Clipper::OutCode Clipper::outCode(const Vec4& v)
         c |= OutCode::OC_FAR;
 
     return c;
+}
+
+bool Clipper::hasOutCode(const Vec4& v, const OutCode oc)
+{
+    switch (oc)
+    {
+    case OutCode::OC_LEFT:
+        return v[0] < -v[3];
+    case OutCode::OC_RIGHT:
+        return v[0] > v[3];
+    case OutCode::OC_BOTTOM:
+        return v[1] < -v[3];
+    case OutCode::OC_TOP:
+        return v[1] > v[3];
+    case OutCode::OC_NEAR:
+        return v[2] < -v[3];
+    case OutCode::OC_FAR:
+        return v[2] > v[3];
+    default:
+        return false;
+    }
 }
 
 float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
@@ -212,26 +225,27 @@ uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
 
     for (int8_t vert = 0; vert < static_cast<int8_t>(listInSize); vert++)
     {
-        if (outCode(vertListIn[vert]) & clipPlane)
+        if (hasOutCode(vertListIn[vert], clipPlane))
         {
             //            uint8_t vertMod = (vert-1)%vertSize;
-            uint8_t vertMod = (vert - 1) < 0 ? listInSize-1 : vert - 1;
-            if (!(outCode(vertListIn[vertMod]) & clipPlane))
+            uint8_t vertMod = (vert - 1) < 0 ? listInSize - 1 : vert - 1;
+            if (!hasOutCode(vertListIn[vertMod], clipPlane))
             {
-                float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
-                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpTexCoord(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                const float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
+                vertListOut[i] = lerpVert(vertListIn[vert], vertListIn[vertMod], lerpw);
+                colorListOut[i] = lerpVert(colorListIn[vert], colorListIn[vertMod], lerpw);
+                texCoordListOut[i] = lerpTexCoord(texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
                 i++;
             }
 
-            vertMod = (vert + 1) % listInSize;
-            if (!(outCode(vertListIn[vertMod]) & clipPlane))
+            // vertMod = (vert + 1) % listInSize;
+            vertMod = (vert + 1) >= listInSize ? 0 : vert + 1;
+            if (!hasOutCode(vertListIn[vertMod], clipPlane))
             {
-                float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                lerpVert(vertListOut[i], vertListIn[vert], vertListIn[vertMod], lerpw);
-                lerpVert(colorListOut[i], colorListIn[vert], colorListIn[vertMod], lerpw);
-                lerpTexCoord(texCoordListOut[i], texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                const float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
+                vertListOut[i] = lerpVert(vertListIn[vert], vertListIn[vertMod], lerpw);
+                colorListOut[i] = lerpVert(colorListIn[vert], colorListIn[vertMod], lerpw);
+                texCoordListOut[i] = lerpTexCoord(texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
                 i++;
             }
         }
