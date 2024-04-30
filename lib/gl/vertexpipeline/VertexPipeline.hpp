@@ -55,7 +55,9 @@ public:
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
-    void fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    bool drawClippedTriangleList(std::span<VertexParameter> list);
+    bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
 
     bool m_enableNormalizing { true };
 

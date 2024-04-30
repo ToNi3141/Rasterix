@@ -30,9 +30,9 @@ Vec4 Clipper::lerpVert(const Vec4& v0, const Vec4& v1, const float amt)
     return vOut;
 }
 
-Clipper::ClipTexCoords Clipper::lerpTexCoord(const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt)
+std::array<Vec4, IRenderer::MAX_TMU_COUNT> Clipper::lerpTexCoord(const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v1, const float amt)
 {
-    ClipTexCoords vOut;
+    std::array<Vec4, IRenderer::MAX_TMU_COUNT> vOut;
     for (std::size_t i = 0; i < vOut.size(); i++)
     {
         vOut[i] = lerpVert(v0[i], v1[i], amt);
@@ -134,69 +134,42 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 #endif
 }
 
-std::tuple<const uint32_t, 
-    Clipper::ClipVertList&, 
-    Clipper::ClipTexCoordList&, 
-    Clipper::ClipVertList&> Clipper::clip(ClipVertList& vertList,
-                                          ClipVertList& vertListBuffer,
-                                          ClipTexCoordList& texCoordList,
-                                          ClipTexCoordList& texCoordListBuffer,
-                                          ClipVertList& colorList,
-                                          ClipVertList& colorListBuffer)
+bool Clipper::isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
 {
-    // Check if the triangle is completely outside by checking if all vertices have the same outcode
-    const OutCode oc0 = outCode(vertList[0]);
-    const OutCode oc1 = outCode(vertList[1]);
-    const OutCode oc2 = outCode(vertList[2]);
+    const OutCode oc0 = outCode(v0);
+    const OutCode oc1 = outCode(v1);
+    const OutCode oc2 = outCode(v2);
 
-    // Checking if the triangle is completely inside by checking, if no vertex has an outcode
-    if ((oc0 | oc1 | oc2) == OutCode::OC_NONE) [[likely]]
-    {
-        return {3u, vertList, texCoordList, colorList};
-    }
+    return oc0 & oc1 & oc2;
+}
 
-    if (oc0 & oc1 & oc2) [[likely]]
-    {
-        return {0u, vertList, texCoordList, colorList};
-    }
+bool Clipper::isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+{
+    const OutCode oc0 = outCode(v0);
+    const OutCode oc1 = outCode(v1);
+    const OutCode oc2 = outCode(v2);
 
-    ClipVertList* currentVertListBufferIn = &vertList;
-    ClipVertList* currentVertListBufferOut = &vertListBuffer;
-    ClipTexCoordList* currentTexCoordListBufferIn = &texCoordList;
-    ClipTexCoordList* currentTexCoordListBufferOut = &texCoordListBuffer;
-    ClipVertList* currentColorListBufferIn = &colorList;
-    ClipVertList* currentColorListBufferOut = &colorListBuffer;
+    return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
+}
 
-    int8_t numberOfVerts = 3; // Initial the list contains 3 vertices
-    int8_t numberOfVertsCurrentPlane = 0;
+std::span<VertexParameter> Clipper::clip(ClipList& list, ClipList& listBuffer)
+{
+    ClipList* listIn = &list;
+    ClipList* listOut = &listBuffer;
+
+    std::size_t numberOfVerts = 3; // Initial the list contains 3 vertices
+    std::size_t numberOfVertsCurrentPlane = 0;
 
     for (auto oc : {OutCode::OC_NEAR, OutCode::OC_FAR, OutCode::OC_LEFT, OutCode::OC_RIGHT, OutCode::OC_TOP, OutCode::OC_BOTTOM})
     {
         // Optimization hint: If no vertex has an outcode given from oc, then it can just be
         // ignored. We just have to avoid that the swapping of the buffers is executed.
         // Then we can skip the unneeded copying of data.
-        numberOfVertsCurrentPlane = clipAgainstPlane(*currentVertListBufferOut,
-                                                     *currentTexCoordListBufferOut,
-                                                     *currentColorListBufferOut,
-                                                     oc,
-                                                     *currentVertListBufferIn,
-                                                     *currentTexCoordListBufferIn,
-                                                     *currentColorListBufferIn,
-                                                     numberOfVerts);
+        numberOfVertsCurrentPlane = clipAgainstPlane(*listOut, oc, *listIn, numberOfVerts);
         if (numberOfVertsCurrentPlane > 0)
         {
             // Swap buffers
-            ClipVertList* tmpVertIn = currentVertListBufferIn;
-            currentVertListBufferIn = currentVertListBufferOut;
-            currentVertListBufferOut = tmpVertIn;
-
-            ClipTexCoordList* tmpTexIn = currentTexCoordListBufferIn;
-            currentTexCoordListBufferIn = currentTexCoordListBufferOut;
-            currentTexCoordListBufferOut = tmpTexIn;
-
-            ClipVertList* tmpColorIn = currentColorListBufferIn;
-            currentColorListBufferIn = currentColorListBufferOut;
-            currentColorListBufferOut = tmpColorIn;
+            std::swap(listIn, listOut);
 
             // Safe the new number of planes
             numberOfVerts = numberOfVertsCurrentPlane;
@@ -205,55 +178,50 @@ std::tuple<const uint32_t,
 
     // Assume in this trivial case, that we have clipped a triangle, which was already
     // complete outside. So this triangle shouldn't result in a bigger triangle
-    if (outCode((*currentVertListBufferIn)[0]) & outCode((*currentVertListBufferIn)[1]) & outCode((*currentVertListBufferIn)[2]))
-        return {0u, vertList, texCoordList, colorList};
+    if (outCode((*listIn)[0].vertex) & outCode((*listIn)[1].vertex) & outCode((*listIn)[2].vertex))
+        return {};
 
-    return {numberOfVerts, *currentVertListBufferIn, *currentTexCoordListBufferIn, *currentColorListBufferIn};
+    return { listIn->data(), numberOfVerts };
 }
 
-uint32_t Clipper::clipAgainstPlane(ClipVertList& vertListOut,
-                               ClipTexCoordList& texCoordListOut,
-                               ClipVertList& colorListOut,
-                               const OutCode clipPlane,
-                               const ClipVertList& vertListIn,
-                               const ClipTexCoordList& texCoordListIn,
-                               const ClipVertList& colorListIn,
-                               const uint32_t listInSize)
+VertexParameter Clipper::lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next)
+{
+    VertexParameter out;
+    const float lerpw = lerpAmt(clipPlane, curr.vertex, next.vertex);
+    out.vertex = lerpVert(curr.vertex, next.vertex, lerpw);
+    out.color = lerpVert(curr.color, next.color, lerpw);
+    out.tex = lerpTexCoord(curr.tex, next.tex, lerpw);
+    return out;
+}
+
+std::size_t Clipper::clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize)
 {
     // Start Clipping
-    int i = 0;
+    std::size_t i = 0;
 
-    for (int8_t vert = 0; vert < static_cast<int8_t>(listInSize); vert++)
+    for (int32_t vert = 0; vert < listSize; vert++)
     {
-        if (hasOutCode(vertListIn[vert], clipPlane))
+        if (hasOutCode(listIn[vert].vertex, clipPlane))
         {
-            //            uint8_t vertMod = (vert-1)%vertSize;
-            uint8_t vertMod = (vert - 1) < 0 ? listInSize - 1 : vert - 1;
-            if (!hasOutCode(vertListIn[vertMod], clipPlane))
+            // std::size_t vertMod = (vert - 1) % listSize;
+            const std::size_t vertPrev = (vert - 1) < 0 ? listSize - 1 : vert - 1;
+            if (!hasOutCode(listIn[vertPrev].vertex, clipPlane))
             {
-                const float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                vertListOut[i] = lerpVert(vertListIn[vert], vertListIn[vertMod], lerpw);
-                colorListOut[i] = lerpVert(colorListIn[vert], colorListIn[vertMod], lerpw);
-                texCoordListOut[i] = lerpTexCoord(texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertPrev]);
                 i++;
             }
 
-            // vertMod = (vert + 1) % listInSize;
-            vertMod = (vert + 1) >= listInSize ? 0 : vert + 1;
-            if (!hasOutCode(vertListIn[vertMod], clipPlane))
+            // vertMod = (vert + 1) % listSize;
+            const std::size_t vertNext = (vert + 1) >= listSize ? 0 : vert + 1;
+            if (!hasOutCode(listIn[vertNext].vertex, clipPlane))
             {
-                const float lerpw = lerpAmt(clipPlane, vertListIn[vert], vertListIn[vertMod]);
-                vertListOut[i] = lerpVert(vertListIn[vert], vertListIn[vertMod], lerpw);
-                colorListOut[i] = lerpVert(colorListIn[vert], colorListIn[vertMod], lerpw);
-                texCoordListOut[i] = lerpTexCoord(texCoordListIn[vert], texCoordListIn[vertMod], lerpw);
+                listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertNext]);
                 i++;
             }
         }
         else
         {
-            vertListOut[i] = vertListIn[vert];
-            colorListOut[i] = colorListIn[vert];
-            texCoordListOut[i] = texCoordListIn[vert];
+            listOut[i] = listIn[vert];
             i++;
         }
     }

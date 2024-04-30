@@ -36,7 +36,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
 }
 
-void VertexPipeline::fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i)
+void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, uint32_t i)
 {
     const uint32_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
@@ -85,7 +85,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     uint32_t count = obj.getCount();
     for (uint32_t it = 0; it < count; it++)
     {
-        PrimitiveAssembler::Triangle::VertexParameter& param = m_primitiveAssembler.createParameter();
+        VertexParameter& param = m_primitiveAssembler.createParameter();
         fetchAndTransform(param, obj, it);
 
         const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
@@ -105,43 +105,17 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     return true;
 }
 
-bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
+bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
 {
-    Clipper::ClipVertList vertList;
-    Clipper::ClipTexCoordList texCoordList;
-    Clipper::ClipVertList colorList;
-    Clipper::ClipVertList vertListBuffer;
-    Clipper::ClipTexCoordList texCoordListBuffer;
-    Clipper::ClipVertList colorListBuffer;
-
-    vertList[0] = triangle.p0->vertex;
-    vertList[1] = triangle.p1->vertex;
-    vertList[2] = triangle.p2->vertex;
-
-    for (uint32_t i = 0; i < IRenderer::MAX_TMU_COUNT; i++)
-    {
-        if (m_renderer.featureEnable().getEnableTmu(i))
-        {
-            texCoordList[0][i] = triangle.p0->tex[i];
-            texCoordList[1][i] = triangle.p1->tex[i];
-            texCoordList[2][i] = triangle.p2->tex[i];
-        }
-    }
-
-    colorList[0] = triangle.p0->color;
-    colorList[1] = triangle.p1->color;
-    colorList[2] = triangle.p2->color;
-
-    auto [vertListSize, vertListClipped, texCoordListClipped, colorListClipped] = Clipper::clip(vertList, vertListBuffer, texCoordList, texCoordListBuffer, colorList, colorListBuffer);
-
-    std::array<float, vertList.size()> oowList;
+    std::array<float, std::tuple_size<Clipper::ClipList>{}> oowList;
 
     // Calculate for every vertex the perspective division and also apply the viewport transformation
-    for (uint32_t i = 0; i < vertListSize; i++)
+    const std::size_t clippedVertexListSize = list.size();
+    for (std::size_t i = 0; i < clippedVertexListSize; i++)
     {
         // Perspective division
-        vertListClipped[i].perspectiveDivide();
-        oowList[i] = vertListClipped[i][3];
+        list[i].vertex.perspectiveDivide();
+        oowList[i] = list[i].vertex[3];
 
         // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
         // for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
@@ -155,48 +129,117 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
         // }
 
         // Viewport transformation of the vertex
-        m_viewPort.transform(vertListClipped[i]);
+        m_viewPort.transform(list[i].vertex);
     }
 
     // Cull triangle
     // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
     // facing backwards, then all in the clipping list will do this and vice versa.
-    if (m_culling.cull(vertListClipped[0], vertListClipped[1], vertListClipped[2]))
+    if (m_culling.cull(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return true;
     }
     
-    if (!m_renderer.stencil().updateStencilFace(vertListClipped[0], vertListClipped[1], vertListClipped[2])) [[unlikely]]
+    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex)) [[unlikely]]
     {
         return false;
     }
 
     // Render the triangle
-    for (uint32_t i = 3; i <= vertListSize; i++)
+    for (std::size_t i = 3; i <= clippedVertexListSize; i++)
     {
-        // For a triangle we need atleast 3 vertices. Also treat the clipped list from the clipping as a
-        // triangle fan where vert zero is always the center of this fan
-        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt the following code when more than two TMUs are configured.");
-        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture0 { { &texCoordListClipped[0][0], &texCoordListClipped[0][1] } };
-        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture1 { { &texCoordListClipped[i - 2][0], &texCoordListClipped[i - 2][1] } };
-        std::array<const Vec4* const, IRenderer::MAX_TMU_COUNT> texture2 { { &texCoordListClipped[i - 1][0], &texCoordListClipped[i - 1][1] } };
         const bool success = m_renderer.drawTriangle({ 
-                vertListClipped[0],
-                vertListClipped[i - 2],
-                vertListClipped[i - 1],
+                list[0].vertex,
+                list[i - 2].vertex,
+                list[i - 1].vertex,
                 { { oowList[0], oowList[i - 2], oowList[i - 1] } },
-                { *(texture0.data()), texture0.size() },
-                { *(texture1.data()), texture1.size() },
-                { *(texture2.data()), texture2.size() },
-                colorListClipped[0],
-                colorListClipped[i - 2],
-                colorListClipped[i - 1] });
+                { list[0].tex },
+                { list[i - 2].tex },
+                { list[i - 1].tex },
+                list[0].color,
+                list[i - 2].color,
+                list[i - 1].color });
         if (!success) [[unlikely]]
         {
             return false;
         }
     }
     return true;
+}
+
+bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle)
+{
+    // Optimized version of the drawTriangle when a triangle is not needed to be clipped.
+
+    Vec4 v0 = triangle[0].get().vertex;
+    Vec4 v1 = triangle[1].get().vertex;
+    Vec4 v2 = triangle[2].get().vertex;
+
+    // Perspective division
+    v0.perspectiveDivide();
+    v1.perspectiveDivide();
+    v2.perspectiveDivide();
+
+    std::array<float, 3> oowList { { v0[3], v1[3], v2[3] } };
+
+    // Viewport transformation of the vertex
+    m_viewPort.transform(v0);
+    m_viewPort.transform(v1);
+    m_viewPort.transform(v2);
+    
+    // Cull triangle
+    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
+    // facing backwards, then all in the clipping list will do this and vice versa.
+    if (m_culling.cull(v0, v1, v2))
+    {
+        return true;
+    }
+    
+    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2)) [[unlikely]]
+    {
+        return false;
+    }
+
+    return m_renderer.drawTriangle({ 
+            v0,
+            v1,
+            v2,
+            { oowList },
+            { triangle[0].get().tex },
+            { triangle[1].get().tex },
+            { triangle[2].get().tex },
+            triangle[0].get().color,
+            triangle[1].get().color,
+            triangle[2].get().color });
+}
+
+bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
+{
+    if (Clipper::isInside(triangle[0].get().vertex, triangle[1].get().vertex, triangle[2].get().vertex))
+    {
+        return drawUnclippedTriangle(triangle);
+    }
+
+    if (Clipper::isOutside(triangle[0].get().vertex, triangle[1].get().vertex, triangle[2].get().vertex))
+    {
+        return true;
+    }
+
+    Clipper::ClipList list;
+    Clipper::ClipList listBuffer;
+
+    list[0] = triangle[0];
+    list[1] = triangle[1];
+    list[2] = triangle[2];
+
+    std::span<VertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
+
+    if (clippedVertexParameter.empty())
+    {
+        return true;
+    }
+
+    return drawClippedTriangleList(clippedVertexParameter);
 }
 
 } // namespace rr
