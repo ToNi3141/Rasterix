@@ -54,14 +54,16 @@ public:
                           const uint16_t lineStart,
                           const uint16_t lineEnd);
 private:
-    static constexpr uint64_t DECIMAL_POINT = 12;
-    inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
-    inline static VecInt calcRecip(VecInt val);
+    static constexpr uint32_t EDGE_FUNC_SIZE = 5;
+    static constexpr int32_t EDGE_FUNC_ZERO_P_FIVE = (1 << (EDGE_FUNC_SIZE - 1));
+    static constexpr int32_t EDGE_FUNC_ONE_P_ZERO = (1 << EDGE_FUNC_SIZE);
 
-    int32_t m_scissorX { 0 };
-    int32_t m_scissorY { 0 };
-    uint32_t m_scissorWidth { 0 };
-    uint32_t m_scissorHeight { 0 };
+    inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
+
+    int32_t m_scissorStartX { 0 };
+    int32_t m_scissorStartY { 0 };
+    int32_t m_scissorEndX { 0 };
+    int32_t m_scissorEndY { 0 };
     bool m_enableScissor { false };
     const bool m_enableScaling { false };
     std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
