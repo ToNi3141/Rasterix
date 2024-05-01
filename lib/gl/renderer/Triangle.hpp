@@ -31,7 +31,6 @@ struct Triangle
     const Vec4& vertex0;
     const Vec4& vertex1;
     const Vec4& vertex2;
-    const Vec3& oow; // Used for perspective correction
     const std::span<const Vec4>& texture0;
     const std::span<const Vec4>& texture1;
     const std::span<const Vec4>& texture2;

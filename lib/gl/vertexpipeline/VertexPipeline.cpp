@@ -107,15 +107,12 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
 
 bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
 {
-    std::array<float, std::tuple_size<Clipper::ClipList>{}> oowList;
-
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     const std::size_t clippedVertexListSize = list.size();
     for (std::size_t i = 0; i < clippedVertexListSize; i++)
     {
         // Perspective division
         list[i].vertex.perspectiveDivide();
-        oowList[i] = list[i].vertex[3];
 
         // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
         // for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
@@ -152,7 +149,6 @@ bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
                 list[0].vertex,
                 list[i - 2].vertex,
                 list[i - 1].vertex,
-                { { oowList[0], oowList[i - 2], oowList[i - 1] } },
                 { list[0].tex },
                 { list[i - 2].tex },
                 { list[i - 1].tex },
@@ -180,8 +176,6 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
     v1.perspectiveDivide();
     v2.perspectiveDivide();
 
-    std::array<float, 3> oowList { { v0[3], v1[3], v2[3] } };
-
     // Viewport transformation of the vertex
     m_viewPort.transform(v0);
     m_viewPort.transform(v1);
@@ -204,7 +198,6 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
             v0,
             v1,
             v2,
-            { oowList },
             { triangle[0].get().tex },
             { triangle[1].get().tex },
             { triangle[2].get().tex },

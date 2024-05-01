@@ -199,7 +199,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     Vec3 wIncYNorm = { { static_cast<float>(wIncY[0]), static_cast<float>(wIncY[1]), static_cast<float>(wIncY[2]) } };
     wIncYNorm.mul(areaInv);
 
-    Vec3 w = triangle.oow;
+    Vec3 w = { { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] } };
     // Avoid that the w gets too small/big by normalizing it
     if (m_enableScaling)
     {
