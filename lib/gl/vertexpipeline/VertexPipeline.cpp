@@ -40,7 +40,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
 {
     const uint32_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
-    for (uint32_t tu = 0; tu < IRenderer::MAX_TMU_COUNT; tu++)
+    for (uint32_t tu = 0; tu < TransformedTriangle::MAX_TMU_COUNT; tu++)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
@@ -115,7 +115,7 @@ bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
         list[i].vertex.perspectiveDivide();
 
         // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
-        // for (uint8_t j = 0; j < IRenderer::MAX_TMU_COUNT; j++)
+        // for (uint8_t j = 0; j < TransformedTriangle::MAX_TMU_COUNT; j++)
         // {
         //     // Perspective correction of the texture coordinates
         //     if (m_renderer.getEnableTmu(j))
@@ -149,9 +149,9 @@ bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
                 list[0].vertex,
                 list[i - 2].vertex,
                 list[i - 1].vertex,
-                { list[0].tex },
-                { list[i - 2].tex },
-                { list[i - 1].tex },
+                list[0].tex,
+                list[i - 2].tex,
+                list[i - 1].tex,
                 list[0].color,
                 list[i - 2].color,
                 list[i - 1].color });
@@ -198,9 +198,9 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
             v0,
             v1,
             v2,
-            { triangle[0].get().tex },
-            { triangle[1].get().tex },
-            { triangle[2].get().tex },
+            triangle[0].get().tex,
+            triangle[1].get().tex,
+            triangle[2].get().tex,
             triangle[0].get().color,
             triangle[1].get().color,
             triangle[2].get().color });

@@ -30,7 +30,7 @@ namespace rr
 class RenderObj
 {
 public:
-    static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
+    static constexpr uint8_t MAX_TMU_COUNT { TransformedTriangle::MAX_TMU_COUNT };
 
     enum DrawMode
     {

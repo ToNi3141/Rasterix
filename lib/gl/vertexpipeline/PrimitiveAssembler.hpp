@@ -50,7 +50,7 @@ public:
 private:
     std::span<const Triangle> constructTriangle();
     std::span<const Triangle> constructLine();
-    std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
+    std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
     FixedSizeQueue<VertexParameter, 3> m_queue {};

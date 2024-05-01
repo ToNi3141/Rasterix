@@ -128,9 +128,9 @@ public:
         render();
     }
 
-    virtual bool drawTriangle(const Triangle& triangle) override
+    virtual bool drawTriangle(const TransformedTriangle& triangle) override
     {
-        TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible())
         {
@@ -197,7 +197,7 @@ public:
         return writeReg(texEnvConfig);
     }
 
-    virtual bool setTexEnvColor(const TMU target, const Vec4i& color) override
+    virtual bool setTexEnvColor(const std::size_t target, const Vec4i& color) override
     {
         TexEnvColorReg reg;
         reg.setTmu(target);
@@ -244,7 +244,7 @@ public:
         return m_textureManager.createTextureWithName(texId);
     }
 
-    virtual bool useTexture(const TMU target, const uint16_t texId) override 
+    virtual bool useTexture(const std::size_t target, const uint16_t texId) override 
     {
         m_boundTextures[target] = texId;
         if (!m_textureManager.textureValid(texId))
@@ -269,7 +269,7 @@ public:
     virtual bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable) override
     {
         m_rasterizer.enableScissor(featureEnable.getEnableScissor());
-        static_assert(IRenderer::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
+        static_assert(TransformedTriangle::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
         m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
         m_rasterizer.enableTmu(1, featureEnable.getEnableTmu(1));
         return writeReg(featureEnable);
@@ -343,7 +343,7 @@ public:
         return RenderConfig::MAX_TEXTURE_SIZE;
     }
     
-    virtual TMU getTmuCount() const override
+    virtual std::size_t getTmuCount() const override
     {
         return RenderConfig::TMU_COUNT;
     }
@@ -373,7 +373,7 @@ private:
     {
         // Find the TMU by searching through the bound textures, if the current texture ID is currently used.
         // If not, just ignore it because then the currently used texture must not be changed.
-        for (uint8_t tmu = 0; tmu < IRenderer::MAX_TMU_COUNT; tmu++)
+        for (uint8_t tmu = 0; tmu < TransformedTriangle::MAX_TMU_COUNT; tmu++)
         {
             if (m_boundTextures[tmu] == texId)
             {

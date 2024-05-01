@@ -30,9 +30,9 @@ Vec4 Clipper::lerpVert(const Vec4& v0, const Vec4& v1, const float amt)
     return vOut;
 }
 
-std::array<Vec4, IRenderer::MAX_TMU_COUNT> Clipper::lerpTexCoord(const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v1, const float amt)
+std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> Clipper::lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt)
 {
-    std::array<Vec4, IRenderer::MAX_TMU_COUNT> vOut;
+    std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> vOut;
     for (std::size_t i = 0; i < vOut.size(); i++)
     {
         vOut[i] = lerpVert(v0[i], v1[i], amt);

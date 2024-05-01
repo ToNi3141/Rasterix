@@ -63,7 +63,7 @@ public:
 
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
     
-    TriangleStreamCmd(const Rasterizer& rasterizer, const Triangle& triangle)
+    TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
     }

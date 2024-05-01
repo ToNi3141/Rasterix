@@ -103,7 +103,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
 
 bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
                            const std::span<TriangleStreamTypes::Texture>& texture, 
-                           const Triangle& triangle) const
+                           const TransformedTriangle& triangle) const
 {
     Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
     Vec2i v1 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });

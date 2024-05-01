@@ -95,7 +95,7 @@ public:
         // If the texture wasn't used, then it is not necessary to send to he renderer a load command.
         // Unfortunately this optimization breaks the code separation. It can be removed, the functionality of the command
         // shouldn't be affected.
-        if constexpr (std::is_same<TCommand, TriangleStreamCmd<IRenderer::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION>>::value)
+        if constexpr (std::is_same<TCommand, TriangleStreamCmd<TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION>>::value)
         {
             // Mark that a triangle was rendered
             m_wasLastCommandATextureCommand.reset();

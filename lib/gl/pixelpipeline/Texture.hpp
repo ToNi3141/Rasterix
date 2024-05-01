@@ -38,7 +38,6 @@ public:
         COMBINE
     };
 
-    using TMU = IRenderer::TMU;
     using TextureWrapMode = IRenderer::TextureWrapMode;
     using TexEnv = TexEnvReg;
 
@@ -60,12 +59,10 @@ public:
     bool setTexEnvMode(const TexEnvMode mode);
     TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
-    void activateTmu(const IRenderer::TMU tmu) { uploadTexture(); m_tmu = tmu; }
-    TMU getActiveTmu() const { return m_tmu; }
+    void activateTmu(const std::size_t tmu) { uploadTexture(); m_tmu = tmu; }
+    std::size_t getActiveTmu() const { return m_tmu; }
 
 private:
-    static constexpr uint8_t MAX_TMU_COUNT { IRenderer::MAX_TMU_COUNT };
-
     struct TmuConfig
     {
         // Textures
@@ -80,7 +77,7 @@ private:
     IRenderer& m_renderer;
 
     // TMU
-    std::array<TmuConfig, MAX_TMU_COUNT> m_tmuConf {};
+    std::array<TmuConfig, TransformedTriangle::MAX_TMU_COUNT> m_tmuConf {};
     uint8_t m_tmu { 0 };
     std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 };

@@ -37,14 +37,11 @@ namespace rr
 class IRenderer
 {
 public:
-    static constexpr std::size_t MAX_TMU_COUNT { 2 };
-
-    using TMU = uint8_t;
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
 
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
-    virtual bool drawTriangle(const Triangle& triangle) = 0;
+    virtual bool drawTriangle(const TransformedTriangle& triangle) = 0;
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
@@ -79,7 +76,7 @@ public:
     /// @param target The used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool useTexture(const TMU target, const uint16_t texId) = 0; 
+    virtual bool useTexture(const std::size_t target, const uint16_t texId) = 0; 
 
     /// @brief The wrapping mode of the texture in s direction
     /// @param texId The texture from where to change the parameter
@@ -138,7 +135,7 @@ public:
     /// @param target is used TMU
     /// @param color the color in ABGR
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    virtual bool setTexEnvColor(const TMU target, const Vec4i& color) = 0;
+    virtual bool setTexEnvColor(const std::size_t target, const Vec4i& color) = 0;
 
     /// @brief Updates the fragment pipeline configuration 
     /// @param pipelineConf The new pipeline configuration 
@@ -185,7 +182,7 @@ public:
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
-    virtual TMU getTmuCount() const = 0;
+    virtual std::size_t getTmuCount() const = 0;
 
     /// @brief Queries of mip mapping is available on hardware
     /// @return true when mipmapping is available

@@ -62,14 +62,14 @@ private:
     bool m_enableNormalizing { true };
 
     // Current active TMU
-    uint8_t m_tmu {};
+    std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
     Lighting m_lighting;
     ViewPort m_viewPort;
     MatrixStack m_matrixStack;
     Culling m_culling;
-    std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
+    std::array<TexGen, TransformedTriangle::MAX_TMU_COUNT> m_texGen;
     PrimitiveAssembler m_primitiveAssembler { m_viewPort };
 };
 

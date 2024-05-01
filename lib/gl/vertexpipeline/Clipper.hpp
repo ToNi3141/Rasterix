@@ -52,7 +52,7 @@ private:
 
     static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
     static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
-    static std::array<Vec4, IRenderer::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& v1, const float amt);
+    static std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt);
     static OutCode outCode(const Vec4 &v);
     static bool hasOutCode(const Vec4& v, const OutCode oc);
     

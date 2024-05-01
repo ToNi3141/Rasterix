@@ -63,7 +63,7 @@ public:
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
-    IRenderer::TMU getTmuCount() const { return m_renderer.getTmuCount(); }
+    std::size_t getTmuCount() const { return m_renderer.getTmuCount(); }
 
     /// @brief Queries of mip mapping is available on hardware
     /// @return true when mipmapping is available

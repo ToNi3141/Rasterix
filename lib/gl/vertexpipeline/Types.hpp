@@ -36,7 +36,7 @@ struct VertexParameter
 {
     Vec4 vertex;
     Vec4 color;
-    std::array<Vec4, IRenderer::MAX_TMU_COUNT> tex;
+    std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> tex;
 };
 
 } // namespace rr

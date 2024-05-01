@@ -37,7 +37,7 @@ public:
 
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
                    const std::span<TriangleStreamTypes::Texture>& texture, 
-                   const Triangle& triangle) const;
+                   const TransformedTriangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable) { m_enableScissor = enable; }
@@ -66,7 +66,7 @@ private:
     int32_t m_scissorEndY { 0 };
     bool m_enableScissor { false };
     const bool m_enableScaling { false };
-    std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
+    std::bitset<TransformedTriangle::MAX_TMU_COUNT> m_tmuEnable {};
 
 };
 
