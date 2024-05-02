@@ -34,8 +34,8 @@ public:
     void setCullMode(const Face mode);
 
 private:
-    bool m_enableCulling{ false };
-    Face m_cullMode{ Face::BACK };
+    bool m_enableCulling { false };
+    Face m_cullMode { Face::BACK };
 };
 
 } // namespace rr

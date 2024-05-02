@@ -29,7 +29,7 @@ namespace rr
 template <class TRegister>
 class WriteRegisterCmd
 {
-    static constexpr uint32_t OP_RENDER_CONFIG = 0x1000'0000;
+    static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
 public:
     WriteRegisterCmd(const TRegister& reg)
     {
