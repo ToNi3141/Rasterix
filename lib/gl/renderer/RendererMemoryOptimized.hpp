@@ -511,7 +511,7 @@ private:
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
     // Mapping of texture id and TMU
-    std::array<uint16_t, MAX_TMU_COUNT> m_boundTextures {};
+    std::array<uint16_t, TransformedTriangle::MAX_TMU_COUNT> m_boundTextures {};
 };
 
 } // namespace rr
