@@ -59,7 +59,7 @@ public:
 
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     Vec4 getVertex(const uint32_t index) const;
-    inline std::bitset<MAX_TMU_COUNT> texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
+    inline const std::bitset<MAX_TMU_COUNT>& texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     Vec4 getTexCoord(const uint8_t tmu, const uint32_t index) const;
     inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }
     Vec4 getColor(const uint32_t index) const;

@@ -40,27 +40,6 @@ std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> Clipper::lerpTexCoord(const
     return vOut;
 }
 
-Clipper::OutCode Clipper::outCode(const Vec4& v)
-{
-    OutCode c = OutCode::OC_NONE;
-    const float w = v[3];
-
-    if (v[0] < -w)
-        c |= OutCode::OC_LEFT;
-    if (v[0] > w)
-        c |= OutCode::OC_RIGHT;
-    if (v[1] < -w)
-        c |= OutCode::OC_BOTTOM;
-    if (v[1] > w)
-        c |= OutCode::OC_TOP;
-    if (v[2] < -w)
-        c |= OutCode::OC_NEAR;
-    if (v[2] > w)
-        c |= OutCode::OC_FAR;
-
-    return c;
-}
-
 bool Clipper::hasOutCode(const Vec4& v, const OutCode oc)
 {
     switch (oc)
@@ -132,24 +111,6 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
     }
     return zDot0 / (zDot0 - zDot1);
 #endif
-}
-
-bool Clipper::isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
-{
-    const OutCode oc0 = outCode(v0);
-    const OutCode oc1 = outCode(v1);
-    const OutCode oc2 = outCode(v2);
-
-    return oc0 & oc1 & oc2;
-}
-
-bool Clipper::isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
-{
-    const OutCode oc0 = outCode(v0);
-    const OutCode oc1 = outCode(v1);
-    const OutCode oc2 = outCode(v2);
-
-    return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
 }
 
 std::span<VertexParameter> Clipper::clip(ClipList& list, ClipList& listBuffer)

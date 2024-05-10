@@ -199,11 +199,6 @@ void Lighting::enableLighting(bool enable)
     m_lightingEnabled = enable;
 }
 
-bool Lighting::lightingEnabled() const 
-{
-    return m_lightingEnabled;
-}
-
 void Lighting::enableLight(const uint8_t light, const bool enable)
 {
     m_lights[light].enable = enable;

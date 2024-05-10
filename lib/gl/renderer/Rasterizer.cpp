@@ -26,20 +26,6 @@
 namespace rr
 {
 
-bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
-                                           const uint16_t lineStart,
-                                           const uint16_t lineEnd)
-{
-    // Check if the triangle is in the current area by checking if the end position is below the start line
-    // and if the start of the triangle is within this area
-    if ((params.bbEndY >= lineStart) &&
-            (params.bbStartY < lineEnd))
-    {
-        return true;
-    }
-    return false;
-}
-
 bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
                            const std::span<TriangleStreamTypes::Texture>& texture,
                            const uint16_t lineStart,

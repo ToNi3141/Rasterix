@@ -45,7 +45,7 @@ public:
                          const Vec4& vertex,
                          const Vec3& normal);
 
-    bool lightingEnabled() const;
+    bool lightingEnabled() const { return m_lightingEnabled; }
 
     void enableLighting(bool enable);
     void setEmissiveColorMaterial(const Vec4& color);

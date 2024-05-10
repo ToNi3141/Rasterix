@@ -47,6 +47,8 @@ public:
     void clear();
 
     void setLineWidth(const float width) { m_lineWidth = width; } 
+
+    bool hasTriangles() const { return m_queue.size() >= 3; }
 private:
     std::span<const Triangle> constructTriangle();
     std::span<const Triangle> constructLine();

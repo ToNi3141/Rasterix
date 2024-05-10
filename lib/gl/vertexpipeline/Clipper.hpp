@@ -35,8 +35,24 @@ public:
 
     static std::span<VertexParameter> clip(ClipList& list, ClipList& listBuffer);
     
-    static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2);
-    static bool isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2);
+    static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    {
+        const OutCode oc0 = outCode(v0);
+        const OutCode oc1 = outCode(v1);
+        const OutCode oc2 = outCode(v2);
+
+        return oc0 & oc1 & oc2;
+    }
+
+    static bool isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    {
+        const OutCode oc0 = outCode(v0);
+        const OutCode oc1 = outCode(v1);
+        const OutCode oc2 = outCode(v2);
+
+        return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
+    }
+
 
 private:
     enum OutCode
@@ -50,15 +66,35 @@ private:
         OC_RIGHT   = 0x20
     };
 
-    static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
-    static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
-    static std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt);
-    static OutCode outCode(const Vec4 &v);
-    static bool hasOutCode(const Vec4& v, const OutCode oc);
+    inline static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
+    inline static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
+    inline static std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt);
+    inline static bool hasOutCode(const Vec4& v, const OutCode oc);
     
     static std::size_t clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);
 
-    static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
+    inline static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
+
+    static OutCode outCode(const Vec4& v)
+    {
+        OutCode c = OutCode::OC_NONE;
+        const float w = v[3];
+
+        if (v[0] < -w)
+            c |= OutCode::OC_LEFT;
+        if (v[0] > w)
+            c |= OutCode::OC_RIGHT;
+        if (v[1] < -w)
+            c |= OutCode::OC_BOTTOM;
+        if (v[1] > w)
+            c |= OutCode::OC_TOP;
+        if (v[2] < -w)
+            c |= OutCode::OC_NEAR;
+        if (v[2] > w)
+            c |= OutCode::OC_FAR;
+
+        return c;
+    }
 
     friend Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
 };

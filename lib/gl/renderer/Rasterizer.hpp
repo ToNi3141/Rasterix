@@ -45,14 +45,19 @@ public:
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
-    static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
-                                          const uint16_t lineStart,
-                                          const uint16_t lineEnd);
-
     static bool increment(TriangleStreamTypes::StaticParams& params, 
                           const std::span<TriangleStreamTypes::Texture>& texture,
                           const uint16_t lineStart,
                           const uint16_t lineEnd);
+
+    static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
+                                          const uint16_t lineStart,
+                                          const uint16_t lineEnd)
+    {
+        // Check if the triangle is in the current area by checking if the end position is below the start line
+        // and if the start of the triangle is within this area
+        return ((params.bbEndY >= lineStart) && (params.bbStartY < lineEnd));
+    }
 private:
     static constexpr uint32_t EDGE_FUNC_SIZE = 5;
     static constexpr int32_t EDGE_FUNC_ZERO_P_FIVE = (1 << (EDGE_FUNC_SIZE - 1));
