@@ -150,7 +150,7 @@ public:
 
     virtual bool drawTriangle(const TransformedTriangle& triangle) override
     {
-        TriangleStreamCmd<TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible()) [[unlikely]]
         {
@@ -177,7 +177,7 @@ public:
                 else
                 {
                     // The fix point interpolator needs the triangle incremented to the current line
-                    TriangleStreamCmd<TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                    TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
                     ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
                 }

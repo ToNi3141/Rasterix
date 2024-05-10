@@ -130,7 +130,7 @@ public:
 
     virtual bool drawTriangle(const TransformedTriangle& triangle) override
     {
-        TriangleStreamCmd<TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
+        TriangleStreamCmd<typename ListAssembler::List, TransformedTriangle::MAX_TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
         if (!triangleCmd.isVisible())
         {
