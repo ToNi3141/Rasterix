@@ -25,6 +25,7 @@
 #include "FixedSizeQueue.hpp"
 #include "ViewPort.hpp"
 #include "renderer/IRenderer.hpp"
+#include "Types.hpp"
 
 namespace rr
 {
@@ -32,19 +33,7 @@ namespace rr
 class PrimitiveAssembler
 {
 public:
-    struct Triangle
-    {
-        struct VertexParameter
-        {
-            Vec4 vertex;
-            Vec4 color;
-            std::array<Vec4, IRenderer::MAX_TMU_COUNT> tex;
-        };
-
-        VertexParameter* p0;
-        VertexParameter* p1;
-        VertexParameter* p2;
-    };
+    using Triangle = std::array<std::reference_wrapper<const VertexParameter>, 3>;
 
     PrimitiveAssembler(ViewPort& viewPort) : m_viewPort(viewPort) { }
 
@@ -54,34 +43,31 @@ public:
     void setExpectedPrimitiveCount(const std::size_t count) { m_expectedPrimitiveCount = count; }
 
     void setDrawMode(const RenderObj::DrawMode mode);
-    Triangle::VertexParameter& createParameter() { return m_queue.create_back(); }
+    VertexParameter& createParameter() { return m_queue.create_back(); }
     void clear();
 
     void setLineWidth(const float width) { m_lineWidth = width; } 
+
+    bool hasTriangles() const { return m_queue.size() >= 3; }
 private:
     std::span<const Triangle> constructTriangle();
     std::span<const Triangle> constructLine();
-    std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc0, const std::array<Vec4, IRenderer::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
+    std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
-    FixedSizeQueue<Triangle::VertexParameter, 3> m_queue {};
+    FixedSizeQueue<VertexParameter, 3> m_queue {};
 
     std::size_t m_expectedPrimitiveCount { 0 };
     std::size_t m_count { 0 };
-    Triangle::VertexParameter m_pTmp {};
+    VertexParameter m_pTmp {};
 
     std::size_t m_decrement { 0 };
 
     ViewPort& m_viewPort;
     float m_lineWidth { 1.0 };
     bool m_line { false };
-    Triangle::VertexParameter m_p0;
-    Triangle::VertexParameter m_p1;
-    Triangle::VertexParameter m_p2;
-    Triangle::VertexParameter m_p3;
-    Triangle::VertexParameter m_p4;
-    Triangle::VertexParameter m_p5;
-    std::array<PrimitiveAssembler::Triangle, 2> m_triangleBuffer;
+    std::array<VertexParameter, 6> m_vertexParameters;
+    std::array<PrimitiveAssembler::Triangle, 2> m_triangleBuffer { { { { m_pTmp, m_pTmp, m_pTmp } }, { { m_pTmp, m_pTmp, m_pTmp } } } };
 };
 
 } // namespace rr

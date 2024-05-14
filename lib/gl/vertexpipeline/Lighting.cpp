@@ -22,26 +22,26 @@ namespace rr
 {
 Lighting::Lighting()
 {
-    setEmissiveColorMaterial({{0.0f, 0.0f, 0.0f, 1.0f}});
-    setAmbientColorMaterial({{0.2f, 0.2f, 0.2f, 1.0}});
-    setAmbientColorScene({{0.2f, 0.2f, 0.2f, 1.0f}});
-    setDiffuseColorMaterial({{0.8f, 0.8f, 0.8f, 1.0}});
-    setSpecularColorMaterial({{0.0f, 0.0f, 0.0f, 1.0}});
+    setEmissiveColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0f } });
+    setAmbientColorMaterial({ { 0.2f, 0.2f, 0.2f, 1.0 } });
+    setAmbientColorScene({ { 0.2f, 0.2f, 0.2f, 1.0f } });
+    setDiffuseColorMaterial({ { 0.8f, 0.8f, 0.8f, 1.0 } });
+    setSpecularColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0 } });
     setSpecularExponentMaterial(0.0f);
 
     for (uint8_t i = 0; i < m_lights.size(); i++)
     {
         enableLight(i, false);
-        setAmbientColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setDiffuseColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setSpecularColorLight(i, {{0.0f, 0.0f, 0.0f, 1.0f}});
-        setPosLight(i, {{0.0f, 0.0f, 1.0f, 0.0f}});
+        setAmbientColorLight(i, { { 0.0f, 0.0f, 0.0f, 1.0f } });
+        setDiffuseColorLight(i, { { 0.0f, 0.0f, 0.0f, 1.0f } });
+        setSpecularColorLight(i, { { 0.0f, 0.0f, 0.0f, 1.0f } });
+        setPosLight(i, { { 0.0f, 0.0f, 1.0f, 0.0f } });
         setConstantAttenuationLight(i, 1.0f);
         setLinearAttenuationLight(i, 0.0f);
         setQuadraticAttenuationLight(i, 0.0f);
     }
-    setDiffuseColorLight(0, {{1.0f, 1.0f, 1.0f, 1.0f}}); // Light Zero has a slightly different configuration here
-    setSpecularColorLight(0, {{1.0f, 1.0f, 1.0f, 1.0f}}); // Light Zero has a slightly different configuration here
+    setDiffuseColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
+    setSpecularColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
 }
 
 void Lighting::calculateLights(Vec4& color,
@@ -86,7 +86,7 @@ void Lighting::calculateLight(Vec4 &color,
                          const Vec4& v0,
                          const Vec3& n0) const
 {
-    Vec4 n{{n0[0], n0[1], n0[2], 0}};
+    Vec4 n{ { n0[0], n0[1], n0[2], 0 } };
 
     if (lightConfig.enable)
     {
@@ -127,7 +127,7 @@ void Lighting::calculateLight(Vec4 &color,
         // Convert now the direction in dir to the half way vector
         if (lightConfig.localViewer)
         {
-            Vec4 dirEye{{0.0f, 0.0f, 0.0f, 1.0f}};
+            Vec4 dirEye { { 0.0f, 0.0f, 0.0f, 1.0f } };
             dirEye -= v0;
             dirEye.normalize();
             dir += dirEye;
@@ -140,7 +140,7 @@ void Lighting::calculateLight(Vec4 &color,
             // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
             if (lightConfig.position[3] != 0.0f)
             {
-                const Vec4 pointEye{{0.0f, 0.0f, 1.0f, 1.0f}};
+                const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
                 dir += pointEye;
                 dir.unit();
             }
@@ -197,11 +197,6 @@ void Lighting::calculateSceneLight(Vec4 &sceneLight, const Vec4& emissiveColor, 
 void Lighting::enableLighting(bool enable)
 {
     m_lightingEnabled = enable;
-}
-
-bool Lighting::lightingEnabled() const 
-{
-    return m_lightingEnabled;
 }
 
 void Lighting::enableLight(const uint8_t light, const bool enable)

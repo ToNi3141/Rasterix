@@ -24,8 +24,8 @@ void ViewPort::transform(Vec4 &v)
 {
     // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
     // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
-    v[0] = ((((v[0] + 1.0f) * m_viewportWidthHalf)) + m_viewportX);
-    v[1] = ((((v[1] + 1.0f) * m_viewportHeightHalf)) + m_viewportY);
+    v[0] = ((v[0] + 1.0f) * m_viewportWidthHalf) + m_viewportX;
+    v[1] = ((v[1] + 1.0f) * m_viewportHeightHalf) + m_viewportY;
     v[2] = (m_depthRangeScale * v[2]) + m_depthRangeOffset;
     v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
 }

@@ -36,8 +36,8 @@ class TextureStreamCmd
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
     using DseTransferType = std::span<const DSEC::Transfer>;
 public:
-    TextureStreamCmd(const uint8_t tmu,
-                    const std::span<const uint16_t>& pages)
+    TextureStreamCmd(const std::size_t tmu,
+                     const std::span<const uint16_t>& pages)
         : m_tmu { tmu }
         , m_texSize { pages.size() * RenderConfig::TEXTURE_PAGE_SIZE }
     {
@@ -62,7 +62,7 @@ public:
     DSEC::SCT dseOp() const { return DSEC::OP_LOAD; }
     const DseTransferType& dseTransfer() const { return m_dseData; }
 private:
-    uint8_t m_tmu {};
+    std::size_t m_tmu {};
     std::array<DSEC::Transfer, MAX_PAGES> m_pages;
     std::size_t m_texSize {};
     DseTransferType m_dseData {};

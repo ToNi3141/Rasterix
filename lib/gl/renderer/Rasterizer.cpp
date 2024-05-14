@@ -26,20 +26,6 @@
 namespace rr
 {
 
-bool Rasterizer::checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
-                                           const uint16_t lineStart,
-                                           const uint16_t lineEnd)
-{
-    // Check if the triangle is in the current area by checking if the end position is below the start line
-    // and if the start of the triangle is within this area
-    if ((params.bbEndY >= lineStart) &&
-            (params.bbStartY < lineEnd))
-    {
-        return true;
-    }
-    return false;
-}
-
 bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
                            const std::span<TriangleStreamTypes::Texture>& texture,
                            const uint16_t lineStart,
@@ -93,14 +79,6 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
     return false;
 }
 
-
-VecInt Rasterizer::calcRecip(VecInt val)
-{
-    // Assume DECIMAL_POINT is 12.
-    int64_t div = (1ll << (DECIMAL_POINT * 4)) / val; // Sn48 / Sn4 = Sn44
-    return div >> 20; // Sn44 >> 20 = Sn24
-}
-
 VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c)
 {
     VecInt val1 = (c[0] - a[0]) * (b[1] - a[1]);
@@ -111,14 +89,20 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
 
 bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
                            const std::span<TriangleStreamTypes::Texture>& texture, 
-                           const Triangle& triangle) const
+                           const TransformedTriangle& triangle) const
 {
-    static constexpr uint32_t EDGE_FUNC_SIZE = 5;
-    static constexpr uint32_t HALF_EDGE_FUNC_SIZE = (1 << (EDGE_FUNC_SIZE-1));
-
     Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
     Vec2i v1 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
     Vec2i v2 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
+
+    VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
+    VecInt sign = -1; // 1 backface culling; -1 frontface culling
+    sign = (area <= 0) ? -1 : 1; // No culling
+    area *= sign;
+    if (area <= 0x0) [[unlikely]]
+    {
+        return false;
+    }
     
     // Initialize Bounding box
     // Get the bounding box
@@ -128,20 +112,22 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     int32_t bbEndY = max(max(v0[1], v1[1]), v2[1]);
 
     // Convert to integer values
-    bbStartX = (bbStartX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
-    bbStartY = (bbStartY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
-    bbEndX = (bbEndX + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
-    bbEndY = (bbEndY + HALF_EDGE_FUNC_SIZE) >> EDGE_FUNC_SIZE;
+    bbStartX = bbStartX + EDGE_FUNC_ZERO_P_FIVE;
+    bbStartY = bbStartY + EDGE_FUNC_ZERO_P_FIVE;
+    bbEndX = bbEndX + EDGE_FUNC_ONE_P_ZERO + EDGE_FUNC_ZERO_P_FIVE;
+    bbEndY = bbEndY + EDGE_FUNC_ONE_P_ZERO + EDGE_FUNC_ZERO_P_FIVE;
 
-    ++bbEndX; // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-    ++bbEndY;
+    params.bbStartX = bbStartX >> EDGE_FUNC_SIZE;
+    params.bbStartY = bbStartY >> EDGE_FUNC_SIZE;
+    params.bbEndX = bbEndX >> EDGE_FUNC_SIZE;
+    params.bbEndY = bbEndY >> EDGE_FUNC_SIZE;
 
     if (m_enableScissor)
     {
-        bbStartX = max(bbStartX, static_cast<int32_t>(m_scissorX));
-        bbStartY = max(bbStartY, static_cast<int32_t>(m_scissorY));
-        bbEndX = min(bbEndX, static_cast<int32_t>(m_scissorX + m_scissorWidth));
-        bbEndY = min(bbEndY, static_cast<int32_t>(m_scissorY + m_scissorHeight));
+        bbStartX = max(bbStartX, m_scissorStartX);
+        bbStartY = max(bbStartY, m_scissorStartY);
+        bbEndX = min(bbEndX, m_scissorEndX);
+        bbEndY = min(bbEndY, m_scissorEndY);
 
         if (bbStartX >= bbEndX)
         {
@@ -163,21 +149,11 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
 
-    params.bbStartX = bbStartX;
-    params.bbStartY = bbStartY;
-    params.bbEndX = bbEndX;
-    params.bbEndY = bbEndY;
-
-    VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
-
-    VecInt sign = -1; // 1 backface culling; -1 frontface culling
-    sign = (area <= 0) ? -1 : 1; // No culling
-    area *= sign;
-    if (area <= 0x0) [[unlikely]]
-        return false;
+    bbStartX = params.bbStartX << EDGE_FUNC_SIZE;
+    bbStartY = params.bbStartY << EDGE_FUNC_SIZE;
 
     // Interpolate triangle
-    Vec2i p = { { (bbStartX << EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE } };
+    Vec2i p = { { bbStartX, bbStartY } };
     Vec3i& wi = params.wInit; // Sn.4
     Vec3i& wIncX = params.wXInc;
     Vec3i& wIncY = params.wYInc;
@@ -185,13 +161,13 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     wi[1] = edgeFunctionFixPoint(v2, v0, p);
     wi[2] = edgeFunctionFixPoint(v0, v1, p);
     wi *= sign;
-    Vec2i pw = { { (bbStartX << EDGE_FUNC_SIZE) + ((1)<< EDGE_FUNC_SIZE), bbStartY << EDGE_FUNC_SIZE } };
+    Vec2i pw = { { bbStartX + EDGE_FUNC_ONE_P_ZERO, bbStartY } };
     wIncX[0] = edgeFunctionFixPoint(v1, v2, pw);
     wIncX[1] = edgeFunctionFixPoint(v2, v0, pw);
     wIncX[2] = edgeFunctionFixPoint(v0, v1, pw);
     wIncX *= sign;
     wIncX -= wi;
-    Vec2i ph = { { bbStartX << EDGE_FUNC_SIZE, (bbStartY << EDGE_FUNC_SIZE) + ((1) << EDGE_FUNC_SIZE) } };
+    Vec2i ph = { { bbStartX, bbStartY + EDGE_FUNC_ONE_P_ZERO } };
     wIncY[0] = edgeFunctionFixPoint(v1, v2, ph);
     wIncY[1] = edgeFunctionFixPoint(v2, v0, ph);
     wIncY[2] = edgeFunctionFixPoint(v0, v1, ph);
@@ -200,16 +176,16 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
 
     float areaInv = 1.0f / area;
 
-    Vec3 wNorm = Vec3::createFromArray(&(wi.vec[0]), 3);
+    Vec3 wNorm = { { static_cast<float>(wi[0]), static_cast<float>(wi[1]), static_cast<float>(wi[2]) } };
     wNorm.mul(areaInv);
 
-    Vec3 wIncXNorm = Vec3::createFromArray(&(wIncX.vec[0]), 3);
+    Vec3 wIncXNorm = { { static_cast<float>(wIncX[0]), static_cast<float>(wIncX[1]), static_cast<float>(wIncX[2]) } };
     wIncXNorm.mul(areaInv);
 
-    Vec3 wIncYNorm = Vec3::createFromArray(&(wIncY.vec[0]), 3);
+    Vec3 wIncYNorm = { { static_cast<float>(wIncY[0]), static_cast<float>(wIncY[1]), static_cast<float>(wIncY[2]) } };
     wIncYNorm.mul(areaInv);
 
-    Vec3 w = triangle.oow;
+    Vec3 w = { { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] } };
     // Avoid that the w gets too small/big by normalizing it
     if (m_enableScaling)
     {
@@ -323,10 +299,10 @@ float Rasterizer::edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c)
 
 void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
 {
-    m_scissorX = x;
-    m_scissorY = y;
-    m_scissorWidth = width;
-    m_scissorHeight = height;
+    m_scissorStartX = x << EDGE_FUNC_SIZE;
+    m_scissorStartY = y << EDGE_FUNC_SIZE;
+    m_scissorEndX = (width << EDGE_FUNC_SIZE) + m_scissorStartX;
+    m_scissorEndY = (height << EDGE_FUNC_SIZE) + m_scissorStartY;
 }
 
 } // namespace rr

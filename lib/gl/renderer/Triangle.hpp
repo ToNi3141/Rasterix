@@ -26,15 +26,15 @@
 namespace rr
 {
 
-struct Triangle
+struct TransformedTriangle
 {
+    static constexpr std::size_t MAX_TMU_COUNT { 2 };
     const Vec4& vertex0;
     const Vec4& vertex1;
     const Vec4& vertex2;
-    const Vec3& oow; // Used for perspective correction
-    const std::span<const Vec4>& texture0;
-    const std::span<const Vec4>& texture1;
-    const std::span<const Vec4>& texture2;
+    const std::array<Vec4, MAX_TMU_COUNT>& texture0;
+    const std::array<Vec4, MAX_TMU_COUNT>& texture1;
+    const std::array<Vec4, MAX_TMU_COUNT>& texture2;
     const Vec4& color0;
     const Vec4& color1;
     const Vec4& color2;

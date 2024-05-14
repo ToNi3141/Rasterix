@@ -24,7 +24,7 @@ namespace rr
 Texture::Texture(IRenderer& renderer)
     : m_renderer(renderer)
 {
-    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
+    for (uint8_t i = 0; i < TransformedTriangle::MAX_TMU_COUNT; i++)
     {
         m_tmuConf[i].texEnvConf.setTmu(i);
         m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
@@ -35,7 +35,7 @@ bool Texture::uploadTexture()
 {
     bool ret { true };
 
-    for (uint8_t i = 0; i < MAX_TMU_COUNT; i++)
+    for (uint8_t i = 0; i < TransformedTriangle::MAX_TMU_COUNT; i++)
     {
         if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize())) [[unlikely]]
         {

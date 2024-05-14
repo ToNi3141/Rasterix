@@ -55,19 +55,21 @@ public:
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
-    void fetchAndTransform(PrimitiveAssembler::Triangle::VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    bool drawClippedTriangleList(std::span<VertexParameter> list);
+    bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
 
     bool m_enableNormalizing { true };
 
     // Current active TMU
-    uint8_t m_tmu {};
+    std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
     Lighting m_lighting;
     ViewPort m_viewPort;
     MatrixStack m_matrixStack;
     Culling m_culling;
-    std::array<TexGen, IRenderer::MAX_TMU_COUNT> m_texGen;
+    std::array<TexGen, TransformedTriangle::MAX_TMU_COUNT> m_texGen;
     PrimitiveAssembler m_primitiveAssembler { m_viewPort };
 };
 

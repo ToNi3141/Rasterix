@@ -81,13 +81,13 @@ private:
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
     Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
     Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
-    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, IRenderer::MAX_TMU_COUNT> m_tmStack {};
+    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, TransformedTriangle::MAX_TMU_COUNT> m_tmStack {};
     Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal
-    std::array<Mat44, IRenderer::MAX_TMU_COUNT> m_tm; // Texture Matrix
+    std::array<Mat44, TransformedTriangle::MAX_TMU_COUNT> m_tm; // Texture Matrix
     Mat44 m_c {}; // Color
     bool m_modelMatrixChanged { true };
     bool m_projectionMatrixChanged { true };

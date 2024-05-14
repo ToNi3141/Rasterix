@@ -25,7 +25,7 @@ PixelPipeline::PixelPipeline(IRenderer& renderer)
 {
 }
 
-bool PixelPipeline::drawTriangle(const Triangle& triangle) 
+bool PixelPipeline::drawTriangle(const TransformedTriangle& triangle) 
 {
     return m_renderer.drawTriangle(triangle);
 }

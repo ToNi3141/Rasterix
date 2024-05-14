@@ -37,7 +37,7 @@ public:
 
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
                    const std::span<TriangleStreamTypes::Texture>& texture, 
-                   const Triangle& triangle) const;
+                   const TransformedTriangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable) { m_enableScissor = enable; }
@@ -45,26 +45,33 @@ public:
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
-    static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
-                                          const uint16_t lineStart,
-                                          const uint16_t lineEnd);
-
     static bool increment(TriangleStreamTypes::StaticParams& params, 
                           const std::span<TriangleStreamTypes::Texture>& texture,
                           const uint16_t lineStart,
                           const uint16_t lineEnd);
-private:
-    static constexpr uint64_t DECIMAL_POINT = 12;
-    inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
-    inline static VecInt calcRecip(VecInt val);
 
-    int32_t m_scissorX { 0 };
-    int32_t m_scissorY { 0 };
-    uint32_t m_scissorWidth { 0 };
-    uint32_t m_scissorHeight { 0 };
+    static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
+                                          const uint16_t lineStart,
+                                          const uint16_t lineEnd)
+    {
+        // Check if the triangle is in the current area by checking if the end position is below the start line
+        // and if the start of the triangle is within this area
+        return ((params.bbEndY >= lineStart) && (params.bbStartY < lineEnd));
+    }
+private:
+    static constexpr uint32_t EDGE_FUNC_SIZE = 5;
+    static constexpr int32_t EDGE_FUNC_ZERO_P_FIVE = (1 << (EDGE_FUNC_SIZE - 1));
+    static constexpr int32_t EDGE_FUNC_ONE_P_ZERO = (1 << EDGE_FUNC_SIZE);
+
+    inline static VecInt edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c);
+
+    int32_t m_scissorStartX { 0 };
+    int32_t m_scissorStartY { 0 };
+    int32_t m_scissorEndX { 0 };
+    int32_t m_scissorEndY { 0 };
     bool m_enableScissor { false };
     const bool m_enableScaling { false };
-    std::bitset<IRenderer::MAX_TMU_COUNT> m_tmuEnable {};
+    std::bitset<TransformedTriangle::MAX_TMU_COUNT> m_tmuEnable {};
 
 };
 

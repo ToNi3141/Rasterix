@@ -19,9 +19,10 @@
 #define CLIPPER_HPP
 
 #include "math/Vec.hpp"
-#include <tuple>
+#include <span>
 #include <array>
 #include "renderer/IRenderer.hpp"
+#include "PrimitiveAssembler.hpp"
 
 namespace rr
 {
@@ -29,20 +30,29 @@ namespace rr
 class Clipper 
 {
 public:
-    // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes
-    using ClipTexCoords = std::array<Vec4, IRenderer::MAX_TMU_COUNT>;
-    using ClipVertList = std::array<Vec4, 9>;
-    using ClipTexCoordList = std::array<ClipTexCoords, 9>;
+    // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
+    using ClipList = std::array<VertexParameter, 9>;
 
-    static std::tuple<const uint32_t,
-        ClipVertList &, 
-        ClipTexCoordList &,
-        ClipVertList &> clip(ClipVertList& vertList,
-                             ClipVertList& vertListBuffer,
-                             ClipTexCoordList& texCoordList,
-                             ClipTexCoordList& texCoordListBuffer,
-                             ClipVertList& colorList,
-                             ClipVertList& colorListBuffer);
+    static std::span<VertexParameter> clip(ClipList& list, ClipList& listBuffer);
+    
+    static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    {
+        const OutCode oc0 = outCode(v0);
+        const OutCode oc1 = outCode(v1);
+        const OutCode oc2 = outCode(v2);
+
+        return oc0 & oc1 & oc2;
+    }
+
+    static bool isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    {
+        const OutCode oc0 = outCode(v0);
+        const OutCode oc1 = outCode(v1);
+        const OutCode oc2 = outCode(v2);
+
+        return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
+    }
+
 
 private:
     enum OutCode
@@ -56,19 +66,35 @@ private:
         OC_RIGHT   = 0x20
     };
 
-    static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
-    static void lerpVert(Vec4& vOut, const Vec4& v0, const Vec4& v1, const float amt);
-    static void lerpTexCoord(ClipTexCoords& vOut, const ClipTexCoords& v0, const ClipTexCoords& v1, const float amt);
-    static OutCode outCode(const Vec4 &v);
+    inline static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
+    inline static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
+    inline static std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt);
+    inline static bool hasOutCode(const Vec4& v, const OutCode oc);
     
-    static uint32_t clipAgainstPlane(ClipVertList& vertListOut,
-                                     ClipTexCoordList& texCoordListOut,
-                                     ClipVertList& colorListOut,
-                                     const OutCode clipPlane,
-                                     const ClipVertList& vertListIn,
-                                     const ClipTexCoordList& texCoordListIn,
-                                     const ClipVertList& colorListIn,
-                                     const uint32_t listInSize);
+    static std::size_t clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);
+
+    inline static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
+
+    static OutCode outCode(const Vec4& v)
+    {
+        OutCode c = OutCode::OC_NONE;
+        const float w = v[3];
+
+        if (v[0] < -w)
+            c |= OutCode::OC_LEFT;
+        if (v[0] > w)
+            c |= OutCode::OC_RIGHT;
+        if (v[1] < -w)
+            c |= OutCode::OC_BOTTOM;
+        if (v[1] > w)
+            c |= OutCode::OC_TOP;
+        if (v[2] < -w)
+            c |= OutCode::OC_NEAR;
+        if (v[2] > w)
+            c |= OutCode::OC_FAR;
+
+        return c;
+    }
 
     friend Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
 };

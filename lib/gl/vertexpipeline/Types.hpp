@@ -18,6 +18,10 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
+#include "math/Vec.hpp"
+#include "renderer/IRenderer.hpp"
+#include <array>
+
 namespace rr
 {
 
@@ -26,6 +30,13 @@ enum class Face
     BACK,
     FRONT,
     FRONT_AND_BACK
+};
+
+struct VertexParameter
+{
+    Vec4 vertex;
+    Vec4 color;
+    std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> tex;
 };
 
 } // namespace rr

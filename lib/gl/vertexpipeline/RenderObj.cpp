@@ -34,7 +34,7 @@ Vec4 RenderObj::getVertex(const uint32_t index) const
 
 Vec4 RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
 {
-    if (texCoordArrayEnabled()[tmu])
+    if (m_texCoordArrayEnabled[tmu])
     {
         return getFromArray<Vec4>(m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
     }
@@ -176,8 +176,8 @@ void RenderObj::logCurrentConfig() const
     for (uint32_t i = 0; i < MAX_TMU_COUNT; i++)
     {
         SPDLOG_DEBUG("  TexCoordArray {}:", i);
-        SPDLOG_DEBUG("      m_texCoordArrayEnabled {}", texCoordArrayEnabled()[i]);
-        if (texCoordArrayEnabled()[i])
+        SPDLOG_DEBUG("      m_texCoordArrayEnabled {}", m_texCoordArrayEnabled[i]);
+        if (m_texCoordArrayEnabled[i])
         {
             SPDLOG_DEBUG("      m_texCoordSize {}", m_texCoordSize[i]);
             SPDLOG_DEBUG("      m_texCoordType {}", typeToString(m_texCoordType[i]));

@@ -33,7 +33,7 @@
 namespace rr
 {
 
-template <uint8_t MAX_TMU_COUNT, bool ENABLE_FLOAT_INTERPOLATION>
+template <typename List, uint8_t TMU_COUNT, bool ENABLE_FLOAT_INTERPOLATION>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -42,18 +42,18 @@ public:
     {
 #pragma pack(push, 4)
         TriangleStreamTypes::StaticParams param;
-        std::array<TriangleStreamTypes::Texture, MAX_TMU_COUNT> texture;
+        std::array<TriangleStreamTypes::Texture, TMU_COUNT> texture;
 #pragma pack(pop)
     };
     struct TriangleDescX
     {
 #pragma pack(push, 4)
         TriangleStreamTypes::StaticParamsX param;
-        std::array<TriangleStreamTypes::TextureX, MAX_TMU_COUNT> texture;
+        std::array<TriangleStreamTypes::TextureX, TMU_COUNT> texture;
         void operator=(const TriangleDesc& t)
         {
             param = t.param;
-            for (uint32_t i = 0; i < texture.size(); i++)
+            for (uint32_t i = 0; i < TMU_COUNT; i++)
             {
                 texture[i] = t.texture[i];
             }
@@ -63,7 +63,7 @@ public:
 
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
     
-    TriangleStreamCmd(const Rasterizer& rasterizer, const Triangle& triangle)
+    TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
     }
@@ -85,7 +85,7 @@ public:
     { 
         desc[0][0] = m_desc;
     }
-    static constexpr uint32_t command() { return TRIANGLE_STREAM | sizeof(TrDesc); }
+    static constexpr uint32_t command() { return TRIANGLE_STREAM | (List::template sizeOf<TrDesc>()); }
 
 private:
     TriangleDesc m_desc;
