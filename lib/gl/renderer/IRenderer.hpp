@@ -45,7 +45,10 @@ public:
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
-    virtual void render() = 0;
+    virtual void swapDisplayList() = 0;
+
+    /// @brief Uploads the display list to the hardware
+    virtual void uploadDisplayList() = 0;
 
     /// @brief Creates a new texture 
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id

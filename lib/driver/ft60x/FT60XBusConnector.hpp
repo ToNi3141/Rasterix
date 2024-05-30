@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 
-#include "../util/GenericMemoryBusConnector.hpp"
+#include "GenericMemoryBusConnector.hpp"
 #include <ftd3xx.h>
 
 #include <stdio.h>

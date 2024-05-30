@@ -6,4 +6,3 @@ if (NOT BUILD_RP2040)
     # exclude it from the RP2040 build, because the memory is too small
     add_subdirectory(mipmap)
 endif()
-

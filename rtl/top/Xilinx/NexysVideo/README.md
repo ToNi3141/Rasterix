@@ -26,7 +26,7 @@ There are two variants available:
   - Mip mapping
   - 25 bit fix point
 
-You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must enable the `VARIANT_RRXIF` or `VARIANT_RRXEF` for the library build.
+You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must choose the preset with the `_rrxif` or `_rrxef` suffix.
 
 To build the binaries use the following commands.
 ```sh
@@ -72,10 +72,10 @@ Before configuring and starting the build, download from FTDI (https://ftdichip.
 To build the library an the minimal example, switch to the source directory and type
 ```sh
 cd <rasterix_directory>
-cmake --preset native -DVARIANT_RRXIF=ON
+cmake --preset native_rrxif
 cmake --build build/native --config Release --parallel
 ```
-Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native -G "Visual Studio 16 2019" -A Win32 -DVARIANT_RRXIF=ON` otherwise the build might fail.
+Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native_rrxif -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
 
 To run the minimal example, type
 ```
@@ -90,7 +90,7 @@ This is a more specific preset for windows which also builds WGL. Please refer t
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
-cmake --preset win32 -DVARIANT_RRXIF=ON
+cmake --preset win32_rrxif
 cmake --build .\build\win32\ --config Release --parallel
 ```
 

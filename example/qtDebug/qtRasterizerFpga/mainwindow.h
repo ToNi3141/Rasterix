@@ -50,7 +50,6 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
-    rr::Renderer<rr::RenderConfigRRXIFSimulation> m_renderer{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -59,7 +58,6 @@ public:
     static const uint32_t RESOLUTION_W = 1024;
 private:
     rr::FT60XBusConnector m_busConnector;
-    rr::Renderer<rr::RenderConfigRRXEFNexys> m_renderer{m_busConnector};
 #endif
 
     Ui::MainWindow *ui;

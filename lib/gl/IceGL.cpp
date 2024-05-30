@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <spdlog/spdlog.h>
+#include "RenderConfigs.hpp"
+#include "renderer/Renderer.hpp"
 
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
 namespace rr
@@ -32,29 +34,51 @@ IceGL& IceGL::getInstance()
     return *instance;
 }
 
-bool IceGL::createInstance(IRenderer& renderer)
+class RenderDevice
+{
+public:
+    RenderDevice(IBusConnector& busConnector)
+        : renderer { busConnector }
+        , pixelPipeline { renderer }
+        , vertexPipeline { pixelPipeline }
+    {
+    }
+
+    Renderer<RenderConfig> renderer;
+    VertexPipeline vertexPipeline;
+    PixelPipeline pixelPipeline;
+};
+
+bool IceGL::createInstance(IBusConnector& busConnector)
 {
     if (instance)
     {
         delete instance;
     }
-    instance = new IceGL { renderer };
+    instance = new IceGL { busConnector };
     return instance != nullptr;
 }
 
-IceGL::IceGL(IRenderer &renderer)
-    : m_renderer(renderer)
-    , m_pixelPipeline(renderer)
-    , m_vertexPipeline(m_pixelPipeline)
+void IceGL::destroy()
+{
+    if (instance)
+    {
+        delete instance;
+        instance = nullptr;
+    }
+}
+
+IceGL::IceGL(IBusConnector& busConnector)
+    : m_renderDevice { new RenderDevice { busConnector } }
 {
     // Set initial values
-    m_renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
-    m_renderer.setClearColor({ {0, 0, 0, 0 } });
-    m_renderer.setClearDepth(65535);
-    m_renderer.setFogColor({ { 255, 255, 255, 255 } });
+    m_renderDevice->renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
+    m_renderDevice->renderer.setClearColor({ {0, 0, 0, 0 } });
+    m_renderDevice->renderer.setClearDepth(65535);
+    m_renderDevice->renderer.setFogColor({ { 255, 255, 255, 255 } });
     std::array<float, 33> fogLut {};
     std::fill(fogLut.begin(), fogLut.end(), 1.0f);
-    m_renderer.setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
+    m_renderDevice->renderer.setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
 
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(glAccum));
@@ -518,10 +542,21 @@ IceGL::IceGL(IRenderer &renderer)
     // }
 }
 
-void IceGL::render()
+IceGL::~IceGL()
 {
-    SPDLOG_INFO("Render called");
-    m_renderer.render();
+    delete m_renderDevice;
+}
+
+void IceGL::swapDisplayList()
+{
+    SPDLOG_INFO("swapDisplayLIst called");
+    m_renderDevice->renderer.swapDisplayList();
+}
+
+void IceGL::uploadDisplayList()
+{
+    SPDLOG_INFO("uploadDisplayList called");
+    m_renderDevice->renderer.uploadDisplayList();
 }
 
 const char *IceGL::getLibExtensions() const
@@ -557,4 +592,40 @@ void IceGL::addLibExtension(std::string extension)
     }
     m_glExtensions.append(extension);
 }
+
+VertexPipeline& IceGL::vertexPipeline()
+{
+    return m_renderDevice->vertexPipeline;
+}
+
+PixelPipeline& IceGL::pixelPipeline()
+{
+    return m_renderDevice->pixelPipeline;
+}
+
+VertexQueue& IceGL::vertexQueue()
+{
+    return m_vertexQueue;
+}
+
+uint16_t IceGL::getMaxTextureSize() const
+{
+    return m_renderDevice->renderer.getMaxTextureSize();
+}
+
+std::size_t IceGL::getTmuCount() const
+{
+    return m_renderDevice->renderer.getTmuCount();
+}
+
+bool IceGL::isMipmappingAvailable() const
+{
+    return m_renderDevice->renderer.isMipmappingAvailable();
+}
+
+bool IceGL::setRenderResolution(const uint16_t x, const uint16_t y)
+{
+    return m_renderDevice->renderer.setRenderResolution(x, y);
+}
+
 } // namespace rr

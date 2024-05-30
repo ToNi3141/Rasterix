@@ -1,17 +1,74 @@
+// Rasterix
+// https://github.com/ToNi3141/Rasterix
+// Copyright (c) 2024 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include "wgl.h"
 #include <spdlog/spdlog.h>
 #include "IceGL.hpp"
-#include "renderer/Renderer.hpp"
 #include "FT60XBusConnector.hpp"
-#include "RenderConfigs.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
+#include "ThreadedRenderer.hpp"
 
 using namespace rr;
 
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
 FT60XBusConnector m_busConnector;
-Renderer<RenderConfigRRXIFNexys> m_renderer{m_busConnector};
+
+class GLInitGuard
+{
+public:
+    GLInitGuard()
+    {
+        rr::IceGL::createInstance(m_busConnector);
+#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
+        rr::IceGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
+        rr::IceGL::getInstance().addLibExtension("WGL_ARB_render_texture");
+        rr::IceGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
+        rr::IceGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
+        rr::IceGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
+        rr::IceGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
+        rr::IceGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
+        rr::IceGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
+        rr::IceGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
+        rr::IceGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
+        rr::IceGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
+        rr::IceGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
+        rr::IceGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
+        rr::IceGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
+        rr::IceGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
+        rr::IceGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
+#undef ADDRESS_OF
+        m_renderer.setRenderer(&rr::IceGL::getInstance());
+    }
+    ~GLInitGuard()
+    {
+        m_renderer.waitForThread();
+        rr::IceGL::destroy();
+    }
+
+    void render()
+    {
+        m_renderer.waitForThread();
+        m_renderer.render();
+    }
+
+private:
+    rr::ThreadedRenderer<rr::IceGL> m_renderer {};
+} guard;
 
 // Wiggle API
 // -------------------------------------------------------
@@ -39,33 +96,8 @@ GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
     // or you can even set multi_sink logger as default logger
     spdlog::set_default_logger(logger);
 
-    IceGL::createInstance(m_renderer);
-    m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
-
-    static bool lazyInit = false;
-    if (!lazyInit)
-    {
-#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
-        rr::IceGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
-        rr::IceGL::getInstance().addLibExtension("WGL_ARB_render_texture");
-        rr::IceGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
-        rr::IceGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
-        rr::IceGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
-        rr::IceGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
-        rr::IceGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
-        rr::IceGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
-        rr::IceGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
-        rr::IceGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
-        rr::IceGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
-        rr::IceGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
-        rr::IceGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
-        rr::IceGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
-        rr::IceGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
-        rr::IceGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
-
-        lazyInit = true;
-#undef ADDRESS_OF
-    }
+    IceGL::createInstance(m_busConnector);
+    IceGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
 
     return reinterpret_cast<HGLRC>(&IceGL::getInstance());
 }
@@ -176,7 +208,7 @@ GLAPI BOOL APIENTRY impl_wglShareLists(HGLRC hglrc, HGLRC hglrc2)
 GLAPI BOOL APIENTRY impl_wglSwapBuffers(HDC hdc)
 {
     SPDLOG_DEBUG("wglSwapBuffers called");
-    IceGL::getInstance().render();
+    guard.render();
     return TRUE;
 }
 
@@ -186,7 +218,7 @@ GLAPI BOOL APIENTRY impl_wglSwapLayerBuffers(HDC hdc, UINT planes)
 
     if ((planes & WGL_SWAP_MAIN_PLANE) != 0U) {
 
-        IceGL::getInstance().render();
+        guard.render();
     }
 
     return TRUE;

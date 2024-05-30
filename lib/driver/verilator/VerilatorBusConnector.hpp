@@ -2,7 +2,7 @@
 #define VERILATORBUSCONNECTOR_H
 
 #include "verilated.h"
-#include "util/GenericMemoryBusConnector.hpp"
+#include "GenericMemoryBusConnector.hpp"
 #include "Vtop.h"
 #include <span>
 #include <verilated_vcd_c.h>
