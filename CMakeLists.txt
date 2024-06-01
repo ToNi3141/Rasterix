@@ -12,9 +12,6 @@ option(BUILD_SHARED_LIBRARY "Builds a dynamic loadable library" OFF)
 option(DRIVER_FT60X "Includes a driver for a FT60X bus connector" OFF)
 option(DRIVER_VERILATOR "Includes a driver for the Verilator simulation" OFF)
 option(DRIVER_DMA_PROXY "Includes a driver for the DMA Proxy bus connector" OFF)
-# Selects the hardware variant
-option(VARIANT_RRXIF "The renderer uses an internal framebuffer for rendering" OFF)
-option(VARIANT_RRXEF "The renderer uses an external framebuffer for rendering" OFF)
 # Enables logging
 option(ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 
