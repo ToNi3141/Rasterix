@@ -1,7 +1,8 @@
 add_library(gl STATIC
+    RRXGL.cpp
+    glImpl.cpp
     gl.cpp
     glu.cpp
-    IceGL.cpp
     vertexpipeline/Lighting.cpp
     vertexpipeline/Clipper.cpp
     vertexpipeline/TexGen.cpp
@@ -19,7 +20,6 @@ add_library(gl STATIC
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog)
-set_target_properties(gl PROPERTIES COMPILE_FLAGS "")
 target_include_directories(gl PUBLIC .)
 
 add_compile_definitions(

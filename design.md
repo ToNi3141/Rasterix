@@ -34,7 +34,7 @@ The following diagram shows roughly the flow a triangle takes, until it is seen 
 
 The driver is build with the following components:
 - `Application`: The application is the user of the library to draw 3D images.
-- `IceGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
+- `RRXGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
 - `VertexPipeline`: Implements the geometry transformation, clipping and lighting.
 - `PixelPipeline`: Controls the pixel pipeline of the hardware.
 - `Renderer`: Implements the IRenderer interface, executes the rasterization, compiles display lists and sends them via the `IBusConnecter` to the Rasterix.

@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ICEGL_HPP
-#define ICEGL_HPP
+#ifndef RRXGL_HPP
+#define RRXGL_HPP
 
 #include <vector>
 #include <array>
 #include <functional>
-#include "renderer/IBusConnector.hpp"
-#include "gl.h"
+#include "IBusConnector.hpp"
 #include <map>
 #include "vertexpipeline/VertexQueue.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
@@ -32,10 +31,10 @@
 namespace rr
 {
 class RenderDevice;
-class IceGL
+class RRXGL
 {
 public:
-    static IceGL& getInstance();
+    static RRXGL& getInstance();
     static bool createInstance(IBusConnector& busConnector);
     static void destroy();
 
@@ -77,8 +76,8 @@ public:
     /// @return true if succeeded
     bool setRenderResolution(const uint16_t x, const uint16_t y);
 private:
-    IceGL(IBusConnector& busConnector);
-    ~IceGL();
+    RRXGL(IBusConnector& busConnector);
+    ~RRXGL();
     VertexQueue m_vertexQueue {};
     RenderDevice* m_renderDevice { nullptr };
 
@@ -91,4 +90,4 @@ private:
 };
 
 } // namespace rr
-#endif // ICEGL_HPP
+#endif // RRXGL_HPP

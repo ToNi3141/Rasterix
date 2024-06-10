@@ -1,4 +1,4 @@
-#include "IceGL.hpp"
+#include "RRXGL.hpp"
 #include "gl.h"
 #include "glu.h"
 
@@ -114,8 +114,8 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::IceGL::createInstance(m_busConnector);
-        rr::IceGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+        rr::RRXGL::createInstance(m_busConnector);
+        rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
     void execute()
@@ -126,8 +126,8 @@ public:
             gpio_put(LED_PIN, led);
             led = !led;
             m_scene.draw();
-            rr::IceGL::getInstance().swapDisplayList();
-            rr::IceGL::getInstance().uploadDisplayList();
+            rr::RRXGL::getInstance().swapDisplayList();
+            rr::RRXGL::getInstance().uploadDisplayList();
         }
     }
 private:

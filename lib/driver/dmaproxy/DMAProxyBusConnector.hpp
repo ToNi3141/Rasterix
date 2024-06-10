@@ -18,7 +18,7 @@
 #ifndef DMAPROXYBUSCONNECTOR_HPP
 #define DMAPROXYBUSCONNECTOR_HPP
 
-#include "renderer/IBusConnector.hpp"
+#include "IBusConnector.hpp"
 struct channel_buffer;
 namespace rr
 {

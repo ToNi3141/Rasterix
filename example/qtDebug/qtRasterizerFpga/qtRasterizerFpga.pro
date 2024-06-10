@@ -19,14 +19,13 @@ TARGET = qtRasterizerFpga
 SOURCES += main.cpp\
     $${ICEGL_PATH}/vertexpipeline/VertexPipeline.cpp \
         mainwindow.cpp \
-    $${ICEGL_PATH}/IceGL.cpp \
+    $${ICEGL_PATH}/RRXGL.cpp \
     $${ICEGL_PATH}/vertexpipeline/Clipper.cpp \
     $${ICEGL_PATH}/vertexpipeline/Lighting.cpp \
     $${ICEGL_PATH}/vertexpipeline/TexGen.cpp \
     $${ICEGL_PATH}/vertexpipeline/RenderObj.cpp \
     $${ICEGL_PATH}/pixelpipeline/PixelPipeline.cpp \
-    $${ICEGL_PATH}/gl.cpp \
-    $${ICEGL_PATH}/glu.cpp \
+    $${ICEGL_PATH}/glImpl.cpp \
     $${ICEGL_PATH}/renderer/Rasterizer.cpp \
     $${ICEGL_PATH}/vertexpipeline/ViewPort.cpp \
     $${ICEGL_PATH}/vertexpipeline/MatrixStack.cpp \
@@ -34,7 +33,9 @@ SOURCES += main.cpp\
     $${ICEGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
     $${ICEGL_PATH}/pixelpipeline/Fogging.cpp \
     $${ICEGL_PATH}/pixelpipeline/Texture.cpp \
-    $${ICEGL_PATH}/pixelpipeline/Stencil.cpp
+    $${ICEGL_PATH}/pixelpipeline/Stencil.cpp \
+    $${ICEGL_PATH}/gl.cpp \
+    $${ICEGL_PATH}/glu.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \

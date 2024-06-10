@@ -21,7 +21,7 @@
 
 #include "gl.h"
 #include <spdlog/spdlog.h>
-#include "IceGL.hpp"
+#include "RRXGL.hpp"
 #include "renderer/IRenderer.hpp"
 #include <cstring>
 #include "vertexpipeline/MatrixStack.hpp"
@@ -215,10 +215,10 @@ FragmentPipeline::PipelineConfig::BlendFunc convertGlBlendFuncToRenderBlendFunc(
         return FragmentPipeline::PipelineConfig::BlendFunc::SRC_ALPHA_SATURATE;
     default:
         SPDLOG_WARN("convertGlBlendFuncToRenderBlendFunc 0x{:X} not suppored", blendFunc);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
     }
-    IceGL::getInstance().setError(GL_INVALID_ENUM);
+    RRXGL::getInstance().setError(GL_INVALID_ENUM);
     return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
 }
 
@@ -227,23 +227,23 @@ void setClientState(const GLenum array, bool enable)
     switch (array) {
     case GL_COLOR_ARRAY:
         SPDLOG_DEBUG("setClientState GL_COLOR_ARRAY {}", enable);
-        IceGL::getInstance().vertexQueue().enableColorArray(enable);
+        RRXGL::getInstance().vertexQueue().enableColorArray(enable);
         break;
     case GL_NORMAL_ARRAY:
         SPDLOG_DEBUG("setClientState GL_NORMAL_ARRAY {}", enable);
-        IceGL::getInstance().vertexQueue().enableNormalArray(enable);
+        RRXGL::getInstance().vertexQueue().enableNormalArray(enable);
         break;
     case GL_TEXTURE_COORD_ARRAY:
         SPDLOG_DEBUG("setClientState GL_TEXTURE_COORD_ARRAY {}", enable);
-        IceGL::getInstance().vertexQueue().enableTexCoordArray(enable);
+        RRXGL::getInstance().vertexQueue().enableTexCoordArray(enable);
         break;
     case GL_VERTEX_ARRAY:
         SPDLOG_DEBUG("setClientState GL_VERTEX_ARRAY {}", enable);
-        IceGL::getInstance().vertexQueue().enableVertexArray(enable);
+        RRXGL::getInstance().vertexQueue().enableVertexArray(enable);
         break;
     default:
         SPDLOG_WARN("setClientState 0x{:X} 0x{:X} not suppored", array, enable);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         break;
     }
 }
@@ -265,7 +265,7 @@ RenderObj::Type convertType(GLenum type)
         return RenderObj::Type::UNSIGNED_INT;
     default:
         SPDLOG_WARN("convertType 0x{:X} not suppored", type);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return RenderObj::Type::BYTE;
     }
 }
@@ -293,7 +293,7 @@ RenderObj::DrawMode convertDrawMode(GLenum drawMode)
         return RenderObj::DrawMode::LINE_LOOP;
     default:
         SPDLOG_WARN("convertDrawMode 0x{:X} not suppored", drawMode);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return RenderObj::DrawMode::TRIANGLES;
     }
 }
@@ -308,7 +308,7 @@ Texture::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
         return Texture::TextureWrapMode::REPEAT;
     default:
         SPDLOG_WARN("convertGlTextureWarpMode 0x{:X} not suppored", mode);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return Texture::TextureWrapMode::REPEAT;
     }
 }
@@ -336,7 +336,7 @@ TestFunc convertTestFunc(const GLenum mode)
 
     default:
         SPDLOG_WARN("convertTestFunc 0x{:X} not suppored", mode);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return TestFunc::ALWAYS;
     }
 }
@@ -364,7 +364,7 @@ Stencil::StencilConfig::StencilOp convertStencilOp(const GLenum mode)
 
     default:
         SPDLOG_WARN("convertStencilOp 0x{:X} not suppored", mode);
-        IceGL::getInstance().setError(GL_INVALID_ENUM);
+        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return Stencil::StencilConfig::StencilOp::KEEP;
     }
 }
