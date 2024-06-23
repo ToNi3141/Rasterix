@@ -67,7 +67,7 @@ module DmaStreamEngine #(
     // Width of the axi interfaces
     parameter STREAM_WIDTH = 32,
     // Width of address bus in bits
-    parameter ADDR_WIDTH = 16,
+    parameter ADDR_WIDTH = 32,
     // Width of wstrb (width of data bus in words)
     parameter STRB_WIDTH = (STREAM_WIDTH / 8),
     // Width of ID signal
@@ -210,7 +210,7 @@ module DmaStreamEngine #(
     reg  [ 1 : 0]               muxOut;
     reg  [ 1 : 0]               tmpMuxIn;
     reg  [ 1 : 0]               tmpMuxOut;
-    reg  [OP_IMM_SIZE - 1 : 0]  counter;
+    reg  [ADDR_WIDTH - 1 : 0]   counter;
     
     reg  [ADDR_WIDTH - 1 : 0]   addr;
     reg                         enableWriteChannel;
@@ -362,7 +362,17 @@ module DmaStreamEngine #(
                         tmpMuxIn <= axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE];
                         tmpMuxOut <= axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE];
                     end
-                    counter <= counterConverted;
+
+                    if (ADDR_WIDTH < OP_IMM_SIZE)
+                    begin
+                        /* verilator lint_off SELRANGE */
+                        counter <= counterConverted[0 +: ADDR_WIDTH];
+                    end
+                    else
+                    begin : SetCounter
+                        localparam REPLICA = (ADDR_WIDTH < OP_IMM_SIZE) ? 0 : (ADDR_WIDTH - OP_IMM_SIZE);
+                        counter <= { { REPLICA { 1'b0 } }, counterConverted };
+                    end
                     
                     if (axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE] == 0 && axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE] == 0)
                     begin

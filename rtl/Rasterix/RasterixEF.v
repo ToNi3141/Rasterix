@@ -290,7 +290,7 @@ module RasterixEF #(
 
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .ADDR_WIDTH(28),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH)
     ) dma (
         .aclk(aclk),
