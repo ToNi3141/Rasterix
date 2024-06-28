@@ -713,6 +713,7 @@ module RasterixEF #(
             assign m_stencil_arready = 1;
             assign m_stencil_rvalid = 1;
             assign m_stencil_rdata = 0;
+            assign m_stencil_wready = 1;
             assign stencilBufferApplied = 1;
         end
     endgenerate

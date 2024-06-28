@@ -658,7 +658,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
     for (uint32_t i = 0; i < 2; i++) 
     {
         // COMMAND ///////////////////////////
-        configPhase(t, COMMAND, 0x100);
+        configPhase(t, COMMAND, 0x8000'0000);
 
         // First test the address channel (data and address are independent)
         // STORE ADDR ////////////////////////
@@ -685,7 +685,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
-        REQUIRE(t.m_mem_axi_awaddr == 0x100);
+        REQUIRE(t.m_mem_axi_awaddr == 0x8000'0000);
 
         rr::ut::clk(top);
 
@@ -699,7 +699,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
-        REQUIRE(t.m_mem_axi_awaddr == 0x180);
+        REQUIRE(t.m_mem_axi_awaddr == 0x8000'0080);
 
         rr::ut::clk(top);
 
@@ -1204,7 +1204,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
     for (uint32_t i = 0; i < 1; i++) 
     {
         // COMMAND ///////////////////////////
-        configPhase(t, COMMAND, 0x100);
+        configPhase(t, COMMAND, 0x8000'0000);
 
         // First test the address channel (data and address are independent)
         // LOAD ADDR /////////////////////////
@@ -1231,7 +1231,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
-        REQUIRE(t.m_mem_axi_araddr == 0x100);
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'0000);
 
         rr::ut::clk(top);
 
@@ -1245,7 +1245,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
-        REQUIRE(t.m_mem_axi_araddr == 0x180);
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'0080);
 
         rr::ut::clk(top);
 
