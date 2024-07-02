@@ -95,8 +95,6 @@ GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
 
     // or you can even set multi_sink logger as default logger
     spdlog::set_default_logger(logger);
-
-    RRXGL::createInstance(m_busConnector);
     RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
 
     return reinterpret_cast<HGLRC>(&RRXGL::getInstance());

@@ -24,6 +24,7 @@
 #include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/Types.hpp"
 #include "glTypeConverters.h"
+#include <cmath>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -2465,7 +2466,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             }
             case GL_RGB_SCALE:
                 {
-                    const uint8_t shift = std::log2f(param);
+                    const uint8_t shift = log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
                         RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftRgb(shift);
@@ -2479,7 +2480,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 break;
             case GL_ALPHA_SCALE:
                 {
-                    const uint8_t shift = std::log2f(param);
+                    const uint8_t shift = log2f(param);
                     if ((shift >= 0) && (shift <= 2))
                     {
                         RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftAlpha(shift);
