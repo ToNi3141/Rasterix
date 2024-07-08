@@ -1,9 +1,9 @@
 {
-    "version": 2,
+    "version": 4,
     "cmakeMinimumRequired": 
     {
         "major": 3,
-        "minor": 20,
+        "minor": 23,
         "patch": 0
     },
     "configurePresets": 
@@ -212,8 +212,6 @@
                 "BUILD_ZYNQ_EMBEDDED_LINUX" : "ON",
                 "ENABLE_SPDLOG": "ON",
                 "DRIVER_DMA_PROXY": "ON",
-                "BUILD_EXAMPLES": "ON",
-                "BUILD_SHARED_LIBRARY": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "toolchains/toolchain_zynq.cmake"
             }
         },
@@ -221,13 +219,21 @@
             "name": "zynq_embedded_linux_rrxif",
             "displayName": "Zynq embedded linux build for the rrxif",
             "description": "Build for an zynq embedded linux device for the rrxif",
-            "inherits": [ "zynq_embedded_linux", "zynq_rrxif"]
+            "inherits": [ "zynq_embedded_linux", "zynq_rrxif"],
+            "cacheVariables": {
+                "BUILD_EXAMPLES": "ON",
+                "BUILD_SHARED_LIBRARY": "ON"
+            }
         },
         {
             "name": "zynq_embedded_linux_rrxef",
             "displayName": "Zynq embedded linux build for the rrxef",
             "description": "Build for an zynq embedded linux device for the rrxef",
-            "inherits": [ "zynq_embedded_linux", "zynq_rrxef"]
+            "inherits": [ "zynq_embedded_linux", "zynq_rrxef"],
+            "cacheVariables": {
+                "BUILD_EXAMPLES": "ON",
+                "BUILD_SHARED_LIBRARY": "ON"
+            }
         }
     ]
 }
