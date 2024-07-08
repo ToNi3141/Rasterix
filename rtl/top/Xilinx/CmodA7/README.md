@@ -56,7 +56,7 @@ Before you start to build, have a look at the rp2040 SDK readme (https://github.
 Open a terminal. Use the following commands to build a rp2040 binary:
 ```sh
 cd <rasterix_directory>
-cmake --preset rp2040 -DPICO_SDK_PATH=<path_to_the_sdk>
+cmake --preset rp2040
 cmake --build build/rp2040 --config Release --parallel
 ```
 You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
