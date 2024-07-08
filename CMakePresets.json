@@ -213,7 +213,8 @@
                 "ENABLE_SPDLOG": "ON",
                 "DRIVER_DMA_PROXY": "ON",
                 "BUILD_EXAMPLES": "ON",
-                "BUILD_SHARED_LIBRARY": "ON"
+                "BUILD_SHARED_LIBRARY": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "toolchains/toolchain_zynq.cmake"
             }
         },
         {
