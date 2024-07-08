@@ -30,6 +30,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
+        rr::RRXGL::createInstance(m_busConnector);
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
         rr::RRXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
         rr::RRXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
