@@ -9,3 +9,7 @@ endif()
 if (DRIVER_VERILATOR)
     add_subdirectory(verilator)
 endif()
+
+if (DRIVER_STANDALONE_XIL_CDMA)
+    add_subdirectory(standalonexilcdma)
+endif()

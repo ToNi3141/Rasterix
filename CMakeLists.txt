@@ -12,6 +12,7 @@ option(BUILD_SHARED_LIBRARY "Builds a dynamic loadable library" OFF)
 option(DRIVER_FT60X "Includes a driver for a FT60X bus connector" OFF)
 option(DRIVER_VERILATOR "Includes a driver for the Verilator simulation" OFF)
 option(DRIVER_DMA_PROXY "Includes a driver for the DMA Proxy bus connector" OFF)
+option(DRIVER_STANDALONE_XIL_CDMA "Includes a driver for the Xilinx CDMA bus connector" OFF)
 # Enables logging
 option(ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 
@@ -42,7 +43,7 @@ set(RRX_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the second
 set(RRX_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")
 set(RRX_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil buffer")
 
-
+enable_language(CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 if (BUILD_EXAMPLES)
