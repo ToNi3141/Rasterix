@@ -14,23 +14,23 @@
             "description": "Configuration for the Nexys rrxif",
             "cacheVariables": 
             {
-                "RRX_TMU_COUNT": "2",
-                "RRX_MAX_TEXTURE_SIZE": "256",
-                "RRX_ENABLE_MIPMAPPING": "true",
-                "RRX_MAX_DISPLAY_WIDTH": "1024",
-                "RRX_MAX_DISPLAY_HEIGHT": "600",
-                "RRX_FRAMEBUFFER_SIZE_IN_WORDS": "131072",
-                "RRX_USE_FLOAT_INTERPOLATION": "false",
-                "RRX_CMD_STREAM_WIDTH": "128",
-                "RRX_NUMBER_OF_TEXTURE_PAGES": "7680",
-                "RRX_NUMBER_OF_TEXTURES": "7680",
-                "RRX_TEXTURE_PAGE_SIZE": "4096",
-                "RRX_GRAM_MEMORY_LOC": "0",
-                "RRX_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_MEMORY",
-                "RRX_COLOR_BUFFER_LOC_1": "0x01E00000",
-                "RRX_COLOR_BUFFER_LOC_2": "0x01E00000",
-                "RRX_DEPTH_BUFFER_LOC": "0",
-                "RRX_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_TMU_COUNT": "2",
+                "RRX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RRX_CORE_ENABLE_MIPMAPPING": "true",
+                "RRX_CORE_MAX_DISPLAY_WIDTH": "1024",
+                "RRX_CORE_MAX_DISPLAY_HEIGHT": "600",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "131072",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RRX_CORE_CMD_STREAM_WIDTH": "128",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "7680",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "7680",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_GRAM_MEMORY_LOC": "0",
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_MEMORY",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01E00000",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
             }
         },
         {
@@ -39,23 +39,23 @@
             "description": "Configuration for the Nexys rrxef",
             "cacheVariables": 
             {
-                "RRX_TMU_COUNT": "2",
-                "RRX_MAX_TEXTURE_SIZE": "256",
-                "RRX_ENABLE_MIPMAPPING": "true",
-                "RRX_MAX_DISPLAY_WIDTH": "1024",
-                "RRX_MAX_DISPLAY_HEIGHT": "600",
-                "RRX_FRAMEBUFFER_SIZE_IN_WORDS": "614400",
-                "RRX_USE_FLOAT_INTERPOLATION": "false",
-                "RRX_CMD_STREAM_WIDTH": "128",
-                "RRX_NUMBER_OF_TEXTURE_PAGES": "6400",
-                "RRX_NUMBER_OF_TEXTURES": "6400",
-                "RRX_TEXTURE_PAGE_SIZE": "4096",
-                "RRX_GRAM_MEMORY_LOC": "0",
-                "RRX_FRAMEBUFFER_TYPE": "FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER",
-                "RRX_COLOR_BUFFER_LOC_1": "0x01E00000",
-                "RRX_COLOR_BUFFER_LOC_2": "0x01C00000",
-                "RRX_DEPTH_BUFFER_LOC": "0x01A00000",
-                "RRX_STENCIL_BUFFER_LOC": "0x01900000"
+                "RRX_CORE_TMU_COUNT": "2",
+                "RRX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RRX_CORE_ENABLE_MIPMAPPING": "true",
+                "RRX_CORE_MAX_DISPLAY_WIDTH": "1024",
+                "RRX_CORE_MAX_DISPLAY_HEIGHT": "600",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "614400",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RRX_CORE_CMD_STREAM_WIDTH": "128",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "6400",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "6400",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_GRAM_MEMORY_LOC": "0",
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01C00000",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0x01A00000",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01900000"
             }
         },
         {
@@ -64,23 +64,23 @@
             "description": "Configuration for the Zynq rrxif",
             "cacheVariables": 
             {
-                "RRX_TMU_COUNT": "1",
-                "RRX_MAX_TEXTURE_SIZE": "256",
-                "RRX_ENABLE_MIPMAPPING": "true",
-                "RRX_MAX_DISPLAY_WIDTH": "1024",
-                "RRX_MAX_DISPLAY_HEIGHT": "600",
-                "RRX_FRAMEBUFFER_SIZE_IN_WORDS": "65536",
-                "RRX_USE_FLOAT_INTERPOLATION": "false",
-                "RRX_CMD_STREAM_WIDTH": "64",
-                "RRX_NUMBER_OF_TEXTURE_PAGES": "7280",
-                "RRX_NUMBER_OF_TEXTURES": "7280",
-                "RRX_TEXTURE_PAGE_SIZE": "4096",
-                "RRX_GRAM_MEMORY_LOC": "0x0E000000",
-                "RRX_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_MEMORY",
-                "RRX_COLOR_BUFFER_LOC_1": "0x01E00000",
-                "RRX_COLOR_BUFFER_LOC_2": "0x01C00000",
-                "RRX_DEPTH_BUFFER_LOC": "0",
-                "RRX_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_TMU_COUNT": "1",
+                "RRX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RRX_CORE_ENABLE_MIPMAPPING": "true",
+                "RRX_CORE_MAX_DISPLAY_WIDTH": "1024",
+                "RRX_CORE_MAX_DISPLAY_HEIGHT": "600",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "65536",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RRX_CORE_CMD_STREAM_WIDTH": "64",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "7280",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "7280",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_GRAM_MEMORY_LOC": "0x0E000000",
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_MEMORY",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01C00000",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
             }
         },
         {
@@ -89,23 +89,23 @@
             "description": "Configuration for the Zynq rrxef",
             "cacheVariables": 
             {
-                "RRX_TMU_COUNT": "2",
-                "RRX_MAX_TEXTURE_SIZE": "256",
-                "RRX_ENABLE_MIPMAPPING": "true",
-                "RRX_MAX_DISPLAY_WIDTH": "1024",
-                "RRX_MAX_DISPLAY_HEIGHT": "600",
-                "RRX_FRAMEBUFFER_SIZE_IN_WORDS": "1048576",
-                "RRX_USE_FLOAT_INTERPOLATION": "false",
-                "RRX_CMD_STREAM_WIDTH": "64",
-                "RRX_NUMBER_OF_TEXTURE_PAGES": "6912",
-                "RRX_NUMBER_OF_TEXTURES": "6912",
-                "RRX_TEXTURE_PAGE_SIZE": "4096",
-                "RRX_GRAM_MEMORY_LOC": "0x0E000000",
-                "RRX_FRAMEBUFFER_TYPE": "FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER",
-                "RRX_COLOR_BUFFER_LOC_1": "0x01E00000",
-                "RRX_COLOR_BUFFER_LOC_2": "0x01C00000",
-                "RRX_DEPTH_BUFFER_LOC": "0x01A00000",
-                "RRX_STENCIL_BUFFER_LOC": "0x01900000"
+                "RRX_CORE_TMU_COUNT": "2",
+                "RRX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RRX_CORE_ENABLE_MIPMAPPING": "true",
+                "RRX_CORE_MAX_DISPLAY_WIDTH": "1024",
+                "RRX_CORE_MAX_DISPLAY_HEIGHT": "600",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "1048576",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RRX_CORE_CMD_STREAM_WIDTH": "64",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "6912",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "6912",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_GRAM_MEMORY_LOC": "0x0E000000",
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01C00000",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0x01A00000",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01900000"
             }
         },
         {
@@ -114,23 +114,23 @@
             "description": "Configuration for the Zynq rrxef",
             "cacheVariables": 
             {
-                "RRX_TMU_COUNT": "1",
-                "RRX_MAX_TEXTURE_SIZE": "128",
-                "RRX_ENABLE_MIPMAPPING": "false",
-                "RRX_MAX_DISPLAY_WIDTH": "320",
-                "RRX_MAX_DISPLAY_HEIGHT": "240",
-                "RRX_FRAMEBUFFER_SIZE_IN_WORDS": "16384",
-                "RRX_USE_FLOAT_INTERPOLATION": "true",
-                "RRX_CMD_STREAM_WIDTH": "32",
-                "RRX_NUMBER_OF_TEXTURE_PAGES": "128",
-                "RRX_NUMBER_OF_TEXTURES": "128",
-                "RRX_TEXTURE_PAGE_SIZE": "4096",
-                "RRX_GRAM_MEMORY_LOC": "0x0",
-                "RRX_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_STREAM",
-                "RRX_COLOR_BUFFER_LOC_1": "0",
-                "RRX_COLOR_BUFFER_LOC_2": "0",
-                "RRX_DEPTH_BUFFER_LOC": "0",
-                "RRX_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_TMU_COUNT": "1",
+                "RRX_CORE_MAX_TEXTURE_SIZE": "128",
+                "RRX_CORE_ENABLE_MIPMAPPING": "false",
+                "RRX_CORE_MAX_DISPLAY_WIDTH": "320",
+                "RRX_CORE_MAX_DISPLAY_HEIGHT": "240",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "16384",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "true",
+                "RRX_CORE_CMD_STREAM_WIDTH": "32",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "128",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "128",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_GRAM_MEMORY_LOC": "0x0",
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_STREAM",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
             }
         },
         {
@@ -141,10 +141,10 @@
             "generator": "Unix Makefiles",
             "cacheVariables": 
             {
-                "BUILD_NATIVE": "ON",
-                "ENABLE_SPDLOG": "ON",
-                "DRIVER_FT60X": "ON",
-                "BUILD_EXAMPLES": "ON"
+                "RRX_BUILD_NATIVE": "ON",
+                "RRX_ENABLE_SPDLOG": "ON",
+                "RRX_DRIVER_FT60X": "ON",
+                "RRX_BUILD_EXAMPLES": "ON"
             }
         },
         {
@@ -167,11 +167,11 @@
             "generator": "Visual Studio 16 2019",
             "cacheVariables": 
             {
-                "BUILD_NATIVE": "ON",
-                "ENABLE_SPDLOG": "ON",
-                "DRIVER_FT60X": "ON",
-                "BUILD_EXAMPLES": "ON",
-                "BUILD_SHARED_LIBRARY": "ON"
+                "RRX_BUILD_NATIVE": "ON",
+                "RRX_ENABLE_SPDLOG": "ON",
+                "RRX_DRIVER_FT60X": "ON",
+                "RRX_BUILD_EXAMPLES": "ON",
+                "RRX_BUILD_SHARED_LIBRARY": "ON"
             },
             "architecture": "Win32"
         },
@@ -197,8 +197,8 @@
             "cacheVariables": 
             {
                 "PICO_SDK_FETCH_FROM_GIT": "ON",
-                "BUILD_RP2040": "ON",
-                "BUILD_EXAMPLES": "ON"
+                "RRX_BUILD_RP2040": "ON",
+                "RRX_BUILD_EXAMPLES": "ON"
             }
         },
         {
@@ -209,9 +209,9 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "BUILD_ZYNQ_EMBEDDED_LINUX" : "ON",
-                "ENABLE_SPDLOG": "ON",
-                "DRIVER_DMA_PROXY": "ON",
+                "RRX_BUILD_ZYNQ_EMBEDDED_LINUX" : "ON",
+                "RRX_ENABLE_SPDLOG": "ON",
+                "RRX_DRIVER_DMA_PROXY": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "toolchains/toolchain_zynq.cmake"
             }
         },
@@ -221,8 +221,8 @@
             "description": "Build for an zynq embedded linux device for the rrxif",
             "inherits": [ "zynq_embedded_linux", "zynq_rrxif"],
             "cacheVariables": {
-                "BUILD_EXAMPLES": "ON",
-                "BUILD_SHARED_LIBRARY": "ON"
+                "RRX_BUILD_EXAMPLES": "ON",
+                "RRX_BUILD_SHARED_LIBRARY": "ON"
             }
         },
         {
@@ -231,8 +231,8 @@
             "description": "Build for an zynq embedded linux device for the rrxef",
             "inherits": [ "zynq_embedded_linux", "zynq_rrxef"],
             "cacheVariables": {
-                "BUILD_EXAMPLES": "ON",
-                "BUILD_SHARED_LIBRARY": "ON"
+                "RRX_BUILD_EXAMPLES": "ON",
+                "RRX_BUILD_SHARED_LIBRARY": "ON"
             }
         }
     ]
