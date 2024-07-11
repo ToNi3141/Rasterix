@@ -45,8 +45,6 @@ set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil bu
 
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_FLAGS "-O3 -ffast-math -mxl-barrel-shift -mlittle-endian -mxl-pattern-compare -mno-xl-soft-mul -mxl-multiply-high -mno-xl-soft-div -mhard-float -mxl-float-convert -mxl-float-sqrt -mcpu=v11.0 -DSDT  -MMD -MP")
-
 
 if (RRX_BUILD_EXAMPLES)
     if (RRX_BUILD_RP2040 AND RRX_BUILD_EXAMPLES)
@@ -90,8 +88,3 @@ endif()
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
 
 add_subdirectory(lib)
-# enable_language(CXX)
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_FLAGS "-O3 -ffast-math -mxl-barrel-shift -mlittle-endian -mxl-pattern-compare -mno-xl-soft-mul -mxl-multiply-high -mno-xl-soft-div -mhard-float -mxl-float-convert -mxl-float-sqrt -mcpu=v11.0 -DSDT  -MMD -MP")
-# #set(CMAKE_CXX_FLAGS "-march=rv32imfc_zicsr_zifencei_zba_zbb_zbc_zbs_zicbom -mabi=ilp32f -DSDT  -MMD -MP -O3")
-# #set(CMAKE_CXX_FLAGS "-march=rv32imf -O3 -ffast-math  -mabi=ilp32f -DSDT  -MMD -MP")
