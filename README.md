@@ -84,8 +84,8 @@ See also the example [here](/example/util/native/Runner.hpp).
 
 The build system requires the following parameters to be set, and which shall be equal to the parameters set in the hardware.
 
-| Property                      | Description |
-|-------------------------------|-------------|
+| Property                           | Description |
+|------------------------------------|-------------|
 | RRX_CORE_TMU_COUNT                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
 | RRX_CORE_MAX_TEXTURE_SIZE          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in TEXTURE_BUFFER_SIZE of the FPGA. |
 | RRX_CORE_ENABLE_MIPMAPPING         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |

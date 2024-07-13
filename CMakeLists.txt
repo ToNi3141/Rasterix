@@ -47,7 +47,16 @@ enable_language(CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 if (RRX_BUILD_EXAMPLES)
-    if (RRX_BUILD_RP2040 AND RRX_BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()
+
+if (NOT RRX_BUILD_RP2040)
+    project(
+        Rasterix
+        VERSION 0.1
+    )
+endif()
+if (RRX_BUILD_RP2040)
         add_link_options(-Wl,--print-memory-usage)
         # initialize the SDK based on PICO_SDK_PATH
         # note: this must happen before project()
@@ -58,23 +67,6 @@ if (RRX_BUILD_EXAMPLES)
         )
         # initialize the Raspberry Pi Pico SDK
         pico_sdk_init()
-    endif()
-
-    if (RRX_BUILD_NATIVE OR RRX_BUILD_ZYNQ_EMBEDDED_LINUX)
-        project(
-            Rasterix
-            VERSION 0.1
-        )
-    endif()
-
-    add_subdirectory(example)
-endif()
-
-if (RRX_BUILD_SHARED_LIBRARY AND !RRX_BUILD_EXAMPLES)
-    project(
-        Rasterix
-        VERSION 0.1
-    )
 endif()
 
 if (CMAKE_HOST_APPLE AND RRX_BUILD_NATIVE)
