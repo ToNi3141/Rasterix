@@ -43,12 +43,7 @@ set(RRX_CORE_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the s
 set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")
 set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil buffer")
 
-enable_language(CXX)
 set(CMAKE_CXX_STANDARD 20)
-
-if (RRX_BUILD_EXAMPLES)
-    add_subdirectory(example)
-endif()
 
 if (NOT RRX_BUILD_RP2040)
     project(
@@ -56,6 +51,7 @@ if (NOT RRX_BUILD_RP2040)
         VERSION 0.1
     )
 endif()
+
 if (RRX_BUILD_RP2040)
         add_link_options(-Wl,--print-memory-usage)
         # initialize the SDK based on PICO_SDK_PATH
@@ -79,4 +75,7 @@ endif()
 
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
 
+if (RRX_BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()
 add_subdirectory(lib)
