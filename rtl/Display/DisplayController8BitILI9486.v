@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ module DisplayController8BitILI9486 #(
         else
         begin
             initMem[ 85] = {1'b0, 8'h36};  
-            initMem[ 86] = {1'b1, 8'h98}; // Horizontal
+            initMem[ 86] = {1'b1, 8'hCC}; // Horizontal
         end
         initMem[ 87] = {1'b0, 8'h3A};   
         initMem[ 88] = {1'b1, 8'h55}; 
