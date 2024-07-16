@@ -15,7 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// This module acts as a framebuffer reader for the displays.
+// It takes from the fb_addr the address where to read the framebuffer.
+// A read is started when swap_fb is set to high and is acknowledged
+// by a transition from fb_swapped from 0 to 1. 
+// Node: An aknowledged framebuffer does not mean that it is fully
+// transferred. It just means, that this modul starts to transfer
+// it to the display.
 module DisplayFramebufferReader #(
     // Size of the framebuffer in bytes
     parameter DISPLAY_SIZE_IN_BYTES = 320 * 480 * 2,
@@ -99,7 +105,6 @@ module DisplayFramebufferReader #(
     localparam STATE_CMD = 0;
     localparam STATE_ADDR = 1;
     localparam STATE_WAIT_DSE = 2;
-    localparam STATE_WAIT_SWAP = 3;
     reg [ 1 : 0] state;
 
     DmaStreamEngine #(
@@ -222,6 +227,7 @@ module DisplayFramebufferReader #(
                     begin
                         st0_axis_tdata <= fb_addr;
                         st0_axis_tlast <= 1;
+                        fb_swapped <= 1; // Early acknowledge to the framebuffer
                         state <= STATE_WAIT_DSE;
                     end
                 end
@@ -231,18 +237,9 @@ module DisplayFramebufferReader #(
                     begin
                         st0_axis_tvalid <= 0;
                         st0_axis_tlast <= 0;
-                        fb_swapped <= 1;
                         state <= STATE_CMD;
                     end
                 end
-                // STATE_WAIT_SWAP:
-                // begin
-                //     if (!swap_fb)
-                //     begin
-                //         fb_swapped <= 0;
-                //         state <= STATE_CMD;
-                //     end
-                // end
                 default: 
                 begin
                 end

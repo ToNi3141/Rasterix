@@ -156,7 +156,7 @@ module DisplayController8BitILI9486 #(
         else
         begin
             initMem[ 85] = {1'b0, 8'h36};  
-            initMem[ 86] = {1'b1, 8'hCC}; // Horizontal
+            initMem[ 86] = {1'b1, 8'hC8}; // Horizontal
         end
         initMem[ 87] = {1'b0, 8'h3A};   
         initMem[ 88] = {1'b1, 8'h55}; 
