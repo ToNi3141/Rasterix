@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,23 +17,53 @@
 
 #include "glx.h"
 #include <spdlog/spdlog.h>
-#include "IceGL.hpp"
-#include "renderer/Renderer.hpp"
+#include "RRXGL.hpp"
 #include "DMAProxyBusConnector.hpp"
-#include "RenderConfigs.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
+#include "ThreadedRenderer.hpp"
 
 static constexpr uint32_t RESOLUTION_H = 600;
 static constexpr uint32_t RESOLUTION_W = 1024;
-rr::DMAProxyBusConnector m_busConnector;
-#if VARIANT_RRXIF == 1
-    rr::Renderer<rr::RenderConfigRRXIFZynq> m_renderer { m_busConnector };
-#endif // VARIANT_RRXIF
-#if VARIANT_RRXEF == 1
-    rr::Renderer<rr::RenderConfigRRXEFZynq> m_renderer { m_busConnector };
-#endif // VARIANT_RRXEF
 
-auto inst = rr::IceGL::createInstance(m_renderer);
+class GLInitGuard
+{
+public:
+    GLInitGuard()
+    {
+        rr::RRXGL::createInstance(m_busConnector);
+#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
+        rr::RRXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
+        rr::RRXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
+        rr::RRXGL::getInstance().addLibProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
+        rr::RRXGL::getInstance().addLibProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
+        rr::RRXGL::getInstance().addLibProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
+        rr::RRXGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
+        rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
+        rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
+#undef ADDRESS_OF
+        m_renderer.setRenderer(&(rr::RRXGL::getInstance()));
+    }
+    ~GLInitGuard()
+    {
+        m_renderer.waitForThread();
+        rr::RRXGL::getInstance().destroy();
+    }
+
+    void render()
+    {
+        m_renderer.waitForThread();
+        m_renderer.render();
+    }
+
+    rr::RRXGL& getInst()
+    {
+        return rr::RRXGL::getInstance();
+    }
+
+private:
+    rr::DMAProxyBusConnector m_busConnector;
+    rr::ThreadedRenderer<rr::RRXGL> m_renderer {};
+} guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual( Display *dpy, int screen,
 				     int *attribList )
@@ -78,8 +108,8 @@ GLAPI GLXContext APIENTRY glXCreateContext( Display *dpy, XVisualInfo *vis,
     spdlog::set_level(spdlog::level::critical);
 #endif
 
-    m_renderer.setRenderResolution(RESOLUTION_W, RESOLUTION_H);
-    return reinterpret_cast<GLXContext>(&rr::IceGL::getInstance());
+    guard.getInst().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    return reinterpret_cast<GLXContext>(&guard.getInst());
 }
 
 GLAPI void APIENTRY glXDestroyContext( Display *dpy, GLXContext ctx )
@@ -104,7 +134,7 @@ GLAPI void APIENTRY glXCopyContext( Display *dpy, GLXContext src, GLXContext dst
 GLAPI void APIENTRY glXSwapBuffers( Display *dpy, GLXDrawable drawable )
 {
     SPDLOG_DEBUG("glXSwapBuffers called");
-    rr::IceGL::getInstance().render();
+    guard.render();
 }
 
 GLAPI GLXPixmap APIENTRY glXCreateGLXPixmap( Display *dpy, XVisualInfo *visual,
@@ -149,7 +179,7 @@ GLAPI int APIENTRY glXGetConfig( Display *dpy, XVisualInfo *visual,
 GLAPI GLXContext APIENTRY glXGetCurrentContext( void )
 {
     SPDLOG_DEBUG("glXGetCurrentContext called");
-    return reinterpret_cast<GLXContext>(&rr::IceGL::getInstance());
+    return reinterpret_cast<GLXContext>(&guard.getInst());
 }
 
 GLAPI GLXDrawable APIENTRY glXGetCurrentDrawable( void )
@@ -317,20 +347,5 @@ GLAPI void APIENTRY glXGetSelectedEvent( Display *dpy, GLXDrawable drawable,
 GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB (const GLubyte *s)
 {
     SPDLOG_DEBUG("glXGetProcAddressARB {} called", s);
-    static bool lazyInit = false;
-    if (!lazyInit)
-    {
-#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
-        rr::IceGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
-        rr::IceGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
-        rr::IceGL::getInstance().addLibProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
-        rr::IceGL::getInstance().addLibProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
-        rr::IceGL::getInstance().addLibProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
-        rr::IceGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
-        rr::IceGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
-        rr::IceGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
-        lazyInit = true;
-#undef ADDRESS_OF
-    }
-    return reinterpret_cast<__GLXextFuncPtr>(rr::IceGL::getInstance().getLibProcedure(reinterpret_cast<const char*>(s)));
+    return reinterpret_cast<__GLXextFuncPtr>(guard.getInst().getLibProcedure(reinterpret_cast<const char*>(s)));
 }

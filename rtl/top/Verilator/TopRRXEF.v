@@ -125,6 +125,8 @@ module top #(
     wire [NRS - 1 : 0]                      s_xbar_axi_rvalid;
     wire [NRS - 1 : 0]                      s_xbar_axi_rready;
 
+    wire                                    fb_swap;
+
 
     axi_ram #(
         .DATA_WIDTH(CMD_STREAM_WIDTH),
@@ -273,7 +275,8 @@ module top #(
         .FB_MEM_DATA_WIDTH(CMD_STREAM_WIDTH),
         .TMU_COUNT(2),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC)
+        .ID_WIDTH(ID_WIDTH_LOC),
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0)
     ) rasterix (
         .aclk(aclk),
         .resetn(resetn),
@@ -288,8 +291,9 @@ module top #(
         .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
         .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
-        .swap_fb(),
-        .fb_swapped(1),
+        .swap_fb(fb_swap),
+        .fb_addr(),
+        .fb_swapped(!fb_swap),
 
         .m_common_axi_awid(s_xbar_axi_awid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_common_axi_awaddr(s_xbar_axi_awaddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),

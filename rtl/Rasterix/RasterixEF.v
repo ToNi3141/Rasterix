@@ -290,7 +290,7 @@ module RasterixEF #(
 
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .ADDR_WIDTH(28),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH)
     ) dma (
         .aclk(aclk),
@@ -713,6 +713,7 @@ module RasterixEF #(
             assign m_stencil_arready = 1;
             assign m_stencil_rvalid = 1;
             assign m_stencil_rdata = 0;
+            assign m_stencil_wready = 1;
             assign stencilBufferApplied = 1;
         end
     endgenerate

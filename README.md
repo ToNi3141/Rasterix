@@ -76,34 +76,33 @@ To integrate it into your own project, first have a look at the already existing
 ## How to port the Driver
 To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:
 1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods.
-2. Instantiate and use this class for the `Renderer`. If you use a MCU, you might lack `std::future`, then you can use `RendererMemoryOptimized`.
-3. Create a `RenderConfig` which fits to the configuration of your hardware.
-4. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system.
-5. Build
+2. Set the build variables mentioned below in the table.
+3. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system. Or add this repository to your CMake project and include the library by adding `gl`.
+4. Build
 
 See also the example [here](/example/util/native/Runner.hpp).
 
-The `Renderer` needs a `RenderConfig`. It contains the following information about the hardware:
+The build system requires the following parameters to be set, and which shall be equal to the parameters set in the hardware.
 
-| Property                  | Description |
-|---------------------------|-------------|
-| TMU_COUNT                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
-| MAX_TEXTURE_SIZE          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in TEXTURE_BUFFER_SIZE of the FPGA. |
-| ENABLE_MIPMAPPING         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
-| MAX_DISPLAY_WIDTH         | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
-| MAX_DISPLAY_HEIGHT        | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
-| FRAMEBUFFER_SIZE_IN_WORDS | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
-| USE_FLOAT_INTERPOLATION   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
-| CMD_STREAM_WIDTH          | Width of the command stream. Must be equal to the FPGA configuration. |
-| NUMBER_OF_TEXTURE_PAGES   | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
-| NUMBER_OF_TEXTURES        | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
-| TEXTURE_PAGE_SIZE         | The size of a texture page in bytes. Typical value is 4096. |
-| GRAM_MEMORY_LOC           | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
-| FRAMEBUFFER_TYPE          | Configures the destination of the framebuffer. Must fit to the chosen variant. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
-| COLOR_BUFFER_LOC_1        | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
-| COLOR_BUFFER_LOC_2        | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
-| DEPTH_BUFFER_LOC          | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
-| STENCIL_BUFFER_LOC        | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| Property                           | Description |
+|------------------------------------|-------------|
+| RRX_CORE_TMU_COUNT                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
+| RRX_CORE_MAX_TEXTURE_SIZE          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in TEXTURE_BUFFER_SIZE of the FPGA. |
+| RRX_CORE_ENABLE_MIPMAPPING         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
+| RRX_CORE_MAX_DISPLAY_WIDTH         | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
+| RRX_CORE_MAX_DISPLAY_HEIGHT        | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
+| RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
+| RRX_CORE_USE_FLOAT_INTERPOLATION   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
+| RRX_CORE_CMD_STREAM_WIDTH          | Width of the command stream. Must be equal to the FPGA configuration. |
+| RRX_CORE_NUMBER_OF_TEXTURE_PAGES   | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
+| RRX_CORE_NUMBER_OF_TEXTURES        | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
+| RRX_CORE_TEXTURE_PAGE_SIZE         | The size of a texture page in bytes. Typical value is 4096. |
+| RRX_CORE_GRAM_MEMORY_LOC           | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
+| RRX_CORE_FRAMEBUFFER_TYPE          | Configures the destination of the framebuffer. Must fit to the chosen variant. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
+| RRX_CORE_COLOR_BUFFER_LOC_1        | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
+| RRX_CORE_COLOR_BUFFER_LOC_2        | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
+| RRX_CORE_DEPTH_BUFFER_LOC          | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| RRX_CORE_STENCIL_BUFFER_LOC        | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
 
 
 ## How to use the Core

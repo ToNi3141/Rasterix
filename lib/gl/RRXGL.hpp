@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,37 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef ICEGL_HPP
-#define ICEGL_HPP
+#ifndef RRXGL_HPP
+#define RRXGL_HPP
 
 #include <vector>
 #include <array>
 #include <functional>
-#include "renderer/IRenderer.hpp"
+#include "IBusConnector.hpp"
+#include <map>
+#include "vertexpipeline/VertexQueue.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
-#include "math/Vec.hpp"
 #include "vertexpipeline/RenderObj.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
-#include "gl.h"
-#include <map>
 
 namespace rr
 {
-class IceGL
+class RenderDevice;
+class RRXGL
 {
 public:
-    static IceGL& getInstance();
-    static bool createInstance(IRenderer& renderer);
+    static RRXGL& getInstance();
+    static bool createInstance(IBusConnector& busConnector);
+    static void destroy();
 
     void setError(const uint32_t error) { m_error = error; }
     uint32_t getError() const { return m_error; }
 
-    VertexPipeline& vertexPipeline() { return m_vertexPipeline; }
-    PixelPipeline& pixelPipeline() { return m_pixelPipeline; }
-    VertexQueue& vertexQueue() { return m_vertexQueue; }
+    VertexPipeline& vertexPipeline();
+    PixelPipeline& pixelPipeline();
+    VertexQueue& vertexQueue();
 
-    void render();
+    void swapDisplayList();
+    void uploadDisplayList();
 
     const char *getLibExtensions() const;
     const void *getLibProcedure(std::string name) const;
@@ -55,7 +56,7 @@ public:
 
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
-    uint16_t getMaxTextureSize() const { return m_renderer.getMaxTextureSize(); }
+    uint16_t getMaxTextureSize() const;
 
     /// @brief Returns the maximum supported LOD level
     /// @return The maximum supported LOD level
@@ -63,21 +64,25 @@ public:
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
-    std::size_t getTmuCount() const { return m_renderer.getTmuCount(); }
+    std::size_t getTmuCount() const;
 
     /// @brief Queries of mip mapping is available on hardware
     /// @return true when mipmapping is available
-    bool isMipmappingAvailable() const { return m_renderer.isMipmappingAvailable(); }
+    bool isMipmappingAvailable() const;
+
+    /// @brief Sets the resolution of the screen
+    /// @param x screen width
+    /// @param y screen height
+    /// @return true if succeeded
+    bool setRenderResolution(const uint16_t x, const uint16_t y);
 private:
-    IRenderer& m_renderer;
-    PixelPipeline m_pixelPipeline;
-    VertexPipeline m_vertexPipeline;
+    RRXGL(IBusConnector& busConnector);
+    ~RRXGL();
     VertexQueue m_vertexQueue {};
+    RenderDevice* m_renderDevice { nullptr };
 
     // Errors
     uint32_t m_error { 0 };
-
-    IceGL(IRenderer& renderer);
 
     // OpenGL extensions 
     std::map<std::string, const void *> m_glProcedures;
@@ -85,4 +90,4 @@ private:
 };
 
 } // namespace rr
-#endif // ICEGL_HPP
+#endif // RRXGL_HPP

@@ -28,7 +28,7 @@ There are two variants available:
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxef.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -113,7 +113,7 @@ Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
-cmake --preset zynq_embedded_linux -DCMAKE_TOOLCHAIN_FILE=toolchains/toolchain_zynq.cmake -DVARIANT_RRXEF=ON
+cmake --preset zynq_embedded_linux_rrxif
 cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.

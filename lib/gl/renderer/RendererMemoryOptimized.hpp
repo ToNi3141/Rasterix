@@ -53,7 +53,6 @@
 #include "commands/FramebufferCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
-#include "RenderConfigs.hpp"
 
 namespace rr
 {

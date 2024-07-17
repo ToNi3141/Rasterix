@@ -28,7 +28,6 @@
 #include "Rasterizer.hpp"
 #include <string.h>
 #include "DisplayListAssembler.hpp"
-#include <future>
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
@@ -130,22 +129,13 @@ public:
             setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
         }
         setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
-
-        // Initialize the render thread by running it once
-        m_renderThread = std::async([&](){
-            return true;
-        });
     }
 
     virtual ~Renderer()
     {
         setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        render();
-        if (m_renderThread.valid() && (m_renderThread.get() != true))
-        {
-            // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
-            return;
-        }
+        swapDisplayList();
+        uploadDisplayList();
     }
 
     virtual bool drawTriangle(const TransformedTriangle& triangle) override
@@ -190,15 +180,8 @@ public:
         return true;
     }
 
-    virtual void render() override
+    virtual void swapDisplayList() override
     {
-        // Check if the previous rendering has finished. If not, block till it is finished.
-        if (m_renderThread.valid() && (m_renderThread.get() != true)) [[unlikely]]
-        {
-            // TODO: In the unexpected case, that the render thread fails, this should handle this error somehow
-            return;
-        }
-
         // Commit frame 
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
@@ -232,7 +215,6 @@ public:
         }
 
         uploadTextures();
-        uploadDisplayList();
         for (int32_t i = m_displayLines - 1; i >= 0; i--)
         {
             clearAndInitDisplayList(i);
@@ -240,6 +222,16 @@ public:
         swapFramebuffer();
     }
 
+    virtual void uploadDisplayList() override
+    {
+        for (int32_t i = m_displayLines - 1; i >= 0; i--)
+        {
+            while (!m_busConnector.clearToSend())
+                ;
+            const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
+            m_busConnector.writeData(i + (DISPLAY_LINES * m_frontList), list->getSize());
+        }
+    }
 
     virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
     {
@@ -561,20 +553,6 @@ private:
         m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
     }
 
-    void uploadDisplayList()
-    {
-        m_renderThread = std::async([&](){
-            for (int32_t i = m_displayLines - 1; i >= 0; i--)
-            {
-                while (!m_busConnector.clearToSend())
-                    ;
-                const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-                m_busConnector.writeData(i + (DISPLAY_LINES * m_frontList), list->getSize());
-            }
-            return true;
-        });
-    }
-
     void swapFramebuffer()
     {
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
@@ -619,7 +597,6 @@ private:
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
-    std::future<bool> m_renderThread;
 
     // Mapping of texture id and TMU
     std::array<uint16_t, TransformedTriangle::MAX_TMU_COUNT> m_boundTextures {};

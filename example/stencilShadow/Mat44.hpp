@@ -19,7 +19,7 @@
 #define MAT44_HPP
 #include <array>
 #include <math.h>
-#include "math/Vec.hpp"
+#include "Vec.hpp"
 
 namespace rr
 {
