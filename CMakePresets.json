@@ -109,7 +109,7 @@
             }
         },
         {
-            "name": "cmod7_rrxif",
+            "name": "cmod7_rrxef",
             "hidden": true,
             "description": "Configuration for the Zynq rrxef",
             "cacheVariables": 
@@ -119,18 +119,18 @@
                 "RRX_CORE_ENABLE_MIPMAPPING": "false",
                 "RRX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RRX_CORE_MAX_DISPLAY_HEIGHT": "240",
-                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "16384",
-                "RRX_CORE_USE_FLOAT_INTERPOLATION": "true",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "153600",
+                "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
                 "RRX_CORE_CMD_STREAM_WIDTH": "32",
-                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "128",
-                "RRX_CORE_NUMBER_OF_TEXTURES": "128",
-                "RRX_CORE_TEXTURE_PAGE_SIZE": "4096",
+                "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "68",
+                "RRX_CORE_NUMBER_OF_TEXTURES": "68",
+                "RRX_CORE_TEXTURE_PAGE_SIZE": "2048",
                 "RRX_CORE_GRAM_MEMORY_LOC": "0x0",
-                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::INTERNAL_TO_STREAM",
-                "RRX_CORE_COLOR_BUFFER_LOC_1": "0",
-                "RRX_CORE_COLOR_BUFFER_LOC_2": "0",
-                "RRX_CORE_DEPTH_BUFFER_LOC": "0",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_FRAMEBUFFER_TYPE": "FramebufferType::EXTERNAL_MEMORY_TO_STREAM",
+                "RRX_CORE_COLOR_BUFFER_LOC_1": "0x35000",
+                "RRX_CORE_COLOR_BUFFER_LOC_2": "0x35000",
+                "RRX_CORE_DEPTH_BUFFER_LOC": "0x5A800",
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x22400"
             }
         },
         {
@@ -193,7 +193,7 @@
             "description": "rp2040 build to be used for the Raspberry Pi Pico",
             "binaryDir": "${sourceDir}/build/rp2040",
             "generator": "Unix Makefiles",
-            "inherits": "cmod7_rrxif",
+            "inherits": "cmod7_rrxef",
             "cacheVariables": 
             {
                 "PICO_SDK_FETCH_FROM_GIT": "ON",

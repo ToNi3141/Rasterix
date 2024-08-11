@@ -31,13 +31,19 @@ read_verilog ./../../../../Rasterix/DmaStreamEngine.v
 read_verilog ./../../../../Rasterix/DualPortRam.v
 read_verilog ./../../../../Rasterix/Fog.v
 read_verilog ./../../../../Rasterix/FrameBuffer.v
+read_verilog ./../../../../Rasterix/FramebufferReader.v
+read_verilog ./../../../../Rasterix/FramebufferSerializer.v
+read_verilog ./../../../../Rasterix/FramebufferWriter.v
+read_verilog ./../../../../Rasterix/FramebufferWriterClear.v
+read_verilog ./../../../../Rasterix/FramebufferWriterStrobeGen.v
 read_verilog ./../../../../Rasterix/FunctionInterpolator.v
 read_verilog ./../../../../Rasterix/LodCalculator.v
 read_verilog ./../../../../Rasterix/MipmapOptimizedRam.v
+read_verilog ./../../../../Rasterix/MemoryReadRequestGenerator.v
 read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
-read_verilog ./../../../../Rasterix/RasterixIF.v
+read_verilog ./../../../../Rasterix/RasterixEF.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerCommands.vh
@@ -46,6 +52,7 @@ read_verilog ./../../../../Rasterix/RegisterBank.v
 read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Rasterix/StreamBarrier.v
 read_verilog ./../../../../Rasterix/StreamConcatFifo.v
+read_verilog ./../../../../Rasterix/StreamFramebuffer.v
 read_verilog ./../../../../Rasterix/StreamSemaphore.v
 read_verilog ./../../../../Rasterix/TestFunc.v
 read_verilog ./../../../../Rasterix/TexEnv.v
@@ -73,6 +80,8 @@ read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/SPI_Slave.v
 read_verilog ./../../../../Display/DisplayController8BitILI9341.v
+read_verilog ./../AsyncSramController.v
+read_verilog ./../AsyncSramPhy.v
 read_xdc ./../Cmod-A7-Master.xdc
 
 source ../design_1.tcl
