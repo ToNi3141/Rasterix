@@ -301,6 +301,10 @@ module PixelPipeline
             assign step2_valid = step1_valid;
             assign step2_keep = step1_keep;
             assign step2_last = step1_last;
+            assign texel1Addr00 = 0;
+            assign texel1Addr01 = 0;
+            assign texel1Addr10 = 0;
+            assign texel1Addr11 = 0;
         end
     endgenerate
 

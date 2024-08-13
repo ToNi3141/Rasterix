@@ -17,6 +17,8 @@
 
 module Rasterizer
 #(
+    `include "RasterizerCommands.vh"
+
     // The maximum size of the screen in power of two
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,
@@ -73,8 +75,6 @@ module Rasterizer
     output reg  [KEEP_WIDTH - 1 : 0]        m_rr_tkeep,
     output reg  [ 1 : 0]                    m_rr_tcmd
 );
-`include "RasterizerCommands.vh"
-
     localparam BB_X_POS = 0;
     localparam BB_Y_POS = 16;
 
@@ -100,12 +100,12 @@ module Rasterizer
     reg  [Y_BIT_WIDTH - 1 : 0] yScreenEnd;
     reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0] x;
-    wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
-    wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW0;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW1;
     reg  [ATTRIBUTE_SIZE - 1 : 0] regW2;
-
+    wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
+    wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
+    
     // Edge walker variables
     reg  [5 : 0] edgeWalkingState;
     reg  edgeWalkTryOtherside;

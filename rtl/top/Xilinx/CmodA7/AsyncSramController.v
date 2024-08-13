@@ -89,7 +89,6 @@ module AsyncSramController
     reg [$clog2(WIT) + 7 : 0]   axlen;
     reg [ID_WIDTH - 1 : 0]      axid;
     reg [ 2 : 0]                axsize;
-    reg [ 1 : 0]                axburst;
     reg [10 : 0]                i;
     reg [ADDR_WIDTH - 1 : 0]    axaddr;
 
@@ -136,7 +135,6 @@ module AsyncSramController
                         axaddr <= s_axi_awaddr;
 
                         axlen <= { s_axi_awlen, { { $clog2(WIT) { 1'b1 } } } };
-                        axburst <= s_axi_awburst;
 
                         s_axi_awready <= 1;
 
@@ -155,7 +153,6 @@ module AsyncSramController
                         axaddr <= s_axi_araddr;
                         
                         axlen <= { s_axi_arlen, { { $clog2(WIT) { 1'b1 } } } };
-                        axburst <= s_axi_arburst;
 
                         s_axi_arready <= 1;
 

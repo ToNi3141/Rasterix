@@ -72,7 +72,7 @@ module Serial2AXIS
         );
 
     always @(posedge aclk)
-        serial_cts <= fill < FIFO_TRESHOLD;
+        serial_cts <= fill <= FIFO_TRESHOLD;
 
     localparam WAIT_FOR_DATA = 0;
     localparam WAIT_FOR_DATA2 = 1;

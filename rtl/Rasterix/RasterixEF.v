@@ -273,7 +273,7 @@ module RasterixEF #(
     // If it is set to a lower value, then the functions will start to remove or add new pixels.
     localparam SUB_PIXEL_OFFSET = (COLOR_NUMBER_OF_SUB_PIXEL == FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) ? COLOR_NUMBER_OF_SUB_PIXEL : COLOR_A_POS; 
     `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
-    `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
+    `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) 
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
@@ -283,10 +283,10 @@ module RasterixEF #(
     wire                             m_cmd_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
 
-    wire                             s_framebuffer_axis_tvalid;
+    wire                             s_framebuffer_axis_tvalid = 1;
     wire                             s_framebuffer_axis_tready;
-    wire                             s_framebuffer_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata;
+    wire                             s_framebuffer_axis_tlast = 1;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata = 0;
 
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -376,6 +376,7 @@ module RasterixEF #(
     wire                                             colorBufferCmdSwap;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
+    wire [COLOR_NUMBER_OF_SUB_PIXEL - 1 : 0]         colorBufferMaskReduced;
     wire                                             m_color_arvalid;
     wire                                             m_color_arlast;
     wire                                             m_color_arready;
@@ -439,11 +440,15 @@ module RasterixEF #(
     wire                                             m_stencil_wvalid;
     wire                                             m_stencil_wready;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_rdata;
+    wire [7 : 0]                                     m_stencil_rdata_byte;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wdata;
     wire                                             m_stencil_wstrb;
     wire                                             m_stencil_wlast;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosY;
+
+    assign colorBufferMaskReduced = ColorBufferReduceMask(colorBufferMask);
+    assign m_stencil_rdata = m_stencil_rdata_byte[0 +: STENCIL_WIDTH];
 
     assign fb_addr = colorBufferAddr;
 
@@ -553,7 +558,7 @@ module RasterixEF #(
         .confScissorEndY(framebufferParamScissorEndY),
         .confXResolution(framebufferParamXResolution),
         .confYResolution(framebufferParamYResolution),
-        .confMask(ColorBufferReduceMask(colorBufferMask)),
+        .confMask(colorBufferMaskReduced[0 +: 2]), // Currently 16 bit pixels are used with memorys where the strobe can only mask byte wise. To silence the warning, only select the lower two bits.
         .confClearColor(XXX2RGB565(ColorBufferReduceVec(colorBufferClearColor))),
 
         .apply(colorBufferApply & colorBufferCmdMemset),
@@ -655,7 +660,7 @@ module RasterixEF #(
 
                 .s_frag_rvalid(m_stencil_rvalid),
                 .s_frag_rready(m_stencil_rready),
-                .s_frag_rdata(m_stencil_rdata),
+                .s_frag_rdata(m_stencil_rdata_byte),
                 .s_frag_rlast(m_stencil_rlast),
 
                 .s_frag_wvalid(m_stencil_wvalid),
@@ -730,6 +735,9 @@ module RasterixEF #(
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
+        
+        .dbgStreamState(),
+        .dbgRasterizerRunning(),
         
         .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
         .s_cmd_axis_tready(m_cmd_axis_tready),

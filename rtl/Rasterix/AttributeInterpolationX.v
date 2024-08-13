@@ -21,6 +21,7 @@
 // Piplined: yes
 // Depth: 1 cycle
 module AttributeInterpolationX #(
+    `include "RasterizerCommands.vh"
     parameter ENABLE_LOD_CALC = 1,
     parameter ENABLE_SECOND_TMU = 1,
 
@@ -91,7 +92,6 @@ module AttributeInterpolationX #(
     output wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_color_b,
     output wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_color_a
 );
-`include "RasterizerCommands.vh"
 
     ////////////////////////////////////////////////////////////////////////////
     // Calculate the increment depending on the command of the rasterizer
@@ -142,6 +142,15 @@ module AttributeInterpolationX #(
                             reg_tex1_mipmap_t <= tex1_t + tex1_t_inc_x + tex1_t_inc_y;
                             reg_tex1_mipmap_q <= tex1_q + tex1_q_inc_x + tex1_q_inc_y;
                         end
+                    end
+                    else
+                    begin
+                        reg_tex1_s <= 0;
+                        reg_tex1_t <= 0;
+                        reg_tex1_q <= 0;
+                        reg_tex1_mipmap_s <= 0;
+                        reg_tex1_mipmap_t <= 0;
+                        reg_tex1_mipmap_q <= 0;
                     end
                     reg_depth_w <= depth_w;
                     reg_depth_z <= depth_z;

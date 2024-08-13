@@ -487,6 +487,9 @@ module RasterixIF #(
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
+
+        .dbgStreamState(),
+        .dbgRasterizerRunning(),
         
         .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
         .s_cmd_axis_tready(m_cmd_axis_tready),
