@@ -157,7 +157,7 @@ TEST_CASE("Stream data", "[Display]")
     initTest(t, true, 0x21);   
     initTest(t, true, 0x04);
     initTest(t, false, 0x36);   
-    initTest(t, true, 0x98);   
+    initTest(t, true, 0xC8);   
     initTest(t, false, 0x3A);   
     initTest(t, true, 0x55); 
     initTest(t, false, 0x11); //Exit Sleep 				

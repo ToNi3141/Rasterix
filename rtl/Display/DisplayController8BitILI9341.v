@@ -57,7 +57,7 @@ module DisplayController8BitILI9341 #(
     localparam COLOR_A_POS = 0;
     localparam COLOR_SUB_PIXEL_WIDTH = 4;
 
-    assign rst = resetn;
+    assign rst = 1;
     assign rd = 1;
     reg [8 : 0] initMem [0 : INIT_MEM_SIZE - 1]; // dc[8], data[7:0]
     initial 

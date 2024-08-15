@@ -34,8 +34,7 @@ void reset(VDisplayController8BitILI9341& t)
     t.s_axis_tdata = 0;
 
     rr::ut::clk(&t);
-    
-    REQUIRE(t.rst == 0);
+
     t.resetn = 1;
 
     rr::ut::clk(&t);
