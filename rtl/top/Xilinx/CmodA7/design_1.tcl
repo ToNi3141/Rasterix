@@ -305,7 +305,7 @@ proc create_root_design { parentCell } {
      return 1
    }
     set_property -dict [list \
-    CONFIG.ENABLE_MIPMAPPING {0} \
+    CONFIG.ENABLE_MIPMAPPING {1} \
     CONFIG.FB_MEM_DATA_WIDTH {32} \
     CONFIG.FB_MEM_STRB_WIDTH {4} \
     CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
@@ -327,7 +327,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.FIFO_SIZE {32768} \
-    CONFIG.FIFO_TRESHOLD {8192} \
+    CONFIG.FIFO_TRESHOLD {2048} \
   ] $Serial2AXIS_0
 
 

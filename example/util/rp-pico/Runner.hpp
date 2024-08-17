@@ -16,7 +16,7 @@ class BusConnector : public rr::IBusConnector
 public:
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
-    static constexpr uint32_t MAX_CHUNK_SIZE { 16384 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
     
     BusConnector() { }
 
