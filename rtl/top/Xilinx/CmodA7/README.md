@@ -48,6 +48,8 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 | RST       | 31      | 3.3V    |
 | DATA[7:0] | [38:45] | D[7:0]  |
 
+The display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA. Attention is required by powering the display. The FPGA pins are only 3.3V tolerant. Therefore `Vin` should not exceed 3.3V.
+ 
 # RP2040 Build
 Uses the [CMOD A7 Build](#cmod-a7-build).
 
