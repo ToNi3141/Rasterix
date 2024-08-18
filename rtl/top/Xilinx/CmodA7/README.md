@@ -2,15 +2,15 @@
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
-This builds the `RasterixIF` and uses one TMU with a maximum texture resolution of 128x128px. The framebuffers have a size of 64kB + 64kB + 16kB. 
+This builds the `RasterixRF` and uses one TMU with a maximum texture resolution of 128x128px.
 
 There is one variant available:
 
-`rrxif`:  
+`rrxef`:  
   - 1 TMU (max res: 128x128)
-  - No mip mapping
-  - Framebuffer size: 64kB + 64kB + 16kB
-  - 32 bit floating point
+  - Mip mapping
+  - Fixpoint
+  - 10MPixel maximum (because of slow SRAM)
 
 
 To build the binaries, use the following commands.
