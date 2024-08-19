@@ -15,6 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Async SRAM controller for 10ns 8 bit SRAMs.
+// It reaches ~40MB/s with random access patterns, and ~50MB/s with bursts.
+// aclk requires a 100MHz clock. Lower frequencies are possible, but will
+// lower the throughput.
+// Cache signals are not supported.
+// Only INCR bursts are supported.
+// Only axsize with $log2(DATA_WIDTH / 2) are supported
 module AsyncSramController
 #(
     parameter DATA_WIDTH = 32,
