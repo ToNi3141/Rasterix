@@ -122,6 +122,7 @@ module FramebufferReader #(
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
+        .s_axis_tkeep(),
 
         .m_axis_tdata(bc_fetch_tdest),
         .m_axis_tvalid(bc_fetch_tvalid),
@@ -129,7 +130,8 @@ module FramebufferReader #(
         .m_axis_tlast(bc_fetch_tlast),
         .m_axis_tid(),
         .m_axis_tdest(),
-        .m_axis_tuser()
+        .m_axis_tuser(),
+        .m_axis_tkeep()
     );
 
     sfifo #(

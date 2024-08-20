@@ -152,7 +152,7 @@ module FramebufferWriter #(
     assign bytePos = s_frag_taddr[INDEX_BYTE_POS +: INDEX_BYTE_WIDTH];
 
     wire maskWriteEnable = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, s_frag_txpos, s_frag_typos);
-    FramebufferWriterStrobeGen #(.STRB_WIDTH(STRB_WIDTH), .MASK_WIDTH(PIXEL_MASK_WIDTH)) fbwsg (.mask((maskWriteEnable && s_frag_tstrb) ? confMask : 0), .val(bytePos), .strobe(currStrobe));
+    FramebufferWriterStrobeGen #(.STRB_WIDTH(STRB_WIDTH), .MASK_WIDTH(PIXEL_MASK_WIDTH)) fbwsg (.mask((maskWriteEnable && s_frag_tstrb) ? confMask : { PIXEL_MASK_WIDTH { 1'b0 } }), .val(bytePos), .strobe(currStrobe));
 
     always @(posedge aclk)
     begin

@@ -20,6 +20,7 @@
 // Pipelined: yes
 // Depth: 17 cycles
 module AttributeInterpolatorX #(
+    `include "RasterizerCommands.vh"
     parameter INDEX_WIDTH = 32,
     parameter SCREEN_POS_WIDTH = 11,
     parameter ENABLE_LOD_CALC = 1,
@@ -107,7 +108,6 @@ module AttributeInterpolatorX #(
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_g, // Qn.0
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_r // Qn.0
 );
-`include "RasterizerCommands.vh"
     wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_tex0_s;
     wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_tex0_t;
     wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_tex0_q;

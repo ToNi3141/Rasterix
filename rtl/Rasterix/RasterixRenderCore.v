@@ -18,6 +18,8 @@
 `include "PixelUtil.vh"
 
 module RasterixRenderCore #(
+    `include "RasterizerCommands.vh"
+
     // The size of the internal framebuffer (in power of two)
     // The access is in words, not bytes! A word can have the size of at least 1 bit to n bits
     parameter INDEX_WIDTH = 17,
@@ -175,7 +177,6 @@ module RasterixRenderCore #(
     output wire                                 dbgRasterizerRunning
 );
 `include "RegisterAndDescriptorDefines.vh"
-`include "RasterizerCommands.vh"
 
     localparam TEX_ADDR_WIDTH = 17;
     localparam ATTRIBUTE_SIZE = 32;

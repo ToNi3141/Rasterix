@@ -114,7 +114,7 @@ module TextureBuffer #(
         end
     endfunction
 
-    `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS);
+    `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS)
 
     reg  [ADDR_WIDTH - 1 : 0]           memWriteAddr = 0;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding00;

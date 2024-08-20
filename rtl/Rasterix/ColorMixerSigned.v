@@ -51,7 +51,7 @@ module ColorMixerSigned #(
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
     localparam signed [SUB_PIXEL_WIDTH_2X - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PIXEL_UNSIGNED_WIDTH { 1'b0 } }, { SUB_PIXEL_UNSIGNED_WIDTH { 1'b1 } } };
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_2X_WITH_CARRY, SUB_PIXEL_WIDTH);  
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_2X_WITH_CARRY, SUB_PIXEL_WIDTH)
 
     reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V00;
     reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V01;

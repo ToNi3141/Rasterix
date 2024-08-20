@@ -177,7 +177,7 @@ module AttributePerspectiveCorrectionX #(
         .DELAY(RECIP_DELAY)
     ) step1_depth_z_delay (
         .clk(aclk), 
-        .in((depth_z[31]) ? 0 : (depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : depth_z[14 +: DEPTH_WIDTH]), 
+        .in((depth_z[31]) ? { DEPTH_WIDTH { 1'b0 } } : (depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : depth_z[14 +: DEPTH_WIDTH]), 
         .out(step1_depth_z)
     );
     XRecip #(
@@ -375,6 +375,11 @@ module AttributePerspectiveCorrectionX #(
             step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
             step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
         end
+        else
+        begin
+            step2_tex0_mipmap_s_reg <= 0;
+            step2_tex0_mipmap_t_reg <= 0;
+        end
 
         if (ENABLE_SECOND_TMU)
         begin
@@ -385,6 +390,18 @@ module AttributePerspectiveCorrectionX #(
                 step2_tex1_mipmap_s_reg <= (step1_tex1_mipmap_s * $signed({ 1'b0, step1_tex1_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
                 step2_tex1_mipmap_t_reg <= (step1_tex1_mipmap_t * $signed({ 1'b0, step1_tex1_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
             end
+            else
+            begin
+                step2_tex1_mipmap_s_reg <= 0;
+                step2_tex1_mipmap_t_reg <= 0;
+            end
+        end
+        else
+        begin
+            step2_tex1_s_reg <= 0;
+            step2_tex1_t_reg <= 0;
+            step2_tex1_mipmap_s_reg <= 0;
+            step2_tex1_mipmap_t_reg <= 0;
         end
     end
 
@@ -457,6 +474,13 @@ module AttributePerspectiveCorrectionX #(
                 assign m_attrb_tmipmap1_t = step2_tex1_t;
                 assign m_attrb_tmipmap1_s = step2_tex1_s;
             end
+        end
+        else
+        begin
+            assign m_attrb_ttexture1_t = 0;
+            assign m_attrb_ttexture1_s = 0;
+            assign m_attrb_tmipmap1_t = 0;
+            assign m_attrb_tmipmap1_s = 0;
         end
     endgenerate
 

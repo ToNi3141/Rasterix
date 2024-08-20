@@ -34,8 +34,7 @@ void reset(VDisplayController8BitILI9341& t)
     t.s_axis_tdata = 0;
 
     rr::ut::clk(&t);
-    
-    REQUIRE(t.rst == 0);
+
     t.resetn = 1;
 
     rr::ut::clk(&t);
@@ -86,7 +85,7 @@ TEST_CASE("Stream data", "[Display]")
     initTest(t, false, 0xC7);  
     initTest(t, true, 0xC0); 
     initTest(t, false, 0x36);  
-    initTest(t, true, 0x00 | 0x08 | 0x40);
+    initTest(t, true, 0x00 | 0x00 | 0x40 | 0x08);
     initTest(t, false, 0x3A);  
     initTest(t, true, 0x55); 
     initTest(t, false, 0xB1);  

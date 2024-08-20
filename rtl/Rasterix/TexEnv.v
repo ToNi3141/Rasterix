@@ -56,9 +56,9 @@ module TexEnv
     localparam COLOR_G_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 2;
     localparam COLOR_R_SIGNED_POS = SUB_PIXEL_WIDTH_SIGNED * 3;
 
-    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED);  
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED);
-    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2);
+    `SaturateCastSignedToUnsigned(SaturateCastSignedToUnsigned, SUB_PIXEL_WIDTH_SIGNED)
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PIXEL_WIDTH_SIGNED + 2, SUB_PIXEL_WIDTH_SIGNED)
+    `ExpandSigned(ExpandSigned, SUB_PIXEL_WIDTH_SIGNED, SUB_PIXEL_WIDTH_SIGNED + 2)
 
     function [SUB_PIXEL_WIDTH - 1 : 0] SelectRgbOperand;
         input [ 1 : 0]                  conf;

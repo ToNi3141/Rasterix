@@ -101,27 +101,27 @@ framebufferWriterClear:
 	./obj_dir/VFramebufferWriterClear
 
 framebufferReader:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/3rdParty/verilog-axis
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/FramebufferReader.v --top-module FramebufferReader cpp/sim_FramebufferReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/3rdParty/verilog-axis
 	-make -C obj_dir -f VFramebufferReader.mk
 	./obj_dir/VFramebufferReader
 
 streamSemaphore:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/StreamSemaphore.v --top-module StreamSemaphore cpp/sim_StreamSemaphore.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
 	-make -C obj_dir -f VStreamSemaphore.mk
 	./obj_dir/VStreamSemaphore
 
 lodCalculator:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/LodCalculator.v --top-module LodCalculator cpp/sim_LodCalculator.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/LodCalculator.v --top-module LodCalculator cpp/sim_LodCalculator.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ 
 	-make -C obj_dir -f VLodCalculator.mk
 	./obj_dir/VLodCalculator
 
 attributeInterpolationX:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributeInterpolationX.v --top-module AttributeInterpolationX cpp/sim_AttributeInterpolationX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributeInterpolationX.v --top-module AttributeInterpolationX cpp/sim_AttributeInterpolationX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VAttributeInterpolationX.mk
 	./obj_dir/VAttributeInterpolationX
 
 attributePerspectiveCorrectionX:
-	verilator -Wno-lint -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributePerspectiveCorrectionX.v --top-module AttributePerspectiveCorrectionX cpp/sim_AttributePerspectiveCorrectionX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributePerspectiveCorrectionX.v --top-module AttributePerspectiveCorrectionX cpp/sim_AttributePerspectiveCorrectionX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VAttributePerspectiveCorrectionX.mk
 	./obj_dir/VAttributePerspectiveCorrectionX
 

@@ -15,9 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-localparam RR_CMD_SIZE = 2;
-
-localparam RR_CMD_INIT = 0;
-localparam RR_CMD_X_INC = 1;
-localparam RR_CMD_X_DEC = 2;
-localparam RR_CMD_Y_INC = 3;
+localparam RR_CMD_SIZE = 2,
+localparam RR_CMD_INIT = 0,
+localparam RR_CMD_X_INC = 1,
+localparam RR_CMD_X_DEC = 2,
+localparam RR_CMD_Y_INC = 3,

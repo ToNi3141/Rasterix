@@ -16,7 +16,7 @@ class BusConnector : public rr::IBusConnector
 public:
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
-    static constexpr uint32_t MAX_CHUNK_SIZE { 16384 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
     
     BusConnector() { }
 
@@ -57,7 +57,7 @@ public:
     { 
         switch (index) 
         {
-            case 11:
+            case 2:
                 return { m_displayListTmp }; 
             default:
                 return { m_dlMem[index] }; 
@@ -66,7 +66,7 @@ public:
     }
     virtual uint8_t getBufferCount() const override 
     { 
-        return 11; 
+        return m_dlMem.size() + 1; 
     }
 
     void init()
@@ -100,7 +100,7 @@ public:
     }
 private:
     uint dma_tx;
-    std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 10> m_dlMem;
+    std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 2> m_dlMem;
     std::array<uint8_t, 4096 + 64> m_displayListTmp;
 };
 
@@ -134,7 +134,7 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<16 * 1024> m_busConnector;
+    BusConnector<32 * 1024> m_busConnector;
     bool led = false;
     Scene m_scene {};
 };

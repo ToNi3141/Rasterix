@@ -2,15 +2,15 @@
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. The interface used to connect the FPGA with a host is an SPI interface with additional CTS pin for flow control (in software).
 
-This builds the `RasterixIF` and uses one TMU with a maximum texture resolution of 128x128px. The framebuffers have a size of 64kB + 64kB + 16kB. 
+This builds the `RasterixRF` and uses one TMU with a maximum texture resolution of 128x128px.
 
 There is one variant available:
 
-`rrxif`:  
+`rrxef`:  
   - 1 TMU (max res: 128x128)
-  - No mip mapping
-  - Framebuffer size: 64kB + 64kB + 16kB
-  - 32 bit floating point
+  - Mip mapping
+  - Fixpoint
+  - 10MPixel maximum (because of slow SRAM)
 
 
 To build the binaries, use the following commands.
@@ -28,12 +28,12 @@ The following hardware setup shows an Raspberry Pi Pico connected to an CMOD A7 
 The Pico is connected via SPI to the CMOD. Have a look at the following table to connect them:
 | Port Name | Pico | CMOD A7 |
 |-----------|------|---------|
+| MOSI      | GP19 | 45      |
+| SCK       | GP18 | 47      |
 | MISO      | GP16 | 48      |
 | CSN       | GP17 | 46      |
-| SCK       | GP18 | 47      |
-| MOSI      | GP19 | 45      |
-| CTS       | GP20 | 44      |
-| RSTN      | GP21 | 43      |
+| CTS       | GP20 |  2      |
+| RSTN      | GP21 |  1      |
 
 Supported SPI clock speed: Around 50MHz.
 
@@ -41,13 +41,15 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 
 | Port Name | CMOD A7 | ILI9341 |
 |-----------|---------|---------|
-| CS        | n/c     | GND     |
-| C/D       | 12      | C/D     |
-| WR        | 10      | WR      |
-| RD        | 09      | RD      |
-| RST       | n/c     | 3.3V    |
-| DATA[7:0] | [1:8]   | D[7:0]  |
+| CS        | 27      | GND     |
+| C/D       | 28      | C/D     |
+| WR        | 29      | WR      |
+| RD        | 30      | RD      |
+| RST       | 31      | 3.3V    |
+| DATA[7:0] | [38:45] | D[7:0]  |
 
+The display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA. Attention is required by powering the display. The FPGA pins are only 3.3V tolerant. Therefore `Vin` should not exceed 3.3V.
+ 
 # RP2040 Build
 Uses the [CMOD A7 Build](#cmod-a7-build).
 
