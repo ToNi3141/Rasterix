@@ -27,7 +27,7 @@ namespace rr
 {
 
 bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
-                           const std::span<TriangleStreamTypes::Texture>& texture,
+                           const tcb::span<TriangleStreamTypes::Texture>& texture,
                            const uint16_t lineStart,
                            const uint16_t lineEnd)
 {
@@ -88,7 +88,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
 }
 
 bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
-                           const std::span<TriangleStreamTypes::Texture>& texture, 
+                           const tcb::span<TriangleStreamTypes::Texture>& texture, 
                            const TransformedTriangle& triangle) const
 {
     Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });

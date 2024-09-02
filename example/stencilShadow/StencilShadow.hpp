@@ -1,6 +1,6 @@
 #ifndef _STENCILSHADOW_HPP_
 #define _STENCILSHADOW_HPP_
-#include <span>
+#include <tcb/span.hpp>
 #include "glu.h"
 #include "Vec.hpp"
 #include "Mat44.hpp"
@@ -205,7 +205,7 @@ private:
         glDisable(GL_STENCIL_TEST);
     }
 
-    void searchAndAddEdge(rr::Vec3* adjacent, const std::span<const rr::Vec3> verts, const rr::Vec3& ev0, const rr::Vec3& ev1, const uint32_t i)
+    void searchAndAddEdge(rr::Vec3* adjacent, const tcb::span<const rr::Vec3> verts, const rr::Vec3& ev0, const rr::Vec3& ev1, const uint32_t i)
     {
         for (uint32_t j = 0; j < verts.size(); j += 3)
         {
@@ -243,7 +243,7 @@ private:
         return;
     }
 
-    void createAdjacentArray(std::span<rr::Vec3> adjacent, const std::span<const rr::Vec3> verts)
+    void createAdjacentArray(tcb::span<rr::Vec3> adjacent, const tcb::span<const rr::Vec3> verts)
     {
         uint32_t j = 0;
         for (uint32_t i = 0; i < verts.size(); i += 3)
@@ -293,7 +293,7 @@ private:
         glDisableClientState(GL_VERTEX_ARRAY);
     }
 
-    void drawSilhouette(const std::span<const rr::Vec3> verts, const rr::Vec4& lightPos)
+    void drawSilhouette(const tcb::span<const rr::Vec3> verts, const rr::Vec4& lightPos)
     {
         rr::Mat44 mInv;
         glGetFloatv(GL_MODELVIEW_MATRIX, &mInv.mat[0][0]);
@@ -349,7 +349,7 @@ private:
         *cptr = cos(angle);
     }
 
-    void createTorus(std::span<rr::Vec3> vertex, std::span<rr::Vec3> normal, float inner_rad, float outer_rad, int sides, int rings)
+    void createTorus(tcb::span<rr::Vec3> vertex, tcb::span<rr::Vec3> normal, float inner_rad, float outer_rad, int sides, int rings)
     {
         static constexpr float __glPi = 3.14159265358979323846f;
         int i, j, k, gray;

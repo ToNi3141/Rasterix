@@ -342,7 +342,7 @@ public:
             return false;
         }
         bool ret { true };
-        const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             using Command = TextureStreamCmd<RenderConfig>;
@@ -505,7 +505,7 @@ private:
 
     void uploadTextures()
     {
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
             DisplayListAssembler<RenderConfig> uploader;
             uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));

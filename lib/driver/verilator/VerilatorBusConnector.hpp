@@ -4,7 +4,7 @@
 #include "verilated.h"
 #include "GenericMemoryBusConnector.hpp"
 #include "Vtop.h"
-#include <span>
+#include <tcb/span.hpp>
 #include <verilated_vcd_c.h>
 
 namespace rr

@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <span>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -37,7 +37,7 @@ public:
         m_op = OP_RENDER_CONFIG | reg.getAddr();
     }
 
-    using Desc = std::array<std::span<uint32_t>, 1>;
+    using Desc = std::array<tcb::span<uint32_t>, 1>;
     void serialize(Desc& desc) const { desc[0][0] = m_val; }
     uint32_t command() const { return m_op; }
 

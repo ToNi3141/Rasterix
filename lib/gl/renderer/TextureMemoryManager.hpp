@@ -23,7 +23,7 @@
 #include "TextureObject.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
-#include <span>
+#include <tcb/span.hpp>
 #include <optional>
 #include <cmath>
 
@@ -200,7 +200,7 @@ public:
         return tex.tmuConfig;
     }
 
-    std::span<const uint16_t> getPages(const uint16_t texId) const
+    tcb::span<const uint16_t> getPages(const uint16_t texId) const
     {
         if (textureValid(texId)) [[likely]]
         {
@@ -239,7 +239,7 @@ public:
         return true;
     }
 
-    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const std::span<const uint8_t> data)> uploader) 
+    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader) 
     {
         if (!m_textureUpdateRequired) [[likely]]
             return true;
@@ -253,7 +253,7 @@ public:
                 bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
                 uint32_t j = 0;
-                for (std::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
+                for (tcb::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
                     ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
                 }
@@ -298,7 +298,7 @@ private:
             return counter;
         }
 
-        std::span<const uint8_t> getPageData(uint32_t page, const std::span<uint8_t>& buffer)
+        tcb::span<const uint8_t> getPageData(uint32_t page, const tcb::span<uint8_t>& buffer)
         {
             const uint32_t addr = page * buffer.size();
             uint32_t level = 0;
@@ -313,7 +313,7 @@ private:
                 mipMapAddr += textures[level].width * textures[level].height * 2;
             }
 
-            std::span<const uint8_t> ret {};
+            tcb::span<const uint8_t> ret {};
             uint32_t bufferSize = 0;
             for (; level < textures.size(); level++)
             {

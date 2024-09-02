@@ -22,7 +22,7 @@
 #include <array>
 #include <bitset>
 #include <algorithm>
-#include <span>
+#include <tcb/span.hpp>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "DmaStreamEngineCommands.hpp"
@@ -38,7 +38,7 @@ public:
     static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
     using List = DisplayList<ALIGNMENT>;
 
-    void setBuffer(std::span<uint8_t> buffer)
+    void setBuffer(tcb::span<uint8_t> buffer)
     {
         m_displayList.setBuffer(buffer);
     }
@@ -50,7 +50,7 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool uploadToDeviceMemory(const uint32_t addr, const std::span<const uint8_t> data)
+    bool uploadToDeviceMemory(const uint32_t addr, const tcb::span<const uint8_t> data)
     {
         const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;

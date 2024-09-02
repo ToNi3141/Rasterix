@@ -24,7 +24,7 @@ public:
 
     virtual void writeData(const uint8_t index, const uint32_t size) override 
     {
-        std::span<const uint8_t> data = requestBuffer(index);
+        tcb::span<const uint8_t> data = requestBuffer(index);
         uint32_t dataToSend = size;
         uint32_t counter = 0;
         while (dataToSend != 0)
@@ -53,7 +53,7 @@ public:
         return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
     }
 
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override 
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override 
     { 
         switch (index) 
         {

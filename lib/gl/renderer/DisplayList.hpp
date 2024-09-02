@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <cstring>
-#include <span>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -28,7 +28,7 @@ namespace rr
 template <uint8_t ALIGNMENT>
 class DisplayList {
 public:
-    void setBuffer(std::span<uint8_t> buffer)
+    void setBuffer(tcb::span<uint8_t> buffer)
     {
         mem = buffer;
     }
@@ -85,7 +85,7 @@ public:
         writePos = checkpoint;
     }
 
-    std::span<const uint8_t> getMemPtr() const
+    tcb::span<const uint8_t> getMemPtr() const
     {
         return { mem.data(), getSize() };
     }
@@ -147,7 +147,7 @@ public:
     }
 
 private:
-    std::span<uint8_t> mem;
+    tcb::span<uint8_t> mem;
     uint32_t writePos { 0 };
     uint32_t readPos { 0 };
     uint32_t checkpoint { 0 };

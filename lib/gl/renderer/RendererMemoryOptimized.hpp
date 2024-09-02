@@ -251,7 +251,7 @@ public:
             return false;
         }
         bool ret { true };
-        const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
         using Command = TextureStreamCmd<RenderConfig>;
         ret = ret && m_displayListAssembler[m_backList].addCommand(Command { target, pages });
         TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
@@ -402,7 +402,7 @@ private:
     void uploadTextures()
     {
         // Upload textures
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
             DisplayListAssembler<RenderConfig> uploader;
             uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));

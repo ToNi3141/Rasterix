@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <array>
-#include <span>
+#include <tcb/span.hpp>
 #include <type_traits>
 #include <typeinfo>
 #include "math/Vec.hpp"
@@ -80,7 +80,7 @@ public:
 
     bool isVisible() const { return m_visible; };
 
-    using Desc = std::array<std::span<TrDesc>, 1>;
+    using Desc = std::array<tcb::span<TrDesc>, 1>;
     void serialize(Desc& desc) const 
     { 
         desc[0][0] = m_desc;

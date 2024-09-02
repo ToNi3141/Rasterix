@@ -88,7 +88,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         VertexParameter& param = m_primitiveAssembler.createParameter();
         fetchAndTransform(param, obj, it);
 
-        const std::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
+        const tcb::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
         {
             if (!drawTriangle(triangle)) [[unlikely]]
@@ -105,7 +105,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     return true;
 }
 
-bool VertexPipeline::drawClippedTriangleList(std::span<VertexParameter> list)
+bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
 {
     // Calculate for every vertex the perspective division and also apply the viewport transformation
     const std::size_t clippedVertexListSize = list.size();
@@ -225,7 +225,7 @@ bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
     list[1] = triangle[1];
     list[2] = triangle[2];
 
-    std::span<VertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
+    tcb::span<VertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
 
     if (clippedVertexParameter.empty())
     {

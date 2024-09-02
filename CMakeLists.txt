@@ -43,7 +43,7 @@ set(RRX_CORE_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the s
 set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")
 set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil buffer")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 if (NOT RRX_BUILD_RP2040)
     project(

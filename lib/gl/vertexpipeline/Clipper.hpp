@@ -19,7 +19,7 @@
 #define CLIPPER_HPP
 
 #include "math/Vec.hpp"
-#include <span>
+#include <tcb/span.hpp>
 #include <array>
 #include "renderer/IRenderer.hpp"
 #include "PrimitiveAssembler.hpp"
@@ -33,7 +33,7 @@ public:
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
     using ClipList = std::array<VertexParameter, 9>;
 
-    static std::span<VertexParameter> clip(ClipList& list, ClipList& listBuffer);
+    static tcb::span<VertexParameter> clip(ClipList& list, ClipList& listBuffer);
     
     static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
     {

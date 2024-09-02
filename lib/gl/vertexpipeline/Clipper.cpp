@@ -113,7 +113,7 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 #endif
 }
 
-std::span<VertexParameter> Clipper::clip(ClipList& list, ClipList& listBuffer)
+tcb::span<VertexParameter> Clipper::clip(ClipList& list, ClipList& listBuffer)
 {
     ClipList* listIn = &list;
     ClipList* listOut = &listBuffer;
