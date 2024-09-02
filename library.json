@@ -19,16 +19,35 @@
     "frameworks": "arduino",
     "platforms": "*",
     "examples": [
-        "https://github.com/nlohmann/json/tree/develop/docs/examples"
+
     ],
     "build": {
         "srcDir": ".",
         "srcFilter": "-<*> +<lib/gl>",
         "includeDir": "lib",
         "flags": [
-            "-I 3rdParty/span/include",
-            "-I gl",
-            "-I driver/arduino"
+            "-I lib/3rdParty/span/include",
+            "-I lib/gl",
+            "-I lib/driver/arduino",
+            "-I lib/stubs/spdlog",
+            "-DRRX_CORE_TMU_COUNT=1",
+            "-DRRX_CORE_MAX_TEXTURE_SIZE=128",
+            "-DRRX_CORE_ENABLE_MIPMAPPING=false",
+            "-DRRX_CORE_MAX_DISPLAY_WIDTH=320",
+            "-DRRX_CORE_MAX_DISPLAY_HEIGHT=240",
+            "-DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=153600",
+            "-DRRX_CORE_USE_FLOAT_INTERPOLATION=false",
+            "-DRRX_CORE_CMD_STREAM_WIDTH=32",
+            "-DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=68",
+            "-DRRX_CORE_NUMBER_OF_TEXTURES=68",
+            "-DRRX_CORE_TEXTURE_PAGE_SIZE=2048",
+            "-DRRX_CORE_GRAM_MEMORY_LOC=0x0",
+            "-DRRX_CORE_FRAMEBUFFER_TYPE=FramebufferType::EXTERNAL_MEMORY_TO_STREAM",
+            "-DRRX_CORE_COLOR_BUFFER_LOC_1=0x35000",
+            "-DRRX_CORE_COLOR_BUFFER_LOC_2=0x35000",
+            "-DRRX_CORE_DEPTH_BUFFER_LOC=0x5A800",
+            "-DRRX_CORE_STENCIL_BUFFER_LOC=0x22400",
+            "-std=c++17"
         ]
     }
 }

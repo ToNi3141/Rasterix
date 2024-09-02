@@ -111,7 +111,7 @@
         {
             "name": "cmod7_rrxef",
             "hidden": true,
-            "description": "Configuration for the Zynq rrxef",
+            "description": "Configuration for the cmod 7 rrxef",
             "cacheVariables": 
             {
                 "RRX_CORE_TMU_COUNT": "1",
