@@ -1,0 +1,34 @@
+{
+    "name": "Rasterix",
+    "description": "OpenGL 1.x library and rasterizer",
+    "keywords": [
+        "opengl"
+    ],
+    "authors": [
+        {
+            "name": "ToNi3141",
+            "url": "https://github.com/ToNi3141"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ToNi3141/Rasterix.git"
+    },
+    "license": "GPL-3.0",
+    "dependencies": [],
+    "frameworks": "arduino",
+    "platforms": "*",
+    "examples": [
+        "https://github.com/nlohmann/json/tree/develop/docs/examples"
+    ],
+    "build": {
+        "srcDir": ".",
+        "srcFilter": "-<*> +<lib/gl>",
+        "includeDir": "lib",
+        "flags": [
+            "-I 3rdParty/span/include",
+            "-I gl",
+            "-I driver/arduino"
+        ]
+    }
+}
