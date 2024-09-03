@@ -25,6 +25,9 @@
 #include "vertexpipeline/Types.hpp"
 #include "glTypeConverters.h"
 #include <cmath>
+#include "vertexpipeline/VertexQueue.hpp"
+#include "vertexpipeline/VertexPipeline.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 

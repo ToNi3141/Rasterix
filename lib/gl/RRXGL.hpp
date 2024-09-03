@@ -23,14 +23,13 @@
 #include <functional>
 #include "IBusConnector.hpp"
 #include <map>
-#include "vertexpipeline/VertexQueue.hpp"
-#include "vertexpipeline/VertexPipeline.hpp"
-#include "vertexpipeline/RenderObj.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
 
 namespace rr
 {
 class RenderDevice;
+class VertexPipeline;
+class PixelPipeline;
+class VertexQueue;
 class RRXGL
 {
 public:
@@ -60,7 +59,7 @@ public:
 
     /// @brief Returns the maximum supported LOD level
     /// @return The maximum supported LOD level
-    static std::size_t getMaxLOD() { return TextureObject::MAX_LOD; }
+    static std::size_t getMaxLOD();
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
@@ -78,7 +77,6 @@ public:
 private:
     RRXGL(IBusConnector& busConnector);
     ~RRXGL();
-    VertexQueue m_vertexQueue {};
     RenderDevice* m_renderDevice { nullptr };
 
     // Errors

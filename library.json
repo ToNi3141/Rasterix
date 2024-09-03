@@ -19,7 +19,11 @@
     "frameworks": "arduino",
     "platforms": "*",
     "examples": [
-
+        {
+            "name": "Hello World",
+            "base": "example/platformio",
+            "files": ["main.cpp"]
+        } 
     ],
     "build": {
         "srcDir": ".",
@@ -30,6 +34,8 @@
             "-I lib/gl",
             "-I lib/driver/arduino",
             "-I lib/stubs/spdlog",
+            "-I example/util/arduino",
+            "-I example/minimal",
             "-DRRX_CORE_TMU_COUNT=1",
             "-DRRX_CORE_MAX_TEXTURE_SIZE=128",
             "-DRRX_CORE_ENABLE_MIPMAPPING=false",

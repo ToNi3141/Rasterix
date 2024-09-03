@@ -24,6 +24,9 @@
 #include <spdlog/spdlog.h>
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
+#include "vertexpipeline/VertexQueue.hpp"
+#include "vertexpipeline/VertexPipeline.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
 
 #define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
 namespace rr
@@ -48,6 +51,7 @@ public:
     Renderer<RenderConfig> renderer;
     VertexPipeline vertexPipeline;
     PixelPipeline pixelPipeline;
+    VertexQueue vertexQueue {};
 };
 
 bool RRXGL::createInstance(IBusConnector& busConnector)
@@ -606,7 +610,7 @@ PixelPipeline& RRXGL::pixelPipeline()
 
 VertexQueue& RRXGL::vertexQueue()
 {
-    return m_vertexQueue;
+    return m_renderDevice->vertexQueue;
 }
 
 uint16_t RRXGL::getMaxTextureSize() const
@@ -627,6 +631,11 @@ bool RRXGL::isMipmappingAvailable() const
 bool RRXGL::setRenderResolution(const uint16_t x, const uint16_t y)
 {
     return m_renderDevice->renderer.setRenderResolution(x, y);
+}
+
+std::size_t RRXGL::getMaxLOD()
+{
+    return TextureObject::MAX_LOD;
 }
 
 } // namespace rr
