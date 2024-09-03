@@ -49,7 +49,7 @@ public:
         glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
-        if constexpr (ENABLE_LIGHT)
+        if (ENABLE_LIGHT)
         {
             glActiveTexture(GL_TEXTURE0);
             glEnable(GL_LIGHT0);
@@ -65,7 +65,7 @@ public:
             glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         }
 
-        if constexpr (ENABLE_BLACK_WHITE)
+        if (ENABLE_BLACK_WHITE)
         {
             static constexpr float colors[4] = {.7, .7, .7, 0.0};
             glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
@@ -77,7 +77,7 @@ public:
             glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
         }
 
-        if constexpr (ENABLE_MULTI_TEXTURE)
+        if (ENABLE_MULTI_TEXTURE)
         {
             if (m_tmuCount > 1)
             {
@@ -137,7 +137,7 @@ public:
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords.data());
 
-        if constexpr (ENABLE_MULTI_TEXTURE)
+        if (ENABLE_MULTI_TEXTURE)
         {
             if (m_tmuCount > 1)
             {

@@ -36,6 +36,7 @@
             "-I lib/stubs/spdlog",
             "-I example/util/arduino",
             "-I example/minimal",
+            "-I example/stencilShadow",
             "-DRRX_CORE_TMU_COUNT=1",
             "-DRRX_CORE_MAX_TEXTURE_SIZE=128",
             "-DRRX_CORE_ENABLE_MIPMAPPING=false",
