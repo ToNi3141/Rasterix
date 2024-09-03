@@ -1,20 +1,27 @@
+// This file is an example how to integrate the rrx with an arduino.
+// Note: Only platformio is supported due to the lack of c++17 features in the arduino IDE.
 #include <Arduino.h>
 #include <SPI.h>
-#include <IBusConnector.hpp>
 #include <RRXGL.hpp>
 #include <Minimal.hpp>
+#include <StencilShadow.hpp>
+#include <IBusConnector.hpp>
 
+// Create a connector for the rrx library. This is a wrapper around the arduino SPI interface.
+// This currently uses the blocking SPI interface. It seems, that this is always supported from
+// the boards. The async one is not always supported.
 template <uint32_t DISPLAYLIST_SIZE = 32 * 1024>
 class ArduinoBusConnector : public rr::IBusConnector
 {
 public:
+    // Configure here the pinout of the arduino
+    // This currently uses the pinout of the rp2040. Might be adapted for other boards.
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
-    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
     static constexpr uint32_t CSN { 17 };
-    static constexpr uint32_t MOSI { 19 };
-    static constexpr uint32_t MISO { 16 };
-    static constexpr uint32_t SCK { 18 };
+
+    // The max chunk size (if the parameter is not changed in the FPGA, then this can be left as it is)
+    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
 
     virtual ~ArduinoBusConnector() = default;
 
@@ -45,10 +52,13 @@ public:
     { 
         switch (index) 
         {
-            case 2:
-                return { m_displayListTmp }; 
-            default:
+            case 0:
+            case 1:
                 return { m_dlMem[index] }; 
+            case 2:
+                return { m_displayListTmp };
+            default:
+                break; 
         }
         return {}; 
     }
@@ -89,22 +99,33 @@ static constexpr uint32_t RESOLUTION_W = 320;
 static constexpr uint LED_PIN = 25;
 bool state { false };
 
+// Select a demo
 static Minimal m_scene {};
+// static StencilShadow m_scene {};
 
 void setup() 
 {
     pinMode(LED_PIN, OUTPUT);
+    // Initialize the connector
     m_busConnector.init();
+    // Create a instance with the current connector. This will also initialize the library.
     rr::RRXGL::createInstance(m_busConnector);
+    // Set the display resolution
     rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    // Initialize the scene
     m_scene.init(RESOLUTION_W, RESOLUTION_H);
 }
 
 void loop() 
 {
+    // Draw the scene
     m_scene.draw();
+    // Swap to a new display list
     rr::RRXGL::getInstance().swapDisplayList();
+    // Upload the finished display list. To improve performance, this can run in a second thread.
     rr::RRXGL::getInstance().uploadDisplayList();
+
+    // Use LED as a heartbeat 
     digitalWrite(LED_PIN, state);
     state = !state;
 }
