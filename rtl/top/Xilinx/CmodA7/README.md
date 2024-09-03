@@ -62,3 +62,28 @@ cmake --preset rp2040
 cmake --build build/rp2040 --config Release --parallel
 ```
 You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
+
+# PlatformIO
+If you are using [PlatformIO](https://platformio.org/) you can add this repo directly to your `platformio.ini` like this:
+
+```ini
+[env:your_env_name]
+lib_deps =
+  toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+```
+
+or you can include it as a dependency in your `library.json` like this:
+
+```json
+…
+  "dependencies": 
+  [
+    {
+      "name": "toni3141-Rasterix",
+      "version": "https://github.com/ToNi3141/Rasterix.git"
+    }
+  ]
+ …
+```
+
+An example for the Arduino framework is available under examples.
