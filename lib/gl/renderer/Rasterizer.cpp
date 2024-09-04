@@ -18,10 +18,7 @@
 #include "Rasterizer.hpp"
 #include <cstring>
 
-// The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max
-#define max std::max
-#define min std::min
 
 namespace rr
 {
@@ -106,10 +103,10 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     
     // Initialize Bounding box
     // Get the bounding box
-    int32_t bbStartX = min(min(v0[0], v1[0]), v2[0]);
-    int32_t bbStartY = min(min(v0[1], v1[1]), v2[1]);
-    int32_t bbEndX = max(max(v0[0], v1[0]), v2[0]);
-    int32_t bbEndY = max(max(v0[1], v1[1]), v2[1]);
+    int32_t bbStartX = std::min(std::min(v0[0], v1[0]), v2[0]);
+    int32_t bbStartY = std::min(std::min(v0[1], v1[1]), v2[1]);
+    int32_t bbEndX = std::max(std::max(v0[0], v1[0]), v2[0]);
+    int32_t bbEndY = std::max(std::max(v0[1], v1[1]), v2[1]);
 
     // Convert to integer values
     bbStartX = bbStartX + EDGE_FUNC_ZERO_P_FIVE;
@@ -124,10 +121,10 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
 
     if (m_enableScissor)
     {
-        bbStartX = max(bbStartX, m_scissorStartX);
-        bbStartY = max(bbStartY, m_scissorStartY);
-        bbEndX = min(bbEndX, m_scissorEndX);
-        bbEndY = min(bbEndY, m_scissorEndY);
+        bbStartX = std::max(bbStartX, m_scissorStartX);
+        bbStartY = std::max(bbStartY, m_scissorStartY);
+        bbEndX = std::min(bbEndX, m_scissorEndX);
+        bbEndY = std::min(bbEndY, m_scissorEndY);
 
         if (bbStartX >= bbEndX)
         {
@@ -141,10 +138,10 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
 
 //    // Clamp against the view port
 //    // Should not be needed when the clipping is enabled
-//         bbStartX = max(bbStartX, (int32_t)0);
-//         bbStartY = max(bbStartY, (int32_t)0);
-//         bbEndX = min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-//         bbEndY = min(bbEndY + 1, 320);
+//         bbStartX = std::max(bbStartX, (int32_t)0);
+//         bbStartY = std::max(bbStartY, (int32_t)0);
+//         bbEndX = std::min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
+//         bbEndY = std::min(bbEndY + 1, 320);
 //     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
 //        if ((bbEndX - bbStartX) == 0)
 //            return false;
@@ -204,10 +201,10 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
             // Avoid overflowing the integer part by adding an offset 
             if (m_enableScaling)
             {
-                const float minS = min(texS[0], min(texS[1], texS[2]));
-                const float minT = min(texT[0], min(texT[1], texT[2]));
-                const float maxS = max(texS[0], max(texS[1], texS[2]));
-                const float maxT = max(texT[0], max(texT[1], texT[2]));
+                const float minS = std::min(texS[0], std::min(texS[1], texS[2]));
+                const float minT = std::min(texT[0], std::min(texT[1], texT[2]));
+                const float maxS = std::max(texS[0], std::max(texS[1], texS[2]));
+                const float maxT = std::max(texT[0], std::max(texT[1], texT[2]));
 
                 if (minS < -4.0f)
                 {
