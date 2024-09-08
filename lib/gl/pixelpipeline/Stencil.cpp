@@ -47,7 +47,7 @@ bool Stencil::update()
 
     if (m_enableTwoSideStencil)
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize()) [[unlikely]]
+        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize()) 
         {
             ret = ret && m_renderer.setStencilBufferConfig(*m_stencilConfTwoSide);
             m_stencilConfUploaded = *m_stencilConfTwoSide;
@@ -55,7 +55,7 @@ bool Stencil::update()
     }
     else 
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize()) [[unlikely]]
+        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize()) 
         {
             ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
             m_stencilConfUploaded = m_stencilConf;
@@ -79,7 +79,7 @@ bool Stencil::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2)
         {
             selectStencilTwoSideBackForDevice();
         }
-        if (!update()) [[unlikely]]
+        if (!update()) 
         {
             SPDLOG_ERROR("updateStencilFace(): Cannot update pixel pipeline");
             return false;

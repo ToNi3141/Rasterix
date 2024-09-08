@@ -32,7 +32,7 @@ bool Culling::cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
     {
         const float edgeVal { Rasterizer::edgeFunctionFloat(v0, v1, v2) };
         const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
-        if (currentOrientation != m_cullMode) [[unlikely]] // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+        if (currentOrientation != m_cullMode)  // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
         {
             return true;
         }   

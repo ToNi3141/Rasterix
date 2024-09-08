@@ -81,7 +81,7 @@ void MatrixStack::multiply(const Mat44& mat)
         case MatrixMode::COLOR:
             setColorMatrix(mat * m_c);
             break;
-        [[unlikely]] default:
+         default:
             break;
     }
 }

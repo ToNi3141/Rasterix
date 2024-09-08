@@ -37,7 +37,7 @@ public:
 
     void* __restrict alloc(const uint32_t size)
     {
-        if ((size + writePos) <= mem.size()) [[likely]]
+        if ((size + writePos) <= mem.size()) 
         {
             void* memPlace = &mem[writePos];
             writePos += size;
@@ -57,7 +57,7 @@ public:
     void remove()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if (size <= writePos) [[likely]]
+        if (size <= writePos) 
         {
             writePos -= size;
         }
@@ -116,7 +116,7 @@ public:
     GET_TYPE* __restrict lookAhead()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) [[likely]]
+        if ((size + readPos) <= writePos) 
         {
             return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
         }
@@ -127,7 +127,7 @@ public:
     GET_TYPE* __restrict getNext()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) [[likely]]
+        if ((size + readPos) <= writePos) 
         {
             void* memPlace = &mem[readPos];
             readPos += size;

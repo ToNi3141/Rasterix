@@ -40,7 +40,7 @@ public:
     {
         bool ret { true };
 
-        if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize()) [[unlikely]]
+        if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize()) 
         {
             ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
             m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;

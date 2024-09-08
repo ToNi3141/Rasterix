@@ -22,7 +22,7 @@ namespace rr
 
 tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::getPrimitive()
 {
-    if (m_line) [[unlikely]]
+    if (m_line) 
     {
         return constructLine();
     }
@@ -86,7 +86,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         }
         m_decrement = 1;
         break;
-    [[unlikely]] default:
+     default:
         return {};
     }
 
@@ -133,7 +133,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
         p1 = &m_queue[1];
         m_decrement = 1;
         break;
-    [[unlikely]] default:
+     default:
         return {};
     }
 
@@ -198,7 +198,7 @@ void PrimitiveAssembler::setDrawMode(const RenderObj::DrawMode mode)
     case RenderObj::DrawMode::LINE_STRIP:
         m_line = true;
         break;
-    [[unlikely]] default:
+     default:
         m_line = false;
         break;
     }

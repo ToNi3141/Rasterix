@@ -89,7 +89,7 @@ public:
         inv[15]= m[0]*m[5]*m[10]-m[0]*m[6]*m[9]-m[4]*m[1]*m[10]+
                 m[4]*m[2]*m[9]+m[8]*m[1]*m[6]-m[8]*m[2]*m[5];
         float det = m[0]*inv[0]+m[1]*inv[4]+m[2]*inv[8]+m[3]*inv[12];
-        if (det == 0.0f) [[unlikely]] return false; 
+        if (det == 0.0f) return false; 
         det = 1.0f / det;
         for (uint8_t i = 0; i < 4; i++)
         {

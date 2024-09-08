@@ -51,7 +51,7 @@ public:
     {
         bool ret { true };
 
-        if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize()) [[unlikely]]
+        if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize()) 
         {
             ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
             m_featureEnableUploaded = m_featureEnable;

@@ -58,7 +58,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         Vec4 vl;
         Vec3 normal = m_matrixStack.getNormal().transform(obj.getNormal(pos));
 
-        if (m_enableNormalizing) [[unlikely]]
+        if (m_enableNormalizing) 
         {
             normal.normalize();
         }
@@ -73,7 +73,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
 bool VertexPipeline::drawObj(const RenderObj &obj)
 {
     m_matrixStack.recalculateMatrices();
-    if (!m_renderer.updatePipeline()) [[unlikely]]
+    if (!m_renderer.updatePipeline()) 
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
@@ -91,7 +91,7 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
         const tcb::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
         {
-            if (!drawTriangle(triangle)) [[unlikely]]
+            if (!drawTriangle(triangle)) 
             {
                 return false;
             }
@@ -137,7 +137,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         return true;
     }
     
-    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex)) [[unlikely]]
+    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex)) 
     {
         return false;
     }
@@ -155,7 +155,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
                 list[0].color,
                 list[i - 2].color,
                 list[i - 1].color });
-        if (!success) [[unlikely]]
+        if (!success) 
         {
             return false;
         }
@@ -189,7 +189,7 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
         return true;
     }
     
-    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2)) [[unlikely]]
+    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2)) 
     {
         return false;
     }
