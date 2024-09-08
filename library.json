@@ -32,9 +32,7 @@
         "flags": [
             "-I lib/3rdParty/span/include",
             "-I lib/gl",
-            "-I lib/driver/arduino",
             "-I lib/stubs/spdlog",
-            "-I example/util/arduino",
             "-I example/minimal",
             "-I example/stencilShadow",
             "-DRRX_CORE_TMU_COUNT=1",
