@@ -3,10 +3,10 @@ TARGET_BUILD = simulation
 
 PATH_PREFIX = ../../..
 
-ICEGL_PATH = $${PATH_PREFIX}/lib/gl
+RRXGL_PATH = $${PATH_PREFIX}/lib/gl
 
 QT       += core gui
-CONFIG += c++2a
+CONFIG += c++17
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -17,43 +17,47 @@ TEMPLATE = app
 TARGET = qtRasterizerFpga
 
 SOURCES += main.cpp\
-    $${ICEGL_PATH}/vertexpipeline/VertexPipeline.cpp \
+    $${RRXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
         mainwindow.cpp \
-    $${ICEGL_PATH}/RRXGL.cpp \
-    $${ICEGL_PATH}/vertexpipeline/Clipper.cpp \
-    $${ICEGL_PATH}/vertexpipeline/Lighting.cpp \
-    $${ICEGL_PATH}/vertexpipeline/TexGen.cpp \
-    $${ICEGL_PATH}/vertexpipeline/RenderObj.cpp \
-    $${ICEGL_PATH}/pixelpipeline/PixelPipeline.cpp \
-    $${ICEGL_PATH}/glImpl.cpp \
-    $${ICEGL_PATH}/renderer/Rasterizer.cpp \
-    $${ICEGL_PATH}/vertexpipeline/ViewPort.cpp \
-    $${ICEGL_PATH}/vertexpipeline/MatrixStack.cpp \
-    $${ICEGL_PATH}/vertexpipeline/Culling.cpp \
-    $${ICEGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
-    $${ICEGL_PATH}/pixelpipeline/Fogging.cpp \
-    $${ICEGL_PATH}/pixelpipeline/Texture.cpp \
-    $${ICEGL_PATH}/pixelpipeline/Stencil.cpp \
-    $${ICEGL_PATH}/gl.cpp \
-    $${ICEGL_PATH}/glu.cpp
+    $${RRXGL_PATH}/RRXGL.cpp \
+    $${RRXGL_PATH}/vertexpipeline/Clipper.cpp \
+    $${RRXGL_PATH}/vertexpipeline/Lighting.cpp \
+    $${RRXGL_PATH}/vertexpipeline/TexGen.cpp \
+    $${RRXGL_PATH}/vertexpipeline/RenderObj.cpp \
+    $${RRXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
+    $${RRXGL_PATH}/glImpl.cpp \
+    $${RRXGL_PATH}/renderer/Rasterizer.cpp \
+    $${RRXGL_PATH}/vertexpipeline/ViewPort.cpp \
+    $${RRXGL_PATH}/vertexpipeline/MatrixStack.cpp \
+    $${RRXGL_PATH}/vertexpipeline/Culling.cpp \
+    $${RRXGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
+    $${RRXGL_PATH}/pixelpipeline/Fogging.cpp \
+    $${RRXGL_PATH}/pixelpipeline/Texture.cpp \
+    $${RRXGL_PATH}/pixelpipeline/Stencil.cpp \
+    $${RRXGL_PATH}/gl.cpp \
+    $${RRXGL_PATH}/glu.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \
-    $${ICEGL_PATH}/*.hpp \
-    $${ICEGL_PATH}/vertexpipeline/*.hpp \
-    $${ICEGL_PATH}/pixelpipeline/*.hpp \
-    $${ICEGL_PATH}/math/*.hpp \
-    $${ICEGL_PATH}/renderer/*.hpp \
-    $${ICEGL_PATH}/*.h \
-    $${ICEGL_PATH}/renderer/registers/* \
-    $${ICEGL_PATH}/renderer/commands/*
+    $${RRXGL_PATH}/*.hpp \
+    $${RRXGL_PATH}/vertexpipeline/*.hpp \
+    $${RRXGL_PATH}/pixelpipeline/*.hpp \
+    $${RRXGL_PATH}/math/*.hpp \
+    $${RRXGL_PATH}/renderer/*.hpp \
+    $${RRXGL_PATH}/*.h \
+    $${RRXGL_PATH}/renderer/registers/* \
+    $${RRXGL_PATH}/renderer/commands/*
 
 
+# spdlog
 DEFINES += SPDLOG_ACTIVE_LEVEL=3
 DEFINES += GL_SILENCE_DEPRICATION
 QMAKE_CXXFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/spdlog-1.10.0/include/
 QMAKE_CFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/spdlog-1.10.0/include/
 
+# tcb span
+QMAKE_CXXFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/span/include/
+QMAKE_CFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/span/include/
 
 # TMU settings
 DEFINES += RRX_CORE_TMU_COUNT=2
@@ -130,5 +134,5 @@ QMAKE_CXXFLAGS += -I$${VERILATOR_CODE_GEN_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/../ \
     -I$${VERILATOR_PATH}/include/ \
-    -I$${ICEGL_PATH}/ \
+    -I$${RRXGL_PATH}/ \
     -I$${PATH_PREFIX}/lib/utils
