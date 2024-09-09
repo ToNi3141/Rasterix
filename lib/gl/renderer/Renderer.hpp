@@ -142,7 +142,7 @@ public:
     {
         TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmd { m_rasterizer, triangle };
 
-        if (!triangleCmd.isVisible()) [[unlikely]]
+        if (!triangleCmd.isVisible()) 
         {
             // Triangle is not visible
             return true;
@@ -171,7 +171,7 @@ public:
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
                     ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
                 }
-                if (ret == false) [[unlikely]]
+                if (ret == false) 
                 {
                     return false;
                 }
@@ -337,12 +337,12 @@ public:
     virtual bool useTexture(const std::size_t target, const uint16_t texId) override 
     {
         m_boundTextures[target] = texId;
-        if (!m_textureManager.textureValid(texId)) [[unlikely]]
+        if (!m_textureManager.textureValid(texId)) 
         {
             return false;
         }
         bool ret { true };
-        const std::span<const uint16_t> pages = m_textureManager.getPages(texId);
+        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             using Command = TextureStreamCmd<RenderConfig>;
@@ -505,7 +505,7 @@ private:
 
     void uploadTextures()
     {
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const std::span<const uint8_t> data)
+        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
             DisplayListAssembler<RenderConfig> uploader;
             uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));

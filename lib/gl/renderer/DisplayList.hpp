@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <cstring>
-#include <span>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -28,7 +28,7 @@ namespace rr
 template <uint8_t ALIGNMENT>
 class DisplayList {
 public:
-    void setBuffer(std::span<uint8_t> buffer)
+    void setBuffer(tcb::span<uint8_t> buffer)
     {
         mem = buffer;
     }
@@ -37,7 +37,7 @@ public:
 
     void* __restrict alloc(const uint32_t size)
     {
-        if ((size + writePos) <= mem.size()) [[likely]]
+        if ((size + writePos) <= mem.size()) 
         {
             void* memPlace = &mem[writePos];
             writePos += size;
@@ -57,7 +57,7 @@ public:
     void remove()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if (size <= writePos) [[likely]]
+        if (size <= writePos) 
         {
             writePos -= size;
         }
@@ -85,7 +85,7 @@ public:
         writePos = checkpoint;
     }
 
-    std::span<const uint8_t> getMemPtr() const
+    tcb::span<const uint8_t> getMemPtr() const
     {
         return { mem.data(), getSize() };
     }
@@ -116,7 +116,7 @@ public:
     GET_TYPE* __restrict lookAhead()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) [[likely]]
+        if ((size + readPos) <= writePos) 
         {
             return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
         }
@@ -127,7 +127,7 @@ public:
     GET_TYPE* __restrict getNext()
     {
         static constexpr uint32_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) [[likely]]
+        if ((size + readPos) <= writePos) 
         {
             void* memPlace = &mem[readPos];
             readPos += size;
@@ -147,7 +147,7 @@ public:
     }
 
 private:
-    std::span<uint8_t> mem;
+    tcb::span<uint8_t> mem;
     uint32_t writePos { 0 };
     uint32_t readPos { 0 };
     uint32_t checkpoint { 0 };

@@ -59,7 +59,7 @@ bool DMAProxyBusConnector::clearToSend()
     return true;
 }
 
-std::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
+tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
 {
     if (index >= BUFFER_COUNT)
     {

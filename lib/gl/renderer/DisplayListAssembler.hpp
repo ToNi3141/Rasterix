@@ -22,7 +22,7 @@
 #include <array>
 #include <bitset>
 #include <algorithm>
-#include <span>
+#include <tcb/span.hpp>
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include "DmaStreamEngineCommands.hpp"
@@ -38,7 +38,7 @@ public:
     static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
     using List = DisplayList<ALIGNMENT>;
 
-    void setBuffer(std::span<uint8_t> buffer)
+    void setBuffer(tcb::span<uint8_t> buffer)
     {
         m_displayList.setBuffer(buffer);
     }
@@ -50,11 +50,11 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool uploadToDeviceMemory(const uint32_t addr, const std::span<const uint8_t> data)
+    bool uploadToDeviceMemory(const uint32_t addr, const tcb::span<const uint8_t> data)
     {
         const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
         const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;
-        if (expectedSize > m_displayList.getFreeSpace()) [[unlikely]]
+        if (expectedSize > m_displayList.getFreeSpace()) 
         {
             return false;
         }
@@ -86,7 +86,7 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (!hasDisplayListEnoughSpace(cmd)) [[unlikely]]
+        if (!hasDisplayListEnoughSpace(cmd)) 
         {
             return false;
         }
@@ -103,14 +103,14 @@ public:
         if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
         {
             const uint8_t tmu = cmd.getTmu();
-            if (tmu >= m_wasLastCommandATextureCommand.size()) [[unlikely]]
+            if (tmu >= m_wasLastCommandATextureCommand.size()) 
             {
                 return false;
             }
             // Close the current stream to avoid and undefined behaviour 
             closeStreamSection();
             // Check if the last command was a texture command. If so, remove the commands from the display list
-            if (m_wasLastCommandATextureCommand[tmu]) [[unlikely]]
+            if (m_wasLastCommandATextureCommand[tmu]) 
             {
                 m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
             }
@@ -183,7 +183,7 @@ private:
             expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
         }
 
-        if (expectedSize >= m_displayList.getFreeSpace()) [[unlikely]]
+        if (expectedSize >= m_displayList.getFreeSpace()) 
         {
             // Not enough memory to finish the operation
             return false;
@@ -196,7 +196,7 @@ private:
     {
         using DescArray = typename TCommand::Desc;
         using DescValueType = typename DescArray::value_type::element_type;
-        if (openNewStreamSection()) [[likely]]
+        if (openNewStreamSection()) 
         {
             // Write command
             uint32_t *opDl = m_displayList.template create<uint32_t>();
@@ -228,7 +228,7 @@ private:
 
     bool openNewStreamSection()
     {
-        if (m_streamCommand == nullptr) [[unlikely]]
+        if (m_streamCommand == nullptr) 
         {
             m_streamCommand = m_displayList.template create<DSEC::SCT>();
             m_displayList.template create<DSEC::SCT>(); // Dummy

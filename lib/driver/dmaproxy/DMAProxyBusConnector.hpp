@@ -31,7 +31,7 @@ public:
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
     virtual bool clearToSend() override;
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) override;
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override;
     virtual uint8_t getBufferCount() const override;
 private:
     struct Channel {
@@ -39,7 +39,7 @@ private:
         int fd;
     };
     Channel m_txChannel;
-    std::span<uint8_t> m_tmpBuffer{};
+    tcb::span<uint8_t> m_tmpBuffer{};
 };
 
 } // namespace rr

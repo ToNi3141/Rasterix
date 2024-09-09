@@ -27,6 +27,8 @@
 #include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/Types.hpp"
 #include "pixelpipeline/Texture.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/VertexQueue.hpp"
 
 namespace rr
 {

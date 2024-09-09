@@ -70,7 +70,7 @@ bool Fogging::setFogColor(const Vec4& val)
 
 bool Fogging::updateFogLut()
 {
-    if (!m_fogDirty) [[unlikely]]
+    if (!m_fogDirty) 
     {
         return true;
     }

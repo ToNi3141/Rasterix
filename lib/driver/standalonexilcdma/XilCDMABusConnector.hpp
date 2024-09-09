@@ -1,6 +1,6 @@
 #include "IBusConnector.hpp"
 #include <array>
-#include <span>
+#include <tcb/span.hpp>
 #include <xil_cache.h>
 #include "xaxidma.h"
 #include "xparameters.h"
@@ -67,7 +67,7 @@ public:
         return true;
     }
 
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) { return { m_dlMem[index] }; }
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) { return { m_dlMem[index] }; }
     virtual uint8_t getBufferCount() const { return m_dlMem.size(); }
 protected:
     std::array<std::array<uint8_t, 64 * 1024>, 4> m_dlMem{};

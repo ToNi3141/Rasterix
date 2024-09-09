@@ -18,7 +18,7 @@
 #ifndef IBUSCONNECTOR_HPP
 #define IBUSCONNECTOR_HPP
 #include <stdint.h>
-#include <span>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -39,7 +39,7 @@ public:
     /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
     /// @param index The index of the requested buffer
     /// @return Returns the requested buffer, or an empty optional if no buffer is available for the given index
-    virtual std::span<uint8_t> requestBuffer(const uint8_t index) = 0;
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) = 0;
 
     /// @brief Returns the number of buffers available to request
     /// @return The number of buffers which can be requested

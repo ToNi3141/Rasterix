@@ -19,7 +19,7 @@ add_library(gl STATIC
     renderer/Rasterizer.cpp
 )
 
-target_link_libraries(gl PRIVATE spdlog::spdlog)
+target_link_libraries(gl PRIVATE spdlog::spdlog span)
 target_include_directories(gl PUBLIC .)
 
 add_compile_definitions(

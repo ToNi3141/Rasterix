@@ -23,7 +23,7 @@
 #include "TextureObject.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
-#include <span>
+#include <tcb/span.hpp>
 #include <optional>
 #include <cmath>
 
@@ -75,7 +75,7 @@ public:
 
     bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) 
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("updateTexture with invalid texID called");
             return false;
@@ -136,7 +136,7 @@ public:
 
     void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("setTextureWrapModeS with invalid texID called");
             return;
@@ -147,7 +147,7 @@ public:
 
     void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("setTextureWrapModeT with invalid texID called");
             return;
@@ -158,7 +158,7 @@ public:
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("enableTextureMagFiltering with invalid texID called");
             return;
@@ -169,7 +169,7 @@ public:
 
     void enableTextureMinFiltering(const uint16_t texId, bool filter)
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("enableTextureMinFiltering with invalid texID called");
             return;
@@ -180,7 +180,7 @@ public:
 
     bool textureValid(const uint16_t texId) const 
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("textureValid with invalid texID called");
             return false;
@@ -191,7 +191,7 @@ public:
 
     TmuTextureReg getTmuConfig(const uint16_t texId) const
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("getTmuConfig with invalid texID called");
             return {};
@@ -200,9 +200,9 @@ public:
         return tex.tmuConfig;
     }
 
-    std::span<const uint16_t> getPages(const uint16_t texId) const
+    tcb::span<const uint16_t> getPages(const uint16_t texId) const
     {
-        if (textureValid(texId)) [[likely]]
+        if (textureValid(texId)) 
         {
             const Texture& tex = m_textures[*m_textureLut[texId]];
             return { tex.pageTable.data(), tex.pages };
@@ -212,13 +212,13 @@ public:
 
     TextureObjectMipmap getTexture(const uint16_t texId)
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("getTexture with invalid texID called");
             return {};
         }
         const uint32_t textureSlot = *m_textureLut[texId];
-        if (!m_textures[textureSlot].inUse) [[unlikely]]
+        if (!m_textures[textureSlot].inUse) 
         {
             return {};
         }
@@ -227,7 +227,7 @@ public:
 
     bool deleteTexture(const uint16_t texId) 
     {
-        if (!m_textureLut[texId]) [[unlikely]]
+        if (!m_textureLut[texId]) 
         {
             SPDLOG_ERROR("deleteTexture with invalid texID called");
             return false;
@@ -239,28 +239,28 @@ public:
         return true;
     }
 
-    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const std::span<const uint8_t> data)> uploader) 
+    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader) 
     {
-        if (!m_textureUpdateRequired) [[likely]]
+        if (!m_textureUpdateRequired) 
             return true;
 
         // Upload textures
         for (uint32_t i = 0; i < m_textures.size(); i++)
         {
             Texture& texture = m_textures[i];
-            if (texture.requiresUpload) [[unlikely]]
+            if (texture.requiresUpload) 
             {
                 bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
                 uint32_t j = 0;
-                for (std::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
+                for (tcb::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
                     ret = ret && uploader(static_cast<uint32_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
                 }
                 texture.requiresUpload = !ret;
             }
 
-            if (texture.requiresDelete) [[unlikely]]
+            if (texture.requiresDelete) 
             {
                 texture.requiresDelete = false;
                 texture.inUse = false;
@@ -298,7 +298,7 @@ private:
             return counter;
         }
 
-        std::span<const uint8_t> getPageData(uint32_t page, const std::span<uint8_t>& buffer)
+        tcb::span<const uint8_t> getPageData(uint32_t page, const tcb::span<uint8_t>& buffer)
         {
             const uint32_t addr = page * buffer.size();
             uint32_t level = 0;
@@ -313,7 +313,7 @@ private:
                 mipMapAddr += textures[level].width * textures[level].height * 2;
             }
 
-            std::span<const uint8_t> ret {};
+            tcb::span<const uint8_t> ret {};
             uint32_t bufferSize = 0;
             for (; level < textures.size(); level++)
             {

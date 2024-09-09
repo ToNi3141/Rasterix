@@ -20,7 +20,7 @@
 #define _TRIANGLE_HPP_
 
 #include <cstdint>
-#include <span>
+#include <tcb/span.hpp>
 #include "math/Vec.hpp"
 
 namespace rr

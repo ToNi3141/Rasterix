@@ -25,6 +25,9 @@
 #include "vertexpipeline/Types.hpp"
 #include "glTypeConverters.h"
 #include <cmath>
+#include "vertexpipeline/VertexQueue.hpp"
+#include "vertexpipeline/VertexPipeline.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -70,7 +73,7 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
 {
     SPDLOG_DEBUG("glBlendFunc srcFactor 0x{:X} dstFactor 0x{:X} called", srcFactor, dstFactor);
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    if (srcFactor == GL_SRC_ALPHA_SATURATE) [[unlikely]]
+    if (srcFactor == GL_SRC_ALPHA_SATURATE) 
     {
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
     }
@@ -1271,7 +1274,7 @@ GLAPI void APIENTRY impl_glLightf(GLenum light, GLenum pname, GLfloat param)
 {
     SPDLOG_DEBUG("glLightf light 0x{:X} pname 0x{:X} param {} called", light - GL_LIGHT0, pname, param);
     
-    if (light > GL_LIGHT7) [[unlikely]]
+    if (light > GL_LIGHT7) 
     {
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
     }   
@@ -1304,7 +1307,7 @@ GLAPI void APIENTRY impl_glLightfv(GLenum light, GLenum pname, const GLfloat *pa
 {
     SPDLOG_DEBUG("glLightfv light 0x{:X} pname 0x{:X}", light - GL_LIGHT0, pname);
 
-    if (light > GL_LIGHT7) [[unlikely]]
+    if (light > GL_LIGHT7) 
     {
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return;
@@ -1689,7 +1692,7 @@ GLAPI void APIENTRY impl_glOrthof(GLfloat left, GLfloat right, GLfloat bottom, G
 {
     SPDLOG_DEBUG("glOrthof left {} right {} bottom {} top {} zNear {} zFar {} called", left, right, bottom, top, zNear, zFar);
 
-    if ((zNear == zFar) || (left == right) || (top == bottom)) [[unlikely]]
+    if ((zNear == zFar) || (left == right) || (top == bottom)) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         return;
@@ -1746,7 +1749,7 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
     RRXGL::getInstance().setError(GL_NO_ERROR); 
     // TODO: Implement GL_UNPACK_ROW_LENGTH
-    if (pname == GL_PACK_ALIGNMENT) [[unlikely]]
+    if (pname == GL_PACK_ALIGNMENT) 
     {
         SPDLOG_WARN("glPixelStorei pname GL_PACK_ALIGNMENT not supported");
         RRXGL::getInstance().setError(GL_INVALID_ENUM); 
@@ -2664,14 +2667,14 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    if ((width > maxTexSize) || (height > maxTexSize)) [[unlikely]]
+    if ((width > maxTexSize) || (height > maxTexSize)) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_ERROR("glTexImage2d texture is too big.");
         return;
     }
 
-    if (!RRXGL::getInstance().isMipmappingAvailable() && (level != 0)) [[unlikely]]
+    if (!RRXGL::getInstance().isMipmappingAvailable() && (level != 0)) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_ERROR("Mipmapping on hardware not supported.");
@@ -2683,7 +2686,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     const uint16_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
     const uint16_t heightRounded = powf(2.0f, ceilf(logf(height) / logf(2.0f)));
 
-    if ((widthRounded == 0) || (heightRounded == 0)) [[unlikely]]
+    if ((widthRounded == 0) || (heightRounded == 0)) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_ERROR("Texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
@@ -2787,7 +2790,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
 {
     SPDLOG_DEBUG("glTexParameteri target 0x{:X} pname 0x{:X} param 0x{:X}", target, pname, param);
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    if (target == GL_TEXTURE_2D) [[likely]]
+    if (target == GL_TEXTURE_2D) 
     {
         switch (pname) {
         case GL_TEXTURE_WRAP_S:
@@ -3046,7 +3049,7 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
 {
     SPDLOG_DEBUG("glBindTexture target 0x{:X} texture 0x{:X}", target, texture);
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    if (target != GL_TEXTURE_2D) [[unlikely]]
+    if (target != GL_TEXTURE_2D) 
     {
         SPDLOG_WARN("glBindTexture target not supported");
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3056,7 +3059,7 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
     if (!RRXGL::getInstance().pixelPipeline().texture().isTextureValid(texture))
     {
         bool ret { RRXGL::getInstance().pixelPipeline().texture().createTextureWithName(texture) };
-        if (!ret) [[unlikely]]
+        if (!ret) 
         {
             // TODO: Free allocated textures to avoid leaks
             SPDLOG_ERROR("glBindTexture cannot create texture {}", texture);
@@ -3113,7 +3116,7 @@ GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint *textures)
 {
     SPDLOG_DEBUG("glDeleteTextures 0x{:X} called", n);
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    if (n < 0) [[unlikely]]
+    if (n < 0) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         return;
@@ -3165,7 +3168,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     case GL_UNSIGNED_INT:
         RRXGL::getInstance().vertexQueue().setIndicesType(RenderObj::Type::UNSIGNED_INT);
         break;
-    [[unlikely]] default:
+     default:
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
         SPDLOG_WARN("glDrawElements type 0x{:X} not supported", type);
         return;
@@ -3178,7 +3181,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     RRXGL::getInstance().vertexQueue().setIndicesPointer(indices);
     RRXGL::getInstance().vertexQueue().enableIndices(true);
 
-    if (RRXGL::getInstance().getError() == GL_NO_ERROR) [[likely]]
+    if (RRXGL::getInstance().getError() == GL_NO_ERROR) 
     {
         RRXGL::getInstance().vertexPipeline().drawObj(RRXGL::getInstance().vertexQueue().renderObj());
     }

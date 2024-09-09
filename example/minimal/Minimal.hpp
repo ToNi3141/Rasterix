@@ -49,7 +49,7 @@ public:
         glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
         glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
-        if constexpr (ENABLE_LIGHT)
+        if (ENABLE_LIGHT)
         {
             glActiveTexture(GL_TEXTURE0);
             glEnable(GL_LIGHT0);
@@ -65,7 +65,7 @@ public:
             glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         }
 
-        if constexpr (ENABLE_BLACK_WHITE)
+        if (ENABLE_BLACK_WHITE)
         {
             static constexpr float colors[4] = {.7, .7, .7, 0.0};
             glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
@@ -77,7 +77,7 @@ public:
             glTexEnvi(GL_TEXTURE_ENV, GL_RGB_SCALE, 1);
         }
 
-        if constexpr (ENABLE_MULTI_TEXTURE)
+        if (ENABLE_MULTI_TEXTURE)
         {
             if (m_tmuCount > 1)
             {
@@ -135,9 +135,9 @@ public:
         glBindTexture(GL_TEXTURE_2D, m_textureId);
         glClientActiveTexture(GL_TEXTURE0);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
+        glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords.data());
 
-        if constexpr (ENABLE_MULTI_TEXTURE)
+        if (ENABLE_MULTI_TEXTURE)
         {
             if (m_tmuCount > 1)
             {
@@ -147,33 +147,33 @@ public:
                 glBindTexture(GL_TEXTURE_2D, m_multiTextureId);
                 glClientActiveTexture(GL_TEXTURE1);
                 glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords);
+                glTexCoordPointer(2, GL_FLOAT, 0, cubeTexCoords.data());
             }
         }
 
         // Enable normals
         glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, 0, cubeNormals);
+        glNormalPointer(GL_FLOAT, 0, cubeNormals.data());
         
         // Enable vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, cubeVerts);
+        glVertexPointer(3, GL_FLOAT, 0, cubeVerts.data());
 
         // Draw the cube
-        glDrawElements(GL_TRIANGLES, sizeof(cubeIndex) / sizeof(cubeIndex[0]), GL_UNSIGNED_SHORT, cubeIndex);
+        glDrawElements(GL_TRIANGLES, cubeIndex.size(), GL_UNSIGNED_SHORT, cubeIndex.data());
     }
 
 private:
-    static constexpr uint16_t cubeIndex[] = {
+    const std::array<uint16_t, 36> cubeIndex = { {
         0, 1, 2, 0, 2, 3, // Face three
         4, 5, 6, 4, 6, 7, // Face five
         8, 9, 10, 8, 10, 11, // Face two
         12, 13, 14, 12, 14, 15, // Face six
         16, 17, 18, 16, 18, 19, // Face one
         20, 21, 22, 20, 22, 23 // Face four
-    };
+    } };
 
-    static constexpr float cubeVerts[] = {
+    const std::array<float, 72> cubeVerts = { {
         -1.0f, 1.0f, 1.0f,
         -1.0f,-1.0f, 1.0f,
         1.0f,-1.0f, 1.0f,
@@ -203,9 +203,9 @@ private:
         1.0f,-1.0f,-1.0f,
         -1.0f,-1.0f,-1.0f,
         -1.0f, 1.0f,-1.0f,
-    };
+    } };
 
-    static constexpr float cubeTexCoords[] = {
+    const std::array<float, 48> cubeTexCoords = { {
         0.0f, 1.0f,
         0.0f, 0.0f,
         1.0f, 0.0f,
@@ -235,9 +235,9 @@ private:
         1.0f, 0.0f,
         0.0f, 0.0f,
         0.0f, 1.0f,
-    };
+    } };
 
-    static constexpr float cubeNormals[] = {
+    const std::array<float, 72> cubeNormals = { {
         0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  1.0f,
@@ -267,7 +267,7 @@ private:
         0.0f,  0.0f, -1.0f,
         0.0f,  0.0f, -1.0f,
         0.0f,  0.0f, -1.0f,
-    };
+    } };
 
     const char *cubeTexture =
         "B)G@G*WTGJ_VE:;MFJSSG:_VD*3JA)C>AY[EE*OR>Y/>BZ/N@YWKEK#^D:K[:H+-"

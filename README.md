@@ -17,7 +17,7 @@ The long term goal of this project is to recreate an open source fixed function 
 
 It comes in two variants, `RasterixIF` and `RasterixEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations (because of AXI strobe limitations: stencil is applied on the whole value, not per bit, color mask work only on the whole fragment, no alpha channel), they are completely equal.
 
-`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA since the rendering is completely executed in static RAM resources on your FPGA. But the drawback is (you might already guess) the occupation of a lot of RAM resources on your FPGA.
+`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA since the rendering is completely executed in static RAM resources on your FPGA. But the drawback is the occupation of a lot of RAM resources on your FPGA.
 For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended. 
 
 The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
@@ -27,7 +27,7 @@ The used memory is decoupled from the actual framebuffer size. If a framebuffer 
 Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires a fraction of the logic of the floating point configuration. To start, it might be reasonable to try the floating point version first to bring everything up and to avoid pitfalls. Later, when there is the need to optimize, try the fixed point version.
 
 ## Area Usage
-With a generic configuration: 
+Typical configuration: 
   - 64 bit command bus / memory bus
   - 256px textures
   - 1 TMU
@@ -37,7 +37,7 @@ With a generic configuration:
 
 Then the core requires __around 10k LUTs__ on a Xilinx Series 7 device.
 
-A full configuration 
+Maximum configuration 
   - 128 bit command / memory bus
   - 256px textures
   - 2 TMUs
@@ -72,6 +72,8 @@ The rasterizer is running on the following platforms:
 
 # How to integrate
 To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7. It may be likely, that you can use the already existing code.
+
+PlatformIO is supported. See [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md).
 
 ## How to port the Driver
 To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:

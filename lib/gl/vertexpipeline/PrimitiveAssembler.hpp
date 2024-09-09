@@ -18,7 +18,7 @@
 #ifndef PRIMITIVE_ASSEMBLER_HPP
 #define PRIMITIVE_ASSEMBLER_HPP
 
-#include <span>
+#include <tcb/span.hpp>
 
 #include "RenderObj.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -37,7 +37,7 @@ public:
 
     PrimitiveAssembler(ViewPort& viewPort) : m_viewPort(viewPort) { }
 
-    std::span<const Triangle> getPrimitive();
+    tcb::span<const Triangle> getPrimitive();
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
     void setExpectedPrimitiveCount(const std::size_t count) { m_expectedPrimitiveCount = count; }
@@ -50,9 +50,9 @@ public:
 
     bool hasTriangles() const { return m_queue.size() >= 3; }
 private:
-    std::span<const Triangle> constructTriangle();
-    std::span<const Triangle> constructLine();
-    std::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
+    tcb::span<const Triangle> constructTriangle();
+    tcb::span<const Triangle> constructLine();
+    tcb::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
     FixedSizeQueue<VertexParameter, 3> m_queue {};

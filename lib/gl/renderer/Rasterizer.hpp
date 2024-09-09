@@ -18,7 +18,7 @@
 #define RASTERIZER_HPP
 #include <stdint.h>
 #include <array>
-#include <span>
+#include <tcb/span.hpp>
 #include "math/Vec.hpp"
 #include "Triangle.hpp"
 #include "IRenderer.hpp"
@@ -36,7 +36,7 @@ public:
     {}
 
     bool rasterize(TriangleStreamTypes::StaticParams& params, 
-                   const std::span<TriangleStreamTypes::Texture>& texture, 
+                   const tcb::span<TriangleStreamTypes::Texture>& texture, 
                    const TransformedTriangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
@@ -46,7 +46,7 @@ public:
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
     static bool increment(TriangleStreamTypes::StaticParams& params, 
-                          const std::span<TriangleStreamTypes::Texture>& texture,
+                          const tcb::span<TriangleStreamTypes::Texture>& texture,
                           const uint16_t lineStart,
                           const uint16_t lineEnd);
 

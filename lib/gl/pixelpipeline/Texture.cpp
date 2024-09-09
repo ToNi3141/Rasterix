@@ -37,7 +37,7 @@ bool Texture::uploadTexture()
 
     for (uint8_t i = 0; i < TransformedTriangle::MAX_TMU_COUNT; i++)
     {
-        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize())) [[unlikely]]
+        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize())) 
         {
             m_tmuConf[i].texEnvConf.setTmu(i);
             ret = ret && m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
