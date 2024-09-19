@@ -134,27 +134,10 @@ public:
         const float src2 = src[2];
         const float src3 = src[3];
 
-        dst[0] = src0 * mat[0][0] + src1 * mat[1][0] + src2 * mat[2][0];
-        dst[1] = src0 * mat[0][1] + src1 * mat[1][1] + src2 * mat[2][1];
-        dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2];
-        dst[3] = src0 * mat[0][3] + src1 * mat[1][3] + src2 * mat[2][3];
-
-        // Typically the w value of a Vec4 is 1.0. So threat this as a special case.
-        // It will probably only speed up when no FPU is available ...
-        if (src3 == 1.0f)
-        {
-            dst[0] += mat[3][0];
-            dst[1] += mat[3][1];
-            dst[2] += mat[3][2];
-            dst[3] += mat[3][3];
-        }
-        else
-        {
-            dst[0] += src3 * mat[3][0];
-            dst[1] += src3 * mat[3][1];
-            dst[2] += src3 * mat[3][2];
-            dst[3] += src3 * mat[3][3];
-        }
+        dst[0] = src0 * mat[0][0] + src1 * mat[1][0] + src2 * mat[2][0] + src3 * mat[3][0];
+        dst[1] = src0 * mat[0][1] + src1 * mat[1][1] + src2 * mat[2][1] + src3 * mat[3][1];
+        dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2] + src3 * mat[3][2];
+        dst[3] = src0 * mat[0][3] + src1 * mat[1][3] + src2 * mat[2][3] + src3 * mat[3][3];
     }
 #endif
 

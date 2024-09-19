@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <cmath>
 #include <spdlog/spdlog.h>
+#include <Arduino.h>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max
@@ -46,7 +47,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
             m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
-            m_matrixStack.getTexture(tu).transform(parameter.tex[tu], parameter.tex[tu]); 
+            parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]); 
         }
     }
 
@@ -63,11 +64,11 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
             normal.normalize();
         }
         if (obj.vertexArrayEnabled())
-            m_matrixStack.getModelView().transform(vl, parameter.vertex);
+            vl = m_matrixStack.getModelView().transform(parameter.vertex);
         m_lighting.calculateLights(parameter.color, parameter.color, vl, normal);
     }
     if (obj.vertexArrayEnabled())
-        m_matrixStack.getModelViewProjection().transform(parameter.vertex, parameter.vertex);
+        parameter.vertex = m_matrixStack.getModelViewProjection().transform(parameter.vertex);
 }
 
 bool VertexPipeline::drawObj(const RenderObj &obj)

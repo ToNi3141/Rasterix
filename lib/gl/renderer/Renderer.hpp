@@ -148,32 +148,39 @@ public:
             return true;
         }
 
-        const uint32_t displayLines = m_displayLines;
-        const uint32_t yLineResolution = m_yLineResolution;
-        for (uint32_t i = 0; i < displayLines; i++)
+        if constexpr (DISPLAY_LINES == 1)
         {
-            const uint16_t currentScreenPositionStart = i * yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            return m_displayListAssembler[m_backList].addCommand(triangleCmd);
+        }
+        else
+        {
+            const uint32_t displayLines = m_displayLines;
+            const uint32_t yLineResolution = m_yLineResolution;
+            for (uint32_t i = 0; i < displayLines; i++)
             {
-                bool ret { false };
-                
-                // The floating point rasterizer can automatically increment all attributes to the current screen position
-                // Therefor no further computing is necessary
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                const uint16_t currentScreenPositionStart = i * yLineResolution;
+                const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
+                if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
                 {
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
-                }
-                else
-                {
-                    // The fix point interpolator needs the triangle incremented to the current line
-                    TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
-                }
-                if (ret == false) 
-                {
-                    return false;
+                    bool ret { false };
+                    
+                    // The floating point rasterizer can automatically increment all attributes to the current screen position
+                    // Therefor no further computing is necessary
+                    if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                    {
+                        ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
+                    }
+                    else
+                    {
+                        // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
+                        TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                        triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                        ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
+                    }
+                    if (ret == false) 
+                    {
+                        return false;
+                    }
                 }
             }
         }
