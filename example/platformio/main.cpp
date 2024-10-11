@@ -90,7 +90,7 @@ public:
     }
 private:
     std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 2> m_dlMem;
-    std::array<uint8_t, 4096 + 64> m_displayListTmp; // The last buffer is used to upload texture chuncks and can be smaller
+    std::array<uint8_t, 4096 + 64> m_displayListTmp; // The last buffer is used to upload texture chunks and can be smaller
 };
 
 static ArduinoBusConnector<> m_busConnector {};

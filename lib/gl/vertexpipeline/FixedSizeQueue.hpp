@@ -21,7 +21,7 @@
 namespace rr
 {
 
-template <typename T, uint32_t Size>
+template <typename T, std::size_t Size>
 class FixedSizeQueue
 {
 public:

@@ -46,7 +46,7 @@ localparam OP_NOP_STREAM = 0;
 //---------------------------------------------------------------------------------------------------------
 // Register writing
 //  +----------------------------+
-//  | 4'h2 | 28'hx register addr |
+//  | 4'h1 | 28'hx register addr |
 //  +----------------------------+
 // Steam size 1 32bit value.
 localparam OP_RENDER_CONFIG = 1;
@@ -77,7 +77,7 @@ localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 19;
 //---------------------------------------------------------------------------------------------------------
 // Framebuffer configuration
 //  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 4'h3 | 22'hx bit reserved | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 2'hx reserved | 1'hx swap | 1'hx memset | 1'hx commit |
+//  | 4'h2 | 22'hx bit reserved | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 2'hx reserved | 1'hx swap | 1'hx memset | 1'hx commit |
 //  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 // Steam size 1 32bit value.
@@ -93,7 +93,7 @@ localparam OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS = 6;
 //---------------------------------------------------------------------------------------------------------
 // Triangle Stream
 //  +--------------------------------------------------------------------+
-//  | 4'h4 | 18'hx reserved | 10'hx size of triangle descriptor in bytes |
+//  | 4'h3 | 18'hx reserved | 10'hx size of triangle descriptor in bytes |
 //  +--------------------------------------------------------------------+
 // Immediate value contains size of triangle in bytes (inclusive the additional bytes which are required for CMD_AXIS bus alignment).
 localparam OP_TRIANGLE_STREAM = 3;
@@ -103,7 +103,7 @@ localparam OP_TRIANGLE_STEEAM_SIZE_SIZE = 10;
 //---------------------------------------------------------------------------------------------------------
 // Fog LuT configuration
 //  +-----------------------+
-//  | 4'h5 | 28'hx reserved |
+//  | 4'h4 | 28'hx reserved |
 //  +-----------------------+
 // Stream of the fog LuT
 // Steam size 33 32bit values.
@@ -112,7 +112,7 @@ localparam OP_FOG_LUT_STREAM = 4;
 //---------------------------------------------------------------------------------------------------------
 // Texture Stream
 //  +-------------------------------------------------------------------------+
-//  | 4'h1 | 7'hx reserved | 2'hx TMU nr | 19'hx texture stream size in bytes |
+//  | 4'h5 | 7'hx reserved | 2'hx TMU nr | 19'hx texture stream size in bytes |
 //  +-------------------------------------------------------------------------+
 // The stream size is not dependent on the actual texture size. This allows partial texture updates.
 // Steam size n 32bit values.

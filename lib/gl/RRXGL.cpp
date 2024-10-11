@@ -49,8 +49,8 @@ public:
     }
 
     Renderer<RenderConfig> renderer;
-    VertexPipeline vertexPipeline;
     PixelPipeline pixelPipeline;
+    VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
 };
 

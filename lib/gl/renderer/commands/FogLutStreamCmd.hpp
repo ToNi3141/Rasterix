@@ -36,7 +36,7 @@ public:
         // The verilog code is not able to handle float values smaller than 1.0f.
         // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
         // the set x to 1.
-        const float lutLowerBound = start < 1.0f ? 1.0f : start;;
+        const float lutLowerBound = start < 1.0f ? 1.0f : start;
         const float lutUpperBound = end;
 
         // Add bounds to the lut value
