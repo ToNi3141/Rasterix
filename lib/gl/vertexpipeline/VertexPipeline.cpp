@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <cmath>
 #include <spdlog/spdlog.h>
-#include <Arduino.h>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
 #include <algorithm>    // std::max

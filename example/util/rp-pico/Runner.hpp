@@ -74,7 +74,7 @@ public:
         gpio_init(RESET);
         gpio_set_dir(RESET, true);
         gpio_set_dir(CTS, false);
-        spi_init(spi_default, 50 * 1000 * 1000);
+        spi_init(spi_default, 25 * 1000 * 1000);
         gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
         gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
         gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, true);

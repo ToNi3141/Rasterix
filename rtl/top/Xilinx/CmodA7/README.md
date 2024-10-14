@@ -35,7 +35,7 @@ The Pico is connected via SPI to the CMOD. Have a look at the following table to
 | CTS       | GP20 |  2      |
 | RSTN      | GP21 |  1      |
 
-Supported SPI clock speed: Around 50MHz.
+Supported SPI clock speed: Max 25MHz.
 
 The display is directly connected to the FPGA via the 8080-I parallel interface. The FPGA automatically configures the display when reset is asserted. To connect the display use the following table:
 

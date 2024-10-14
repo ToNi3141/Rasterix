@@ -50,8 +50,18 @@ module Serial2AXIS
 
     wire        readFromFifo = fifoReadEnable;
 
-    SPI_Slave #(.SPI_MODE(0)) spiSlave (resetn, aclk, rxDone, mosi, 0, 0, serial_sck, serial_miso, serial_mosi, serial_ncs);
+    // SPI_Slave #(.SPI_MODE(0)) spiSlave (resetn, aclk, rxDone, mosi, 0, 0, serial_sck, serial_miso, serial_mosi, serial_ncs);
     //uart_rx #(.CLKS_PER_BIT(16)) rxUart(aclk, rx, rxDone, mosi);
+    SpiSlave spiSlave (
+        .clk(aclk),
+        .resetn(resetn),
+        .sck(serial_sck),
+        .mosi(serial_mosi),
+        .active(serial_miso), // The miso line is currently used to mark if the slave works on an active transfer
+        .csn(serial_ncs),
+        .data(mosi),
+        .valid(rxDone)
+    );
 
     sfifo #(.BW(BW), .LGFLEN(LGFLEN), .OPT_ASYNC_READ(0))
         sfifoInst

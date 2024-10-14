@@ -75,6 +75,7 @@ read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/Serial2AXIS.v
+read_verilog ./../../../../Util/SpiSlave.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/sfifo.v

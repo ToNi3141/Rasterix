@@ -77,7 +77,7 @@ public:
         digitalWrite(CSN, HIGH);
         digitalWrite(RESET, HIGH);
         SPI.begin();
-        SPI.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(25000000, MSBFIRST, SPI_MODE0));
     
         // Reset FPGA
         digitalWrite(RESET, LOW);
