@@ -615,8 +615,11 @@ private:
         bool ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
         if constexpr (DISPLAY_LINES == 1)
         {
-            intermediateUpload();
-            ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+            if (!ret)
+            {
+                intermediateUpload();
+                ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+            }
         }
         return ret;
     }
