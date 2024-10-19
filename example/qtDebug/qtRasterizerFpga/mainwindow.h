@@ -6,7 +6,6 @@
 #include <QTimer>
 #include "RRXGL.hpp"
 #include "renderer/Renderer.hpp"
-#include "renderer/RendererMemoryOptimized.hpp"
 #include "gl.h"
 #include "RenderConfigs.hpp"
 #if USE_SIMULATION
