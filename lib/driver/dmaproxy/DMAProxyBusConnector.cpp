@@ -47,16 +47,18 @@ void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
     int buffer_id = index;
     m_txChannel.buf_ptr[buffer_id].length = size;
+    m_transferOngoing = true;
     ioctl(m_txChannel.fd, XFER, &buffer_id);
     if (m_txChannel.buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
     {
         SPDLOG_ERROR("Proxy tx transfer error");
     }
+    m_transferOngoing = false;
 }
 
 bool DMAProxyBusConnector::clearToSend()
 {
-    return true;
+    return !m_transferOngoing;
 }
 
 tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)

@@ -564,14 +564,15 @@ private:
     {
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
         {
-            if (m_backList == 0)
-            {
-                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-            }
-            else
+            if (m_switchColorBuffer)
             {
                 setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
             }
+            else
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            }
+            m_switchColorBuffer = !m_switchColorBuffer;
         }
     }
 
@@ -646,6 +647,8 @@ private:
 
     // Mapping of texture id and TMU
     std::array<uint16_t, TransformedTriangle::MAX_TMU_COUNT> m_boundTextures {};
+
+    bool m_switchColorBuffer { true };
 };
 
 } // namespace rr

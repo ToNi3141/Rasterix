@@ -40,6 +40,7 @@ private:
     };
     Channel m_txChannel;
     tcb::span<uint8_t> m_tmpBuffer{};
+    bool m_transferOngoing { false };
 };
 
 } // namespace rr
