@@ -19,6 +19,8 @@
 #define DMAPROXYBUSCONNECTOR_HPP
 
 #include "IBusConnector.hpp"
+#include <atomic>
+
 struct channel_buffer;
 namespace rr
 {
@@ -40,7 +42,7 @@ private:
     };
     Channel m_txChannel;
     tcb::span<uint8_t> m_tmpBuffer{};
-    bool m_transferOngoing { false };
+    std::atomic<bool> m_transferOngoing { false };
 };
 
 } // namespace rr

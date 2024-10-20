@@ -88,7 +88,8 @@ namespace rr
 template <class RenderConfig>
 class Renderer : public IRenderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
+    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
+                                                                                                                                                                : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
@@ -588,39 +589,33 @@ private:
 
     void intermediateUpload()
     {
-        if constexpr (DISPLAY_LINES == 1)
-        {
-            // Finish display list to prepare it for upload
-            m_displayListAssembler[DISPLAY_LINES * m_backList].finish();
+        // Finish display list to prepare it for upload
+        m_displayListAssembler[DISPLAY_LINES * m_backList].finish();
 
-            // Switch the display lists
-            if (m_backList == 0)
-            {
-                m_backList = 1;
-                m_frontList = 0;
-            }
-            else
-            {
-                m_backList = 0;
-                m_frontList = 1;
-            }
-            uploadTextures();
-            clearAndInitDisplayList(0);
-            uploadDisplayList();
+        // Switch the display lists
+        if (m_backList == 0)
+        {
+            m_backList = 1;
+            m_frontList = 0;
         }
+        else
+        {
+            m_backList = 0;
+            m_frontList = 1;
+        }
+        uploadTextures();
+        clearAndInitDisplayList(0);
+        uploadDisplayList();
     }
 
     template <typename Command>
     bool addCommand(const std::size_t index, const Command& cmd)
     {
         bool ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-        if constexpr (DISPLAY_LINES == 1)
+        if (!ret && (m_displayLines == 1))
         {
-            if (!ret)
-            {
-                intermediateUpload();
-                ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-            }
+            intermediateUpload();
+            ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
         }
         return ret;
     }
