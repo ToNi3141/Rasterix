@@ -119,7 +119,7 @@
                 "RRX_CORE_ENABLE_MIPMAPPING": "false",
                 "RRX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RRX_CORE_MAX_DISPLAY_HEIGHT": "240",
-                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "153600",
+                "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "76800",
                 "RRX_CORE_USE_FLOAT_INTERPOLATION": "false",
                 "RRX_CORE_CMD_STREAM_WIDTH": "32",
                 "RRX_CORE_NUMBER_OF_TEXTURE_PAGES": "68",
