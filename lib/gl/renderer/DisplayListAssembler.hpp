@@ -254,7 +254,7 @@ private:
         return false;
     }
 
-    List m_displayList;
+    List m_displayList {};
 
     DSEC::SCT *m_streamCommand { nullptr };
 

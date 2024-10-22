@@ -88,7 +88,8 @@ namespace rr
 template <class RenderConfig>
 class Renderer : public IRenderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
+    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
+                                                                                                                                                                : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     Renderer(IBusConnector& busConnector)
         : m_busConnector(busConnector)
@@ -148,32 +149,39 @@ public:
             return true;
         }
 
-        const uint32_t displayLines = m_displayLines;
-        const uint32_t yLineResolution = m_yLineResolution;
-        for (uint32_t i = 0; i < displayLines; i++)
+        if constexpr (DISPLAY_LINES == 1)
         {
-            const uint16_t currentScreenPositionStart = i * yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            return addCommand(0, triangleCmd);
+        }
+        else
+        {
+            const uint32_t displayLines = m_displayLines;
+            const uint32_t yLineResolution = m_yLineResolution;
+            for (uint32_t i = 0; i < displayLines; i++)
             {
-                bool ret { false };
-                
-                // The floating point rasterizer can automatically increment all attributes to the current screen position
-                // Therefor no further computing is necessary
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                const uint16_t currentScreenPositionStart = i * yLineResolution;
+                const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
+                if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
                 {
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmd);
-                }
-                else
-                {
-                    // The fix point interpolator needs the triangle incremented to the current line
-                    TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(triangleCmdInc);
-                }
-                if (ret == false) 
-                {
-                    return false;
+                    bool ret { false };
+                    
+                    // The floating point rasterizer can automatically increment all attributes to the current screen position
+                    // Therefor no further computing is necessary
+                    if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                    {
+                        ret = addCommand(i, triangleCmd);
+                    }
+                    else
+                    {
+                        // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
+                        TriangleStreamCmd<typename ListAssembler::List, RenderConfig::TMU_COUNT, RenderConfig::USE_FLOAT_INTERPOLATION> triangleCmdInc = triangleCmd;
+                        triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                        ret = addCommand(i, triangleCmdInc);
+                    }
+                    if (ret == false) 
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -187,14 +195,14 @@ public:
         {
             if (auto cmd = createCommitFramebufferCommand(i); cmd)
             {
-                m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(*cmd);
+                addCommand(i, *cmd);
             }
         }
 
         // Swap frame
         // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
         // the address for the display output
-        m_displayListAssembler[(DISPLAY_LINES * m_backList)].addCommand(createSwapFramebufferCommand()); 
+        addCommand(0, createSwapFramebufferCommand());
 
         // Finish display list to prepare it for upload
         for (uint32_t i = 0; i < m_displayLines; i++)
@@ -246,12 +254,12 @@ public:
             {
                 if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
                 {
-                    ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+                    ret = ret && addCommand(i, cmd);
                 }
             }
             else
             {
-                ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+                ret = ret && addCommand(i, cmd);
             }
         }
         return ret;
@@ -304,7 +312,7 @@ public:
         // Upload data to the display lists
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(fogLutDesc);
+            ret = ret && addCommand(i, fogLutDesc);
         }
         return ret;
     }
@@ -346,10 +354,10 @@ public:
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
             using Command = TextureStreamCmd<RenderConfig>;
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(Command { target, pages });
+            ret = ret && addCommand(i, Command { target, pages });
             TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
             reg.setTmu(target);
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
+            ret = ret && addCommand(i, WriteRegisterCmd { reg });
         }
         return ret;
     }
@@ -467,7 +475,7 @@ private:
         bool ret = true;
         for (uint32_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { regVal });
+            ret = ret && addCommand(i, WriteRegisterCmd { regVal });
         }
         return ret;
     }
@@ -557,14 +565,15 @@ private:
     {
         if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
         {
-            if (m_backList == 0)
-            {
-                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-            }
-            else
+            if (m_switchColorBuffer)
             {
                 setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
             }
+            else
+            {
+                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+            }
+            m_switchColorBuffer = !m_switchColorBuffer;
         }
     }
 
@@ -576,6 +585,39 @@ private:
     void enableColorBufferStream()
     {
         m_colorBufferUseMemory = false;
+    }
+
+    void intermediateUpload()
+    {
+        // Finish display list to prepare it for upload
+        m_displayListAssembler[DISPLAY_LINES * m_backList].finish();
+
+        // Switch the display lists
+        if (m_backList == 0)
+        {
+            m_backList = 1;
+            m_frontList = 0;
+        }
+        else
+        {
+            m_backList = 0;
+            m_frontList = 1;
+        }
+        uploadTextures();
+        clearAndInitDisplayList(0);
+        uploadDisplayList();
+    }
+
+    template <typename Command>
+    bool addCommand(const std::size_t index, const Command& cmd)
+    {
+        bool ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+        if (!ret && (m_displayLines == 1))
+        {
+            intermediateUpload();
+            ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+        }
+        return ret;
     }
 
     bool m_colorBufferUseMemory { true };
@@ -600,6 +642,8 @@ private:
 
     // Mapping of texture id and TMU
     std::array<uint16_t, TransformedTriangle::MAX_TMU_COUNT> m_boundTextures {};
+
+    bool m_switchColorBuffer { true };
 };
 
 } // namespace rr

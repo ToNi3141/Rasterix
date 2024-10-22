@@ -40,7 +40,7 @@
             "-DRRX_CORE_ENABLE_MIPMAPPING=false",
             "-DRRX_CORE_MAX_DISPLAY_WIDTH=320",
             "-DRRX_CORE_MAX_DISPLAY_HEIGHT=240",
-            "-DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=153600",
+            "-DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=76800",
             "-DRRX_CORE_USE_FLOAT_INTERPOLATION=false",
             "-DRRX_CORE_CMD_STREAM_WIDTH=32",
             "-DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=68",
@@ -52,6 +52,7 @@
             "-DRRX_CORE_COLOR_BUFFER_LOC_2=0x35000",
             "-DRRX_CORE_DEPTH_BUFFER_LOC=0x5A800",
             "-DRRX_CORE_STENCIL_BUFFER_LOC=0x22400",
+            "-Ofast",
             "-std=c++17"
         ]
     }

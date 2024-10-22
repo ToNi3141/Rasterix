@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <array>
+#include <string>
 #include <functional>
 #include "IBusConnector.hpp"
 #include <map>
