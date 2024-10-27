@@ -116,7 +116,7 @@
             {
                 "RRX_CORE_TMU_COUNT": "1",
                 "RRX_CORE_MAX_TEXTURE_SIZE": "128",
-                "RRX_CORE_ENABLE_MIPMAPPING": "false",
+                "RRX_CORE_ENABLE_MIPMAPPING": "true",
                 "RRX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RRX_CORE_MAX_DISPLAY_HEIGHT": "240",
                 "RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS": "76800",
@@ -188,16 +188,16 @@
             "inherits": ["win32", "nexys_rrxef"]
         },
         {
-            "name": "rp2040",
-            "displayName": "rp2040 build",
-            "description": "rp2040 build to be used for the Raspberry Pi Pico",
-            "binaryDir": "${sourceDir}/build/rp2040",
+            "name": "rppico",
+            "displayName": "rppico build",
+            "description": "rppico build to be used for the Raspberry Pi Pico",
+            "binaryDir": "${sourceDir}/build/rppico",
             "generator": "Unix Makefiles",
             "inherits": "cmod7_rrxef",
             "cacheVariables": 
             {
                 "PICO_SDK_FETCH_FROM_GIT": "ON",
-                "RRX_BUILD_RP2040": "ON",
+                "RRX_BUILD_RPPICO": "ON",
                 "RRX_BUILD_EXAMPLES": "ON"
             }
         },

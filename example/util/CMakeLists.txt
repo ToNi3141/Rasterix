@@ -2,7 +2,7 @@ if (RRX_BUILD_NATIVE)
     add_subdirectory(native)
 endif()
 
-if (RRX_BUILD_RP2040)
+if (RRX_BUILD_RPPICO)
     add_subdirectory(rp-pico)
 endif()
 

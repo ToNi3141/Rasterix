@@ -73,7 +73,7 @@ The rasterizer is running on the following platforms:
 # How to integrate
 To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7. It may be likely, that you can use the already existing code.
 
-PlatformIO is supported. See [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md).
+The __pico-sdk__ and __PlatformIO__ are supported. See [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md).
 
 ## How to port the Driver
 To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:

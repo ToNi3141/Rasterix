@@ -48,20 +48,20 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 | RST       | 31      | 3.3V    |
 | DATA[7:0] | [38:45] | D[7:0]  |
 
-The display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA. Attention is required by powering the display. The FPGA pins are only 3.3V tolerant. Therefore `Vin` should not exceed 3.3V.
+If you look closely, the display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA pins when connected to the breadboard. Only one wire to the displays `Vin` is required to power it. __Please note that the `Vin` of the display goes to a FPGA IO. That is not an issue as long as `Vin` does not exceed 3.3V!__
  
-# RP2040 Build
-Uses the [CMOD A7 Build](#cmod-a7-build).
+# RPPICO Build
+Uses the [CMOD A7 Build](#cmod-a7-build) and the pico-sdk. By default, this build will download the pico-sdk automatically.
 
-Before you start to build, have a look at the rp2040 SDK readme (https://github.com/raspberrypi/pico-sdk). You have several options, which are supported. The option documented there is based on a already cloned SDK on your computer.
-
-Open a terminal. Use the following commands to build a rp2040 binary:
+Open a terminal. Use the following commands to build a rppico binary:
 ```sh
 cd <rasterix_directory>
-cmake --preset rp2040
-cmake --build build/rp2040 --config Release --parallel
+cmake --preset rppico -DPICO_BOARD=pico
+cmake --build build/rppico --config Release --parallel 
 ```
-You will find a `minimal.uf2` file in the `build/rp2040/example/rp-pico` directory.
+You will find a `minimal.uf2` file in the `build/rppico/example/rp-pico` directory.
+
+Note: The rrx library heavily relies on floating point arithmetics. A MCU, like the `rp2350`, with FPU is recommended. It can speed up the overall performance of around 10 times.
 
 # PlatformIO
 If you are using [PlatformIO](https://platformio.org/) you can add this repo directly to your `platformio.ini` like this:
