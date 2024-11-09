@@ -48,7 +48,7 @@ The display is directly connected to the FPGA via the 8080-I parallel interface.
 | RST       | 31      | 3.3V    |
 | DATA[7:0] | [38:45] | D[7:0]  |
 
-If you look closely, the display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA pins when connected to the breadboard. Only one wire to the displays `Vin` is required to power it. __Please note that the `Vin` of the display goes to a FPGA IO. That is not an issue as long as `Vin` does not exceed 3.3V!__
+If you look closely, the display (Adafruit 2.4" TFT LCD Breakout Board) has a one to one mapping to the FPGA pins when connected to a breadboard. Only one wire to the displays `Vin` is required to power it. __Please note that the `Vin` of the display goes to a FPGA IO. That is not an issue as long as `Vin` does not exceed 3.3V!__
  
 # RPPICO Build
 Uses the [CMOD A7 Build](#cmod-a7-build) and the pico-sdk. By default, this build will download the pico-sdk automatically.
