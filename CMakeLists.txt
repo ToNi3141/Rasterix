@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14...3.25)
 # Selects the platform to build for
 option(RRX_BUILD_NATIVE "Sets up a native build for the current platform" OFF)
 option(RRX_BUILD_ZYNQ_EMBEDDED_LINUX "Sets up a cross build environment for embedded linux with zynq drivers" OFF)
-option(RRX_BUILD_RP2040 "Sets up a cross compilation build for the RP2040" OFF)
+option(RRX_BUILD_RPPICO "Sets up a cross compilation build for the RPPico" OFF)
 # Enables the examples
 option(RRX_BUILD_EXAMPLES "Builds the examples" OFF)
 # Builds a dynamic library
@@ -45,20 +45,20 @@ set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil bu
 
 set(CMAKE_CXX_STANDARD 17)
 
-if (NOT RRX_BUILD_RP2040)
+if (NOT RRX_BUILD_RPPICO)
     project(
         Rasterix
         VERSION 0.1
     )
 endif()
 
-if (RRX_BUILD_RP2040)
+if (RRX_BUILD_RPPICO)
         add_link_options(-Wl,--print-memory-usage)
         # initialize the SDK based on PICO_SDK_PATH
         # note: this must happen before project()
         include(pico_sdk_import.cmake)
         project(
-            RasterixRP2040
+            RasterixRPPico
             VERSION 0.1
         )
         # initialize the Raspberry Pi Pico SDK

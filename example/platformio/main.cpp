@@ -15,7 +15,7 @@ class ArduinoBusConnector : public rr::IBusConnector
 {
 public:
     // Configure here the pinout of the arduino
-    // This currently uses the pinout of the rp2040. Might be adapted for other boards.
+    // This currently uses the pinout of the RPPico. Might be adapted for other boards.
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
     static constexpr uint32_t CSN { 17 };

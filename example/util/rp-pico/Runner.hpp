@@ -72,8 +72,9 @@ public:
     void init()
     {
         gpio_init(RESET);
-        gpio_set_dir(RESET, true);
-        gpio_set_dir(CTS, false);
+        gpio_init(CTS);
+        gpio_set_dir(RESET, GPIO_OUT);
+        gpio_set_dir(CTS, GPIO_IN);
         spi_init(spi_default, 25 * 1000 * 1000);
         gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
         gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
