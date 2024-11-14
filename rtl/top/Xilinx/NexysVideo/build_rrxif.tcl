@@ -68,7 +68,11 @@ read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/FT245S2AXIS.v
+read_verilog ./../../../../Util/Serial2AXIS.v
+read_verilog ./../../../../Util/SpiSlave.v
+read_verilog ./../../../../3rdParty/verilog-axis/axis_adapter.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
+read_verilog ./../../../../3rdParty/verilog-axis/axis_mux.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/ftdi_245fifo.sv
@@ -82,6 +86,7 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_serialiser.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_defs.v
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
+read_verilog ./../MainInterface.v
 read_xdc ./../Nexys-Video-Master.xdc
 
 source ../bd_rrxif/design_1.tcl

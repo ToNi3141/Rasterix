@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# Dvi, FT245X2AXIS, RasterixEF
+# Dvi, MainInterface, RasterixEF
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -131,12 +131,12 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:axis_data_fifo:2.0\
 xilinx.com:ip:axis_dwidth_converter:1.1\
 xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:mig_7series:4.2\
 xilinx.com:ip:proc_sys_reset:5.0\
+xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:util_ds_buf:2.2\
 "
 
@@ -164,7 +164,7 @@ set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 Dvi\
-FT245X2AXIS\
+MainInterface\
 RasterixEF\
 "
 
@@ -332,7 +332,7 @@ proc write_mig_file_design_1_mig_7series_0_0 { str_mig_prj_filepath } {
    puts $mig_prj_file {      <C0_C_RD_WR_ARB_ALGORITHM>RD_PRI_REG</C0_C_RD_WR_ARB_ALGORITHM>}
    puts $mig_prj_file {      <C0_S_AXI_ADDR_WIDTH>29</C0_S_AXI_ADDR_WIDTH>}
    puts $mig_prj_file {      <C0_S_AXI_DATA_WIDTH>128</C0_S_AXI_DATA_WIDTH>}
-   puts $mig_prj_file {      <C0_S_AXI_ID_WIDTH>2</C0_S_AXI_ID_WIDTH>}
+   puts $mig_prj_file {      <C0_S_AXI_ID_WIDTH>11</C0_S_AXI_ID_WIDTH>}
    puts $mig_prj_file {      <C0_S_AXI_SUPPORTS_NARROW_BURST>0</C0_S_AXI_SUPPORTS_NARROW_BURST>}
    puts $mig_prj_file {    </AXIParameters>}
    puts $mig_prj_file {  </Controller>}
@@ -407,6 +407,12 @@ proc create_root_design { parentCell } {
   set hdmi_tx_g_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_g_p ]
   set hdmi_tx_r_n [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_n ]
   set hdmi_tx_r_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_p ]
+  set serial_cts [ create_bd_port -dir O serial_cts ]
+  set serial_miso [ create_bd_port -dir O serial_miso ]
+  set serial_mosi [ create_bd_port -dir I serial_mosi ]
+  set serial_ncs [ create_bd_port -dir I serial_ncs ]
+  set serial_reset [ create_bd_port -dir I serial_reset ]
+  set serial_sck [ create_bd_port -dir I serial_sck ]
   set set_vadj [ create_bd_port -dir O -from 1 -to 0 set_vadj ]
   set vadj_en [ create_bd_port -dir O vadj_en ]
 
@@ -421,17 +427,22 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: FT245X2AXIS_0, and set properties
-  set block_name FT245X2AXIS
-  set block_cell_name FT245X2AXIS_0
-  if { [catch {set FT245X2AXIS_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  # Create instance: MainInterface_0, and set properties
+  set block_name MainInterface
+  set block_cell_name MainInterface_0
+  if { [catch {set MainInterface_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $FT245X2AXIS_0 eq "" } {
+   } elseif { $MainInterface_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-  
+    set_property -dict [list \
+    CONFIG.FIFO_SIZE {32768} \
+    CONFIG.FIFO_TRESHOLD {2048} \
+  ] $MainInterface_0
+
+
   # Create instance: RasterixEF_0, and set properties
   set block_name RasterixEF
   set block_cell_name RasterixEF_0
@@ -443,34 +454,18 @@ proc create_root_design { parentCell } {
      return 1
    }
     set_property -dict [list \
-    CONFIG.ADDR_WIDTH {28} \
-    CONFIG.STRB_WIDTH {16} \
+    CONFIG.ADDR_WIDTH {32} \
     CONFIG.CMD_STREAM_WIDTH {128} \
     CONFIG.FB_MEM_DATA_WIDTH {128} \
     CONFIG.FB_MEM_STRB_WIDTH {16} \
-    CONFIG.TEXTURE_BUFFER_SIZE {17} \
     CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
+    CONFIG.STRB_WIDTH {16} \
+    CONFIG.TEXTURE_BUFFER_SIZE {17} \
   ] $RasterixEF_0
 
 
-  # Create instance: axi_smc, and set properties
-  set axi_smc [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_smc ]
-  set_property -dict [list \
-    CONFIG.ADVANCED_PROPERTIES {          __view__ { functional { S02_Entry { PKT_W_THR 128 } S02_Buffer { W_SIZE 256 } S00_Entry { PKT_W_THR 16 } } }         } \
-    CONFIG.NUM_CLKS {2} \
-    CONFIG.NUM_MI {1} \
-    CONFIG.NUM_SI {5} \
-  ] $axi_smc
-
-
-  # Create instance: axis_data_fifo_1, and set properties
-  set axis_data_fifo_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_1 ]
-  set_property -dict [list \
-    CONFIG.FIFO_DEPTH {512} \
-    CONFIG.FIFO_MEMORY_TYPE {distributed} \
-    CONFIG.TDATA_NUM_BYTES {16} \
-  ] $axis_data_fifo_1
-
+  # Create instance: axis_data_fifo_0, and set properties
+  set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
 
   # Create instance: axis_dwidth_converter_2, and set properties
   set axis_dwidth_converter_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_dwidth_converter:1.1 axis_dwidth_converter_2 ]
@@ -542,7 +537,6 @@ proc create_root_design { parentCell } {
 
   set_property -dict [list \
     CONFIG.BOARD_MIG_PARAM {ddr3_sdram} \
-    CONFIG.MIG_DONT_TOUCH_PARAM {Custom} \
     CONFIG.RESET_BOARD_INTERFACE {reset} \
     CONFIG.XML_INPUT_FILE {mig_b.prj} \
   ] $mig_7series_0
@@ -553,6 +547,15 @@ proc create_root_design { parentCell } {
 
   # Create instance: rst_mig_7series_0_81M1, and set properties
   set rst_mig_7series_0_81M1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_7series_0_81M1 ]
+
+  # Create instance: smartconnect_0, and set properties
+  set smartconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_0 ]
+  set_property -dict [list \
+    CONFIG.ADVANCED_PROPERTIES { __view__ { clocking { S01_Entry { ASSOCIATED_CLK aclk } } }} \
+    CONFIG.NUM_CLKS {2} \
+    CONFIG.NUM_SI {5} \
+  ] $smartconnect_0
+
 
   # Create instance: util_ds_buf_0, and set properties
   set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.2 util_ds_buf_0 ]
@@ -575,16 +578,16 @@ proc create_root_design { parentCell } {
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
-  connect_bd_intf_net -intf_net FT245X2AXIS_0_m_axis [get_bd_intf_pins FT245X2AXIS_0/m_axis] [get_bd_intf_pins axis_dwidth_converter_2/S_AXIS]
-  connect_bd_intf_net -intf_net RasterixEF_0_m_color_axi [get_bd_intf_pins RasterixEF_0/m_color_axi] [get_bd_intf_pins axi_smc/S02_AXI]
-  connect_bd_intf_net -intf_net RasterixEF_0_m_common_axi [get_bd_intf_pins RasterixEF_0/m_common_axi] [get_bd_intf_pins axi_smc/S00_AXI]
-  connect_bd_intf_net -intf_net RasterixEF_0_m_depth_axi [get_bd_intf_pins RasterixEF_0/m_depth_axi] [get_bd_intf_pins axi_smc/S03_AXI]
-  connect_bd_intf_net -intf_net RasterixEF_0_m_stencil_axi [get_bd_intf_pins RasterixEF_0/m_stencil_axi] [get_bd_intf_pins axi_smc/S04_AXI]
-  connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
-  connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins RasterixEF_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
-  connect_bd_intf_net -intf_net axis_dwidth_converter_2_M_AXIS [get_bd_intf_pins axis_data_fifo_1/S_AXIS] [get_bd_intf_pins axis_dwidth_converter_2/M_AXIS]
+  connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins smartconnect_0/S01_AXI]
+  connect_bd_intf_net -intf_net MainInterface_0_m_axis [get_bd_intf_pins MainInterface_0/m_axis] [get_bd_intf_pins axis_dwidth_converter_2/S_AXIS]
+  connect_bd_intf_net -intf_net RasterixEF_0_m_color_axi [get_bd_intf_pins RasterixEF_0/m_color_axi] [get_bd_intf_pins smartconnect_0/S00_AXI]
+  connect_bd_intf_net -intf_net RasterixEF_0_m_common_axi [get_bd_intf_pins RasterixEF_0/m_common_axi] [get_bd_intf_pins smartconnect_0/S02_AXI]
+  connect_bd_intf_net -intf_net RasterixEF_0_m_depth_axi [get_bd_intf_pins RasterixEF_0/m_depth_axi] [get_bd_intf_pins smartconnect_0/S03_AXI]
+  connect_bd_intf_net -intf_net RasterixEF_0_m_stencil_axi [get_bd_intf_pins RasterixEF_0/m_stencil_axi] [get_bd_intf_pins smartconnect_0/S04_AXI]
+  connect_bd_intf_net -intf_net axis_data_fifo_0_M_AXIS [get_bd_intf_pins RasterixEF_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_0/M_AXIS]
+  connect_bd_intf_net -intf_net axis_dwidth_converter_2_M_AXIS [get_bd_intf_pins axis_data_fifo_0/S_AXIS] [get_bd_intf_pins axis_dwidth_converter_2/M_AXIS]
   connect_bd_intf_net -intf_net mig_7series_0_DDR3 [get_bd_intf_ports ddr3_sdram] [get_bd_intf_pins mig_7series_0/DDR3]
+  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins mig_7series_0/S_AXI] [get_bd_intf_pins smartconnect_0/M00_AXI]
 
   # Create port connections
   connect_bd_net -net Dvi_0_dvi_blue [get_bd_pins Dvi_0/dvi_blue] [get_bd_pins util_ds_buf_2/OBUF_IN]
@@ -592,30 +595,37 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_dvi_green [get_bd_pins Dvi_0/dvi_green] [get_bd_pins util_ds_buf_1/OBUF_IN]
   connect_bd_net -net Dvi_0_dvi_red [get_bd_pins Dvi_0/dvi_red] [get_bd_pins util_ds_buf_0/OBUF_IN]
   connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterixEF_0/fb_swapped]
-  connect_bd_net -net FT245X2AXIS_0_fmc_oen [get_bd_ports fmc_oen] [get_bd_pins FT245X2AXIS_0/fmc_oen]
-  connect_bd_net -net FT245X2AXIS_0_fmc_rdn [get_bd_ports fmc_rdn] [get_bd_pins FT245X2AXIS_0/fmc_rdn]
-  connect_bd_net -net FT245X2AXIS_0_fmc_siwun [get_bd_ports fmc_siwun] [get_bd_pins FT245X2AXIS_0/fmc_siwun]
-  connect_bd_net -net FT245X2AXIS_0_fmc_wrn [get_bd_ports fmc_wrn] [get_bd_pins FT245X2AXIS_0/fmc_wrn]
-  connect_bd_net -net FT245X2AXIS_0_set_vadj [get_bd_ports set_vadj] [get_bd_pins FT245X2AXIS_0/set_vadj]
-  connect_bd_net -net FT245X2AXIS_0_vadj_en [get_bd_ports vadj_en] [get_bd_pins FT245X2AXIS_0/vadj_en]
-  connect_bd_net -net Net [get_bd_ports fmc_wkup] [get_bd_pins FT245X2AXIS_0/fmc_wkup]
-  connect_bd_net -net Net1 [get_bd_ports fmc_be] [get_bd_pins FT245X2AXIS_0/fmc_be]
-  connect_bd_net -net Net2 [get_bd_ports fmc_data] [get_bd_pins FT245X2AXIS_0/fmc_data]
+  connect_bd_net -net MainInterface_0_concatinated_reset [get_bd_pins MainInterface_0/concatinated_reset] [get_bd_pins mig_7series_0/sys_rst]
+  connect_bd_net -net MainInterface_0_fmc_oen [get_bd_ports fmc_oen] [get_bd_pins MainInterface_0/fmc_oen]
+  connect_bd_net -net MainInterface_0_fmc_rdn [get_bd_ports fmc_rdn] [get_bd_pins MainInterface_0/fmc_rdn]
+  connect_bd_net -net MainInterface_0_fmc_siwun [get_bd_ports fmc_siwun] [get_bd_pins MainInterface_0/fmc_siwun]
+  connect_bd_net -net MainInterface_0_fmc_wrn [get_bd_ports fmc_wrn] [get_bd_pins MainInterface_0/fmc_wrn]
+  connect_bd_net -net MainInterface_0_serial_cts [get_bd_ports serial_cts] [get_bd_pins MainInterface_0/serial_cts]
+  connect_bd_net -net MainInterface_0_serial_miso [get_bd_ports serial_miso] [get_bd_pins MainInterface_0/serial_miso]
+  connect_bd_net -net MainInterface_0_set_vadj [get_bd_ports set_vadj] [get_bd_pins MainInterface_0/set_vadj]
+  connect_bd_net -net MainInterface_0_vadj_en [get_bd_ports vadj_en] [get_bd_pins MainInterface_0/vadj_en]
+  connect_bd_net -net Net [get_bd_ports fmc_wkup] [get_bd_pins MainInterface_0/fmc_wkup]
+  connect_bd_net -net Net1 [get_bd_ports fmc_be] [get_bd_pins MainInterface_0/fmc_be]
+  connect_bd_net -net Net2 [get_bd_ports fmc_data] [get_bd_pins MainInterface_0/fmc_data]
   connect_bd_net -net RasterixEF_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterixEF_0/fb_addr]
   connect_bd_net -net RasterixEF_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterixEF_0/swap_fb]
-  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_smc/aclk1] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins rst_mig_7series_0_81M1/slowest_sync_clk]
+  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins rst_mig_7series_0_81M1/slowest_sync_clk] [get_bd_pins smartconnect_0/aclk1]
   connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins Dvi_0/aclk5x] [get_bd_pins clk_wiz_0/clk_out2]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_mig_7series_0_81M1/dcm_locked]
-  connect_bd_net -net fmc_clk_1 [get_bd_ports fmc_clk] [get_bd_pins FT245X2AXIS_0/fmc_clk]
-  connect_bd_net -net fmc_gpio0_1 [get_bd_ports fmc_gpio0] [get_bd_pins FT245X2AXIS_0/fmc_resetn] [get_bd_pins mig_7series_0/sys_rst]
-  connect_bd_net -net fmc_rxfn_1 [get_bd_ports fmc_rxfn] [get_bd_pins FT245X2AXIS_0/fmc_rxfn]
-  connect_bd_net -net fmc_txen_1 [get_bd_ports fmc_txen] [get_bd_pins FT245X2AXIS_0/fmc_txen]
+  connect_bd_net -net fmc_clk_1 [get_bd_ports fmc_clk] [get_bd_pins MainInterface_0/fmc_clk]
+  connect_bd_net -net fmc_gpio0_1 [get_bd_ports fmc_gpio0] [get_bd_pins MainInterface_0/fmc_reset]
+  connect_bd_net -net fmc_rxfn_1 [get_bd_ports fmc_rxfn] [get_bd_pins MainInterface_0/fmc_rxfn]
+  connect_bd_net -net fmc_txen_1 [get_bd_ports fmc_txen] [get_bd_pins MainInterface_0/fmc_txen]
   connect_bd_net -net mig_7series_0_mmcm_locked [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_7series_0_81M/dcm_locked]
   connect_bd_net -net mig_7series_0_ui_addn_clk_0 [get_bd_pins mig_7series_0/clk_ref_i] [get_bd_pins mig_7series_0/ui_addn_clk_0]
-  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins Dvi_0/aclkLogic] [get_bd_pins FT245X2AXIS_0/aclk] [get_bd_pins RasterixEF_0/aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axis_data_fifo_1/s_axis_aclk] [get_bd_pins axis_dwidth_converter_2/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk]
+  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins Dvi_0/aclkLogic] [get_bd_pins MainInterface_0/aclk] [get_bd_pins RasterixEF_0/aclk] [get_bd_pins axis_data_fifo_0/s_axis_aclk] [get_bd_pins axis_dwidth_converter_2/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk] [get_bd_pins smartconnect_0/aclk]
   connect_bd_net -net mig_7series_0_ui_clk_sync_rst [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_7series_0_81M/ext_reset_in]
   connect_bd_net -net rst_mig_7series_0_81M1_peripheral_aresetn [get_bd_pins Dvi_0/resetn] [get_bd_pins rst_mig_7series_0_81M1/peripheral_aresetn]
-  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins FT245X2AXIS_0/aresetn] [get_bd_pins RasterixEF_0/resetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axis_data_fifo_1/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_2/aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in]
+  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins MainInterface_0/resetn] [get_bd_pins RasterixEF_0/resetn] [get_bd_pins axis_data_fifo_0/s_axis_aresetn] [get_bd_pins axis_dwidth_converter_2/aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in] [get_bd_pins smartconnect_0/aresetn]
+  connect_bd_net -net serial_mosi_1 [get_bd_ports serial_mosi] [get_bd_pins MainInterface_0/serial_mosi]
+  connect_bd_net -net serial_ncs_1 [get_bd_ports serial_ncs] [get_bd_pins MainInterface_0/serial_ncs]
+  connect_bd_net -net serial_reset_1 [get_bd_ports serial_reset] [get_bd_pins MainInterface_0/serial_reset]
+  connect_bd_net -net serial_sck_1 [get_bd_ports serial_sck] [get_bd_pins MainInterface_0/serial_sck]
   connect_bd_net -net util_ds_buf_0_OBUF_DS_N [get_bd_ports hdmi_tx_r_n] [get_bd_pins util_ds_buf_0/OBUF_DS_N]
   connect_bd_net -net util_ds_buf_0_OBUF_DS_P [get_bd_ports hdmi_tx_r_p] [get_bd_pins util_ds_buf_0/OBUF_DS_P]
   connect_bd_net -net util_ds_buf_1_OBUF_DS_N [get_bd_ports hdmi_tx_g_n] [get_bd_pins util_ds_buf_1/OBUF_DS_N]
