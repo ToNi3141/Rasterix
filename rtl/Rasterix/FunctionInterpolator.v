@@ -32,13 +32,14 @@
 // interpolator will output fx = 1.0.
 // The function interpolator has 32 entries to cover input values from 1.0 to 4294967296.0
 // Dataformat
-// Beat 0 are the LUT bounds
-// lower bound = tdata[0 : 32] as float. If x is lower, fx will be 1.0
-// upper bound = tdata[32 : 32] as float. If x is higher, fx will be 0.0
-// Beat 1 .. 33 
-// m = tdata[0  +: 32] as S1.30
-// b = tdata[32  +: 32] as S1.30
-// In case STREAM_WIDTH is bigger than 64 bit, bits [n : 64] are ignored
+// Beat 0 Lower bound
+// tdata as float. If x is lower, fx will be 1.0
+// Beat 1 Upper bound
+// tdata as float. If x is higher, fx will be 0.0
+// Beat 2 .. 66 
+// Even beat: m = tdata as S1.30
+// Odd beat b = tdata as S1.30
+// In case STREAM_WIDTH is bigger than 32 bit, bits [n : 32] are ignored
 //
 // This module is pipelined. It requires 4 clock cycles until it outputs the calculated value.
 module FunctionInterpolator #(
