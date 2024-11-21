@@ -27,9 +27,9 @@ module StreamBarrier #(
 
     input  wire                         m_axis_tready,
     output reg                          m_axis_tvalid,
-    output reg                          m_axis_tlast,
-    output reg  [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
-    output reg  [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,
+    output wire                         m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
+    output wire [KEEP_WIDTH - 1 : 0]    m_axis_tkeep,
 
     input  wire                         s_axis_tvalid,
     output wire                         s_axis_tready,
@@ -58,14 +58,11 @@ module StreamBarrier #(
 
         .o_valid(skidValid),
         .i_ready(!stall && m_axis_tready),
-        .o_data(skidData)
+        .o_data({ m_axis_tlast, m_axis_tkeep, m_axis_tdata })
     );
 
     always @(*)
     begin
-        m_axis_tvalid = skidValid & !stall;
-        m_axis_tdata = skidData[0 +: STREAM_WIDTH];
-        m_axis_tkeep = skidData[STREAM_WIDTH +: KEEP_WIDTH];
-        m_axis_tlast = skidData[STREAM_WIDTH + KEEP_WIDTH +: 1];
+        m_axis_tvalid = skidValid && !stall;
     end
 endmodule
