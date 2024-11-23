@@ -17,14 +17,13 @@ FT60XBusConnector::FT60XBusConnector()
     }
 
     ftStatus = FT_EnableGPIO(fthandle, 0x3, 0x3); //bit 0 and 1 both set.
-    //ftStatus = FT_SetGPIOPull(fthandle, 0x3, GPIO_PULL_50K_PU); // Windows does not have GPIO_PULL_50K_PU constant?
     ftStatus = FT_SetGPIOPull(fthandle, 0x3, 0x2);
 
-    ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x3);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x0);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x0);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 

@@ -5,7 +5,6 @@ module FT245X2AXIS (
     output reg [1:0]    set_vadj,
     output reg          vadj_en,
     
-    input  wire         fmc_resetn,
     inout  wire         fmc_wkup,
     input  wire         fmc_clk,
     input  wire         fmc_txen,

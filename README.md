@@ -13,18 +13,22 @@
 The Rasterix project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The long term goal of this project is to recreate an open source fixed function renderer compatible with all fixed function APIs (OpenGL 1.5, OpenGL ES 1.1, Glide, Direct 3D 7.0) and is also suitable for embedded devices. The current focus is on OpenGL.
+The project started as an experiment, how an 3D renderer can be implemented on an FPGA and slowly evolved to something, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
 
-It comes in two variants, `RasterixIF` and `RasterixEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations (because of AXI strobe limitations: stencil is applied on the whole value, not per bit, color mask work only on the whole fragment, no alpha channel), they are completely equal.
+It comes in two variants, `RasterixIF` and `RasterixEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
 
-`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA since the rendering is completely executed in static RAM resources on your FPGA. But the drawback is the occupation of a lot of RAM resources on your FPGA.
-For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended. 
+`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
+For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended.
 
 The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
 
-`RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem since all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance but the the number of memory request the system can execute, is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around two times slower that the `RasterixIF`). Contrary to the `RasterixIF`, it don't uses FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests.
+Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
 
-Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires a fraction of the logic of the floating point configuration. To start, it might be reasonable to try the floating point version first to bring everything up and to avoid pitfalls. Later, when there is the need to optimize, try the fixed point version.
+`RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RasterixIF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
+
+The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. With this configuration, the renderer works more like a traditional one.
+
+Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires a fraction of the logic of the floating point configuration. The floating point version can run faster on the host system because it avoids the conversion from float to fixed point.
 
 ## Area Usage
 Typical configuration: 
@@ -37,7 +41,7 @@ Typical configuration:
 
 Then the core requires __around 10k LUTs__ on a Xilinx Series 7 device.
 
-Maximum configuration 
+High performance configuration: 
   - 128 bit command / memory bus
   - 256px textures
   - 2 TMUs
@@ -71,7 +75,7 @@ The rasterizer is running on the following platforms:
 - [Digilent ArtyZ7-20](/rtl/top/Xilinx/ArtyZ7-20/README.md)
 
 # How to integrate
-To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7. It may be likely, that you can use the already existing code.
+To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7.
 
 The __pico-sdk__ and __PlatformIO__ are supported. See [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md).
 

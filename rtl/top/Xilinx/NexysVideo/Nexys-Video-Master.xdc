@@ -109,12 +109,12 @@ set_property -dict {PACKAGE_PIN AB3 IOSTANDARD TMDS_33} [get_ports hdmi_tx_r_p]
 
 
 ## Pmod header JA
-# set_property -dict { PACKAGE_PIN AB22  IOSTANDARD LVCMOS33 } [get_ports { ftData[0] }]; #IO_L10N_T1_D15_14 Sch=ja[1]
-# set_property -dict { PACKAGE_PIN AB21  IOSTANDARD LVCMOS33 } [get_ports { ftData[1] }]; #IO_L10P_T1_D14_14 Sch=ja[2]
-# set_property -dict { PACKAGE_PIN AB20  IOSTANDARD LVCMOS33 } [get_ports { ftData[2] }]; #IO_L15N_T2_DQS_DOUT_CSO_B_14 Sch=ja[3]
-# set_property -dict { PACKAGE_PIN AB18  IOSTANDARD LVCMOS33 } [get_ports { ftData[3] }]; #IO_L17N_T2_A13_D29_14 Sch=ja[4]
-# set_property -dict { PACKAGE_PIN Y21   IOSTANDARD LVCMOS33 } [get_ports { ftData[4] }]; #IO_L9P_T1_DQS_14 Sch=ja[7]
-# set_property -dict { PACKAGE_PIN AA21  IOSTANDARD LVCMOS33 } [get_ports { ftData[5] }]; #IO_L8N_T1_D12_14 Sch=ja[8]
+set_property -dict { PACKAGE_PIN AB22  IOSTANDARD LVCMOS33 } [get_ports { serial_mosi }]; #IO_L10N_T1_D15_14 Sch=ja[1]
+set_property -dict { PACKAGE_PIN AB21  IOSTANDARD LVCMOS33 } [get_ports { serial_miso }]; #IO_L10P_T1_D14_14 Sch=ja[2]
+set_property -dict { PACKAGE_PIN AB20  IOSTANDARD LVCMOS33 } [get_ports { serial_sck }]; #IO_L15N_T2_DQS_DOUT_CSO_B_14 Sch=ja[3]
+set_property -dict { PACKAGE_PIN AB18  IOSTANDARD LVCMOS33 } [get_ports { serial_ncs }]; #IO_L17N_T2_A13_D29_14 Sch=ja[4]
+set_property -dict { PACKAGE_PIN Y21   IOSTANDARD LVCMOS33 } [get_ports { serial_cts }]; #IO_L9P_T1_DQS_14 Sch=ja[7]
+set_property -dict { PACKAGE_PIN AA21  IOSTANDARD LVCMOS33 } [get_ports { serial_reset }]; #IO_L8N_T1_D12_14 Sch=ja[8]
 # set_property -dict { PACKAGE_PIN AA20  IOSTANDARD LVCMOS33 } [get_ports { ftData[6] }]; #IO_L8P_T1_D11_14 Sch=ja[9]
 # set_property -dict { PACKAGE_PIN AA18  IOSTANDARD LVCMOS33 } [get_ports { ftData[7] }]; #IO_L17P_T2_A14_D30_14 Sch=ja[10]
 
@@ -322,6 +322,12 @@ set_property -dict {PACKAGE_PIN A15 IOSTANDARD LVCMOS25} [get_ports {fmc_data[2]
 set_property -dict {PACKAGE_PIN F14 IOSTANDARD LVCMOS25} [get_ports {fmc_data[1]}]
 set_property -dict {PACKAGE_PIN F13 IOSTANDARD LVCMOS25} [get_ports {fmc_data[3]}]
 
+set_property PULLUP TRUE [get_ports serial_reset]
+set_property PULLUP TRUE [get_ports serial_ncs]
+set_property PULLUP TRUE [get_ports fmc_gpio0]
+set_property PULLUP TRUE [get_ports fmc_rxfn]
+
+create_clock -period 10.000 -name fmc_clk [get_ports fmc_clk]
 
 ## Configuration options, can be used for all designs
 set_property CONFIG_VOLTAGE 3.3 [current_design]

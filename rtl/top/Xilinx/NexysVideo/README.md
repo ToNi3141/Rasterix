@@ -8,10 +8,11 @@
   - [Build](#build)
 - [Windows Build](#windows-build)
   - [Run Warcraft 3](#run-warcraft-3)
+- [PlatformIO](#platformio)
 
 
 # Nexys Video Build
-The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector.
+The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector. Alternatively you can use the SPI interface on PMOD JA.
 
 There are two variants available:
 
@@ -113,3 +114,36 @@ Warcraft 3 runs on low settings with around 20-30FPS.
 
 Switching the resolution and videos are currently not working.
 
+# PlatformIO
+When using this board with PlatformIO, you can use the following config for your `platformio.ini`:
+```ini
+[env:teensy40]
+platform = teensy
+board = teensy40
+framework = arduino
+lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+build_flags = ${rrx.build_flags}
+
+[rrx]
+build_flags = 
+    -Ofast 
+    -g3 
+    -std=c++17
+    -DRRX_CORE_TMU_COUNT=2
+    -DRRX_CORE_MAX_TEXTURE_SIZE=256
+    -DRRX_CORE_ENABLE_MIPMAPPING=true
+    -DRRX_CORE_MAX_DISPLAY_WIDTH=1024
+    -DRRX_CORE_MAX_DISPLAY_HEIGHT=600
+    -DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=614400
+    -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
+    -DRRX_CORE_CMD_STREAM_WIDTH=128
+    -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=640
+    -DRRX_CORE_NUMBER_OF_TEXTURES=640
+    -DRRX_CORE_TEXTURE_PAGE_SIZE=4096
+    -DRRX_CORE_GRAM_MEMORY_LOC=0
+    -DRRX_CORE_FRAMEBUFFER_TYPE=FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER
+    -DRRX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
+    -DRRX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
+    -DRRX_CORE_DEPTH_BUFFER_LOC=0x01A00000
+    -DRRX_CORE_STENCIL_BUFFER_LOC=0x01900000
+```

@@ -59,7 +59,8 @@ TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 
 TEST_CASE("Test Stall", "[VStreamSemaphore]")
 {
-    static constexpr uint32_t MAX_ITERATIONS { 128 };
+    static constexpr uint32_t SEMAPHORE_COUNT { 128 };
+    static constexpr uint32_t MAX_ITERATIONS { SEMAPHORE_COUNT + 1 };
     VStreamSemaphore* t = new VStreamSemaphore();
     
     t->sigRelease = 0;
@@ -77,11 +78,14 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
         t->s_axis_tdata = i;
         t->s_axis_tkeep = 0;
         rr::ut::clk(t);
-        CHECK(t->m_axis_tvalid == 1);
+        // valid as long as MAX_ITERATIONS are not exceeded
+        CHECK(t->m_axis_tvalid == (i < (SEMAPHORE_COUNT - 1)));
         CHECK(t->m_axis_tlast == 0);
-        CHECK(t->m_axis_tdata == i);
+        // Stays at the last valid value
+        CHECK(t->m_axis_tdata == ((i < SEMAPHORE_COUNT) ? i : SEMAPHORE_COUNT - 1));
         CHECK(t->m_axis_tkeep == 0);
-        CHECK(t->s_axis_tready == (i < (MAX_ITERATIONS - 1)));
+        // Gets false one clock later because on element is stored in the skid buffer
+        CHECK(t->s_axis_tready == (i < SEMAPHORE_COUNT));
         CHECK(t->released == 0);
     }
 
@@ -91,9 +95,11 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
         rr::ut::clk(t);
-        CHECK(t->s_axis_tready == 1);
-        CHECK(t->m_axis_tvalid == 0);
-        CHECK(t->released == !(i < (MAX_ITERATIONS - 1)));
+        // turns to true when one element gets removed
+        CHECK(t->s_axis_tready == (i > 0)); 
+        // two values: The current one and one in the skid buffer
+        CHECK(t->m_axis_tvalid == (i <= 1)); 
+        CHECK(t->released == !(i < (SEMAPHORE_COUNT - 1)));
     }
 
     // Destroy model
