@@ -237,7 +237,7 @@ proc write_mig_file_design_1_mig_7series_0_0 { str_mig_prj_filepath } {
    puts $mig_prj_file {    <DataMask>1</DataMask>}
    puts $mig_prj_file {    <ECC>Disabled</ECC>}
    puts $mig_prj_file {    <Ordering>Normal</Ordering>}
-   puts $mig_prj_file {    <BankMachineCnt>4</BankMachineCnt>}
+   puts $mig_prj_file {    <BankMachineCnt>8</BankMachineCnt>}
    puts $mig_prj_file {    <CustomPart>FALSE</CustomPart>}
    puts $mig_prj_file {    <NewPartName/>}
    puts $mig_prj_file {    <RowAddress>15</RowAddress>}
@@ -329,7 +329,7 @@ proc write_mig_file_design_1_mig_7series_0_0 { str_mig_prj_filepath } {
    puts $mig_prj_file {    <mr2RTTWR name="RTT_WR - Dynamic On Die Termination (ODT)">Dynamic ODT off</mr2RTTWR>}
    puts $mig_prj_file {    <PortInterface>AXI</PortInterface>}
    puts $mig_prj_file {    <AXIParameters>}
-   puts $mig_prj_file {      <C0_C_RD_WR_ARB_ALGORITHM>RD_PRI_REG</C0_C_RD_WR_ARB_ALGORITHM>}
+   puts $mig_prj_file {      <C0_C_RD_WR_ARB_ALGORITHM>ROUND_ROBIN</C0_C_RD_WR_ARB_ALGORITHM>}
    puts $mig_prj_file {      <C0_S_AXI_ADDR_WIDTH>29</C0_S_AXI_ADDR_WIDTH>}
    puts $mig_prj_file {      <C0_S_AXI_DATA_WIDTH>128</C0_S_AXI_DATA_WIDTH>}
    puts $mig_prj_file {      <C0_S_AXI_ID_WIDTH>11</C0_S_AXI_ID_WIDTH>}
@@ -537,6 +537,7 @@ proc create_root_design { parentCell } {
 
   set_property -dict [list \
     CONFIG.BOARD_MIG_PARAM {ddr3_sdram} \
+    CONFIG.MIG_DONT_TOUCH_PARAM {Custom} \
     CONFIG.RESET_BOARD_INTERFACE {reset} \
     CONFIG.XML_INPUT_FILE {mig_b.prj} \
   ] $mig_7series_0
@@ -551,7 +552,7 @@ proc create_root_design { parentCell } {
   # Create instance: smartconnect_0, and set properties
   set smartconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_0 ]
   set_property -dict [list \
-    CONFIG.ADVANCED_PROPERTIES { __view__ { clocking { S01_Entry { ASSOCIATED_CLK aclk } } }} \
+    CONFIG.ADVANCED_PROPERTIES {    __view__ { }   } \
     CONFIG.NUM_CLKS {2} \
     CONFIG.NUM_SI {5} \
   ] $smartconnect_0

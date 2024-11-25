@@ -77,7 +77,6 @@ build_flags = ${rrx.build_flags}
 [rrx]
 build_flags = 
     -Ofast 
-    -g3 
     -std=c++17
     -DRRX_CORE_TMU_COUNT=1
     -DRRX_CORE_MAX_TEXTURE_SIZE=128

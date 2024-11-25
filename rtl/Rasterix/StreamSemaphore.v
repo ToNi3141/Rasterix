@@ -47,7 +47,7 @@ module StreamSemaphore #(
 
     wire sigOutgoingValue   = sigRelease;
     wire sigIncommingValue  = s_axis_tvalid && s_axis_tready && sigLock;
-    wire free               = (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
+    wire free               = (valuesCounter < (MAX_NUMBER_OF_ELEMENTS - 1));
 
     skidbuffer #(
         .OPT_OUTREG(1),

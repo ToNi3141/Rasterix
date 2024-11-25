@@ -617,9 +617,9 @@ module RasterixRenderCore #(
     generate
         if (ENABLE_FLOW_CTRL)
         begin
-            assign fifosAlmostFull = (color_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
-                || (depth_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG))
-                || (stencil_fifo_fill >= (2 ** MAX_NUMBER_OF_PIXELS_LG));
+            assign fifosAlmostFull = (color_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1)
+                || (depth_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1)
+                || (stencil_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1);
 
             // Used to prevent overflows of the write fifos
             StreamBarrier sbr (

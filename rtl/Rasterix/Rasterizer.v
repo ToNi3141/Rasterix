@@ -128,17 +128,20 @@ module Rasterizer
             case (rasterizerState)
             RASTERIZER_WAITFORCOMMAND:
             begin
-                m_rr_tvalid <= 0;
-                m_rr_tpixel <= 0;
-                m_rr_tkeep <= ~0;
-                m_rr_tlast <= 0;
-                rasterizerRunning <= 0;
-                if (startRendering)
+                if (m_rr_tready)
                 begin
-                    lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
-                    rasterizerRunning <= 1;
-                    rasterizerState <= RASTERIZER_INIT;
-                    m_rr_tcmd <= RR_CMD_INIT;
+                    m_rr_tvalid <= 0;
+                    m_rr_tpixel <= 0;
+                    m_rr_tkeep <= ~0;
+                    m_rr_tlast <= 0;
+                    rasterizerRunning <= 0;
+                    if (startRendering)
+                    begin
+                        lineBBStart <= yOffset - bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                        rasterizerRunning <= 1;
+                        rasterizerState <= RASTERIZER_INIT;
+                        m_rr_tcmd <= RR_CMD_INIT;
+                    end
                 end
             end
             RASTERIZER_INIT:
@@ -172,7 +175,7 @@ module Rasterizer
                 // takes too much logic. It can be completely discarded, when the framebuffer is big enough to contain the whole screen. This is only 
                 // required in the line mode, to handle the offsets in y direction when rendering a new line.
                 // Check if the current line offset is above the bounding box. Means, the bounding box starts in this line or in lines after this line.
-                // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start possition is in this
+                // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start position is in this
                 // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
                 // for this line.
                 if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
@@ -188,7 +191,7 @@ module Rasterizer
 
                 // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
                 // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
-                // The the condition occures that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
+                // The the condition occurs that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
                 if ((yOffset + yLineResolution) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
                 begin
                     yScreenEnd <= yOffset + yLineResolution;
@@ -405,6 +408,20 @@ module Rasterizer
                             m_rr_tpixel <= isInTriangleAndInBounds;
                         end
                         endcase
+
+                        /* verilator lint_off WIDTH */
+                        // Check that the index never exceeds the borders of the view port
+                        if ((y < yResolution) && (x < xResolution))
+                        begin
+                            m_rr_tindex <= (((yLineResolution - 1) - y) * xResolution) + x;
+                        end
+                        /* verilator lint_on WIDTH */
+                        
+                        // Arguments for the shader
+                        m_rr_tbbx <= (x - bbStart[BB_X_POS +: X_BIT_WIDTH]);
+                        m_rr_tbby <= (yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
+                        m_rr_tspx <= x;
+                        m_rr_tspy <= yScreen;
                     end
                     else
                     begin
@@ -413,22 +430,9 @@ module Rasterizer
                         m_rr_tpixel <= 1;
                         m_rr_tkeep <= 0;
                         m_rr_tlast <= 1;
+                        m_rr_tvalid <= 1;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
-
-                    /* verilator lint_off WIDTH */
-                    // Check that the index never exceeds the borders of the view port
-                    if ((y < yResolution) && (x < xResolution))
-                    begin
-                        m_rr_tindex <= (((yLineResolution - 1) - y) * xResolution) + x;
-                    end
-                    /* verilator lint_on WIDTH */
-                    
-                    // Arguments for the shader
-                    m_rr_tbbx <= (x - bbStart[BB_X_POS +: X_BIT_WIDTH]);
-                    m_rr_tbby <= (yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
-                    m_rr_tspx <= x;
-                    m_rr_tspy <= yScreen;
                 end
             end
             endcase 
