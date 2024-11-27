@@ -42,12 +42,12 @@ module StreamSemaphore #(
     input  wire                         sigRelease,
     output reg                          released
 );
-    reg  [7 : 0]    valuesCounter = 0;
-    wire            skidValid;
+    reg  [$clog2(MAX_NUMBER_OF_ELEMENTS) + 1 : 0]   valuesCounter = 0;
+    wire                                            skidValid;
 
     wire sigOutgoingValue   = sigRelease;
-    wire sigIncommingValue  = s_axis_tvalid && s_axis_tready && sigLock;
-    wire free               = (valuesCounter < (MAX_NUMBER_OF_ELEMENTS - 1));
+    wire sigIncomingValue   = s_axis_tvalid && s_axis_tready && sigLock;
+    wire free               = (valuesCounter < MAX_NUMBER_OF_ELEMENTS);
 
     skidbuffer #(
         .OPT_OUTREG(1),
@@ -76,14 +76,14 @@ module StreamSemaphore #(
         else
         begin
             // Value goes out and no values comes in. 
-            // The pipeline loses a value (decrement) but still contains something
-            if ((sigOutgoingValue == 1) && (sigIncommingValue == 0) && (valuesCounter != 0))
+            // The pipeline loses a value: decrement
+            if ((sigOutgoingValue == 1) && (sigIncomingValue == 0) && (valuesCounter != 0))
             begin
                 valuesCounter = valuesCounter - 1;
             end
             // No values goes out but one comes in
-            // The pipeline receives a new values (increment) therefor it contains values
-            if ((sigOutgoingValue == 0) && (sigIncommingValue == 1) && (valuesCounter != MAX_NUMBER_OF_ELEMENTS))
+            // The pipeline receives a new value: increment
+            if ((sigOutgoingValue == 0) && (sigIncomingValue == 1))
             begin
                 valuesCounter = valuesCounter + 1;
             end

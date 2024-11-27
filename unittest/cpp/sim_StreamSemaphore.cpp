@@ -95,11 +95,16 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     for (uint32_t i = 0; i < MAX_ITERATIONS; i++)
     {
         rr::ut::clk(t);
-        // turns to true when one element gets removed
-        CHECK(t->s_axis_tready == (i > 0)); 
-        // two values: The current one and one in the skid buffer
-        CHECK(t->m_axis_tvalid == (i <= 1)); 
-        CHECK(t->released == !(i < (SEMAPHORE_COUNT - 1)));
+        CHECK(t->s_axis_tready == (i > 1)); // Turns to true when one element gets removed
+        if (i == 0)
+            CHECK(t->m_axis_tvalid == false);
+        else if (i == 1)
+            CHECK(t->m_axis_tvalid == true); // Current value hidden by the lock signal
+        else if (i == 2)
+            CHECK(t->m_axis_tvalid == true); // Skid value
+        else 
+            CHECK(t->m_axis_tvalid == false);
+        CHECK(t->released == !(i < SEMAPHORE_COUNT)); // Includes an additional value in the skid buffer
     }
 
     // Destroy model
