@@ -25,9 +25,6 @@ module Rasterizer
 
     parameter INDEX_WIDTH = 14,
 
-    // The bit width of the command interface. Allowed values: 32, 64, 128, 256
-    parameter CMD_STREAM_WIDTH = 32,
-
     // Automatically increments the weights during the initialization of the triangle 
     // to the current screen position
     parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
@@ -78,8 +75,6 @@ module Rasterizer
     localparam BB_X_POS = 0;
     localparam BB_Y_POS = 16;
 
-    localparam PARAMETERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / ATTRIBUTE_SIZE;
-
     // Rasterizer main state machine
     localparam RASTERIZER_WAITFORCOMMAND = 0;
     localparam RASTERIZER_INIT = 1;
@@ -93,23 +88,24 @@ module Rasterizer
     localparam RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR = 4;
 
     // Rasterizer variables
-    wire [Y_BIT_WIDTH - 1 : 0] yLineResolution = yResolution;
-    reg  [5 : 0] rasterizerState;
-    reg  [Y_BIT_WIDTH - 1 : 0] y;
-    reg  [Y_BIT_WIDTH - 1 : 0] yScreen;
-    reg  [Y_BIT_WIDTH - 1 : 0] yScreenEnd;
-    reg  [Y_BIT_WIDTH - 1 : 0] lineBBStart;
-    reg  [X_BIT_WIDTH - 1 : 0] x;
-    reg  [ATTRIBUTE_SIZE - 1 : 0] regW0;
-    reg  [ATTRIBUTE_SIZE - 1 : 0] regW1;
-    reg  [ATTRIBUTE_SIZE - 1 : 0] regW2;
+    wire [Y_BIT_WIDTH - 1 : 0]      yLineResolution = yResolution;
+    reg  [ 5 : 0]                   rasterizerState;
+    reg  [Y_BIT_WIDTH - 1 : 0]      y;
+    reg  [Y_BIT_WIDTH - 1 : 0]      yScreen;
+    reg  [Y_BIT_WIDTH - 1 : 0]      yScreenEnd;
+    reg  [Y_BIT_WIDTH - 1 : 0]      lineBBStart;
+    reg  [X_BIT_WIDTH - 1 : 0]      x;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW0;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW1;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW2;
+
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
     wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     
     // Edge walker variables
-    reg  [5 : 0] edgeWalkingState;
-    reg  edgeWalkTryOtherside;
-    reg  edgeWalkingDirection; 
+    reg  [ 5 : 0]   edgeWalkingState;
+    reg             edgeWalkTryOtherside;
+    reg             edgeWalkingDirection; 
     localparam EDGE_WALKING_DIRECTION_LEFT = 1'b0;
     localparam EDGE_WALKING_DIRECTION_RIGHT = 1'b1;
 
@@ -150,7 +146,6 @@ module Rasterizer
 
                 if (RASTERIZER_ENABLE_INITIAL_Y_INC)
                 begin
-                    
                     if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
                     begin
                         regW0 <= w0;
@@ -239,7 +234,7 @@ module Rasterizer
                     if (edgeWalkingState == RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR)
                     begin
                         // Do nothing here, just avoid an increment.
-                        // It is convinient to do that when we are checking the new direction,
+                        // It is convenient to do that when we are checking the new direction,
                         // because in 50% of the cases, we are walking in the wrong direction
                         // anyway, so this gives us no advantage, but when we just keep walking
                         // we risk an over or underflow of x.

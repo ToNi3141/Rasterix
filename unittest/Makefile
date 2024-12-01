@@ -20,7 +20,8 @@ all: \
 	streamSemaphore \
 	lodCalculator \
 	attributeInterpolationX \
-	attributePerspectiveCorrectionX
+	attributePerspectiveCorrectionX \
+	triangleStreamF2XConverter
  
 clean:
 	rm -rf obj_dir
@@ -124,6 +125,11 @@ attributePerspectiveCorrectionX:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/AttributePerspectiveCorrectionX.v --top-module AttributePerspectiveCorrectionX cpp/sim_AttributePerspectiveCorrectionX.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VAttributePerspectiveCorrectionX.mk
 	./obj_dir/VAttributePerspectiveCorrectionX
+
+triangleStreamF2XConverter:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/TriangleStreamF2XConverter.v --top-module TriangleStreamF2XConverter cpp/sim_TriangleStreamF2XConverter.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VTriangleStreamF2XConverter.mk
+	./obj_dir/VTriangleStreamF2XConverter
 
 .SECONDARY:
 .PHONY: all clean
