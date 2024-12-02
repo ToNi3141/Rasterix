@@ -108,7 +108,7 @@ module TriangleStreamF2XConverter #(
         convertLut[TRIANGLE_STREAM_INC_TEX1_S_Y]  = { CONVERT, TEXTURE_SHIFT };
         convertLut[TRIANGLE_STREAM_INC_TEX1_T_Y]  = { CONVERT, TEXTURE_SHIFT };
         convertLut[TRIANGLE_STREAM_INC_TEX1_Q_Y]  = { CONVERT, TEXTURE_SHIFT };
-        convertLut[TRIANGLE_STREAM_PADDING_1]     = { BYPASS,  NULL_SHIFT };
+        convertLut[TRIANGLE_STREAM_PADDING_1]     = { BYPASS,  NULL_SHIFT    };
     end
 
     ValueDelay #(

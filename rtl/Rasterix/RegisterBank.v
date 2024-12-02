@@ -47,7 +47,7 @@ module RegisterBank
     // Register bank
     output wire [(BANK_SIZE * BANK_REG_WIDTH) - 1 : 0] registers,
 
-    // Optional signals to inform other modules, that the registers have updated
+    // Optional signals to inform other modules, that the registers have been updated
     output reg                              registers_updated,
     input  wire                             update_acknowledged
 );

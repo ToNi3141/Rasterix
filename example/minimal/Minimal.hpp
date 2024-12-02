@@ -15,6 +15,7 @@ class Minimal
     static constexpr bool ENABLE_LIGHT { true };
     static constexpr bool ENABLE_BLACK_WHITE { false };
     static constexpr bool ENABLE_MULTI_TEXTURE { true };
+    static constexpr bool ENABLE_FOG { true };
 
     static constexpr std::array<float, 4> CLEAR_COLOR { { 135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 0.0f } };
 public:
@@ -94,11 +95,14 @@ public:
             }
         }
 
-        glEnable(GL_FOG);
-        glFogf(GL_FOG_START, 10.0f);
-        glFogf(GL_FOG_END, 15.0f);
-        glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogfv(GL_FOG_COLOR, CLEAR_COLOR.data());
+        if (ENABLE_FOG)
+        {
+            glFogf(GL_FOG_START, 10.0f);
+            glFogf(GL_FOG_END, 15.0f);
+            glFogi(GL_FOG_MODE, GL_LINEAR);
+            glFogfv(GL_FOG_COLOR, CLEAR_COLOR.data());
+            glEnable(GL_FOG);
+        }
     }
 
     void draw()

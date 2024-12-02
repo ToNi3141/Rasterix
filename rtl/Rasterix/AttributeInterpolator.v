@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// This module is used to interpolate the triagle attributes based 
+// This module is used to interpolate the triangle attributes based 
 // on the data from the rasterizer
 // Pipelined: yes
 // Depth: 31 cycles
