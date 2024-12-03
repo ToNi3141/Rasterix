@@ -40,13 +40,16 @@ module RegisterBank
 
     // Register content stream
     input  wire                             s_axis_tvalid,
-    output wire                             s_axis_tready,
     input  wire                             s_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_axis_tdata,
     input  wire [INDEX_WIDTH - 1 : 0]       s_axis_tuser,
 
     // Register bank
-    output wire [(BANK_SIZE * BANK_REG_WIDTH) - 1 : 0] registers
+    output wire [(BANK_SIZE * BANK_REG_WIDTH) - 1 : 0] registers,
+
+    // Optional signals to inform other modules, that the registers have been updated
+    output reg                              registers_updated,
+    input  wire                             update_acknowledged
 );
     
     localparam REGISTERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / BANK_REG_WIDTH;
@@ -54,14 +57,17 @@ module RegisterBank
     reg [BANK_REG_WIDTH - 1 : 0] registerMem [0 : BANK_SIZE - 1];
     reg [INDEX_WIDTH - 1 : 0] registerIndex;
 
-    assign s_axis_tready = 1;
-
     always @(posedge aclk)
     begin : Copy
         integer i;
         if (!resetn)
         begin
             registerIndex <= 0;
+        end
+
+        if (update_acknowledged)
+        begin
+            registers_updated <= 0;
         end
         
         if (s_axis_tvalid)
@@ -82,6 +88,7 @@ module RegisterBank
 
             if (s_axis_tlast)
             begin
+                registers_updated <= 1;
                 registerIndex <= 0;
             end
         end

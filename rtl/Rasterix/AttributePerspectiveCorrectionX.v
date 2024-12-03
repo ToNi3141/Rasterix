@@ -346,8 +346,8 @@ module AttributePerspectiveCorrectionX #(
     ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(I2F_DELAY)) 
         step2_tdepth_z_delay (.clk(aclk), .in(step1_depth_z), .out(step2_depth_z));
 
-    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE), .EXPONENT_BIAS_OFFSET(-9))
-        step2_tdepth_w_i2f (.clk(aclk), .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), .out(step2_depth_w));
+    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE))
+        step2_tdepth_w_i2f (.clk(aclk), .offset(-9), .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), .out(step2_depth_w));
 
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_t_reg;

@@ -61,6 +61,7 @@ read_verilog ./../../../../Rasterix/TextureFilter.v
 read_verilog ./../../../../Rasterix/TextureMappingUnit.v
 read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
+read_verilog ./../../../../Rasterix/TriangleStreamF2XConverter.v
 read_verilog ./../../../../Rasterix/StencilOp.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v
 read_verilog ./../../../../Float/rtl/float/ComputeRecip.v
@@ -76,6 +77,7 @@ read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/Serial2AXIS.v
 read_verilog ./../../../../Util/SpiSlave.v
+read_verilog ./../../../../3rdParty/verilog-axis/axis_adapter.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/sfifo.v

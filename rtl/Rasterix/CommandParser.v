@@ -44,7 +44,6 @@ module CommandParser #(
 
     // Control
     input  wire         rasterizerRunning,
-    output reg          startRendering,
     input  wire         pixelInPipeline,
 
     // Color/Depth buffer control
@@ -80,28 +79,26 @@ module CommandParser #(
     localparam MUX_TEXTURE1_STREAM = 5'd3;
     localparam MUX_RENDER_CONFIG = 5'd4;
     localparam MUX_FOG_LUT_STREAM = 5'd5;
-    
-    // Wait For Rasterizer Statemachine
-    localparam RASTERIZER_CONTROL_WAITFORCOMMAND = 0;
-    localparam RASTERIZER_CONTROL_WAITFOREND = 1;
 
     // Wait For Cache Apply Statemachine
     localparam FB_CONTROL_WAITFORCOMMAND = 0;
     localparam FB_CONTROL_WAITFOREND = 1;
 
     // Command Unit Variables
-    reg             apply;
-    wire            applied;
-    reg  [18 : 0]   streamCounter;
-    reg             parameterComplete;
-    reg             tvalid;
+    reg             framebufferCommandApply;
+    wire            framebufferCommandApplied;
+    reg             rasterizerWasStarted;
+    reg  [ 1 : 0]   fbControlState;
 
     // Local Statemachine variables
     reg  [ 4 : 0]   state;
     reg  [ 4 : 0]   mux;
-    reg  [ 1 : 0]   rasterizerControlState;
-    reg  [ 1 : 0]   fbControlState;
-    reg             wlsp = 0;
+    reg             tvalid;
+    reg  [18 : 0]   streamCounter;
+
+    // Skid buffer
+    reg  [CMD_STREAM_WIDTH - 1 : 0] tdataSkid;
+    reg                             tvalidSkid;
 
     assign m_cmd_fog_axis_tvalid         = (mux == MUX_FOG_LUT_STREAM) ? tvalid : 0;
     assign m_cmd_rasterizer_axis_tvalid  = (mux == MUX_TRIANGLE_STREAM) ? tvalid : 0;
@@ -109,43 +106,56 @@ module CommandParser #(
     assign m_cmd_tmu1_axis_tvalid        = (mux == MUX_TEXTURE1_STREAM) ? tvalid : 0;
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
-    assign applied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
+    assign framebufferCommandApplied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
 
     assign dbgStreamState = state[3:0];
 
     always @(posedge aclk)
-    begin
+    begin : CmdParser
+        reg tready;
+        case (mux)
+            MUX_FOG_LUT_STREAM: tready = m_cmd_fog_axis_tready;
+            MUX_RENDER_CONFIG: tready = m_cmd_config_axis_tready;
+            MUX_TEXTURE0_STREAM: tready = m_cmd_tmu0_axis_tready;
+            MUX_TEXTURE1_STREAM: tready = m_cmd_tmu1_axis_tready;
+            MUX_TRIANGLE_STREAM: tready = m_cmd_rasterizer_axis_tready;
+            MUX_NONE: tready = 1;
+        endcase 
+
         if (!resetn)
         begin
             state <= WAIT_FOR_IDLE;
             mux <= MUX_NONE;
-            
-            rasterizerControlState <= RASTERIZER_CONTROL_WAITFORCOMMAND;
 
             fbControlState <= FB_CONTROL_WAITFORCOMMAND;
-            apply <= 0;
+            framebufferCommandApply <= 0;
             s_cmd_axis_tready <= 0;
 
             tvalid <= 0;
             m_cmd_xxx_axis_tlast <= 0;
 
-            startRendering <= 0;
+            tvalidSkid <= 0;
+
+            rasterizerWasStarted <= 1;
         end
         else 
         begin
             case (state)
             WAIT_FOR_IDLE:
             begin
-                mux <= MUX_NONE;
-                tvalid <= 0;
-                m_cmd_xxx_axis_tlast <= 0;
-                if (rasterizerRunning)
-                    startRendering <= 0;
-                if (!m_cmd_xxx_axis_tlast && !apply && applied && !pixelInPipeline && !rasterizerRunning && !startRendering)
+                if (rasterizerRunning && !rasterizerWasStarted)
+                    rasterizerWasStarted <= 1;
+
+                if (tready) // Wait till the stream has ended
                 begin
-                    startRendering <= 0;
-                    s_cmd_axis_tready <= 1;
-                    state <= COMMAND_IN;
+                    mux <= MUX_NONE;
+                    tvalid <= 0;
+                    m_cmd_xxx_axis_tlast <= 0;
+                    if (!m_cmd_xxx_axis_tlast && !framebufferCommandApply && framebufferCommandApplied && !pixelInPipeline && !rasterizerRunning && rasterizerWasStarted)
+                    begin
+                        s_cmd_axis_tready <= 1;
+                        state <= COMMAND_IN;
+                    end
                 end
             end
             COMMAND_IN:
@@ -159,6 +169,7 @@ module CommandParser #(
                         /* verilator lint_off WIDTH */
                         streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_TRIANGLE_STEEAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         /* verilator lint_off WIDTH */
+                        rasterizerWasStarted <= 0;
                         mux <= MUX_TRIANGLE_STREAM;
                         state <= EXEC_STREAM;
                     end
@@ -210,7 +221,7 @@ module CommandParser #(
                         colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
                         depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
                         stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
-                        apply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS] 
+                        framebufferCommandApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS] 
                             | (s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS])
                             | (s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]);
                         state <= WAIT_FOR_IDLE;
@@ -221,26 +232,26 @@ module CommandParser #(
                         state <= WAIT_FOR_IDLE;
                     end
                     endcase
-                    parameterComplete <= 0;
                 end
             end
             EXEC_STREAM:
             begin : Stream
-                reg tready;
-                case (mux)
-                    MUX_FOG_LUT_STREAM: tready = m_cmd_fog_axis_tready;
-                    MUX_RENDER_CONFIG: tready = m_cmd_config_axis_tready;
-                    MUX_TEXTURE0_STREAM: tready = m_cmd_tmu0_axis_tready;
-                    MUX_TEXTURE1_STREAM: tready = m_cmd_tmu1_axis_tready;
-                    MUX_TRIANGLE_STREAM: tready = m_cmd_config_axis_tready;
-                endcase 
-
                 s_cmd_axis_tready <= tready;
                 if (tready)
                 begin
-                    tvalid <= s_cmd_axis_tvalid;
-                    m_cmd_xxx_axis_tdata <= s_cmd_axis_tdata;
-                    if (s_cmd_axis_tvalid)
+                    if (tvalidSkid)
+                    begin
+                        tvalid <= tvalidSkid;
+                        m_cmd_xxx_axis_tdata <= tdataSkid;
+                        tvalidSkid <= 0;
+                    end
+                    else
+                    begin
+                        tvalid <= s_cmd_axis_tvalid;
+                        m_cmd_xxx_axis_tdata <= s_cmd_axis_tdata;
+                    end
+
+                    if (s_cmd_axis_tvalid || tvalidSkid)
                     begin
                         streamCounter <= streamCounter - 1;
                         if (streamCounter == 1)
@@ -248,12 +259,16 @@ module CommandParser #(
                             s_cmd_axis_tready <= 0;
                             m_cmd_xxx_axis_tlast <= 1;
 
-                            // If this stream was a triangle stream, start the rendering now.
-                            if (mux == MUX_TRIANGLE_STREAM)
-                                startRendering <= 1;
-
                             state <= WAIT_FOR_IDLE;
                         end
+                    end
+                end
+                else
+                begin
+                    if (s_cmd_axis_tvalid)
+                    begin
+                        tdataSkid <= s_cmd_axis_tdata;
+                        tvalidSkid <= s_cmd_axis_tvalid;
                     end
                 end
             end
@@ -265,9 +280,9 @@ module CommandParser #(
             case (fbControlState)
             FB_CONTROL_WAITFORCOMMAND:
             begin
-                if (apply)
+                if (framebufferCommandApply)
                 begin
-                    if (applied == 0)
+                    if (framebufferCommandApplied == 0)
                     begin
                         fbControlState <= FB_CONTROL_WAITFOREND;
                     end
@@ -275,11 +290,11 @@ module CommandParser #(
             end
             FB_CONTROL_WAITFOREND:
             begin
-                apply <= 0;
+                framebufferCommandApply <= 0;
                 colorBufferApply <= 0;
                 depthBufferApply <= 0;
                 stencilBufferApply <= 0;
-                if (applied)
+                if (framebufferCommandApplied)
                 begin
                     fbControlState <= FB_CONTROL_WAITFORCOMMAND;
                 end

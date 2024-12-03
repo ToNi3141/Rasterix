@@ -29,11 +29,12 @@
 #include "renderer/Triangle.hpp"
 #include "renderer/Rasterizer.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
 
-template <typename List, uint8_t TMU_COUNT, bool ENABLE_FLOAT_INTERPOLATION>
+template <typename List>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -42,18 +43,18 @@ public:
     {
 #pragma pack(push, 4)
         TriangleStreamTypes::StaticParams param;
-        std::array<TriangleStreamTypes::Texture, TMU_COUNT> texture;
+        std::array<TriangleStreamTypes::Texture, RenderConfig::TMU_COUNT> texture;
 #pragma pack(pop)
     };
     struct TriangleDescX
     {
 #pragma pack(push, 4)
         TriangleStreamTypes::StaticParamsX param;
-        std::array<TriangleStreamTypes::TextureX, TMU_COUNT> texture;
+        std::array<TriangleStreamTypes::TextureX, RenderConfig::TMU_COUNT> texture;
         void operator=(const TriangleDesc& t)
         {
             param = t.param;
-            for (uint32_t i = 0; i < TMU_COUNT; i++)
+            for (uint32_t i = 0; i < RenderConfig::TMU_COUNT; i++)
             {
                 texture[i] = t.texture[i];
             }
@@ -61,6 +62,9 @@ public:
 #pragma pack(pop)
     };
 
+    // Both, the float and fix point variant expecting the triangle parameters as float.
+    // Therefore: Set the interpolation by default to float.
+    static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
     
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)

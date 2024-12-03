@@ -129,22 +129,22 @@ module AttributeF2XConverter #(
     // Depth
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(CONV_DELAY)) 
         convert_depth_delay (.clk(aclk), .in(s_ftx_tdepth_w), .out(step_convert_depth_w_float));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-DEPTH_WIDTH), .DELAY(0))
-        convert_floatToInt_DepthZ (.clk(aclk), .in(s_ftx_tdepth_z), .out(step_convert_depth_z)); 
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_DepthZ (.clk(aclk), .offset(-$signed(DEPTH_WIDTH)),.in(s_ftx_tdepth_z), .out(step_convert_depth_z)); 
 
     // Tex Coords TMU0
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-        convert_floatToInt_tmu0_textureS (.clk(aclk), .in(s_ftx_ttexture0_s), .out(step_convert_texture0_s));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-        convert_floatToInt_tmu0_textureT (.clk(aclk), .in(s_ftx_ttexture0_t), .out(step_convert_texture0_t));   
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_tmu0_textureS (.clk(aclk), .offset(-15), .in(s_ftx_ttexture0_s), .out(step_convert_texture0_s));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_tmu0_textureT (.clk(aclk), .offset(-15), .in(s_ftx_ttexture0_t), .out(step_convert_texture0_t));   
 
     generate 
         if (ENABLE_LOD_CALC)
         begin
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .in(s_ftx_tmipmap0_s), .out(step_convert_mipmap0_s));
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .in(s_ftx_tmipmap0_t), .out(step_convert_mipmap0_t));   
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap0_s), .out(step_convert_mipmap0_s));
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap0_t), .out(step_convert_mipmap0_t));   
         end
     endgenerate
 
@@ -153,30 +153,30 @@ module AttributeF2XConverter #(
         if (ENABLE_SECOND_TMU)
         begin
 
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                convert_floatToInt_tmu1_textureS (.clk(aclk), .in(s_ftx_ttexture1_s), .out(step_convert_texture1_s));
-            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                convert_floatToInt_tmu1_textureT (.clk(aclk), .in(s_ftx_ttexture1_t), .out(step_convert_texture1_t));
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                convert_floatToInt_tmu1_textureS (.clk(aclk), .offset(-15), .in(s_ftx_ttexture1_s), .out(step_convert_texture1_s));
+            FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                convert_floatToInt_tmu1_textureT (.clk(aclk), .offset(-15), .in(s_ftx_ttexture1_t), .out(step_convert_texture1_t));
 
             if (ENABLE_LOD_CALC)
             begin
-                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .in(s_ftx_tmipmap1_s), .out(step_convert_mipmap1_s));
-                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-15), .DELAY(0))
-                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .in(s_ftx_tmipmap1_t), .out(step_convert_mipmap1_t));        
+                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap1_s), .out(step_convert_mipmap1_s));
+                FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap1_t), .out(step_convert_mipmap1_t));        
             end
         end
     endgenerate
 
     // Fragment Color
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(0))
-        convert_floatToInt_ColorR (.clk(aclk), .in(s_ftx_tcolor_r), .out(step_convert_color_r));
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(0))
-        convert_floatToInt_ColorG (.clk(aclk), .in(s_ftx_tcolor_g), .out(step_convert_color_g));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(0))
-        convert_floatToInt_ColorB (.clk(aclk), .in(s_ftx_tcolor_b), .out(step_convert_color_b));   
-    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .EXPONENT_BIAS_OFFSET(-16), .DELAY(0))
-        convert_floatToInt_ColorA (.clk(aclk), .in(s_ftx_tcolor_a), .out(step_convert_color_a));   
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_ColorR (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_r), .out(step_convert_color_r));
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_ColorG (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_g), .out(step_convert_color_g));   
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_ColorB (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_b), .out(step_convert_color_b));   
+    FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
+        convert_floatToInt_ColorA (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_a), .out(step_convert_color_a));   
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1 

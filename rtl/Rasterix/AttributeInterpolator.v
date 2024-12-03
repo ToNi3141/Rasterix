@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// This module is used to interpolate the triagle attributes based 
+// This module is used to interpolate the triangle attributes based 
 // on the data from the rasterizer
 // Pipelined: yes
 // Depth: 31 cycles
@@ -210,9 +210,9 @@ module AttributeInterpolator #(
     wire [RASTERIZER_FLOAT_PRECISION - 1 : 0] step_1_bounding_box_pos_y_float;
 
     IntToFloat #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .INT_SIZE(32))
-        intToFloatBBX (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_x}), .out(step_1_bounding_box_pos_x_float));
+        intToFloatBBX (.clk(aclk), .offset(0), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_x}), .out(step_1_bounding_box_pos_x_float));
     IntToFloat #(.MANTISSA_SIZE(MANTISSA_SIZE), .EXPONENT_SIZE(EXPONENT_SIZE), .INT_SIZE(32))
-        intToFloatBBY (.clk(aclk), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_y}), .out(step_1_bounding_box_pos_y_float));
+        intToFloatBBY (.clk(aclk), .offset(0), .in({{INT_32_DIFF{1'b0}}, bounding_box_pos_y}), .out(step_1_bounding_box_pos_y_float));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2 Multiply bounding box positions with the vertex attribute increments

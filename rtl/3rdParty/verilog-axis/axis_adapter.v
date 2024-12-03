@@ -25,8 +25,8 @@ THE SOFTWARE.
 // Language: Verilog 2001
 
 `resetall
-`timescale 1ns / 1ps
-`default_nettype none
+// `timescale 1ns / 1ps
+// `default_nettype none
 
 /*
  * AXI4-Stream bus width adapter

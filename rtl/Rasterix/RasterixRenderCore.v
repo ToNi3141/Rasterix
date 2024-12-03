@@ -74,7 +74,7 @@ module RasterixRenderCore #(
     // Screen pos width
     localparam SCREEN_POS_WIDTH = 11,
 
-    // Number of pixel the pipeline can maximal contain until a stall event occures in power of two
+    // Number of pixel the pipeline can maximal contain until a stall event occurs in power of two
     localparam MAX_NUMBER_OF_PIXELS_LG = 7
 )
 (
@@ -265,7 +265,6 @@ module RasterixRenderCore #(
         // Rasterizer
         // Control
         .rasterizerRunning(rasterizerRunning),
-        .startRendering(startRendering),
         .pixelInPipeline(!pipelineEmpty || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
 
         // applied
@@ -294,21 +293,94 @@ module RasterixRenderCore #(
     // Register Bank for the triangle parameters
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
-    wire [(TRIANGLE_STREAM_PARAM_SIZE * `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH)) - 1 : 0] triangleParams;
-    RegisterBank triangleParameters (
-        .aclk(aclk),
-        .resetn(resetn),
+    wire [(TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_SIZE) - 1 : 0] triangleParams;
 
-        .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
-        .s_axis_tready(cmd_rasterizer_axis_tready),
-        .s_axis_tlast(cmd_xxx_axis_tlast),
-        .s_axis_tdata(cmd_xxx_axis_tdata),
-        .s_axis_tuser(0),
+    generate
+        if (RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        begin
+            RegisterBank triangleParameters (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .registers(triangleParams)
-    );
-    defparam triangleParameters.BANK_SIZE = `GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(CMD_STREAM_WIDTH);
-    defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+                .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tdata(cmd_xxx_axis_tdata),
+                .s_axis_tuser(0),
+
+                .registers(triangleParams),
+
+                .registers_updated(startRendering),
+                .update_acknowledged(rasterizerRunning)
+            );
+            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_SIZE;
+            defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+            assign cmd_rasterizer_axis_tready = 1;
+        end
+        else
+        begin
+            wire            triangle_axis_tvalid;
+            wire            triangle_axis_tlast;
+            wire [31 : 0]   triangle_axis_tdata;
+
+            wire            trianglex_axis_tvalid;
+            wire            trianglex_axis_tlast;
+            wire [31 : 0]   trianglex_axis_tdata;
+
+            axis_adapter #(
+                .S_DATA_WIDTH(CMD_STREAM_WIDTH),
+                .M_DATA_WIDTH(32),
+                .S_KEEP_ENABLE(1),
+                .M_KEEP_ENABLE(1),
+                .ID_ENABLE(0),
+                .DEST_ENABLE(0),
+                .USER_ENABLE(0)
+            ) triangleStreamAxisAdapter (
+                .clk(aclk),
+                .rst(!resetn),
+
+                .s_axis_tkeep(~0),
+                .s_axis_tdata(cmd_xxx_axis_tdata),
+                .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
+                .s_axis_tready(cmd_rasterizer_axis_tready),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+
+                .m_axis_tdata(triangle_axis_tdata),
+                .m_axis_tvalid(triangle_axis_tvalid),
+                .m_axis_tready(1),
+                .m_axis_tlast(triangle_axis_tlast)
+            );
+
+            TriangleStreamF2XConverter triangleStreamF2XConverter (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .s_axis_tvalid(triangle_axis_tvalid),
+                .s_axis_tlast(triangle_axis_tlast),
+                .s_axis_tdata(triangle_axis_tdata),
+
+                .m_axis_tvalid(trianglex_axis_tvalid),
+                .m_axis_tlast(trianglex_axis_tlast),
+                .m_axis_tdata(trianglex_axis_tdata)
+            );
+
+            RegisterBank triangleParameters (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .s_axis_tvalid(trianglex_axis_tvalid),
+                .s_axis_tlast(trianglex_axis_tlast),
+                .s_axis_tdata(trianglex_axis_tdata),
+                .s_axis_tuser(0),
+
+                .registers(triangleParams),
+
+                .registers_updated(startRendering),
+                .update_acknowledged(rasterizerRunning)
+            );
+            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_SIZE;
+            defparam triangleParameters.CMD_STREAM_WIDTH = 32;
+        end
+    endgenerate
     
     ////////////////////////////////////////////////////////////////////////////
     // Register Bank for the render configs
@@ -320,16 +392,19 @@ module RasterixRenderCore #(
         .resetn(resetn),
 
         .s_axis_tvalid(cmd_config_axis_tvalid),
-        .s_axis_tready(cmd_config_axis_tready),
         .s_axis_tlast(cmd_xxx_axis_tlast),
         .s_axis_tdata(cmd_xxx_axis_tdata),
         .s_axis_tuser(cmd_xxx_axis_tuser),
 
-        .registers(renderConfigs)
+        .registers(renderConfigs),
+
+        .registers_updated(),
+        .update_acknowledged(1'b1)
     );
     defparam renderConfigsRegBank.BANK_SIZE = OP_RENDER_CONFIG_NUMBER_OR_REGS;
     defparam renderConfigsRegBank.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam renderConfigsRegBank.COMPRESSED = 0;
+    assign cmd_config_axis_tready = 1;
 
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confFeatureEnable;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confFragmentPipelineConfig;
@@ -530,7 +605,6 @@ module RasterixRenderCore #(
     defparam rop.X_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rop.INDEX_WIDTH = INDEX_WIDTH;
-    defparam rop.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
 
     ////////////////////////////////////////////////////////////////////////////

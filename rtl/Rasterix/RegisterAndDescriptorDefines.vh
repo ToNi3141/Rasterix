@@ -400,7 +400,7 @@ localparam RENDER_CONFIG_CLEAR_DEPTH_SIZE = 16;
 
 //---------------------------------------------------------------------------------------------------------
 // OP_TRIANGLE_STREAM 
-// Triangle Descriptor, each value containts 4 bytes.
+// Triangle Descriptor, each value contains 4 bytes.
 localparam TRIANGLE_STREAM_PARAM_SIZE = 32;
 localparam TRIANGLE_STREAM_RESERVED = 0; // 32 bit
 localparam TRIANGLE_STREAM_BB_START = 1; // S15.0, S15.0 (32bit)
@@ -450,12 +450,8 @@ localparam TRIANGLE_STREAM_INC_TEX1_Q_X = 44; // float (32bit)
 localparam TRIANGLE_STREAM_INC_TEX1_S_Y = 45; // float (32bit)
 localparam TRIANGLE_STREAM_INC_TEX1_T_Y = 46; // float (32bit)
 localparam TRIANGLE_STREAM_INC_TEX1_Q_Y = 47; // float (32bit)
-localparam PADDING_1 = TRIANGLE_STREAM_INC_TEX1_Q_Y + 1;
-localparam TRIANGLE_DATA_SET_SIZE_128 = PADDING_1; // Max command port width: 128 bit
-localparam TRIANGLE_DATA_SET_SIZE_256 = PADDING_1; // Max command port width: 256 bit
-`define GET_TRIANGLE_SIZE_FOR_BUS_WIDTH(x) (x <= 128 ? TRIANGLE_DATA_SET_SIZE_128 : \
-                                            x <= 256 ? TRIANGLE_DATA_SET_SIZE_256 : \
-                                            0)
+localparam TRIANGLE_STREAM_PADDING_1 = TRIANGLE_STREAM_INC_TEX1_Q_Y + 1;
+localparam TRIANGLE_STREAM_SIZE = TRIANGLE_STREAM_PADDING_1;
 
 //---------------------------------------------------------------------------------------------------------
 // OP_FOG_LUT_STREAM
