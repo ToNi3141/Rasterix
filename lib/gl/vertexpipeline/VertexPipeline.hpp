@@ -26,7 +26,6 @@
 #include "vertexpipeline/ViewPort.hpp"
 #include "vertexpipeline/TexGen.hpp"
 #include "RenderObj.hpp"
-#include "renderer/IRenderer.hpp"
 #include "Stack.hpp"
 #include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/Culling.hpp"
@@ -69,7 +68,7 @@ private:
     ViewPort m_viewPort;
     MatrixStack m_matrixStack;
     Culling m_culling;
-    std::array<TexGen, TransformedTriangle::MAX_TMU_COUNT> m_texGen;
+    std::array<TexGen, RenderConfig::TMU_COUNT> m_texGen;
     PrimitiveAssembler m_primitiveAssembler { m_viewPort };
 };
 

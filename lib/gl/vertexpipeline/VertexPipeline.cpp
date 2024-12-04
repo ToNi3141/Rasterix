@@ -40,7 +40,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
 {
     const uint32_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
-    for (uint32_t tu = 0; tu < TransformedTriangle::MAX_TMU_COUNT; tu++)
+    for (uint32_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
@@ -115,7 +115,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         list[i].vertex.perspectiveDivide();
 
         // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
-        // for (uint8_t j = 0; j < TransformedTriangle::MAX_TMU_COUNT; j++)
+        // for (uint8_t j = 0; j < RenderConfig::TMU_COUNT; j++)
         // {
         //     // Perspective correction of the texture coordinates
         //     if (m_renderer.getEnableTmu(j))

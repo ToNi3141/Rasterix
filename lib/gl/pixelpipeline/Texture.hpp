@@ -18,7 +18,7 @@
 #ifndef TEXTURE_HPP_
 #define TEXTURE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 
@@ -38,10 +38,10 @@ public:
         COMBINE
     };
 
-    using TextureWrapMode = IRenderer::TextureWrapMode;
+    using TextureWrapMode = Renderer::TextureWrapMode;
     using TexEnv = TexEnvReg;
 
-    Texture(IRenderer& renderer);
+    Texture(Renderer& renderer);
 
     bool uploadTexture();
     TextureObjectMipmap& getTexture();
@@ -74,10 +74,10 @@ private:
        TexEnv texEnvConfUploaded {};
     };
 
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
 
     // TMU
-    std::array<TmuConfig, TransformedTriangle::MAX_TMU_COUNT> m_tmuConf {};
+    std::array<TmuConfig, RenderConfig::TMU_COUNT> m_tmuConf {};
     uint8_t m_tmu { 0 };
     std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 };

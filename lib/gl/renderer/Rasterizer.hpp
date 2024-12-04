@@ -21,7 +21,6 @@
 #include <tcb/span.hpp>
 #include "math/Vec.hpp"
 #include "Triangle.hpp"
-#include "IRenderer.hpp"
 #include <bitset>
 #include "commands/TriangleStreamTypes.hpp"
 
@@ -71,7 +70,7 @@ private:
     int32_t m_scissorEndY { 0 };
     bool m_enableScissor { false };
     const bool m_enableScaling { false };
-    std::bitset<TransformedTriangle::MAX_TMU_COUNT> m_tmuEnable {};
+    std::bitset<RenderConfig::TMU_COUNT> m_tmuEnable {};
 
 };
 

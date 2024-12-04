@@ -19,7 +19,7 @@
 #ifndef TEXTUREMEMORYMANAGER_HPP
 #define TEXTUREMEMORYMANAGER_HPP
 #include <array>
-#include "IRenderer.hpp"
+#include "registers/TmuTextureReg.hpp"
 #include "TextureObject.hpp"
 #include <functional>
 #include <spdlog/spdlog.h>
@@ -65,8 +65,8 @@ public:
         {
             m_textures[*m_textureLut[texId]].requiresUpload = false;
             m_textures[*m_textureLut[texId]].requiresDelete = false;
-            setTextureWrapModeS(texId, IRenderer::TextureWrapMode::REPEAT);
-            setTextureWrapModeT(texId, IRenderer::TextureWrapMode::REPEAT);
+            setTextureWrapModeS(texId, TmuTextureReg::TextureWrapMode::REPEAT);
+            setTextureWrapModeT(texId, TmuTextureReg::TextureWrapMode::REPEAT);
             enableTextureMagFiltering(texId, true);
             return true;
         }
@@ -134,7 +134,7 @@ public:
         return ret;
     }
 
-    void setTextureWrapModeS(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    void setTextureWrapModeS(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
     {
         if (!m_textureLut[texId]) 
         {
@@ -145,7 +145,7 @@ public:
         tex.tmuConfig.setWarpModeS(mode);
     }
 
-    void setTextureWrapModeT(const uint16_t texId, IRenderer::TextureWrapMode mode)
+    void setTextureWrapModeT(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
     {
         if (!m_textureLut[texId]) 
         {

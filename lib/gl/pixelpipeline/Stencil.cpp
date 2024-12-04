@@ -22,7 +22,7 @@
 
 namespace rr
 {
-Stencil::Stencil(IRenderer& renderer)
+Stencil::Stencil(Renderer& renderer)
     : m_renderer(renderer)
 {
     m_renderer.setStencilBufferConfig(m_stencilConf);

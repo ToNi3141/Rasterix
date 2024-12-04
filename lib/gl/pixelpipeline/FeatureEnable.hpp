@@ -18,7 +18,7 @@
 #ifndef FEATURE_ENABLE_HPP_
 #define FEATURE_ENABLE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "Texture.hpp"
 
 namespace rr
@@ -26,7 +26,7 @@ namespace rr
 class FeatureEnable
 {
 public:
-    FeatureEnable(IRenderer& renderer, Texture& texture) : m_renderer(renderer), m_texture(texture)
+    FeatureEnable(Renderer& renderer, Texture& texture) : m_renderer(renderer), m_texture(texture)
     {
         m_renderer.setFeatureEnableConfig(m_featureEnableUploaded);
     }
@@ -60,7 +60,7 @@ public:
         return ret;
     }
 private:
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
     Texture& m_texture;
     FeatureEnableReg m_featureEnable {};
     FeatureEnableReg m_featureEnableUploaded {};

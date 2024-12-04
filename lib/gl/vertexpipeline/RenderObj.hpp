@@ -20,7 +20,7 @@
 #define RENDEROBJ_HPP
 
 #include "math/Vec.hpp"
-#include "renderer/IRenderer.hpp"
+#include "RenderConfigs.hpp"
 #include <array>
 #include <bitset>
 #include <optional>
@@ -30,7 +30,7 @@ namespace rr
 class RenderObj
 {
 public:
-    static constexpr uint8_t MAX_TMU_COUNT { TransformedTriangle::MAX_TMU_COUNT };
+    static constexpr uint8_t MAX_TMU_COUNT { RenderConfig::TMU_COUNT };
 
     enum DrawMode
     {
@@ -54,6 +54,14 @@ public:
         FLOAT,
         UNSIGNED_INT
     };
+
+    RenderObj()
+    {
+        for (auto& tc : m_texCoord)
+        {
+            tc = Vec4{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+        }
+    }
 
     void logCurrentConfig() const;
 
@@ -187,7 +195,7 @@ private:
     std::array<Type, MAX_TMU_COUNT> m_texCoordType;
     std::array<uint32_t, MAX_TMU_COUNT> m_texCoordStride;
     std::array<const void*, MAX_TMU_COUNT> m_texCoordPointer;
-    std::array<Vec4, MAX_TMU_COUNT> m_texCoord  { { { { 0.0f, 0.0f, 0.0f, 1.0f } }, { { 0.0f, 0.0f, 0.0f, 1.0f } } } }; // TODO: Make it variable.
+    std::array<Vec4, MAX_TMU_COUNT> m_texCoord {};
 
     bool m_normalArrayEnabled;
     Type m_normalType;

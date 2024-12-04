@@ -19,7 +19,7 @@
 #ifndef PIXELPIPELINE_HPP_
 #define PIXELPIPELINE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 #include "Fogging.hpp"
@@ -33,7 +33,7 @@ namespace rr
 class PixelPipeline
 {
 public:
-    PixelPipeline(IRenderer& renderer);
+    PixelPipeline(Renderer& renderer);
 
     bool drawTriangle(const TransformedTriangle& triangle);
     bool updatePipeline();
@@ -53,7 +53,7 @@ public:
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
 
     Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };

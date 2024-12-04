@@ -20,7 +20,7 @@
 
 namespace rr
 {
-PixelPipeline::PixelPipeline(IRenderer& renderer) 
+PixelPipeline::PixelPipeline(Renderer& renderer) 
     : m_renderer(renderer)
 {
 }

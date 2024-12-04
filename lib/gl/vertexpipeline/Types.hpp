@@ -19,7 +19,7 @@
 #define TYPES_HPP
 
 #include "math/Vec.hpp"
-#include "renderer/IRenderer.hpp"
+#include "RenderConfigs.hpp"
 #include <array>
 
 namespace rr
@@ -36,7 +36,7 @@ struct VertexParameter
 {
     Vec4 vertex;
     Vec4 color;
-    std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> tex;
+    std::array<Vec4, RenderConfig::TMU_COUNT> tex;
 };
 
 } // namespace rr

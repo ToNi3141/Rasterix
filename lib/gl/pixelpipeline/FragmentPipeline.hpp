@@ -18,7 +18,7 @@
 #ifndef FRAGMENT_PIPELINE_HPP_
 #define FRAGMENT_PIPELINE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 
@@ -29,7 +29,7 @@ class FragmentPipeline
 public:
     using PipelineConfig = FragmentPipelineReg;
 
-    FragmentPipeline(IRenderer& renderer) : m_renderer(renderer)
+    FragmentPipeline(Renderer& renderer) : m_renderer(renderer)
     {
         m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
     }
@@ -50,7 +50,7 @@ public:
     }
 
 private:
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
     PipelineConfig m_fragmentPipelineConf {};
     PipelineConfig m_fragmentPipelineConfUploaded {};
 };

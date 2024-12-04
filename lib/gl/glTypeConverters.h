@@ -22,7 +22,6 @@
 #include "gl.h"
 #include <spdlog/spdlog.h>
 #include "RRXGL.hpp"
-#include "renderer/IRenderer.hpp"
 #include <cstring>
 #include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/Types.hpp"

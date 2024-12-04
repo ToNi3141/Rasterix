@@ -20,6 +20,7 @@
 #define TEXTURE_OBJECT_HPP
 
 #include <array>
+#include <memory>
 #include "renderer/registers/TmuTextureReg.hpp"
 
 namespace rr

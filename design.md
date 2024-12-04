@@ -37,7 +37,7 @@ The driver is build with the following components:
 - `RRXGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
 - `VertexPipeline`: Implements the geometry transformation, clipping and lighting.
 - `PixelPipeline`: Controls the pixel pipeline of the hardware.
-- `Renderer`: Implements the IRenderer interface, executes the rasterization, compiles display lists and sends them via the `IBusConnecter` to the Rasterix.
+- `Renderer`: Executes the rasterization, compiles display lists and sends them via the `IBusConnecter` to the Rasterix.
 - `Rasterizer`: This basically is the rasterizer. It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
 - `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the Rasterix.
 - `TextureMemoryManager`: Manager for the texture memory on the device.
