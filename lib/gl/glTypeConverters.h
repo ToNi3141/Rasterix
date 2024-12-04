@@ -28,6 +28,7 @@
 #include "vertexpipeline/Types.hpp"
 #include "pixelpipeline/Texture.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 
 namespace rr
@@ -229,19 +230,19 @@ void setClientState(const GLenum array, bool enable)
     switch (array) {
     case GL_COLOR_ARRAY:
         SPDLOG_DEBUG("setClientState GL_COLOR_ARRAY {}", enable);
-        RRXGL::getInstance().vertexQueue().enableColorArray(enable);
+        RRXGL::getInstance().vertexArray().enableColorArray(enable);
         break;
     case GL_NORMAL_ARRAY:
         SPDLOG_DEBUG("setClientState GL_NORMAL_ARRAY {}", enable);
-        RRXGL::getInstance().vertexQueue().enableNormalArray(enable);
+        RRXGL::getInstance().vertexArray().enableNormalArray(enable);
         break;
     case GL_TEXTURE_COORD_ARRAY:
         SPDLOG_DEBUG("setClientState GL_TEXTURE_COORD_ARRAY {}", enable);
-        RRXGL::getInstance().vertexQueue().enableTexCoordArray(enable);
+        RRXGL::getInstance().vertexArray().enableTexCoordArray(enable);
         break;
     case GL_VERTEX_ARRAY:
         SPDLOG_DEBUG("setClientState GL_VERTEX_ARRAY {}", enable);
-        RRXGL::getInstance().vertexQueue().enableVertexArray(enable);
+        RRXGL::getInstance().vertexArray().enableVertexArray(enable);
         break;
     default:
         SPDLOG_WARN("setClientState 0x{:X} 0x{:X} not suppored", array, enable);

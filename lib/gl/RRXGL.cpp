@@ -24,6 +24,7 @@
 #include <spdlog/spdlog.h>
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
+#include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -52,6 +53,7 @@ public:
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
+    VertexArray vertexArray {};
 };
 
 bool RRXGL::createInstance(IBusConnector& busConnector)
@@ -611,6 +613,11 @@ PixelPipeline& RRXGL::pixelPipeline()
 VertexQueue& RRXGL::vertexQueue()
 {
     return m_renderDevice->vertexQueue;
+}
+
+VertexArray& RRXGL::vertexArray()
+{
+    return m_renderDevice->vertexArray;
 }
 
 uint16_t RRXGL::getMaxTextureSize() const

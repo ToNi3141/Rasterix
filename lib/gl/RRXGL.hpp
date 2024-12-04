@@ -30,6 +30,7 @@ namespace rr
 class RenderDevice;
 class VertexPipeline;
 class PixelPipeline;
+class VertexArray;
 class VertexQueue;
 class RRXGL
 {
@@ -44,6 +45,7 @@ public:
     VertexPipeline& vertexPipeline();
     PixelPipeline& pixelPipeline();
     VertexQueue& vertexQueue();
+    VertexArray& vertexArray();
 
     void swapDisplayList();
     void uploadDisplayList();
