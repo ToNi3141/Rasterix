@@ -49,7 +49,7 @@ public:
     {
     }
 
-    Renderer<RenderConfig> renderer;
+    Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};

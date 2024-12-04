@@ -85,7 +85,6 @@ namespace rr
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
 // The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
-template <class RenderConfig>
 class Renderer : public IRenderer
 {
     static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
