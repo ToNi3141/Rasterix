@@ -22,6 +22,15 @@
 
 namespace rr
 {
+
+RenderObj::RenderObj()
+{
+    for (auto& tc : m_texCoord)
+    {
+        tc = Vec4 { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    }
+}
+
 bool RenderObj::isLine() const
 {
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);

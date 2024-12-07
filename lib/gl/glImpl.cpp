@@ -2429,7 +2429,8 @@ GLAPI void APIENTRY impl_glTexCoord3d(GLdouble s, GLdouble t, GLdouble r)
     const Vec4 tex { { 
         static_cast<float>(s), 
         static_cast<float>(t), 
-        static_cast<float>(r), 1.0f } };
+        static_cast<float>(r), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -2443,7 +2444,8 @@ GLAPI void APIENTRY impl_glTexCoord3dv(const GLdouble *v)
     const Vec4 tex { { 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
-        static_cast<float>(v[2]), 1.0f } };
+        static_cast<float>(v[2]), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -2473,7 +2475,8 @@ GLAPI void APIENTRY impl_glTexCoord3i(GLint s, GLint t, GLint r)
     const Vec4 tex { { 
         static_cast<float>(s), 
         static_cast<float>(t), 
-        static_cast<float>(r), 1.0f } };
+        static_cast<float>(r), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -2487,7 +2490,8 @@ GLAPI void APIENTRY impl_glTexCoord3iv(const GLint *v)
     const Vec4 tex { { 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
-        static_cast<float>(v[2]), 1.0f } };
+        static_cast<float>(v[2]), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -2501,7 +2505,8 @@ GLAPI void APIENTRY impl_glTexCoord3s(GLshort s, GLshort t, GLshort r)
     const Vec4 tex { { 
         static_cast<float>(s), 
         static_cast<float>(t), 
-        static_cast<float>(r), 1.0f } };
+        static_cast<float>(r), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -2515,7 +2520,8 @@ GLAPI void APIENTRY impl_glTexCoord3sv(const GLshort *v)
     const Vec4 tex { { 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
-        static_cast<float>(v[2]), 1.0f } };
+        static_cast<float>(v[2]), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setTexCoord(tex);
     RRXGL::getInstance().vertexArray().setTexCoord(tex);
 }
@@ -4312,7 +4318,8 @@ GLAPI void APIENTRY impl_glMultiTexCoord3i(GLenum target, GLint s, GLint t, GLin
     const Vec4 tex { { 
         static_cast<float>(s), 
         static_cast<float>(t), 
-        static_cast<float>(r), 1.0f } };
+        static_cast<float>(r), 
+        1.0f } };
     RRXGL::getInstance().vertexQueue().setMultiTexCoord(target - GL_TEXTURE0, tex);
     RRXGL::getInstance().vertexArray().setMultiTexCoord(target - GL_TEXTURE0, tex);
 }

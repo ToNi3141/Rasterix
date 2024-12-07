@@ -55,13 +55,7 @@ public:
         UNSIGNED_INT
     };
 
-    RenderObj()
-    {
-        for (auto& tc : m_texCoord)
-        {
-            tc = Vec4{ { 0.0f, 0.0f, 0.0f, 1.0f } };
-        }
-    }
+    RenderObj();
 
     void logCurrentConfig() const;
 
