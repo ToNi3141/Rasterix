@@ -1703,7 +1703,7 @@ GLAPI void APIENTRY impl_glMultMatrixd(const GLdouble *m)
 {
     SPDLOG_DEBUG("glMultMatrixd redirected to glMultMatrixf");
     GLfloat mf[16];
-    for (uint32_t i = 0; i < 4*4; i++)
+    for (std::size_t i = 0; i < 4*4; i++)
     {
         mf[i] = m[i];
     }
@@ -2981,7 +2981,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     (void)border;// Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
 
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    const uint16_t maxTexSize { RRXGL::getInstance().getMaxTextureSize() }; 
+    const std::size_t maxTexSize { RRXGL::getInstance().getMaxTextureSize() }; 
 
     if (level > RRXGL::getInstance().getMaxLOD())
     {
@@ -3005,8 +3005,8 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 
     // It can happen, that a not power of two texture is used. This little hack allows that the texture can sill be used
     // without crashing the software. But it is likely that it will produce graphical errors.
-    const uint16_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
-    const uint16_t heightRounded = powf(2.0f, ceilf(logf(height) / logf(2.0f)));
+    const std::size_t widthRounded = powf(2.0f, ceilf(logf(width) / logf(2.0f)));
+    const std::size_t heightRounded = powf(2.0f, ceilf(logf(height) / logf(2.0f)));
 
     if ((widthRounded == 0) || (heightRounded == 0)) 
     {
@@ -3792,13 +3792,13 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        int32_t i = 0;
+        std::size_t i = 0;
         // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
-        for (int32_t y = yoffset; y < (height + yoffset); y++)
+        for (std::size_t y = yoffset; y < (height + yoffset); y++)
         {
-            for (int32_t x = xoffset; x < (width + xoffset); x++)
+            for (std::size_t x = xoffset; x < (width + xoffset); x++)
             {
-                const int32_t texPos { (y * texObj.width) + x };
+                const std::size_t texPos { (y * texObj.width) + x };
                 switch (format)
                 {
                     case GL_RGB:

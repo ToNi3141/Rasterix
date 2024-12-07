@@ -25,7 +25,7 @@
 namespace rr
 {
 
-template <uint8_t ALIGNMENT>
+template <std::size_t ALIGNMENT>
 class DisplayList {
 public:
     void setBuffer(tcb::span<uint8_t> buffer)
@@ -35,7 +35,7 @@ public:
 
     // Interface for writing the display list
 
-    void* __restrict alloc(const uint32_t size)
+    void* __restrict alloc(const std::size_t size)
     {
         if ((size + writePos) <= mem.size()) 
         {
@@ -49,14 +49,14 @@ public:
     template <typename GET_TYPE>
     GET_TYPE* __restrict create()
     {
-        static constexpr uint32_t size = sizeOf<GET_TYPE>();
+        static constexpr std::size_t size = sizeOf<GET_TYPE>();
         return reinterpret_cast<GET_TYPE* __restrict>(alloc(size));
     }
 
     template <typename GET_TYPE>
     void remove()
     {
-        static constexpr uint32_t size = sizeOf<GET_TYPE>();
+        static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if (size <= writePos) 
         {
             writePos -= size;
@@ -64,9 +64,9 @@ public:
     }
 
     template <typename GET_TYPE>
-    static constexpr uint32_t sizeOf()
+    static constexpr std::size_t sizeOf()
     {
-        constexpr uint32_t mask = ALIGNMENT - 1;
+        constexpr uint32_t mask = static_cast<uint32_t>(ALIGNMENT) - 1;
         return (sizeof(GET_TYPE) + mask) & ~mask;
     }
 
@@ -90,22 +90,22 @@ public:
         return { mem.data(), getSize() };
     }
 
-    uint32_t getSize() const
+    std::size_t getSize() const
     {
         return writePos;
     }
 
-    uint32_t getFreeSpace() const
+    std::size_t getFreeSpace() const
     {
         return mem.size() - writePos;
     }
 
-    void initArea(const uint32_t start, const uint32_t size)
+    void initArea(const std::size_t start, const std::size_t size)
     {
         memset(&mem[start], 0, size);
     }
 
-    uint32_t getCurrentWritePos() const
+    std::size_t getCurrentWritePos() const
     {
         return writePos;
     }
@@ -115,7 +115,7 @@ public:
     template <typename GET_TYPE>
     GET_TYPE* __restrict lookAhead()
     {
-        static constexpr uint32_t size = sizeOf<GET_TYPE>();
+        static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if ((size + readPos) <= writePos) 
         {
             return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
@@ -126,7 +126,7 @@ public:
     template <typename GET_TYPE>
     GET_TYPE* __restrict getNext()
     {
-        static constexpr uint32_t size = sizeOf<GET_TYPE>();
+        static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if ((size + readPos) <= writePos) 
         {
             void* memPlace = &mem[readPos];
@@ -148,9 +148,9 @@ public:
 
 private:
     tcb::span<uint8_t> mem;
-    uint32_t writePos { 0 };
-    uint32_t readPos { 0 };
-    uint32_t checkpoint { 0 };
+    std::size_t writePos { 0 };
+    std::size_t readPos { 0 };
+    std::size_t checkpoint { 0 };
 };
 
 } // namespace rr

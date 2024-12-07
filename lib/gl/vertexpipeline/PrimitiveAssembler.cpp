@@ -146,8 +146,8 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     // Copied from swGL and adapted.
 
     // Get the reciprocal viewport scaling factor
-    float rcpViewportScaleX = 2.0f / static_cast<float>(m_viewPort.getViewPortWidth());
-    float rcpViewportScaleY = 2.0f / static_cast<float>(m_viewPort.getViewPortHeight());
+    float rcpViewportScaleX = 2.0f / m_viewPort.getViewPortWidth();
+    float rcpViewportScaleY = 2.0f / m_viewPort.getViewPortHeight();
 
     // Calculate the lines normal n = normalize(-dx, dy)
     float nx = -((v1[1] / v1[3]) - (v0[1] / v0[3]));

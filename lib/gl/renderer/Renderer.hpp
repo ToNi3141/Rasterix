@@ -87,7 +87,7 @@ namespace rr
 // The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
 class Renderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
+    static constexpr std::size_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
                                                                                                                                                                 : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
@@ -233,11 +233,11 @@ public:
     /// @param x X is the width of the produced image
     /// @param y Y is the height of the produced image
     /// @return true if success
-    bool setRenderResolution(const uint16_t x, const uint16_t y);
+    bool setRenderResolution(const std::size_t x, const std::size_t y);
 
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
-    uint16_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
+    std::size_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
     
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
@@ -262,7 +262,7 @@ private:
     bool writeReg(const TArg& regVal)
     {
         bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
+        for (std::size_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && addCommand(i, WriteRegisterCmd { regVal });
         }
@@ -298,17 +298,17 @@ private:
     uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
-    uint8_t m_frontList = 0;
-    uint8_t m_backList = 1;
+    std::size_t m_frontList = 0;
+    std::size_t m_backList = 1;
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
-    int16_t m_scissorYStart { 0 };
-    int16_t m_scissorYEnd { 0 };
+    int32_t m_scissorYStart { 0 };
+    int32_t m_scissorYEnd { 0 };
 
-    uint16_t m_yLineResolution { 128 };
-    uint16_t m_xResolution { 640 };
-    uint16_t m_displayLines { DISPLAY_LINES };
+    std::size_t m_yLineResolution { 128 };
+    std::size_t m_xResolution { 640 };
+    std::size_t m_displayLines { DISPLAY_LINES };
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;

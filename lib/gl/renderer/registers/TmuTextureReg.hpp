@@ -58,11 +58,11 @@ public:
     bool getEnableMinFilter() const { return m_regVal.fields.enableMinFilter; }
     PixelFormat getPixelFormat() const { return static_cast<PixelFormat>(m_regVal.fields.pixelFormat); }
 
-    void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t serialize() const { return m_regVal.data; }
     uint32_t getAddr() const { return 0xC + m_offset; }
 private:
-    static constexpr uint8_t TMU_OFFSET { 3 };
+    static constexpr std::size_t TMU_OFFSET { 3 };
     union RegVal
     {
         #pragma pack(push, 1)
@@ -89,7 +89,7 @@ private:
         uint32_t data;
         #pragma pack(pop)
     } m_regVal;
-    uint8_t m_offset { 0 };
+    std::size_t m_offset { 0 };
 };
 } // namespace rr
 

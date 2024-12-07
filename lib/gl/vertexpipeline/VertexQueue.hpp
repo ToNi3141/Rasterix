@@ -31,7 +31,7 @@ public:
     using DrawMode = RenderObj::DrawMode;
     using Type = RenderObj::Type;
 
-    void setActiveTexture(const uint8_t tmu) { m_tmu = tmu; }
+    void setActiveTexture(const std::size_t tmu) { m_tmu = tmu; }
 
     void begin(const DrawMode drawMode)
     {
@@ -51,7 +51,7 @@ public:
     void setColor(const Vec4& color) { m_vertexColor = color; }
     void setNormal(const Vec3& normal) { m_normal = normal; }
     void setTexCoord(const Vec4& texCoord) { m_textureCoord[0] = texCoord; }
-    void setMultiTexCoord(const uint8_t tmu, const Vec4& texCoord) { m_textureCoord[tmu] = texCoord; }
+    void setMultiTexCoord(const std::size_t tmu, const Vec4& texCoord) { m_textureCoord[tmu] = texCoord; }
     const RenderObj& end()
     {
         m_objBeginEnd.reset();
@@ -62,7 +62,7 @@ public:
         m_objBeginEnd.setVertexStride(0);
         m_objBeginEnd.setVertexPointer(m_vertexBuffer.data());
 
-        for (uint8_t i = 0; i < RenderObj::MAX_TMU_COUNT; i++)
+        for (std::size_t i = 0; i < RenderObj::MAX_TMU_COUNT; i++)
         {
             m_objBeginEnd.enableTexCoordArray(i, !m_textureVertexBuffer.empty());
             m_objBeginEnd.setTexCoordSize(i, 4);
@@ -106,7 +106,7 @@ private:
     // Render Object
     RenderObj m_objBeginEnd {};
 
-    uint8_t m_tmu { 0 };
+    std::size_t m_tmu { 0 };
 };
 
 } // namespace rr

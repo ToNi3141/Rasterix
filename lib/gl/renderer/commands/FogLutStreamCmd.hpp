@@ -61,7 +61,7 @@ public:
     using Desc = std::array<tcb::span<uint32_t>, LUT_SIZE>;
     void serialize(Desc& desc) const 
     { 
-        for (uint8_t i = 0; i < desc.size(); i++)
+        for (std::size_t i = 0; i < desc.size(); i++)
         {
             *(desc[i].data()) = m_lut[i];
         }
@@ -74,7 +74,7 @@ private:
         m_lut[1] = *reinterpret_cast<const uint32_t*>(&upper);
     }
     
-    void setLutValue(const uint8_t index, const float m, const float b)
+    void setLutValue(const std::size_t index, const float m, const float b)
     {
         m_lut[((index + 1) * 2)] = static_cast<int32_t>(m);
         m_lut[((index + 1) * 2) + 1] = static_cast<int32_t>(b);

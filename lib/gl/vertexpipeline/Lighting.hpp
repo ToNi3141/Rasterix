@@ -27,7 +27,7 @@ namespace rr
 class Lighting 
 {
 public:
-    static constexpr uint8_t MAX_LIGHTS { 8 };
+    static constexpr std::size_t MAX_LIGHTS { 8 };
 
     enum class ColorMaterialTracking
     {
@@ -54,14 +54,14 @@ public:
     void setDiffuseColorMaterial(const Vec4& color);
     void setSpecularColorMaterial(const Vec4& color);
     void setSpecularExponentMaterial(const float val);
-    void enableLight(const uint8_t light, const bool enable);
-    void setAmbientColorLight(const uint8_t light, const Vec4& color);
-    void setDiffuseColorLight(const uint8_t light, const Vec4& color);
-    void setSpecularColorLight(const uint8_t light, const Vec4& color);
-    void setPosLight(const uint8_t light, const Vec4& pos);
-    void setConstantAttenuationLight(const uint8_t light, const float val);
-    void setLinearAttenuationLight(const uint8_t light, const float val);
-    void setQuadraticAttenuationLight(const uint8_t light, const float val);
+    void enableLight(const std::size_t light, const bool enable);
+    void setAmbientColorLight(const std::size_t light, const Vec4& color);
+    void setDiffuseColorLight(const std::size_t light, const Vec4& color);
+    void setSpecularColorLight(const std::size_t light, const Vec4& color);
+    void setPosLight(const std::size_t light, const Vec4& pos);
+    void setConstantAttenuationLight(const std::size_t light, const float val);
+    void setLinearAttenuationLight(const std::size_t light, const float val);
+    void setQuadraticAttenuationLight(const std::size_t light, const float val);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);

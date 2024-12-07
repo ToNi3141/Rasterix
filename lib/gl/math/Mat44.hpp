@@ -91,9 +91,9 @@ public:
         float det = m[0]*inv[0]+m[1]*inv[4]+m[2]*inv[8]+m[3]*inv[12];
         if (det == 0.0f)  return false; 
         det = 1.0f / det;
-        for (uint8_t i = 0; i < 4; i++)
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = inv[(i * 4) + j] * det;
             }
@@ -169,9 +169,9 @@ public:
     void operator*= (const Mat44& rhs)
     {
         Mat44 m{*this};
-        for (uint8_t i = 0; i < 4; i++)
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = m[i][0] * rhs[0][j] + m[i][1] * rhs[1][j] +
                         m[i][2] * rhs[2][j] + m[i][3] * rhs[3][j];
@@ -181,10 +181,10 @@ public:
 
     void operator= (const float* m)
     {
-        uint8_t k = 0;
-        for (uint8_t i = 0; i < 4; i++)
+        std::size_t k = 0;
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = m[k++];
             }
@@ -196,12 +196,12 @@ public:
         operator= (&m[0][0]);
     }
 
-    std::array<float, 4>& operator[] (const uint8_t rhs)
+    std::array<float, 4>& operator[] (const std::size_t rhs)
     {
         return mat[rhs];
     }
 
-    const std::array<float, 4>& operator[] (const uint8_t rhs) const
+    const std::array<float, 4>& operator[] (const std::size_t rhs) const
     {
         return mat[rhs];
     }
@@ -212,9 +212,9 @@ public:
 inline Mat44 operator* (const Mat44& lhs, const Mat44& rhs)
 {
     Mat44 mat;
-    for (uint8_t i = 0; i < 4; i++)
+    for (std::size_t i = 0; i < 4; i++)
     {
-        for (uint8_t j = 0; j < 4; j++)
+        for (std::size_t j = 0; j < 4; j++)
         {
             mat[i][j] = lhs[i][0] * rhs[0][j] + lhs[i][1] * rhs[1][j] +
                     lhs[i][2] * rhs[2][j] + lhs[i][3] * rhs[3][j];

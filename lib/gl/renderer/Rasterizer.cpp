@@ -25,8 +25,8 @@ namespace rr
 
 bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
                            const tcb::span<TriangleStreamTypes::Texture>& texture,
-                           const uint16_t lineStart,
-                           const uint16_t lineEnd)
+                           const std::size_t lineStart,
+                           const std::size_t lineEnd)
 {
     
     if ((lineStart == 0) && (params.bbStartY < lineEnd))
@@ -61,7 +61,7 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
                 params.color *= bbDiff;
                 params.color += colorTmp;
 
-                for (uint32_t i = 0; i < texture.size(); i++)
+                for (std::size_t i = 0; i < texture.size(); i++)
                 {
                     const auto texStqTmp = texture[i].texStq;
                     texture[i].texStq = texture[i].texStqYInc;
@@ -190,7 +190,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     }
 
     // Interpolate texture
-    for (uint8_t i = 0; i < texture.size(); i++)
+    for (std::size_t i = 0; i < texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {

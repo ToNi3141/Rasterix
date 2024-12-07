@@ -40,18 +40,18 @@ public:
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable) { m_enableScissor = enable; }
-    void enableTmu(const uint8_t tmu, const bool enable) { m_tmuEnable[tmu] = enable; }
+    void enableTmu(const std::size_t tmu, const bool enable) { m_tmuEnable[tmu] = enable; }
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
     static bool increment(TriangleStreamTypes::StaticParams& params, 
                           const tcb::span<TriangleStreamTypes::Texture>& texture,
-                          const uint16_t lineStart,
-                          const uint16_t lineEnd);
+                          const std::size_t lineStart,
+                          const std::size_t lineEnd);
 
     static bool checkIfTriangleIsInBounds(const TriangleStreamTypes::StaticParams& params,
-                                          const uint16_t lineStart,
-                                          const uint16_t lineEnd)
+                                          const std::size_t lineStart,
+                                          const std::size_t lineEnd)
     {
         // Check if the triangle is in the current area by checking if the end position is below the start line
         // and if the start of the triangle is within this area

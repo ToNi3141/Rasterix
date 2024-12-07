@@ -43,7 +43,7 @@ public:
 
     bool drawObj(const RenderObj &obj);
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
-    void activateTmu(const uint8_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
+    void activateTmu(const std::size_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
 
     Lighting& getLighting() { return m_lighting; }
     TexGen& getTexGen() { return m_texGen[m_tmu]; }
@@ -54,7 +54,7 @@ public:
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
-    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, uint32_t i);
+    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
     bool drawClippedTriangleList(tcb::span<VertexParameter> list);
     bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
 

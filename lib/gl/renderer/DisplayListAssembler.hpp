@@ -102,7 +102,7 @@ public:
         }
         if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
         {
-            const uint8_t tmu = cmd.getTmu();
+            const std::size_t tmu = cmd.getTmu();
             if (tmu >= m_wasLastCommandATextureCommand.size()) 
             {
                 return false;
@@ -129,7 +129,7 @@ public:
 
         if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
         {
-            const uint8_t tmu = cmd.getTmu();
+            const std::size_t tmu = cmd.getTmu();
             // Store the end position of the display list.
             m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
         }

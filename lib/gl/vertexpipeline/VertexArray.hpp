@@ -76,7 +76,7 @@ public:
 private:
     // Render Object
     RenderObj m_objPtr {};
-    uint8_t m_tmu { 0 };
+    std::size_t m_tmu { 0 };
 };
 
 } // namespace rr

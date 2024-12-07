@@ -121,8 +121,8 @@ struct TextureObject
     }
 
     std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by PixelFormat
-    uint16_t width {}; ///< The width of the texture
-    uint16_t height {}; ///< The height of the texture
+    std::size_t width {}; ///< The width of the texture
+    std::size_t height {}; ///< The height of the texture
     IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
 };
 

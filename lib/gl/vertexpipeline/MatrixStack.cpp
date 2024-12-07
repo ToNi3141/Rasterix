@@ -217,7 +217,7 @@ void MatrixStack::setMatrixMode(const MatrixMode matrixMode)
     m_matrixMode = matrixMode;
 }
 
-void MatrixStack::setTmu(const uint8_t tmu)
+void MatrixStack::setTmu(const std::size_t tmu)
 {
     m_tmu = tmu;
 }
@@ -244,12 +244,12 @@ bool MatrixStack::loadMatrix(const Mat44& m)
     return false;
 }
 
-uint8_t MatrixStack::getModelMatrixStackDepth()
+std::size_t MatrixStack::getModelMatrixStackDepth()
 {
     return MODEL_MATRIX_STACK_DEPTH;
 }
 
-uint8_t MatrixStack::getProjectionMatrixStackDepth()
+std::size_t MatrixStack::getProjectionMatrixStackDepth()
 {
     return PROJECTION_MATRIX_STACK_DEPTH;
 }

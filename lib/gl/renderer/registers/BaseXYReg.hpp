@@ -33,8 +33,8 @@ public:
     void setX(const uint16_t val) { m_regValX = val & MASK_X; }
     void setY(const uint16_t val) { m_regValY = val & MASK_Y; }
 
-    uint32_t getX() const { return m_regValX; }
-    uint32_t getY() const { return m_regValY; }
+    uint16_t getX() const { return m_regValX; }
+    uint16_t getY() const { return m_regValY; }
 
     uint32_t serialize() const { return (static_cast<uint32_t>(m_regValY) << 16) | (static_cast<uint32_t>(m_regValX)); }
 private:

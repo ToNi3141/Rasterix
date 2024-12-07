@@ -27,7 +27,7 @@ Renderer::Renderer(IBusConnector& busConnector)
     }
 
     // Fixes the first two frames
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
         auto buffer1 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_backList));
         auto buffer2 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_frontList));
@@ -82,12 +82,12 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     }
     else
     {
-        const uint32_t displayLines = m_displayLines;
-        const uint32_t yLineResolution = m_yLineResolution;
-        for (uint32_t i = 0; i < displayLines; i++)
+        const std::size_t displayLines = m_displayLines;
+        const std::size_t yLineResolution = m_yLineResolution;
+        for (std::size_t i = 0; i < displayLines; i++)
         {
-            const uint16_t currentScreenPositionStart = i * yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
+            const std::size_t currentScreenPositionStart = i * yLineResolution;
+            const std::size_t currentScreenPositionEnd = (i + 1) * yLineResolution;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
                 bool ret { false };
@@ -118,7 +118,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 void Renderer::swapDisplayList()
 {
     // Commit frame 
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
         if (auto cmd = createCommitFramebufferCommand(i); cmd)
         {
@@ -132,7 +132,7 @@ void Renderer::swapDisplayList()
     addCommand(0, createSwapFramebufferCommand());
 
     // Finish display list to prepare it for upload
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
         m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].finish();
     }
@@ -173,10 +173,10 @@ bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool 
     FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
     cmd.enableMemset();
     bool ret = true;
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
-        const uint16_t currentScreenPositionStart = i * m_yLineResolution;
-        const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
+        const std::size_t currentScreenPositionStart = i * m_yLineResolution;
+        const std::size_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
         if (m_scissorEnabled) 
         {
             if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
@@ -227,7 +227,7 @@ bool Renderer::setFogLut(const std::array<float, 33>& fogLut, float start, float
     const FogLutStreamCmd fogLutDesc { fogLut, start, end };
 
     // Upload data to the display lists
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
         ret = ret && addCommand(i, fogLutDesc);
     }
@@ -243,7 +243,7 @@ bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
     }
     bool ret { true };
     const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
-    for (uint32_t i = 0; i < m_displayLines; i++)
+    for (std::size_t i = 0; i < m_displayLines; i++)
     {
         using Command = TextureStreamCmd<RenderConfig>;
         ret = ret && addCommand(i, Command { target, pages });
@@ -311,10 +311,10 @@ bool Renderer::enableTextureMinFiltering(const uint16_t texId, bool filter)
     return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
 }
 
-bool Renderer::setRenderResolution(const uint16_t x, const uint16_t y)
+bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
 {
-    const uint32_t framebufferSize = x * y;
-    const uint32_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
+    const std::size_t framebufferSize = x * y;
+    const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
     if (framebufferLines > DISPLAY_LINES)
     {
         // More lines required than lines available

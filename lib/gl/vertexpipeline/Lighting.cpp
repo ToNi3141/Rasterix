@@ -29,7 +29,7 @@ Lighting::Lighting()
     setSpecularColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0 } });
     setSpecularExponentMaterial(0.0f);
 
-    for (uint8_t i = 0; i < m_lights.size(); i++)
+    for (std::size_t i = 0; i < m_lights.size(); i++)
     {
         enableLight(i, false);
         setAmbientColorLight(i, { { 0.0f, 0.0f, 0.0f, 1.0f } });
@@ -199,43 +199,43 @@ void Lighting::enableLighting(bool enable)
     m_lightingEnabled = enable;
 }
 
-void Lighting::enableLight(const uint8_t light, const bool enable)
+void Lighting::enableLight(const std::size_t light, const bool enable)
 {
     m_lights[light].enable = enable;
 }
 
-void Lighting::setAmbientColorLight(const uint8_t light, const Vec4 &color)
+void Lighting::setAmbientColorLight(const std::size_t light, const Vec4 &color)
 {
     m_lights[light].ambientColor = color;
 }
 
-void Lighting::setDiffuseColorLight(const uint8_t light, const Vec4 &color)
+void Lighting::setDiffuseColorLight(const std::size_t light, const Vec4 &color)
 {
     m_lights[light].diffuseColor = color;
 }
 
-void Lighting::setSpecularColorLight(const uint8_t light, const Vec4 &color)
+void Lighting::setSpecularColorLight(const std::size_t light, const Vec4 &color)
 {
     m_lights[light].specularColor = color;
 }
 
-void Lighting::setPosLight(const uint8_t light, const Vec4 &pos)
+void Lighting::setPosLight(const std::size_t light, const Vec4 &pos)
 {
     m_lights[light].position = pos;
     m_lights[light].preCalcVectors();
 }
 
-void Lighting::setConstantAttenuationLight(const uint8_t light, const float val)
+void Lighting::setConstantAttenuationLight(const std::size_t light, const float val)
 {
     m_lights[light].constantAttenuation = val;
 }
 
-void Lighting::setLinearAttenuationLight(const uint8_t light, const float val)
+void Lighting::setLinearAttenuationLight(const std::size_t light, const float val)
 {
     m_lights[light].linearAttenuation = val;
 }
 
-void Lighting::setQuadraticAttenuationLight(const uint8_t light, const float val)
+void Lighting::setQuadraticAttenuationLight(const std::size_t light, const float val)
 {
     m_lights[light].quadraticAttenuation = val;
 }

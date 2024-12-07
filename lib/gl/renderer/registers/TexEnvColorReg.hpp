@@ -26,11 +26,11 @@ namespace rr
 class TexEnvColorReg : public BaseColorReg
 {
 public:
-    void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t getAddr() const { return 0xB + m_offset; }
 private:
-    static constexpr uint8_t TMU_OFFSET { 3 };
-    uint8_t m_offset { 0 };
+    static constexpr std::size_t TMU_OFFSET { 3 };
+    std::size_t m_offset { 0 };
 };
 } // namespace rr
 

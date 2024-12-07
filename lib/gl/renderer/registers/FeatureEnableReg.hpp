@@ -30,7 +30,7 @@ public:
     void setEnableBlending(const bool val) { m_regVal.fields.blending = val; }
     void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
     void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
-    void setEnableTmu(const uint8_t tmu, const bool val) { if (tmu == 0) m_regVal.fields.tmu0 = val; else m_regVal.fields.tmu1 = val; }
+    void setEnableTmu(const std::size_t tmu, const bool val) { if (tmu == 0) m_regVal.fields.tmu0 = val; else m_regVal.fields.tmu1 = val; }
     void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
     void setEnableStencilTest(const bool val) { m_regVal.fields.stencilTest = val; }
 
@@ -38,7 +38,7 @@ public:
     bool getEnableBlending() const { return m_regVal.fields.blending; }
     bool getEnableDepthTest() const { return m_regVal.fields.depthTest; }
     bool getEnableAlphaTest() const { return m_regVal.fields.alphaTest; }
-    bool getEnableTmu(const uint8_t tmu) const { return (tmu == 0) ? m_regVal.fields.tmu0 : m_regVal.fields.tmu1; }
+    bool getEnableTmu(const std::size_t tmu) const { return (tmu == 0) ? m_regVal.fields.tmu0 : m_regVal.fields.tmu1; }
     bool getEnableScissor() const { return m_regVal.fields.scissor; }
     bool getEnableStencilTest() const { return m_regVal.fields.stencilTest; }
 

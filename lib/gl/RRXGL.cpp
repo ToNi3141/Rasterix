@@ -620,7 +620,7 @@ VertexArray& RRXGL::vertexArray()
     return m_renderDevice->vertexArray;
 }
 
-uint16_t RRXGL::getMaxTextureSize() const
+std::size_t RRXGL::getMaxTextureSize() const
 {
     return m_renderDevice->renderer.getMaxTextureSize();
 }
@@ -635,7 +635,7 @@ bool RRXGL::isMipmappingAvailable() const
     return m_renderDevice->renderer.isMipmappingAvailable();
 }
 
-bool RRXGL::setRenderResolution(const uint16_t x, const uint16_t y)
+bool RRXGL::setRenderResolution(const std::size_t x, const std::size_t y)
 {
     return m_renderDevice->renderer.setRenderResolution(x, y);
 }

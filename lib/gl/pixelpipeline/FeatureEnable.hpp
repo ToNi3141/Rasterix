@@ -39,7 +39,7 @@ public:
     void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
     void setEnableStencil(const bool enable) { m_featureEnable.setEnableStencilTest(enable); }
     bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_texture.getActiveTmu()); }
-    bool getEnableTmu(const uint8_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
+    bool getEnableTmu(const std::size_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
     bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
     bool getEnableDepthTest() const { return m_featureEnable.getEnableDepthTest(); }
     bool getEnableBlending() const { return m_featureEnable.getEnableBlending(); }
