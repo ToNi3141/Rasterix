@@ -68,13 +68,13 @@ public:
             vec[i] = arr[i];
     }
 
-    Vec<VecSize>& operator*= (const float val)
+    Vec<VecSize>& operator*=(const float val)
     {
         mul(val);
         return *this;
     }
 
-    Vec<VecSize>& operator*= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator*=(const Vec<VecSize>& val)
     {
         mul(val);
         return *this;
@@ -106,31 +106,31 @@ public:
             vec[i] = vec[i] * val[i];
     }
 
-    Vec<VecSize>& operator+= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator+=(const Vec<VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] += val[i];
         return *this;
     }
 
-    Vec<VecSize>& operator-= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator-=(const Vec<VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val[i];
         return *this;
     }
 
-    Vec<VecSize>& operator-= (float val)
+    Vec<VecSize>& operator-=(float val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val;
         return *this;
     }
 
-    float& operator[] (int index) { return vec[index]; }
-    float operator[] (int index) const { return vec[index]; }
-    void operator= (const std::array<float, VecSize>& val) { vec = val; }
-    void operator= (const float* val)
+    float& operator[](int index) { return vec[index]; }
+    float operator[](int index) const { return vec[index]; }
+    void operator=(const std::array<float, VecSize>& val) { vec = val; }
+    void operator=(const float* val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = val[i];
@@ -196,27 +196,33 @@ public:
 };
 
 template <std::size_t S, std::size_t T>
-inline Vec<T> operator *(const Vec<S>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)
 {
-    Vec<T> tmp{rhs};
-    tmp *= lhs;
-    return tmp;
+    return Vec<T>{rhs} *= lhs;
 }
 
 template <std::size_t T>
-inline Vec<T> operator -(const Vec<T>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const float lhs, const Vec<T>& rhs)
 {
-    Vec<T> tmp{lhs};
-    tmp -= rhs;
-    return tmp;
+    return Vec<T>{rhs} *= lhs;
 }
 
 template <std::size_t T>
-inline Vec<T> operator +(const Vec<T>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const Vec<T>& lhs, const float rhs)
 {
-    Vec<T> tmp{lhs};
-    tmp += rhs;
-    return tmp;
+    return Vec<T>{lhs} *= rhs;
+}
+
+template <std::size_t T>
+inline Vec<T> operator-(const Vec<T>& lhs, const Vec<T>& rhs)
+{
+    return Vec<T>{lhs} -= rhs;
+}
+
+template <std::size_t T>
+inline Vec<T> operator+(const Vec<T>& lhs, const Vec<T>& rhs)
+{
+    return Vec<T>{lhs} += rhs;
 }
 
 template <std::size_t T>
@@ -230,4 +236,4 @@ using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
 
 } // namespace rr
-#endif // VECI_HPP
+#endif // VEC_HPP

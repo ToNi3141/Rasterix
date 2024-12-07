@@ -35,7 +35,7 @@ class PixelPipeline
 public:
     PixelPipeline(Renderer& renderer);
 
-    bool drawTriangle(const TransformedTriangle& triangle);
+    bool drawTriangle(const TransformedTriangle& triangle) { return m_renderer.drawTriangle(triangle); }
     bool updatePipeline();
 
     // Framebuffer

@@ -20,6 +20,7 @@
 #define _TRIANGLE_STREAM_TYPES_CMD_HPP_
 
 #include <cstdint>
+#include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
 #include "math/Veci.hpp"
 
@@ -110,6 +111,30 @@ struct StaticParamsX
         depthZXInc = static_cast<int32_t>(t.depthZXInc * (1 << 30));
         depthZYInc = static_cast<int32_t>(t.depthZYInc * (1 << 30));
     }
+};
+
+struct TriangleDesc
+{
+#pragma pack(push, 4)
+    StaticParams param;
+    std::array<Texture, RenderConfig::TMU_COUNT> texture;
+#pragma pack(pop)
+};
+
+struct TriangleDescX
+{
+#pragma pack(push, 4)
+    StaticParamsX param;
+    std::array<TextureX, RenderConfig::TMU_COUNT> texture;
+    void operator=(const TriangleDesc& t)
+    {
+        param = t.param;
+        for (std::size_t i = 0; i < RenderConfig::TMU_COUNT; i++)
+        {
+            texture[i] = t.texture[i];
+        }
+    };
+#pragma pack(pop)
 };
 
 } // namespace TriangleStreamTypes

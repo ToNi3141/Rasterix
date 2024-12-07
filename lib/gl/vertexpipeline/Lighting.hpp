@@ -78,7 +78,6 @@ private:
 
     struct LightConfig
     {
-        bool enable { false};
         Vec4 ambientColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
         Vec4 diffuseColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
         Vec4 specularColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
@@ -121,6 +120,7 @@ private:
 
     std::array<LightConfig, MAX_LIGHTS> m_lights;
     MaterialConfig m_material{};
+    std::array<bool, MAX_LIGHTS> m_lightEnable;
     bool m_lightingEnabled { false };
     bool m_enableColorMaterialEmission { false };
     bool m_enableColorMaterialAmbient { false };

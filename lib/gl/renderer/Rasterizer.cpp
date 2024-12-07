@@ -23,12 +23,11 @@
 namespace rr
 {
 
-bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params, 
-                           const tcb::span<TriangleStreamTypes::Texture>& texture,
+bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
                            const std::size_t lineStart,
                            const std::size_t lineEnd)
 {
-    
+    TriangleStreamTypes::StaticParams& params = desc.param;
     if ((lineStart == 0) && (params.bbStartY < lineEnd))
     {
         // If the triangle completely in the current line, then nothing has to be done here.
@@ -61,12 +60,12 @@ bool Rasterizer::increment(TriangleStreamTypes::StaticParams& params,
                 params.color *= bbDiff;
                 params.color += colorTmp;
 
-                for (std::size_t i = 0; i < texture.size(); i++)
+                for (std::size_t i = 0; i < desc.texture.size(); i++)
                 {
-                    const auto texStqTmp = texture[i].texStq;
-                    texture[i].texStq = texture[i].texStqYInc;
-                    texture[i].texStq *= bbDiff;
-                    texture[i].texStq += texStqTmp;
+                    const auto texStqTmp = desc.texture[i].texStq;
+                    desc.texture[i].texStq = desc.texture[i].texStqYInc;
+                    desc.texture[i].texStq *= bbDiff;
+                    desc.texture[i].texStq += texStqTmp;
                 }
             }
 
@@ -84,10 +83,10 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params, 
-                           const tcb::span<TriangleStreamTypes::Texture>& texture, 
+bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& desc, 
                            const TransformedTriangle& triangle) const
 {
+    TriangleStreamTypes::StaticParams& params = desc.param;
     Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
     Vec2i v1 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
     Vec2i v2 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
@@ -190,7 +189,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
     }
 
     // Interpolate texture
-    for (std::size_t i = 0; i < texture.size(); i++)
+    for (std::size_t i = 0; i < desc.texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {
@@ -233,17 +232,19 @@ bool Rasterizer::rasterize(TriangleStreamTypes::StaticParams& params,
             texS.mul(w);
             texT.mul(w);
 
-            texture[i].texStq[0] = texS.dot(wNorm);
-            texture[i].texStq[1] = texT.dot(wNorm);
-            texture[i].texStq[2] = texQ.dot(wNorm);
+            TriangleStreamTypes::Texture& t = desc.texture[i];
 
-            texture[i].texStqXInc[0] = texS.dot(wIncXNorm);
-            texture[i].texStqXInc[1] = texT.dot(wIncXNorm);
-            texture[i].texStqXInc[2] = texQ.dot(wIncXNorm);
+            t.texStq[0] = texS.dot(wNorm);
+            t.texStq[1] = texT.dot(wNorm);
+            t.texStq[2] = texQ.dot(wNorm);
 
-            texture[i].texStqYInc[0] = texS.dot(wIncYNorm);
-            texture[i].texStqYInc[1] = texT.dot(wIncYNorm);
-            texture[i].texStqYInc[2] = texQ.dot(wIncYNorm);
+            t.texStqXInc[0] = texS.dot(wIncXNorm);
+            t.texStqXInc[1] = texT.dot(wIncXNorm);
+            t.texStqXInc[2] = texQ.dot(wIncXNorm);
+
+            t.texStqYInc[0] = texS.dot(wIncYNorm);
+            t.texStqYInc[1] = texT.dot(wIncYNorm);
+            t.texStqYInc[2] = texQ.dot(wIncYNorm);
         }
     }
 

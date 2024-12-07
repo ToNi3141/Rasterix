@@ -39,37 +39,16 @@ class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
 public:
-    struct TriangleDesc
-    {
-#pragma pack(push, 4)
-        TriangleStreamTypes::StaticParams param;
-        std::array<TriangleStreamTypes::Texture, RenderConfig::TMU_COUNT> texture;
-#pragma pack(pop)
-    };
-    struct TriangleDescX
-    {
-#pragma pack(push, 4)
-        TriangleStreamTypes::StaticParamsX param;
-        std::array<TriangleStreamTypes::TextureX, RenderConfig::TMU_COUNT> texture;
-        void operator=(const TriangleDesc& t)
-        {
-            param = t.param;
-            for (std::size_t i = 0; i < RenderConfig::TMU_COUNT; i++)
-            {
-                texture[i] = t.texture[i];
-            }
-        };
-#pragma pack(pop)
-    };
+
 
     // Both, the float and fix point variant expecting the triangle parameters as float.
     // Therefore: Set the interpolation by default to float.
     static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
-    using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleDesc, TriangleDescX>::type;
+    using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
     
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
-        m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
+        m_visible = rasterizer.rasterize(m_desc, triangle);
     }
 
     bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const 
@@ -79,7 +58,7 @@ public:
 
     bool increment(const std::size_t lineStart, const std::size_t lineEnd)
     {
-        return Rasterizer::increment(m_desc.param, { m_desc.texture }, lineStart, lineEnd);
+        return Rasterizer::increment(m_desc, lineStart, lineEnd);
     }
 
     bool isVisible() const { return m_visible; };
@@ -92,7 +71,7 @@ public:
     static constexpr uint32_t command() { return TRIANGLE_STREAM | (List::template sizeOf<TrDesc>()); }
 
 private:
-    TriangleDesc m_desc;
+    TriangleStreamTypes::TriangleDesc m_desc;
     bool m_visible { false };
 };
 
