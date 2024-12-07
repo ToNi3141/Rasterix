@@ -18,7 +18,7 @@
 #ifndef FEATURE_ENABLE_HPP_
 #define FEATURE_ENABLE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "Texture.hpp"
 
 namespace rr
@@ -26,7 +26,7 @@ namespace rr
 class FeatureEnable
 {
 public:
-    FeatureEnable(IRenderer& renderer, Texture& texture) : m_renderer(renderer), m_texture(texture)
+    FeatureEnable(Renderer& renderer, Texture& texture) : m_renderer(renderer), m_texture(texture)
     {
         m_renderer.setFeatureEnableConfig(m_featureEnableUploaded);
     }
@@ -39,7 +39,7 @@ public:
     void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
     void setEnableStencil(const bool enable) { m_featureEnable.setEnableStencilTest(enable); }
     bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_texture.getActiveTmu()); }
-    bool getEnableTmu(const uint8_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
+    bool getEnableTmu(const std::size_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
     bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
     bool getEnableDepthTest() const { return m_featureEnable.getEnableDepthTest(); }
     bool getEnableBlending() const { return m_featureEnable.getEnableBlending(); }
@@ -60,7 +60,7 @@ public:
         return ret;
     }
 private:
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
     Texture& m_texture;
     FeatureEnableReg m_featureEnable {};
     FeatureEnableReg m_featureEnableUploaded {};

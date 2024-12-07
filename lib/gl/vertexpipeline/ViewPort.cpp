@@ -30,7 +30,7 @@ void ViewPort::transform(Vec4 &v)
     v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
 }
 
-void ViewPort::setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height)
+void ViewPort::setViewport(const float x, const float y, const float width, const float height)
 {
     m_viewportHeight = height;
     m_viewportWidth = width;

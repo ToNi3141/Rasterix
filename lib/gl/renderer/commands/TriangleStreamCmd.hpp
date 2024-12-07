@@ -54,7 +54,7 @@ public:
         void operator=(const TriangleDesc& t)
         {
             param = t.param;
-            for (uint32_t i = 0; i < RenderConfig::TMU_COUNT; i++)
+            for (std::size_t i = 0; i < RenderConfig::TMU_COUNT; i++)
             {
                 texture[i] = t.texture[i];
             }
@@ -72,12 +72,12 @@ public:
         m_visible = rasterizer.rasterize(m_desc.param, { m_desc.texture }, triangle);
     }
 
-    bool isInBounds(const uint16_t lineStart, const uint16_t lineEnd) const 
+    bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const 
     {
         return Rasterizer::checkIfTriangleIsInBounds(m_desc.param, lineStart, lineEnd);
     }
 
-    bool increment(const uint16_t lineStart, const uint16_t lineEnd)
+    bool increment(const std::size_t lineStart, const std::size_t lineEnd)
     {
         return Rasterizer::increment(m_desc.param, { m_desc.texture }, lineStart, lineEnd);
     }

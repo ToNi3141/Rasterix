@@ -24,6 +24,7 @@
 #include <spdlog/spdlog.h>
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
+#include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -48,10 +49,11 @@ public:
     {
     }
 
-    Renderer<RenderConfig> renderer;
+    Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
+    VertexArray vertexArray {};
 };
 
 bool RRXGL::createInstance(IBusConnector& busConnector)
@@ -613,7 +615,12 @@ VertexQueue& RRXGL::vertexQueue()
     return m_renderDevice->vertexQueue;
 }
 
-uint16_t RRXGL::getMaxTextureSize() const
+VertexArray& RRXGL::vertexArray()
+{
+    return m_renderDevice->vertexArray;
+}
+
+std::size_t RRXGL::getMaxTextureSize() const
 {
     return m_renderDevice->renderer.getMaxTextureSize();
 }
@@ -628,7 +635,7 @@ bool RRXGL::isMipmappingAvailable() const
     return m_renderDevice->renderer.isMipmappingAvailable();
 }
 
-bool RRXGL::setRenderResolution(const uint16_t x, const uint16_t y)
+bool RRXGL::setRenderResolution(const std::size_t x, const std::size_t y)
 {
     return m_renderDevice->renderer.setRenderResolution(x, y);
 }

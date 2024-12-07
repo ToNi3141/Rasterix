@@ -37,18 +37,18 @@ class TextureStreamCmd
     using DseTransferType = tcb::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const std::size_t tmu,
-                     const tcb::span<const uint16_t>& pages)
+                     const tcb::span<const std::size_t>& pages)
         : m_tmu { tmu }
         , m_texSize { pages.size() * RenderConfig::TEXTURE_PAGE_SIZE }
     {
-        for (uint32_t i = 0; i < pages.size(); i++)
+        for (std::size_t i = 0; i < pages.size(); i++)
         {
             m_pages[i] = { RenderConfig::GRAM_MEMORY_LOC + (pages[i] * RenderConfig::TEXTURE_PAGE_SIZE), RenderConfig::TEXTURE_PAGE_SIZE };
         }
         m_dseData = { m_pages.data(), pages.size() };  
     }
 
-    uint8_t getTmu() const { return m_tmu; }
+    std::size_t getTmu() const { return m_tmu; }
 
     using Desc = std::array<tcb::span<uint8_t>, 0>;
     void serialize(Desc&) const {}

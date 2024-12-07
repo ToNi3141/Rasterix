@@ -22,7 +22,7 @@
 #include <array>
 #include <optional>
 #include "math/Vec.hpp"
-#include "IRenderer.hpp"
+#include "Renderer.hpp"
 #include "IBusConnector.hpp"
 #include "DisplayList.hpp"
 #include "Rasterizer.hpp"
@@ -85,383 +85,172 @@ namespace rr
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
 // The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
-template <class RenderConfig>
-class Renderer : public IRenderer
+class Renderer
 {
-    static constexpr uint16_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
+    static constexpr std::size_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
                                                                                                                                                                 : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
-    Renderer(IBusConnector& busConnector)
-        : m_busConnector(busConnector)
-    {
-        for (auto& entry : m_displayListAssembler)
-        {
-            entry.clearAssembler();
-        }
+    using TextureWrapMode = TmuTextureReg::TextureWrapMode;
+    Renderer(IBusConnector& busConnector);
 
-        // Fixes the first two frames
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            auto buffer1 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_backList));
-            auto buffer2 = m_busConnector.requestBuffer(i + (DISPLAY_LINES * m_frontList));
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].setBuffer(buffer1);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].setBuffer(buffer2);
+    ~Renderer();
 
-            YOffsetReg reg;
-            reg.setY(i * m_yLineResolution);
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
-            m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].addCommand(WriteRegisterCmd { reg });
-        }
+    /// @brief Will render a triangle which is constructed with the given parameters
+    /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
+    bool drawTriangle(const TransformedTriangle& triangle);
 
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-            enableColorBufferInMemory();
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-        {
-            enableColorBufferStream();
-        }
-        if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-            || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-            setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
-            setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
-        }
-        setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
-    }
+    /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
+    /// the framebuffers
+    void swapDisplayList();
 
-    virtual ~Renderer()
-    {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        swapDisplayList();
-        uploadDisplayList();
-    }
+    /// @brief Uploads the display list to the hardware
+    void uploadDisplayList();
 
-    virtual bool drawTriangle(const TransformedTriangle& triangle) override
-    {
-        TriangleStreamCmd<typename ListAssembler::List> triangleCmd { m_rasterizer, triangle };
+    /// @brief Will clear a buffer
+    /// @param frameBuffer Will clear the frame buffer
+    /// @param zBuffer Will clear the z buffer
+    /// @param stencilBuffer Will clear the stencil buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer);
 
-        if (!triangleCmd.isVisible()) 
-        {
-            // Triangle is not visible
-            return true;
-        }
+    /// @brief Will set a color which is used as clear color for the frame buffer
+    /// when clear() is called
+    /// @param color the color in ABGR
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setClearColor(const Vec4i& color);
 
-        if constexpr (DISPLAY_LINES == 1)
-        {
-            return addCommand(0, triangleCmd);
-        }
-        else
-        {
-            const uint32_t displayLines = m_displayLines;
-            const uint32_t yLineResolution = m_yLineResolution;
-            for (uint32_t i = 0; i < displayLines; i++)
-            {
-                const uint16_t currentScreenPositionStart = i * yLineResolution;
-                const uint16_t currentScreenPositionEnd = (i + 1) * yLineResolution;
-                if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-                {
-                    bool ret { false };
-                    
-                    // The floating point rasterizer can automatically increment all attributes to the current screen position
-                    // Therefor no further computing is necessary
-                    if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                    {
-                        ret = addCommand(i, triangleCmd);
-                    }
-                    else
-                    {
-                        // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                        TriangleStreamCmd<typename ListAssembler::List> triangleCmdInc = triangleCmd;
-                        triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                        ret = addCommand(i, triangleCmdInc);
-                    }
-                    if (ret == false) 
-                    {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
+    /// @brief Will set a depth which is used as initial value for the depth buffer when clear() is called
+    /// @param depth The depth which is used by calling clear()
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setClearDepth(uint16_t depth);
 
-    virtual void swapDisplayList() override
-    {
-        // Commit frame 
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            if (auto cmd = createCommitFramebufferCommand(i); cmd)
-            {
-                addCommand(i, *cmd);
-            }
-        }
+    /// @brief Updates the fragment pipeline configuration 
+    /// @param pipelineConf The new pipeline configuration 
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
 
-        // Swap frame
-        // Display list zero is always the last list, and this list is responsible to set the overall SoC state, like
-        // the address for the display output
-        addCommand(0, createSwapFramebufferCommand());
+    /// @brief Configures the texture environment. See glTexEnv()
+    /// @param pname parameter name of the env parameter
+    /// @param param Function of the tex env
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setTexEnv(const TexEnvReg& texEnvConfig) { return writeReg(texEnvConfig); }
 
-        // Finish display list to prepare it for upload
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].finish();
-        }
+    /// @brief Set a static color for the tex environment
+    /// @param target is used TMU
+    /// @param color the color in ABGR
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setTexEnvColor(const std::size_t target, const Vec4i& color);
 
-        // Switch the display lists
-        if (m_backList == 0)
-        {
-            m_backList = 1;
-            m_frontList = 0;
-        }
-        else
-        {
-            m_backList = 0;
-            m_frontList = 1;
-        }
+    /// @brief Set the fog color
+    /// @param color the color in ABGR
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setFogColor(const Vec4i& color);
 
-        uploadTextures();
-        for (int32_t i = m_displayLines - 1; i >= 0; i--)
-        {
-            clearAndInitDisplayList(i);
-        }
-        swapFramebuffer();
-    }
+    /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
+    /// and not z (clamped value of 0.0..1.0)
+    /// @param fogLut the fog lookup table
+    /// The fog LUT uses a exponential distribution of w, means fogLut[0] = f(1), fogLut[1] = f(2), fogLut[2] = f(4), fogLut[3] = f(8).
+    /// The fog values between start and end must not exceed 1.0f
+    /// @param start the start value of the fog
+    /// @param end the end value of the fog
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setFogLut(const std::array<float, 33>& fogLut, float start, float end);
 
-    virtual void uploadDisplayList() override
-    {
-        for (int32_t i = m_displayLines - 1; i >= 0; i--)
-        {
-            while (!m_busConnector.clearToSend())
-                ;
-            const typename ListAssembler::List *list = m_displayListAssembler[i + (DISPLAY_LINES * m_frontList)].getDisplayList();
-            m_busConnector.writeData(i + (DISPLAY_LINES * m_frontList), list->getSize());
-        }
-    }
+    /// @brief Creates a new texture 
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    std::pair<bool, uint16_t> createTexture() { return m_textureManager.createTexture(); }
 
-    virtual bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer) override
-    {
-        FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
-        cmd.enableMemset();
-        bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            const uint16_t currentScreenPositionStart = i * m_yLineResolution;
-            const uint16_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
-            if (m_scissorEnabled) 
-            {
-                if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
-                {
-                    ret = ret && addCommand(i, cmd);
-                }
-            }
-            else
-            {
-                ret = ret && addCommand(i, cmd);
-            }
-        }
-        return ret;
-    }
-
-    virtual bool setClearColor(const Vec4i& color) override
-    {
-        ColorBufferClearColorReg reg;
-        reg.setColor(color);
-        return writeReg(reg);
-    }
-
-    virtual bool setClearDepth(uint16_t depth) override
-    {
-        DepthBufferClearDepthReg reg;
-        reg.setValue(depth);
-        return writeReg(reg);
-    }
-
-    virtual bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) override 
-    {
-        return writeReg(pipelineConf);
-    }
-
-    virtual bool setTexEnv(const TexEnvReg& texEnvConfig) override
-    {
-        return writeReg(texEnvConfig);
-    }
-
-    virtual bool setTexEnvColor(const std::size_t target, const Vec4i& color) override
-    {
-        TexEnvColorReg reg;
-        reg.setTmu(target);
-        reg.setColor(color);
-        return writeReg(reg);
-    }
-
-    virtual bool setFogColor(const Vec4i& color) override
-    {
-        FogColorReg reg;
-        reg.setColor(color);
-        return writeReg(reg);
-    }
-
-    virtual bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) override
-    {
-        bool ret = true;
-        const FogLutStreamCmd fogLutDesc { fogLut, start, end };
-
-        // Upload data to the display lists
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && addCommand(i, fogLutDesc);
-        }
-        return ret;
-    }
-
-    virtual std::pair<bool, uint16_t> createTexture() override
-    {
-        return m_textureManager.createTexture();
-    }
-
-    virtual bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) override
-    {
-        return m_textureManager.updateTexture(texId, textureObject);
-    }
-
-    virtual TextureObjectMipmap getTexture(const uint16_t texId) override
-    {
-        return m_textureManager.getTexture(texId);
-    }
-
-    virtual bool isTextureValid(const uint16_t texId) const override
-    {
-        return m_textureManager.textureValid(texId);
-    }
-
-    virtual bool createTextureWithName(const uint16_t texId) override 
-    {
-        return m_textureManager.createTextureWithName(texId);
-    }
-
-    virtual bool useTexture(const std::size_t target, const uint16_t texId) override 
-    {
-        m_boundTextures[target] = texId;
-        if (!m_textureManager.textureValid(texId)) 
-        {
-            return false;
-        }
-        bool ret { true };
-        const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
-        for (uint32_t i = 0; i < m_displayLines; i++)
-        {
-            using Command = TextureStreamCmd<RenderConfig>;
-            ret = ret && addCommand(i, Command { target, pages });
-            TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
-            reg.setTmu(target);
-            ret = ret && addCommand(i, WriteRegisterCmd { reg });
-        }
-        return ret;
-    }
-
-    virtual bool deleteTexture(const uint16_t texId) override 
-    {
-        return m_textureManager.deleteTexture(texId);
-    }
-
-    virtual bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable) override
-    {
-        m_scissorEnabled = featureEnable.getEnableScissor();
-        m_rasterizer.enableScissor(featureEnable.getEnableScissor());
-        static_assert(TransformedTriangle::MAX_TMU_COUNT == 2, "Adapt following code when the TMU count has changed");
-        m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
-        m_rasterizer.enableTmu(1, featureEnable.getEnableTmu(1));
-        return writeReg(featureEnable);
-    }
-
-    virtual bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height) override
-    {
-        bool ret = true;
-
-        ScissorStartReg regStart;
-        ScissorEndReg regEnd;
-        regStart.setX(x);
-        regStart.setY(y);
-        regEnd.setX(x + width);
-        regEnd.setY(y + height);
-
-        ret = ret && writeReg(regStart);
-        ret = ret && writeReg(regEnd);
-
-        m_scissorYStart = y;
-        m_scissorYEnd = y + height;
-
-        m_rasterizer.setScissorBox(x, y, width, height);
-
-        return ret;
-    }
-
-    virtual bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode) override
-    {
-        m_textureManager.setTextureWrapModeS(texId, mode);
-        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
-    }
-
-    virtual bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode) override
-    {
-        m_textureManager.setTextureWrapModeT(texId, mode);
-        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId)); 
-    }
-
-    virtual bool enableTextureMagFiltering(const uint16_t texId, bool filter) override
-    {
-        m_textureManager.enableTextureMagFiltering(texId, filter);
-        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
-    }
-
-    virtual bool enableTextureMinFiltering(const uint16_t texId, bool filter) override
-    {
-        m_textureManager.enableTextureMinFiltering(texId, filter);
-        return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
-    }
-
-    virtual bool setRenderResolution(const uint16_t x, const uint16_t y) override
-    {
-        const uint32_t framebufferSize = x * y;
-        const uint32_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
-        if (framebufferLines > DISPLAY_LINES)
-        {
-            // More lines required than lines available
-            return false;
-        }
-
-        m_yLineResolution = y / framebufferLines;
-        m_xResolution = x;
-        m_displayLines = framebufferLines;
-
-        RenderResolutionReg reg;
-        reg.setX(x);
-        reg.setY(m_yLineResolution);
-        return writeReg(reg);
-    }
-
-    virtual uint16_t getMaxTextureSize() const override
-    {
-        return RenderConfig::MAX_TEXTURE_SIZE;
-    }
+    /// @brief Creates a new texture for a given texture id
+    /// @param texId the name of the new texture
+    /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
+    bool createTextureWithName(const uint16_t texId) { return m_textureManager.createTextureWithName(texId); }
     
-    virtual std::size_t getTmuCount() const override
-    {
-        return RenderConfig::TMU_COUNT;
-    }
+    /// @brief This will update the texture data of the texture with the given id
+    /// @param texId The texture id which texture has to be updated
+    /// @param textureObject The object which contains the texture and all its meta data
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) { return m_textureManager.updateTexture(texId, textureObject); }
 
-    virtual bool isMipmappingAvailable() const override
-    {
-        return RenderConfig::ENABLE_MIPMAPPING;
-    }
+    /// @brief Returns a texture associated to the texId
+    /// @param texId The texture id of the texture to get the data from
+    /// @return The texture object
+    TextureObjectMipmap getTexture(const uint16_t texId) { return m_textureManager.getTexture(texId); }
 
-    virtual bool setStencilBufferConfig(const StencilReg& stencilConf) override 
-    {
-        return writeReg(stencilConf);
-    }
+    /// @brief Queries if the current texture id is a valid texture
+    /// @param texId Texture id to query
+    /// @return true if the current texture id is mapped to a valid texture
+    bool isTextureValid(const uint16_t texId) const { return m_textureManager.textureValid(texId); }
+
+    /// @brief Activates a texture which then is used for rendering
+    /// @param target The used TMU
+    /// @param texId The id of the texture to use
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool useTexture(const std::size_t target, const uint16_t texId);
+
+    /// @brief Deletes a texture 
+    /// @param texId The id of the texture to delete
+    /// @return true if succeeded
+    bool deleteTexture(const uint16_t texId) { return m_textureManager.deleteTexture(texId); }
+
+    /// @brief Enable or disable a feature
+    /// @param featureEnable The enabled features
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
+
+    /// @brief Sets the scissor box parameter
+    /// @param x X coordinate of the box
+    /// @param y Y coordinate of the box
+    /// @param width Width of the box
+    /// @param height Height of the box
+    /// @return true if success
+    bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
+
+    /// @brief The wrapping mode of the texture in s direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode);
+
+    /// @brief The wrapping mode of the texture in t direction
+    /// @param texId The texture from where to change the parameter
+    /// @param mode The new mode
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode);
+
+    /// @brief Enables the texture filtering for magnification
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool enableTextureMagFiltering(const uint16_t texId, bool filter);
+
+    /// @brief Enables the texture filtering for minification (mipmapping)
+    /// @param texId The texture from where to change the parameter
+    /// @param filter True to enable the filter
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool enableTextureMinFiltering(const uint16_t texId, bool filter);
+
+    /// @brief Sets the resolution of the renderer
+    /// @param x X is the width of the produced image
+    /// @param y Y is the height of the produced image
+    /// @return true if success
+    bool setRenderResolution(const std::size_t x, const std::size_t y);
+
+    /// @brief Queries the maximum texture size in pixels
+    /// @return The maximum texture size in pixel
+    std::size_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
+    
+    /// @brief Queries the maximum number of TMUs available for the hardware
+    /// @brief The number of TMUs available
+    std::size_t getTmuCount() const { return RenderConfig::TMU_COUNT; }
+
+    /// @brief Queries of mip mapping is available on hardware
+    /// @return true when mipmapping is available
+    bool isMipmappingAvailable() const { return RenderConfig::ENABLE_MIPMAPPING; }
+
+    /// @brief Configures the stencil buffer
+    /// @param stencilConf The config of the stencil buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setStencilBufferConfig(const StencilReg& stencilConf) { return writeReg(stencilConf); }
 
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
@@ -473,139 +262,11 @@ private:
     bool writeReg(const TArg& regVal)
     {
         bool ret = true;
-        for (uint32_t i = 0; i < m_displayLines; i++)
+        for (std::size_t i = 0; i < m_displayLines; i++)
         {
             ret = ret && addCommand(i, WriteRegisterCmd { regVal });
         }
         return ret;
-    }
-
-    bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig)
-    {
-        // Find the TMU by searching through the bound textures, if the current texture ID is currently used.
-        // If not, just ignore it because then the currently used texture must not be changed.
-        for (std::size_t tmu = 0; tmu < TransformedTriangle::MAX_TMU_COUNT; tmu++)
-        {
-            if (m_boundTextures[tmu] == texId)
-            {
-                tmuConfig.setTmu(tmu);
-                return writeReg(tmuConfig);  
-            }
-        }
-        return true;
-    }
-
-    bool setColorBufferAddress(const uint32_t addr)
-    {
-        m_colorBufferAddr = addr + RenderConfig::GRAM_MEMORY_LOC;
-        return writeReg(ColorBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
-    }
-
-    bool setDepthBufferAddress(const uint32_t addr)
-    {
-        return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
-    }
-
-    bool setStencilBufferAddress(const uint32_t addr)
-    {
-        return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC });
-    }
-
-    void uploadTextures()
-    {
-        m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
-        {
-            DisplayListAssembler<RenderConfig> uploader;
-            uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
-            uploader.uploadToDeviceMemory(gramAddr, data);
-
-            while (!m_busConnector.clearToSend())
-                ;
-            m_busConnector.writeData(m_busConnector.getBufferCount() - 1, uploader.getDisplayList()->getSize());
-            return true;
-        });
-    }
-
-    std::optional<FramebufferCmd> createCommitFramebufferCommand(const uint32_t i)
-    {
-        FramebufferCmd cmd { false, false, false };
-        const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-        if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-            || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY))
-        {
-            cmd.selectColorBuffer();
-            cmd.selectDepthBuffer();
-            cmd.selectStencilBuffer();
-            cmd.commitFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)), !m_colorBufferUseMemory);
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-        {
-            cmd.streamFromFramebuffer(screenSize, m_colorBufferAddr + (screenSize * (m_displayLines - i - 1)));
-        }
-        return cmd;
-    }
-
-    FramebufferCmd createSwapFramebufferCommand()
-    {
-        FramebufferCmd cmd { false, false, false };
-        cmd.selectColorBuffer();
-        cmd.swapFramebuffer();
-        return cmd;
-    }
-
-    void clearAndInitDisplayList(const uint32_t i)
-    {
-        m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].clearAssembler();
-        YOffsetReg reg;
-        reg.setY(i * m_yLineResolution);
-        m_displayListAssembler[i + (DISPLAY_LINES * m_backList)].addCommand(WriteRegisterCmd { reg });
-    }
-
-    void swapFramebuffer()
-    {
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-        {
-            if (m_switchColorBuffer)
-            {
-                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-            }
-            else
-            {
-                setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-            }
-            m_switchColorBuffer = !m_switchColorBuffer;
-        }
-    }
-
-    void enableColorBufferInMemory()
-    {
-        m_colorBufferUseMemory = true;
-    }
-
-    void enableColorBufferStream()
-    {
-        m_colorBufferUseMemory = false;
-    }
-
-    void intermediateUpload()
-    {
-        // Finish display list to prepare it for upload
-        m_displayListAssembler[DISPLAY_LINES * m_backList].finish();
-
-        // Switch the display lists
-        if (m_backList == 0)
-        {
-            m_backList = 1;
-            m_frontList = 0;
-        }
-        else
-        {
-            m_backList = 0;
-            m_frontList = 1;
-        }
-        uploadTextures();
-        clearAndInitDisplayList(0);
-        uploadDisplayList();
     }
 
     template <typename Command>
@@ -620,28 +281,41 @@ private:
         return ret;
     }
 
+    void enableColorBufferInMemory() { m_colorBufferUseMemory = true; }
+    void enableColorBufferStream() { m_colorBufferUseMemory = false; }
+    bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
+    bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
+    bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
+    bool setColorBufferAddress(const uint32_t addr);
+    void uploadTextures();
+    std::optional<FramebufferCmd> createCommitFramebufferCommand(const uint32_t i);
+    FramebufferCmd createSwapFramebufferCommand();
+    void clearAndInitDisplayList(const uint32_t i);
+    void swapFramebuffer();
+    void intermediateUpload();
+
     bool m_colorBufferUseMemory { true };
     uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
-    uint8_t m_frontList = 0;
-    uint8_t m_backList = 1;
+    std::size_t m_frontList = 0;
+    std::size_t m_backList = 1;
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
-    int16_t m_scissorYStart { 0 };
-    int16_t m_scissorYEnd { 0 };
+    int32_t m_scissorYStart { 0 };
+    int32_t m_scissorYEnd { 0 };
 
-    uint16_t m_yLineResolution { 128 };
-    uint16_t m_xResolution { 640 };
-    uint16_t m_displayLines { DISPLAY_LINES };
+    std::size_t m_yLineResolution { 128 };
+    std::size_t m_xResolution { 640 };
+    std::size_t m_displayLines { DISPLAY_LINES };
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
     // Mapping of texture id and TMU
-    std::array<uint16_t, TransformedTriangle::MAX_TMU_COUNT> m_boundTextures {};
+    std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 
     bool m_switchColorBuffer { true };
 };

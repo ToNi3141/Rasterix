@@ -22,19 +22,19 @@
 #include <cstdint>
 #include <tcb/span.hpp>
 #include "math/Vec.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
 
 struct TransformedTriangle
 {
-    static constexpr std::size_t MAX_TMU_COUNT { 2 };
     const Vec4& vertex0;
     const Vec4& vertex1;
     const Vec4& vertex2;
-    const std::array<Vec4, MAX_TMU_COUNT>& texture0;
-    const std::array<Vec4, MAX_TMU_COUNT>& texture1;
-    const std::array<Vec4, MAX_TMU_COUNT>& texture2;
+    const std::array<Vec4, RenderConfig::TMU_COUNT>& texture0;
+    const std::array<Vec4, RenderConfig::TMU_COUNT>& texture1;
+    const std::array<Vec4, RenderConfig::TMU_COUNT>& texture2;
     const Vec4& color0;
     const Vec4& color1;
     const Vec4& color2;

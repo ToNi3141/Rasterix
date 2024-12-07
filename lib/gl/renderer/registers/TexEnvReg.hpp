@@ -89,11 +89,11 @@ public:
     uint8_t getShiftRgb() const { return m_regVal.fields.shiftRgb; }
     uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
 
-    void setTmu(const uint8_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t serialize() const { return m_regVal.data; }
     uint32_t getAddr() const { return 0xA + m_offset; }
 private:
-    static constexpr uint8_t TMU_OFFSET { 3 };
+    static constexpr std::size_t TMU_OFFSET { 3 };
     union RegVal
     {
         #pragma pack(push, 1)

@@ -29,6 +29,7 @@ SOURCES += main.cpp\
     $${RRXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
     $${RRXGL_PATH}/glImpl.cpp \
     $${RRXGL_PATH}/renderer/Rasterizer.cpp \
+    $${RRXGL_PATH}/renderer/Renderer.cpp \
     $${RRXGL_PATH}/vertexpipeline/ViewPort.cpp \
     $${RRXGL_PATH}/vertexpipeline/MatrixStack.cpp \
     $${RRXGL_PATH}/vertexpipeline/Culling.cpp \

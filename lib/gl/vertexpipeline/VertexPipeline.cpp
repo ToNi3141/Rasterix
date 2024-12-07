@@ -36,11 +36,11 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
 }
 
-void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, uint32_t i)
+void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i)
 {
-    const uint32_t pos = obj.getIndex(i);
+    const std::size_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
-    for (uint32_t tu = 0; tu < TransformedTriangle::MAX_TMU_COUNT; tu++)
+    for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
@@ -82,8 +82,8 @@ bool VertexPipeline::drawObj(const RenderObj &obj)
     m_primitiveAssembler.clear();
     m_primitiveAssembler.setDrawMode(obj.getDrawMode());
     m_primitiveAssembler.setExpectedPrimitiveCount(obj.getCount());
-    uint32_t count = obj.getCount();
-    for (uint32_t it = 0; it < count; it++)
+    std::size_t count = obj.getCount();
+    for (std::size_t it = 0; it < count; it++)
     {
         VertexParameter& param = m_primitiveAssembler.createParameter();
         fetchAndTransform(param, obj, it);
@@ -115,7 +115,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         list[i].vertex.perspectiveDivide();
 
         // Moved into the Rasterizer.cpp. But it is probably faster to calculate it here ...
-        // for (uint8_t j = 0; j < TransformedTriangle::MAX_TMU_COUNT; j++)
+        // for (std::size_t j = 0; j < RenderConfig::TMU_COUNT; j++)
         // {
         //     // Perspective correction of the texture coordinates
         //     if (m_renderer.getEnableTmu(j))

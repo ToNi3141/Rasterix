@@ -30,6 +30,7 @@ namespace rr
 class RenderDevice;
 class VertexPipeline;
 class PixelPipeline;
+class VertexArray;
 class VertexQueue;
 class RRXGL
 {
@@ -44,6 +45,7 @@ public:
     VertexPipeline& vertexPipeline();
     PixelPipeline& pixelPipeline();
     VertexQueue& vertexQueue();
+    VertexArray& vertexArray();
 
     void swapDisplayList();
     void uploadDisplayList();
@@ -56,7 +58,7 @@ public:
 
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
-    uint16_t getMaxTextureSize() const;
+    std::size_t getMaxTextureSize() const;
 
     /// @brief Returns the maximum supported LOD level
     /// @return The maximum supported LOD level
@@ -74,7 +76,7 @@ public:
     /// @param x screen width
     /// @param y screen height
     /// @return true if succeeded
-    bool setRenderResolution(const uint16_t x, const uint16_t y);
+    bool setRenderResolution(const std::size_t x, const std::size_t y);
 private:
     RRXGL(IBusConnector& busConnector);
     ~RRXGL();

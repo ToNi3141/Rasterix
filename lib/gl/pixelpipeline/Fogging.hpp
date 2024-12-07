@@ -18,7 +18,7 @@
 #ifndef FOGGING_HPP_
 #define FOGGING_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 
@@ -35,7 +35,7 @@ public:
         EXP2
     };
 
-    Fogging(IRenderer& renderer);
+    Fogging(Renderer& renderer);
 
     void setFogMode(const FogMode val);
     void setFogStart(const float val);
@@ -46,7 +46,7 @@ public:
     bool updateFogLut();
 
 private:
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
     bool m_fogDirty { false };
     FogMode m_fogMode { FogMode::EXP };
     float m_fogStart { 0.0f };

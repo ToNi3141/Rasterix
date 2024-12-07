@@ -20,7 +20,7 @@
 #define RENDEROBJ_HPP
 
 #include "math/Vec.hpp"
-#include "renderer/IRenderer.hpp"
+#include "RenderConfigs.hpp"
 #include <array>
 #include <bitset>
 #include <optional>
@@ -30,7 +30,7 @@ namespace rr
 class RenderObj
 {
 public:
-    static constexpr uint8_t MAX_TMU_COUNT { TransformedTriangle::MAX_TMU_COUNT };
+    static constexpr std::size_t MAX_TMU_COUNT { RenderConfig::TMU_COUNT };
 
     enum DrawMode
     {
@@ -55,20 +55,22 @@ public:
         UNSIGNED_INT
     };
 
+    RenderObj();
+
     void logCurrentConfig() const;
 
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
-    Vec4 getVertex(const uint32_t index) const;
+    Vec4 getVertex(const std::size_t index) const;
     inline const std::bitset<MAX_TMU_COUNT>& texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
-    Vec4 getTexCoord(const uint8_t tmu, const uint32_t index) const;
+    Vec4 getTexCoord(const std::size_t tmu, const std::size_t index) const;
     inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }
-    Vec4 getColor(const uint32_t index) const;
+    Vec4 getColor(const std::size_t index) const;
     inline const Vec4& getVertexColor() const { return m_vertexColor; }
     inline bool normalArrayEnabled() const { return m_normalArrayEnabled; }
-    Vec3 getNormal(const uint32_t index) const;
+    Vec3 getNormal(const std::size_t index) const;
     bool isLine() const;
 
-    uint32_t getIndex(const uint32_t index) const;
+    std::size_t getIndex(const std::size_t index) const;
     inline DrawMode getDrawMode() const { return m_drawMode; }
     inline std::size_t getCount() const { return m_count; }
     inline void reset() { m_fetchCount = 0; }
@@ -76,28 +78,28 @@ public:
     inline void incFetchCount() const { m_fetchCount++; }
 
     void enableVertexArray(bool enable) { m_vertexArrayEnabled = enable; }
-    void setVertexSize(uint8_t size) { m_vertexSize = size; }
+    void setVertexSize(std::size_t size) { m_vertexSize = size; }
     void setVertexType(Type type) { m_vertexType = type; }
-    void setVertexStride(uint32_t stride) { m_vertexStride = stride; }
+    void setVertexStride(std::size_t stride) { m_vertexStride = stride; }
     void setVertexPointer(const void* ptr) { m_vertexPointer = ptr; }
 
-    void enableTexCoordArray(const uint8_t tmu, bool enable) { m_texCoordArrayEnabled[tmu] = enable; }
-    void setTexCoordSize(const uint8_t tmu, uint8_t size) { m_texCoordSize[tmu] = size; }
-    void setTexCoordType(const uint8_t tmu, Type type) { m_texCoordType[tmu] = type; }
-    void setTexCoordStride(const uint8_t tmu, uint32_t stride) { m_texCoordStride[tmu] = stride; }
-    void setTexCoordPointer(const uint8_t tmu, const void* ptr) { m_texCoordPointer[tmu] = ptr; }
-    void setTexCoord(const uint8_t tmu, const Vec4& texCoord){ m_texCoord[tmu] = texCoord; }
+    void enableTexCoordArray(const std::size_t tmu, bool enable) { m_texCoordArrayEnabled[tmu] = enable; }
+    void setTexCoordSize(const std::size_t tmu, std::size_t size) { m_texCoordSize[tmu] = size; }
+    void setTexCoordType(const std::size_t tmu, Type type) { m_texCoordType[tmu] = type; }
+    void setTexCoordStride(const std::size_t tmu, std::size_t stride) { m_texCoordStride[tmu] = stride; }
+    void setTexCoordPointer(const std::size_t tmu, const void* ptr) { m_texCoordPointer[tmu] = ptr; }
+    void setTexCoord(const std::size_t tmu, const Vec4& texCoord){ m_texCoord[tmu] = texCoord; }
 
     void enableNormalArray(bool enable) { m_normalArrayEnabled = enable; }
     void setNormalType(Type type) { m_normalType = type; }
-    void setNormalStride(uint32_t stride) { m_normalStride = stride; }
+    void setNormalStride(std::size_t stride) { m_normalStride = stride; }
     void setNormalPointer(const void* ptr) { m_normalPointer = ptr; }
     void setNormal(const Vec3& normal) { m_normal = normal; }
 
     void enableColorArray(bool enable) { m_colorArrayEnabled = enable; }
-    void setColorSize(uint8_t size) { m_colorSize = size; }
+    void setColorSize(std::size_t size) { m_colorSize = size; }
     void setColorType(Type type) { m_colorType = type; }
-    void setColorStride(uint32_t stride) { m_colorStride = stride; }
+    void setColorStride(std::size_t stride) { m_colorStride = stride; }
     void setColorPointer(const void* ptr) { m_colorPointer = ptr; }
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
 
@@ -107,18 +109,18 @@ public:
     void setCount(std::size_t count) { m_count = count; }
     void setIndicesType(Type type) { m_indicesType = type; }
     void setIndicesPointer(const void* ptr) { m_indicesPointer = ptr; }
-    void setArrayOffset(uint32_t offset) { m_arrayOffset = offset; }
+    void setArrayOffset(std::size_t offset) { m_arrayOffset = offset; }
 
 private:
     template <typename T>
-    T getFromArray(const Type type, const void* arr, const uint32_t stride, uint8_t size, const uint32_t index) const
+    T getFromArray(const Type type, const void* arr, const std::size_t stride, std::size_t size, const std::size_t index) const
     {
         T vec = T::createHomogeneous();
         if (arr)
         {
             const int8_t* a = reinterpret_cast<const int8_t*>(arr);
             if (stride == 0) {
-                const uint32_t indexWithStride = index * size;
+                const std::size_t indexWithStride = index * size;
                 switch (type)
                 {
                 case Type::BYTE:
@@ -177,28 +179,28 @@ private:
     std::size_t m_count;
 
     bool m_vertexArrayEnabled;
-    uint8_t m_vertexSize;
+    std::size_t m_vertexSize;
     Type m_vertexType;
-    uint32_t m_vertexStride;
+    std::size_t m_vertexStride;
     const void* m_vertexPointer;
 
     std::bitset<MAX_TMU_COUNT> m_texCoordArrayEnabled;
-    std::array<uint8_t, MAX_TMU_COUNT> m_texCoordSize;
+    std::array<std::size_t, MAX_TMU_COUNT> m_texCoordSize;
     std::array<Type, MAX_TMU_COUNT> m_texCoordType;
-    std::array<uint32_t, MAX_TMU_COUNT> m_texCoordStride;
+    std::array<std::size_t, MAX_TMU_COUNT> m_texCoordStride;
     std::array<const void*, MAX_TMU_COUNT> m_texCoordPointer;
-    std::array<Vec4, MAX_TMU_COUNT> m_texCoord  { { { { 0.0f, 0.0f, 0.0f, 1.0f } }, { { 0.0f, 0.0f, 0.0f, 1.0f } } } }; // TODO: Make it variable.
+    std::array<Vec4, MAX_TMU_COUNT> m_texCoord {};
 
     bool m_normalArrayEnabled;
     Type m_normalType;
-    uint32_t m_normalStride;
+    std::size_t m_normalStride;
     const void* m_normalPointer;
     Vec3 m_normal { { 0.0f, 0.0f, 1.0f } };
 
     bool m_colorArrayEnabled;
-    uint8_t m_colorSize;
+    std::size_t m_colorSize;
     Type m_colorType;
-    uint32_t m_colorStride;
+    std::size_t m_colorStride;
     const void* m_colorPointer;
     Vec4 m_vertexColor { { 1.0f, 1.0f, 1.0f, 1.0f } };
 
@@ -206,7 +208,7 @@ private:
     Type m_indicesType;
     const void* m_indicesPointer;
 
-    uint32_t m_arrayOffset;
+    std::size_t m_arrayOffset;
 
     mutable std::size_t m_fetchCount { 0 };
 };

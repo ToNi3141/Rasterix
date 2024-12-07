@@ -24,7 +24,7 @@
 
 namespace rr
 {
-template <uint8_t VecSize>
+template <std::size_t VecSize>
 class Vec
 {
 public:
@@ -36,7 +36,7 @@ public:
 
     void initHomogeneous()
     {
-        for (uint32_t i = 0; i < VecSize - 1; i++)
+        for (std::size_t i = 0; i < VecSize - 1; i++)
             vec[i] = 0.0f;
         vec[VecSize - 1] = 1.0f;
     }
@@ -44,27 +44,27 @@ public:
     static Vec<VecSize> createHomogeneous()
     {
         Vec<VecSize> vec;
-        for (uint32_t i = 0; i < VecSize - 1; i++)
+        for (std::size_t i = 0; i < VecSize - 1; i++)
             vec.vec[i] = 0.0f;
         vec.vec[VecSize - 1] = 1.0f;
         return vec;
     }
 
     template <typename T>
-    static Vec<VecSize> createFromArray(const T* arr, const uint8_t size)
+    static Vec<VecSize> createFromArray(const T* arr, const std::size_t size)
     {
         Vec<VecSize> vec;
-        const uint32_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
-        for (uint8_t i = 0; i < len; i++)
+        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
+        for (std::size_t i = 0; i < len; i++)
             vec[i] = arr[i];
         return vec;
     }
 
     template <typename T>
-    void fromArray(const T* arr, const uint8_t size)
+    void fromArray(const T* arr, const std::size_t size)
     {
-        const uint32_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
-        for (uint8_t i = 0; i < len; i++)
+        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
+        for (std::size_t i = 0; i < len; i++)
             vec[i] = arr[i];
     }
 
@@ -84,45 +84,45 @@ public:
     {
         const float inv = 1.0f / vec[VecSize - 1];
         vec[VecSize - 1] = inv;
-        for (uint32_t i = 0; i < VecSize - 1; i++)
+        for (std::size_t i = 0; i < VecSize - 1; i++)
             vec[i] = vec[i] * inv;
     }
 
     void div(float val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] / val;
     }
 
     void mul(float val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * val;
     }
 
     void mul(const Vec<VecSize>& val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * val[i];
     }
 
     Vec<VecSize>& operator+= (const Vec<VecSize>& val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] += val[i];
         return *this;
     }
 
     Vec<VecSize>& operator-= (const Vec<VecSize>& val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val[i];
         return *this;
     }
 
     Vec<VecSize>& operator-= (float val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val;
         return *this;
     }
@@ -132,14 +132,14 @@ public:
     void operator= (const std::array<float, VecSize>& val) { vec = val; }
     void operator= (const float* val)
     {
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = val[i];
     }
 
     float dot(const Vec<VecSize>& val) const
     {
         float retVal = 0;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             retVal += vec[i] * val[i];
         return retVal;
     }
@@ -147,7 +147,7 @@ public:
     void normalize()
     {
         float tmp = 0;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
@@ -155,7 +155,7 @@ public:
             return;
 
         tmp = 1.0f / tmp;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * tmp;
 
     }
@@ -163,7 +163,7 @@ public:
     float dist(const Vec<VecSize>& val) const
     {
         float tmp = 0;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             tmp += (vec[i] - val[i]) * (vec[i] - val[i]);
         return sqrtf(tmp);
     }
@@ -171,7 +171,7 @@ public:
     void unit()
     {
         float tmp = 0;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
@@ -179,14 +179,14 @@ public:
             return;
 
         tmp = 1.0f / tmp;
-        for (uint32_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * tmp;
     }
 
     void cross(const Vec<VecSize>& val)
     {
         const Vec<VecSize> tmp{*this};
-        for (uint8_t i = 0; i < VecSize; i++)
+        for (std::size_t i = 0; i < VecSize; i++)
         {
             vec[i] = (tmp[(i + 1) % VecSize] * val[(i + 2) % VecSize]) - (tmp[(i + 2) % VecSize] * val[(i + 1) % VecSize]);
         }
@@ -195,7 +195,7 @@ public:
     std::array<float, VecSize> vec;
 };
 
-template <uint8_t S, uint8_t T>
+template <std::size_t S, std::size_t T>
 inline Vec<T> operator *(const Vec<S>& lhs, const Vec<T>& rhs)
 {
     Vec<T> tmp{rhs};
@@ -203,7 +203,7 @@ inline Vec<T> operator *(const Vec<S>& lhs, const Vec<T>& rhs)
     return tmp;
 }
 
-template <uint8_t T>
+template <std::size_t T>
 inline Vec<T> operator -(const Vec<T>& lhs, const Vec<T>& rhs)
 {
     Vec<T> tmp{lhs};
@@ -211,7 +211,7 @@ inline Vec<T> operator -(const Vec<T>& lhs, const Vec<T>& rhs)
     return tmp;
 }
 
-template <uint8_t T>
+template <std::size_t T>
 inline Vec<T> operator +(const Vec<T>& lhs, const Vec<T>& rhs)
 {
     Vec<T> tmp{lhs};
@@ -219,7 +219,7 @@ inline Vec<T> operator +(const Vec<T>& lhs, const Vec<T>& rhs)
     return tmp;
 }
 
-template <uint8_t T>
+template <std::size_t T>
 bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
 {
     return std::equal(lhs.vec.begin(), lhs.vec.end(), rhs.vec.begin());

@@ -18,7 +18,7 @@
 #ifndef STENCIL_HPP_
 #define STENCIL_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 
@@ -35,7 +35,7 @@ public:
         BACK
     };
 
-    Stencil(IRenderer& renderer);
+    Stencil(Renderer& renderer);
 
     StencilConfig& stencilConfig();
     void enableTwoSideStencil(const bool enable) { m_enableTwoSideStencil = enable; }
@@ -48,7 +48,7 @@ private:
     void selectStencilTwoSideFrontForDevice() { m_stencilConfTwoSide = &m_stencilConfFront; }
     void selectStencilTwoSideBackForDevice() { m_stencilConfTwoSide = &m_stencilConfBack; }
 
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
 
     bool m_enableTwoSideStencil { false };
     StencilFace m_stencilFace { StencilFace::FRONT };

@@ -22,17 +22,26 @@
 
 namespace rr
 {
+
+RenderObj::RenderObj()
+{
+    for (auto& tc : m_texCoord)
+    {
+        tc = Vec4 { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    }
+}
+
 bool RenderObj::isLine() const
 {
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
 }
 
-Vec4 RenderObj::getVertex(const uint32_t index) const
+Vec4 RenderObj::getVertex(const std::size_t index) const
 {
     return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
 }
 
-Vec4 RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
+Vec4 RenderObj::getTexCoord(const std::size_t tmu, const std::size_t index) const
 {
     if (m_texCoordArrayEnabled[tmu])
     {
@@ -41,7 +50,7 @@ Vec4 RenderObj::getTexCoord(const uint8_t tmu, const uint32_t index) const
     return m_texCoord[tmu];
 }
 
-Vec4 RenderObj::getColor(const uint32_t index) const
+Vec4 RenderObj::getColor(const std::size_t index) const
 {
     if (colorArrayEnabled())
     {
@@ -67,7 +76,7 @@ Vec4 RenderObj::getColor(const uint32_t index) const
     return m_vertexColor;
 }
 
-Vec3 RenderObj::getNormal(const uint32_t index) const
+Vec3 RenderObj::getNormal(const std::size_t index) const
 {
     if (normalArrayEnabled())
     {
@@ -76,7 +85,7 @@ Vec3 RenderObj::getNormal(const uint32_t index) const
     return m_normal;
 }
 
-uint32_t RenderObj::getIndex(const uint32_t index) const
+std::size_t RenderObj::getIndex(const std::size_t index) const
 {
     if (m_indicesEnabled)
     {

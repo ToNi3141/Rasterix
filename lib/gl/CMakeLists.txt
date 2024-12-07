@@ -17,6 +17,7 @@ add_library(gl STATIC
     pixelpipeline/Fogging.cpp
     pixelpipeline/Texture.cpp
     renderer/Rasterizer.cpp
+    renderer/Renderer.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog span)

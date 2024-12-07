@@ -21,7 +21,7 @@
 #include "math/Vec.hpp"
 #include "math/Mat44.hpp"
 #include "Stack.hpp"
-#include "renderer/IRenderer.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
@@ -41,7 +41,7 @@ public:
     const Mat44& getModelViewProjection() const { return m_t; }
     const Mat44& getModelView() const { return m_m; }
     const Mat44& getProjection() const { return m_p; }
-    const Mat44& getTexture(const uint8_t tmu) const { return m_tm[tmu]; }
+    const Mat44& getTexture(const std::size_t tmu) const { return m_tm[tmu]; }
     const Mat44& getColor() const { return m_c; }
     const Mat44& getNormal() const { return m_n; }
 
@@ -62,18 +62,18 @@ public:
     bool popMatrix();
 
     void setMatrixMode(const MatrixMode matrixMode);
-    void setTmu(const uint8_t tmu);
+    void setTmu(const std::size_t tmu);
     bool loadMatrix(const Mat44& m);
     
     void recalculateMatrices();
 
-    static uint8_t getModelMatrixStackDepth();
-    static uint8_t getProjectionMatrixStackDepth();
+    static std::size_t getModelMatrixStackDepth();
+    static std::size_t getProjectionMatrixStackDepth();
 private:
-    static constexpr uint8_t MODEL_MATRIX_STACK_DEPTH { 16 };
-    static constexpr uint8_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
-    static constexpr uint8_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
-    static constexpr uint8_t COLOR_MATRIX_STACK_DEPTH { 16 };
+    static constexpr std::size_t MODEL_MATRIX_STACK_DEPTH { 16 };
+    static constexpr std::size_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
+    static constexpr std::size_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
+    static constexpr std::size_t COLOR_MATRIX_STACK_DEPTH { 16 };
 
     void recalculateModelProjectionMatrix();
     void recalculateNormalMatrix();
@@ -81,17 +81,17 @@ private:
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
     Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
     Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
-    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, TransformedTriangle::MAX_TMU_COUNT> m_tmStack {};
+    std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, RenderConfig::TMU_COUNT> m_tmStack {};
     Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
     Mat44 m_p {}; // Projection 
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal
-    std::array<Mat44, TransformedTriangle::MAX_TMU_COUNT> m_tm; // Texture Matrix
+    std::array<Mat44, RenderConfig::TMU_COUNT> m_tm; // Texture Matrix
     Mat44 m_c {}; // Color
     bool m_modelMatrixChanged { true };
     bool m_projectionMatrixChanged { true };
-    uint8_t m_tmu { 0 };
+    std::size_t m_tmu { 0 };
 };
 
 } // namespace rr

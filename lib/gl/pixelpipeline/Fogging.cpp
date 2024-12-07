@@ -20,7 +20,7 @@
 namespace rr
 {
 
-Fogging::Fogging(IRenderer& renderer)
+Fogging::Fogging(Renderer& renderer)
     : m_renderer(renderer)
 {
 }

@@ -141,13 +141,13 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
     return drawLine(p0->vertex, p1->vertex, p0->tex, p1->tex, p0->color, p1->color);
 }
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1)
+tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1)
 {
     // Copied from swGL and adapted.
 
     // Get the reciprocal viewport scaling factor
-    float rcpViewportScaleX = 2.0f / static_cast<float>(m_viewPort.getViewPortWidth());
-    float rcpViewportScaleY = 2.0f / static_cast<float>(m_viewPort.getViewPortHeight());
+    float rcpViewportScaleX = 2.0f / m_viewPort.getViewPortWidth();
+    float rcpViewportScaleY = 2.0f / m_viewPort.getViewPortHeight();
 
     // Calculate the lines normal n = normalize(-dx, dy)
     float nx = -((v1[1] / v1[3]) - (v0[1] / v0[3]));

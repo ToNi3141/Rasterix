@@ -18,7 +18,7 @@
 #ifndef TEXTURE_HPP_
 #define TEXTURE_HPP_
 
-#include "renderer/IRenderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
 #include <optional>
 
@@ -38,10 +38,10 @@ public:
         COMBINE
     };
 
-    using TextureWrapMode = IRenderer::TextureWrapMode;
+    using TextureWrapMode = Renderer::TextureWrapMode;
     using TexEnv = TexEnvReg;
 
-    Texture(IRenderer& renderer);
+    Texture(Renderer& renderer);
 
     bool uploadTexture();
     TextureObjectMipmap& getTexture();
@@ -49,8 +49,8 @@ public:
     bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
-    bool deleteTexture(const uint32_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint32_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
+    bool deleteTexture(const uint16_t texture) { return m_renderer.deleteTexture(texture); }
+    void setBoundTexture(const uint16_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
@@ -66,7 +66,7 @@ private:
     struct TmuConfig
     {
         // Textures
-        uint32_t boundTexture { 0 };
+        uint16_t boundTexture { 0 };
 
         // TMU
        TexEnvMode texEnvMode { TexEnvMode::REPLACE };
@@ -74,11 +74,11 @@ private:
        TexEnv texEnvConfUploaded {};
     };
 
-    IRenderer& m_renderer;
+    Renderer& m_renderer;
 
     // TMU
-    std::array<TmuConfig, TransformedTriangle::MAX_TMU_COUNT> m_tmuConf {};
-    uint8_t m_tmu { 0 };
+    std::array<TmuConfig, RenderConfig::TMU_COUNT> m_tmuConf {};
+    std::size_t m_tmu { 0 };
     std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
 };
 

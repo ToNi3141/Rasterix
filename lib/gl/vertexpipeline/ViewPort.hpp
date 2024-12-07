@@ -26,21 +26,21 @@ class ViewPort
 {
 public:
     void transform(Vec4 &v);
-    void setViewport(const int16_t x, const int16_t y, const int16_t width, const int16_t height);
+    void setViewport(const float x, const float y, const float width, const float height);
     void setDepthRange(const float zNear, const float zFar);
 
-    int16_t getViewPortWidth() const { return m_viewportWidth; }
-    int16_t getViewPortHeight() const { return m_viewportHeight; }
+    float getViewPortWidth() const { return m_viewportWidth; }
+    float getViewPortHeight() const { return m_viewportHeight; }
 
 private:
     float m_depthRangeZNear { 0.0f };
     float m_depthRangeZFar { 1.0f };
     float m_depthRangeOffset { 0.0f };
     float m_depthRangeScale { 1.0f };
-    int16_t m_viewportX { 0 };
-    int16_t m_viewportY { 0 };
-    int16_t m_viewportHeight { 0 };
-    int16_t m_viewportWidth { 0 };
+    float m_viewportX { 0.0f };
+    float m_viewportY { 0.0f };
+    float m_viewportHeight { 0.0f };
+    float m_viewportWidth { 0.0f };
     float m_viewportHeightHalf { 0.0f };
     float m_viewportWidthHalf { 0.0f };
 };

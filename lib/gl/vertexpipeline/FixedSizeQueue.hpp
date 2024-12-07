@@ -52,7 +52,7 @@ public:
     ///     Size - 1 is the last element added. 0 is the first element added.
     /// @param index The index of the element to return.
     /// @return The element at the specified index.
-    inline T& operator[](uint32_t index)
+    inline T& operator[](std::size_t index)
     {
         return m_data[calculateIndex(index)];
     }
@@ -60,14 +60,14 @@ public:
     /// @brief Returns the element at the specified index.
     /// @param index The index of the element to return.
     /// @return The element at the specified index.
-    inline const T& operator[](uint32_t index) const
+    inline const T& operator[](std::size_t index) const
     {
         return m_data[calculateIndex(index)];
     }
 
     /// @brief Returns the size of the queue.
     /// @return The size of the queue.
-    inline uint32_t size() const
+    inline std::size_t size() const
     {
         return m_size;
     }
@@ -81,7 +81,7 @@ public:
 
     /// @brief Decreases the size of the queue.
     /// @param count The number of elements to remove.
-    inline void removeElements(uint32_t count)
+    inline void removeElements(std::size_t count)
     {
         if (count > m_size)
         {
@@ -94,7 +94,7 @@ public:
     };
 
 private:
-    inline uint32_t calculateIndex(uint32_t index) const
+    inline std::size_t calculateIndex(uint32_t index) const
     {
         int32_t newIndex = (m_head - m_size) + index;
         if (newIndex >= Size)

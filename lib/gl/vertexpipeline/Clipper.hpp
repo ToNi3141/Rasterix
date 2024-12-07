@@ -21,7 +21,6 @@
 #include "math/Vec.hpp"
 #include <tcb/span.hpp>
 #include <array>
-#include "renderer/IRenderer.hpp"
 #include "PrimitiveAssembler.hpp"
 
 namespace rr
@@ -68,7 +67,7 @@ private:
 
     inline static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
     inline static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
-    inline static std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT> lerpTexCoord(const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v0, const std::array<Vec4, TransformedTriangle::MAX_TMU_COUNT>& v1, const float amt);
+    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0, const std::array<Vec4, RenderConfig::TMU_COUNT>& v1, const float amt);
     inline static bool hasOutCode(const Vec4& v, const OutCode oc);
     
     static std::size_t clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);

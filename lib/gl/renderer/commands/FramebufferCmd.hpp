@@ -59,13 +59,13 @@ public:
         m_op |= OP_FRAMEBUFFER_SWAP;
         m_dseOp = DSEC::OP_NOP;
     }
-    void streamFromFramebuffer(const uint32_t size, const uint32_t addr)
+    void streamFromFramebuffer(const std::size_t size, const uint32_t addr)
     {
         m_op = 0;
         m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
         m_dseData = { { addr, size } };
     }
-    void commitFramebuffer(const uint32_t size, const uint32_t addr, const bool commitToStream) 
+    void commitFramebuffer(const std::size_t size, const uint32_t addr, const bool commitToStream) 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
