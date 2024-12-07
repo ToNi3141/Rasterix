@@ -242,7 +242,7 @@ bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
         return false;
     }
     bool ret { true };
-    const tcb::span<const uint16_t> pages = m_textureManager.getPages(texId);
+    const tcb::span<const std::size_t> pages = m_textureManager.getPages(texId);
     for (std::size_t i = 0; i < m_displayLines; i++)
     {
         using Command = TextureStreamCmd<RenderConfig>;

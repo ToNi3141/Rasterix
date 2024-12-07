@@ -37,7 +37,7 @@ class TextureStreamCmd
     using DseTransferType = tcb::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const std::size_t tmu,
-                     const tcb::span<const uint16_t>& pages)
+                     const tcb::span<const std::size_t>& pages)
         : m_tmu { tmu }
         , m_texSize { pages.size() * RenderConfig::TEXTURE_PAGE_SIZE }
     {
