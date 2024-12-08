@@ -52,11 +52,13 @@ void Lighting::calculateLights(Vec4& __restrict color,
     const float alphaOld = triangleColor[3];
     if (m_lightingEnabled)
     {
+        const Vec4& emissiveColor = (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor;
+        const Vec4& ambientColor = (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor;
+        const Vec4& diffuseColor = (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor;
+        const Vec4& specularColor = (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor;
+        
         Vec4 colorTmp;
-        calculateSceneLight(colorTmp,
-                            (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor,
-                            (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
-                            m_material.ambientColorScene);
+        calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_material.ambientColorScene);
 
         for (std::size_t i = 0; i < MAX_LIGHTS; i++)
         {
@@ -65,9 +67,9 @@ void Lighting::calculateLights(Vec4& __restrict color,
             calculateLight(colorTmp,
                            m_lights[i],
                            m_material.specularExponent,
-                           (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
-                           (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor,
-                           (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor,
+                           ambientColor,
+                           diffuseColor,
+                           specularColor,
                            vertex,
                            normal);
         }
@@ -86,7 +88,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
                          const Vec4& v0,
                          const Vec3& n0) const
 {
-    Vec4 n{ { n0[0], n0[1], n0[2], 0 } };
+    Vec4 n { n0[0], n0[1], n0[2], 0 };
 
     // Calculate light from lights
     Vec4 dir;
@@ -125,7 +127,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
     // Convert now the direction in dir to the half way vector
     if (lightConfig.localViewer)
     {
-        Vec4 dirEye { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
         dirEye -= v0;
         dirEye.normalize();
         dir += dirEye;
@@ -138,7 +140,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
         // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
         if (lightConfig.position[3] != 0.0f)
         {
-            const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
             dir += pointEye;
             dir.unit();
         }
@@ -183,12 +185,13 @@ void Lighting::calculateLight(Vec4& __restrict color,
     color += colorLight;
 }
 
-void Lighting::calculateSceneLight(Vec4 &sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
+void Lighting::calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
 {
-    // Emission color of material
-    sceneLight = emissiveColor;
     // Ambient Color Material and ambient scene color
-    sceneLight += ambientColor * ambientColorScene;
+    sceneLight = ambientColor;
+    sceneLight *= ambientColorScene;
+    // Emission color of material
+    sceneLight += emissiveColor;
 }
 
 void Lighting::enableLighting(bool enable)

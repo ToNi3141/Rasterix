@@ -31,6 +31,7 @@ public:
     Veci() {}
     Veci(const Veci<T, VecSize>& val) { operator=(val.vec); }
     Veci(const std::array<T, VecSize>& val) { operator=(val); }
+    Veci(const std::initializer_list<T> val) { std::copy(val.begin(), val.end(), vec.begin()); } 
     ~Veci() {}
 
     Veci<T, VecSize>& operator*= (T val)

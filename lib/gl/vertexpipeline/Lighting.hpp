@@ -101,7 +101,7 @@ private:
             preCalcDirectionalLightDir.unit();
 
             // Half Way Vector from infinite viewer
-            const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
             preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir;
             preCalcHalfWayVectorInfinite += pointEye;
             preCalcHalfWayVectorInfinite.unit();
