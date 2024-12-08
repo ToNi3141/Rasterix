@@ -29,8 +29,9 @@ class Vec
 {
 public:
     Vec() {}
-    Vec(const Vec<VecSize>& val) { operator=(val.vec); }
-    Vec(const std::array<float, VecSize>& val) { operator=(val); }
+    Vec(const Vec<VecSize>& val) { vec = val.vec; }
+    Vec(const std::initializer_list<float> val) { std::copy(val.begin(), val.end(), vec.begin()); }
+    Vec(const std::array<float, VecSize>& val) { vec = val; }
     Vec(const float* val) { operator=(val); }
     ~Vec() {}
 

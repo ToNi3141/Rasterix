@@ -70,7 +70,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         parameter.vertex = m_matrixStack.getModelViewProjection().transform(parameter.vertex);
 }
 
-bool VertexPipeline::drawObj(const RenderObj &obj)
+bool VertexPipeline::drawObj(const RenderObj& obj)
 {
     m_matrixStack.recalculateMatrices();
     if (!m_renderer.updatePipeline()) 
