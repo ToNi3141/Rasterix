@@ -101,7 +101,6 @@ private:
     {
         static constexpr uint32_t WIDTH = 256;
         static constexpr uint32_t HEIGHT = 256;
-        int level = 0;
         int border = 0;
 
         // data is aligned in byte order

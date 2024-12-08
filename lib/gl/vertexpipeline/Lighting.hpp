@@ -91,8 +91,8 @@ private:
 
         bool localViewer{ false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
-        Vec4 preCalcDirectionalLightDir;
-        Vec4 preCalcHalfWayVectorInfinite;
+        Vec4 preCalcDirectionalLightDir {};
+        Vec4 preCalcHalfWayVectorInfinite {};
 
         void preCalcVectors()
         {
@@ -118,9 +118,9 @@ private:
                         const Vec4& v0,
                         const Vec3& n0) const;
 
-    std::array<LightConfig, MAX_LIGHTS> m_lights;
+    std::array<LightConfig, MAX_LIGHTS> m_lights {};
     MaterialConfig m_material{};
-    std::array<bool, MAX_LIGHTS> m_lightEnable;
+    std::array<bool, MAX_LIGHTS> m_lightEnable {};
     bool m_lightingEnabled { false };
     bool m_enableColorMaterialEmission { false };
     bool m_enableColorMaterialAmbient { false };

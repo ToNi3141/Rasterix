@@ -1500,7 +1500,7 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
 
-    FragmentPipeline::PipelineConfig::LogicOp logicOp { FragmentPipeline::PipelineConfig::LogicOp::COPY };
+    [[maybe_unused]] FragmentPipeline::PipelineConfig::LogicOp logicOp { FragmentPipeline::PipelineConfig::LogicOp::COPY };
     switch (opcode) {
     case GL_CLEAR:
         logicOp = FragmentPipeline::PipelineConfig::LogicOp::CLEAR;
@@ -2989,13 +2989,13 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     RRXGL::getInstance().setError(GL_NO_ERROR);
     const std::size_t maxTexSize { RRXGL::getInstance().getMaxTextureSize() }; 
 
-    if (level > RRXGL::getInstance().getMaxLOD())
+    if (static_cast<std::size_t>(level) > RRXGL::getInstance().getMaxLOD())
     {
         SPDLOG_ERROR("glTexImage2d invalid lod.");
         return;
     }
 
-    if ((width > maxTexSize) || (height > maxTexSize)) 
+    if ((static_cast<std::size_t>(width) > maxTexSize) || (static_cast<std::size_t>(height) > maxTexSize)) 
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_ERROR("glTexImage2d texture is too big.");
@@ -3760,7 +3760,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     RRXGL::getInstance().setError(GL_NO_ERROR);
 
-    if (level > RRXGL::getInstance().getMaxLOD())
+    if (static_cast<std::size_t>(level) > RRXGL::getInstance().getMaxLOD())
     {
         SPDLOG_ERROR("glTexSubImage2D invalid lod.");
         return;
@@ -3800,9 +3800,9 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     {
         std::size_t i = 0;
         // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
-        for (std::size_t y = yoffset; y < (height + yoffset); y++)
+        for (std::size_t y = yoffset; y < static_cast<std::size_t>(height + yoffset); y++)
         {
-            for (std::size_t x = xoffset; x < (width + xoffset); x++)
+            for (std::size_t x = xoffset; x < static_cast<std::size_t>(width + xoffset); x++)
             {
                 const std::size_t texPos { (y * texObj.width) + x };
                 switch (format)

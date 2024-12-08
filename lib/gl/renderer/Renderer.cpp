@@ -179,7 +179,8 @@ bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool 
         const std::size_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
         if (m_scissorEnabled) 
         {
-            if ((currentScreenPositionEnd >= m_scissorYStart) && (currentScreenPositionStart < m_scissorYEnd))
+            if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart) 
+                && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
             {
                 ret = ret && addCommand(i, cmd);
             }
