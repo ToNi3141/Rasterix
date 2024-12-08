@@ -2798,7 +2798,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             case GL_RGB_SCALE:
                 {
                     const uint8_t shift = log2f(param);
-                    if ((shift >= 0) && (shift <= 2))
+                    if (shift <= 2)
                     {
                         RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftRgb(shift);
                         error = GL_NO_ERROR;
@@ -2812,7 +2812,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             case GL_ALPHA_SCALE:
                 {
                     const uint8_t shift = log2f(param);
-                    if ((shift >= 0) && (shift <= 2))
+                    if (shift <= 2)
                     {
                         RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftAlpha(shift);
                         error = GL_NO_ERROR;

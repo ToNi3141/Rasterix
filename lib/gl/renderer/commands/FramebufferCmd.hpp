@@ -63,7 +63,7 @@ public:
     {
         m_op = 0;
         m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
-        m_dseData = { { addr, size } };
+        m_dseData = { { addr, static_cast<uint32_t>(size) } };
     }
     void commitFramebuffer(const std::size_t size, const uint32_t addr, const bool commitToStream) 
     { 
@@ -76,7 +76,7 @@ public:
         {
             m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
         }
-        m_dseData = { { addr, size } };
+        m_dseData = { { addr, static_cast<uint32_t>(size) } };
     }
     void enableMemset() 
     { 

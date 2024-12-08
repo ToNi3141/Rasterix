@@ -114,7 +114,8 @@ public:
 
     T& operator[] (int index) { return vec[index]; }
     T operator[] (int index) const { return vec[index]; }
-    void operator= (const std::array<T, VecSize>& val) { vec = val; }
+    Veci<T, VecSize>& operator=(const Veci<T, VecSize>& val) { vec = val.vec; return *this; }
+    Veci<T, VecSize>& operator=(const std::array<T, VecSize>& val) { vec = val; return *this; }
 
     template <std::size_t shift = 0>
     int64_t dot(const Veci<T, VecSize>& val) const

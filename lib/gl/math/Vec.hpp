@@ -129,11 +129,13 @@ public:
 
     float& operator[](int index) { return vec[index]; }
     float operator[](int index) const { return vec[index]; }
-    void operator=(const std::array<float, VecSize>& val) { vec = val; }
-    void operator=(const float* val)
+    Vec<VecSize>& operator=(const Vec<VecSize>& val) { vec = val.vec; return *this; }
+    Vec<VecSize>& operator=(const std::array<float, VecSize>& val) { vec = val; return *this; }
+    Vec<VecSize>& operator=(const float* val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = val[i];
+        return *this;
     }
 
     float dot(const Vec<VecSize>& val) const
