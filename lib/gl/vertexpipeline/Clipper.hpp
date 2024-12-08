@@ -32,7 +32,7 @@ public:
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
     using ClipList = std::array<VertexParameter, 9>;
 
-    static tcb::span<VertexParameter> clip(ClipList& list, ClipList& listBuffer);
+    static tcb::span<VertexParameter> clip(ClipList& __restrict list, ClipList& __restrict listBuffer);
     
     static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
     {
@@ -70,7 +70,7 @@ private:
     inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0, const std::array<Vec4, RenderConfig::TMU_COUNT>& v1, const float amt);
     inline static bool hasOutCode(const Vec4& v, const OutCode oc);
     
-    static std::size_t clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);
+    static std::size_t clipAgainstPlane(ClipList& __restrict listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);
 
     inline static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
 

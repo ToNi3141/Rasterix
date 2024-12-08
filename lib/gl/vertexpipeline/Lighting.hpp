@@ -40,7 +40,7 @@ public:
 
     Lighting();
 
-    void calculateLights(Vec4& color,
+    void calculateLights(Vec4& __restrict color,
                          const Vec4& triangleColor,
                          const Vec4& vertex,
                          const Vec3& normal);
@@ -109,8 +109,8 @@ private:
     };
 
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
-    void calculateSceneLight(Vec4& sceneLight, const Vec4 &emissiveColor, const Vec4 &ambientColor, const Vec4 &ambientColorScene) const;
-    void calculateLight(Vec4 &color,
+    void calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const;
+    void calculateLight(Vec4& __restrict color,
                         const LightConfig& lightConfig,
                         const float materialSpecularExponent,
                         const Vec4& materialAmbientColor,

@@ -34,7 +34,7 @@ public:
         : m_enableScaling(enableScaling)
     {}
 
-    bool rasterize(TriangleStreamTypes::TriangleDesc& desc, 
+    bool rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc, 
                    const TransformedTriangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);

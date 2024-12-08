@@ -44,7 +44,7 @@ Lighting::Lighting()
     setSpecularColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
 }
 
-void Lighting::calculateLights(Vec4& color,
+void Lighting::calculateLights(Vec4& __restrict color,
                                const Vec4& triangleColor,
                                const Vec4& vertex,
                                const Vec3& normal) 
@@ -77,7 +77,7 @@ void Lighting::calculateLights(Vec4& color,
     }
 }
 
-void Lighting::calculateLight(Vec4 &color,
+void Lighting::calculateLight(Vec4& __restrict color,
                          const LightConfig& lightConfig,
                          const float materialSpecularExponent,
                          const Vec4& materialAmbientColor,

@@ -83,7 +83,7 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& desc, 
+bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc, 
                            const TransformedTriangle& triangle) const
 {
     TriangleStreamTypes::StaticParams& params = desc.param;
