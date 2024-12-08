@@ -87,9 +87,9 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& desc,
                            const TransformedTriangle& triangle) const
 {
     TriangleStreamTypes::StaticParams& params = desc.param;
-    Vec2i v0 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
-    Vec2i v1 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
-    Vec2i v2 = Vec2i::createFromVec<EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
+    Vec2i v0 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
+    Vec2i v1 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
+    Vec2i v2 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
 
     VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
     VecInt sign = -1; // 1 backface culling; -1 frontface culling

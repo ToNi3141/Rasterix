@@ -1361,7 +1361,7 @@ GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint *params)
     SPDLOG_DEBUG("glLightModeliv redirected to glLightModefv");
     Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
-    impl_glLightModelfv(pname, color.vec.data());
+    impl_glLightModelfv(pname, color.data());
 }
 
 GLAPI void APIENTRY impl_glLightf(GLenum light, GLenum pname, GLfloat param)
@@ -1447,7 +1447,7 @@ GLAPI void APIENTRY impl_glLightiv(GLenum light, GLenum pname, const GLint *para
     SPDLOG_DEBUG("glLightiv redirected to glLightfv");
     Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
-    impl_glLightfv(light, pname, color.vec.data());
+    impl_glLightfv(light, pname, color.data());
 }
 
 GLAPI void APIENTRY impl_glLineStipple(GLint factor, GLushort pattern)
@@ -1666,7 +1666,7 @@ GLAPI void APIENTRY impl_glMaterialiv(GLenum face, GLenum pname, const GLint *pa
     SPDLOG_DEBUG("glMaterialiv redirected to glMaterialfv");
     Vec4 color = Vec4::createFromArray(params, 4);
     color.div(255);
-    impl_glMaterialfv(face, pname, color.vec.data());
+    impl_glMaterialfv(face, pname, color.data());
 }
 
 GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)

@@ -122,7 +122,7 @@ public:
             
             "vst1.32    {d26, d27}, [%2]    \n\t"	// dst = q13
             : 
-            : "r"(&mat[0][0]), "r"(src.vec.data()), "r"(dst.vec.data()) 
+            : "r"(&mat[0][0]), "r"(src.data()), "r"(dst.data()) 
             : "q0", "q9", "q13", "memory"
         );
     }

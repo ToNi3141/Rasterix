@@ -66,9 +66,9 @@ struct TextureX
 
     void operator=(const Texture& t)
     {
-        texStq.fromVec<28>(t.texStq.vec);
-        texStqXInc.fromVec<28>(t.texStqXInc.vec);
-        texStqYInc.fromVec<28>(t.texStqYInc.vec);
+        texStq.fromVec<Vec3, 28>(t.texStq);
+        texStqXInc.fromVec<Vec3, 28>(t.texStqXInc);
+        texStqYInc.fromVec<Vec3, 28>(t.texStqYInc);
     }
 };
 
@@ -101,9 +101,9 @@ struct StaticParamsX
         wInit = t.wInit;
         wXInc = t.wXInc;
         wYInc = t.wYInc;
-        color.fromVec<24>(t.color.vec);
-        colorXInc.fromVec<24>(t.colorXInc.vec);
-        colorYInc.fromVec<24>(t.colorYInc.vec);
+        color.fromVec<Vec4, 24>(t.color);
+        colorXInc.fromVec<Vec4, 24>(t.colorXInc);
+        colorYInc.fromVec<Vec4, 24>(t.colorYInc);
         depthW = static_cast<int32_t>(t.depthW * (1 << 30));
         depthWXInc = static_cast<int32_t>(t.depthWXInc * (1 << 30));
         depthWYInc = static_cast<int32_t>(t.depthWYInc * (1 << 30));

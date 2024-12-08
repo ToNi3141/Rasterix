@@ -194,6 +194,15 @@ public:
         }
     }
 
+    const float* data() const
+    {
+        return vec.data();
+    }
+
+    template <std::size_t S>
+    friend bool operator==(const rr::Vec<S>& lhs, const rr::Vec<S>& rhs);
+
+private:
     std::array<float, VecSize> vec;
 };
 
@@ -228,7 +237,7 @@ inline Vec<T> operator+(const Vec<T>& lhs, const Vec<T>& rhs)
 }
 
 template <std::size_t T>
-bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
+inline bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
 {
     return std::equal(lhs.vec.begin(), lhs.vec.end(), rhs.vec.begin());
 }

@@ -96,8 +96,8 @@ public:
         return *this;
     }
 
-    template <std::size_t shift = 0>
-    static Veci<T, VecSize> createFromVec(const std::array<float, VecSize> val)
+    template <typename TV, std::size_t shift = 0>
+    static Veci<T, VecSize> createFromVec(const TV& val)
     {
         Veci<T, VecSize> vec;
         for (std::size_t i = 0; i < VecSize; i++)
@@ -105,8 +105,8 @@ public:
         return vec;
     }
 
-    template <std::size_t shift = 0>
-    void fromVec(const std::array<float, VecSize> val)
+    template <typename TV, std::size_t shift = 0>
+    void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = (val[i] * (1ul << shift)) + 0.5f;
@@ -134,6 +134,12 @@ public:
         }
     }
 
+    const T* data() const
+    {
+        return vec.data();
+    }
+
+private:
     std::array<T, VecSize> vec;
 };
 

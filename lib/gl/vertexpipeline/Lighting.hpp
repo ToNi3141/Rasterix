@@ -89,7 +89,7 @@ private:
         float linearAttenuation { 0.0f };
         float quadraticAttenuation { 0.0f };
 
-        bool localViewer{ false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
+        static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
         Vec4 preCalcDirectionalLightDir {};
         Vec4 preCalcHalfWayVectorInfinite {};
@@ -102,7 +102,8 @@ private:
 
             // Half Way Vector from infinite viewer
             const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
-            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir + pointEye;
+            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir;
+            preCalcHalfWayVectorInfinite += pointEye;
             preCalcHalfWayVectorInfinite.unit();
         }
     };

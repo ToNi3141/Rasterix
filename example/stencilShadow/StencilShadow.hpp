@@ -58,7 +58,7 @@ public:
         glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
         glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-        glLightfv(GL_LIGHT0, GL_POSITION, m_lightPosition.vec.data());
+        glLightfv(GL_LIGHT0, GL_POSITION, m_lightPosition.data());
         glEnable(GL_LIGHT0);
 
         glActiveTexture(GL_TEXTURE0);
@@ -300,7 +300,7 @@ private:
         mInv.invert();
         rr::Vec4 tmpLightPos;
         mInv.transform(tmpLightPos, lightPos);
-        rr::Vec3 tLightPos { tmpLightPos.vec.data() };
+        rr::Vec3 tLightPos { tmpLightPos.data() };
         for (uint32_t i = 0; i < verts.size() / 6; i++)
         {
             const rr::Vec3* line = &(verts[i * 6]);

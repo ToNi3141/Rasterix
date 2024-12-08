@@ -19,7 +19,7 @@
 #define MAT44_HPP
 #include <array>
 #include <math.h>
-#include "Vec.hpp"
+#include "math/Vec.hpp"
 
 namespace rr
 {
@@ -89,11 +89,11 @@ public:
         inv[15]= m[0]*m[5]*m[10]-m[0]*m[6]*m[9]-m[4]*m[1]*m[10]+
                 m[4]*m[2]*m[9]+m[8]*m[1]*m[6]-m[8]*m[2]*m[5];
         float det = m[0]*inv[0]+m[1]*inv[4]+m[2]*inv[8]+m[3]*inv[12];
-        if (det == 0.0f) return false; 
+        if (det == 0.0f)  return false; 
         det = 1.0f / det;
-        for (uint8_t i = 0; i < 4; i++)
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = inv[(i * 4) + j] * det;
             }
@@ -122,7 +122,7 @@ public:
             
             "vst1.32    {d26, d27}, [%2]    \n\t"	// dst = q13
             : 
-            : "r"(&mat[0][0]), "r"(src.vec.data()), "r"(dst.vec.data()) 
+            : "r"(&mat[0][0]), "r"(src.data()), "r"(dst.data()) 
             : "q0", "q9", "q13", "memory"
         );
     }
@@ -134,27 +134,10 @@ public:
         const float src2 = src[2];
         const float src3 = src[3];
 
-        dst[0] = src0 * mat[0][0] + src1 * mat[1][0] + src2 * mat[2][0];
-        dst[1] = src0 * mat[0][1] + src1 * mat[1][1] + src2 * mat[2][1];
-        dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2];
-        dst[3] = src0 * mat[0][3] + src1 * mat[1][3] + src2 * mat[2][3];
-
-        // Typically the w value of a Vec4 is 1.0. So threat this as a special case.
-        // It will probably only speed up when no FPU is available ...
-        if (src3 == 1.0f)
-        {
-            dst[0] += mat[3][0];
-            dst[1] += mat[3][1];
-            dst[2] += mat[3][2];
-            dst[3] += mat[3][3];
-        }
-        else
-        {
-            dst[0] += src3 * mat[3][0];
-            dst[1] += src3 * mat[3][1];
-            dst[2] += src3 * mat[3][2];
-            dst[3] += src3 * mat[3][3];
-        }
+        dst[0] = src0 * mat[0][0] + src1 * mat[1][0] + src2 * mat[2][0] + src3 * mat[3][0];
+        dst[1] = src0 * mat[0][1] + src1 * mat[1][1] + src2 * mat[2][1] + src3 * mat[3][1];
+        dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2] + src3 * mat[3][2];
+        dst[3] = src0 * mat[0][3] + src1 * mat[1][3] + src2 * mat[2][3] + src3 * mat[3][3];
     }
 #endif
 
@@ -186,9 +169,9 @@ public:
     void operator*= (const Mat44& rhs)
     {
         Mat44 m{*this};
-        for (uint8_t i = 0; i < 4; i++)
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = m[i][0] * rhs[0][j] + m[i][1] * rhs[1][j] +
                         m[i][2] * rhs[2][j] + m[i][3] * rhs[3][j];
@@ -198,10 +181,10 @@ public:
 
     void operator= (const float* m)
     {
-        uint8_t k = 0;
-        for (uint8_t i = 0; i < 4; i++)
+        std::size_t k = 0;
+        for (std::size_t i = 0; i < 4; i++)
         {
-            for (uint8_t j = 0; j < 4; j++)
+            for (std::size_t j = 0; j < 4; j++)
             {
                 mat[i][j] = m[k++];
             }
@@ -213,12 +196,12 @@ public:
         operator= (&m[0][0]);
     }
 
-    std::array<float, 4>& operator[] (const uint8_t rhs)
+    std::array<float, 4>& operator[] (const std::size_t rhs)
     {
         return mat[rhs];
     }
 
-    const std::array<float, 4>& operator[] (const uint8_t rhs) const
+    const std::array<float, 4>& operator[] (const std::size_t rhs) const
     {
         return mat[rhs];
     }
@@ -229,9 +212,9 @@ public:
 inline Mat44 operator* (const Mat44& lhs, const Mat44& rhs)
 {
     Mat44 mat;
-    for (uint8_t i = 0; i < 4; i++)
+    for (std::size_t i = 0; i < 4; i++)
     {
-        for (uint8_t j = 0; j < 4; j++)
+        for (std::size_t j = 0; j < 4; j++)
         {
             mat[i][j] = lhs[i][0] * rhs[0][j] + lhs[i][1] * rhs[1][j] +
                     lhs[i][2] * rhs[2][j] + lhs[i][3] * rhs[3][j];
