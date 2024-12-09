@@ -46,7 +46,7 @@ public:
         {
             if (!m_textureLut[i])
             {
-                return { createTextureWithName(i), i };
+                return { createTextureWithName(i), static_cast<uint16_t>(i) };
             }
         }
         return { false, 0 };
