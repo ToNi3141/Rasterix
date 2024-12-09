@@ -51,13 +51,13 @@ public:
         return vec;
     }
 
-    template <typename T>
-    static Vec<VecSize> createFromArray(const T* arr, const std::size_t size)
+    template <typename T, std::size_t S>
+    static Vec<VecSize> createFromArray(const T* arr)
     {
         Vec<VecSize> vec;
-        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
-        for (std::size_t i = 0; i < len; i++)
-            vec[i] = arr[i];
+        static_assert(S <= VecSize);
+        for (std::size_t i = 0; i < S; i++)
+            vec[i] = static_cast<float>(arr[i]);
         return vec;
     }
 

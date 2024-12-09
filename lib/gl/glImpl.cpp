@@ -116,7 +116,7 @@ GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, 
 GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     SPDLOG_DEBUG("glClearColor ({}, {}, {}, {}) called", red, green, blue, alpha);
-    if (RRXGL::getInstance().pixelPipeline().setClearColor({ { red, green, blue, alpha } }))
+    if (RRXGL::getInstance().pixelPipeline().setClearColor({ red, green, blue, alpha }))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -1004,7 +1004,7 @@ GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat *params)
         break;
     case GL_FOG_COLOR:
     {
-        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ { params[0], params[1], params[2], params[3] } });
+        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ params[0], params[1], params[2], params[3] });
     }
         break;
     default:
@@ -1033,9 +1033,9 @@ GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint *params)
         break;
     case GL_FOG_COLOR:
     {
-        Vec4 fogColor = Vec4::createFromArray(params, 4);
+        Vec4 fogColor = Vec4::createFromArray<GLint, 4>(params);
         fogColor.div(255);
-        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ { fogColor[0], fogColor[1], fogColor[2], fogColor[3] } });
+        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ fogColor[0], fogColor[1], fogColor[2], fogColor[3] });
         break;
     }
     default:
@@ -1089,7 +1089,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat *params)
     SPDLOG_DEBUG("glGetFloatv pname 0x{:X} called", pname);
     switch (pname) {
         case GL_MODELVIEW_MATRIX:
-            memcpy(params, RRXGL::getInstance().vertexPipeline().getMatrixStack().getModelView().mat.data(), 16 * 4);
+            memcpy(params, RRXGL::getInstance().vertexPipeline().getMatrixStack().getModelView().data(), 16 * 4);
             break;
         default:
             SPDLOG_DEBUG("glGetFloatv redirected to glGetIntegerv");
@@ -1359,7 +1359,7 @@ GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glLightModeliv redirected to glLightModefv");
-    Vec4 color = Vec4::createFromArray(params, 4);
+    Vec4 color = Vec4::createFromArray<GLint, 4>(params);
     color.div(255);
     impl_glLightModelfv(pname, color.data());
 }
@@ -1445,7 +1445,7 @@ GLAPI void APIENTRY impl_glLighti(GLenum light, GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glLightiv(GLenum light, GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glLightiv redirected to glLightfv");
-    Vec4 color = Vec4::createFromArray(params, 4);
+    Vec4 color = Vec4::createFromArray<GLint, 4>(params);
     color.div(255);
     impl_glLightfv(light, pname, color.data());
 }
@@ -1664,7 +1664,7 @@ GLAPI void APIENTRY impl_glMateriali(GLenum face, GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
     SPDLOG_DEBUG("glMaterialiv redirected to glMaterialfv");
-    Vec4 color = Vec4::createFromArray(params, 4);
+    Vec4 color = Vec4::createFromArray<GLint, 4>(params);
     color.div(255);
     impl_glMaterialfv(face, pname, color.data());
 }
@@ -2650,7 +2650,7 @@ GLAPI void APIENTRY impl_glTexEnvfv(GLenum target, GLenum pname, const GLfloat *
 
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (RRXGL::getInstance().pixelPipeline().texture().setTexEnvColor({ { params[0], params[1], params[2], params[3] } }))
+        if (RRXGL::getInstance().pixelPipeline().texture().setTexEnvColor({ params[0], params[1], params[2], params[3] }))
         {
             RRXGL::getInstance().setError(GL_NO_ERROR);
         }
@@ -3207,11 +3207,11 @@ GLAPI void APIENTRY impl_glVertex2d(GLdouble x, GLdouble y)
     SPDLOG_DEBUG("glVertex2d ({}, {}) called", 
         static_cast<float>(x), 
         static_cast<float>(y));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2dv(const GLdouble *v)
@@ -3219,23 +3219,23 @@ GLAPI void APIENTRY impl_glVertex2dv(const GLdouble *v)
     SPDLOG_DEBUG("glVertex2dv ({}, {}) called", 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2f(GLfloat x, GLfloat y)
 {
     SPDLOG_DEBUG("glVertex2f ({}, {}) called", x, y);
-    RRXGL::getInstance().vertexQueue().addVertex({ { x, y, 0.0f, 1.0f } });
+    RRXGL::getInstance().vertexQueue().addVertex({ x, y, 0.0f, 1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2fv(const GLfloat *v)
 {
     SPDLOG_DEBUG("glVertex2fv ({}, {}) called", v[0], v[1]);
-    RRXGL::getInstance().vertexQueue().addVertex({ {  v[0], v[1], 0.0f, 1.0f } });
+    RRXGL::getInstance().vertexQueue().addVertex({  v[0], v[1], 0.0f, 1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2i(GLint x, GLint y)
@@ -3243,11 +3243,11 @@ GLAPI void APIENTRY impl_glVertex2i(GLint x, GLint y)
     SPDLOG_DEBUG("glVertex2i ({}, {}) called", 
         static_cast<float>(x), 
         static_cast<float>(y));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2iv(const GLint *v)
@@ -3255,11 +3255,11 @@ GLAPI void APIENTRY impl_glVertex2iv(const GLint *v)
     SPDLOG_DEBUG("glVertex2iv ({}, {}) called", 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2s(GLshort x, GLshort y)
@@ -3267,11 +3267,11 @@ GLAPI void APIENTRY impl_glVertex2s(GLshort x, GLshort y)
     SPDLOG_DEBUG("glVertex2s ({}, {}) called", 
         static_cast<float>(x), 
         static_cast<float>(y));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex2sv(const GLshort *v)
@@ -3279,11 +3279,11 @@ GLAPI void APIENTRY impl_glVertex2sv(const GLshort *v)
     SPDLOG_DEBUG("glVertex2sv ({}, {}) called", 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         0.0f, 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3d(GLdouble x, GLdouble y, GLdouble z)
@@ -3292,11 +3292,11 @@ GLAPI void APIENTRY impl_glVertex3d(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y),
         static_cast<float>(z), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3dv(const GLdouble *v)
@@ -3305,23 +3305,23 @@ GLAPI void APIENTRY impl_glVertex3dv(const GLdouble *v)
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3f(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glVertex3f ({}, {}, {}) called", x, y, z);
-    RRXGL::getInstance().vertexQueue().addVertex({ { x, y, z, 1.0f } });
+    RRXGL::getInstance().vertexQueue().addVertex({ x, y, z, 1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3fv(const GLfloat *v)
 {
     SPDLOG_DEBUG("glVertex3fv ({}, {}, {}) called", v[0], v[1], v[2]);
-    RRXGL::getInstance().vertexQueue().addVertex({ { v[0], v[1], v[2], 1.0f } });
+    RRXGL::getInstance().vertexQueue().addVertex({ v[0], v[1], v[2], 1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3i(GLint x, GLint y, GLint z)
@@ -3330,11 +3330,11 @@ GLAPI void APIENTRY impl_glVertex3i(GLint x, GLint y, GLint z)
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3iv(const GLint *v)
@@ -3343,11 +3343,11 @@ GLAPI void APIENTRY impl_glVertex3iv(const GLint *v)
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3s(GLshort x, GLshort y, GLshort z)
@@ -3356,11 +3356,11 @@ GLAPI void APIENTRY impl_glVertex3s(GLshort x, GLshort y, GLshort z)
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex3sv(const GLshort *v)
@@ -3369,11 +3369,11 @@ GLAPI void APIENTRY impl_glVertex3sv(const GLshort *v)
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        1.0f } });
+        1.0f });
 }
 
 GLAPI void APIENTRY impl_glVertex4d(GLdouble x, GLdouble y, GLdouble z, GLdouble w)
@@ -3383,11 +3383,11 @@ GLAPI void APIENTRY impl_glVertex4d(GLdouble x, GLdouble y, GLdouble z, GLdouble
         static_cast<float>(y), 
         static_cast<float>(z), 
         static_cast<float>(w));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z), 
-        static_cast<float>(w) } });
+        static_cast<float>(w) });
 }
 
 GLAPI void APIENTRY impl_glVertex4dv(const GLdouble *v)
@@ -3397,23 +3397,23 @@ GLAPI void APIENTRY impl_glVertex4dv(const GLdouble *v)
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
         static_cast<float>(v[3]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        static_cast<float>(v[3]) } });
+        static_cast<float>(v[3]) });
 }
 
 GLAPI void APIENTRY impl_glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
     SPDLOG_DEBUG("glVertex4f ({}, {}, {}, {}) called", x, y, z, w);
-    RRXGL::getInstance().vertexQueue().addVertex({ { x, y, z, w } });
+    RRXGL::getInstance().vertexQueue().addVertex({ x, y, z, w });
 }
 
 GLAPI void APIENTRY impl_glVertex4fv(const GLfloat *v)
 {
     SPDLOG_DEBUG("glVertex4fv ({}, {}, {}, {}) called", v[0], v[1], v[2], v[3]);
-    RRXGL::getInstance().vertexQueue().addVertex({ { v[0], v[1], v[2], v[3] } });
+    RRXGL::getInstance().vertexQueue().addVertex({ v[0], v[1], v[2], v[3] });
 }
 
 GLAPI void APIENTRY impl_glVertex4i(GLint x, GLint y, GLint z, GLint w)
@@ -3423,11 +3423,11 @@ GLAPI void APIENTRY impl_glVertex4i(GLint x, GLint y, GLint z, GLint w)
         static_cast<float>(y), 
         static_cast<float>(z), 
         static_cast<float>(w));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z), 
-        static_cast<float>(w) } });
+        static_cast<float>(w) });
 }
 
 GLAPI void APIENTRY impl_glVertex4iv(const GLint *v)
@@ -3437,11 +3437,11 @@ GLAPI void APIENTRY impl_glVertex4iv(const GLint *v)
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
         static_cast<float>(v[3]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        static_cast<float>(v[3]) } });
+        static_cast<float>(v[3]) });
 }
 
 GLAPI void APIENTRY impl_glVertex4s(GLshort x, GLshort y, GLshort z, GLshort w)
@@ -3451,11 +3451,11 @@ GLAPI void APIENTRY impl_glVertex4s(GLshort x, GLshort y, GLshort z, GLshort w)
         static_cast<float>(y), 
         static_cast<float>(z), 
         static_cast<float>(w));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(x), 
         static_cast<float>(y), 
         static_cast<float>(z), 
-        static_cast<float>(w) } });
+        static_cast<float>(w) });
 }
 
 GLAPI void APIENTRY impl_glVertex4sv(const GLshort *v)
@@ -3465,11 +3465,11 @@ GLAPI void APIENTRY impl_glVertex4sv(const GLshort *v)
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
         static_cast<float>(v[3]));
-    RRXGL::getInstance().vertexQueue().addVertex({ { 
+    RRXGL::getInstance().vertexQueue().addVertex({ 
         static_cast<float>(v[0]), 
         static_cast<float>(v[1]), 
         static_cast<float>(v[2]), 
-        static_cast<float>(v[3]) } });
+        static_cast<float>(v[3]) });
 }
 
 GLAPI void APIENTRY impl_glViewport(GLint x, GLint y, GLsizei width, GLsizei height)

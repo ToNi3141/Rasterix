@@ -117,7 +117,7 @@ private:
                         const Vec4& materialDiffuseColor,
                         const Vec4& materialSpecularColor,
                         const Vec4& v0,
-                        const Vec3& n0) const;
+                        const Vec4& n0) const;
 
     std::array<LightConfig, MAX_LIGHTS> m_lights {};
     MaterialConfig m_material{};

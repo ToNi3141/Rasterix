@@ -60,6 +60,7 @@ void Lighting::calculateLights(Vec4& __restrict color,
         Vec4 colorTmp;
         calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_material.ambientColorScene);
 
+        const Vec4 n { normal[0], normal[1], normal[2], 0 };
         for (std::size_t i = 0; i < MAX_LIGHTS; i++)
         {
             if (!m_lightEnable[i])
@@ -71,7 +72,7 @@ void Lighting::calculateLights(Vec4& __restrict color,
                            diffuseColor,
                            specularColor,
                            vertex,
-                           normal);
+                           n);
         }
 
         color = colorTmp;
@@ -86,10 +87,8 @@ void Lighting::calculateLight(Vec4& __restrict color,
                          const Vec4& materialDiffuseColor,
                          const Vec4& materialSpecularColor,
                          const Vec4& v0,
-                         const Vec3& n0) const
+                         const Vec4& n0) const
 {
-    Vec4 n { n0[0], n0[1], n0[2], 0 };
-
     // Calculate light from lights
     Vec4 dir;
     float att = 1.0f;
@@ -114,7 +113,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
         // Directional light, direction is the unit vector
         dir = lightConfig.preCalcDirectionalLightDir;
     }
-    float dotDirDiffuse = n.dot(dir);
+    float dotDirDiffuse = n0.dot(dir);
     dotDirDiffuse = (dotDirDiffuse < 0.01f) ? 0.0f : dotDirDiffuse;
 
     // Calculate specular light
@@ -150,7 +149,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
         }
     }
 
-    float dotDirSpecular = n.dot(dir);
+    float dotDirSpecular = n0.dot(dir);
 
     // Optimization: pows are expensive
     if (materialSpecularExponent == 0.0f) // x^0 == 1.0
