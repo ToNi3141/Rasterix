@@ -27,6 +27,9 @@ http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/n4820.pdf
 #ifndef TCB_SPAN_NO_EXCEPTIONS
 #include <cstdio>
 #include <stdexcept>
+#else
+// See https://github.com/tcbrindle/span/issues/55
+#include <exception> // for std::terminate
 #endif
 
 // Various feature test macros
