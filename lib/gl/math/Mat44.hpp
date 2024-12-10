@@ -122,7 +122,7 @@ public:
             
             "vst1.32    {d26, d27}, [%2]    \n\t"	// dst = q13
             : 
-            : "r"(&mat[0][0]), "r"(src.vec.data()), "r"(dst.vec.data()) 
+            : "r"(&mat[0][0]), "r"(src.data()), "r"(dst.data()) 
             : "q0", "q9", "q13", "memory"
         );
     }
@@ -148,7 +148,7 @@ public:
         return dst;
     }
 
-    inline void transform(Vec3& dst, const Vec3 &src) const
+    inline void transform(Vec3& __restrict dst, const Vec3& src) const
     {
         const float src0 = src[0];
         const float src1 = src[1];
@@ -166,9 +166,9 @@ public:
         return dst;
     }
 
-    void operator*= (const Mat44& rhs)
+    void operator*=(const Mat44& rhs)
     {
-        Mat44 m{*this};
+        Mat44 m { *this };
         for (std::size_t i = 0; i < 4; i++)
         {
             for (std::size_t j = 0; j < 4; j++)
@@ -179,7 +179,7 @@ public:
         }
     }
 
-    void operator= (const float* m)
+    void operator=(const float* m)
     {
         std::size_t k = 0;
         for (std::size_t i = 0; i < 4; i++)
@@ -191,25 +191,31 @@ public:
         }
     }
 
-    void operator= (const ValType& m)
+    void operator=(const ValType& m)
     {
-        operator= (&m[0][0]);
+        operator=(&m[0][0]);
     }
 
-    std::array<float, 4>& operator[] (const std::size_t rhs)
-    {
-        return mat[rhs];
-    }
-
-    const std::array<float, 4>& operator[] (const std::size_t rhs) const
+    std::array<float, 4>& operator[](const std::size_t rhs)
     {
         return mat[rhs];
     }
 
+    const std::array<float, 4>& operator[](const std::size_t rhs) const
+    {
+        return mat[rhs];
+    }
+
+    const float* data() const
+    {
+        return mat[0].data();
+    }
+
+private:
     ValType mat;
 };
 
-inline Mat44 operator* (const Mat44& lhs, const Mat44& rhs)
+inline Mat44 operator*(const Mat44& lhs, const Mat44& rhs)
 {
     Mat44 mat;
     for (std::size_t i = 0; i < 4; i++)

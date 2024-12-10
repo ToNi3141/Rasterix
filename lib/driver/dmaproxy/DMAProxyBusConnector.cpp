@@ -25,7 +25,7 @@ namespace rr
 DMAProxyBusConnector::DMAProxyBusConnector()
 {
     const char *tx_channel_names[] = { "dma_proxy_tx" };
-    const char *rx_channel_names[] = { "dma_proxy_rx" };
+    // const char *rx_channel_names[] = { "dma_proxy_rx" };
 
     char channel_name[64] = "/dev/";
     strcat(channel_name, tx_channel_names[0]);

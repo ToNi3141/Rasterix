@@ -44,7 +44,7 @@ Lighting::Lighting()
     setSpecularColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
 }
 
-void Lighting::calculateLights(Vec4& color,
+void Lighting::calculateLights(Vec4& __restrict color,
                                const Vec4& triangleColor,
                                const Vec4& vertex,
                                const Vec3& normal) 
@@ -52,24 +52,27 @@ void Lighting::calculateLights(Vec4& color,
     const float alphaOld = triangleColor[3];
     if (m_lightingEnabled)
     {
+        const Vec4& emissiveColor = (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor;
+        const Vec4& ambientColor = (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor;
+        const Vec4& diffuseColor = (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor;
+        const Vec4& specularColor = (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor;
+        
         Vec4 colorTmp;
-        calculateSceneLight(colorTmp,
-                            (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor,
-                            (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
-                            m_material.ambientColorScene);
+        calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_material.ambientColorScene);
 
-        for (auto& light : m_lights)
+        const Vec4 n { normal[0], normal[1], normal[2], 0 };
+        for (std::size_t i = 0; i < MAX_LIGHTS; i++)
         {
-            if (!light.enable)
+            if (!m_lightEnable[i])
                 continue;
             calculateLight(colorTmp,
-                           light,
+                           m_lights[i],
                            m_material.specularExponent,
-                           (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor,
-                           (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor,
-                           (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor,
+                           ambientColor,
+                           diffuseColor,
+                           specularColor,
                            vertex,
-                           normal);
+                           n);
         }
 
         color = colorTmp;
@@ -77,121 +80,117 @@ void Lighting::calculateLights(Vec4& color,
     }
 }
 
-void Lighting::calculateLight(Vec4 &color,
+void Lighting::calculateLight(Vec4& __restrict color,
                          const LightConfig& lightConfig,
                          const float materialSpecularExponent,
                          const Vec4& materialAmbientColor,
                          const Vec4& materialDiffuseColor,
                          const Vec4& materialSpecularColor,
                          const Vec4& v0,
-                         const Vec3& n0) const
+                         const Vec4& n0) const
 {
-    Vec4 n{ { n0[0], n0[1], n0[2], 0 } };
+    // Calculate light from lights
+    Vec4 dir;
+    float att = 1.0f;
 
-    if (lightConfig.enable)
+    // Calculate Diffuse Light
+    // w unequal zero means: Point light
+    // w equal to zero means: Directional light
+    // It seems that mac os is interpolating between 0.0 and 1.0 so that the different
+    // light sources can lerp to each other. We will not do this here.
+    if (lightConfig.position[3] != 0.0f)
     {
-        // Calculate light from lights
-        Vec4 dir;
-        float att = 1.0f;
+        // Point light, is the normalized direction vector
+        dir = lightConfig.position;
+        dir -= v0;
+        dir.normalize();
 
-        // Calculate Diffuse Light
-        // w unequal zero means: Point light
-        // w equal to zero means: Directional light
-        // It seems that mac os is interpolating between 0.0 and 1.0 so that the different
-        // light sources can lerp to each other. We will not do this here.
+        const float dist = v0.dist(lightConfig.position);
+        att = 1.0f / (lightConfig.constantAttenuation + (lightConfig.linearAttenuation * dist) + lightConfig.quadraticAttenuation * (dist * dist));
+    }
+    else
+    {
+        // Directional light, direction is the unit vector
+        dir = lightConfig.preCalcDirectionalLightDir;
+    }
+    float dotDirDiffuse = n0.dot(dir);
+    dotDirDiffuse = (dotDirDiffuse < 0.01f) ? 0.0f : dotDirDiffuse;
+
+    // Calculate specular light
+    float f = 0.0f;
+    if (dotDirDiffuse != 0.0f)
+    {
+        f = 1.0f;
+    }
+
+    // Convert now the direction in dir to the half way vector
+    if (lightConfig.localViewer)
+    {
+        Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
+        dirEye -= v0;
+        dirEye.normalize();
+        dir += dirEye;
+        dir.unit();
+    }
+    else
+    {
+        // Optimization: When position.w is equal to zero, then dirDiffuse is constant and
+        // we can precompute with this constant value the half way vector.
+        // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
         if (lightConfig.position[3] != 0.0f)
         {
-            // Point light, is the normalized direction vector
-            dir = lightConfig.position;
-            dir -= v0;
-            dir.normalize();
-
-            const float dist = v0.dist(lightConfig.position);
-            att = 1.0f / (lightConfig.constantAttenuation + (lightConfig.linearAttenuation * dist) + lightConfig.quadraticAttenuation * (dist * dist));
-        }
-        else
-        {
-            // Directional light, direction is the unit vector
-            dir = lightConfig.preCalcDirectionalLightDir;
-        }
-        float dotDirDiffuse = n.dot(dir);
-        dotDirDiffuse = (dotDirDiffuse < 0.01f) ? 0.0f : dotDirDiffuse;
-
-        // Calculate specular light
-        float f = 0.0f;
-        if (dotDirDiffuse != 0.0f)
-        {
-            f = 1.0f;
-        }
-
-        // Convert now the direction in dir to the half way vector
-        if (lightConfig.localViewer)
-        {
-            Vec4 dirEye { { 0.0f, 0.0f, 0.0f, 1.0f } };
-            dirEye -= v0;
-            dirEye.normalize();
-            dir += dirEye;
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
+            dir += pointEye;
             dir.unit();
         }
         else
         {
-            // Optimization: When position.w is equal to zero, then dirDiffuse is constant and
-            // we can precompute with this constant value the half way vector.
-            // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
-            if (lightConfig.position[3] != 0.0f)
-            {
-                const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
-                dir += pointEye;
-                dir.unit();
-            }
-            else
-            {
-                dir = lightConfig.preCalcHalfWayVectorInfinite;
-            }
+            dir = lightConfig.preCalcHalfWayVectorInfinite;
         }
-
-        float dotDirSpecular = n.dot(dir);
-
-        // Optimization: pows are expensive
-        if (materialSpecularExponent == 0.0f) // x^0 == 1.0
-        {
-            dotDirSpecular = 1.0f;
-        }
-        else if (materialSpecularExponent != 1.0f) // x^1 == x
-        {
-            dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
-        }
-
-        Vec4 ambientColor = lightConfig.ambientColor;
-        ambientColor *= materialAmbientColor;
-        Vec4 colorLight = lightConfig.diffuseColor;
-        colorLight *= materialDiffuseColor;
-        colorLight *= dotDirDiffuse;
-        colorLight += ambientColor;
-        Vec4 colorLightSpecular = lightConfig.specularColor;
-        colorLightSpecular *= materialSpecularColor;
-        colorLightSpecular *= (f * dotDirSpecular);
-        colorLight += colorLightSpecular;
-
-        colorLight *= att;
-        // TODO: Spotlight has to be implemented. Please see in the OpenGL 1.5 spec equation 2.5.
-        // Basically it is a val = dot(normalize(v0 - lightConfig.position), unit(lightConfig.spotlightDirectionLight))
-        // spot = pow(val, lightConfig.spotlightExponentLight); when lightConfig.spotlightCutoffLight != 180 and val >= cos(lightConfig.spotlightCutoffLight)
-        // spot = 0; when lightConfig.spotlightCutoffLight != 180 and val < cos(lightConfig.spotlightCutoffLight)
-        // spot = 1; when lightConfig.spotlightCutoffLight == 180
-        // colorLight0 *= spot;
-
-        // Add light sums to final color
-        color += colorLight;
     }
+
+    float dotDirSpecular = n0.dot(dir);
+
+    // Optimization: pows are expensive
+    if (materialSpecularExponent == 0.0f) // x^0 == 1.0
+    {
+        dotDirSpecular = 1.0f;
+    }
+    else if (materialSpecularExponent != 1.0f) // x^1 == x
+    {
+        dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
+    }
+
+    Vec4 ambientColor = lightConfig.ambientColor;
+    ambientColor *= materialAmbientColor;
+    Vec4 colorLight = lightConfig.diffuseColor;
+    colorLight *= materialDiffuseColor;
+    colorLight *= dotDirDiffuse;
+    colorLight += ambientColor;
+    Vec4 colorLightSpecular = lightConfig.specularColor;
+    colorLightSpecular *= materialSpecularColor;
+    colorLightSpecular *= (f * dotDirSpecular);
+    colorLight += colorLightSpecular;
+
+    colorLight *= att;
+    // TODO: Spotlight has to be implemented. Please see in the OpenGL 1.5 spec equation 2.5.
+    // Basically it is a val = dot(normalize(v0 - lightConfig.position), unit(lightConfig.spotlightDirectionLight))
+    // spot = pow(val, lightConfig.spotlightExponentLight); when lightConfig.spotlightCutoffLight != 180 and val >= cos(lightConfig.spotlightCutoffLight)
+    // spot = 0; when lightConfig.spotlightCutoffLight != 180 and val < cos(lightConfig.spotlightCutoffLight)
+    // spot = 1; when lightConfig.spotlightCutoffLight == 180
+    // colorLight0 *= spot;
+
+    // Add light sums to final color
+    color += colorLight;
 }
 
-void Lighting::calculateSceneLight(Vec4 &sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
+void Lighting::calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
 {
-    // Emission color of material
-    sceneLight = emissiveColor;
     // Ambient Color Material and ambient scene color
-    sceneLight += ambientColor * ambientColorScene;
+    sceneLight = ambientColor;
+    sceneLight *= ambientColorScene;
+    // Emission color of material
+    sceneLight += emissiveColor;
 }
 
 void Lighting::enableLighting(bool enable)
@@ -201,7 +200,7 @@ void Lighting::enableLighting(bool enable)
 
 void Lighting::enableLight(const std::size_t light, const bool enable)
 {
-    m_lights[light].enable = enable;
+    m_lightEnable[light] = enable;
 }
 
 void Lighting::setAmbientColorLight(const std::size_t light, const Vec4 &color)

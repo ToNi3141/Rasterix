@@ -46,7 +46,7 @@ public:
         {
             if (!m_textureLut[i])
             {
-                return { createTextureWithName(i), i };
+                return { createTextureWithName(i), static_cast<uint16_t>(i) };
             }
         }
         return { false, 0 };
@@ -318,7 +318,7 @@ private:
             {
                 const std::size_t texSize = textures[level].width * textures[level].height * 2;
                 const uint8_t *pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
-                const std::size_t dataSize = (std::min)(texSize - mipMapAddr, buffer.size() - bufferSize);
+                const std::size_t dataSize = (std::min)(texSize - static_cast<std::size_t>(mipMapAddr), buffer.size() - bufferSize);
                 std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
                 bufferSize += dataSize;
                 if (bufferSize == buffer.size())

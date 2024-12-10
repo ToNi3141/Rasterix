@@ -40,7 +40,7 @@ public:
 
     Lighting();
 
-    void calculateLights(Vec4& color,
+    void calculateLights(Vec4& __restrict color,
                          const Vec4& triangleColor,
                          const Vec4& vertex,
                          const Vec3& normal);
@@ -78,7 +78,6 @@ private:
 
     struct LightConfig
     {
-        bool enable { false};
         Vec4 ambientColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
         Vec4 diffuseColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
         Vec4 specularColor { { 1.0f, 1.0f, 1.0f, 1.0f } }; // For other lights than light0 the default value is {{0.0f, 0.0f, 0.0f, 1.0f}}
@@ -90,10 +89,10 @@ private:
         float linearAttenuation { 0.0f };
         float quadraticAttenuation { 0.0f };
 
-        bool localViewer{ false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
+        static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
-        Vec4 preCalcDirectionalLightDir;
-        Vec4 preCalcHalfWayVectorInfinite;
+        Vec4 preCalcDirectionalLightDir {};
+        Vec4 preCalcHalfWayVectorInfinite {};
 
         void preCalcVectors()
         {
@@ -102,25 +101,27 @@ private:
             preCalcDirectionalLightDir.unit();
 
             // Half Way Vector from infinite viewer
-            const Vec4 pointEye { { 0.0f, 0.0f, 1.0f, 1.0f } };
-            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir + pointEye;
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
+            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir;
+            preCalcHalfWayVectorInfinite += pointEye;
             preCalcHalfWayVectorInfinite.unit();
         }
     };
 
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
-    void calculateSceneLight(Vec4& sceneLight, const Vec4 &emissiveColor, const Vec4 &ambientColor, const Vec4 &ambientColorScene) const;
-    void calculateLight(Vec4 &color,
+    void calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const;
+    void calculateLight(Vec4& __restrict color,
                         const LightConfig& lightConfig,
                         const float materialSpecularExponent,
                         const Vec4& materialAmbientColor,
                         const Vec4& materialDiffuseColor,
                         const Vec4& materialSpecularColor,
                         const Vec4& v0,
-                        const Vec3& n0) const;
+                        const Vec4& n0) const;
 
-    std::array<LightConfig, MAX_LIGHTS> m_lights;
+    std::array<LightConfig, MAX_LIGHTS> m_lights {};
     MaterialConfig m_material{};
+    std::array<bool, MAX_LIGHTS> m_lightEnable {};
     bool m_lightingEnabled { false };
     bool m_enableColorMaterialEmission { false };
     bool m_enableColorMaterialAmbient { false };

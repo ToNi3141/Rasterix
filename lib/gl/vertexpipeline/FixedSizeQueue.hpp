@@ -96,7 +96,7 @@ public:
 private:
     inline std::size_t calculateIndex(uint32_t index) const
     {
-        int32_t newIndex = (m_head - m_size) + index;
+        std::size_t newIndex = (m_head - m_size) + index;
         if (newIndex >= Size)
         {
             newIndex = newIndex + Size;
@@ -105,8 +105,8 @@ private:
     }
 
     std::array<T, Size> m_data;
-    int32_t m_head { 0 };
-    int32_t m_size { 0 };
+    std::size_t m_head { 0 };
+    std::size_t m_size { 0 };
 };
 
 } // namespace rr

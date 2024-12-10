@@ -29,8 +29,9 @@ class Vec
 {
 public:
     Vec() {}
-    Vec(const Vec<VecSize>& val) { operator=(val.vec); }
-    Vec(const std::array<float, VecSize>& val) { operator=(val); }
+    Vec(const Vec<VecSize>& val) { vec = val.vec; }
+    Vec(const std::initializer_list<float> val) { std::copy(val.begin(), val.end(), vec.begin()); }
+    Vec(const std::array<float, VecSize>& val) { vec = val; }
     Vec(const float* val) { operator=(val); }
     ~Vec() {}
 
@@ -50,13 +51,13 @@ public:
         return vec;
     }
 
-    template <typename T>
-    static Vec<VecSize> createFromArray(const T* arr, const std::size_t size)
+    template <typename T, std::size_t S>
+    static Vec<VecSize> createFromArray(const T* arr)
     {
         Vec<VecSize> vec;
-        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
-        for (std::size_t i = 0; i < len; i++)
-            vec[i] = arr[i];
+        static_assert(S <= VecSize);
+        for (std::size_t i = 0; i < S; i++)
+            vec[i] = static_cast<float>(arr[i]);
         return vec;
     }
 
@@ -68,13 +69,13 @@ public:
             vec[i] = arr[i];
     }
 
-    Vec<VecSize>& operator*= (const float val)
+    Vec<VecSize>& operator*=(const float val)
     {
         mul(val);
         return *this;
     }
 
-    Vec<VecSize>& operator*= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator*=(const Vec<VecSize>& val)
     {
         mul(val);
         return *this;
@@ -106,34 +107,36 @@ public:
             vec[i] = vec[i] * val[i];
     }
 
-    Vec<VecSize>& operator+= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator+=(const Vec<VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] += val[i];
         return *this;
     }
 
-    Vec<VecSize>& operator-= (const Vec<VecSize>& val)
+    Vec<VecSize>& operator-=(const Vec<VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val[i];
         return *this;
     }
 
-    Vec<VecSize>& operator-= (float val)
+    Vec<VecSize>& operator-=(float val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val;
         return *this;
     }
 
-    float& operator[] (int index) { return vec[index]; }
-    float operator[] (int index) const { return vec[index]; }
-    void operator= (const std::array<float, VecSize>& val) { vec = val; }
-    void operator= (const float* val)
+    float& operator[](int index) { return vec[index]; }
+    float operator[](int index) const { return vec[index]; }
+    Vec<VecSize>& operator=(const Vec<VecSize>& val) { vec = val.vec; return *this; }
+    Vec<VecSize>& operator=(const std::array<float, VecSize>& val) { vec = val; return *this; }
+    Vec<VecSize>& operator=(const float* val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = val[i];
+        return *this;
     }
 
     float dot(const Vec<VecSize>& val) const
@@ -192,35 +195,50 @@ public:
         }
     }
 
+    const float* data() const
+    {
+        return vec.data();
+    }
+
+    template <std::size_t S>
+    friend bool operator==(const rr::Vec<S>& lhs, const rr::Vec<S>& rhs);
+
+private:
     std::array<float, VecSize> vec;
 };
 
 template <std::size_t S, std::size_t T>
-inline Vec<T> operator *(const Vec<S>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)
 {
-    Vec<T> tmp{rhs};
-    tmp *= lhs;
-    return tmp;
+    return Vec<T>{rhs} *= lhs;
 }
 
 template <std::size_t T>
-inline Vec<T> operator -(const Vec<T>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const float lhs, const Vec<T>& rhs)
 {
-    Vec<T> tmp{lhs};
-    tmp -= rhs;
-    return tmp;
+    return Vec<T>{rhs} *= lhs;
 }
 
 template <std::size_t T>
-inline Vec<T> operator +(const Vec<T>& lhs, const Vec<T>& rhs)
+inline Vec<T> operator*(const Vec<T>& lhs, const float rhs)
 {
-    Vec<T> tmp{lhs};
-    tmp += rhs;
-    return tmp;
+    return Vec<T>{lhs} *= rhs;
 }
 
 template <std::size_t T>
-bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
+inline Vec<T> operator-(const Vec<T>& lhs, const Vec<T>& rhs)
+{
+    return Vec<T>{lhs} -= rhs;
+}
+
+template <std::size_t T>
+inline Vec<T> operator+(const Vec<T>& lhs, const Vec<T>& rhs)
+{
+    return Vec<T>{lhs} += rhs;
+}
+
+template <std::size_t T>
+inline bool operator==(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
 {
     return std::equal(lhs.vec.begin(), lhs.vec.end(), rhs.vec.begin());
 }
@@ -230,4 +248,4 @@ using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;
 
 } // namespace rr
-#endif // VECI_HPP
+#endif // VEC_HPP

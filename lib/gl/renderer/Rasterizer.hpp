@@ -34,8 +34,7 @@ public:
         : m_enableScaling(enableScaling)
     {}
 
-    bool rasterize(TriangleStreamTypes::StaticParams& params, 
-                   const tcb::span<TriangleStreamTypes::Texture>& texture, 
+    bool rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc, 
                    const TransformedTriangle& triangle) const;
 
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
@@ -44,8 +43,7 @@ public:
 
     static float edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c);
 
-    static bool increment(TriangleStreamTypes::StaticParams& params, 
-                          const tcb::span<TriangleStreamTypes::Texture>& texture,
+    static bool increment(TriangleStreamTypes::TriangleDesc& desc,
                           const std::size_t lineStart,
                           const std::size_t lineEnd);
 

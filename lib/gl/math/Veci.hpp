@@ -31,6 +31,7 @@ public:
     Veci() {}
     Veci(const Veci<T, VecSize>& val) { operator=(val.vec); }
     Veci(const std::array<T, VecSize>& val) { operator=(val); }
+    Veci(const std::initializer_list<T> val) { std::copy(val.begin(), val.end(), vec.begin()); } 
     ~Veci() {}
 
     Veci<T, VecSize>& operator*= (T val)
@@ -96,8 +97,8 @@ public:
         return *this;
     }
 
-    template <std::size_t shift = 0>
-    static Veci<T, VecSize> createFromVec(const std::array<float, VecSize> val)
+    template <typename TV, std::size_t shift = 0>
+    static Veci<T, VecSize> createFromVec(const TV& val)
     {
         Veci<T, VecSize> vec;
         for (std::size_t i = 0; i < VecSize; i++)
@@ -105,8 +106,8 @@ public:
         return vec;
     }
 
-    template <std::size_t shift = 0>
-    void fromVec(const std::array<float, VecSize> val)
+    template <typename TV, std::size_t shift = 0>
+    void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = (val[i] * (1ul << shift)) + 0.5f;
@@ -114,7 +115,8 @@ public:
 
     T& operator[] (int index) { return vec[index]; }
     T operator[] (int index) const { return vec[index]; }
-    void operator= (const std::array<T, VecSize>& val) { vec = val; }
+    Veci<T, VecSize>& operator=(const Veci<T, VecSize>& val) { vec = val.vec; return *this; }
+    Veci<T, VecSize>& operator=(const std::array<T, VecSize>& val) { vec = val; return *this; }
 
     template <std::size_t shift = 0>
     int64_t dot(const Veci<T, VecSize>& val) const
@@ -133,6 +135,12 @@ public:
         }
     }
 
+    const T* data() const
+    {
+        return vec.data();
+    }
+
+private:
     std::array<T, VecSize> vec;
 };
 

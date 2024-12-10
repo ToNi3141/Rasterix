@@ -64,13 +64,14 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         }
         if (obj.vertexArrayEnabled())
             vl = m_matrixStack.getModelView().transform(parameter.vertex);
-        m_lighting.calculateLights(parameter.color, parameter.color, vl, normal);
+        const Vec4 c = parameter.color;
+        m_lighting.calculateLights(parameter.color, c, vl, normal);
     }
     if (obj.vertexArrayEnabled())
         parameter.vertex = m_matrixStack.getModelViewProjection().transform(parameter.vertex);
 }
 
-bool VertexPipeline::drawObj(const RenderObj &obj)
+bool VertexPipeline::drawObj(const RenderObj& obj)
 {
     m_matrixStack.recalculateMatrices();
     if (!m_renderer.updatePipeline()) 

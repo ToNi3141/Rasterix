@@ -113,7 +113,7 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 #endif
 }
 
-tcb::span<VertexParameter> Clipper::clip(ClipList& list, ClipList& listBuffer)
+tcb::span<VertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
     ClipList* listIn = &list;
     ClipList* listOut = &listBuffer;
@@ -155,17 +155,17 @@ VertexParameter Clipper::lerp(const OutCode clipPlane, const VertexParameter& cu
     return out;
 }
 
-std::size_t Clipper::clipAgainstPlane(ClipList& listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize)
+std::size_t Clipper::clipAgainstPlane(ClipList& __restrict listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize)
 {
     // Start Clipping
     std::size_t i = 0;
 
-    for (int32_t vert = 0; vert < listSize; vert++)
+    for (int32_t vert = 0; vert < static_cast<int32_t>(listSize); vert++)
     {
         if (hasOutCode(listIn[vert].vertex, clipPlane))
         {
             // std::size_t vertMod = (vert - 1) % listSize;
-            const std::size_t vertPrev = (vert - 1) < 0 ? listSize - 1 : vert - 1;
+            const std::size_t vertPrev = (vert - 1) < 0 ? listSize - 1 : static_cast<std::size_t>(vert - 1);
             if (!hasOutCode(listIn[vertPrev].vertex, clipPlane))
             {
                 listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertPrev]);
@@ -173,7 +173,7 @@ std::size_t Clipper::clipAgainstPlane(ClipList& listOut, const OutCode clipPlane
             }
 
             // vertMod = (vert + 1) % listSize;
-            const std::size_t vertNext = (vert + 1) >= listSize ? 0 : vert + 1;
+            const std::size_t vertNext = ((vert + 1) >= static_cast<int32_t>(listSize)) ? 0 : static_cast<std::size_t>(vert + 1);
             if (!hasOutCode(listIn[vertNext].vertex, clipPlane))
             {
                 listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertNext]);

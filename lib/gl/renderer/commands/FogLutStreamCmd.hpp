@@ -70,8 +70,8 @@ public:
 private:
     void setBounds(const float lower, const float upper)
     {
-        m_lut[0] = *reinterpret_cast<const uint32_t*>(&lower);
-        m_lut[1] = *reinterpret_cast<const uint32_t*>(&upper);
+        std::memcpy(&(m_lut[0]), &lower, sizeof(m_lut[0]));
+        std::memcpy(&(m_lut[1]), &upper, sizeof(m_lut[1]));
     }
     
     void setLutValue(const std::size_t index, const float m, const float b)
