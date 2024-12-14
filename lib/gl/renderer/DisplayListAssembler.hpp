@@ -100,7 +100,7 @@ public:
             // Mark that a triangle was rendered
             m_wasLastCommandATextureCommand.reset();
         }
-        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
         {
             const std::size_t tmu = cmd.getTmu();
             if (tmu >= m_wasLastCommandATextureCommand.size()) 
@@ -127,7 +127,7 @@ public:
             writeDseCommand(cmd);
         }
 
-        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
         {
             const std::size_t tmu = cmd.getTmu();
             // Store the end position of the display list.
