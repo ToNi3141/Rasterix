@@ -87,8 +87,8 @@ public:
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
     void selectStencilBuffer() { m_op |= OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT; }
 
-    using Desc = std::array<tcb::span<uint8_t>, 0>;
-    void serialize(Desc&) const {}
+    using Payload = tcb::span<const uint8_t>;
+    const Payload payload() const { return {}; }
     uint32_t command() const { return m_op; }
 
     DSEC::SCT dseOp() const { return m_dseOp; }

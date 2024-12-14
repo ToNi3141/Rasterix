@@ -33,17 +33,19 @@ class WriteRegisterCmd
 public:
     WriteRegisterCmd(const TRegister& reg)
     {
-        m_val = reg.serialize();
+        m_val[0] = reg.serialize();
         m_op = OP_RENDER_CONFIG | reg.getAddr();
+        m_payload = { m_val };
     }
 
-    using Desc = std::array<tcb::span<uint32_t>, 1>;
-    void serialize(Desc& desc) const { desc[0][0] = m_val; }
+    using Payload = tcb::span<const uint32_t>;
+    const Payload& payload() const { return m_payload; }
     uint32_t command() const { return m_op; }
 
 private:
     uint32_t m_op {};
-    uint32_t m_val;
+    std::array<uint32_t, 1> m_val;
+    Payload m_payload;
 };
 
 } // namespace rr

@@ -56,16 +56,11 @@ public:
 
             setLutValue(i, m, b);
         }
+        m_payload = { m_lut };
     }
 
-    using Desc = std::array<tcb::span<uint32_t>, LUT_SIZE>;
-    void serialize(Desc& desc) const 
-    { 
-        for (std::size_t i = 0; i < desc.size(); i++)
-        {
-            *(desc[i].data()) = m_lut[i];
-        }
-    }
+    using Payload = tcb::span<const uint32_t>;
+    const Payload& payload() const { return m_payload; }
     static constexpr uint32_t command() { return FOG_LUT_STREAM; }
 private:
     void setBounds(const float lower, const float upper)
@@ -81,6 +76,7 @@ private:
     }
 
     std::array<uint32_t, LUT_SIZE> m_lut;
+    Payload m_payload;
 };
 
 } // namespace rr

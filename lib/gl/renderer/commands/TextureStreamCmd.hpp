@@ -50,8 +50,8 @@ public:
 
     std::size_t getTmu() const { return m_tmu; }
 
-    using Desc = std::array<tcb::span<uint8_t>, 0>;
-    void serialize(Desc&) const {}
+    using Payload = tcb::span<const uint8_t>;
+    const Payload payload() const { return {}; }
     uint32_t command() const 
     { 
         const uint32_t texSize = static_cast<uint32_t>(m_texSize) << TEXTURE_STREAM_SIZE_POS;

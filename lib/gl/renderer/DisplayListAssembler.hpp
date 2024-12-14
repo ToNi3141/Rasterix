@@ -171,13 +171,9 @@ private:
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
-        using DescArray = typename TCommand::Desc;
-        using DescValueType = typename DescArray::value_type::element_type;
-
         // Check if the display list contains enough space
-        std::size_t expectedSize = List::template sizeOf<uint32_t>() 
-                                    + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>()) 
-                                    + List::template sizeOf<DSEC::SCT>(); // Additional memory for a stream section (just in case)
+        std::size_t expectedSize = List::template sizeOf<uint32_t>() + List::template sizeOf<DSEC::SCT>();
+        expectedSize += List::template sizeOf<typename TCommand::Payload::element_type>() * cmd.payload().size();
         if constexpr (HasDseOp<decltype(cmd)>::value)
         {
             expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
@@ -194,8 +190,6 @@ private:
     template <typename TCommand>
     void writeCommand(const TCommand& cmd)
     {
-        using DescArray = typename TCommand::Desc;
-        using DescValueType = typename DescArray::value_type::element_type;
         if (openNewStreamSection()) 
         {
             // Write command
@@ -203,13 +197,11 @@ private:
             *opDl = cmd.command();
 
             // Create elements
-            DescArray arr;
-            for (auto& a : arr)
+            for (auto& a : cmd.payload())
             {
-                DescValueType *argDl = m_displayList.template create<DescValueType>();
-                a = { argDl, sizeof(DescValueType) };
+                using Payload = typename std::remove_const<typename TCommand::Payload::element_type>::type;
+                *(m_displayList.template create<Payload>()) = a;
             }
-            cmd.serialize(arr);
         }
     }
 
