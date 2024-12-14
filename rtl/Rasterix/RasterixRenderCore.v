@@ -489,7 +489,6 @@ module RasterixRenderCore #(
         .texelOutput11(texel0Input11),
 
         .s_axis_tvalid(cmd_tmu0_axis_tvalid),
-        .s_axis_tready(cmd_tmu0_axis_tready),
         .s_axis_tlast(cmd_xxx_axis_tlast),
         .s_axis_tdata(cmd_xxx_axis_tdata)
     );
@@ -497,6 +496,7 @@ module RasterixRenderCore #(
     defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
     defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
+    assign cmd_tmu0_axis_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
     // Texture Mapping Unit Buffer 1
@@ -531,7 +531,6 @@ module RasterixRenderCore #(
                 .texelOutput11(texel1Input11),
 
                 .s_axis_tvalid(cmd_tmu1_axis_tvalid),
-                .s_axis_tready(cmd_tmu1_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
                 .s_axis_tdata(cmd_xxx_axis_tdata)
             );
@@ -546,8 +545,8 @@ module RasterixRenderCore #(
             assign texel1Input01 = 0;
             assign texel1Input10 = 0;
             assign texel1Input11 = 0;
-            assign cmd_tmu1_axis_tready = 1;
         end
+        assign cmd_tmu1_axis_tready = 1;
     endgenerate
 
     ////////////////////////////////////////////////////////////////////////////

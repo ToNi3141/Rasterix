@@ -18,7 +18,7 @@
 `include "PixelUtil.vh"
 
 // Texture buffer which stores a whole texture. When reading a texel, the texture buffer
-// reads a texel quad with the neigbored texels. Additionally it returns the sub pixel 
+// reads a texel quad with the neighbored texels. Additionally it returns the sub pixel 
 // coordinates which later can be used for texture filtering
 // Pipelined: yes
 // Depth: 2 cycle
@@ -65,7 +65,6 @@ module TextureBuffer #(
 
     // Texture Write
     input  wire                             s_axis_tvalid,
-    output reg                              s_axis_tready,
     input  wire                             s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata
 );
@@ -260,7 +259,6 @@ module TextureBuffer #(
         if (!resetn)
         begin
             memWriteAddr <= 0;
-            s_axis_tready <= 1;
         end
         else
         begin
