@@ -22,8 +22,6 @@
 // Depth: 13 cycles
 module TextureMappingUnit
 #(
-    parameter CMD_STREAM_WIDTH = 64,
-
     parameter SUB_PIXEL_WIDTH = 8,
 
     parameter ENABLE_LOD_CALC = 1,

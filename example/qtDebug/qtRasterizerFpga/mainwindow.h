@@ -48,7 +48,7 @@ public:
 private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
-    rr::VerilatorBusConnector<uint64_t> m_busConnector{reinterpret_cast<uint64_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+    rr::VerilatorBusConnector<uint32_t> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
 #endif
 
 #if USE_HARDWARE

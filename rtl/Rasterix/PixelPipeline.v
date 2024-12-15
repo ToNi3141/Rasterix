@@ -185,7 +185,6 @@ module PixelPipeline
     endgenerate
 
     TextureMappingUnit #(
-        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
         .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
     ) tmu0 (
@@ -257,7 +256,6 @@ module PixelPipeline
                 step2_lastDelay (.clk(aclk), .in(step1_last), .out(step2_last));
 
             TextureMappingUnit #(
-                .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
                 .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
                 .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
             ) tmu1 (

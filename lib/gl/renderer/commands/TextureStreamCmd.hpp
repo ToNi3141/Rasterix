@@ -39,19 +39,19 @@ public:
     TextureStreamCmd(const std::size_t tmu,
                      const tcb::span<const std::size_t>& pages)
         : m_tmu { tmu }
-        , m_texSize { pages.size() * RenderConfig::TEXTURE_PAGE_SIZE }
+        , m_texSize { pages.size() }
     {
         for (std::size_t i = 0; i < pages.size(); i++)
         {
-            m_pages[i] = { RenderConfig::GRAM_MEMORY_LOC + (pages[i] * RenderConfig::TEXTURE_PAGE_SIZE), RenderConfig::TEXTURE_PAGE_SIZE };
+            m_pages[i] = RenderConfig::GRAM_MEMORY_LOC + static_cast<uint32_t>(pages[i] * RenderConfig::TEXTURE_PAGE_SIZE);
         }
-        m_dseData = { m_pages.data(), pages.size() };  
+        m_payload = { m_pages.data(), pages.size() };  
     }
 
     std::size_t getTmu() const { return m_tmu; }
 
-    using Payload = tcb::span<const uint8_t>;
-    const Payload payload() const { return {}; }
+    using Payload = tcb::span<const uint32_t>;
+    const Payload& payload() const { return m_payload; }
     uint32_t command() const 
     { 
         const uint32_t texSize = static_cast<uint32_t>(m_texSize) << TEXTURE_STREAM_SIZE_POS;
@@ -59,13 +59,11 @@ public:
         return OP_TEXTURE_STREAM | texSize | tmuShifted;
     }
 
-    DSEC::SCT dseOp() const { return DSEC::OP_LOAD; }
-    const DseTransferType& dseTransfer() const { return m_dseData; }
 private:
     std::size_t m_tmu {};
-    std::array<DSEC::Transfer, MAX_PAGES> m_pages;
+    std::array<uint32_t, MAX_PAGES> m_pages;
     std::size_t m_texSize {};
-    DseTransferType m_dseData {};
+    Payload m_payload {};
 };
 
 } // namespace rr

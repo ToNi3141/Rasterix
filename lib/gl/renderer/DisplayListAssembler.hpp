@@ -107,8 +107,6 @@ public:
             {
                 return false;
             }
-            // Close the current stream to avoid and undefined behaviour 
-            closeStreamSection();
             // Check if the last command was a texture command. If so, remove the commands from the display list
             if (m_wasLastCommandATextureCommand[tmu]) 
             {

@@ -26,14 +26,17 @@ module RasterixRenderCore #(
 
     // The width of the address channel
     parameter ADDR_WIDTH = 32,
+    parameter ID_WIDTH = 8,
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter TMU_MEMORY_WIDTH = 64,
+    parameter TMU_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
-    parameter CMD_STREAM_WIDTH = 16,
+    localparam CMD_STREAM_WIDTH = 32,
 
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17,
@@ -172,6 +175,44 @@ module RasterixRenderCore #(
     output wire [SCREEN_POS_WIDTH - 1 : 0]      m_stencil_wscreenPosX,
     output wire [SCREEN_POS_WIDTH - 1 : 0]      m_stencil_wscreenPosY,
 
+    // TMU 0 memory access
+    output wire [ID_WIDTH - 1 : 0]              m_tmu0_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_tmu0_axi_araddr,
+    output wire [ 7 : 0]                        m_tmu0_axi_arlen,
+    output wire [ 2 : 0]                        m_tmu0_axi_arsize,
+    output wire [ 1 : 0]                        m_tmu0_axi_arburst,
+    output wire                                 m_tmu0_axi_arlock,
+    output wire [ 3 : 0]                        m_tmu0_axi_arcache,
+    output wire [ 2 : 0]                        m_tmu0_axi_arprot,
+    output wire                                 m_tmu0_axi_arvalid,
+    input  wire                                 m_tmu0_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]              m_tmu0_axi_rid,
+    input  wire [TMU_MEMORY_WIDTH - 1 : 0]      m_tmu0_axi_rdata,
+    input  wire [ 1 : 0]                        m_tmu0_axi_rresp,
+    input  wire                                 m_tmu0_axi_rlast,
+    input  wire                                 m_tmu0_axi_rvalid,
+    output wire                                 m_tmu0_axi_rready,
+
+    // TMU 1 memory access
+    output wire [ID_WIDTH - 1 : 0]              m_tmu1_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_tmu1_axi_araddr,
+    output wire [ 7 : 0]                        m_tmu1_axi_arlen,
+    output wire [ 2 : 0]                        m_tmu1_axi_arsize,
+    output wire [ 1 : 0]                        m_tmu1_axi_arburst,
+    output wire                                 m_tmu1_axi_arlock,
+    output wire [ 3 : 0]                        m_tmu1_axi_arcache,
+    output wire [ 2 : 0]                        m_tmu1_axi_arprot,
+    output wire                                 m_tmu1_axi_arvalid,
+    input  wire                                 m_tmu1_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]              m_tmu1_axi_rid,
+    input  wire [TMU_MEMORY_WIDTH - 1 : 0]      m_tmu1_axi_rdata,
+    input  wire [ 1 : 0]                        m_tmu1_axi_rresp,
+    input  wire                                 m_tmu1_axi_rlast,
+    input  wire                                 m_tmu1_axi_rvalid,
+    output wire                                 m_tmu1_axi_rready,
+
     // Debug
     output wire [ 3 : 0]                        dbgStreamState,
     output wire                                 dbgRasterizerRunning
@@ -182,7 +223,7 @@ module RasterixRenderCore #(
     localparam ATTRIBUTE_SIZE = 32;
     
     // The bit width of the texture stream
-    localparam TEXTURE_STREAM_WIDTH = CMD_STREAM_WIDTH;
+    localparam TEXTURE_STREAM_WIDTH = TMU_MEMORY_WIDTH;
 
     initial
     begin
@@ -464,6 +505,44 @@ module RasterixRenderCore #(
     // Memory area where the texture is stored
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
+    wire                                axis_tmu0_tvalid;
+    wire                                axis_tmu0_tlast;
+    wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu0_tdata;
+    PagedMemoryReader pagedMemoryReaderTmu0 (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(axis_tmu0_tvalid),
+        .m_axis_tlast(axis_tmu0_tlast),
+        .m_axis_tdata(axis_tmu0_tdata),
+
+        .s_axis_tvalid(cmd_tmu0_axis_tvalid),
+        .s_axis_tready(cmd_tmu0_axis_tready),
+        .s_axis_tlast(cmd_xxx_axis_tlast),
+        .s_axis_tdata(cmd_xxx_axis_tdata),
+
+        .m_mem_axi_arid(m_tmu0_axi_arid),
+        .m_mem_axi_araddr(m_tmu0_axi_araddr),
+        .m_mem_axi_arlen(m_tmu0_axi_arlen),
+        .m_mem_axi_arsize(m_tmu0_axi_arsize),
+        .m_mem_axi_arburst(m_tmu0_axi_arburst),
+        .m_mem_axi_arlock(m_tmu0_axi_arlock),
+        .m_mem_axi_arcache(m_tmu0_axi_arcache),
+        .m_mem_axi_arprot(m_tmu0_axi_arprot),
+        .m_mem_axi_arvalid(m_tmu0_axi_arvalid),
+        .m_mem_axi_arready(m_tmu0_axi_arready),
+        .m_mem_axi_rid(m_tmu0_axi_rid),
+        .m_mem_axi_rdata(m_tmu0_axi_rdata),
+        .m_mem_axi_rresp(m_tmu0_axi_rresp),
+        .m_mem_axi_rlast(m_tmu0_axi_rlast),
+        .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
+        .m_mem_axi_rready(m_tmu0_axi_rready)
+    );
+    defparam pagedMemoryReaderTmu0.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
+    defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
+    defparam pagedMemoryReaderTmu0.ID_WIDTH = ID_WIDTH;
+    defparam pagedMemoryReaderTmu0.PAGE_SIZE = TMU_PAGE_SIZE;
+    
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
@@ -488,15 +567,14 @@ module RasterixRenderCore #(
         .texelOutput10(texel0Input10),
         .texelOutput11(texel0Input11),
 
-        .s_axis_tvalid(cmd_tmu0_axis_tvalid),
-        .s_axis_tlast(cmd_xxx_axis_tlast),
-        .s_axis_tdata(cmd_xxx_axis_tdata)
+        .s_axis_tvalid(axis_tmu0_tvalid),
+        .s_axis_tlast(axis_tmu0_tlast),
+        .s_axis_tdata(axis_tmu0_tdata)
     );
-    defparam textureBufferTMU0.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+    defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
     defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
     defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
-    assign cmd_tmu0_axis_tready = 1;
 
     ////////////////////////////////////////////////////////////////////////////
     // Texture Mapping Unit Buffer 1
@@ -514,6 +592,44 @@ module RasterixRenderCore #(
     generate
         if (ENABLE_SECOND_TMU)
         begin
+            wire                                axis_tmu1_tvalid;
+            wire                                axis_tmu1_tlast;
+            wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu1_tdata;
+            PagedMemoryReader pagedMemoryReaderTmu1 (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .m_axis_tvalid(axis_tmu1_tvalid),
+                .m_axis_tlast(axis_tmu1_tlast),
+                .m_axis_tdata(axis_tmu1_tdata),
+
+                .s_axis_tvalid(cmd_tmu1_axis_tvalid),
+                .s_axis_tready(cmd_tmu1_axis_tready),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tdata(cmd_xxx_axis_tdata),
+
+                .m_mem_axi_arid(m_tmu1_axi_arid),
+                .m_mem_axi_araddr(m_tmu1_axi_araddr),
+                .m_mem_axi_arlen(m_tmu1_axi_arlen),
+                .m_mem_axi_arsize(m_tmu1_axi_arsize),
+                .m_mem_axi_arburst(m_tmu1_axi_arburst),
+                .m_mem_axi_arlock(m_tmu1_axi_arlock),
+                .m_mem_axi_arcache(m_tmu1_axi_arcache),
+                .m_mem_axi_arprot(m_tmu1_axi_arprot),
+                .m_mem_axi_arvalid(m_tmu1_axi_arvalid),
+                .m_mem_axi_arready(m_tmu1_axi_arready),
+                .m_mem_axi_rid(m_tmu1_axi_rid),
+                .m_mem_axi_rdata(m_tmu1_axi_rdata),
+                .m_mem_axi_rresp(m_tmu1_axi_rresp),
+                .m_mem_axi_rlast(m_tmu1_axi_rlast),
+                .m_mem_axi_rvalid(m_tmu1_axi_rvalid),
+                .m_mem_axi_rready(m_tmu1_axi_rready)
+            );
+            defparam pagedMemoryReaderTmu1.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
+            defparam pagedMemoryReaderTmu1.ADDR_WIDTH = ADDR_WIDTH;
+            defparam pagedMemoryReaderTmu1.ID_WIDTH = ID_WIDTH;
+            defparam pagedMemoryReaderTmu1.PAGE_SIZE = TMU_PAGE_SIZE;
+            
             TextureBuffer textureBufferTMU1 (
                 .aclk(aclk),
                 .resetn(resetn),
@@ -530,11 +646,11 @@ module RasterixRenderCore #(
                 .texelOutput10(texel1Input10),
                 .texelOutput11(texel1Input11),
 
-                .s_axis_tvalid(cmd_tmu1_axis_tvalid),
-                .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata)
+                .s_axis_tvalid(axis_tmu1_tvalid),
+                .s_axis_tlast(axis_tmu1_tlast),
+                .s_axis_tdata(axis_tmu1_tdata)
             );
-            defparam textureBufferTMU1.STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
+            defparam textureBufferTMU1.STREAM_WIDTH = TMU_MEMORY_WIDTH;
             defparam textureBufferTMU1.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
             defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
             defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
@@ -545,8 +661,10 @@ module RasterixRenderCore #(
             assign texel1Input01 = 0;
             assign texel1Input10 = 0;
             assign texel1Input11 = 0;
+
+            assign m_tmu1_axi_rready = 1;
+            assign m_tmu1_axi_arvalid = 0;
         end
-        assign cmd_tmu1_axis_tready = 1;
     endgenerate
 
     ////////////////////////////////////////////////////////////////////////////

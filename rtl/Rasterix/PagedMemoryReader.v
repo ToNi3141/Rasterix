@@ -22,11 +22,9 @@
 // beat.
 module PagedMemoryReader #(
     // Width of the axi interfaces
-    parameter STREAM_WIDTH = 32,
+    parameter MEMORY_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
-    // Width of wstrb (width of data bus in words)
-    parameter STRB_WIDTH = (STREAM_WIDTH / 8),
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
@@ -38,12 +36,12 @@ module PagedMemoryReader #(
 
     output reg                          m_axis_tvalid,
     output reg                          m_axis_tlast,
-    output reg  [STREAM_WIDTH - 1 : 0]  m_axis_tdata,
+    output reg  [MEMORY_WIDTH - 1 : 0]  m_axis_tdata,
 
     input  wire                         s_axis_tvalid,
     output reg                          s_axis_tready,
     input  wire                         s_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata,
+    input  wire [MEMORY_WIDTH - 1 : 0]  s_axis_tdata,
 
     // Memory interface
     output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_arid,
@@ -58,13 +56,13 @@ module PagedMemoryReader #(
     input  wire                         m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]      m_mem_axi_rid,
-    input  wire [STREAM_WIDTH - 1 : 0]  m_mem_axi_rdata,
+    input  wire [MEMORY_WIDTH - 1 : 0]  m_mem_axi_rdata,
     input  wire [ 1 : 0]                m_mem_axi_rresp,
     input  wire                         m_mem_axi_rlast,
     input  wire                         m_mem_axi_rvalid,
     output wire                         m_mem_axi_rready
 );
-    localparam BYTES_PER_BEAT = STREAM_WIDTH / 8;
+    localparam BYTES_PER_BEAT = MEMORY_WIDTH / 8;
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
 
     // Memory transfers have to be 128 byte aligned.
@@ -94,6 +92,8 @@ module PagedMemoryReader #(
     reg  [ADDR_WIDTH - 1 : 0]   addr;
     reg  [ 1 : 0]               state;
     reg                         lastTransfer;
+    reg  [15 : 0]               transfersRequested;
+    reg  [15 : 0]               transfersReceived;
 
     // Memory Request
     always @(posedge aclk)
@@ -108,6 +108,8 @@ module PagedMemoryReader #(
 
             lastTransfer <= 0;
 
+            transfersRequested <= 0;
+            
             state <= RECEIVE_ADDR;
         end
         else
@@ -128,6 +130,7 @@ module PagedMemoryReader #(
                 begin
                     m_mem_axi_araddr <= addr + { { (ADDR_WIDTH - 16) { 1'b0 } }, index };
                     index <= index + INCREMENT[15 : 0];
+                    transfersRequested <= transfersRequested + 1;
                     m_mem_axi_arvalid <= 1;
                     state <= WAIT_FOR_MEMORY;
                 end
@@ -166,6 +169,8 @@ module PagedMemoryReader #(
         begin
             m_axis_tvalid <= 0;
             m_mem_axi_rready <= 1;
+
+            transfersReceived <= 0;
         end
         else
         begin
@@ -173,9 +178,15 @@ module PagedMemoryReader #(
             m_axis_tdata <= m_mem_axi_rdata;
             if (m_mem_axi_rvalid)
             begin
-                if (m_mem_axi_rlast && lastTransfer)
+                if (m_mem_axi_rlast)
+                begin
+                    transfersReceived <= transfersReceived + 1;
+                end
+                if (m_mem_axi_rlast && lastTransfer && (transfersRequested == (transfersReceived + 1)))
                 begin
                     lastTransfer <= 0;
+                    transfersRequested <= 0;
+                    transfersReceived <= 0;
                     m_axis_tlast <= 1;
                 end
                 else

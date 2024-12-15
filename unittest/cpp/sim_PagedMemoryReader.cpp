@@ -84,7 +84,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
     // The memory data is now streamed to the axis interface
     for (std::size_t i = 0; i < ((PAGE_SIZE * 2) / 4) - 1; i++)
     {
-        t->m_mem_axi_rlast = 0;
+        t->m_mem_axi_rlast = ((i % 32) == 31);
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = i;
         rr::ut::clk(t);

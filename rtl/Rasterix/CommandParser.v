@@ -151,7 +151,7 @@ module CommandParser #(
                     mux <= MUX_NONE;
                     tvalid <= 0;
                     m_cmd_xxx_axis_tlast <= 0;
-                    if (!m_cmd_xxx_axis_tlast && !framebufferCommandApply && framebufferCommandApplied && !pixelInPipeline && !rasterizerRunning && rasterizerWasStarted)
+                    if (!m_cmd_xxx_axis_tlast && !framebufferCommandApply && framebufferCommandApplied && !pixelInPipeline && !rasterizerRunning && rasterizerWasStarted && m_cmd_tmu0_axis_tready && m_cmd_tmu1_axis_tready)
                     begin
                         s_cmd_axis_tready <= 1;
                         state <= COMMAND_IN;
@@ -175,7 +175,7 @@ module CommandParser #(
                     end
                     OP_TEXTURE_STREAM:
                     begin
-                        streamCounter <= s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS + DATABUS_SCALE_FACTOR_LOG2 +: TEXTURE_STREAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
+                        streamCounter <= s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE];
 
                         if (|s_cmd_axis_tdata[TEXTURE_STREAM_SIZE_POS +: TEXTURE_STREAM_SIZE_SIZE])
                         begin
