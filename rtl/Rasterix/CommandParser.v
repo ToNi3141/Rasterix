@@ -265,7 +265,7 @@ module CommandParser #(
                 end
                 else
                 begin
-                    if (s_cmd_axis_tvalid)
+                    if (s_cmd_axis_tvalid && !tvalidSkid)
                     begin
                         tdataSkid <= s_cmd_axis_tdata;
                         tvalidSkid <= s_cmd_axis_tvalid;
