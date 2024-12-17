@@ -10,7 +10,7 @@ clean:
 	rm -rf obj_dir
 
 rrxif:
-	$(VERILATOR) -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-O3' --cc TopRRXIF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
+	$(VERILATOR) -Wno-SELRANGE -Wno-lint -DUNITTEST -DFRAMEBUFFER_SIZE_IN_WORDS=$(FRAMEBUFFER_SIZE_IN_WORDS_INT) -CFLAGS '-O3' --cc TopRRXIF.v --top-module top -I../../Rasterix -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
 	-make -C obj_dir -f Vtop.mk
 
 rrxef:
