@@ -22,8 +22,6 @@
 // Depth: 6 cycles
 module Fog 
 #(
-    parameter CMD_STREAM_WIDTH = 64,
-
     parameter SUB_PIXEL_WIDTH = 8,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL,
@@ -38,7 +36,7 @@ module Fog
     input  wire                         s_fog_lut_axis_tvalid,
     output wire                         s_fog_lut_axis_tready,
     input  wire                         s_fog_lut_axis_tlast,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0] s_fog_lut_axis_tdata,
+    input  wire [31 : 0]                s_fog_lut_axis_tdata,
 
     // Fog Color
     input  wire [PIXEL_WIDTH - 1 : 0]   confFogColor,
@@ -70,10 +68,7 @@ module Fog
         .out(step0_texelColor)
     );
 
-    FunctionInterpolator #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH)
-    )
-    step0_calculateFogIntensity (
+    FunctionInterpolator step0_calculateFogIntensity (
         .aclk(aclk), 
         .resetn(resetn), 
         .x(depth),

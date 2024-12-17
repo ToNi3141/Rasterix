@@ -39,12 +39,9 @@
 // Beat 2 .. 66 
 // Even beat: m = tdata as S1.30
 // Odd beat b = tdata as S1.30
-// In case STREAM_WIDTH is bigger than 32 bit, bits [n : 32] are ignored
 //
 // This module is pipelined. It requires 4 clock cycles until it outputs the calculated value.
 module FunctionInterpolator #(
-    // Width of the write port
-    parameter STREAM_WIDTH = 32,
     localparam LUT_ENTRY_FIELD_WIDTH = 32,
     localparam FLOAT_WIDTH = LUT_ENTRY_FIELD_WIDTH,
     localparam INT_WIDTH = 24
@@ -60,7 +57,7 @@ module FunctionInterpolator #(
     input  wire                         s_axis_tvalid,
     output reg                          s_axis_tready,
     input  wire                         s_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
+    input  wire [31 : 0]                s_axis_tdata
 );
     localparam LUT_INTERPOLATION_STEPS = 8; // Defines the steps between two LUT enties. The range between x and x + 1 will be divided by pow(2, LUT_INTERPOLATION_STEPS) 
     localparam LUT_ENTRIES = 32;

@@ -519,7 +519,7 @@ module RasterixRenderCore #(
         .s_axis_tvalid(cmd_tmu0_axis_tvalid),
         .s_axis_tready(cmd_tmu0_axis_tready),
         .s_axis_tlast(cmd_xxx_axis_tlast),
-        .s_axis_tdata(cmd_xxx_axis_tdata),
+        .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
 
         .m_mem_axi_arid(m_tmu0_axi_arid),
         .m_mem_axi_araddr(m_tmu0_axi_araddr),
@@ -606,7 +606,7 @@ module RasterixRenderCore #(
                 .s_axis_tvalid(cmd_tmu1_axis_tvalid),
                 .s_axis_tready(cmd_tmu1_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
 
                 .m_mem_axi_arid(m_tmu1_axi_arid),
                 .m_mem_axi_araddr(m_tmu1_axi_araddr),
@@ -664,6 +664,7 @@ module RasterixRenderCore #(
 
             assign m_tmu1_axi_rready = 1;
             assign m_tmu1_axi_arvalid = 0;
+            assign cmd_tmu1_axis_tready = 1;
         end
     endgenerate
 
@@ -1254,7 +1255,7 @@ module RasterixRenderCore #(
         .s_fog_lut_axis_tvalid(cmd_fog_axis_tvalid),
         .s_fog_lut_axis_tready(cmd_fog_axis_tready),
         .s_fog_lut_axis_tlast(cmd_xxx_axis_tlast),
-        .s_fog_lut_axis_tdata(cmd_xxx_axis_tdata),
+        .s_fog_lut_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
 
         .confFeatureEnable(confFeatureEnable),
         .confFragmentPipelineConfig(confFragmentPipelineConfig),
@@ -1318,7 +1319,6 @@ module RasterixRenderCore #(
         .m_framebuffer_screenPosY(framebuffer_screenPosY)
     );
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
-    defparam pixelPipeline.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;

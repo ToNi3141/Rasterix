@@ -41,7 +41,7 @@ module PagedMemoryReader #(
     input  wire                         s_axis_tvalid,
     output reg                          s_axis_tready,
     input  wire                         s_axis_tlast,
-    input  wire [MEMORY_WIDTH - 1 : 0]  s_axis_tdata,
+    input  wire [31 : 0]                s_axis_tdata,
 
     // Memory interface
     output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_arid,
@@ -60,7 +60,7 @@ module PagedMemoryReader #(
     input  wire [ 1 : 0]                m_mem_axi_rresp,
     input  wire                         m_mem_axi_rlast,
     input  wire                         m_mem_axi_rvalid,
-    output wire                         m_mem_axi_rready
+    output reg                          m_mem_axi_rready
 );
     localparam BYTES_PER_BEAT = MEMORY_WIDTH / 8;
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
@@ -160,11 +160,7 @@ module PagedMemoryReader #(
                 end
             endcase
         end
-    end
 
-    // Memory Read
-    always @(posedge aclk)
-    begin
         if (!resetn)
         begin
             m_axis_tvalid <= 0;

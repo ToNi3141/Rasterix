@@ -25,8 +25,6 @@
 // Depth: 28 cycles
 module PixelPipeline
 #(
-    parameter CMD_STREAM_WIDTH = 64,
-
     // The minimum bit width which is required to contain the resolution
     parameter INDEX_WIDTH = 14,
 
@@ -56,7 +54,7 @@ module PixelPipeline
     input  wire                                     s_fog_lut_axis_tvalid,
     output wire                                     s_fog_lut_axis_tready,
     input  wire                                     s_fog_lut_axis_tlast,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]          s_fog_lut_axis_tdata,
+    input  wire [31 : 0]                            s_fog_lut_axis_tdata,
 
     // Shader configurations
     input  wire [31 : 0]                            confFeatureEnable,
@@ -337,8 +335,7 @@ module PixelPipeline
         step3_lastDelay (.clk(aclk), .in(step2_last), .out(step3_last));
 
     Fog #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) fog (
         .aclk(aclk),
         .resetn(resetn),
