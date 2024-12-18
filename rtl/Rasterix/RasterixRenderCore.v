@@ -211,11 +211,7 @@ module RasterixRenderCore #(
     input  wire [ 1 : 0]                        m_tmu1_axi_rresp,
     input  wire                                 m_tmu1_axi_rlast,
     input  wire                                 m_tmu1_axi_rvalid,
-    output wire                                 m_tmu1_axi_rready,
-
-    // Debug
-    output wire [ 3 : 0]                        dbgStreamState,
-    output wire                                 dbgRasterizerRunning
+    output wire                                 m_tmu1_axi_rready
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -321,14 +317,10 @@ module RasterixRenderCore #(
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
-        .stencilBufferCmdMemset(stencilBufferCmdMemset),
-
-        // Debug
-        .dbgStreamState(dbgStreamState)
+        .stencilBufferCmdMemset(stencilBufferCmdMemset)
     );
     defparam commandParser.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam commandParser.TEXTURE_STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
-    assign dbgRasterizerRunning = rasterizerRunning;
 
     ////////////////////////////////////////////////////////////////////////////
     // Register Bank for the triangle parameters
@@ -379,16 +371,23 @@ module RasterixRenderCore #(
                 .clk(aclk),
                 .rst(!resetn),
 
-                .s_axis_tkeep(~0),
                 .s_axis_tdata(cmd_xxx_axis_tdata),
+                .s_axis_tkeep(~0),
                 .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
                 .s_axis_tready(cmd_rasterizer_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tid(0),
+                .s_axis_tdest(0),
+                .s_axis_tuser(0),
 
                 .m_axis_tdata(triangle_axis_tdata),
+                .m_axis_tkeep(),
                 .m_axis_tvalid(triangle_axis_tvalid),
                 .m_axis_tready(1),
-                .m_axis_tlast(triangle_axis_tlast)
+                .m_axis_tlast(triangle_axis_tlast),
+                .m_axis_tid(),
+                .m_axis_tdest(),
+                .m_axis_tuser()
             );
 
             TriangleStreamF2XConverter triangleStreamF2XConverter (
@@ -663,6 +662,14 @@ module RasterixRenderCore #(
             assign texel1Input11 = 0;
 
             assign m_tmu1_axi_rready = 1;
+            assign m_tmu1_axi_arid = 0;
+            assign m_tmu1_axi_araddr = 0;
+            assign m_tmu1_axi_arlen = 0;
+            assign m_tmu1_axi_arsize = 0;
+            assign m_tmu1_axi_arburst = 0;
+            assign m_tmu1_axi_arlock = 0;
+            assign m_tmu1_axi_arcache = 0;
+            assign m_tmu1_axi_arprot = 0;
             assign m_tmu1_axi_arvalid = 0;
             assign cmd_tmu1_axis_tready = 1;
         end

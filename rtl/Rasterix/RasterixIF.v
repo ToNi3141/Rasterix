@@ -66,6 +66,11 @@ module RasterixIF #(
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
 
+    // Memory data width for the common channel
+    localparam COMMON_DATA_WIDTH = CMD_STREAM_WIDTH,
+    // Memory strobe width for the common channel
+    localparam COMMON_STRB_WIDTH = COMMON_DATA_WIDTH / 8,
+
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
     // distortions in the rendered image.
@@ -115,8 +120,8 @@ module RasterixIF #(
     output wire                             m_common_axi_awvalid,
     input  wire                             m_common_axi_awready,
 
-    output wire [DATA_WIDTH - 1 : 0]        m_common_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_common_axi_wstrb,
+    output wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_wdata,
+    output wire [COMMON_STRB_WIDTH - 1 : 0] m_common_axi_wstrb,
     output wire                             m_common_axi_wlast,
     output wire                             m_common_axi_wvalid,
     input  wire                             m_common_axi_wready,
@@ -138,7 +143,7 @@ module RasterixIF #(
     input  wire                             m_common_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_common_axi_rid,
-    input  wire [DATA_WIDTH - 1 : 0]        m_common_axi_rdata,
+    input  wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_rdata,
     input  wire [ 1 : 0]                    m_common_axi_rresp,
     input  wire                             m_common_axi_rlast,
     input  wire                             m_common_axi_rvalid,
@@ -227,21 +232,29 @@ module RasterixIF #(
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tkeep(~0),
         .s_axis_tdata(framebuffer_axis_tdata),
+        .s_axis_tkeep(~0),
         .s_axis_tvalid(framebuffer_axis_tvalid),
         .s_axis_tready(framebuffer_axis_tready),
         .s_axis_tlast(framebuffer_axis_tlast),
+        .s_axis_tid(0),
+        .s_axis_tdest(0),
+        .s_axis_tuser(0),
 
         .m_axis_tdata(framebuffer_dse_axis_tdata),
+        .m_axis_tkeep(),
         .m_axis_tvalid(framebuffer_dse_axis_tvalid),
         .m_axis_tready(framebuffer_dse_axis_tready),
-        .m_axis_tlast(framebuffer_dse_axis_tlast)
+        .m_axis_tlast(framebuffer_dse_axis_tlast),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
     );
 
     DmaStreamEngine #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .STREAM_WIDTH(COMMON_DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH)
     ) dma (
         .aclk(aclk),
         .resetn(resetn),
@@ -541,6 +554,7 @@ module RasterixIF #(
         else
         begin
             assign m_stencil_rdata = 0;
+            assign m_stencil_arlast = 0;
             assign stencilBufferApplied = 1;
         end
     endgenerate
@@ -561,9 +575,6 @@ module RasterixIF #(
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
-
-        .dbgStreamState(),
-        .dbgRasterizerRunning(),
         
         .s_cmd_axis_tvalid(cmd_axis_tvalid),
         .s_cmd_axis_tready(cmd_axis_tready),
@@ -589,7 +600,7 @@ module RasterixIF #(
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
-        .m_color_arlast(),
+        .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
         .m_color_araddr(m_color_araddr),
         .m_color_rready(),
@@ -605,6 +616,7 @@ module RasterixIF #(
         .m_color_wscreenPosY(m_color_wscreenPosY),
 
         .depthBufferClearDepth(depthBufferClearDepth),
+        .depthBufferAddr(), // Unused in the rrxif config
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
@@ -612,7 +624,7 @@ module RasterixIF #(
         .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
-        .m_depth_arlast(),
+        .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
         .m_depth_araddr(m_depth_araddr),
         .m_depth_rready(),
@@ -628,6 +640,7 @@ module RasterixIF #(
         .m_depth_wscreenPosY(m_depth_wscreenPosY),
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
+        .stencilBufferAddr(), // Unused in the rrxif config
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
@@ -635,7 +648,7 @@ module RasterixIF #(
         .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),
-        .m_stencil_arlast(),
+        .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),
         .m_stencil_araddr(m_stencil_araddr),
         .m_stencil_rready(),

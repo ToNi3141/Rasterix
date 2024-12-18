@@ -92,7 +92,7 @@ module FrameBuffer
 
     // Input Stream
     input  wire                             wvalid,
-    input  wire                             wlast,
+    // input  wire                             wlast,
     // output wire                             wready,
     input  wire [ADDR_WIDTH - 1 : 0]        waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]       wdata,

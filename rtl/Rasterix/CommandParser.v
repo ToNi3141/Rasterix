@@ -59,10 +59,7 @@ module CommandParser #(
     output reg          stencilBufferApply,
     input  wire         stencilBufferApplied,
     output reg          stencilBufferCmdCommit,
-    output reg          stencilBufferCmdMemset,
-
-    // Debug
-    output wire [ 3 : 0]  dbgStreamState
+    output reg          stencilBufferCmdMemset
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DATABUS_SCALE_FACTOR = (CMD_STREAM_WIDTH / 8);
@@ -107,8 +104,6 @@ module CommandParser #(
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
     assign framebufferCommandApplied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
-
-    assign dbgStreamState = state[3:0];
 
     always @(posedge aclk)
     begin : CmdParser

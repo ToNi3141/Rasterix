@@ -123,7 +123,7 @@ module RRX #(
     input  wire                             m_axi_rvalid,
     output wire                             m_axi_rready
 );
-    localparam ID_WIDTH_LOC = ID_WIDTH / 3;
+    localparam ID_WIDTH_LOC = ID_WIDTH - 2;
     localparam NRS = 3;
 
     wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_awid;
@@ -172,6 +172,7 @@ module RRX #(
         .S_ID_WIDTH(ID_WIDTH_LOC),
         .S_COUNT(NRS),
         .M_COUNT(1),
+        .M_ID_WIDTH(ID_WIDTH),
         .M_ADDR_WIDTH( ADDR_WIDTH[0 +: 32])
     ) mainXBar (
         .clk(aclk),
@@ -186,17 +187,20 @@ module RRX #(
         .s_axi_awcache(xbar_axi_awcache),
         .s_axi_awprot(xbar_axi_awprot),
         .s_axi_awqos(0),
+        .s_axi_awuser(0),
         .s_axi_awvalid(xbar_axi_awvalid),
         .s_axi_awready(xbar_axi_awready),
 
         .s_axi_wdata(xbar_axi_wdata),
         .s_axi_wstrb(xbar_axi_wstrb),
         .s_axi_wlast(xbar_axi_wlast),
+        .s_axi_wuser(0),
         .s_axi_wvalid(xbar_axi_wvalid),
         .s_axi_wready(xbar_axi_wready),
 
         .s_axi_bid(xbar_axi_bid),
         .s_axi_bresp(xbar_axi_bresp),
+        .s_axi_buser(),
         .s_axi_bvalid(xbar_axi_bvalid),
         .s_axi_bready(xbar_axi_bready),
 
@@ -209,6 +213,7 @@ module RRX #(
         .s_axi_arcache(xbar_axi_arcache),
         .s_axi_arprot(xbar_axi_arprot),
         .s_axi_arqos(0),
+        .s_axi_aruser(0),
         .s_axi_arvalid(xbar_axi_arvalid),
         .s_axi_arready(xbar_axi_arready),
 
@@ -216,6 +221,7 @@ module RRX #(
         .s_axi_rdata(xbar_axi_rdata),
         .s_axi_rresp(xbar_axi_rresp),
         .s_axi_rlast(xbar_axi_rlast),
+        .s_axi_ruser(),
         .s_axi_rvalid(xbar_axi_rvalid),
         .s_axi_rready(xbar_axi_rready),
 
@@ -228,17 +234,21 @@ module RRX #(
         .m_axi_awcache(m_axi_awcache),
         .m_axi_awprot(m_axi_awprot),
         .m_axi_awqos(),
+        .m_axi_awregion(),
+        .m_axi_awuser(),
         .m_axi_awvalid(m_axi_awvalid),
         .m_axi_awready(m_axi_awready),
 
         .m_axi_wdata(m_axi_wdata),
         .m_axi_wstrb(m_axi_wstrb),
         .m_axi_wlast(m_axi_wlast),
+        .m_axi_wuser(),
         .m_axi_wvalid(m_axi_wvalid),
         .m_axi_wready(m_axi_wready),
 
         .m_axi_bid(m_axi_bid),
         .m_axi_bresp(m_axi_bresp),
+        .m_axi_buser(0),
         .m_axi_bvalid(m_axi_bvalid),
         .m_axi_bready(m_axi_bready),
 
@@ -250,6 +260,8 @@ module RRX #(
         .m_axi_arlock(m_axi_arlock),
         .m_axi_arcache(m_axi_arcache),
         .m_axi_arqos(),
+        .m_axi_arregion(),
+        .m_axi_aruser(),
         .m_axi_arprot(m_axi_arprot),
         .m_axi_arvalid(m_axi_arvalid),
         .m_axi_arready(m_axi_arready),
@@ -258,6 +270,7 @@ module RRX #(
         .m_axi_rdata(m_axi_rdata),
         .m_axi_rresp(m_axi_rresp),
         .m_axi_rlast(m_axi_rlast),
+        .m_axi_ruser(0),
         .m_axi_rvalid(m_axi_rvalid),
         .m_axi_rready(m_axi_rready)
     );
@@ -516,11 +529,35 @@ module RRX #(
     // This is an work around for the internal error: verilator Internal Error: ../V3Gate.cpp:1008: Can't replace lvalue assignments with const var
     reg tmpOne = 1;
     reg tmpZero = 0;
+
+    assign xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
+    assign xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
+    assign xbar_axi_awlen[1 * 8 +: 8] = { 8 { tmpZero } };
+    assign xbar_axi_awsize[1 * 3 +: 3] = { 3 { tmpZero } };
+    assign xbar_axi_awburst[1 * 2 +: 2] = { 2 { tmpZero } };
+    assign xbar_axi_awlock[1 * 1 +: 1] = tmpZero;
+    assign xbar_axi_awcache[1 * 4 +: 4] = { 4 { tmpZero } };
+    assign xbar_axi_awprot[1 * 3 +: 3] = { 3 { tmpZero } };
     assign xbar_axi_awvalid[1 * 1 +: 1] = tmpZero;
+    assign xbar_axi_wdata[1 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
+    assign xbar_axi_wstrb[1 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
+    assign xbar_axi_wlast[1 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[1 * 1 +: 1] = tmpZero;
-    assign xbar_axi_bready[1 * 1 +: 1] = tmpOne;
+    assign xbar_axi_bready[1 * 1 +: 1] = tmpZero;
+
+    assign xbar_axi_awid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
+    assign xbar_axi_awaddr[2 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
+    assign xbar_axi_awlen[2 * 8 +: 8] = { 8 { tmpZero } };
+    assign xbar_axi_awsize[2 * 3 +: 3] = { 3 { tmpZero } };
+    assign xbar_axi_awburst[2 * 2 +: 2] = { 2 { tmpZero } };
+    assign xbar_axi_awlock[2 * 1 +: 1] = tmpZero;
+    assign xbar_axi_awcache[2 * 4 +: 4] = { 4 { tmpZero } };
+    assign xbar_axi_awprot[2 * 3 +: 3] = { 3 { tmpZero } };
     assign xbar_axi_awvalid[2 * 1 +: 1] = tmpZero;
+    assign xbar_axi_wdata[2 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
+    assign xbar_axi_wstrb[2 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
+    assign xbar_axi_wlast[2 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[2 * 1 +: 1] = tmpZero;
-    assign xbar_axi_bready[2 * 1 +: 1] = tmpOne;
+    assign xbar_axi_bready[2 * 1 +: 1] = tmpZero;
 
 endmodule
