@@ -38,6 +38,7 @@ read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
 read_verilog ./../../../../Rasterix/PixelPipeline.v
 read_verilog ./../../../../Rasterix/PixelUtil.vh
 read_verilog ./../../../../Rasterix/RasterixIF.v
+read_verilog ./../../../../Rasterix/RRX.v
 read_verilog ./../../../../Rasterix/RasterixRenderCore.v
 read_verilog ./../../../../Rasterix/Rasterizer.v
 read_verilog ./../../../../Rasterix/RasterizerCommands.vh
@@ -55,6 +56,7 @@ read_verilog ./../../../../Rasterix/TextureMappingUnit.v
 read_verilog ./../../../../Rasterix/TextureSampler.v
 read_verilog ./../../../../Rasterix/TrueDualPortRam.v
 read_verilog ./../../../../Rasterix/TriangleStreamF2XConverter.v
+read_verilog ./../../../../Rasterix/PagedMemoryReader.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v
 read_verilog ./../../../../Float/rtl/float/ComputeRecip.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
@@ -70,6 +72,18 @@ read_verilog ./../../../../Float/rtl/float/ValueTrack.v
 read_verilog ./../../../../Util/FT245S2AXIS.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_adapter.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
+read_verilog ./../../../../3rdParty/verilog-axi/arbiter.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_crossbar_addr.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_crossbar_rd.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_crossbar.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_crossbar_wr.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_adapter_rd.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_adapter.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_adapter_wr.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_ram.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_register_rd.v
+read_verilog ./../../../../3rdParty/verilog-axi/axi_register_wr.v
+read_verilog ./../../../../3rdParty/verilog-axi/priority_encoder.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../3rdParty/FPGA-ftdi245fifo/RTL/ftdi_245fifo.sv
