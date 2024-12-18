@@ -200,15 +200,44 @@ module RasterixIF #(
     `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
 
-    wire                             m_cmd_axis_tvalid;
-    wire                             m_cmd_axis_tready;
-    wire                             m_cmd_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
+    wire                             cmd_axis_tvalid;
+    wire                             cmd_axis_tready;
+    wire                             cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
 
-    wire                             s_framebuffer_axis_tvalid;
-    wire                             s_framebuffer_axis_tready;
-    wire                             s_framebuffer_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata;
+    wire                             framebuffer_dse_axis_tvalid;
+    wire                             framebuffer_dse_axis_tready;
+    wire                             framebuffer_dse_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  framebuffer_dse_axis_tdata;
+
+    wire                             framebuffer_axis_tvalid;
+    wire                             framebuffer_axis_tready;
+    wire                             framebuffer_axis_tlast;
+    wire [DATA_WIDTH - 1 : 0]        framebuffer_axis_tdata;
+
+    axis_adapter #(
+        .S_DATA_WIDTH(DATA_WIDTH),
+        .M_DATA_WIDTH(CMD_STREAM_WIDTH),
+        .S_KEEP_ENABLE(1),
+        .M_KEEP_ENABLE(1),
+        .ID_ENABLE(0),
+        .DEST_ENABLE(0),
+        .USER_ENABLE(0)
+    ) framebufferAdapter (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tkeep(~0),
+        .s_axis_tdata(framebuffer_axis_tdata),
+        .s_axis_tvalid(framebuffer_axis_tvalid),
+        .s_axis_tready(framebuffer_axis_tready),
+        .s_axis_tlast(framebuffer_axis_tlast),
+
+        .m_axis_tdata(framebuffer_dse_axis_tdata),
+        .m_axis_tvalid(framebuffer_dse_axis_tvalid),
+        .m_axis_tready(framebuffer_dse_axis_tready),
+        .m_axis_tlast(framebuffer_dse_axis_tlast)
+    );
 
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -217,15 +246,15 @@ module RasterixIF #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_st1_axis_tvalid(m_cmd_axis_tvalid),
-        .m_st1_axis_tready(m_cmd_axis_tready),
-        .m_st1_axis_tlast(m_cmd_axis_tlast),
-        .m_st1_axis_tdata(m_cmd_axis_tdata),
+        .m_st1_axis_tvalid(cmd_axis_tvalid),
+        .m_st1_axis_tready(cmd_axis_tready),
+        .m_st1_axis_tlast(cmd_axis_tlast),
+        .m_st1_axis_tdata(cmd_axis_tdata),
 
-        .s_st1_axis_tvalid(s_framebuffer_axis_tvalid),
-        .s_st1_axis_tready(s_framebuffer_axis_tready),
-        .s_st1_axis_tlast(s_framebuffer_axis_tlast),
-        .s_st1_axis_tdata(s_framebuffer_axis_tdata),
+        .s_st1_axis_tvalid(framebuffer_dse_axis_tvalid),
+        .s_st1_axis_tready(framebuffer_dse_axis_tready),
+        .s_st1_axis_tlast(framebuffer_dse_axis_tlast),
+        .s_st1_axis_tdata(framebuffer_dse_axis_tdata),
 
         .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_st0_axis_tready(m_framebuffer_axis_tready),
@@ -433,9 +462,9 @@ module RasterixIF #(
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
 
-        .m_axis_tvalid(s_framebuffer_axis_tvalid),
-        .m_axis_tready(s_framebuffer_axis_tready),
-        .m_axis_tlast(s_framebuffer_axis_tlast),
+        .m_axis_tvalid(framebuffer_axis_tvalid),
+        .m_axis_tready(framebuffer_axis_tready),
+        .m_axis_tlast(framebuffer_axis_tlast),
         .m_axis_tdata(s_framebuffer_unconverted_axis_tdata)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
@@ -452,11 +481,11 @@ module RasterixIF #(
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
             `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
-            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(s_framebuffer_unconverted_axis_tdata)));
+            assign framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(s_framebuffer_unconverted_axis_tdata)));
         end
         else
         begin
-            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(s_framebuffer_unconverted_axis_tdata));
+            assign framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(s_framebuffer_unconverted_axis_tdata));
         end
     endgenerate
 
@@ -536,10 +565,10 @@ module RasterixIF #(
         .dbgStreamState(),
         .dbgRasterizerRunning(),
         
-        .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .s_cmd_axis_tready(m_cmd_axis_tready),
-        .s_cmd_axis_tlast(m_cmd_axis_tlast),
-        .s_cmd_axis_tdata(m_cmd_axis_tdata),
+        .s_cmd_axis_tvalid(cmd_axis_tvalid),
+        .s_cmd_axis_tready(cmd_axis_tready),
+        .s_cmd_axis_tlast(cmd_axis_tlast),
+        .s_cmd_axis_tdata(cmd_axis_tdata),
 
         .framebufferParamEnableScissor(framebufferParamEnableScissor),
         .framebufferParamScissorStartX(framebufferParamScissorStartX),
