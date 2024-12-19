@@ -16,18 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module RRXEF #(
-    // The size of the internal framebuffer (in power of two)
-    // Depth buffer word size: 16 bit
-    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
-
-    // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
-    // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
-    // Lower depth will result in color banding.
-    parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
-    // This enables the alpha channel of the framebuffer. Requires additional memory.
-    parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
-
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
@@ -62,7 +50,6 @@ module RRXEF #(
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
-
 
     localparam CMD_STREAM_WIDTH = 32
 )
