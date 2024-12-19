@@ -16,6 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module RRX #(
+    parameter VARIANT = "if",
+
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
@@ -123,441 +125,148 @@ module RRX #(
     input  wire                             m_axi_rvalid,
     output wire                             m_axi_rready
 );
-    localparam ID_WIDTH_LOC = ID_WIDTH - 2;
-    localparam NRS = 3;
+    generate
+        if (VARIANT == "if" || VARIANT == "IF")
+        begin
+            RRXIF #(
+                .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
+                .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
+                .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
+                .TMU_COUNT(TMU_COUNT),
+                .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+                .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+                .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .ID_WIDTH(ID_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
+                .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+                .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+            ) rrxif (
+                .aclk(aclk),
+                .resetn(resetn),
 
-    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_awid;
-    wire [(NRS * ADDR_WIDTH) - 1 : 0]       xbar_axi_awaddr;
-    wire [(NRS * 8) - 1 : 0]                xbar_axi_awlen; 
-    wire [(NRS * 3) - 1 : 0]                xbar_axi_awsize;
-    wire [(NRS * 2) - 1 : 0]                xbar_axi_awburst;
-    wire [NRS - 1 : 0]                      xbar_axi_awlock;
-    wire [(NRS * 4) - 1 : 0]                xbar_axi_awcache;
-    wire [(NRS * 3) - 1 : 0]                xbar_axi_awprot; 
-    wire [NRS - 1 : 0]                      xbar_axi_awvalid;
-    wire [NRS - 1 : 0]                      xbar_axi_awready;
+                .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
+                .s_cmd_axis_tready(s_cmd_axis_tready),
+                .s_cmd_axis_tlast(s_cmd_axis_tlast),
+                .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
-    wire [(NRS * DATA_WIDTH) - 1 : 0]       xbar_axi_wdata;
-    wire [(NRS * STRB_WIDTH) - 1 : 0]       xbar_axi_wstrb;
-    wire [NRS - 1 : 0]                      xbar_axi_wlast;
-    wire [NRS - 1 : 0]                      xbar_axi_wvalid;
-    wire [NRS - 1 : 0]                      xbar_axi_wready;
+                .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
+                .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
+                .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
+                .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
-    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_bid;
-    wire [(NRS * 2) - 1 : 0]                xbar_axi_bresp;
-    wire [NRS - 1 : 0]                      xbar_axi_bvalid;
-    wire [NRS - 1 : 0]                      xbar_axi_bready;
+                .swap_fb(swap_fb),
+                .fb_addr(fb_addr),
+                .fb_swapped(fb_swapped),
 
-    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_arid;
-    wire [(NRS * ADDR_WIDTH) - 1 : 0]       xbar_axi_araddr;
-    wire [(NRS * 8) - 1 : 0]                xbar_axi_arlen;
-    wire [(NRS * 3) - 1 : 0]                xbar_axi_arsize;
-    wire [(NRS * 2) - 1 : 0]                xbar_axi_arburst;
-    wire [NRS - 1 : 0]                      xbar_axi_arlock;
-    wire [(NRS * 4) - 1 : 0]                xbar_axi_arcache;
-    wire [(NRS * 3) - 1 : 0]                xbar_axi_arprot;
-    wire [NRS - 1 : 0]                      xbar_axi_arvalid;
-    wire [NRS - 1 : 0]                      xbar_axi_arready;
+                .m_axi_awid(m_axi_awid),
+                .m_axi_awaddr(m_axi_awaddr),
+                .m_axi_awlen(m_axi_awlen),
+                .m_axi_awsize(m_axi_awsize),
+                .m_axi_awburst(m_axi_awburst),
+                .m_axi_awlock(m_axi_awlock),
+                .m_axi_awcache(m_axi_awcache),
+                .m_axi_awprot(m_axi_awprot),
+                .m_axi_awvalid(m_axi_awvalid),
+                .m_axi_awready(m_axi_awready),
+                .m_axi_wdata(m_axi_wdata),
+                .m_axi_wstrb(m_axi_wstrb),
+                .m_axi_wlast(m_axi_wlast),
+                .m_axi_wvalid(m_axi_wvalid),
+                .m_axi_wready(m_axi_wready),
+                .m_axi_bid(m_axi_bid),
+                .m_axi_bresp(m_axi_bresp),
+                .m_axi_bvalid(m_axi_bvalid),
+                .m_axi_bready(m_axi_bready),
+                .m_axi_arid(m_axi_arid),
+                .m_axi_araddr(m_axi_araddr),
+                .m_axi_arlen(m_axi_arlen),
+                .m_axi_arsize(m_axi_arsize),
+                .m_axi_arburst(m_axi_arburst),
+                .m_axi_arlock(m_axi_arlock),
+                .m_axi_arcache(m_axi_arcache),
+                .m_axi_arprot(m_axi_arprot),
+                .m_axi_arvalid(m_axi_arvalid),
+                .m_axi_arready(m_axi_arready),
+                .m_axi_rid(m_axi_rid),
+                .m_axi_rdata(m_axi_rdata),
+                .m_axi_rresp(m_axi_rresp),
+                .m_axi_rlast(m_axi_rlast),
+                .m_axi_rvalid(m_axi_rvalid),
+                .m_axi_rready(m_axi_rready)
+            );
+        end
+        if (VARIANT == "ef" || VARIANT == "EF")
+        begin
+            RRXEF #(
+                .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
+                .TMU_COUNT(TMU_COUNT),
+                .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+                .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+                .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .ID_WIDTH(ID_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
+                .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+                .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+            ) rrxef (
+                .aclk(aclk),
+                .resetn(resetn),
 
-    wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_rid;
-    wire [(NRS * DATA_WIDTH) - 1 : 0]       xbar_axi_rdata;
-    wire [(NRS * 2) - 1 : 0]                xbar_axi_rresp;
-    wire [NRS - 1 : 0]                      xbar_axi_rlast;
-    wire [NRS - 1 : 0]                      xbar_axi_rvalid;
-    wire [NRS - 1 : 0]                      xbar_axi_rready;
+                .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
+                .s_cmd_axis_tready(s_cmd_axis_tready),
+                .s_cmd_axis_tlast(s_cmd_axis_tlast),
+                .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
-    axi_crossbar #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .S_ID_WIDTH(ID_WIDTH_LOC),
-        .S_COUNT(NRS),
-        .M_COUNT(1),
-        .M_ID_WIDTH(ID_WIDTH),
-        .M_ADDR_WIDTH( ADDR_WIDTH[0 +: 32])
-    ) mainXBar (
-        .clk(aclk),
-        .rst(!resetn),
+                .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
+                .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
+                .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
+                .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
-        .s_axi_awid(xbar_axi_awid),
-        .s_axi_awaddr(xbar_axi_awaddr),
-        .s_axi_awlen(xbar_axi_awlen),
-        .s_axi_awsize(xbar_axi_awsize),
-        .s_axi_awburst(xbar_axi_awburst),
-        .s_axi_awlock(xbar_axi_awlock),
-        .s_axi_awcache(xbar_axi_awcache),
-        .s_axi_awprot(xbar_axi_awprot),
-        .s_axi_awqos(0),
-        .s_axi_awuser(0),
-        .s_axi_awvalid(xbar_axi_awvalid),
-        .s_axi_awready(xbar_axi_awready),
-
-        .s_axi_wdata(xbar_axi_wdata),
-        .s_axi_wstrb(xbar_axi_wstrb),
-        .s_axi_wlast(xbar_axi_wlast),
-        .s_axi_wuser(0),
-        .s_axi_wvalid(xbar_axi_wvalid),
-        .s_axi_wready(xbar_axi_wready),
-
-        .s_axi_bid(xbar_axi_bid),
-        .s_axi_bresp(xbar_axi_bresp),
-        .s_axi_buser(),
-        .s_axi_bvalid(xbar_axi_bvalid),
-        .s_axi_bready(xbar_axi_bready),
-
-        .s_axi_arid(xbar_axi_arid),
-        .s_axi_araddr(xbar_axi_araddr),
-        .s_axi_arlen(xbar_axi_arlen),
-        .s_axi_arsize(xbar_axi_arsize),
-        .s_axi_arburst(xbar_axi_arburst),
-        .s_axi_arlock(xbar_axi_arlock),
-        .s_axi_arcache(xbar_axi_arcache),
-        .s_axi_arprot(xbar_axi_arprot),
-        .s_axi_arqos(0),
-        .s_axi_aruser(0),
-        .s_axi_arvalid(xbar_axi_arvalid),
-        .s_axi_arready(xbar_axi_arready),
-
-        .s_axi_rid(xbar_axi_rid),
-        .s_axi_rdata(xbar_axi_rdata),
-        .s_axi_rresp(xbar_axi_rresp),
-        .s_axi_rlast(xbar_axi_rlast),
-        .s_axi_ruser(),
-        .s_axi_rvalid(xbar_axi_rvalid),
-        .s_axi_rready(xbar_axi_rready),
-
-        .m_axi_awid(m_axi_awid),
-        .m_axi_awaddr(m_axi_awaddr),
-        .m_axi_awlen(m_axi_awlen),
-        .m_axi_awsize(m_axi_awsize),
-        .m_axi_awburst(m_axi_awburst),
-        .m_axi_awlock(m_axi_awlock),
-        .m_axi_awcache(m_axi_awcache),
-        .m_axi_awprot(m_axi_awprot),
-        .m_axi_awqos(),
-        .m_axi_awregion(),
-        .m_axi_awuser(),
-        .m_axi_awvalid(m_axi_awvalid),
-        .m_axi_awready(m_axi_awready),
-
-        .m_axi_wdata(m_axi_wdata),
-        .m_axi_wstrb(m_axi_wstrb),
-        .m_axi_wlast(m_axi_wlast),
-        .m_axi_wuser(),
-        .m_axi_wvalid(m_axi_wvalid),
-        .m_axi_wready(m_axi_wready),
-
-        .m_axi_bid(m_axi_bid),
-        .m_axi_bresp(m_axi_bresp),
-        .m_axi_buser(0),
-        .m_axi_bvalid(m_axi_bvalid),
-        .m_axi_bready(m_axi_bready),
-
-        .m_axi_arid(m_axi_arid),
-        .m_axi_araddr(m_axi_araddr),
-        .m_axi_arlen(m_axi_arlen),
-        .m_axi_arsize(m_axi_arsize),
-        .m_axi_arburst(m_axi_arburst),
-        .m_axi_arlock(m_axi_arlock),
-        .m_axi_arcache(m_axi_arcache),
-        .m_axi_arqos(),
-        .m_axi_arregion(),
-        .m_axi_aruser(),
-        .m_axi_arprot(m_axi_arprot),
-        .m_axi_arvalid(m_axi_arvalid),
-        .m_axi_arready(m_axi_arready),
-
-        .m_axi_rid(m_axi_rid),
-        .m_axi_rdata(m_axi_rdata),
-        .m_axi_rresp(m_axi_rresp),
-        .m_axi_rlast(m_axi_rlast),
-        .m_axi_ruser(0),
-        .m_axi_rvalid(m_axi_rvalid),
-        .m_axi_rready(m_axi_rready)
-    );
-
-    localparam CMD_STREAM_STRB_WIDTH = CMD_STREAM_WIDTH / 8;
-    wire [ID_WIDTH_LOC - 1 : 0]             common_axi_awid;
-    wire [ADDR_WIDTH - 1 : 0]               common_axi_awaddr;
-    wire [ 7 : 0]                           common_axi_awlen;
-    wire [ 2 : 0]                           common_axi_awsize;
-    wire [ 1 : 0]                           common_axi_awburst;
-    wire                                    common_axi_awlock;
-    wire [ 3 : 0]                           common_axi_awcache;
-    wire [ 2 : 0]                           common_axi_awprot;
-    wire                                    common_axi_awvalid;
-    wire                                    common_axi_awready;
-    wire [CMD_STREAM_WIDTH - 1 : 0]         common_axi_wdata;
-    wire [CMD_STREAM_STRB_WIDTH - 1 : 0]    common_axi_wstrb;
-    wire                                    common_axi_wlast;
-    wire                                    common_axi_wvalid;
-    wire                                    common_axi_wready;
-    wire [ID_WIDTH_LOC - 1 : 0]             common_axi_bid;
-    wire [ 1 : 0]                           common_axi_bresp;
-    wire                                    common_axi_bvalid;
-    wire                                    common_axi_bready;
-    wire [ID_WIDTH_LOC - 1 : 0]             common_axi_arid;
-    wire [ADDR_WIDTH - 1 : 0]               common_axi_araddr;
-    wire [ 7 : 0]                           common_axi_arlen;
-    wire [ 2 : 0]                           common_axi_arsize;
-    wire [ 1 : 0]                           common_axi_arburst;
-    wire                                    common_axi_arlock;
-    wire [ 3 : 0]                           common_axi_arcache;
-    wire [ 2 : 0]                           common_axi_arprot;
-    wire                                    common_axi_arvalid;
-    wire                                    common_axi_arready;
-    wire [ID_WIDTH_LOC - 1 : 0]             common_axi_rid;
-    wire [CMD_STREAM_WIDTH - 1 : 0]         common_axi_rdata;
-    wire [ 1 : 0]                           common_axi_rresp;
-    wire                                    common_axi_rlast;
-    wire                                    common_axi_rvalid;
-    wire                                    common_axi_rready;
-
-    axi_adapter #(
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .M_DATA_WIDTH(DATA_WIDTH),
-        .M_STRB_WIDTH(STRB_WIDTH),
-        .S_DATA_WIDTH(CMD_STREAM_WIDTH),
-        .S_STRB_WIDTH(CMD_STREAM_STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC)
-    ) commonAxiAdapter
-    (
-        .clk(aclk),
-        .rst(!resetn),
-
-        .m_axi_awid(xbar_axi_awid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_axi_awaddr(xbar_axi_awaddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_axi_awlen(xbar_axi_awlen[0 * 8 +: 8]),
-        .m_axi_awsize(xbar_axi_awsize[0 * 3 +: 3]),
-        .m_axi_awburst(xbar_axi_awburst[0 * 2 +: 2]),
-        .m_axi_awlock(xbar_axi_awlock[0 * 1 +: 1]),
-        .m_axi_awcache(xbar_axi_awcache[0 * 4 +: 4]),
-        .m_axi_awprot(xbar_axi_awprot[0 * 3 +: 3]),
-        .m_axi_awqos(),
-        .m_axi_awregion(),
-        .m_axi_awuser(),
-        .m_axi_awvalid(xbar_axi_awvalid[0 * 1 +: 1]),
-        .m_axi_awready(xbar_axi_awready[0 * 1 +: 1]),
-        .m_axi_wdata(xbar_axi_wdata[0 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_axi_wstrb(xbar_axi_wstrb[0 * STRB_WIDTH +: STRB_WIDTH]),
-        .m_axi_wlast(xbar_axi_wlast[0 * 1 +: 1]),
-        .m_axi_wuser(),
-        .m_axi_wvalid(xbar_axi_wvalid[0 * 1 +: 1]),
-        .m_axi_wready(xbar_axi_wready[0 * 1 +: 1]),
-        .m_axi_bid(xbar_axi_bid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_axi_bresp(xbar_axi_bresp[0 * 2 +: 2]),
-        .m_axi_buser(0),
-        .m_axi_bvalid(xbar_axi_bvalid[0 * 1 +: 1]),
-        .m_axi_bready(xbar_axi_bready[0 * 1 +: 1]),
-        .m_axi_arid(xbar_axi_arid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_axi_araddr(xbar_axi_araddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_axi_arlen(xbar_axi_arlen[0 * 8 +: 8]),
-        .m_axi_arsize(xbar_axi_arsize[0 * 3 +: 3]),
-        .m_axi_arburst(xbar_axi_arburst[0 * 2 +: 2]),
-        .m_axi_arlock(xbar_axi_arlock[0 * 1 +: 1]),
-        .m_axi_arcache(xbar_axi_arcache[0 * 4 +: 4]),
-        .m_axi_arprot(xbar_axi_arprot[0 * 3 +: 3]),
-        .m_axi_arqos(),
-        .m_axi_arregion(),
-        .m_axi_aruser(),
-        .m_axi_arvalid(xbar_axi_arvalid[0 * 1 +: 1]),
-        .m_axi_arready(xbar_axi_arready[0 * 1 +: 1]),
-        .m_axi_rid(xbar_axi_rid[0 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_axi_rdata(xbar_axi_rdata[0 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_axi_rresp(xbar_axi_rresp[0 * 2 +: 2]),
-        .m_axi_rlast(xbar_axi_rlast[0 * 1 +: 1]),
-        .m_axi_ruser(0),
-        .m_axi_rvalid(xbar_axi_rvalid[0 * 1 +: 1]),
-        .m_axi_rready(xbar_axi_rready[0 * 1 +: 1]),
-
-        .s_axi_awid(common_axi_awid),
-        .s_axi_awaddr(common_axi_awaddr),
-        .s_axi_awlen(common_axi_awlen),
-        .s_axi_awsize(common_axi_awsize),
-        .s_axi_awburst(common_axi_awburst),
-        .s_axi_awlock(common_axi_awlock),
-        .s_axi_awcache(common_axi_awcache),
-        .s_axi_awprot(common_axi_awprot),
-        .s_axi_awqos(0),
-        .s_axi_awregion(0),
-        .s_axi_awuser(0),
-        .s_axi_awvalid(common_axi_awvalid),
-        .s_axi_awready(common_axi_awready),
-        .s_axi_wdata(common_axi_wdata),
-        .s_axi_wstrb(common_axi_wstrb),
-        .s_axi_wlast(common_axi_wlast),
-        .s_axi_wuser(0),
-        .s_axi_wvalid(common_axi_wvalid),
-        .s_axi_wready(common_axi_wready),
-        .s_axi_bid(common_axi_bid),
-        .s_axi_bresp(common_axi_bresp),
-        .s_axi_buser(),
-        .s_axi_bvalid(common_axi_bvalid),
-        .s_axi_bready(common_axi_bready),
-        .s_axi_arid(common_axi_arid),
-        .s_axi_araddr(common_axi_araddr),
-        .s_axi_arlen(common_axi_arlen),
-        .s_axi_arsize(common_axi_arsize),
-        .s_axi_arburst(common_axi_arburst),
-        .s_axi_arlock(common_axi_arlock),
-        .s_axi_arcache(common_axi_arcache),
-        .s_axi_arprot(common_axi_arprot),
-        .s_axi_arqos(0),
-        .s_axi_arregion(0),
-        .s_axi_aruser(0),
-        .s_axi_arvalid(common_axi_arvalid),
-        .s_axi_arready(common_axi_arready),
-        .s_axi_rid(common_axi_rid),
-        .s_axi_rdata(common_axi_rdata),
-        .s_axi_rresp(common_axi_rresp),
-        .s_axi_rlast(common_axi_rlast),
-        .s_axi_ruser(),
-        .s_axi_rvalid(common_axi_rvalid),
-        .s_axi_rready(common_axi_rready)
-    );
-
-    RasterixIF #(
-        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
-        .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
-        .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC),
-        .DATA_WIDTH(DATA_WIDTH),
-        .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
-        .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
-        .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
-        .TMU_COUNT(TMU_COUNT),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
-        .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
-        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION)
-    ) rasterix (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
-        .s_cmd_axis_tready(s_cmd_axis_tready),
-        .s_cmd_axis_tlast(s_cmd_axis_tlast),
-        .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
-
-        .swap_fb(swap_fb),
-        .fb_addr(fb_addr),
-        .fb_swapped(fb_swapped),
-
-        .m_common_axi_awid(common_axi_awid),
-        .m_common_axi_awaddr(common_axi_awaddr),
-        .m_common_axi_awlen(common_axi_awlen),
-        .m_common_axi_awsize(common_axi_awsize),
-        .m_common_axi_awburst(common_axi_awburst),
-        .m_common_axi_awlock(common_axi_awlock),
-        .m_common_axi_awcache(common_axi_awcache),
-        .m_common_axi_awprot(common_axi_awprot), 
-        .m_common_axi_awvalid(common_axi_awvalid),
-        .m_common_axi_awready(common_axi_awready),
-
-        .m_common_axi_wdata(common_axi_wdata),
-        .m_common_axi_wstrb(common_axi_wstrb),
-        .m_common_axi_wlast(common_axi_wlast),
-        .m_common_axi_wvalid(common_axi_wvalid),
-        .m_common_axi_wready(common_axi_wready),
-
-        .m_common_axi_bid(common_axi_bid),
-        .m_common_axi_bresp(common_axi_bresp),
-        .m_common_axi_bvalid(common_axi_bvalid),
-        .m_common_axi_bready(common_axi_bready),
-
-        .m_common_axi_arid(common_axi_arid),
-        .m_common_axi_araddr(common_axi_araddr),
-        .m_common_axi_arlen(common_axi_arlen),
-        .m_common_axi_arsize(common_axi_arsize),
-        .m_common_axi_arburst(common_axi_arburst),
-        .m_common_axi_arlock(common_axi_arlock),
-        .m_common_axi_arcache(common_axi_arcache),
-        .m_common_axi_arprot(common_axi_arprot),
-        .m_common_axi_arvalid(common_axi_arvalid),
-        .m_common_axi_arready(common_axi_arready),
-
-        .m_common_axi_rid(common_axi_rid),
-        .m_common_axi_rdata(common_axi_rdata),
-        .m_common_axi_rresp(common_axi_rresp),
-        .m_common_axi_rlast(common_axi_rlast),
-        .m_common_axi_rvalid(common_axi_rvalid),
-        .m_common_axi_rready(common_axi_rready),
-
-        .m_tmu0_axi_arid(xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_tmu0_axi_araddr(xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_tmu0_axi_arlen(xbar_axi_arlen[1 * 8 +: 8]),
-        .m_tmu0_axi_arsize(xbar_axi_arsize[1 * 3 +: 3]),
-        .m_tmu0_axi_arburst(xbar_axi_arburst[1 * 2 +: 2]),
-        .m_tmu0_axi_arlock(xbar_axi_arlock[1 * 1 +: 1]),
-        .m_tmu0_axi_arcache(xbar_axi_arcache[1 * 4 +: 4]),
-        .m_tmu0_axi_arprot(xbar_axi_arprot[1 * 3 +: 3]),
-        .m_tmu0_axi_arvalid(xbar_axi_arvalid[1 * 1 +: 1]),
-        .m_tmu0_axi_arready(xbar_axi_arready[1 * 1 +: 1]),
-
-        .m_tmu0_axi_rid(xbar_axi_rid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_tmu0_axi_rdata(xbar_axi_rdata[1 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_tmu0_axi_rresp(xbar_axi_rresp[1 * 2 +: 2]),
-        .m_tmu0_axi_rlast(xbar_axi_rlast[1 * 1 +: 1]),
-        .m_tmu0_axi_rvalid(xbar_axi_rvalid[1 * 1 +: 1]),
-        .m_tmu0_axi_rready(xbar_axi_rready[1 * 1 +: 1]),
-
-        .m_tmu1_axi_arid(xbar_axi_arid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_tmu1_axi_araddr(xbar_axi_araddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_tmu1_axi_arlen(xbar_axi_arlen[2 * 8 +: 8]),
-        .m_tmu1_axi_arsize(xbar_axi_arsize[2 * 3 +: 3]),
-        .m_tmu1_axi_arburst(xbar_axi_arburst[2 * 2 +: 2]),
-        .m_tmu1_axi_arlock(xbar_axi_arlock[2 * 1 +: 1]),
-        .m_tmu1_axi_arcache(xbar_axi_arcache[2 * 4 +: 4]),
-        .m_tmu1_axi_arprot(xbar_axi_arprot[2 * 3 +: 3]),
-        .m_tmu1_axi_arvalid(xbar_axi_arvalid[2 * 1 +: 1]),
-        .m_tmu1_axi_arready(xbar_axi_arready[2 * 1 +: 1]),
-
-        .m_tmu1_axi_rid(xbar_axi_rid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_tmu1_axi_rdata(xbar_axi_rdata[2 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_tmu1_axi_rresp(xbar_axi_rresp[2 * 2 +: 2]),
-        .m_tmu1_axi_rlast(xbar_axi_rlast[2 * 1 +: 1]),
-        .m_tmu1_axi_rvalid(xbar_axi_rvalid[2 * 1 +: 1]),
-        .m_tmu1_axi_rready(xbar_axi_rready[2 * 1 +: 1])
-    );
-
-    // Directly assign a value does not work in verilator.
-    // This is an work around for the internal error: verilator Internal Error: ../V3Gate.cpp:1008: Can't replace lvalue assignments with const var
-    reg tmpOne = 1;
-    reg tmpZero = 0;
-
-    assign xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
-    assign xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
-    assign xbar_axi_awlen[1 * 8 +: 8] = { 8 { tmpZero } };
-    assign xbar_axi_awsize[1 * 3 +: 3] = { 3 { tmpZero } };
-    assign xbar_axi_awburst[1 * 2 +: 2] = { 2 { tmpZero } };
-    assign xbar_axi_awlock[1 * 1 +: 1] = tmpZero;
-    assign xbar_axi_awcache[1 * 4 +: 4] = { 4 { tmpZero } };
-    assign xbar_axi_awprot[1 * 3 +: 3] = { 3 { tmpZero } };
-    assign xbar_axi_awvalid[1 * 1 +: 1] = tmpZero;
-    assign xbar_axi_wdata[1 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
-    assign xbar_axi_wstrb[1 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
-    assign xbar_axi_wlast[1 * 1 +: 1] = tmpZero;
-    assign xbar_axi_wvalid[1 * 1 +: 1] = tmpZero;
-    assign xbar_axi_bready[1 * 1 +: 1] = tmpZero;
-
-    assign xbar_axi_awid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
-    assign xbar_axi_awaddr[2 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
-    assign xbar_axi_awlen[2 * 8 +: 8] = { 8 { tmpZero } };
-    assign xbar_axi_awsize[2 * 3 +: 3] = { 3 { tmpZero } };
-    assign xbar_axi_awburst[2 * 2 +: 2] = { 2 { tmpZero } };
-    assign xbar_axi_awlock[2 * 1 +: 1] = tmpZero;
-    assign xbar_axi_awcache[2 * 4 +: 4] = { 4 { tmpZero } };
-    assign xbar_axi_awprot[2 * 3 +: 3] = { 3 { tmpZero } };
-    assign xbar_axi_awvalid[2 * 1 +: 1] = tmpZero;
-    assign xbar_axi_wdata[2 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
-    assign xbar_axi_wstrb[2 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
-    assign xbar_axi_wlast[2 * 1 +: 1] = tmpZero;
-    assign xbar_axi_wvalid[2 * 1 +: 1] = tmpZero;
-    assign xbar_axi_bready[2 * 1 +: 1] = tmpZero;
-
+                .swap_fb(swap_fb),
+                .fb_addr(fb_addr),
+                .fb_swapped(fb_swapped),
+                
+                .m_axi_awid(m_axi_awid),
+                .m_axi_awaddr(m_axi_awaddr),
+                .m_axi_awlen(m_axi_awlen),
+                .m_axi_awsize(m_axi_awsize),
+                .m_axi_awburst(m_axi_awburst),
+                .m_axi_awlock(m_axi_awlock),
+                .m_axi_awcache(m_axi_awcache),
+                .m_axi_awprot(m_axi_awprot),
+                .m_axi_awvalid(m_axi_awvalid),
+                .m_axi_awready(m_axi_awready),
+                .m_axi_wdata(m_axi_wdata),
+                .m_axi_wstrb(m_axi_wstrb),
+                .m_axi_wlast(m_axi_wlast),
+                .m_axi_wvalid(m_axi_wvalid),
+                .m_axi_wready(m_axi_wready),
+                .m_axi_bid(m_axi_bid),
+                .m_axi_bresp(m_axi_bresp),
+                .m_axi_bvalid(m_axi_bvalid),
+                .m_axi_bready(m_axi_bready),
+                .m_axi_arid(m_axi_arid),
+                .m_axi_araddr(m_axi_araddr),
+                .m_axi_arlen(m_axi_arlen),
+                .m_axi_arsize(m_axi_arsize),
+                .m_axi_arburst(m_axi_arburst),
+                .m_axi_arlock(m_axi_arlock),
+                .m_axi_arcache(m_axi_arcache),
+                .m_axi_arprot(m_axi_arprot),
+                .m_axi_arvalid(m_axi_arvalid),
+                .m_axi_arready(m_axi_arready),
+                .m_axi_rid(m_axi_rid),
+                .m_axi_rdata(m_axi_rdata),
+                .m_axi_rresp(m_axi_rresp),
+                .m_axi_rlast(m_axi_rlast),
+                .m_axi_rvalid(m_axi_rvalid),
+                .m_axi_rready(m_axi_rready)
+            );
+        end
+    endgenerate
 endmodule

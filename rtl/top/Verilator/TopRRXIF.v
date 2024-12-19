@@ -47,7 +47,6 @@ module top #(
     localparam ID_WIDTH = 8;
     localparam ADDR_WIDTH = 25;
     localparam STRB_WIDTH = DATA_WIDTH / 8;
-    localparam ID_WIDTH_LOC = ID_WIDTH / 4;
     wire [ID_WIDTH - 1 : 0]     mem_axi_awid;
     wire [ADDR_WIDTH - 1 : 0]   mem_axi_awaddr;
     wire [ 7 : 0]               mem_axi_awlen;

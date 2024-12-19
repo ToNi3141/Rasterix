@@ -40,27 +40,28 @@ module RasterixEF #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter TMU_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
-    parameter CMD_STREAM_WIDTH = 32,
-
-    // The width of the frame buffer stream
-    // Allowed values: 32, 64, 128, 256 bit
-    parameter FB_MEM_DATA_WIDTH = CMD_STREAM_WIDTH,
+    localparam CMD_STREAM_WIDTH = 32,
 
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17,
 
     // Memory address witdth
     parameter ADDR_WIDTH = 32,
-
     // Memory ID width
     parameter ID_WIDTH = 8,
-
+    // Memory data width
+    parameter DATA_WIDTH = 64,
     // Memory strobe width
-    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8,
-    parameter FB_MEM_STRB_WIDTH = FB_MEM_DATA_WIDTH / 8,
+    parameter STRB_WIDTH = DATA_WIDTH / 8,
+
+    // Memory data width for the common channel
+    localparam COMMON_DATA_WIDTH = CMD_STREAM_WIDTH,
+    // Memory strobe width for the common channel
+    localparam COMMON_STRB_WIDTH = COMMON_DATA_WIDTH / 8,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -109,8 +110,8 @@ module RasterixEF #(
     output wire                             m_common_axi_awvalid,
     input  wire                             m_common_axi_awready,
 
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_common_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_common_axi_wstrb,
+    output wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_wdata,
+    output wire [COMMON_STRB_WIDTH - 1 : 0] m_common_axi_wstrb,
     output wire                             m_common_axi_wlast,
     output wire                             m_common_axi_wvalid,
     input  wire                             m_common_axi_wready,
@@ -132,7 +133,7 @@ module RasterixEF #(
     input  wire                             m_common_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_common_axi_rid,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_common_axi_rdata,
+    input  wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_rdata,
     input  wire [ 1 : 0]                    m_common_axi_rresp,
     input  wire                             m_common_axi_rlast,
     input  wire                             m_common_axi_rvalid,
@@ -150,8 +151,8 @@ module RasterixEF #(
     output wire                             m_color_axi_awvalid,
     input  wire                             m_color_axi_awready,
 
-    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_color_axi_wdata,
-    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_color_axi_wstrb,
+    output wire [DATA_WIDTH - 1 : 0]        m_color_axi_wdata,
+    output wire [STRB_WIDTH - 1 : 0]        m_color_axi_wstrb,
     output wire                             m_color_axi_wlast,
     output wire                             m_color_axi_wvalid,
     input  wire                             m_color_axi_wready,
@@ -173,7 +174,7 @@ module RasterixEF #(
     input  wire                             m_color_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_color_axi_rid,
-    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_color_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_color_axi_rdata,
     input  wire [ 1 : 0]                    m_color_axi_rresp,
     input  wire                             m_color_axi_rlast,
     input  wire                             m_color_axi_rvalid,
@@ -191,8 +192,8 @@ module RasterixEF #(
     output wire                             m_depth_axi_awvalid,
     input  wire                             m_depth_axi_awready,
 
-    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_depth_axi_wdata,
-    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_depth_axi_wstrb,
+    output wire [DATA_WIDTH - 1 : 0]        m_depth_axi_wdata,
+    output wire [STRB_WIDTH - 1 : 0]        m_depth_axi_wstrb,
     output wire                             m_depth_axi_wlast,
     output wire                             m_depth_axi_wvalid,
     input  wire                             m_depth_axi_wready,
@@ -214,7 +215,7 @@ module RasterixEF #(
     input  wire                             m_depth_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_depth_axi_rid,
-    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_depth_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_depth_axi_rdata,
     input  wire [ 1 : 0]                    m_depth_axi_rresp,
     input  wire                             m_depth_axi_rlast,
     input  wire                             m_depth_axi_rvalid,
@@ -232,8 +233,8 @@ module RasterixEF #(
     output wire                             m_stencil_axi_awvalid,
     input  wire                             m_stencil_axi_awready,
 
-    output wire [FB_MEM_DATA_WIDTH - 1 : 0] m_stencil_axi_wdata,
-    output wire [FB_MEM_STRB_WIDTH - 1 : 0] m_stencil_axi_wstrb,
+    output wire [DATA_WIDTH - 1 : 0]        m_stencil_axi_wdata,
+    output wire [STRB_WIDTH - 1 : 0]        m_stencil_axi_wstrb,
     output wire                             m_stencil_axi_wlast,
     output wire                             m_stencil_axi_wvalid,
     input  wire                             m_stencil_axi_wready,
@@ -255,11 +256,49 @@ module RasterixEF #(
     input  wire                             m_stencil_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_stencil_axi_rid,
-    input  wire [FB_MEM_DATA_WIDTH - 1 : 0] m_stencil_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_stencil_axi_rdata,
     input  wire [ 1 : 0]                    m_stencil_axi_rresp,
     input  wire                             m_stencil_axi_rlast,
     input  wire                             m_stencil_axi_rvalid,
-    output wire                             m_stencil_axi_rready
+    output wire                             m_stencil_axi_rready,
+
+    // TMU 0 memory access
+    output wire [ID_WIDTH - 1 : 0]          m_tmu0_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_tmu0_axi_araddr,
+    output wire [ 7 : 0]                    m_tmu0_axi_arlen,
+    output wire [ 2 : 0]                    m_tmu0_axi_arsize,
+    output wire [ 1 : 0]                    m_tmu0_axi_arburst,
+    output wire                             m_tmu0_axi_arlock,
+    output wire [ 3 : 0]                    m_tmu0_axi_arcache,
+    output wire [ 2 : 0]                    m_tmu0_axi_arprot,
+    output wire                             m_tmu0_axi_arvalid,
+    input  wire                             m_tmu0_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_tmu0_axi_rid,
+    input  wire [DATA_WIDTH - 1 : 0]        m_tmu0_axi_rdata,
+    input  wire [ 1 : 0]                    m_tmu0_axi_rresp,
+    input  wire                             m_tmu0_axi_rlast,
+    input  wire                             m_tmu0_axi_rvalid,
+    output wire                             m_tmu0_axi_rready,
+
+    // TMU 1 memory access
+    output wire [ID_WIDTH - 1 : 0]          m_tmu1_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_tmu1_axi_araddr,
+    output wire [ 7 : 0]                    m_tmu1_axi_arlen,
+    output wire [ 2 : 0]                    m_tmu1_axi_arsize,
+    output wire [ 1 : 0]                    m_tmu1_axi_arburst,
+    output wire                             m_tmu1_axi_arlock,
+    output wire [ 3 : 0]                    m_tmu1_axi_arcache,
+    output wire [ 2 : 0]                    m_tmu1_axi_arprot,
+    output wire                             m_tmu1_axi_arvalid,
+    input  wire                             m_tmu1_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_tmu1_axi_rid,
+    input  wire [DATA_WIDTH - 1 : 0]        m_tmu1_axi_rdata,
+    input  wire [ 1 : 0]                    m_tmu1_axi_rresp,
+    input  wire                             m_tmu1_axi_rlast,
+    input  wire                             m_tmu1_axi_rvalid,
+    output wire                             m_tmu1_axi_rready
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam FRAMEBUFFER_SIZE_IN_WORDS = 20; // Width of the framebuffer index. 20 bit is enough for a framebuffer with a size of 2MB (RGB565)
@@ -278,33 +317,33 @@ module RasterixEF #(
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
 
-    wire                             m_cmd_axis_tvalid;
-    wire                             m_cmd_axis_tready;
-    wire                             m_cmd_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
+    wire                             cmd_axis_tvalid;
+    wire                             cmd_axis_tready;
+    wire                             cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
 
-    wire                             s_framebuffer_axis_tvalid = 1;
-    wire                             s_framebuffer_axis_tready;
-    wire                             s_framebuffer_axis_tlast = 1;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata = 0;
+    wire                             framebuffer_axis_tvalid = 1;
+    wire                             framebuffer_axis_tready;
+    wire                             framebuffer_axis_tlast = 1;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  framebuffer_axis_tdata = 0;
 
     DmaStreamEngine #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .STREAM_WIDTH(COMMON_DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH)
     ) dma (
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_st1_axis_tvalid(m_cmd_axis_tvalid),
-        .m_st1_axis_tready(m_cmd_axis_tready),
-        .m_st1_axis_tlast(m_cmd_axis_tlast),
-        .m_st1_axis_tdata(m_cmd_axis_tdata),
+        .m_st1_axis_tvalid(cmd_axis_tvalid),
+        .m_st1_axis_tready(cmd_axis_tready),
+        .m_st1_axis_tlast(cmd_axis_tlast),
+        .m_st1_axis_tdata(cmd_axis_tdata),
 
-        .s_st1_axis_tvalid(s_framebuffer_axis_tvalid),
-        .s_st1_axis_tready(s_framebuffer_axis_tready),
-        .s_st1_axis_tlast(s_framebuffer_axis_tlast),
-        .s_st1_axis_tdata(s_framebuffer_axis_tdata),
+        .s_st1_axis_tvalid(framebuffer_axis_tvalid),
+        .s_st1_axis_tready(framebuffer_axis_tready),
+        .s_st1_axis_tlast(framebuffer_axis_tlast),
+        .s_st1_axis_tdata(framebuffer_axis_tdata),
 
         .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_st0_axis_tready(m_framebuffer_axis_tready),
@@ -453,13 +492,13 @@ module RasterixEF #(
     assign fb_addr = colorBufferAddr;
 
     StreamFramebuffer #(
-        .DATA_WIDTH(FB_MEM_DATA_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
         .PIXEL_WIDTH(DEPTH_WIDTH),
-        .STRB_WIDTH(FB_MEM_STRB_WIDTH)
+        .STRB_WIDTH(STRB_WIDTH)
     ) depthBuffer (
         .aclk(aclk),
         .resetn(resetn),
@@ -539,13 +578,13 @@ module RasterixEF #(
     );
 
     StreamFramebuffer #(
-        .DATA_WIDTH(FB_MEM_DATA_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
         .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
         .PIXEL_WIDTH(PIXEL_WIDTH),
-        .STRB_WIDTH(FB_MEM_STRB_WIDTH)
+        .STRB_WIDTH(STRB_WIDTH)
     ) colorBuffer (
         .aclk(aclk),
         .resetn(resetn),
@@ -628,13 +667,13 @@ module RasterixEF #(
         if (ENABLE_STENCIL_BUFFER)
         begin
             StreamFramebuffer #(
-                .DATA_WIDTH(FB_MEM_DATA_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
                 .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
                 .PIXEL_WIDTH(8),
-                .STRB_WIDTH(FB_MEM_STRB_WIDTH)
+                .STRB_WIDTH(STRB_WIDTH)
             ) stencilBuffer (
                 .aclk(aclk),
                 .resetn(resetn),
@@ -725,10 +764,14 @@ module RasterixEF #(
 
     RasterixRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
-        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+        .TMU_MEMORY_WIDTH(DATA_WIDTH),
+        .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+        .ENABLE_FLOW_CTRL(1),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
@@ -736,13 +779,10 @@ module RasterixEF #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .dbgStreamState(),
-        .dbgRasterizerRunning(),
-        
-        .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .s_cmd_axis_tready(m_cmd_axis_tready),
-        .s_cmd_axis_tlast(m_cmd_axis_tlast),
-        .s_cmd_axis_tdata(m_cmd_axis_tdata),
+        .s_cmd_axis_tvalid(cmd_axis_tvalid),
+        .s_cmd_axis_tready(cmd_axis_tready),
+        .s_cmd_axis_tlast(cmd_axis_tlast),
+        .s_cmd_axis_tdata(cmd_axis_tdata),
 
         .framebufferParamEnableScissor(framebufferParamEnableScissor),
         .framebufferParamScissorStartX(framebufferParamScissorStartX),
@@ -824,7 +864,41 @@ module RasterixEF #(
         .m_stencil_wstrb(m_stencil_wstrb),
         .m_stencil_wlast(m_stencil_wlast),
         .m_stencil_wscreenPosX(m_stencil_wscreenPosX),
-        .m_stencil_wscreenPosY(m_stencil_wscreenPosY)
+        .m_stencil_wscreenPosY(m_stencil_wscreenPosY),
+
+        .m_tmu0_axi_arid(m_tmu0_axi_arid),
+        .m_tmu0_axi_araddr(m_tmu0_axi_araddr),
+        .m_tmu0_axi_arlen(m_tmu0_axi_arlen),
+        .m_tmu0_axi_arsize(m_tmu0_axi_arsize),
+        .m_tmu0_axi_arburst(m_tmu0_axi_arburst),
+        .m_tmu0_axi_arlock(m_tmu0_axi_arlock),
+        .m_tmu0_axi_arcache(m_tmu0_axi_arcache),
+        .m_tmu0_axi_arprot(m_tmu0_axi_arprot),
+        .m_tmu0_axi_arvalid(m_tmu0_axi_arvalid),
+        .m_tmu0_axi_arready(m_tmu0_axi_arready),
+        .m_tmu0_axi_rid(m_tmu0_axi_rid),
+        .m_tmu0_axi_rdata(m_tmu0_axi_rdata),
+        .m_tmu0_axi_rresp(m_tmu0_axi_rresp),
+        .m_tmu0_axi_rlast(m_tmu0_axi_rlast),
+        .m_tmu0_axi_rvalid(m_tmu0_axi_rvalid),
+        .m_tmu0_axi_rready(m_tmu0_axi_rready),
+
+        .m_tmu1_axi_arid(m_tmu1_axi_arid),
+        .m_tmu1_axi_araddr(m_tmu1_axi_araddr),
+        .m_tmu1_axi_arlen(m_tmu1_axi_arlen),
+        .m_tmu1_axi_arsize(m_tmu1_axi_arsize),
+        .m_tmu1_axi_arburst(m_tmu1_axi_arburst),
+        .m_tmu1_axi_arlock(m_tmu1_axi_arlock),
+        .m_tmu1_axi_arcache(m_tmu1_axi_arcache),
+        .m_tmu1_axi_arprot(m_tmu1_axi_arprot),
+        .m_tmu1_axi_arvalid(m_tmu1_axi_arvalid),
+        .m_tmu1_axi_arready(m_tmu1_axi_arready),
+        .m_tmu1_axi_rid(m_tmu1_axi_rid),
+        .m_tmu1_axi_rdata(m_tmu1_axi_rdata),
+        .m_tmu1_axi_rresp(m_tmu1_axi_rresp),
+        .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
+        .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
+        .m_tmu1_axi_rready(m_tmu1_axi_rready)
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;

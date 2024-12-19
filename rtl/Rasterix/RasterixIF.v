@@ -186,7 +186,6 @@ module RasterixIF #(
     input  wire                             m_tmu1_axi_rlast,
     input  wire                             m_tmu1_axi_rvalid,
     output wire                             m_tmu1_axi_rready
-
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DEFAULT_ALPHA_VAL = 0;
