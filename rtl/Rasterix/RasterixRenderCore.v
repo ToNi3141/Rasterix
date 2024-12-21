@@ -246,6 +246,21 @@ module RasterixRenderCore #(
         begin
             $error("The number of sub pixels in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
         end
+
+        if ((RASTERIZER_FLOAT_PRECISION > 32) || (RASTERIZER_FLOAT_PRECISION < 20))
+        begin
+            $error("RASTERIZER_FLOAT_PRECISION must be between 25 and 20");
+        end
+
+        if ((RASTERIZER_FIXPOINT_PRECISION > 25) || (RASTERIZER_FIXPOINT_PRECISION < 16))
+        begin
+            $error("RASTERIZER_FIXPOINT_PRECISION must be between 16 and 25");
+        end
+
+        if ((TEXTURE_BUFFER_SIZE > 17) || (TEXTURE_BUFFER_SIZE < 11))
+        begin
+            $error("TEXTURE_BUFFER_SIZE must be between 11 and 17");
+        end
     end
 
     localparam ENABLE_SECOND_TMU = TMU_COUNT == 2;
@@ -537,7 +552,7 @@ module RasterixRenderCore #(
         .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
         .m_mem_axi_rready(m_tmu0_axi_rready)
     );
-    defparam pagedMemoryReaderTmu0.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
+    defparam pagedMemoryReaderTmu0.DATA_WIDTH = TMU_MEMORY_WIDTH;
     defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
     defparam pagedMemoryReaderTmu0.ID_WIDTH = ID_WIDTH;
     defparam pagedMemoryReaderTmu0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
@@ -624,7 +639,7 @@ module RasterixRenderCore #(
                 .m_mem_axi_rvalid(m_tmu1_axi_rvalid),
                 .m_mem_axi_rready(m_tmu1_axi_rready)
             );
-            defparam pagedMemoryReaderTmu1.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
+            defparam pagedMemoryReaderTmu1.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu1.ADDR_WIDTH = ADDR_WIDTH;
             defparam pagedMemoryReaderTmu1.ID_WIDTH = ID_WIDTH;
             defparam pagedMemoryReaderTmu1.PAGE_SIZE = TEXTURE_PAGE_SIZE;

@@ -22,7 +22,7 @@
 // beat.
 module PagedMemoryReader #(
     // Width of the axi interfaces
-    parameter MEMORY_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
     // Width of ID signal
@@ -36,7 +36,7 @@ module PagedMemoryReader #(
 
     output reg                          m_axis_tvalid,
     output reg                          m_axis_tlast,
-    output reg  [MEMORY_WIDTH - 1 : 0]  m_axis_tdata,
+    output reg  [DATA_WIDTH - 1 : 0]    m_axis_tdata,
 
     input  wire                         s_axis_tvalid,
     output reg                          s_axis_tready,
@@ -56,26 +56,35 @@ module PagedMemoryReader #(
     input  wire                         m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]      m_mem_axi_rid,
-    input  wire [MEMORY_WIDTH - 1 : 0]  m_mem_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]    m_mem_axi_rdata,
     input  wire [ 1 : 0]                m_mem_axi_rresp,
     input  wire                         m_mem_axi_rlast,
     input  wire                         m_mem_axi_rvalid,
     output reg                          m_mem_axi_rready
 );
-    localparam BYTES_PER_BEAT = MEMORY_WIDTH / 8;
+    localparam BYTES_PER_BEAT = DATA_WIDTH / 8;
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
 
-    // Memory transfers have to be 128 byte aligned.
-    // 128 because: The zynq has 64 bit axi3 ports, which means one beat contains 8 bytes.
-    // Max beats of an axi3 port are 16.
-    // 128 / 8 = 16. So we will be axi3 compliant.
-    localparam BEATS = 128 / BYTES_PER_BEAT;
+    
+    localparam BEATS = 1024 / BYTES_PER_BEAT;
 
     localparam INCREMENT = BEATS << LG_BEAT_SIZE;
     initial 
     begin
+        if (DATA_WIDTH < 32)
+        begin
+            $error("DATA_WIDTH must be at least 32 bit");
+        end
+        if (PAGE_SIZE < 1024)
+        begin
+            $error("PAGE_SIZE must be at least 1024 bytes");
+        end
+    end
+    
+    initial 
+    begin
         m_mem_axi_arid = 0;
-        m_mem_axi_arlen = BEATS - 1; // 16 beats for axi3 compliance
+        m_mem_axi_arlen = BEATS[0 +: 8] - 1; // 16 beats for axi3 compliance
         m_mem_axi_arsize = LG_BEAT_SIZE[2 : 0]; // 4 byte increment because of 32 bit interface
         m_mem_axi_arburst = 1;
         m_mem_axi_arlock = 0;

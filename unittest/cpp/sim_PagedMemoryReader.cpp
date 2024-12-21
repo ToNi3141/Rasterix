@@ -25,8 +25,9 @@
 
 TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
 {        
+    static constexpr std::size_t BEATS { 256 };
     static constexpr std::size_t PAGE_SIZE { 2048 };
-    static constexpr std::size_t TRANSFER_SIZE { 32 * 4 };
+    static constexpr std::size_t TRANSFER_SIZE { BEATS * 4 };
     
     VPagedMemoryReader* t = new VPagedMemoryReader();
     auto testMemoryAddressGeneration = [t]()
@@ -84,7 +85,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
     // The memory data is now streamed to the axis interface
     for (std::size_t i = 0; i < ((PAGE_SIZE * 2) / 4) - 1; i++)
     {
-        t->m_mem_axi_rlast = ((i % 32) == 31);
+        t->m_mem_axi_rlast = ((i % BEATS) == (BEATS - 1));
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = i;
         rr::ut::clk(t);

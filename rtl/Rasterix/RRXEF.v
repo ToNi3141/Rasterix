@@ -113,6 +113,14 @@ module RRXEF #(
     localparam ID_WIDTH_LOC = ID_WIDTH - 3;
     localparam NRS = 6;
 
+    initial
+    begin
+        if (ID_WIDTH < 4)
+        begin
+            $error("ID_WIDTH must be at least 4");
+        end
+    end
+
     wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_awid;
     wire [(NRS * ADDR_WIDTH) - 1 : 0]       xbar_axi_awaddr;
     wire [(NRS * 8) - 1 : 0]                xbar_axi_awlen; 
@@ -171,7 +179,7 @@ module RRXEF #(
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
         .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
-        .S_THREADS({NRS{32'd8}}),   
+        .S_THREADS({ NRS { 32'd8 } }),   
         .M_ISSUE(32'd8)
     ) mainXBar (
         .clk(aclk),

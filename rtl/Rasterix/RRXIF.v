@@ -126,6 +126,14 @@ module RRXIF #(
     localparam ID_WIDTH_LOC = ID_WIDTH - 2;
     localparam NRS = 3;
 
+    initial
+    begin
+        if (ID_WIDTH < 3)
+        begin
+            $error("ID_WIDTH must be at least 3");
+        end
+    end
+
     wire [(NRS * ID_WIDTH_LOC) - 1 : 0]     xbar_axi_awid;
     wire [(NRS * ADDR_WIDTH) - 1 : 0]       xbar_axi_awaddr;
     wire [(NRS * 8) - 1 : 0]                xbar_axi_awlen; 
