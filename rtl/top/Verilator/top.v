@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module top #(
-    parameter CMD_STREAM_WIDTH = 32,
     parameter DATA_WIDTH = 32
 )
 (
@@ -35,8 +34,11 @@ module top #(
     output wire                             m_framebuffer_axis_tlast,
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
 );
+`define STR(x) `"x`"
+    parameter VARIANT = `STR(`VARIANT);
     parameter FRAMEBUFFER_SIZE_IN_WORDS = `FRAMEBUFFER_SIZE_IN_WORDS;
     parameter TEXTURE_BUFFER_SIZE = 17;
+    parameter CMD_STREAM_WIDTH = 32;
 
     initial
     begin
@@ -130,6 +132,7 @@ module top #(
     );
 
     RRX #(
+        .VARIANT(VARIANT),
         .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .TMU_PAGE_SIZE(4096),
         .ADDR_WIDTH(ADDR_WIDTH),

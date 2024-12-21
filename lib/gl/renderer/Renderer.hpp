@@ -84,7 +84,6 @@ namespace rr
 // This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
 // all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
 // but requires much more memory because of lots of duplicated data.
-// The RenderConfig::CMD_STREAM_WIDTH is used to calculate the alignment in the display list.
 class Renderer
 {
     static constexpr std::size_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 

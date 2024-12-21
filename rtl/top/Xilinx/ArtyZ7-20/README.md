@@ -28,7 +28,7 @@ There are two variants available:
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl -tclargs rrxif
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 

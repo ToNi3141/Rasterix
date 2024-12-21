@@ -99,7 +99,6 @@ The build system requires the following parameters to be set, and which shall be
 | RRX_CORE_MAX_DISPLAY_HEIGHT        | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
 | RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
 | RRX_CORE_USE_FLOAT_INTERPOLATION   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
-| RRX_CORE_CMD_STREAM_WIDTH          | Width of the command stream. Must be equal to the FPGA configuration. |
 | RRX_CORE_NUMBER_OF_TEXTURE_PAGES   | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
 | RRX_CORE_NUMBER_OF_TEXTURES        | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
 | RRX_CORE_TEXTURE_PAGE_SIZE         | The size of a texture page in bytes. Typical value is 4096. |
@@ -131,7 +130,6 @@ The hardware has the following configuration options:
 | ENABLE_STENCIL_BUFFER                   | Enables the stencil buffer. |
 | TMU_COUNT                               | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | ENABLE_MIPMAPPING                       | Enables the mip mapping. |
-| CMD_STREAM_WIDTH                        | Width of the AXIS command stream. |
 | TEXTURE_BUFFER_SIZE                     | Size of the texture buffer in lg2(bytes). |
 | ADDR_WIDTH                              | Width of the AXI address channel. |
 | ID_WIDTH                                | Width of the AXI id property. |

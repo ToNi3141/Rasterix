@@ -160,7 +160,15 @@ module RRXEF #(
         .S_COUNT(NRS),
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
-        .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32])
+        .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
+        .S_THREADS({NRS{32'd8}}),   
+        .M_ISSUE(32'd8)
+        // Benchmarks:            
+        // S_THREADS:   16     8     4       4       8       4
+        // M_ISSUE:     16     4     8       16      8       4
+        // FPS Q3:      13.x   9.5   11.5    11.5    12.1    9.5
+        // S_THREADS 8 and M_ISSUE 8 seems to be the best compromize between utilization,
+        // timing, and performance. The configuration mostly hides the memory latency.
     ) mainXBar (
         .clk(aclk),
         .rst(!resetn),

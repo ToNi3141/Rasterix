@@ -35,7 +35,7 @@ namespace rr
 template <class RenderConfig>
 class DisplayListAssembler {
 public:
-    static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
+    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using List = DisplayList<ALIGNMENT>;
 
     void setBuffer(tcb::span<uint8_t> buffer)

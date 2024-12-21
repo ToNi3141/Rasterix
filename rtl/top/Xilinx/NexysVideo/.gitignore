@@ -1,5 +1,4 @@
 synth
-synth_ef
-synth_if
+synth_*
 *.log
 *.jou

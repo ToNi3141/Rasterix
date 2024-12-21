@@ -277,6 +277,7 @@ proc create_root_design { parentCell } {
     CONFIG.STRB_WIDTH {8} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.TMU_PAGE_SIZE {4096} \
+    CONFIG.VARIANT {if} \
   ] $RRX_0
 
 

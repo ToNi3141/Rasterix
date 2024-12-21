@@ -1,4 +1,4 @@
-set SYNTH_OUT ./synth_if
+set SYNTH_OUT ./synth_[lindex $argv 0]
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 file delete -force $SYNTH_OUT
@@ -79,7 +79,6 @@ read_verilog ./../../../../Float/rtl/float/FloatToInt.v
 read_verilog ./../../../../Float/rtl/float/IntToFloat.v
 read_verilog ./../../../../Float/rtl/float/ValueDelay.v
 read_verilog ./../../../../Float/rtl/float/ValueTrack.v
-read_verilog ./../../../../Util/FT245S2AXIS.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_adapter.v
 read_verilog ./../../../../3rdParty/verilog-axis/axis_broadcast.v
 read_verilog ./../../../../3rdParty/verilog-axi/arbiter.v
@@ -109,7 +108,7 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_d
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
 read_xdc ./../Arty-Z7-20-Master.xdc
 
-source ../bd_rrxif/design_1.tcl
+source ../bd_[lindex $argv 0]/design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

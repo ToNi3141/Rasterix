@@ -28,9 +28,6 @@ struct RenderConfig
     // Rasterizer settings
     static constexpr bool USE_FLOAT_INTERPOLATION { RRX_CORE_USE_FLOAT_INTERPOLATION };
 
-    // Bus Settings
-    static constexpr std::size_t CMD_STREAM_WIDTH { RRX_CORE_CMD_STREAM_WIDTH };
-
     // Texture Memory Settings
     static constexpr std::size_t NUMBER_OF_TEXTURE_PAGES { RRX_CORE_NUMBER_OF_TEXTURE_PAGES };
     static constexpr std::size_t NUMBER_OF_TEXTURES { RRX_CORE_NUMBER_OF_TEXTURES };
