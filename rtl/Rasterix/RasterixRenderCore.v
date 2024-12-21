@@ -32,7 +32,7 @@ module RasterixRenderCore #(
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
     parameter TMU_MEMORY_WIDTH = 64,
-    parameter TMU_PAGE_SIZE = 2048,
+    parameter TEXTURE_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -540,7 +540,7 @@ module RasterixRenderCore #(
     defparam pagedMemoryReaderTmu0.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
     defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
     defparam pagedMemoryReaderTmu0.ID_WIDTH = ID_WIDTH;
-    defparam pagedMemoryReaderTmu0.PAGE_SIZE = TMU_PAGE_SIZE;
+    defparam pagedMemoryReaderTmu0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
     
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
@@ -627,7 +627,7 @@ module RasterixRenderCore #(
             defparam pagedMemoryReaderTmu1.MEMORY_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu1.ADDR_WIDTH = ADDR_WIDTH;
             defparam pagedMemoryReaderTmu1.ID_WIDTH = ID_WIDTH;
-            defparam pagedMemoryReaderTmu1.PAGE_SIZE = TMU_PAGE_SIZE;
+            defparam pagedMemoryReaderTmu1.PAGE_SIZE = TEXTURE_PAGE_SIZE;
             
             TextureBuffer textureBufferTMU1 (
                 .aclk(aclk),

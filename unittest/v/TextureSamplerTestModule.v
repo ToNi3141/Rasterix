@@ -53,7 +53,6 @@ module TextureSamplerTestModule #(
 
     // Texture Write
     input  wire                         s_axis_tvalid,
-    output reg                          s_axis_tready,
     input  wire                         s_axis_tlast,
     input  wire [STREAM_WIDTH - 1 : 0]  s_axis_tdata
 );
@@ -86,7 +85,6 @@ module TextureSamplerTestModule #(
         .texelOutput11(texelInput11),
 
         .s_axis_tvalid(s_axis_tvalid),
-        .s_axis_tready(s_axis_tready),
         .s_axis_tlast(s_axis_tlast),
         .s_axis_tdata(s_axis_tdata)
     );

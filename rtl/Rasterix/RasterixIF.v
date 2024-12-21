@@ -48,7 +48,7 @@ module RasterixIF #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
-    parameter TMU_PAGE_SIZE = 2048,
+    parameter TEXTURE_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -111,9 +111,9 @@ module RasterixIF #(
     // Memory interface
     output wire [ID_WIDTH - 1 : 0]          m_common_axi_awid,
     output wire [ADDR_WIDTH - 1 : 0]        m_common_axi_awaddr,
-    output wire [ 7 : 0]                    m_common_axi_awlen, // How many beats are in this transaction
-    output wire [ 2 : 0]                    m_common_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
-    output wire [ 1 : 0]                    m_common_axi_awburst, // 0 fixed, 1 incr, 2 wrapping
+    output wire [ 7 : 0]                    m_common_axi_awlen,
+    output wire [ 2 : 0]                    m_common_axi_awsize,
+    output wire [ 1 : 0]                    m_common_axi_awburst,
     output wire                             m_common_axi_awlock,
     output wire [ 3 : 0]                    m_common_axi_awcache,
     output wire [ 2 : 0]                    m_common_axi_awprot, 
@@ -566,7 +566,7 @@ module RasterixIF #(
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
-        .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+        .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_FLOW_CTRL(0),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),

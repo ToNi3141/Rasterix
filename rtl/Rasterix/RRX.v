@@ -16,18 +16,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module RRX #(
+    // Selects the variant. Allowed values: if, ef
     parameter VARIANT = "if",
 
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
+    // IF only.
     parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
+    // IF only.
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
+    // IF only.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
     // This enables the 4 bit stencil buffer
@@ -36,7 +40,7 @@ module RRX #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
-    parameter TMU_PAGE_SIZE = 4096,
+    parameter TEXTURE_PAGE_SIZE = 4096,
     
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
@@ -134,7 +138,7 @@ module RRX #(
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
-                .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+                .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
                 .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
@@ -204,7 +208,7 @@ module RRX #(
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
-                .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+                .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
                 .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),

@@ -34,7 +34,7 @@ module RRXIF #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
-    parameter TMU_PAGE_SIZE = 4096,
+    parameter TEXTURE_PAGE_SIZE = 4096,
     
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
@@ -418,7 +418,7 @@ module RRXIF #(
     RasterixIF #(
         .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
-        .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+        .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),

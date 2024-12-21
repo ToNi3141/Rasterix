@@ -40,7 +40,7 @@ module RasterixEF #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
-    parameter TMU_PAGE_SIZE = 2048,
+    parameter TEXTURE_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -770,7 +770,7 @@ module RasterixEF #(
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
-        .TMU_PAGE_SIZE(TMU_PAGE_SIZE),
+        .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_FLOW_CTRL(1),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),

@@ -276,7 +276,7 @@ proc create_root_design { parentCell } {
     CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
     CONFIG.STRB_WIDTH {8} \
     CONFIG.TMU_COUNT {1} \
-    CONFIG.TMU_PAGE_SIZE {4096} \
+    CONFIG.TEXTURE_PAGE_SIZE {4096} \
     CONFIG.VARIANT {ef} \
   ] $RRX_0
 
