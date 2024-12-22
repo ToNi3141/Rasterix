@@ -35,7 +35,7 @@ namespace rr
 template <class RenderConfig>
 class DisplayListAssembler {
 public:
-    static constexpr uint8_t ALIGNMENT { RenderConfig::CMD_STREAM_WIDTH / 8 };
+    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using List = DisplayList<ALIGNMENT>;
 
     void setBuffer(tcb::span<uint8_t> buffer)
@@ -100,15 +100,13 @@ public:
             // Mark that a triangle was rendered
             m_wasLastCommandATextureCommand.reset();
         }
-        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
         {
             const std::size_t tmu = cmd.getTmu();
             if (tmu >= m_wasLastCommandATextureCommand.size()) 
             {
                 return false;
             }
-            // Close the current stream to avoid and undefined behaviour 
-            closeStreamSection();
             // Check if the last command was a texture command. If so, remove the commands from the display list
             if (m_wasLastCommandATextureCommand[tmu]) 
             {
@@ -127,7 +125,7 @@ public:
             writeDseCommand(cmd);
         }
 
-        if constexpr (std::is_same<TCommand, TextureStreamCmd<RenderConfig>>::value)
+        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
         {
             const std::size_t tmu = cmd.getTmu();
             // Store the end position of the display list.
@@ -171,13 +169,9 @@ private:
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
-        using DescArray = typename TCommand::Desc;
-        using DescValueType = typename DescArray::value_type::element_type;
-
         // Check if the display list contains enough space
-        std::size_t expectedSize = List::template sizeOf<uint32_t>() 
-                                    + (List::template sizeOf<DescValueType>() * std::tuple_size<DescArray>()) 
-                                    + List::template sizeOf<DSEC::SCT>(); // Additional memory for a stream section (just in case)
+        std::size_t expectedSize = List::template sizeOf<uint32_t>() + List::template sizeOf<DSEC::SCT>();
+        expectedSize += List::template sizeOf<typename TCommand::Payload::element_type>() * cmd.payload().size();
         if constexpr (HasDseOp<decltype(cmd)>::value)
         {
             expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
@@ -194,8 +188,6 @@ private:
     template <typename TCommand>
     void writeCommand(const TCommand& cmd)
     {
-        using DescArray = typename TCommand::Desc;
-        using DescValueType = typename DescArray::value_type::element_type;
         if (openNewStreamSection()) 
         {
             // Write command
@@ -203,13 +195,11 @@ private:
             *opDl = cmd.command();
 
             // Create elements
-            DescArray arr;
-            for (auto& a : arr)
+            for (auto& a : cmd.payload())
             {
-                DescValueType *argDl = m_displayList.template create<DescValueType>();
-                a = { argDl, sizeof(DescValueType) };
+                using Payload = typename std::remove_const<typename TCommand::Payload::element_type>::type;
+                *(m_displayList.template create<Payload>()) = a;
             }
-            cmd.serialize(arr);
         }
     }
 

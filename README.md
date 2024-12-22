@@ -88,58 +88,62 @@ To port the driver to a new interface (like SPI, async FT245, AXIS, or others) u
 
 See also the example [here](/example/util/native/Runner.hpp).
 
-The build system requires the following parameters to be set, and which shall be equal to the parameters set in the hardware.
+The build system requires the following parameters to be set:
 
-| Property                           | Description |
-|------------------------------------|-------------|
-| RRX_CORE_TMU_COUNT                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
-| RRX_CORE_MAX_TEXTURE_SIZE          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in TEXTURE_BUFFER_SIZE of the FPGA. |
-| RRX_CORE_ENABLE_MIPMAPPING         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
-| RRX_CORE_MAX_DISPLAY_WIDTH         | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
-| RRX_CORE_MAX_DISPLAY_HEIGHT        | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
-| RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
-| RRX_CORE_USE_FLOAT_INTERPOLATION   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
-| RRX_CORE_CMD_STREAM_WIDTH          | Width of the command stream. Must be equal to the FPGA configuration. |
-| RRX_CORE_NUMBER_OF_TEXTURE_PAGES   | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
-| RRX_CORE_NUMBER_OF_TEXTURES        | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
-| RRX_CORE_TEXTURE_PAGE_SIZE         | The size of a texture page in bytes. Typical value is 4096. |
-| RRX_CORE_GRAM_MEMORY_LOC           | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
-| RRX_CORE_FRAMEBUFFER_TYPE          | Configures the destination of the framebuffer. Must fit to the chosen variant. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
-| RRX_CORE_COLOR_BUFFER_LOC_1        | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
-| RRX_CORE_COLOR_BUFFER_LOC_2        | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
-| RRX_CORE_DEPTH_BUFFER_LOC          | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
-| RRX_CORE_STENCIL_BUFFER_LOC        | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
+Note: Bold options are required to be equal to the hardware counterparts.
+
+| Property                               | Description |
+|----------------------------------------|-------------|
+| __RRX_CORE_TMU_COUNT__                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
+| RRX_CORE_MAX_TEXTURE_SIZE              | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in __TEXTURE_BUFFER_SIZE__ of the FPGA. A 256x256px texture requires: __TEXTURE_BUFFER_SIZE__ = log2(256x256x2). |
+| __RRX_CORE_ENABLE_MIPMAPPING__         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
+| RRX_CORE_MAX_DISPLAY_WIDTH             | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
+| RRX_CORE_MAX_DISPLAY_HEIGHT            | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
+| __RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS__ | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
+| __RRX_CORE_USE_FLOAT_INTERPOLATION__   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
+| RRX_CORE_NUMBER_OF_TEXTURE_PAGES       | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
+| RRX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
+| __RRX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 4096. |
+| RRX_CORE_GRAM_MEMORY_LOC               | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
+| RRX_CORE_FRAMEBUFFER_TYPE              | Configures the destination of the framebuffer. Must fit to the chosen __VARIANT__. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
+| RRX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
+| RRX_CORE_COLOR_BUFFER_LOC_2            | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
+| RRX_CORE_DEPTH_BUFFER_LOC              | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| RRX_CORE_STENCIL_BUFFER_LOC            | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
 
 
 ## How to use the Core
-1. Add the following directories to your project: `rtl/Rasterix`, `rtl/Util`, and `rtl/Float`.
-2. Instantiate the `RasterixIF` or `RasterixEF` module.  
+1. Add the files in the following directories to your project: `rtl/Rasterix/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
+2. Instantiate the `RRX` module.  
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
-4. Connect the `m_mem_axi` interface to a memory. In case of a configuration with external framebuffer, connect also the axi ports of the framebuffer to the memory.
+4. Connect the `m_mem_axi` interface to a memory.
 5. Optionally connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a display for instance). When using a memory mapped framebuffer, then this port is unused.
-6. Connect `resetn` to your reset line and `aclk` to your clock domain.
-7. Synthesize.
+6. Connect the framebuffer signals (`swap_fb`, `fb_swapped`, `fb_addr`). They are used to signal an display controller, that it should swap the color buffer. `swap_fb` gets high when a swapping is requested, `fb_swapped` is used to signal that the swap request was acknowledged. `fb_addr` contains the address of the new color buffer. If this signals are not used, then connect them the following way: `assign fb_swapped = !swap_fb`. `fb_addr` can be left unconnected.
+7. Connect `resetn` to your reset line and `aclk` to your clock domain.
+8. Synthesize.
 
 The hardware has the following configuration options:
 
-| Property                                | Description |
-|-----------------------------------------|-------------|
-| FRAMEBUFFER_SIZE_IN_WORDS               | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
-| FB_MEM_DATA_WIDTH                       | `rrxef` only. Width of the framebuffer memory channel. |
-| FRAMEBUFFER_SUB_PIXEL_WIDTH             | `rrxif` only. Sub pixel width in the internal framebuffer. |
-| FRAMEBUFFER_ENABLE_ALPHA_CHANNEL        | `rrxif` only. Enables the alpha channel in the framebuffer. |
-| ENABLE_STENCIL_BUFFER                   | Enables the stencil buffer. |
-| TMU_COUNT                               | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
-| ENABLE_MIPMAPPING                       | Enables the mip mapping. |
-| CMD_STREAM_WIDTH                        | Width of the AXIS command stream. |
-| TEXTURE_BUFFER_SIZE                     | Size of the texture buffer in lg2(bytes). |
-| ADDR_WIDTH                              | Width of the AXI address channel. |
-| ID_WIDTH                                | Width of the AXI id property. |
-| STRB_WIDTH                              | Width of the AXI strobe property. |
-| FB_MEM_STRB_WIDTH                       | `rrxef` only. Width of the framebuffer AXI strobe property. |
-| RASTERIZER_FLOAT_PRECISION              | `true` enables the floating point interpolation. `false` enables the fixed point interpolation. |
-| RASTERIZER_FIXPOINT_PRECISION           | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
-| RASTERIZER_ENABLE_FLOAT_INTERPOLATION   | Precision of the floating point arithmetic. Valid range: 20-32. |
+Note: Bold options are required to be equal to the software counterparts.
+
+| Property                                  | Variant | Description |
+|-------------------------------------------|---------|-------------|
+| __VARIANT__                               | if/ef   | The selected variant. Valid values are `if` for the rrxif and `ef` for the rrxef. |
+| __FRAMEBUFFER_SIZE_IN_WORDS__             | if      | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
+| FRAMEBUFFER_SUB_PIXEL_WIDTH               | if      | Sub pixel width in the internal framebuffer. |
+| FRAMEBUFFER_ENABLE_ALPHA_CHANNEL          | if      | Enables the alpha channel in the framebuffer. |
+| __ENABLE_STENCIL_BUFFER__                 | if/ef   | Enables the stencil buffer. |
+| __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
+| __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
+| __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip mapping. |
+| __TEXTURE_BUFFER_SIZE__                   | if/ef   | Size of the texture buffer in log2(bytes). |
+| ADDR_WIDTH                                | if/ef   | Width of the AXI address channel. |
+| ID_WIDTH                                  | if/ef   | Width of the AXI id property. Should be at least 4. |
+| DATA_WIDTH                                | if/ef   | Width of the AXI data property. |
+| STRB_WIDTH                                | if/ef   | Width of the AXI strobe property. Should always be 8 bit per byte. |
+| __RASTERIZER_ENABLE_FLOAT_INTERPOLATION__ | if/ef   | `true` enables the floating point interpolation. `false` enables the fixed point interpolation. |
+| RASTERIZER_FIXPOINT_PRECISION             | if/ef   | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
+| RASTERIZER_FLOAT_PRECISION                | if/ef   | Precision of the floating point arithmetic. Valid range: 20-32. |
 
 
 # Missing Features

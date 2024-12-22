@@ -48,20 +48,28 @@ module RasterixIF #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter TEXTURE_PAGE_SIZE = 2048,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
-    parameter CMD_STREAM_WIDTH = 32,
+    localparam CMD_STREAM_WIDTH = 32,
 
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
 
-    // Memory address witdth
+    // Memory address width
     parameter ADDR_WIDTH = 24,
     // Memory ID width
     parameter ID_WIDTH = 8,
+    // Memory data width
+    parameter DATA_WIDTH = 64,
     // Memory strobe width
-    parameter STRB_WIDTH = CMD_STREAM_WIDTH / 8,
+    parameter STRB_WIDTH = DATA_WIDTH / 8,
+
+    // Memory data width for the common channel
+    localparam COMMON_DATA_WIDTH = CMD_STREAM_WIDTH,
+    // Memory strobe width for the common channel
+    localparam COMMON_STRB_WIDTH = COMMON_DATA_WIDTH / 8,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -101,51 +109,89 @@ module RasterixIF #(
     input  wire                             fb_swapped,
 
     // Memory interface
-    output wire [ID_WIDTH - 1 : 0]          m_mem_axi_awid,
-    output wire [ADDR_WIDTH - 1 : 0]        m_mem_axi_awaddr,
-    output wire [ 7 : 0]                    m_mem_axi_awlen, // How many beats are in this transaction
-    output wire [ 2 : 0]                    m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
-    output wire [ 1 : 0]                    m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
-    output wire                             m_mem_axi_awlock,
-    output wire [ 3 : 0]                    m_mem_axi_awcache,
-    output wire [ 2 : 0]                    m_mem_axi_awprot, 
-    output wire                             m_mem_axi_awvalid,
-    input  wire                             m_mem_axi_awready,
+    output wire [ID_WIDTH - 1 : 0]          m_common_axi_awid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_common_axi_awaddr,
+    output wire [ 7 : 0]                    m_common_axi_awlen,
+    output wire [ 2 : 0]                    m_common_axi_awsize,
+    output wire [ 1 : 0]                    m_common_axi_awburst,
+    output wire                             m_common_axi_awlock,
+    output wire [ 3 : 0]                    m_common_axi_awcache,
+    output wire [ 2 : 0]                    m_common_axi_awprot, 
+    output wire                             m_common_axi_awvalid,
+    input  wire                             m_common_axi_awready,
 
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_mem_axi_wdata,
-    output wire [STRB_WIDTH - 1 : 0]        m_mem_axi_wstrb,
-    output wire                             m_mem_axi_wlast,
-    output wire                             m_mem_axi_wvalid,
-    input  wire                             m_mem_axi_wready,
+    output wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_wdata,
+    output wire [COMMON_STRB_WIDTH - 1 : 0] m_common_axi_wstrb,
+    output wire                             m_common_axi_wlast,
+    output wire                             m_common_axi_wvalid,
+    input  wire                             m_common_axi_wready,
 
-    input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_bid,
-    input  wire [ 1 : 0]                    m_mem_axi_bresp,
-    input  wire                             m_mem_axi_bvalid,
-    output wire                             m_mem_axi_bready,
+    input  wire [ID_WIDTH - 1 : 0]          m_common_axi_bid,
+    input  wire [ 1 : 0]                    m_common_axi_bresp,
+    input  wire                             m_common_axi_bvalid,
+    output wire                             m_common_axi_bready,
 
-    output wire [ID_WIDTH - 1 : 0]          m_mem_axi_arid,
-    output wire [ADDR_WIDTH - 1 : 0]        m_mem_axi_araddr,
-    output wire [ 7 : 0]                    m_mem_axi_arlen,
-    output wire [ 2 : 0]                    m_mem_axi_arsize,
-    output wire [ 1 : 0]                    m_mem_axi_arburst,
-    output wire                             m_mem_axi_arlock,
-    output wire [ 3 : 0]                    m_mem_axi_arcache,
-    output wire [ 2 : 0]                    m_mem_axi_arprot,
-    output wire                             m_mem_axi_arvalid,
-    input  wire                             m_mem_axi_arready,
+    output wire [ID_WIDTH - 1 : 0]          m_common_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_common_axi_araddr,
+    output wire [ 7 : 0]                    m_common_axi_arlen,
+    output wire [ 2 : 0]                    m_common_axi_arsize,
+    output wire [ 1 : 0]                    m_common_axi_arburst,
+    output wire                             m_common_axi_arlock,
+    output wire [ 3 : 0]                    m_common_axi_arcache,
+    output wire [ 2 : 0]                    m_common_axi_arprot,
+    output wire                             m_common_axi_arvalid,
+    input  wire                             m_common_axi_arready,
 
-    input  wire [ID_WIDTH - 1 : 0]          m_mem_axi_rid,
-    input  wire [CMD_STREAM_WIDTH - 1 : 0]  m_mem_axi_rdata,
-    input  wire [ 1 : 0]                    m_mem_axi_rresp,
-    input  wire                             m_mem_axi_rlast,
-    input  wire                             m_mem_axi_rvalid,
-    output wire                             m_mem_axi_rready
+    input  wire [ID_WIDTH - 1 : 0]          m_common_axi_rid,
+    input  wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_rdata,
+    input  wire [ 1 : 0]                    m_common_axi_rresp,
+    input  wire                             m_common_axi_rlast,
+    input  wire                             m_common_axi_rvalid,
+    output wire                             m_common_axi_rready,
+
+    // TMU 0 memory access
+    output wire [ID_WIDTH - 1 : 0]          m_tmu0_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_tmu0_axi_araddr,
+    output wire [ 7 : 0]                    m_tmu0_axi_arlen,
+    output wire [ 2 : 0]                    m_tmu0_axi_arsize,
+    output wire [ 1 : 0]                    m_tmu0_axi_arburst,
+    output wire                             m_tmu0_axi_arlock,
+    output wire [ 3 : 0]                    m_tmu0_axi_arcache,
+    output wire [ 2 : 0]                    m_tmu0_axi_arprot,
+    output wire                             m_tmu0_axi_arvalid,
+    input  wire                             m_tmu0_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_tmu0_axi_rid,
+    input  wire [DATA_WIDTH - 1 : 0]        m_tmu0_axi_rdata,
+    input  wire [ 1 : 0]                    m_tmu0_axi_rresp,
+    input  wire                             m_tmu0_axi_rlast,
+    input  wire                             m_tmu0_axi_rvalid,
+    output wire                             m_tmu0_axi_rready,
+
+    // TMU 1 memory access
+    output wire [ID_WIDTH - 1 : 0]          m_tmu1_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_tmu1_axi_araddr,
+    output wire [ 7 : 0]                    m_tmu1_axi_arlen,
+    output wire [ 2 : 0]                    m_tmu1_axi_arsize,
+    output wire [ 1 : 0]                    m_tmu1_axi_arburst,
+    output wire                             m_tmu1_axi_arlock,
+    output wire [ 3 : 0]                    m_tmu1_axi_arcache,
+    output wire [ 2 : 0]                    m_tmu1_axi_arprot,
+    output wire                             m_tmu1_axi_arvalid,
+    input  wire                             m_tmu1_axi_arready,
+
+    input  wire [ID_WIDTH - 1 : 0]          m_tmu1_axi_rid,
+    input  wire [DATA_WIDTH - 1 : 0]        m_tmu1_axi_rdata,
+    input  wire [ 1 : 0]                    m_tmu1_axi_rresp,
+    input  wire                             m_tmu1_axi_rlast,
+    input  wire                             m_tmu1_axi_rvalid,
+    output wire                             m_tmu1_axi_rready
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DEFAULT_ALPHA_VAL = 0;
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
-    localparam PIXEL_PER_BEAT = CMD_STREAM_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -158,32 +204,69 @@ module RasterixIF #(
     `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
 
-    wire                             m_cmd_axis_tvalid;
-    wire                             m_cmd_axis_tready;
-    wire                             m_cmd_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_axis_tdata;
+    wire                             cmd_axis_tvalid;
+    wire                             cmd_axis_tready;
+    wire                             cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
 
-    wire                             s_framebuffer_axis_tvalid;
-    wire                             s_framebuffer_axis_tready;
-    wire                             s_framebuffer_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  s_framebuffer_axis_tdata;
+    wire                             framebuffer_dse_axis_tvalid;
+    wire                             framebuffer_dse_axis_tready;
+    wire                             framebuffer_dse_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  framebuffer_dse_axis_tdata;
+
+    wire                             framebuffer_axis_tvalid;
+    wire                             framebuffer_axis_tready;
+    wire                             framebuffer_axis_tlast;
+    wire [DATA_WIDTH - 1 : 0]        framebuffer_axis_tdata;
+
+    axis_adapter #(
+        .S_DATA_WIDTH(DATA_WIDTH),
+        .M_DATA_WIDTH(CMD_STREAM_WIDTH),
+        .S_KEEP_ENABLE(1),
+        .M_KEEP_ENABLE(1),
+        .ID_ENABLE(0),
+        .DEST_ENABLE(0),
+        .USER_ENABLE(0)
+    ) framebufferAdapter (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata(framebuffer_axis_tdata),
+        .s_axis_tkeep(~0),
+        .s_axis_tvalid(framebuffer_axis_tvalid),
+        .s_axis_tready(framebuffer_axis_tready),
+        .s_axis_tlast(framebuffer_axis_tlast),
+        .s_axis_tid(0),
+        .s_axis_tdest(0),
+        .s_axis_tuser(0),
+
+        .m_axis_tdata(framebuffer_dse_axis_tdata),
+        .m_axis_tkeep(),
+        .m_axis_tvalid(framebuffer_dse_axis_tvalid),
+        .m_axis_tready(framebuffer_dse_axis_tready),
+        .m_axis_tlast(framebuffer_dse_axis_tlast),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
+    );
 
     DmaStreamEngine #(
-        .STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .STREAM_WIDTH(COMMON_DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH)
     ) dma (
         .aclk(aclk),
         .resetn(resetn),
 
-        .m_st1_axis_tvalid(m_cmd_axis_tvalid),
-        .m_st1_axis_tready(m_cmd_axis_tready),
-        .m_st1_axis_tlast(m_cmd_axis_tlast),
-        .m_st1_axis_tdata(m_cmd_axis_tdata),
+        .m_st1_axis_tvalid(cmd_axis_tvalid),
+        .m_st1_axis_tready(cmd_axis_tready),
+        .m_st1_axis_tlast(cmd_axis_tlast),
+        .m_st1_axis_tdata(cmd_axis_tdata),
 
-        .s_st1_axis_tvalid(s_framebuffer_axis_tvalid),
-        .s_st1_axis_tready(s_framebuffer_axis_tready),
-        .s_st1_axis_tlast(s_framebuffer_axis_tlast),
-        .s_st1_axis_tdata(s_framebuffer_axis_tdata),
+        .s_st1_axis_tvalid(framebuffer_dse_axis_tvalid),
+        .s_st1_axis_tready(framebuffer_dse_axis_tready),
+        .s_st1_axis_tlast(framebuffer_dse_axis_tlast),
+        .s_st1_axis_tdata(framebuffer_dse_axis_tdata),
 
         .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_st0_axis_tready(m_framebuffer_axis_tready),
@@ -195,45 +278,45 @@ module RasterixIF #(
         .s_st0_axis_tlast(s_cmd_axis_tlast),
         .s_st0_axis_tdata(s_cmd_axis_tdata),
 
-        .m_mem_axi_awid(m_mem_axi_awid),
-        .m_mem_axi_awaddr(m_mem_axi_awaddr),
-        .m_mem_axi_awlen(m_mem_axi_awlen), 
-        .m_mem_axi_awsize(m_mem_axi_awsize), 
-        .m_mem_axi_awburst(m_mem_axi_awburst), 
-        .m_mem_axi_awlock(m_mem_axi_awlock), 
-        .m_mem_axi_awcache(m_mem_axi_awcache), 
-        .m_mem_axi_awprot(m_mem_axi_awprot), 
-        .m_mem_axi_awvalid(m_mem_axi_awvalid),
-        .m_mem_axi_awready(m_mem_axi_awready),
+        .m_mem_axi_awid(m_common_axi_awid),
+        .m_mem_axi_awaddr(m_common_axi_awaddr),
+        .m_mem_axi_awlen(m_common_axi_awlen), 
+        .m_mem_axi_awsize(m_common_axi_awsize), 
+        .m_mem_axi_awburst(m_common_axi_awburst), 
+        .m_mem_axi_awlock(m_common_axi_awlock), 
+        .m_mem_axi_awcache(m_common_axi_awcache), 
+        .m_mem_axi_awprot(m_common_axi_awprot), 
+        .m_mem_axi_awvalid(m_common_axi_awvalid),
+        .m_mem_axi_awready(m_common_axi_awready),
 
-        .m_mem_axi_wdata(m_mem_axi_wdata),
-        .m_mem_axi_wstrb(m_mem_axi_wstrb),
-        .m_mem_axi_wlast(m_mem_axi_wlast),
-        .m_mem_axi_wvalid(m_mem_axi_wvalid),
-        .m_mem_axi_wready(m_mem_axi_wready),
+        .m_mem_axi_wdata(m_common_axi_wdata),
+        .m_mem_axi_wstrb(m_common_axi_wstrb),
+        .m_mem_axi_wlast(m_common_axi_wlast),
+        .m_mem_axi_wvalid(m_common_axi_wvalid),
+        .m_mem_axi_wready(m_common_axi_wready),
 
-        .m_mem_axi_bid(m_mem_axi_bid),
-        .m_mem_axi_bresp(m_mem_axi_bresp),
-        .m_mem_axi_bvalid(m_mem_axi_bvalid),
-        .m_mem_axi_bready(m_mem_axi_bready),
+        .m_mem_axi_bid(m_common_axi_bid),
+        .m_mem_axi_bresp(m_common_axi_bresp),
+        .m_mem_axi_bvalid(m_common_axi_bvalid),
+        .m_mem_axi_bready(m_common_axi_bready),
 
-        .m_mem_axi_arid(m_mem_axi_arid),
-        .m_mem_axi_araddr(m_mem_axi_araddr),
-        .m_mem_axi_arlen(m_mem_axi_arlen),
-        .m_mem_axi_arsize(m_mem_axi_arsize),
-        .m_mem_axi_arburst(m_mem_axi_arburst),
-        .m_mem_axi_arlock(m_mem_axi_arlock),
-        .m_mem_axi_arcache(m_mem_axi_arcache),
-        .m_mem_axi_arprot(m_mem_axi_arprot),
-        .m_mem_axi_arvalid(m_mem_axi_arvalid),
-        .m_mem_axi_arready(m_mem_axi_arready),
+        .m_mem_axi_arid(m_common_axi_arid),
+        .m_mem_axi_araddr(m_common_axi_araddr),
+        .m_mem_axi_arlen(m_common_axi_arlen),
+        .m_mem_axi_arsize(m_common_axi_arsize),
+        .m_mem_axi_arburst(m_common_axi_arburst),
+        .m_mem_axi_arlock(m_common_axi_arlock),
+        .m_mem_axi_arcache(m_common_axi_arcache),
+        .m_mem_axi_arprot(m_common_axi_arprot),
+        .m_mem_axi_arvalid(m_common_axi_arvalid),
+        .m_mem_axi_arready(m_common_axi_arready),
 
-        .m_mem_axi_rid(m_mem_axi_rid),
-        .m_mem_axi_rdata(m_mem_axi_rdata),
-        .m_mem_axi_rresp(m_mem_axi_rresp),
-        .m_mem_axi_rlast(m_mem_axi_rlast),
-        .m_mem_axi_rvalid(m_mem_axi_rvalid),
-        .m_mem_axi_rready(m_mem_axi_rready)
+        .m_mem_axi_rid(m_common_axi_rid),
+        .m_mem_axi_rdata(m_common_axi_rdata),
+        .m_mem_axi_rresp(m_common_axi_rresp),
+        .m_mem_axi_rlast(m_common_axi_rlast),
+        .m_mem_axi_rvalid(m_common_axi_rvalid),
+        .m_mem_axi_rready(m_common_axi_rready)
     );
 
     wire                                             framebufferParamEnableScissor;
@@ -391,9 +474,9 @@ module RasterixIF #(
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
 
-        .m_axis_tvalid(s_framebuffer_axis_tvalid),
-        .m_axis_tready(s_framebuffer_axis_tready),
-        .m_axis_tlast(s_framebuffer_axis_tlast),
+        .m_axis_tvalid(framebuffer_axis_tvalid),
+        .m_axis_tready(framebuffer_axis_tready),
+        .m_axis_tlast(framebuffer_axis_tlast),
         .m_axis_tdata(s_framebuffer_unconverted_axis_tdata)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
@@ -410,11 +493,11 @@ module RasterixIF #(
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
             `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
-            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(s_framebuffer_unconverted_axis_tdata)));
+            assign framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(s_framebuffer_unconverted_axis_tdata)));
         end
         else
         begin
-            assign s_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(s_framebuffer_unconverted_axis_tdata));
+            assign framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(s_framebuffer_unconverted_axis_tdata));
         end
     endgenerate
 
@@ -470,16 +553,20 @@ module RasterixIF #(
         else
         begin
             assign m_stencil_rdata = 0;
+            assign m_stencil_arlast = 0;
             assign stencilBufferApplied = 1;
         end
     endgenerate
 
     RasterixRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
-        .CMD_STREAM_WIDTH(CMD_STREAM_WIDTH),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+        .TMU_MEMORY_WIDTH(DATA_WIDTH),
+        .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_FLOW_CTRL(0),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
@@ -487,14 +574,11 @@ module RasterixIF #(
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),
-
-        .dbgStreamState(),
-        .dbgRasterizerRunning(),
         
-        .s_cmd_axis_tvalid(m_cmd_axis_tvalid),
-        .s_cmd_axis_tready(m_cmd_axis_tready),
-        .s_cmd_axis_tlast(m_cmd_axis_tlast),
-        .s_cmd_axis_tdata(m_cmd_axis_tdata),
+        .s_cmd_axis_tvalid(cmd_axis_tvalid),
+        .s_cmd_axis_tready(cmd_axis_tready),
+        .s_cmd_axis_tlast(cmd_axis_tlast),
+        .s_cmd_axis_tdata(cmd_axis_tdata),
 
         .framebufferParamEnableScissor(framebufferParamEnableScissor),
         .framebufferParamScissorStartX(framebufferParamScissorStartX),
@@ -515,7 +599,7 @@ module RasterixIF #(
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
-        .m_color_arlast(),
+        .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
         .m_color_araddr(m_color_araddr),
         .m_color_rready(),
@@ -531,6 +615,7 @@ module RasterixIF #(
         .m_color_wscreenPosY(m_color_wscreenPosY),
 
         .depthBufferClearDepth(depthBufferClearDepth),
+        .depthBufferAddr(), // Unused in the rrxif config
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
@@ -538,7 +623,7 @@ module RasterixIF #(
         .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
-        .m_depth_arlast(),
+        .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
         .m_depth_araddr(m_depth_araddr),
         .m_depth_rready(),
@@ -554,6 +639,7 @@ module RasterixIF #(
         .m_depth_wscreenPosY(m_depth_wscreenPosY),
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
+        .stencilBufferAddr(), // Unused in the rrxif config
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
@@ -561,7 +647,7 @@ module RasterixIF #(
         .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),
-        .m_stencil_arlast(),
+        .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),
         .m_stencil_araddr(m_stencil_araddr),
         .m_stencil_rready(),
@@ -574,7 +660,41 @@ module RasterixIF #(
         .m_stencil_wstrb(m_stencil_wstrb),
         .m_stencil_wlast(),
         .m_stencil_wscreenPosX(m_stencil_wscreenPosX),
-        .m_stencil_wscreenPosY(m_stencil_wscreenPosY)
+        .m_stencil_wscreenPosY(m_stencil_wscreenPosY),
+
+        .m_tmu0_axi_arid(m_tmu0_axi_arid),
+        .m_tmu0_axi_araddr(m_tmu0_axi_araddr),
+        .m_tmu0_axi_arlen(m_tmu0_axi_arlen),
+        .m_tmu0_axi_arsize(m_tmu0_axi_arsize),
+        .m_tmu0_axi_arburst(m_tmu0_axi_arburst),
+        .m_tmu0_axi_arlock(m_tmu0_axi_arlock),
+        .m_tmu0_axi_arcache(m_tmu0_axi_arcache),
+        .m_tmu0_axi_arprot(m_tmu0_axi_arprot),
+        .m_tmu0_axi_arvalid(m_tmu0_axi_arvalid),
+        .m_tmu0_axi_arready(m_tmu0_axi_arready),
+        .m_tmu0_axi_rid(m_tmu0_axi_rid),
+        .m_tmu0_axi_rdata(m_tmu0_axi_rdata),
+        .m_tmu0_axi_rresp(m_tmu0_axi_rresp),
+        .m_tmu0_axi_rlast(m_tmu0_axi_rlast),
+        .m_tmu0_axi_rvalid(m_tmu0_axi_rvalid),
+        .m_tmu0_axi_rready(m_tmu0_axi_rready),
+
+        .m_tmu1_axi_arid(m_tmu1_axi_arid),
+        .m_tmu1_axi_araddr(m_tmu1_axi_araddr),
+        .m_tmu1_axi_arlen(m_tmu1_axi_arlen),
+        .m_tmu1_axi_arsize(m_tmu1_axi_arsize),
+        .m_tmu1_axi_arburst(m_tmu1_axi_arburst),
+        .m_tmu1_axi_arlock(m_tmu1_axi_arlock),
+        .m_tmu1_axi_arcache(m_tmu1_axi_arcache),
+        .m_tmu1_axi_arprot(m_tmu1_axi_arprot),
+        .m_tmu1_axi_arvalid(m_tmu1_axi_arvalid),
+        .m_tmu1_axi_arready(m_tmu1_axi_arready),
+        .m_tmu1_axi_rid(m_tmu1_axi_rid),
+        .m_tmu1_axi_rdata(m_tmu1_axi_rdata),
+        .m_tmu1_axi_rresp(m_tmu1_axi_rresp),
+        .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
+        .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
+        .m_tmu1_axi_rready(m_tmu1_axi_rready)
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;

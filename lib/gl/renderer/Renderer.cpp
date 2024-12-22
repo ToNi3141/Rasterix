@@ -246,8 +246,7 @@ bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
     const tcb::span<const std::size_t> pages = m_textureManager.getPages(texId);
     for (std::size_t i = 0; i < m_displayLines; i++)
     {
-        using Command = TextureStreamCmd<RenderConfig>;
-        ret = ret && addCommand(i, Command { target, pages });
+        ret = ret && addCommand(i, TextureStreamCmd { target, pages });
         TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
         reg.setTmu(target);
         ret = ret && addCommand(i, WriteRegisterCmd { reg });

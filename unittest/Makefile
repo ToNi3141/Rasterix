@@ -21,7 +21,8 @@ all: \
 	lodCalculator \
 	attributeInterpolationX \
 	attributePerspectiveCorrectionX \
-	triangleStreamF2XConverter
+	triangleStreamF2XConverter \
+	pagedMemoryReader
  
 clean:
 	rm -rf obj_dir
@@ -130,6 +131,11 @@ triangleStreamF2XConverter:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/TriangleStreamF2XConverter.v --top-module TriangleStreamF2XConverter cpp/sim_TriangleStreamF2XConverter.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VTriangleStreamF2XConverter.mk
 	./obj_dir/VTriangleStreamF2XConverter
+
+pagedMemoryReader:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/Rasterix/PagedMemoryReader.v --top-module PagedMemoryReader cpp/sim_PagedMemoryReader.cpp -I../rtl/Rasterix/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VPagedMemoryReader.mk
+	./obj_dir/VPagedMemoryReader
 
 .SECONDARY:
 .PHONY: all clean

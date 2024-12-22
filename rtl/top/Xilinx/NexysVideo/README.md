@@ -32,7 +32,7 @@ You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant,
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl -tclargs rrxif
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -135,7 +135,6 @@ build_flags =
     -DRRX_CORE_MAX_DISPLAY_HEIGHT=600
     -DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=614400
     -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
-    -DRRX_CORE_CMD_STREAM_WIDTH=128
     -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=64
     -DRRX_CORE_NUMBER_OF_TEXTURES=64
     -DRRX_CORE_TEXTURE_PAGE_SIZE=4096
@@ -157,7 +156,6 @@ build_flags =
     -DRRX_CORE_MAX_DISPLAY_HEIGHT=600
     -DRRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS=131072
     -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
-    -DRRX_CORE_CMD_STREAM_WIDTH=128
     -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=64
     -DRRX_CORE_NUMBER_OF_TEXTURES=64
     -DRRX_CORE_TEXTURE_PAGE_SIZE=4096

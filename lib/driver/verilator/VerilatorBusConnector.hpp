@@ -33,13 +33,13 @@ public:
     virtual void writeData(const uint8_t index, const uint32_t size) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint64_t *data64 = reinterpret_cast<const uint64_t*>(this->m_dlMem[index].data());
-        const uint64_t bytes64 = size / sizeof(*data64);
-        for (uint16_t i = 0; i < bytes64; )
+        const uint32_t *data32 = reinterpret_cast<const uint32_t*>(this->m_dlMem[index].data());
+        const uint32_t bytes32 = size / sizeof(*data32);
+        for (uint32_t i = 0; i < bytes32; )
         {
             if (m_top.s_cmd_axis_tready)
             {
-                m_top.s_cmd_axis_tdata = data64[i];
+                m_top.s_cmd_axis_tdata = data32[i];
                 m_top.s_cmd_axis_tvalid = 1;
                 i++;
             }

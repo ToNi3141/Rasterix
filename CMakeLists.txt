@@ -27,8 +27,6 @@ set(RRX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the di
 set(RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS "65536" CACHE STRING "The size of the framebuffer in 16 bit words / in pixel")
 # Rasterizer settings
 set(RRX_CORE_USE_FLOAT_INTERPOLATION "false" CACHE STRING "Enables float interpolation")
-# BUS settings
-set(RRX_CORE_CMD_STREAM_WIDTH "64" CACHE STRING "The width of the command stream")
 # Texture memory settings
 set(RRX_CORE_NUMBER_OF_TEXTURE_PAGES "7280" CACHE STRING "The number of texture pages")
 set(RRX_CORE_NUMBER_OF_TEXTURES "7280" CACHE STRING "The number of textures (typically less or the same as RRX_CORE_NUMBER_OF_TEXTURE_PAGES)")

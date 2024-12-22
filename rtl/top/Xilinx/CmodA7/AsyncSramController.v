@@ -203,11 +203,13 @@ module AsyncSramController
                     state <= READ_DATA;
                 end
                 READ_DATA:
-                begin
-                    s_axi_rvalid <= (i & WITM) == WITM;
+                begin : ReadData
+                    reg valid;
+                    valid = (i & WITM) == WITM;
+                    s_axi_rvalid <= valid;
                     s_axi_rdata[(i & WITM) * MEM_WIDTH +: MEM_WIDTH] <= mem_data_i;
                     s_axi_rlast <= (i == axlen);
-                    if (s_axi_rready)
+                    if (s_axi_rready || !valid)
                     begin
                         if (i == axlen)
                         begin
@@ -218,7 +220,11 @@ module AsyncSramController
                             i <= i + 1;
                             mem_addr <= axaddr + i + 1;
                             state <= READ_ADDR;
-                        end    
+                        end
+                        if (s_axi_rvalid)
+                        begin
+                            s_axi_rvalid <= 0;
+                        end
                     end
                 end
                 FINISH:
