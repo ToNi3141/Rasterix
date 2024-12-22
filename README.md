@@ -89,6 +89,7 @@ To port the driver to a new interface (like SPI, async FT245, AXIS, or others) u
 See also the example [here](/example/util/native/Runner.hpp).
 
 The build system requires the following parameters to be set:
+
 Note: Bold options are required to be equal to the hardware counterparts.
 
 | Property                               | Description |
@@ -122,6 +123,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 8. Synthesize.
 
 The hardware has the following configuration options:
+
 Note: Bold options are required to be equal to the software counterparts.
 
 | Property                                  | Variant | Description |
