@@ -36,9 +36,9 @@ module TextureMappingUnit
     input  wire                         resetn,
 
     // TMU configurations
-    input  wire [ 31 : 0]               confFunc, // See TexEnv for more documentation
+    input  wire [31 : 0]                confFunc, // See TexEnv for more documentation
     input  wire [PIXEL_WIDTH - 1 : 0]   confTextureEnvColor, // CONSTANT
-    input  wire [ 31 : 0]               confTextureConfig,
+    input  wire [31 : 0]                confTextureConfig,
     input  wire                         confEnable,
 
     // Texture memory access of a texel quad

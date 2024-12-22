@@ -916,7 +916,7 @@ module RasterixRenderCore #(
     assign m_depth_arlast     = bc_last[2];
     assign m_stencil_arlast   = bc_last[1];
 
-    axis_broadcast axisBroadcast (
+    axis_broadcast rasterizerBroadcast (
         .clk(aclk),
         .rst(!resetn),
 
@@ -980,14 +980,14 @@ module RasterixRenderCore #(
         .m_axis_tdest(),
         .m_axis_tuser()
     );
-    defparam axisBroadcast.M_COUNT = 4;
-    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
-    defparam axisBroadcast.KEEP_ENABLE = 1;
-    defparam axisBroadcast.KEEP_WIDTH = 1;
-    defparam axisBroadcast.LAST_ENABLE = 1;
-    defparam axisBroadcast.ID_ENABLE = 0;
-    defparam axisBroadcast.DEST_ENABLE = 0;
-    defparam axisBroadcast.USER_ENABLE = 0;
+    defparam rasterizerBroadcast.M_COUNT = 4;
+    defparam rasterizerBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
+    defparam rasterizerBroadcast.KEEP_ENABLE = 1;
+    defparam rasterizerBroadcast.KEEP_WIDTH = 1;
+    defparam rasterizerBroadcast.LAST_ENABLE = 1;
+    defparam rasterizerBroadcast.ID_ENABLE = 0;
+    defparam rasterizerBroadcast.DEST_ENABLE = 0;
+    defparam rasterizerBroadcast.USER_ENABLE = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
@@ -1408,29 +1408,21 @@ module RasterixRenderCore #(
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
-    wire [INDEX_WIDTH - 1 : 0]      color_fifo_waddr;
-    wire                            color_fifo_wvalid;
-    wire                            color_fifo_wlast;
-    wire [PIXEL_WIDTH - 1 : 0]      color_fifo_wdata;
-    wire                            color_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] color_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] color_fifo_wscreenPosY;
+    wire [INDEX_WIDTH - 1 : 0]      framebuffer_pfp_waddr;
+    wire                            framebuffer_pfp_wvalid;
+    wire                            framebuffer_pfp_wlast;
+    wire                            framebuffer_pfp_wready; // TODO: Connect to PerFragmentPipeline
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_pfp_wscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_pfp_wscreenPosY;
 
-    wire [INDEX_WIDTH - 1 : 0]      depth_fifo_waddr;
-    wire                            depth_fifo_wvalid;
-    wire                            depth_fifo_wlast;
-    wire [DEPTH_WIDTH - 1 : 0]      depth_fifo_wdata;
-    wire                            depth_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] depth_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] depth_fifo_wscreenPosY;
+    wire [PIXEL_WIDTH - 1 : 0]      framebuffer_color_pfp_wdata;
+    wire                            framebuffer_color_pfp_wstrb;
 
-    wire [INDEX_WIDTH - 1 : 0]      stencil_fifo_waddr;
-    wire                            stencil_fifo_wvalid;
-    wire                            stencil_fifo_wlast;
-    wire [STENCIL_WIDTH - 1 : 0]    stencil_fifo_wdata;
-    wire                            stencil_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosY;
+    wire [DEPTH_WIDTH - 1 : 0]      framebuffer_depth_pfp_wdata;
+    wire                            framebuffer_depth_pfp_wstrb;
+
+    wire [STENCIL_WIDTH - 1 : 0]    framebuffer_stencil_pfp_wdata;
+    wire                            framebuffer_stencil_pfp_wstrb;
 
     PerFragmentPipeline perFragmentPipeline (
         .aclk(aclk),
@@ -1451,35 +1443,24 @@ module RasterixRenderCore #(
 
         .fragmentProcessed(fragmentProcessed),
 
-        .s_color_rvalid(fragment_stream_out_tvalid),
-        .s_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
-        .m_color_waddr(color_fifo_waddr),
-        .m_color_wvalid(color_fifo_wvalid),
-        .m_color_wlast(color_fifo_wlast),
-        .m_color_wdata(color_fifo_wdata),
-        .m_color_wstrb(color_fifo_wstrb),
-        .m_color_wscreenPosX(color_fifo_wscreenPosX),
-        .m_color_wscreenPosY(color_fifo_wscreenPosY),
+        .s_framebuffer_rvalid(fragment_stream_out_tvalid),
+        .m_framebuffer_waddr(framebuffer_pfp_waddr),
+        .m_framebuffer_wvalid(framebuffer_pfp_wvalid),
+        .m_framebuffer_wlast(framebuffer_pfp_wlast),
+        .m_framebuffer_wscreenPosX(framebuffer_pfp_wscreenPosX),
+        .m_framebuffer_wscreenPosY(framebuffer_pfp_wscreenPosY),
+        
+        .s_framebuffer_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
+        .m_framebuffer_color_wdata(framebuffer_color_pfp_wdata),
+        .m_framebuffer_color_wstrb(framebuffer_color_pfp_wstrb),
 
-        .s_depth_rvalid(fragment_stream_out_tvalid),
-        .s_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
-        .m_depth_waddr(depth_fifo_waddr),
-        .m_depth_wvalid(depth_fifo_wvalid),
-        .m_depth_wlast(depth_fifo_wlast),
-        .m_depth_wdata(depth_fifo_wdata),
-        .m_depth_wstrb(depth_fifo_wstrb),
-        .m_depth_wscreenPosX(depth_fifo_wscreenPosX),
-        .m_depth_wscreenPosY(depth_fifo_wscreenPosY),
+        .s_framebuffer_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
+        .m_framebuffer_depth_wdata(framebuffer_depth_pfp_wdata),
+        .m_framebuffer_depth_wstrb(framebuffer_depth_pfp_wstrb),
 
-        .s_stencil_rvalid(fragment_stream_out_tvalid),
-        .s_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
-        .m_stencil_waddr(stencil_fifo_waddr),
-        .m_stencil_wvalid(stencil_fifo_wvalid),
-        .m_stencil_wlast(stencil_fifo_wlast),
-        .m_stencil_wdata(stencil_fifo_wdata),
-        .m_stencil_wstrb(stencil_fifo_wstrb),
-        .m_stencil_wscreenPosX(stencil_fifo_wscreenPosX),
-        .m_stencil_wscreenPosY(stencil_fifo_wscreenPosY)
+        .s_framebuffer_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
+        .m_framebuffer_stencil_wdata(framebuffer_stencil_pfp_wdata),
+        .m_framebuffer_stencil_wstrb(framebuffer_stencil_pfp_wstrb)
     );
     defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam perFragmentPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
@@ -1490,6 +1471,100 @@ module RasterixRenderCore #(
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7
+    // Broadcast fragment stream to output fifos
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    wire [(INDEX_WIDTH * 3) - 1 : 0]        framebuffer_bc_waddr;
+    wire [ 2 : 0]                           framebuffer_bc_wvalid;
+    wire [ 2 : 0]                           framebuffer_bc_wlast;
+    wire [ 2 : 0]                           framebuffer_bc_wfull; // it's a !wready signal
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   framebuffer_bc_wscreenPosX;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   framebuffer_bc_wscreenPosY;
+
+    wire [(PIXEL_WIDTH * 3) - 1 : 0]        framebuffer_color_bc_wdata;
+    wire  [ 2 : 0]                          framebuffer_color_bc_wstrb;
+
+    wire [(DEPTH_WIDTH * 3) - 1 : 0]        framebuffer_depth_bc_wdata;
+    wire [ 2 : 0]                           framebuffer_depth_bc_wstrb;
+
+    wire [(STENCIL_WIDTH * 3) - 1 : 0]      framebuffer_stencil_bc_wdata;
+    wire [ 2 : 0]                           framebuffer_stencil_bc_wstrb;
+
+    axis_broadcast fragmentBroadcast (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata({
+            framebuffer_pfp_waddr,
+            framebuffer_pfp_wscreenPosX,
+            framebuffer_pfp_wscreenPosY,
+            framebuffer_color_pfp_wdata,
+            framebuffer_color_pfp_wstrb,
+            framebuffer_depth_pfp_wdata,
+            framebuffer_depth_pfp_wstrb,
+            framebuffer_stencil_pfp_wdata,
+            framebuffer_stencil_pfp_wstrb
+        }),
+        .s_axis_tlast(framebuffer_pfp_wlast),
+        .s_axis_tvalid(framebuffer_pfp_wvalid),
+        .s_axis_tready(framebuffer_pfp_wready), 
+        .s_axis_tkeep(~0),
+        .s_axis_tid(0),
+        .s_axis_tdest(0),
+        .s_axis_tuser(0),
+
+        .m_axis_tdata({
+            framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[2],
+            framebuffer_depth_bc_wdata[2 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[2],
+            framebuffer_stencil_bc_wdata[2 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[2],
+            framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[1 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[1],
+            framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[1],
+            framebuffer_stencil_bc_wdata[1 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[1],
+            framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[0 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[0],
+            framebuffer_depth_bc_wdata[0 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[0],
+            framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[0]
+        }),
+        .m_axis_tvalid(framebuffer_bc_wvalid),
+        .m_axis_tready({
+            !framebuffer_bc_wfull[2],
+            !framebuffer_bc_wfull[1],
+            !framebuffer_bc_wfull[0]
+        }),
+        .m_axis_tlast(framebuffer_bc_wlast),
+        .m_axis_tkeep(),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
+    );
+    defparam fragmentBroadcast.M_COUNT = 3;
+    defparam fragmentBroadcast.DATA_WIDTH = INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + PIXEL_WIDTH + 1 + DEPTH_WIDTH + 1 + STENCIL_WIDTH + 1;
+    defparam fragmentBroadcast.KEEP_ENABLE = 0;
+    defparam fragmentBroadcast.KEEP_WIDTH = 1;
+    defparam fragmentBroadcast.LAST_ENABLE = 1;
+    defparam fragmentBroadcast.ID_ENABLE = 0;
+    defparam fragmentBroadcast.DEST_ENABLE = 0;
+    defparam fragmentBroadcast.USER_ENABLE = 0;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 8
     // FIFOs for the flow control on the write channel
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
@@ -1503,26 +1578,26 @@ module RasterixRenderCore #(
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(color_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[2]),
                 .i_data({ 
-                    color_fifo_wlast, 
-                    color_fifo_wstrb, 
-                    color_fifo_wscreenPosY, 
-                    color_fifo_wscreenPosX, 
-                    color_fifo_waddr, 
-                    color_fifo_wdata 
+                    framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[2], 
+                    framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH], 
+                    framebuffer_color_bc_wstrb[2]
                 }),
-                .o_full(),
+                .o_full(framebuffer_bc_wfull[2]),
                 .o_fill(color_fifo_fill),
 
                 .i_rd(m_color_wready),
                 .o_data({
-                    m_color_wlast,
-                    m_color_wstrb,
-                    m_color_wscreenPosY,
-                    m_color_wscreenPosX,
                     m_color_waddr,
-                    m_color_wdata
+                    m_color_wlast,
+                    m_color_wscreenPosX,
+                    m_color_wscreenPosY,
+                    m_color_wdata,
+                    m_color_wstrb
                 }),
                 .o_empty(color_fifo_empty)    
             );
@@ -1534,13 +1609,13 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_color_wdata = color_fifo_wdata;
-            assign m_color_waddr = color_fifo_waddr;
-            assign m_color_wscreenPosX = color_fifo_wscreenPosX;
-            assign m_color_wscreenPosY = color_fifo_wscreenPosY;
-            assign m_color_wstrb = color_fifo_wstrb;
-            assign m_color_wlast = color_fifo_wlast;
-            assign m_color_wvalid = color_fifo_wvalid;
+            assign m_color_wvalid = framebuffer_bc_wvalid[2];
+            assign m_color_waddr = framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_color_wlast = framebuffer_bc_wlast[2];
+            assign m_color_wscreenPosX = framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wscreenPosY = framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wdata = framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH];
+            assign m_color_wstrb = framebuffer_color_bc_wstrb[2];
 
             assign color_fifo_fill = 0;
             assign color_fifo_empty = 1;
@@ -1555,26 +1630,26 @@ module RasterixRenderCore #(
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(depth_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[1]),
                 .i_data({ 
-                    depth_fifo_wlast, 
-                    depth_fifo_wstrb, 
-                    depth_fifo_wscreenPosY, 
-                    depth_fifo_wscreenPosX, 
-                    depth_fifo_waddr, 
-                    depth_fifo_wdata 
+                    framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[1], 
+                    framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH], 
+                    framebuffer_depth_bc_wstrb[1]
                 }),
-                .o_full(),
+                .o_full(framebuffer_bc_wfull[1]),
                 .o_fill(depth_fifo_fill),
 
                 .i_rd(m_depth_wready),
                 .o_data({
-                    m_depth_wlast,
-                    m_depth_wstrb,
-                    m_depth_wscreenPosY,
-                    m_depth_wscreenPosX,
                     m_depth_waddr,
-                    m_depth_wdata
+                    m_depth_wlast,
+                    m_depth_wscreenPosX,
+                    m_depth_wscreenPosY,
+                    m_depth_wdata,
+                    m_depth_wstrb
                 }),
                 .o_empty(depth_fifo_empty)    
             );
@@ -1586,13 +1661,13 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_depth_wdata = depth_fifo_wdata;
-            assign m_depth_waddr = depth_fifo_waddr;
-            assign m_depth_wscreenPosX = depth_fifo_wscreenPosX;
-            assign m_depth_wscreenPosY = depth_fifo_wscreenPosY;
-            assign m_depth_wstrb = depth_fifo_wstrb;
-            assign m_depth_wlast = depth_fifo_wlast;
-            assign m_depth_wvalid = depth_fifo_wvalid;
+            assign m_depth_wvalid = framebuffer_bc_wvalid[1];
+            assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_depth_wlast = framebuffer_bc_wlast[1];
+            assign m_depth_wscreenPosX = framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wscreenPosY = framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wdata = framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH];
+            assign m_depth_wstrb = framebuffer_depth_bc_wstrb[1];
 
             assign depth_fifo_fill = 0;
             assign depth_fifo_empty = 1;
@@ -1607,26 +1682,26 @@ module RasterixRenderCore #(
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(stencil_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[0]),
                 .i_data({ 
-                    stencil_fifo_wlast, 
-                    stencil_fifo_wstrb, 
-                    stencil_fifo_wscreenPosY, 
-                    stencil_fifo_wscreenPosX, 
-                    stencil_fifo_waddr, 
-                    stencil_fifo_wdata 
+                    framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[0], 
+                    framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH], 
+                    framebuffer_stencil_bc_wstrb[0]
                 }),
-                .o_full(),
+                .o_full(framebuffer_bc_wfull[0]),
                 .o_fill(stencil_fifo_fill),
 
                 .i_rd(m_stencil_wready),
                 .o_data({
-                    m_stencil_wlast,
-                    m_stencil_wstrb,
-                    m_stencil_wscreenPosY,
-                    m_stencil_wscreenPosX,
                     m_stencil_waddr,
-                    m_stencil_wdata
+                    m_stencil_wlast,
+                    m_stencil_wscreenPosX,
+                    m_stencil_wscreenPosY,
+                    m_stencil_wdata,
+                    m_stencil_wstrb
                 }),
                 .o_empty(stencil_fifo_empty)    
             );
@@ -1638,13 +1713,14 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_stencil_wdata = stencil_fifo_wdata;
-            assign m_stencil_waddr = stencil_fifo_waddr;
-            assign m_stencil_wscreenPosX = stencil_fifo_wscreenPosX;
-            assign m_stencil_wscreenPosY = stencil_fifo_wscreenPosY;
-            assign m_stencil_wstrb = stencil_fifo_wstrb;
-            assign m_stencil_wlast = stencil_fifo_wlast;
-            assign m_stencil_wvalid = stencil_fifo_wvalid;
+            assign m_stencil_wvalid = framebuffer_bc_wvalid[0];
+            assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_stencil_wlast = framebuffer_bc_wlast[0];
+            assign m_stencil_wscreenPosX = framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wscreenPosY = framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wdata = framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH];
+            assign m_stencil_wstrb = framebuffer_stencil_bc_wstrb[0];
+
 
             assign stencil_fifo_fill = 0;
             assign stencil_fifo_empty = 1;

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// The function interpolater will interpolate a mathematical function based on a LUT
+// The function interpolator will interpolate a mathematical function based on a LUT
 // The used interpolation equation is: f(x) = m*x + b
 // where:
 // x: User input, mantissa is of this value is used as multiplicant for m
@@ -148,7 +148,7 @@ module FunctionInterpolator #(
 
         // Float unpacking and rebias
         // Rebiasing is done, because we care usually about the integer part. Half of the values from a float lies between 0..1.
-        // so we are cutting this of
+        // so we are cutting this off
         floatExp <= x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE] - FLOAT_EXP_BIAS;
         floatMantissa[0] <= x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
 
