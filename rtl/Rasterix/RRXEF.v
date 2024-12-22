@@ -179,7 +179,7 @@ module RRXEF #(
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
         .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
-        .S_THREADS({ NRS { 32'd8 } }),   
+        .S_THREADS({ NRS { 32'd4 } }), // Reduced to 4 because vivado gets stuck sometimes with 8
         .M_ISSUE(32'd8)
     ) mainXBar (
         .clk(aclk),

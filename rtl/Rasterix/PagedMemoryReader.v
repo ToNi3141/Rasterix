@@ -84,8 +84,8 @@ module PagedMemoryReader #(
     initial 
     begin
         m_mem_axi_arid = 0;
-        m_mem_axi_arlen = BEATS[0 +: 8] - 1; // 16 beats for axi3 compliance
-        m_mem_axi_arsize = LG_BEAT_SIZE[2 : 0]; // 4 byte increment because of 32 bit interface
+        m_mem_axi_arlen = BEATS[0 +: 8] - 1;
+        m_mem_axi_arsize = LG_BEAT_SIZE[2 : 0];
         m_mem_axi_arburst = 1;
         m_mem_axi_arlock = 0;
         m_mem_axi_arcache = 0;

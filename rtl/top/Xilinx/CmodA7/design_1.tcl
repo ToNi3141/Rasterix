@@ -306,8 +306,8 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.TEXTURE_BUFFER_SIZE {15} \
-    CONFIG.TMU_COUNT {1} \
     CONFIG.TEXTURE_PAGE_SIZE {2048} \
+    CONFIG.TMU_COUNT {1} \
     CONFIG.VARIANT {ef} \
   ] $RRX_0
 
