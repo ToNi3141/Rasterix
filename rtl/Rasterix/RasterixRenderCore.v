@@ -1440,27 +1440,26 @@ module RasterixRenderCore #(
         .s_frag_tindex(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 +: INDEX_WIDTH]),
         .s_frag_tscreenPosX(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH +: SCREEN_POS_WIDTH]),
         .s_frag_tscreenPosY(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_frag_color_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
+        .s_frag_depth_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
+        .s_frag_stencil_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 
-        .s_framebuffer_rvalid(fragment_stream_out_tvalid),
-        .m_framebuffer_waddr(framebuffer_pfp_waddr),
-        .m_framebuffer_wvalid(framebuffer_pfp_wvalid),
-        .m_framebuffer_wlast(framebuffer_pfp_wlast),
-        .m_framebuffer_wscreenPosX(framebuffer_pfp_wscreenPosX),
-        .m_framebuffer_wscreenPosY(framebuffer_pfp_wscreenPosY),
+        .m_frag_taddr(framebuffer_pfp_waddr),
+        .m_frag_tvalid(framebuffer_pfp_wvalid),
+        .m_frag_tlast(framebuffer_pfp_wlast),
+        .m_frag_tscreenPosX(framebuffer_pfp_wscreenPosX),
+        .m_frag_tscreenPosY(framebuffer_pfp_wscreenPosY),
         
-        .s_framebuffer_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
-        .m_framebuffer_color_wdata(framebuffer_color_pfp_wdata),
-        .m_framebuffer_color_wstrb(framebuffer_color_pfp_wstrb),
+        .m_frag_color_tdata(framebuffer_color_pfp_wdata),
+        .m_frag_color_tstrb(framebuffer_color_pfp_wstrb),
 
-        .s_framebuffer_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
-        .m_framebuffer_depth_wdata(framebuffer_depth_pfp_wdata),
-        .m_framebuffer_depth_wstrb(framebuffer_depth_pfp_wstrb),
+        .m_frag_depth_tdata(framebuffer_depth_pfp_wdata),
+        .m_frag_depth_tstrb(framebuffer_depth_pfp_wstrb),
 
-        .s_framebuffer_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
-        .m_framebuffer_stencil_wdata(framebuffer_stencil_pfp_wdata),
-        .m_framebuffer_stencil_wstrb(framebuffer_stencil_pfp_wstrb)
+        .m_frag_stencil_tdata(framebuffer_stencil_pfp_wdata),
+        .m_frag_stencil_tstrb(framebuffer_stencil_pfp_wstrb)
     );
     defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam perFragmentPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
