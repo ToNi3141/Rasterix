@@ -38,6 +38,7 @@ module AttributeInterpolatorX #(
     input  wire                                 resetn,
 
     // Pixel Stream
+    output wire                                 s_attrb_tready,
     input  wire                                 s_attrb_tvalid,
     input  wire                                 s_attrb_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]            s_attrb_tkeep,
@@ -87,6 +88,7 @@ module AttributeInterpolatorX #(
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_a_inc_y,
 
     // Pixel Stream Interpolated
+    input  wire                                 m_attrb_tready,
     output wire                                 m_attrb_tvalid,
     output wire                                 m_attrb_tlast,
     output wire [KEEP_WIDTH - 1 : 0]            m_attrb_tkeep,
@@ -127,15 +129,20 @@ module AttributeInterpolatorX #(
     wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_color_b;
     wire signed [ATTRIBUTE_SIZE - 1 : 0] curr_color_a;
 
+    wire ce;
+    assign ce = m_attrb_tready;
+    assign s_attrb_tready = m_attrb_tready;
+
     AttributeInterpolationX #(
         .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
         .ENABLE_SECOND_TMU(ENABLE_SECOND_TMU)
     ) cmd (
         .aclk(aclk),
         .resetn(resetn),
-
-        .s_attrb_tvalid(s_attrb_tvalid),
-        .s_attrb_tcmd(s_attrb_tcmd),
+        .ce(ce),
+        
+        .valid(s_attrb_tvalid),
+        .cmd(s_attrb_tcmd),
 
         .tex0_s(tex0_s),
         .tex0_t(tex0_t),
@@ -204,6 +211,7 @@ module AttributeInterpolatorX #(
     ) interpolation (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .s_attrb_tvalid(s_attrb_tvalid),
         .s_attrb_tlast(s_attrb_tlast),

@@ -34,6 +34,7 @@ module TextureMappingUnit
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     // TMU configurations
     input  wire [31 : 0]                confFunc, // See TexEnv for more documentation
@@ -75,17 +76,17 @@ module TextureMappingUnit
     wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
-        step1_primaryColorDelay (.clk(aclk), .in(primaryColor), .out(step1_primaryColor));
+        step1_primaryColorDelay (.clk(aclk), .ce(ce), .in(primaryColor), .out(step1_primaryColor));
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
-        step1_previousColorDelay (.clk(aclk), .in(previousColor), .out(step1_previousColor));
+        step1_previousColorDelay (.clk(aclk), .ce(ce), .in(previousColor), .out(step1_previousColor));
 
     wire [31 : 0] textureSDly;
     wire [31 : 0] textureTDly;
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
-        step1_textureSDelay (.clk(aclk), .in(textureS), .out(textureSDly));
+        step1_textureSDelay (.clk(aclk), .ce(ce), .in(textureS), .out(textureSDly));
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(1)) 
-        step1_textureTDelay (.clk(aclk), .in(textureT), .out(textureTDly));
+        step1_textureTDelay (.clk(aclk), .ce(ce), .in(textureT), .out(textureTDly));
 
     wire [ 3 : 0] lod;
     generate 
@@ -94,6 +95,7 @@ module TextureMappingUnit
             LodCalculator lodCalculator (
                 .aclk(aclk),
                 .resetn(resetn),
+                .ce(ce),
 
                 .confEnable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MIN_FILTER_SIZE]),
 
@@ -126,6 +128,7 @@ module TextureMappingUnit
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
         .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
@@ -157,6 +160,7 @@ module TextureMappingUnit
     TextureFilter texFilter (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .enable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
 
@@ -179,13 +183,14 @@ module TextureMappingUnit
     wire [PIXEL_WIDTH - 1 : 0]  step2_previousColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(4)) 
-        step2_previousColorDelay (.clk(aclk), .in(step1_previousColor), .out(step2_previousColor));
+        step2_previousColorDelay (.clk(aclk), .ce(ce), .in(step1_previousColor), .out(step2_previousColor));
 
     TexEnv #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
     ) texEnv (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .conf(confFunc),
 

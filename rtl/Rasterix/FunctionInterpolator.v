@@ -49,6 +49,7 @@ module FunctionInterpolator #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     input  wire [FLOAT_WIDTH - 1 : 0]   x, // IEEE 754 32bit float
     output reg  signed [INT_WIDTH - 1 : 0] fx, // 24bit signed fixpoint S1.22 number
@@ -59,7 +60,7 @@ module FunctionInterpolator #(
     input  wire                         s_axis_tlast,
     input  wire [31 : 0]                s_axis_tdata
 );
-    localparam LUT_INTERPOLATION_STEPS = 8; // Defines the steps between two LUT enties. The range between x and x + 1 will be divided by pow(2, LUT_INTERPOLATION_STEPS) 
+    localparam LUT_INTERPOLATION_STEPS = 8; // Defines the steps between two LUT entries. The range between x and x + 1 will be divided by pow(2, LUT_INTERPOLATION_STEPS) 
     localparam LUT_ENTRIES = 32;
 
     localparam FLOAT_EXP_SIZE = 8;
@@ -130,7 +131,7 @@ module FunctionInterpolator #(
 
     // Interpolation
     always @(posedge aclk)
-    begin : Interpolation
+    if (ce) begin : Interpolation
         // x
         reg [FLOAT_WIDTH - 1 : 0]   xVal[0 : 3];
 

@@ -34,6 +34,7 @@ module TestFunc
 (
     input  wire                             aclk,
     input  wire                             resetn,
+    input  wire                             ce,
     
     input  wire [ 2 : 0]                    func,
     input  wire [SUB_PIXEL_WIDTH - 1 : 0]   refVal,
@@ -46,7 +47,7 @@ module TestFunc
 `include "RegisterAndDescriptorDefines.vh"
 
     always @(posedge aclk)
-    begin : TestFunc
+    if (ce) begin : TestFunc
         reg less;
         reg greater;
         reg equal;

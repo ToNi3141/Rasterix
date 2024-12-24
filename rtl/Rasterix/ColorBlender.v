@@ -47,6 +47,7 @@ module ColorBlender
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     input  wire [ 3 : 0]                funcSFactor,
     input  wire [ 3 : 0]                funcDFactor,
@@ -81,10 +82,10 @@ module ColorBlender
     wire [PIXEL_WIDTH - 1 : 0]    step_sourceColor;
 
     ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(3)) 
-        step_sourceColorDelay (.clk(aclk), .in(sourceColor), .out(step_sourceColor));
+        step_sourceColorDelay (.clk(aclk), .ce(ce), .in(sourceColor), .out(step_sourceColor));
 
     always @(posedge aclk)
-    begin : Select
+    if (ce) begin : Select
         reg [SUB_PIXEL_WIDTH - 1 : 0] rs;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gs;
         reg [SUB_PIXEL_WIDTH - 1 : 0] bs;
@@ -253,6 +254,7 @@ module ColorBlender
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .colorA({
             v00,

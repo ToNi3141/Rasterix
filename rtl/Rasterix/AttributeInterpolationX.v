@@ -30,10 +30,11 @@ module AttributeInterpolationX #(
 (
     input  wire                                 aclk,
     input  wire                                 resetn,
+    input  wire                                 ce,
 
     // Pixel Stream
-    input  wire                                 s_attrb_tvalid,
-    input  wire [RR_CMD_SIZE - 1 : 0]           s_attrb_tcmd,
+    input  wire                                 valid,
+    input  wire [RR_CMD_SIZE - 1 : 0]           cmd,
 
     // Attributes
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_s, // S3.28
@@ -116,10 +117,10 @@ module AttributeInterpolationX #(
     reg  signed [ATTRIBUTE_SIZE - 1 : 0]    reg_color_a;
 
     always @(posedge aclk)
-    begin
-        if (s_attrb_tvalid)
+    if (ce) begin
+        if (valid)
         begin
-            case (s_attrb_tcmd)
+            case (cmd)
                 RR_CMD_INIT:
                 begin
                     reg_tex0_s <= tex0_s;

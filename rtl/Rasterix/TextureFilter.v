@@ -26,6 +26,7 @@ module TextureFilter #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     input  wire                         enable,
 
@@ -52,6 +53,7 @@ module TextureFilter #(
     ColorInterpolator interpolatorS0 (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .intensity(intensityS),
         .colorA(texel00),
@@ -62,6 +64,7 @@ module TextureFilter #(
     ColorInterpolator interpolatorS1 (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .intensity(intensityS),
         .colorA(texel10),
@@ -72,6 +75,7 @@ module TextureFilter #(
     ColorInterpolator interpolatorT (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .intensity(intensityDelayedT),
         .colorA(mixedColorS0),
@@ -86,6 +90,7 @@ module TextureFilter #(
     ) 
     intensityTDelay (
         .clk(aclk), 
+        .ce(ce),
         .in(intensityT), 
         .out(intensityDelayedT)
     );
@@ -97,6 +102,7 @@ module TextureFilter #(
     ) 
     texelDelay (
         .clk(aclk), 
+        .ce(ce),
         .in(texel00), 
         .out(unfilteredTexel)
     );

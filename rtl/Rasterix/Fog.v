@@ -31,6 +31,7 @@ module Fog
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     // Fog function LUT stream
     input  wire                         s_fog_lut_axis_tvalid,
@@ -64,6 +65,7 @@ module Fog
         .DELAY(4)
     ) step0_texelColorDelay (
         .clk(aclk), 
+        .ce(ce),
         .in(texelColor),
         .out(step0_texelColor)
     );
@@ -71,6 +73,7 @@ module Fog
     FunctionInterpolator step0_calculateFogIntensity (
         .aclk(aclk), 
         .resetn(resetn), 
+        .ce(ce),
         .x(depth),
         .fx(step0_fogIntensity),
         .s_axis_tvalid(s_fog_lut_axis_tvalid), 
@@ -91,7 +94,8 @@ module Fog
         .VALUE_SIZE(PIXEL_WIDTH), 
         .DELAY(2)
     ) step0_texelDelay (
-        .clk(aclk), 
+        .clk(aclk),
+        .ce(ce),
         .in(step0_texelColor),
         .out(step1_texelColor)
     );
@@ -101,6 +105,7 @@ module Fog
     ) fogInterpolator (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .intensity((step0_fogIntensity[22]) ? 16'hffff : step0_fogIntensity[22 - 16 +: 16]),
         .colorA(step0_texelColor),

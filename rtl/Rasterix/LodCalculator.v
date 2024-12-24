@@ -30,6 +30,7 @@ module LodCalculator
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     input  wire                         confEnable,
 
@@ -52,7 +53,7 @@ module LodCalculator
     wire [ 7 : 0] diffV = diffUnsignedT[7 +: 8] >> (8 - textureSizeHeight);
     wire [ 7 : 0] diffMax = diffV | diffU;
     always @(posedge aclk)
-    begin : Mux
+    if (ce) begin : Mux
         reg [ 3 : 0] lodReg;
         casez (diffMax)
             8'b00000000: lodReg = 0;

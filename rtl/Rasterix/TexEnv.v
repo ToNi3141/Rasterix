@@ -31,6 +31,7 @@ module TexEnv
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
     
     input  wire [31 : 0]                conf,
 
@@ -176,7 +177,7 @@ module TexEnv
     ////////////////////////////////////////////////////////////////////////////
     wire [ 2 : 0] combineRgbDelay;
     ValueDelay #(.VALUE_SIZE(RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_SIZE), .DELAY(3)) 
-        glob_combineRgbDelay (.clk(aclk), .in(combineRgb), .out(combineRgbDelay));
+        glob_combineRgbDelay (.clk(aclk), .ce(ce), .in(combineRgb), .out(combineRgbDelay));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -200,7 +201,7 @@ module TexEnv
     reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v32;
     reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] v33;
     always @(posedge aclk)
-    begin : SelectColor
+    if (ce) begin : SelectColor
         reg [SUB_PIXEL_WIDTH - 1 : 0] rt;
         reg [SUB_PIXEL_WIDTH - 1 : 0] gt;
         reg [SUB_PIXEL_WIDTH - 1 : 0] bt;
@@ -566,6 +567,7 @@ module TexEnv
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .colorA({
             v00,
@@ -601,7 +603,7 @@ module TexEnv
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
     always @(posedge aclk)
-    begin : DotCalculation
+    if (ce) begin : DotCalculation
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] rc;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] gc;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] bc;

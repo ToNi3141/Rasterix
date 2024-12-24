@@ -27,6 +27,7 @@ module TextureSampler #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
@@ -151,7 +152,7 @@ module TextureSampler #(
     reg                             step0_clampT;
 
     always @(posedge aclk)
-    begin : LodOffsetCalc
+    if (ce) begin : LodOffsetCalc
         reg [ 3 : 0]                    width;
         reg [ 3 : 0]                    height;
         
@@ -203,7 +204,7 @@ module TextureSampler #(
     reg  [15 : 0]   step1_subCoordV; // Q0.16
     
     always @(posedge aclk)
-    begin : TexAddrCalc
+    if (ce) begin : TexAddrCalc
         reg [31 : 0]                    texelS0; // S16.15
         reg [31 : 0]                    texelS1; // S16.15
         reg [31 : 0]                    texelT0; // S16.15
@@ -259,16 +260,16 @@ module TextureSampler #(
     wire step2_clampVCalc = step0_clampT && ((step1_texelV0 > step1_texelV1) || (!step1_texelV0[15] && step1_texelV1[15]));
 
     ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
-        step2_subCoordUDelay ( .clk(aclk), .in(step1_subCoordU), .out(step2_subCoordU));
+        step2_subCoordUDelay (.clk(aclk), .ce(ce), .in(step1_subCoordU), .out(step2_subCoordU));
 
     ValueDelay #( .VALUE_SIZE(16), .DELAY(MEMORY_DELAY)) 
-        step2_subCoordVDelay ( .clk(aclk), .in(step1_subCoordV), .out(step2_subCoordV));
+        step2_subCoordVDelay (.clk(aclk), .ce(ce), .in(step1_subCoordV), .out(step2_subCoordV));
 
     ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step2_clampUDelay ( .clk(aclk), .in(step2_clampUCalc), .out(step2_clampU));
+        step2_clampUDelay (.clk(aclk), .ce(ce), .in(step2_clampUCalc), .out(step2_clampU));
 
     ValueDelay #( .VALUE_SIZE(1), .DELAY(MEMORY_DELAY)) 
-        step2_clampVDelay ( .clk(aclk), .in(step2_clampVCalc), .out(step2_clampV));
+        step2_clampVDelay (.clk(aclk), .ce(ce), .in(step2_clampVCalc), .out(step2_clampV));
 
     //////////////////////////////////////////////
     // STEP 3
@@ -283,7 +284,7 @@ module TextureSampler #(
     reg  [PIXEL_WIDTH - 1 : 0]  step3_texel11; 
 
     always @(posedge aclk)
-    begin : ClampTexelQuad
+    if (ce) begin : ClampTexelQuad
         
         // Clamp texel quad
         step3_texel00 <= texelInput00;

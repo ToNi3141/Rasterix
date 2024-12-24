@@ -116,6 +116,7 @@ module TriangleStreamF2XConverter #(
         .DELAY(2)
     ) delayStream (
         .clk(aclk), 
+        .ce(1),
         .in({ convertLut[index][MUX_POS +: MUX_SIZE], s_axis_tvalid, s_axis_tlast, s_axis_tdata }), 
         .out({ delay_mux, delay_tvalid, delay_tlast, delay_tdata })
     );
@@ -127,6 +128,7 @@ module TriangleStreamF2XConverter #(
         .DELAY(0)
     ) convertStream (
         .clk(aclk),
+        .ce(1),
         .offset(convertLut[index][OFFSET_POS +: OFFSET_SIZE]),
         .in(s_axis_tdata), 
         .out(convert_tdata)
