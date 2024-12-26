@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 28 cycles
+// Depth: 30 cycles
 module PixelPipeline
 #(
     // The minimum bit width which is required to contain the resolution

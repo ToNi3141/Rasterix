@@ -41,8 +41,15 @@ module RasterixRenderCore #(
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17,
 
-    // Enables the flow control. Disabling can safe logic resources.
-    parameter ENABLE_FLOW_CTRL = 1,
+    // Enables FIFOs on the memory write channel. It can improve the performance by batching write requests.
+    parameter ENABLE_WRITE_FIFO = 1,
+    // Size of the write FIFO in log2(size)
+    parameter WRITE_FIFO_SIZE = 4,
+
+    // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
+    parameter ENABLE_READ_FIFO = 1,
+    // Size of the read FIFO in log2(size)
+    parameter READ_FIFO_SIZE = 6,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -1134,7 +1141,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 28
+    // Clocks: 30
     ////////////////////////////////////////////////////////////////////////////
     wire                                        framebuffer_tready;
     wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_tfragmentColor;
@@ -1272,10 +1279,10 @@ module RasterixRenderCore #(
         .m_stream_tdata(fragment_stream_out_tdata),
         .m_stream_tready(fragment_stream_out_tready)
     );
-    defparam streamConcatFifo.FIFO_DEPTH0_POW2 = (ENABLE_FLOW_CTRL) ? MAX_NUMBER_OF_PIXELS_LG : 0;
-    defparam streamConcatFifo.FIFO_DEPTH1_POW2 = MAX_NUMBER_OF_PIXELS_LG;
-    defparam streamConcatFifo.FIFO_DEPTH2_POW2 = MAX_NUMBER_OF_PIXELS_LG;
-    defparam streamConcatFifo.FIFO_DEPTH3_POW2 = MAX_NUMBER_OF_PIXELS_LG;
+    defparam streamConcatFifo.FIFO_DEPTH0_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH1_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH2_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH3_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
     defparam streamConcatFifo.STREAM0_WIDTH = FRAGMENT_STREAM_WIDTH;
     defparam streamConcatFifo.STREAM1_WIDTH = PIXEL_WIDTH;
     defparam streamConcatFifo.STREAM2_WIDTH = DEPTH_WIDTH;
@@ -1446,10 +1453,8 @@ module RasterixRenderCore #(
     // FIFOs for the flow control on the write channel
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
-    localparam WRITE_FIFO_SIZE = MAX_NUMBER_OF_PIXELS_LG + 1;
-
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam COLOR_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + PIXEL_WIDTH;
             sfifo colorWriteFifo (
@@ -1501,7 +1506,7 @@ module RasterixRenderCore #(
     endgenerate
 
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam DEPTH_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + DEPTH_WIDTH;
             sfifo depthWriteFifo (
@@ -1553,7 +1558,7 @@ module RasterixRenderCore #(
     endgenerate
     
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam STENCIL_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + STENCIL_WIDTH;
             sfifo stencilWriteFifo (
