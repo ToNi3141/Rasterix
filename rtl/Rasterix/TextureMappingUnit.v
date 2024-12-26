@@ -69,16 +69,16 @@ module TextureMappingUnit
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Request texel from texture buffer and filter it
-    // Clocks: 9
+    // Clocks: 10
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_texel; // TEXTURE
     wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(10)) 
         step1_primaryColorDelay (.clk(aclk), .ce(ce), .in(primaryColor), .out(step1_primaryColor));
 
-    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(9)) 
+    ValueDelay #(.VALUE_SIZE(PIXEL_WIDTH), .DELAY(10)) 
         step1_previousColorDelay (.clk(aclk), .ce(ce), .in(previousColor), .out(step1_previousColor));
 
     wire [31 : 0] textureSDly;
