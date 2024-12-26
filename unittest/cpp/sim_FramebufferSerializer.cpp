@@ -53,72 +53,72 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     rr::ut::clk(t);
     REQUIRE(t->m_frag_tvalid == 0);
     REQUIRE(t->m_mem_axi_rready == 0);
-    t->m_mem_axi_rvalid = 1; // Make memory valid now
 
     // Memory has now valid data, fetch and acknowledge data and send the current fragment
+    t->m_mem_axi_rvalid = 1; // Make memory valid now
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 1); // Acknowledges the memory data
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tdata == 0x5555);
     REQUIRE(t->m_frag_taddr == 0x100);
     REQUIRE(t->m_frag_tlast == 0);
-    t->s_fetch_taddr = 0x101;
 
     // Fetch cached data. Dont request data from memory
+    t->s_fetch_taddr = 0x101;
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 0);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tdata == 0xffff);
     REQUIRE(t->m_frag_taddr == 0x101);
     REQUIRE(t->m_frag_tlast == 0);
-    t->s_fetch_taddr = 0x102;
-    t->m_mem_axi_rdata = 0xaaaa'0000;
 
     // Request data from memory and directly output it
+    t->s_fetch_taddr = 0x102;
+    t->m_mem_axi_rdata = 0xaaaa'0000;
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 1); // Acknowledges the memory data
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tdata == 0x0000);
     REQUIRE(t->m_frag_taddr == 0x102);
     REQUIRE(t->m_frag_tlast == 0);
-    t->s_fetch_taddr = 0x103;
-    t->m_mem_axi_rvalid = 0; // Disable memory
 
     // Fetch cached data
+    t->s_fetch_taddr = 0x103;
+    t->m_mem_axi_rvalid = 0; // Disable memory
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 0);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tdata == 0xaaaa);
     REQUIRE(t->m_frag_taddr == 0x103);
     REQUIRE(t->m_frag_tlast == 0);
+
+    // New data required but no new data on the memory available
     t->s_fetch_tlast = 1;
     t->s_fetch_taddr = 0x104;
-
-    // New data required but no new data on the memory available
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 0);
     REQUIRE(t->m_frag_tvalid == 0);
+
+    // New data required but no new data on the memory available
     t->s_fetch_taddr = 0x104;
-
-    // New data required but no new data on the memory available
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 0);
     REQUIRE(t->m_frag_tvalid == 0);
+
+    // New data on memory available, last fetch
     t->s_fetch_taddr = 0x104;
     t->m_mem_axi_rdata = 0x1111'2222;
     t->m_mem_axi_rvalid = 1;
-
-    // New data on memory available, last fetch
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 1);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tdata == 0x2222);
     REQUIRE(t->m_frag_taddr == 0x104);
     REQUIRE(t->m_frag_tlast == 1);
-    t->s_fetch_taddr = 0x105;
-    t->m_mem_axi_rvalid = 0;
     
     // Fetch last data (check that the after the tlast a new memory request is forced)
+    t->s_fetch_taddr = 0x105;
+    t->m_mem_axi_rvalid = 0;
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_rready == 0);
     REQUIRE(t->m_frag_tvalid == 0);
@@ -167,10 +167,10 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_tdata == 0x5555);
         REQUIRE(t->m_frag_taddr == 0x100);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x102;
-        t->m_mem_axi_rdata = 0xaaaa'0000;
 
         // Fetch cached data. Dont request data from memory
+        t->s_fetch_taddr = 0x102;
+        t->m_mem_axi_rdata = 0xaaaa'0000;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
@@ -182,18 +182,18 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
         REQUIRE(t->m_frag_tdata == 0x0000);
         REQUIRE(t->m_frag_taddr == 0x102);
         REQUIRE(t->m_frag_tlast == 0);
+
+        // Fetch cached data
         t->s_fetch_tlast = 1;
         t->s_fetch_taddr = 0x105;
         t->m_mem_axi_rdata = 0x1111'2222;
-
-        // Fetch cached data
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
-        t->s_fetch_tvalid = 0;
-        t->s_fetch_tlast = 0;
 
         // New data on memory available, last fetch
+        t->s_fetch_tvalid = 0;
+        t->s_fetch_tlast = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 1);
         REQUIRE(t->m_frag_tvalid == 1);
@@ -229,91 +229,92 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         t->s_fetch_tvalid = 1;
         t->s_fetch_taddr = 0x100;
         t->s_fetch_tlast = 0;
-        t->m_frag_tready = 0; // Fragment port is not ready
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = 0xffff'5555;
 
         // Fetch data from memory interface and output it
+        t->m_frag_tready = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 1); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5555);
         REQUIRE(t->m_frag_taddr == 0x100);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x101; 
 
         // Skid cycle because fragment port is not ready
+        t->s_fetch_taddr = 0x101; 
+        t->m_frag_tready = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5555);
         REQUIRE(t->m_frag_taddr == 0x100);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x101;
-        t->m_frag_tready = 1;
 
         // Fragment port is ready -> output new data
+        t->s_fetch_taddr = 0x101;
+        t->m_frag_tready = 1;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xffff);
         REQUIRE(t->m_frag_taddr == 0x101);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x102; 
-        t->m_frag_tready = 0;
 
         // Skid cycle because fragment port is not ready
+        t->s_fetch_taddr = 0x102; 
+        t->m_mem_axi_rdata = 0x1234'5678;
+        t->m_frag_tready = 0;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0);
+        REQUIRE(t->m_mem_axi_rready == 1);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xffff);
         REQUIRE(t->m_frag_taddr == 0x101);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x102;
-        t->m_frag_tready = 1;
-        t->m_mem_axi_rdata = 0x1234'5678;
 
         // Fragment port is ready -> output new data, fetch new data from memory
+        t->s_fetch_taddr = 0x102;
+        t->m_frag_tready = 1;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 1); 
+        REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5678);
         REQUIRE(t->m_frag_taddr == 0x102);
         REQUIRE(t->m_frag_tlast == 0);
+
+        // Skid cycle because fragment port is not ready
         t->s_fetch_taddr = 0x103; 
         t->s_fetch_tlast = 1;
         t->m_frag_tready = 0;
-
-        // Skid cycle because fragment port is not ready
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5678);
         REQUIRE(t->m_frag_taddr == 0x102);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_taddr = 0x103;
-        t->m_frag_tready = 1;
 
         // Fragment port is ready -> output new data
+        t->s_fetch_taddr = 0x103;
+        t->m_frag_tready = 1;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x1234);
         REQUIRE(t->m_frag_taddr == 0x103);
         REQUIRE(t->m_frag_tlast == 1);
-        t->m_frag_tready = 0;
-        t->s_fetch_tvalid = 0;
 
         // Skid cycle because fragment port is not ready
+        t->m_frag_tready = 0;
+        t->s_fetch_tvalid = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x1234);
         REQUIRE(t->m_frag_taddr == 0x103);
         REQUIRE(t->m_frag_tlast == 1);
-        t->m_frag_tready = 1;
 
         // Acknowledge the last data
+        t->m_frag_tready = 1;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
@@ -353,52 +354,52 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 0);
-        t->s_fetch_tvalid = 1;
-        t->s_fetch_taddr = 0x100;
 
         // Fetch data from fetch interface and memory interface, output it
+        t->s_fetch_tvalid = 1;
+        t->s_fetch_taddr = 0x100;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 1);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5555);
         REQUIRE(t->m_frag_taddr == 0x100);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_tvalid = 0;
 
         // Wait for valid data on the fetch interface
+        t->s_fetch_tvalid = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 0);
-        t->s_fetch_tvalid = 1;
-        t->s_fetch_taddr = 0x101;
 
         // Fetch cached data from fetch interface, output it
+        t->s_fetch_tvalid = 1;
+        t->s_fetch_taddr = 0x101;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xffff);
         REQUIRE(t->m_frag_taddr == 0x101);
         REQUIRE(t->m_frag_tlast == 0);
-        t->s_fetch_tvalid = 0;
 
         // Wait for valid data on the fetch interface
+        t->s_fetch_tvalid = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 0);
+
+        // Fetch last data from fetch interface and memory interface, output it
         t->s_fetch_tvalid = 1;
         t->s_fetch_taddr = 0x102;
         t->s_fetch_tlast = 1;
         t->m_mem_axi_rdata = 0xaaaa'bbbb;
-
-        // Fetch last data from fetch interface and memory interface, output it
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 1); 
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xbbbb);
         REQUIRE(t->m_frag_taddr == 0x102);
         REQUIRE(t->m_frag_tlast == 1);
-        t->s_fetch_tvalid = 0;
 
+        t->s_fetch_tvalid = 0;
         rr::ut::clk(t); // memory bubble cycle
         REQUIRE(t->m_mem_axi_rready == 0); 
         REQUIRE(t->m_frag_tvalid == 0);

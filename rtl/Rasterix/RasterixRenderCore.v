@@ -752,7 +752,7 @@ module RasterixRenderCore #(
     // Counting of the pixels which are send from the rasterizer and which leave
     // the pipeline. Used to determine if there are pixel on the fly or not.
     ////////////////////////////////////////////////////////////////////////////
-    wire                                    fragmentProcessed;
+    wire fragmentProcessed;
 
     ValueTrack vt (
         .aclk(aclk),
@@ -1346,7 +1346,6 @@ module RasterixRenderCore #(
     defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
-    assign fragment_stream_out_tready = 1; // No flow ctrl -> always active
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7
