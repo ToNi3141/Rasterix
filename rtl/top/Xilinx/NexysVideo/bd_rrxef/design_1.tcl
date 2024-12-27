@@ -436,7 +436,12 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-  
+    set_property -dict [list \
+    CONFIG.FIFO_SIZE {32768} \
+    CONFIG.FIFO_TRESHOLD {2048} \
+  ] $MainInterface_0
+
+
   # Create instance: RRX_0, and set properties
   set block_name RRX
   set block_cell_name RRX_0

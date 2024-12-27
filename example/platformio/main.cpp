@@ -10,7 +10,7 @@
 // Create a connector for the rrx library. This is a wrapper around the arduino SPI interface.
 // This currently uses the blocking SPI interface. It seems, that this is always supported from
 // the boards. The async one is not always supported.
-template <uint32_t DISPLAYLIST_SIZE = 32 * 1024>
+template <uint32_t DISPLAYLIST_SIZE = 30 * 1024>
 class ArduinoBusConnector : public rr::IBusConnector
 {
 public:
@@ -77,7 +77,7 @@ public:
         digitalWrite(CSN, HIGH);
         digitalWrite(RESET, HIGH);
         SPI.begin();
-        SPI.beginTransaction(SPISettings(25000000, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(22000000, MSBFIRST, SPI_MODE0));
     
         // Reset FPGA
         digitalWrite(RESET, LOW);

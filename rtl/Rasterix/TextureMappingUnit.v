@@ -19,7 +19,7 @@
 // It samples a texel from the texture memory, filters it and 
 // executes the texture environment.
 // Pipelined: yes
-// Depth: 13 cycles
+// Depth: 14 cycles
 module TextureMappingUnit
 #(
     parameter SUB_PIXEL_WIDTH = 8,
