@@ -1004,7 +1004,6 @@ module RasterixRenderCore #(
             AttributeInterpolator attributeInterpolator (
                 .aclk(aclk),
                 .resetn(resetn),
-                .pixelInPipeline(),
 
                 .s_attrb_tready(bc_ready[0]),
                 .s_attrb_tvalid(bc_valid[0] & bc_pixel[0]),

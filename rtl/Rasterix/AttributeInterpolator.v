@@ -32,9 +32,6 @@ module AttributeInterpolator #(
 (
     input  wire                             aclk,
     input  wire                             resetn,
-    
-    // Interpolation Control
-    output wire                             pixelInPipeline,
 
     // Pixel Stream
     output wire                             s_attrb_tready,
@@ -198,15 +195,6 @@ module AttributeInterpolator #(
 
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY))
         step_0_delay_tkeep(.clk(aclk), .ce(ce), .in(s_attrb_tkeep), .out(step_0_tkeep));
-
-    ValueTrack pixelTracker (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .sigIncomingValue(s_attrb_tvalid & s_attrb_tready),
-        .sigOutgoingValue(m_attrb_tvalid & m_attrb_tready),
-        .valueInPipeline(pixelInPipeline)
-    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1 Convert bounding box positions integers to float 

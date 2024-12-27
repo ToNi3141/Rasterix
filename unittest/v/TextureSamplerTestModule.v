@@ -26,7 +26,8 @@ module TextureSamplerTestModule #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
-
+    input  wire                         ce,
+    
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 3 : 0]                textureSizeWidth, 
@@ -94,6 +95,7 @@ module TextureSamplerTestModule #(
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .textureSizeWidth(textureSizeWidth),
         .textureSizeHeight(textureSizeHeight),
