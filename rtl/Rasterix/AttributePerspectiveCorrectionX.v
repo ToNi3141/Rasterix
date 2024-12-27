@@ -38,7 +38,6 @@ module AttributePerspectiveCorrectionX #(
     input  wire                                 ce,
 
     // Pixel Stream
-    // TODO: Rename the signals to avoid confusion with an AXIS
     input  wire                                 s_attrb_tvalid,
     input  wire                                 s_attrb_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]            s_attrb_tkeep,
@@ -54,18 +53,18 @@ module AttributePerspectiveCorrectionX #(
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_s, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_t, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_q, // S3.28
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_s,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_t,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_q,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_s,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_t,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_q,
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_s, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_t, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_q, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_s, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_t, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_q, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] depth_w, // S1.30
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] depth_z, // S1.30
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_r, // S7.24
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_g,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_b,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_a,
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_g, // S7.24
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_b, // S7.24
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_a, // S7.24
 
     // Pixel Stream Interpolated
     output wire                                 m_attrb_tvalid,
