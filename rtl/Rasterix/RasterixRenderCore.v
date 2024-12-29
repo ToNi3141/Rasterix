@@ -48,8 +48,8 @@ module RasterixRenderCore #(
 
     // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
     parameter ENABLE_READ_FIFO = 1,
-    // Size of the read FIFO in log2(size)
-    parameter READ_FIFO_SIZE = 6,
+    // Size of the read FIFO in log2(size). Keep this size to make sure, it works with the rrxif configuration
+    parameter READ_FIFO_SIZE = 7,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
