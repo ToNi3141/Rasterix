@@ -15,6 +15,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Rasterizes a triangle by using increments and a edge walking algorithm
+// shown in the following picture:
+//
+//                      +Bounding Box----------------+
+//                      |   Triangle to rasterize    |
+//                      |   +------+                 |
+//                      |   |      |                 |
+//   Arrow to show  +-------> +----> +->+            |  Walk right
+//   walking direction  |   |      |    |            |
+//                      |   +-----------v-+          |
+//                      |   |      |    +----v       |  Check if inside of the triangle (in this case yes, so walk out (or till we get to the limit of the bounding box))
+//                      | + <----+ <----+ <--+       |  Walk left
+//                      | | |      |      |          |
+//                      | | +--------------------+   |
+//                      | | |      |      |      |   |  Check if inside of the triangle (in this case not)
+//                      | +-> +----> +----> +---->   |  Walk right
+//                      |   |      |      |      |   |
+//                      |   +--------------------+   |
+//                      |                            |
+//                      +----------------------------+
+// The output is a stream of pixels and commands.
+// m_rr_tlast: Is true when the algorithm terminates.
+// m_rr_tready: Stalls the rasterizer when it is false.
+// m_rr_tvalid: Is true when the algorithm runs and streams data. True does not mean, that it is inside a triangle, true 
+//      only means that the rasterizer streams meaningful data.
+// m_rr_tpixel: It is only true, when the edge walker is inside a triangle and false outside except for the last pixel.
+//      The last pixel can be outside of the bounding box and is used, together with m_rr_tkeep to flush the pipeline.
+// m_rr_tkeep: Marks a hidden pixel. When m_rr_tkeep and m_rr_tpixel are true, a pixel must be drawn. If m_rr_tkeep is false,
+//      then the pixel must not be written to the framebuffer. It is used to flush the pipeline.
+// m_rr_tbbx: x position in the bounding box.
+// m_rr_tbby: y position in the bounding box.
+// m_rr_tspx: x position on the screen.
+// m_rr_tspy: y position on the screen.
+// m_rr_tindex: Pixel address in the framebuffer.
+// m_rr_tcmd: Command to an incremental interpolator. When calculating the attributes (color, tex coords, ...) via increments,
+//      then this cmd can be used. It informs the interpolator to do a x inc/dec or a y inc. It needs to be synchronous
+//      with the rasterizer.
+//      Typically when m_rr_tpixel and m_rr_tvalid is true, a pixel can be drawn. It is expected that the the current attributes
+//      can be used. The attributes of the current m_rr_tcmd a needed for the attributes in the next cycle. So a single cycle
+//      interpolator can run in parallel to the perspective correction.
 module Rasterizer
 #(
     `include "RasterizerCommands.vh"
@@ -210,26 +250,6 @@ module Rasterizer
                 // A rasterization cycle is only executed if the shader is free. Otherwise the rasterizer will stall
                 if (m_rr_tready)
                 begin
-                    // General walking algorithm diagram:
-                    //
-                    //                      +Bounding Box----------------+
-                    //                      |   Triangle to rasterize    |
-                    //                      |   +------+                 |
-                    //                      |   |      |                 |
-                    //   Arrow to show  +-------> +----> +->+            |  Walk right
-                    //   walking direction  |   |      |    |            |
-                    //                      |   +-----------v-+          |
-                    //                      |   |      |    +----v       |  Check if inside of the triangle (in this case yes, so walk out (or till we get to the limit of the bounding box))
-                    //                      | + <----+ <----+ <--+       |  Walk left
-                    //                      | | |      |      |          |
-                    //                      | | +--------------------+   |
-                    //                      | | |      |      |      |   |  Check if inside of the triangle (in this case not)
-                    //                      | +-> +----> +----> +---->   |  Walk right
-                    //                      |   |      |      |      |   |
-                    //                      |   +--------------------+   |
-                    //                      |                            |
-                    //                      +----------------------------+
-
                     // Triangle increments
                     if (edgeWalkingState == RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR)
                     begin

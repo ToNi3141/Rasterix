@@ -137,20 +137,31 @@ module PerFragmentPipeline
     wire [STENCIL_WIDTH - 1 : 0 ]           step1_stencil;
     wire                                    step1_writeStencilBuffer;
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(3)) 
-        step1_validDelay (.clk(aclk), .ce(ce), .in(step0_valid), .out(step1_valid));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(3)) 
-        step1_lastDelay (.clk(aclk), .ce(ce), .in(step0_last), .out(step1_last));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(3)) 
-        step1_keepDelay (.clk(aclk), .ce(ce), .in(step0_keep), .out(step1_keep));
-    ValueDelay #(.VALUE_SIZE(FRAMEBUFFER_INDEX_WIDTH), .DELAY(3)) 
-        step1_indexDelay (.clk(aclk), .ce(ce), .in(step0_index), .out(step1_index));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(3)) 
-        step1_screenPosXDelay (.clk(aclk), .ce(ce), .in(step0_screenPosX), .out(step1_screenPosX));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(3)) 
-        step1_screenPosYDelay (.clk(aclk), .ce(ce), .in(step0_screenPosY), .out(step1_screenPosY));
-    ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(3)) 
-        step1_depthDelay (.clk(aclk), .ce(ce), .in(step0_depth), .out(step1_depth)); 
+    ValueDelay #(
+        .VALUE_SIZE(1 + 1 + KEEP_WIDTH + FRAMEBUFFER_INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + DEPTH_WIDTH), 
+        .DELAY(3)
+    ) step1_delay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in({
+            step0_valid,
+            step0_last,
+            step0_keep,
+            step0_index,
+            step0_screenPosX,
+            step0_screenPosY,
+            step0_depth
+        }), 
+        .out({
+            step1_valid,
+            step1_last,
+            step1_keep,
+            step1_index,
+            step1_screenPosX,
+            step1_screenPosY,
+            step1_depth
+        })
+    );
 
     ColorBlender #(
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
@@ -203,8 +214,15 @@ module PerFragmentPipeline
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilBufferValTmp;
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilRefValTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_REF_POS +: RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE)];
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilMaskTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE)];
-    ValueDelay #(.VALUE_SIZE(STENCIL_WIDTH), .DELAY(1)) 
-        step1_stencilBufferDelay (.clk(aclk), .ce(ce), .in(s_frag_stencil_tdata), .out(step1_stencilBufferValTmp)); 
+    ValueDelay #(
+        .VALUE_SIZE(STENCIL_WIDTH), 
+        .DELAY(1)
+    ) step1_stencilBufferDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(s_frag_stencil_tdata), 
+        .out(step1_stencilBufferValTmp)
+    ); 
     TestFunc #(
         .SUB_PIXEL_WIDTH(STENCIL_WIDTH)
     ) stencilTest (
@@ -239,14 +257,35 @@ module PerFragmentPipeline
         .write(step1_writeStencilBufferTmp)
     );
 
-    ValueDelay #(.VALUE_SIZE(STENCIL_WIDTH), .DELAY(1)) 
-        step1_stencilDelay (.clk(aclk), .ce(ce), .in(step1_stencilTmp), .out(step1_stencil));
+    ValueDelay #(
+        .VALUE_SIZE(STENCIL_WIDTH), 
+        .DELAY(1)
+    ) step1_stencilDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(step1_stencilTmp), 
+        .out(step1_stencil)
+    );
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(1)) 
-        step1_writeStencilDelay (.clk(aclk), .ce(ce), .in(step1_writeStencilBufferTmp), .out(step1_writeStencilBuffer));
+    ValueDelay #(
+        .VALUE_SIZE(1), 
+        .DELAY(1)
+    ) step1_writeStencilDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(step1_writeStencilBufferTmp), 
+        .out(step1_writeStencilBuffer)
+    );
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(2)) 
-        step1_writeFramebufferDelay (.clk(aclk), .ce(ce), .in(step1_depthTestTmp & step1_alphaTestTmp & step1_stencilTestTmp), .out(step1_writeFramebuffer));
+    ValueDelay #(
+        .VALUE_SIZE(1), 
+        .DELAY(2)
+    ) step1_writeFramebufferDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(step1_depthTestTmp & step1_alphaTestTmp & step1_stencilTestTmp), 
+        .out(step1_writeFramebuffer)
+    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
