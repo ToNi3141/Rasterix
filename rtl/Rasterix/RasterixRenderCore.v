@@ -1227,7 +1227,6 @@ module RasterixRenderCore #(
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
-    defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 

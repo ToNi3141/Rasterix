@@ -27,30 +27,40 @@
 // Pipelined: yes
 // Depth: 1 cycles
 module LodCalculator
+#(
+    parameter USER_WIDTH = 1
+)
 (
     input  wire                         aclk,
     input  wire                         resetn,
-    input  wire                         ce,
 
     input  wire                         confEnable,
 
-    input  wire [ 3 : 0]                textureSizeWidth, 
-    input  wire [ 3 : 0]                textureSizeHeight,
+    output wire                         s_ready,
+    input  wire                         s_valid,
+    input  wire [USER_WIDTH - 1 : 0]    s_user,
+    input  wire [ 3 : 0]                s_textureSizeWidth, 
+    input  wire [ 3 : 0]                s_textureSizeHeight,
+    input  wire [31 : 0]                s_texelS, // S16.15
+    input  wire [31 : 0]                s_texelT, // S16.15
+    input  wire [31 : 0]                s_texelSxy, // S16.15
+    input  wire [31 : 0]                s_texelTxy, // S16.15
 
-    input  wire [31 : 0]                texelS, // S16.15
-    input  wire [31 : 0]                texelT, // S16.15
-
-    input  wire [31 : 0]                texelSxy, // S16.15
-    input  wire [31 : 0]                texelTxy, // S16.15
-
-    output reg  [ 3 : 0]                lod
+    input  wire                         m_ready,
+    output reg                          m_valid,
+    output reg  [USER_WIDTH - 1 : 0]    m_user,
+    output reg  [ 3 : 0]                m_lod
 );
-    wire [31 : 0] diffS = texelS - texelSxy;
-    wire [31 : 0] diffT = texelT - texelTxy;
+    wire ce;
+    assign ce = m_ready;
+    assign s_ready = m_ready;
+
+    wire [31 : 0] diffS = s_texelS - s_texelSxy;
+    wire [31 : 0] diffT = s_texelT - s_texelTxy;
     wire [14 : 0] diffUnsignedS = diffS[31] ? ~diffS[0 +: 15] + 1 : diffS[0 +: 15];
     wire [14 : 0] diffUnsignedT = diffT[31] ? ~diffT[0 +: 15] + 1 : diffT[0 +: 15];
-    wire [ 7 : 0] diffU = diffUnsignedS[7 +: 8] >> (8 - textureSizeWidth);
-    wire [ 7 : 0] diffV = diffUnsignedT[7 +: 8] >> (8 - textureSizeHeight);
+    wire [ 7 : 0] diffU = diffUnsignedS[7 +: 8] >> (8 - s_textureSizeWidth);
+    wire [ 7 : 0] diffV = diffUnsignedT[7 +: 8] >> (8 - s_textureSizeHeight);
     wire [ 7 : 0] diffMax = diffV | diffU;
     always @(posedge aclk)
     if (ce) begin : Mux
@@ -69,11 +79,13 @@ module LodCalculator
 
         if (confEnable)
         begin
-            lod <= lodReg;
+            m_lod <= lodReg;
         end
         else
         begin
-            lod <= 0;
+            m_lod <= 0;
         end
+        m_valid <= s_valid;
+        m_user <= s_user;
     end
 endmodule

@@ -20,25 +20,35 @@
 // Pipelined: yes
 // Depth: 4 cycles
 module TextureFilter #(
+    parameter USER_WIDTH = 1,
     localparam SUB_PIXEL_WIDTH = 8,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4
 ) 
 (
     input  wire                         aclk,
     input  wire                         resetn,
-    input  wire                         ce,
 
     input  wire                         enable,
 
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel00,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel01,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel10,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texel11,
-    input  wire [15 : 0]                texelSubCoordS,
-    input  wire [15 : 0]                texelSubCoordT,
+    output wire                         s_ready,
+    input  wire                         s_valid,
+    input  wire [USER_WIDTH - 1 : 0]    s_user,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texel00,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texel01,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texel10,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texel11,
+    input  wire [15 : 0]                s_texelSubCoordS,
+    input  wire [15 : 0]                s_texelSubCoordT,
 
-    output wire [PIXEL_WIDTH - 1 : 0]   texel
+    input  wire                         m_ready,
+    output wire                         m_valid,
+    output wire [USER_WIDTH - 1 : 0]    m_user,
+    output wire [PIXEL_WIDTH - 1 : 0]   m_texel
 );
+    wire ce;
+    assign ce = m_ready;
+    assign s_ready = m_ready;
+
     wire [15 : 0]               intensityDelayedT;
     wire [PIXEL_WIDTH - 1 : 0]  mixedColorS0;
     wire [PIXEL_WIDTH - 1 : 0]  mixedColorS1;
@@ -47,8 +57,8 @@ module TextureFilter #(
     wire [PIXEL_WIDTH - 1 : 0]  filteredTexel;
     wire [PIXEL_WIDTH - 1 : 0]  unfilteredTexel;
 
-    assign intensityS = 16'hffff - texelSubCoordS;
-    assign intensityT = 16'hffff - texelSubCoordT;
+    assign intensityS = 16'hffff - s_texelSubCoordS;
+    assign intensityT = 16'hffff - s_texelSubCoordT;
 
     ColorInterpolator interpolatorS0 (
         .aclk(aclk),
@@ -56,8 +66,8 @@ module TextureFilter #(
         .ce(ce),
 
         .intensity(intensityS),
-        .colorA(texel00),
-        .colorB(texel01),
+        .colorA(s_texel00),
+        .colorB(s_texel01),
         .mixedColor(mixedColorS0)
     );
 
@@ -67,8 +77,8 @@ module TextureFilter #(
         .ce(ce),
 
         .intensity(intensityS),
-        .colorA(texel10),
-        .colorB(texel11),
+        .colorA(s_texel10),
+        .colorB(s_texel11),
         .mixedColor(mixedColorS1)
     );
 
@@ -95,18 +105,25 @@ module TextureFilter #(
         .out(intensityDelayedT)
     );
 
-    // To delay the texel00 to use it as an unfiltered texel
     ValueDelay #(
-        .VALUE_SIZE(PIXEL_WIDTH), 
+        .VALUE_SIZE(1 + USER_WIDTH + PIXEL_WIDTH), 
         .DELAY(4)
     ) 
-    texelDelay (
+    validDelay (
         .clk(aclk), 
         .ce(ce),
-        .in(texel00), 
-        .out(unfilteredTexel)
+        .in({
+            s_valid,
+            s_user,
+            s_texel00 // Use texel00 as unfiltered texel
+        }), 
+        .out({
+            m_valid,
+            m_user,
+            unfilteredTexel
+        })
     );
 
-    assign texel = (enable) ? filteredTexel : unfilteredTexel;
+    assign m_texel = (enable) ? filteredTexel : unfilteredTexel;
 
 endmodule

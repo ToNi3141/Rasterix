@@ -18,11 +18,12 @@
 `include "PixelUtil.vh"
 
 // This module calculates the texture environment 
-// For documentation, see RegisterAndDescripterDefines.vh:OP_RENDER_CONFIG_TMU_TEX_ENV
+// For documentation, see RegisterAndDescriptorDefines.vh:OP_RENDER_CONFIG_TMU_TEX_ENV
 // Pipelined: yes
 // Depth: 4 cycles
 module TexEnv 
 #(
+    parameter USER_WIDTH = 1,
     parameter SUB_PIXEL_WIDTH = 8,
 
     localparam NUMBER_OF_SUB_PIXEL = 4,
@@ -31,16 +32,21 @@ module TexEnv
 (
     input  wire                         aclk,
     input  wire                         resetn,
-    input  wire                         ce,
     
     input  wire [31 : 0]                conf,
 
-    input  wire [PIXEL_WIDTH - 1 : 0]   previousColor, // Cf (in case of tex unit 0) or Cp (output color of tex unit n-1) 
-    input  wire [PIXEL_WIDTH - 1 : 0]   texSrcColor, // Cs 
-    input  wire [PIXEL_WIDTH - 1 : 0]   primaryColor, // Cf
-    input  wire [PIXEL_WIDTH - 1 : 0]   envColor, // Cc
+    output wire                         s_ready,
+    input  wire                         s_valid,
+    input  wire [USER_WIDTH - 1 : 0]    s_user,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_previousColor, // Cf (in case of tex unit 0) or Cp (output m_color of tex unit n-1) 
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texSrcColor, // Cs 
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_primaryColor, // Cf
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_envColor, // Cc
 
-    output reg  [PIXEL_WIDTH - 1 : 0]   color
+    input  wire                         m_ready,
+    output wire                         m_valid,
+    output wire [USER_WIDTH - 1 : 0]    m_user,
+    output reg  [PIXEL_WIDTH - 1 : 0]   m_color
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -128,6 +134,10 @@ module TexEnv
             end
         endcase
     endfunction
+
+    wire ce;
+    assign ce = m_ready;
+    assign s_ready = m_ready;
     
     wire [ 2 : 0] combineRgb    = conf[ RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_POS    +: RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_SIZE ];
     wire [ 2 : 0] combineAlpha  = conf[ RENDER_CONFIG_TMU_TEX_ENV_COMBINE_ALPHA_POS  +: RENDER_CONFIG_TMU_TEX_ENV_COMBINE_ALPHA_SIZE ];
@@ -173,11 +183,17 @@ module TexEnv
 
     ////////////////////////////////////////////////////////////////////////////
     // GLOBAL DELAY
-    // Delays parameters globaly to use them in further steps in the pipeline.
+    // Delays parameters globally to use them in further steps in the pipeline.
     ////////////////////////////////////////////////////////////////////////////
     wire [ 2 : 0] combineRgbDelay;
     ValueDelay #(.VALUE_SIZE(RENDER_CONFIG_TMU_TEX_ENV_COMBINE_RGB_SIZE), .DELAY(3)) 
         glob_combineRgbDelay (.clk(aclk), .ce(ce), .in(combineRgb), .out(combineRgbDelay));
+
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(4)) 
+        glob_validDelay (.clk(aclk), .ce(ce), .in(s_valid), .out(m_valid));
+    
+    ValueDelay #(.VALUE_SIZE(USER_WIDTH), .DELAY(4)) 
+        glob_userDelay (.clk(aclk), .ce(ce), .in(s_user), .out(m_user));
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -245,25 +261,25 @@ module TexEnv
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] b2;
         reg signed [SUB_PIXEL_WIDTH_SIGNED - 1 : 0] a2;
 
-        rt = texSrcColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gt = texSrcColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bt = texSrcColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        at = texSrcColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rt = s_texSrcColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gt = s_texSrcColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bt = s_texSrcColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        at = s_texSrcColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        rc = envColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gc = envColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bc = envColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ac = envColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rc = s_envColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gc = s_envColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bc = s_envColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ac = s_envColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        rpc = primaryColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gpc = primaryColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bpc = primaryColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        apc = primaryColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rpc = s_primaryColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gpc = s_primaryColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bpc = s_primaryColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        apc = s_primaryColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
-        rp = previousColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
-        gp = previousColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
-        bp = previousColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
-        ap = previousColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
+        rp = s_previousColor[COLOR_R_POS +: SUB_PIXEL_WIDTH];
+        gp = s_previousColor[COLOR_G_POS +: SUB_PIXEL_WIDTH];
+        bp = s_previousColor[COLOR_B_POS +: SUB_PIXEL_WIDTH];
+        ap = s_previousColor[COLOR_A_POS +: SUB_PIXEL_WIDTH];
 
         ru0 = SelectRgbOperand(operandRgb0, 
                               SelectSrcColor(srcRegRgb0, rt, rc, rpc, rp), 
@@ -633,21 +649,21 @@ module TexEnv
         
         case (combineRgbDelay)
             DOT3_RGBA:
-                color <= {
+                m_color <= {
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(dotScaled)
                 };
             DOT3_RGB:
-                color <= {
+                m_color <= {
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(dotScaled),
                     SaturateCastSignedToUnsigned(acScaled)
                 };
             default: 
-                color <= {
+                m_color <= {
                     SaturateCastSignedToUnsigned(rcScaled),
                     SaturateCastSignedToUnsigned(gcScaled),
                     SaturateCastSignedToUnsigned(bcScaled),

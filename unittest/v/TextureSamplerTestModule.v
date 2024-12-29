@@ -18,6 +18,7 @@
 // This is a test module for the TextureSampler and TextureBuffer.
 // It instantiates both of them to have with the TextureBuffer a mock for the TextureSampler to ease the testing.
 module TextureSamplerTestModule #(
+    parameter USER_WIDTH = 1,
     parameter STREAM_WIDTH = 32,
 
     localparam TEX_ADDR_WIDTH = 17,
@@ -26,31 +27,32 @@ module TextureSamplerTestModule #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
-    input  wire                         ce,
     
     // Texture size
     // textureSize * 2. 0 equals 1px. 1 equals 2px. 2 equals 4px... Only power of two are allowed.
     input  wire [ 3 : 0]                textureSizeWidth, 
     input  wire [ 3 : 0]                textureSizeHeight,
-    input  wire [ 3 : 0]                textureLod,
     input  wire                         enableHalfPixelOffset,
     input  wire [ 3 : 0]                confPixelFormat,
 
-    input  wire [31 : 0]                texelS, // S16.15
-    input  wire [31 : 0]                texelT, // S16.15
-    input  wire                         clampS,
-    input  wire                         clampT,
-    output wire [PIXEL_WIDTH - 1 : 0]   texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [PIXEL_WIDTH - 1 : 0]   texel01, // (1, 0)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel10, // (0, 1)
-    output wire [PIXEL_WIDTH - 1 : 0]   texel11, // (1, 1)
+    input  wire                         s_valid,
+    output wire                         s_ready,
+    input  wire [USER_WIDTH - 1 : 0]    s_user,
+    input  wire [31 : 0]                s_texelS, // S16.15
+    input  wire [31 : 0]                s_texelT, // S16.15
+    input  wire                         s_clampS,
+    input  wire                         s_clampT,
+    input  wire [ 3 : 0]                s_textureLod,
 
-    // This is basically the faction of the pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
-    // The integer part is not required, since the integer part only adresses the pixel and we don't care about that.
-    // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
-    // are outside of our quad which never happens.
-    output wire [15 : 0]                texelSubCoordS, // Q0.16
-    output wire [15 : 0]                texelSubCoordT, // Q0.16
+    output wire                         m_valid,
+    input  wire                         m_ready,
+    output wire [USER_WIDTH - 1 : 0]    m_user,
+    output wire [PIXEL_WIDTH - 1 : 0]   m_texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
+    output wire [PIXEL_WIDTH - 1 : 0]   m_texel01, // (1, 0)
+    output wire [PIXEL_WIDTH - 1 : 0]   m_texel10, // (0, 1)
+    output wire [PIXEL_WIDTH - 1 : 0]   m_texel11, // (1, 1)
+    output wire [15 : 0]                m_texelSubCoordS, // Q0.16
+    output wire [15 : 0]                m_texelSubCoordT, // Q0.16
 
     // Texture Write
     input  wire                         s_axis_tvalid,
@@ -91,15 +93,14 @@ module TextureSamplerTestModule #(
     );
 
     TextureSampler #(
+        .USER_WIDTH(USER_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
-        .ce(ce),
 
         .textureSizeWidth(textureSizeWidth),
         .textureSizeHeight(textureSizeHeight),
-        .textureLod(textureLod),
         .enableHalfPixelOffset(enableHalfPixelOffset),
 
         .texelAddr00(texelAddr00),
@@ -111,17 +112,24 @@ module TextureSamplerTestModule #(
         .texelInput10(texelInput10),
         .texelInput11(texelInput11),
 
-        .texelS(texelS),
-        .texelT(texelT),
-        .clampS(clampS),
-        .clampT(clampT),
-        .texel00(texel00),
-        .texel01(texel01),
-        .texel10(texel10),
-        .texel11(texel11),
-
-        .texelSubCoordS(texelSubCoordS),
-        .texelSubCoordT(texelSubCoordT)
+        .s_valid(s_valid),
+        .s_ready(s_ready),
+        .s_user(s_user),
+        .s_texelS(s_texelS),
+        .s_texelT(s_texelT),
+        .s_clampS(s_clampS),
+        .s_clampT(s_clampT),
+        .s_textureLod(s_textureLod),
+        
+        .m_valid(m_valid),
+        .m_ready(m_ready),
+        .m_user(m_user),
+        .m_texel00(m_texel00),
+        .m_texel01(m_texel01),
+        .m_texel10(m_texel10),
+        .m_texel11(m_texel11),
+        .m_texelSubCoordS(m_texelSubCoordS),
+        .m_texelSubCoordT(m_texelSubCoordT)
     );
 
 endmodule

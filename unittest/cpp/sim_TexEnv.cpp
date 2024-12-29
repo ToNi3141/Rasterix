@@ -103,7 +103,7 @@ TEST_CASE("Check TexEnv SRC_RGB TEXTURE", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -111,16 +111,16 @@ TEST_CASE("Check TexEnv SRC_RGB TEXTURE", "[TexEnv]")
     conf.conf.srcRegRgb0 = TEXTURE;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff0002);
+    REQUIRE(top->m_color == 0x00ff0002);
 
     // Destroy model
     delete top;
@@ -130,7 +130,7 @@ TEST_CASE("Check TexEnv SRC_RGB PREVIOUS", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -138,16 +138,16 @@ TEST_CASE("Check TexEnv SRC_RGB PREVIOUS", "[TexEnv]")
     conf.conf.srcRegRgb0 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0xff000002);
+    REQUIRE(top->m_color ==  0xff000002);
 
     // Destroy model
     delete top;
@@ -157,7 +157,7 @@ TEST_CASE("Check TexEnv SRC_RGB CONSTANT", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -165,16 +165,16 @@ TEST_CASE("Check TexEnv SRC_RGB CONSTANT", "[TexEnv]")
     conf.conf.srcRegRgb0 = CONSTANT;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0x00000002);
+    REQUIRE(top->m_color ==  0x00000002);
 
     // Destroy model
     delete top;
@@ -184,7 +184,7 @@ TEST_CASE("Check TexEnv SRC_RGB PRIMARY_COLOR", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -192,16 +192,16 @@ TEST_CASE("Check TexEnv SRC_RGB PRIMARY_COLOR", "[TexEnv]")
     conf.conf.srcRegRgb0 = PRIMARY_COLOR;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0x0000ff02);
+    REQUIRE(top->m_color ==  0x0000ff02);
 
     // Destroy model
     delete top;
@@ -211,7 +211,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA TEXTURE", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -219,16 +219,16 @@ TEST_CASE("Check TexEnv SRC_ALPHA TEXTURE", "[TexEnv]")
     conf.conf.srcRegAlpha0 = TEXTURE;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff0002);
+    REQUIRE(top->m_color == 0x00ff0002);
 
     // Destroy model
     delete top;
@@ -238,7 +238,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PREVIOUS", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -246,16 +246,16 @@ TEST_CASE("Check TexEnv SRC_ALPHA PREVIOUS", "[TexEnv]")
     conf.conf.srcRegAlpha0 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0x00ff0001);
+    REQUIRE(top->m_color ==  0x00ff0001);
 
     // Destroy model
     delete top;
@@ -265,7 +265,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA CONSTANT", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -273,16 +273,16 @@ TEST_CASE("Check TexEnv SRC_ALPHA CONSTANT", "[TexEnv]")
     conf.conf.srcRegAlpha0 = CONSTANT;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0x00ff00ff);
+    REQUIRE(top->m_color ==  0x00ff00ff);
 
     // Destroy model
     delete top;
@@ -292,7 +292,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PRIMARY_COLOR", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -300,16 +300,16 @@ TEST_CASE("Check TexEnv SRC_ALPHA PRIMARY_COLOR", "[TexEnv]")
     conf.conf.srcRegAlpha0 = PRIMARY_COLOR;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color ==  0x00ff0003);
+    REQUIRE(top->m_color ==  0x00ff0003);
 
     // Destroy model
     delete top;
@@ -319,20 +319,20 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_COLOR (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.operandRgb0 = ONE_MINUS_SRC_COLOR;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xff00ff02);
+    REQUIRE(top->m_color == 0xff00ff02);
 
     // Destroy model
     delete top;
@@ -342,20 +342,20 @@ TEST_CASE("Check TexEnv OP SRC_ALPHA (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.operandRgb0 = SRC_ALPHA;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x02020202);
+    REQUIRE(top->m_color == 0x02020202);
 
     // Destroy model
     delete top;
@@ -365,20 +365,20 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.operandRgb0 = ONE_MINUS_SRC_ALPHA;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xfdfdfd02);
+    REQUIRE(top->m_color == 0xfdfdfd02);
 
     // Destroy model
     delete top;
@@ -388,20 +388,20 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.operandAlpha0 = ONE_MINUS_SRC_ALPHA;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff00fd);
+    REQUIRE(top->m_color == 0x00ff00fd);
 
     // Destroy model
     delete top;
@@ -411,20 +411,20 @@ TEST_CASE("Check TexEnv REPLACE (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.combineRgb = REPLACE;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff0002);
+    REQUIRE(top->m_color == 0x00ff0002);
 
     // Destroy model
     delete top;
@@ -434,7 +434,7 @@ TEST_CASE("Check TexEnv MODULATE (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -443,14 +443,14 @@ TEST_CASE("Check TexEnv MODULATE (RGB)", "[TexEnv]")
     conf.conf.srcRegRgb1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x10203001;
-    top->texSrcColor = 0x40506002;
+    top->s_previousColor = 0x10203001;
+    top->s_texSrcColor = 0x40506002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x040A1202);
+    REQUIRE(top->m_color == 0x040A1202);
 
     // Destroy model
     delete top;
@@ -460,7 +460,7 @@ TEST_CASE("Check TexEnv ADD (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -469,14 +469,14 @@ TEST_CASE("Check TexEnv ADD (RGB)", "[TexEnv]")
     conf.conf.srcRegRgb1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x10203001;
-    top->texSrcColor = 0x40506002;
+    top->s_previousColor = 0x10203001;
+    top->s_texSrcColor = 0x40506002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x50709002);
+    REQUIRE(top->m_color == 0x50709002);
 
     // Destroy model
     delete top;
@@ -486,7 +486,7 @@ TEST_CASE("Check TexEnv ADD_SIGNED (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -495,14 +495,14 @@ TEST_CASE("Check TexEnv ADD_SIGNED (RGB)", "[TexEnv]")
     conf.conf.srcRegRgb1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x10203001;
-    top->texSrcColor = 0x6080A002;
+    top->s_previousColor = 0x10203001;
+    top->s_texSrcColor = 0x6080A002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00215102);
+    REQUIRE(top->m_color == 0x00215102);
 
     // Destroy model
     delete top;
@@ -512,7 +512,7 @@ TEST_CASE("Check TexEnv INTERPOLATE (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -522,15 +522,15 @@ TEST_CASE("Check TexEnv INTERPOLATE (RGB)", "[TexEnv]")
     conf.conf.srcRegRgb2 = CONSTANT;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x10203001;
-    top->previousColor = 0x6080A002;
-    top->envColor = 0x40506003;
+    top->s_texSrcColor = 0x10203001;
+    top->s_previousColor = 0x6080A002;
+    top->s_envColor = 0x40506003;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x4c627601);
+    REQUIRE(top->m_color == 0x4c627601);
     
     // arg0 * arg1 = 0x040A12
     // 1 - arg2 = 0xbfaf9f
@@ -545,7 +545,7 @@ TEST_CASE("Check TexEnv SUBTRACT (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -554,14 +554,14 @@ TEST_CASE("Check TexEnv SUBTRACT (RGB)", "[TexEnv]")
     conf.conf.srcRegRgb1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x5080A001;
-    top->previousColor = 0x10203002;
+    top->s_texSrcColor = 0x5080A001;
+    top->s_previousColor = 0x10203002;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x40607001);
+    REQUIRE(top->m_color == 0x40607001);
 
     // Destroy model
     delete top;
@@ -571,12 +571,12 @@ TEST_CASE("Check DOT3_RGB", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
-    top->previousColor = 0x11000001; // 0x11 = 0.066
-    top->texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
-    top->primaryColor = 0x00000003;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0x11000001; // 0x11 = 0.066
+    top->s_texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
+    top->s_primaryColor = 0x00000003;
+    top->s_envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
     // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
@@ -595,7 +595,7 @@ TEST_CASE("Check DOT3_RGB", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x14141402);
+    REQUIRE(top->m_color == 0x14141402);
 
     // Destroy model
     delete top;
@@ -605,12 +605,12 @@ TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
-    top->previousColor = 0x11000001; // 0x11 = 0.066
-    top->texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
-    top->primaryColor = 0x00000003;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0x11000001; // 0x11 = 0.066
+    top->s_texSrcColor = 0x00CCAA02; // 0xCC = 0.8, 0xAA = 0.66667
+    top->s_primaryColor = 0x00000003;
+    top->s_envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
     // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
@@ -629,7 +629,7 @@ TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x14141414);
+    REQUIRE(top->m_color == 0x14141414);
 
     // Destroy model
     delete top;
@@ -639,7 +639,7 @@ TEST_CASE("Check TexEnv MODULATE (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -648,14 +648,14 @@ TEST_CASE("Check TexEnv MODULATE (ALPHA)", "[TexEnv]")
     conf.conf.srcRegAlpha1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x00000030;
-    top->texSrcColor = 0x00000060;
+    top->s_previousColor = 0x00000030;
+    top->s_texSrcColor = 0x00000060;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00000012);
+    REQUIRE(top->m_color == 0x00000012);
 
     // Destroy model
     delete top;
@@ -665,7 +665,7 @@ TEST_CASE("Check TexEnv ADD (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -674,14 +674,14 @@ TEST_CASE("Check TexEnv ADD (ALPHA)", "[TexEnv]")
     conf.conf.srcRegAlpha1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x00000030;
-    top->texSrcColor = 0x00000060;
+    top->s_previousColor = 0x00000030;
+    top->s_texSrcColor = 0x00000060;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00000090);
+    REQUIRE(top->m_color == 0x00000090);
 
     // Destroy model
     delete top;
@@ -691,7 +691,7 @@ TEST_CASE("Check TexEnv ADD_SIGNED (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -700,14 +700,14 @@ TEST_CASE("Check TexEnv ADD_SIGNED (ALPHA)", "[TexEnv]")
     conf.conf.srcRegAlpha1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->previousColor = 0x00000030;
-    top->texSrcColor = 0x00000060;
+    top->s_previousColor = 0x00000030;
+    top->s_texSrcColor = 0x00000060;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00000011);
+    REQUIRE(top->m_color == 0x00000011);
 
     // Destroy model
     delete top;
@@ -717,7 +717,7 @@ TEST_CASE("Check TexEnv INTERPOLATE (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -727,15 +727,15 @@ TEST_CASE("Check TexEnv INTERPOLATE (ALPHA)", "[TexEnv]")
     conf.conf.srcRegAlpha2 = CONSTANT;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00000030;
-    top->previousColor = 0x00000060;
-    top->envColor = 0x00000090;
+    top->s_texSrcColor = 0x00000030;
+    top->s_previousColor = 0x00000060;
+    top->s_envColor = 0x00000090;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00000045);
+    REQUIRE(top->m_color == 0x00000045);
     // arg0 * arg2 = 0x30 * 0x60 = 0x1B
     // 1 - arg2 = 0x6F
     // arg1 * (1 - arg2) = 0x29
@@ -749,7 +749,7 @@ TEST_CASE("Check TexEnv SUBTRACT (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -758,14 +758,14 @@ TEST_CASE("Check TexEnv SUBTRACT (ALPHA)", "[TexEnv]")
     conf.conf.srcRegAlpha1 = PREVIOUS;
     top->conf = conf.value;
 
-    top->texSrcColor = 0x00000090;
-    top->previousColor = 0x00000060;
+    top->s_texSrcColor = 0x00000090;
+    top->s_previousColor = 0x00000060;
 
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00000030);
+    REQUIRE(top->m_color == 0x00000030);
 
     // Destroy model
     delete top;
@@ -775,29 +775,29 @@ TEST_CASE("Check TexEnv REPLACE Pipeline", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.combineRgb = REPLACE;
     top->conf = conf.value;
 
-    top->texSrcColor = 0xff000001;
+    top->s_texSrcColor = 0xff000001;
 
     rr::ut::clk(top);
-    top->texSrcColor = 0x00ff0002;
+    top->s_texSrcColor = 0x00ff0002;
     rr::ut::clk(top);
-    top->texSrcColor = 0x0000ff03;
+    top->s_texSrcColor = 0x0000ff03;
     rr::ut::clk(top);
-    top->texSrcColor = 0xffff0004;
+    top->s_texSrcColor = 0xffff0004;
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xff000001);
+    REQUIRE(top->m_color == 0xff000001);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff0002);
+    REQUIRE(top->m_color == 0x00ff0002);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x0000ff03);
+    REQUIRE(top->m_color == 0x0000ff03);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xffff0004);
+    REQUIRE(top->m_color == 0xffff0004);
 
     // Destroy model
     delete top;
@@ -807,13 +807,13 @@ TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.combineRgb = REPLACE;
 
-    top->texSrcColor = 0x01084002;
+    top->s_texSrcColor = 0x01084002;
 
     // Scale of 1
     conf.conf.shiftRgb = 1;
@@ -822,7 +822,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x02108002);
+    REQUIRE(top->m_color == 0x02108002);
 
     // Scale of 2
     conf.conf.shiftRgb = 2;
@@ -831,7 +831,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x0420ff02);
+    REQUIRE(top->m_color == 0x0420ff02);
 
     // Destroy model
     delete top;
@@ -841,13 +841,13 @@ TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
     conf.conf.combineRgb = REPLACE;
 
-    top->texSrcColor = 0x01084040;
+    top->s_texSrcColor = 0x01084040;
 
     // Scale of 1
     conf.conf.shiftAlpha = 1;
@@ -856,7 +856,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x01084080);
+    REQUIRE(top->m_color == 0x01084080);
 
     // Scale of 2
     conf.conf.shiftAlpha = 2;
@@ -865,7 +865,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x010840ff);
+    REQUIRE(top->m_color == 0x010840ff);
 
     // Destroy model
     delete top;
@@ -875,12 +875,12 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
-    top->previousColor = 0x11000001; // 0x11 = 0.066
-    top->texSrcColor = 0x00CC8802; // 0xCC = 0.8, 0x88 = 0.533334
-    top->primaryColor = 0x00000003;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0x11000001; // 0x11 = 0.066
+    top->s_texSrcColor = 0x00CC8802; // 0xCC = 0.8, 0x88 = 0.533334
+    top->s_primaryColor = 0x00000003;
+    top->s_envColor = 0x000000ff;
 
     // r = (0 - 0.5) * (0 - 0.5) = 0.25
     // g = (0.8 - 0.5) * (0 - 0.5) = -0.15
@@ -902,7 +902,7 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xB0B0B002);
+    REQUIRE(top->m_color == 0xB0B0B002);
 
     // Scale of 2
     conf.conf.shiftRgb = 2;
@@ -911,7 +911,7 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0xffffff02);
+    REQUIRE(top->m_color == 0xffffff02);
 
     // Destroy model
     delete top;
@@ -921,7 +921,7 @@ TEST_CASE("Check stall", "[TexEnv]")
 {
     VTexEnv* top = new VTexEnv();
     rr::ut::reset(top);
-    top->ce = 1;
+    top->m_ready = 1;
 
     Conf conf;
     initConf(conf);
@@ -929,27 +929,38 @@ TEST_CASE("Check stall", "[TexEnv]")
     conf.conf.srcRegRgb0 = TEXTURE;
     top->conf = conf.value;
 
-    top->previousColor = 0xff000001;
-    top->texSrcColor = 0x00ff0002;
-    top->primaryColor = 0x0000ff03;
-    top->envColor = 0x000000ff;
+    top->s_previousColor = 0xff000001;
+    top->s_texSrcColor = 0x00ff0002;
+    top->s_primaryColor = 0x0000ff03;
+    top->s_envColor = 0x000000ff;
+    top->s_user = 1;
+    top->s_valid = 1;
     rr::ut::clk(top);
+    REQUIRE(top->s_ready == 1);
 
-    top->previousColor = 0;
-    top->texSrcColor = 0;
-    top->primaryColor = 0;
-    top->envColor = 0;
+    top->s_previousColor = 0;
+    top->s_texSrcColor = 0;
+    top->s_primaryColor = 0;
+    top->s_envColor = 0;
+    top->s_user = 0;
+    top->s_valid = 0;
     rr::ut::clk(top);
-    top->ce = 0;
+    top->m_ready = 0;
+    rr::ut::clk(top);
+    REQUIRE(top->s_ready == 0);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    rr::ut::clk(top);
-    REQUIRE(top->color != 0x00ff0002);
+    REQUIRE(top->m_color != 0x00ff0002);
+    REQUIRE(top->m_user != 1);
+    REQUIRE(top->m_valid != 1);
 
-    top->ce = 1;
+    top->m_ready = 1;
     rr::ut::clk(top);
+    REQUIRE(top->s_ready == 1);
     rr::ut::clk(top);
-    REQUIRE(top->color == 0x00ff0002);
+    REQUIRE(top->m_color == 0x00ff0002);
+    REQUIRE(top->m_user == 1);
+    REQUIRE(top->m_valid == 1);
 
     // Destroy model
     delete top;

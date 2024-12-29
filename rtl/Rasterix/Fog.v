@@ -22,6 +22,7 @@
 // Depth: 6 cycles
 module Fog 
 #(
+    parameter USER_WIDTH = 1,
     parameter SUB_PIXEL_WIDTH = 8,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL,
@@ -31,7 +32,6 @@ module Fog
 (
     input  wire                         aclk,
     input  wire                         resetn,
-    input  wire                         ce,
 
     // Fog function LUT stream
     input  wire                         s_fog_lut_axis_tvalid,
@@ -44,13 +44,23 @@ module Fog
     input  wire                         confEnable,
 
     // Fog calculation
-    input  wire [FLOAT_SIZE - 1 : 0]    depth,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelColor,
+    output wire                         s_ready,
+    input  wire                         s_valid,
+    input  wire [USER_WIDTH - 1 : 0]    s_user,
+    input  wire [FLOAT_SIZE - 1 : 0]    s_depth,
+    input  wire [PIXEL_WIDTH - 1 : 0]   s_texelColor,
     
     // Fogged texel
-    output wire [PIXEL_WIDTH - 1 : 0]   color 
+    input  wire                         m_ready,
+    output wire                         m_valid,
+    output wire [USER_WIDTH - 1 : 0]    m_user,
+    output wire [PIXEL_WIDTH - 1 : 0]   m_color 
 );
 `include "RegisterAndDescriptorDefines.vh"
+
+    wire ce;
+    assign ce = m_ready;
+    assign s_ready = m_ready;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -58,23 +68,33 @@ module Fog
     // Clocks: 4 
     ////////////////////////////////////////////////////////////////////////////
     wire [23 : 0]               step0_fogIntensity;
-    wire [PIXEL_WIDTH - 1 :0]   step0_texelColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step0_texelColor;
+    wire                        step0_valid;
+    wire [USER_WIDTH - 1 : 0]   step0_user;
 
     ValueDelay #(
-        .VALUE_SIZE(PIXEL_WIDTH), 
+        .VALUE_SIZE(1 + USER_WIDTH + PIXEL_WIDTH), 
         .DELAY(4)
-    ) step0_texelColorDelay (
+    ) step0_validDelay (
         .clk(aclk), 
         .ce(ce),
-        .in(texelColor),
-        .out(step0_texelColor)
+        .in({
+            s_valid,
+            s_user,
+            s_texelColor
+        }),
+        .out({
+            step0_valid,
+            step0_user,
+            step0_texelColor
+        })
     );
 
     FunctionInterpolator step0_calculateFogIntensity (
         .aclk(aclk), 
         .resetn(resetn), 
         .ce(ce),
-        .x(depth),
+        .x(s_depth),
         .fx(step0_fogIntensity),
         .s_axis_tvalid(s_fog_lut_axis_tvalid), 
         .s_axis_tready(s_fog_lut_axis_tready), 
@@ -89,15 +109,25 @@ module Fog
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]  step1_texelColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_mixedColor;
+    wire [USER_WIDTH - 1 : 0]   step1_user;
+    wire                        step1_valid;
 
     ValueDelay #(
-        .VALUE_SIZE(PIXEL_WIDTH), 
+        .VALUE_SIZE(1 + USER_WIDTH + PIXEL_WIDTH), 
         .DELAY(2)
-    ) step0_texelDelay (
-        .clk(aclk),
+    ) step1_validDelay (
+        .clk(aclk), 
         .ce(ce),
-        .in(step0_texelColor),
-        .out(step1_texelColor)
+        .in({
+            step0_valid,
+            step0_user,
+            step0_texelColor
+        }),
+        .out({
+            step1_valid,
+            step1_user,
+            step1_texelColor
+        })
     );
 
     ColorInterpolator #(
@@ -119,11 +149,13 @@ module Fog
     // Output fogged texel
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign color = (confEnable) ? {
+    assign m_color = (confEnable) ? {
             step1_mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
             step1_mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
             step1_mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
             step1_texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH] // Replace alpha, because it is specified that fog does not change the alpha value of a texel
         } : step1_texelColor;
+    assign m_user = step1_user;
+    assign m_valid = step1_valid;
 
 endmodule
