@@ -27,6 +27,7 @@ static constexpr uint8_t RR_CMD_Y_INC { 3 };
 
 void init(VAttributeInterpolationX* top)
 {
+    top->ce = 1;
     top->tex0_s = 0;
     top->tex0_t = 100;
     top->tex0_q = 200;
@@ -64,8 +65,8 @@ void init(VAttributeInterpolationX* top)
     top->color_b_inc_y = 23;
     top->color_a_inc_y = 24;
 
-    top->s_attrb_tvalid = 1;
-    top->s_attrb_tcmd = RR_CMD_INIT;
+    top->valid = 1;
+    top->cmd = RR_CMD_INIT;
 
     rr::ut::clk(top);
 }
@@ -113,7 +114,7 @@ TEST_CASE("Check x inc", "[AttributeInterpolationX]")
 
     init(top);
 
-    top->s_attrb_tcmd = RR_CMD_X_INC;
+    top->cmd = RR_CMD_X_INC;
     rr::ut::clk(top);
 
     CHECK(top->curr_tex0_s == 0 + 1);
@@ -152,7 +153,7 @@ TEST_CASE("Check x dec", "[AttributeInterpolationX]")
 
     init(top);
 
-    top->s_attrb_tcmd = RR_CMD_X_DEC;
+    top->cmd = RR_CMD_X_DEC;
     rr::ut::clk(top);
 
     CHECK(top->curr_tex0_s == 0 - 1);
@@ -191,7 +192,75 @@ TEST_CASE("Check y inc", "[AttributeInterpolationX]")
 
     init(top);
 
-    top->s_attrb_tcmd = RR_CMD_Y_INC;
+    top->cmd = RR_CMD_Y_INC;
+    rr::ut::clk(top);
+
+    CHECK(top->curr_tex0_s == 0 + 4);
+    CHECK(top->curr_tex0_t == 100 + 5);
+    CHECK(top->curr_tex0_q == 200 + 6);
+    
+    CHECK(top->curr_tex0_mipmap_s == 5 + 4);
+    CHECK(top->curr_tex0_mipmap_t == 107 + 5);
+    CHECK(top->curr_tex0_mipmap_q == 209 + 6);
+
+    CHECK(top->curr_tex1_s == 300 + 10);
+    CHECK(top->curr_tex1_t == 400 + 11);
+    CHECK(top->curr_tex1_q == 500 + 12);
+    
+    CHECK(top->curr_tex1_mipmap_s == 317 + 10);
+    CHECK(top->curr_tex1_mipmap_t == 419 + 11);
+    CHECK(top->curr_tex1_mipmap_q == 521 + 12);
+
+    CHECK(top->curr_depth_w == 600 + 14);
+
+    CHECK(top->curr_depth_z == 700 + 16);
+
+    CHECK(top->curr_color_r == 800 + 21);
+    CHECK(top->curr_color_g == 900 + 22);
+    CHECK(top->curr_color_b == 1000 + 23);
+    CHECK(top->curr_color_a == 1100 + 24);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check stall", "[AttributeInterpolationX]")
+{
+    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    rr::ut::reset(top);
+
+    init(top);
+
+    top->cmd = RR_CMD_Y_INC;
+    top->ce = 0;
+    rr::ut::clk(top);
+
+    CHECK(top->curr_tex0_s == 0);
+    CHECK(top->curr_tex0_t == 100);
+    CHECK(top->curr_tex0_q == 200);
+    
+    CHECK(top->curr_tex0_mipmap_s == 5);
+    CHECK(top->curr_tex0_mipmap_t == 107);
+    CHECK(top->curr_tex0_mipmap_q == 209);
+
+    CHECK(top->curr_tex1_s == 300);
+    CHECK(top->curr_tex1_t == 400);
+    CHECK(top->curr_tex1_q == 500);
+    
+    CHECK(top->curr_tex1_mipmap_s == 317);
+    CHECK(top->curr_tex1_mipmap_t == 419);
+    CHECK(top->curr_tex1_mipmap_q == 521);
+
+    CHECK(top->curr_depth_w == 600);
+
+    CHECK(top->curr_depth_z == 700);
+
+    CHECK(top->curr_color_r == 800);
+    CHECK(top->curr_color_g == 900);
+    CHECK(top->curr_color_b == 1000);
+    CHECK(top->curr_color_a == 1100);
+
+    top->ce = 1;
     rr::ut::clk(top);
 
     CHECK(top->curr_tex0_s == 0 + 4);

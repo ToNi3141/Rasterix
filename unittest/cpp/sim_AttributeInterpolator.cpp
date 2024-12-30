@@ -179,10 +179,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     VAttributeInterpolator* top = new VAttributeInterpolator();
 
     // Reset cycle
-    top->resetn = 0;
-    rr::ut::clk(top);
-    top->resetn = 1;
-    rr::ut::clk(top);
+    rr::ut::reset(top);
 
     // Reset the pipeline
     for (int i = 0; i < CLOCK_DELAY; i++)
@@ -233,7 +230,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->m_attrb_tcolor_r == 0);
     REQUIRE(top->m_attrb_tvalid == 0);
     REQUIRE(top->m_attrb_tlast == 0);
-    REQUIRE(top->pixelInPipeline == 0);
 
     ScreenPos sp;
     ScreenPos bb;
@@ -326,6 +322,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     top->s_attrb_tindex = 0;
 
     top->s_attrb_tvalid = 1;
+    top->m_attrb_tready = 1;
     top->s_attrb_tlast = 0;
 
     // Check the pipeline with 100 pixel
@@ -378,7 +375,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             REQUIRE(Approx(b).epsilon(0.01) == expectedResult.b);
             REQUIRE(Approx(a).epsilon(0.01) == expectedResult.a);
         }
-        REQUIRE(top->pixelInPipeline == 1);
 
         top->s_attrb_tvalid = 1;
         top->s_attrb_tlast = i % 5;
@@ -409,7 +405,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         REQUIRE(top->m_attrb_tindex == i);
         REQUIRE(top->m_attrb_tvalid == 1);
         REQUIRE(top->m_attrb_tlast == i % 5);
-        REQUIRE(top->pixelInPipeline == 1);
         REQUIRE(top->m_attrb_tspx == (400 + static_cast<uint16_t>(i)));
         REQUIRE(top->m_attrb_tspy == (200 + static_cast<uint16_t>(i)));
 
@@ -468,10 +463,6 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->m_attrb_tindex == 0);
     REQUIRE(top->m_attrb_tvalid == 0);
     REQUIRE(top->m_attrb_tlast == 0);
-
-    // This signal is one clock delayed
-    rr::ut::clk(top);
-    REQUIRE(top->pixelInPipeline == 0);
 
     // Destroy model
     delete top;

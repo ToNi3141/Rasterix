@@ -24,6 +24,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 {
     VAttributePerspectiveCorrectionX* top = new VAttributePerspectiveCorrectionX();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->s_attrb_tvalid = 1;
     top->s_attrb_tlast = 0;
@@ -91,10 +92,19 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     top->s_attrb_tvalid = 0;
     top->s_attrb_tpixel = 0;
 
+    for (uint32_t i = 0; i < 13; i++)
+    {
+        rr::ut::clk(top);
+    }
+    // Check stalling
+    top->ce = 0;
     for (uint32_t i = 0; i < 14; i++)
     {
         rr::ut::clk(top);
     }
+    // Enable pipeline
+    top->ce = 1;
+    rr::ut::clk(top);
 
     CHECK(top->m_attrb_tvalid == 1);
     CHECK(top->m_attrb_tlast == 0);

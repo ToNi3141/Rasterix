@@ -28,6 +28,7 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
 {
     VColorInterpolator* top = new VColorInterpolator();
     rr::ut::reset(top);
+    top->ce = 1;
 
     const uint32_t colorA = 0xffffffff;
     const uint32_t colorB = 0x00000000;
@@ -53,6 +54,7 @@ TEST_CASE("Check pipelining", "[ColorInterpolator]")
 {
     VColorInterpolator* top = new VColorInterpolator();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->colorA = 0xffffffff;
     top->colorB = 0x00000000;
@@ -79,6 +81,7 @@ TEST_CASE("Check channels", "[ColorInterpolator]")
 {
     VColorInterpolator* top = new VColorInterpolator();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->intensity = 0x7fff;
 
@@ -105,6 +108,32 @@ TEST_CASE("Check channels", "[ColorInterpolator]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     REQUIRE(top->mixedColor == 0x000000bf);
+    
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check stalling", "[ColorInterpolator]")
+{
+    VColorInterpolator* top = new VColorInterpolator();
+    rr::ut::reset(top);
+    top->ce = 1;
+
+    top->intensity = 0x7fff;
+
+    top->colorA = 0xff000000;
+    top->colorB = 0x7f000000;
+    rr::ut::clk(top);
+
+    top->colorA = 0;
+    top->colorB = 0;
+    top->ce = 0;
+    rr::ut::clk(top);
+    REQUIRE(top->mixedColor != 0xbf000000);
+
+    top->ce = 1;
+    rr::ut::clk(top);
+    REQUIRE(top->mixedColor == 0xbf000000);
     
     // Destroy model
     delete top;

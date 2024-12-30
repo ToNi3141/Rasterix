@@ -37,6 +37,7 @@ TEST_CASE("Test stencil fail op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -103,6 +104,7 @@ TEST_CASE("Test z fail op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -169,6 +171,7 @@ TEST_CASE("Test z pass op", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -235,6 +238,7 @@ TEST_CASE("Test wrapping", "[VStencilOp]")
 {
     VStencilOp* top = new VStencilOp();
     rr::ut::reset(top);
+    top->ce = 1;
 
     top->opZFail = KEEP;
     top->opZPass = KEEP;
@@ -267,6 +271,44 @@ TEST_CASE("Test wrapping", "[VStencilOp]")
     top->sValIn = 0;
     rr::ut::clk(top);
     REQUIRE(top->sValOut == 0xf);
+    REQUIRE(top->write == 1);
+
+    // Destroy model
+    delete top;
+}
+
+
+TEST_CASE("Check stall", "[VStencilOp]")
+{
+    VStencilOp* top = new VStencilOp();
+    rr::ut::reset(top);
+    top->ce = 1;
+
+    top->opZFail = KEEP;
+    top->opZPass = KEEP;
+    top->opFail = KEEP;
+    top->refVal = 0x5;
+    top->enable = 1;
+
+    top->zTest = 1;
+    top->sTest = 1;
+
+    top->opZPass = KEEP;
+    top->sValIn = 1;
+    rr::ut::clk(top);
+    REQUIRE(top->sValOut == 1);
+    REQUIRE(top->write == 1);
+
+    top->opZPass = ZERO;
+    top->sValIn = 2;
+    top->ce = 0;
+    rr::ut::clk(top);
+    REQUIRE(top->sValOut == 1);
+    REQUIRE(top->write == 1);
+
+    top->ce = 1;
+    rr::ut::clk(top);
+    REQUIRE(top->sValOut == 0);
     REQUIRE(top->write == 1);
 
     // Destroy model

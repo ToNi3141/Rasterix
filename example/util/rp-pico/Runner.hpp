@@ -10,7 +10,7 @@
 #include <algorithm>
 
 // Simple BusConnector which wraps the SPI
-template <uint32_t DISPLAYLIST_SIZE = 32 * 1024>
+template <uint32_t DISPLAYLIST_SIZE = 30 * 1024>
 class BusConnector : public rr::IBusConnector
 {
 public:
@@ -135,7 +135,7 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<32 * 1024> m_busConnector;
+    BusConnector<> m_busConnector;
     bool led = false;
     Scene m_scene {};
 };

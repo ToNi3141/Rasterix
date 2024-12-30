@@ -31,6 +31,7 @@ module ColorMixerSigned #(
 ) (
     input wire                          aclk,
     input wire                          resetn,
+    input wire                          ce,
 
     input wire  [PIXEL_WIDTH - 1 : 0]   colorA,
     input wire  [PIXEL_WIDTH - 1 : 0]   colorB,
@@ -62,7 +63,7 @@ module ColorMixerSigned #(
     reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V12;
     reg signed [SUB_PIXEL_WIDTH_2X - 1 : 0] V13;
     always @(posedge aclk)
-    begin : Blending
+    if (ce) begin : Blending
         reg signed [SUB_PIXEL_WIDTH - 1 : 0] ca0;
         reg signed [SUB_PIXEL_WIDTH - 1 : 0] ca1;
         reg signed [SUB_PIXEL_WIDTH - 1 : 0] ca2;
@@ -112,7 +113,7 @@ module ColorMixerSigned #(
     end
 
     always @(posedge aclk)
-    begin : Result
+    if (ce) begin : Result
         reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c0;
         reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c1;
         reg signed [SUB_PIXEL_WIDTH_2X_WITH_CARRY - 1 : 0] c2;

@@ -5,9 +5,6 @@
   - [Software Flow](#software-flow)
   - [FPGA Flow](#fpga-flow)
     - [Flow Control](#flow-control)
-      - [StreamSemaphore](#streamsemaphore)
-      - [StreamBarrier](#streambarrier)
-      - [StreamConcatFifo](#streamconcatfifo)
   - [Pixel Pipeline](#pixel-pipeline)
   - [Texture Mapping Unit](#texture-mapping-unit)
   - [Per Fragment Pipeline](#per-fragment-pipeline)
@@ -26,7 +23,7 @@ When the rendering of the image is finished, the renderer will stream out the co
 Normally the internal frame buffer in the renderer is too small to render a complete high resolution picture. To overcome this limitation, the renderer can render partial images. For instance, assume a screen resolution of 1024x768x16 (1536kB) and a internal frame buffer with the size of 256kB. The driver will then divide the image in 6 different 1024x128x16 parts. It will first render the image {(0, 0), (1023, 127)}, then {(0, 128), (1023, 255)} and so on. It will stream each subpart to the frame buffer in memory. This frame buffer is then responsible to stich the sub images together.
 
 ## RasterixEF
-It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rrxif, since it needs less texture fetches. But in reality it is slower because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
+It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rrxif, since it needs less texture fetches. But in reality, it is slower, because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
 
 ## Software Flow
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
@@ -52,31 +49,17 @@ The driver is build with the following components:
   - `RasterixRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
     - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
     - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
-    - `StreamSemaphore`: It is a counting semaphore and takes care that only a maximum number of pixels stay in the pipeline. If the pipeline exceeds this amount, the semaphore will stall. It observes the feedback of the `PerPixelPipeline` to decrement its value. It is a part of the flow control in this pipeline.
-    - `StreamBarrier`: This module observes the fill level of the write FIFOs and stalls, if the fill level exceeds a specified value to avoid overflowing the write FIFOs.
-    - `AXISBroadcast`: Broadcasts the stream into four independent streams for the pipeline and the framebuffers.
+    - `ValueTrack`: It is counting the pixels in the pipeline. This is necessary, to avoid raw (read before write) conflicts when starting to draw the new triangle while pixels from the past one are still floating around the pipeline.
+    - `AXISBroadcast`: Broadcasts the stream into four independent streams to the rendering pipeline and to the three framebuffer (color, depth, stencil).
     - `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
     - `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the texenv calculations, texture clamping and fogging.
     - `TextureBuffer`: Buffer which contains the complete texture. One for each TMU. They are filled with data from the command parser.
-    - `StreamConcatFifo`: Concatinates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here.
+    - `StreamConcatFifo`: Concatenates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here. It does the opposite of the `AXISBroadcast`.
     - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / stencil / depth tests.
     - `FrameBuffer`: Contains the color, depth and stencil buffer.
 
 ### Flow Control
-To save logic, the partial pipeline steps like the `AttributeInterpolation`, `PixelPipeline` and the `PerFragmentPipeline` have no flow control implemented. But to be still able to stall the pipeline when the system is not able to fetch fragments fast enough, the `RasterixRenderCore` has the following mechanisms implemented:
-
-#### StreamSemaphore
-The `StreamSemaphore` observes the stream from the `Rasterizer` and counts how many pixels are pushed into the pipeline and how many will leave it by observing the `PerFragmentPipeline`. This mechanism has the advantage, that the semaphore will interrupt the stream in case a defined amount of pixels in the pipeline exceed. Other modules, which require flow control, can rely on this fact. They can use a simple FIFO in case of a stall. For instance, assume that the semaphore accepts 128 pixels. A FIFO with the size of 128 entries is enough to store all pixels in case of a stall event. A FIFO like this can exist several times and at different parts of the pipeline without loosing data, as long as it is on the observation area of the semaphore.
-
-#### StreamBarrier
-Unlike the `StreamSemaphore` the `StreamBarrier` takes (only) the write FIFOs into account. It checks the fill level of the write FIFOs and will stall as soon as one of the write FIFOs exceeds its fill level. The write FIFOs are twice as big as the maximum number of pixels the pipeline contain (see `StreamSemaphore`). For instance, assume the semaphore allows a maximum of 128 pixel in the pipeline. The write FIFOs must have twice the size of that, 256 entries. If one of the FIFOs reports a fill level of 128, then the `StreamBarrier` will stall to leave enough place, to store the accepted data from the `StreamSemaphore` (in the case there are 128 on the fly) without overflowing the FIFO. The strategy to choose twice the size of the semaphore was to improve the performance and avoid unnecessary stalls.
-
-In theory, the `StreamBarrier` should be enough for the flow control. It is possible to use it at every position the pipeline stalls, but it has the drawback, that the FIFOs must be twice as big for the same performance which the semaphore offers. We could stall also the FIFO at a lower fill level, to compensate the logic used, but it will directly affect the performance of the pipeline, because fewer pixel can enter the pipeline until a stall event occurs. 
-
-#### StreamConcatFifo
-When the pixel comes past the `StreamSemaphore` and `StreamBarrier`, it is broadcasted to the `AttributeInterpolator` and to the framebuffers. The framebuffers will now start to fetch the fragment from an internal or external memory (depending if it is the `RasterixIF` or `RasterixEF`). If they have read the requested fragment, they will push it to the `StreamConcatFifo`. The `StreamConcatFifo` contains for each channel a FIFO of the size configured in the semaphore. It only starts to concatenate and forward the data, when it is able to fetch data from all four channel FIFOs. If one channel lacks data (for instance from the color buffer), then it will stall as long as the data has not arrived.
-
-The flow control can be optionally disabled to save logic. The deactivation is only allowed when the framebuffer promises never to stall. 
+The high level modules using a back pressure mechanism (valid/ready) to stall the pipeline. High level modules are considered all modules in the `RasterixRenderCore`. Other modules using a clock enable signal (ce) to stall the processing when the m_ready signal stalls.
 
 ## Pixel Pipeline
 ![pixel pipeline diagram](pictures/PixelPipeline.drawio.svg)
@@ -107,7 +90,7 @@ The `*_rdata` values are read from the framebuffer.
 ## Stream Framebuffer
 ![stream framebuffer diagram](pictures/StreamFramebuffer.drawio.svg)
 
-The `StreamFramebuffer` is used from the `RasterixEF`. It requires flow control and operates directly on the RAM.
+The `StreamFramebuffer` is used from the `RasterixEF`. It operates directly on the RAM.
 
 - `axisBroadcast`: Splits the `fetch*` data into two streams, one goes into the FIFO to be stored until the read data arrives, the other is used to create the memory requests.
 - `ReadRequestGenerator`: This module creates the read requests based on the index in `fetch*` and writes it to the AXI address channel.

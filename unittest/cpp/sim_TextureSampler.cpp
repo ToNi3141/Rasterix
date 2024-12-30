@@ -44,101 +44,109 @@ void uploadTexture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
 
-    top->clampS = 0;
-    top->clampT = 0;
+    top->s_clampS = 0;
+    top->s_clampT = 0;
 }
 
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
     // (0, 0)
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // (0.99.., 0.0)
-    top->texelS = 0x7fff;
-    top->texelT = 0;
+    top->s_texelS = 0x7fff;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0xff000000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x0000ff00);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x00ff0000);
+    REQUIRE(top->m_texel01 == 0xff000000);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x0000ff00);
 
     // (0.0, 0.99..)
-    top->texelS = 0;
-    top->texelT = 0x7fff;
+    top->s_texelS = 0;
+    top->s_texelT = 0x7fff;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0xff000000);
-    REQUIRE(top->texel11 == 0x00ff0000);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x0000ff00);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0xff000000);
+    REQUIRE(top->m_texel11 == 0x00ff0000);
 
     // (0.99.., 0.99..)
-    top->texelS = 0x7fff;
-    top->texelT = 0x7fff;
+    top->s_texelS = 0x7fff;
+    top->s_texelT = 0x7fff;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x0000ff00);
-    REQUIRE(top->texel10 == 0x00ff0000);
-    REQUIRE(top->texel11 == 0xff000000);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x0000ff00);
+    REQUIRE(top->m_texel10 == 0x00ff0000);
+    REQUIRE(top->m_texel11 == 0xff000000);
 
 
     // (1.0, 0.0)
-    top->texelS = 0x8000;
-    top->texelT = 0;
+    top->s_texelS = 0x8000;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // (0.0, 1.0)
-    top->texelS = 0;
-    top->texelT = 0x8000;
+    top->s_texelS = 0;
+    top->s_texelT = 0x8000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // (1.0, 1.0)
-    top->texelS = 0x8000;
-    top->texelT = 0x8000;
+    top->s_texelS = 0x8000;
+    top->s_texelT = 0x8000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // Destroy model
     delete top;
@@ -148,58 +156,57 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
     // (0, 0)
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
 
     // (0.99.., 0.0)
-    top->texelS = 0x7fff;
-    top->texelT = 0;
+    top->s_texelS = 0x7fff;
+    top->s_texelT = 0;
     rr::ut::clk(top);
 
     // (0.0, 0.99..)
-    top->texelS = 0;
-    top->texelT = 0x7fff;
+    top->s_texelS = 0;
+    top->s_texelT = 0x7fff;
     rr::ut::clk(top);
 
     // (0.99.., 0.99..)
-    top->texelS = 0x7fff;
-    top->texelT = 0x7fff;
+    top->s_texelS = 0x7fff;
+    top->s_texelT = 0x7fff;
     rr::ut::clk(top);
 
     // Result of (0, 0)
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
-
     rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // (0.99.., 0.0)
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0xff000000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x0000ff00);
-
     rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x00ff0000);
+    REQUIRE(top->m_texel01 == 0xff000000);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x0000ff00);
 
     // Result of (0.0, 0.99..)
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0xff000000);
-    REQUIRE(top->texel11 == 0x00ff0000);
-
     rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x0000ff00);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0xff000000);
+    REQUIRE(top->m_texel11 == 0x00ff0000);
 
     // Result of (0.99.., 0.99..)
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x0000ff00);
-    REQUIRE(top->texel10 == 0x00ff0000);
-    REQUIRE(top->texel11 == 0xff000000);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x0000ff00);
+    REQUIRE(top->m_texel10 == 0x00ff0000);
+    REQUIRE(top->m_texel11 == 0xff000000);
 
 
     // Destroy model
@@ -210,23 +217,25 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
     // texel (0.0, 0.0)
-    top->texelS = 0x0000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.0, 0.0)
-    REQUIRE(top->texelSubCoordS == 0x0); 
-    REQUIRE(top->texelSubCoordT == 0x0);
+    REQUIRE(top->m_texelSubCoordS == 0x0); 
+    REQUIRE(top->m_texelSubCoordT == 0x0);
 
 
     // To get the sub coordinate of (0.25, 0.0), we have to imagine the following things:
@@ -236,49 +245,52 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // to access the texel (1, 0), we would have to add 0.5 to the x value which results in (0.625, 0.0).
 
     // texel (0.125, 0.125) 
-    top->texelS = 0x1000;
-    top->texelT = 0x1000;
+    top->s_texelS = 0x1000;
+    top->s_texelT = 0x1000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.25, 0.25)
-    REQUIRE(top->texelSubCoordS == 0x4000); 
-    REQUIRE(top->texelSubCoordT == 0x4000); 
+    REQUIRE(top->m_texelSubCoordS == 0x4000); 
+    REQUIRE(top->m_texelSubCoordT == 0x4000); 
 
     // texel (0.125, 0.375) 
-    top->texelS = 0x1000;
-    top->texelT = 0x3000;
+    top->s_texelS = 0x1000;
+    top->s_texelT = 0x3000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.25, 0.75)
-    REQUIRE(top->texelSubCoordS == 0x4000); 
-    REQUIRE(top->texelSubCoordT == 0xc000);
+    REQUIRE(top->m_texelSubCoordS == 0x4000); 
+    REQUIRE(top->m_texelSubCoordT == 0xc000);
 
     // texel (0.375, 0.125) 
-    top->texelS = 0x3000;
-    top->texelT = 0x1000;
+    top->s_texelS = 0x3000;
+    top->s_texelT = 0x1000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.75, 0.25)
-    REQUIRE(top->texelSubCoordS == 0xc000);
-    REQUIRE(top->texelSubCoordT == 0x4000);
+    REQUIRE(top->m_texelSubCoordS == 0xc000);
+    REQUIRE(top->m_texelSubCoordT == 0x4000);
 
     // Destroy model
     delete top;
@@ -288,47 +300,51 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
-    top->clampS = 1;
-    top->clampT = 0;
+    top->s_clampS = 1;
+    top->s_clampT = 0;
 
     // texel (0.0, 0.0)
-    top->texelS = 0x0000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.5, 0.0)
-    top->texelS = 0x4000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x4000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x00ff0000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.5, 0.5)
-    top->texelS = 0x4000;
-    top->texelT = 0x4000;
+    top->s_texelS = 0x4000;
+    top->s_texelT = 0x4000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x00ff0000);
-    REQUIRE(top->texel11 == 0x00ff0000);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0x00ff0000);
+    REQUIRE(top->m_texel11 == 0x00ff0000);
 
     // Destroy model
     delete top;
@@ -338,47 +354,51 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
-    top->clampS = 0;
-    top->clampT = 1;
+    top->s_clampS = 0;
+    top->s_clampT = 1;
 
     // texel (0.0, 0.0)
-    top->texelS = 0x0000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.0, 0.5)
-    top->texelS = 0x0000;
-    top->texelT = 0x4000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x4000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x0000ff00);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.5, 0.5)
-    top->texelS = 0x4000;
-    top->texelT = 0x4000;
+    top->s_texelS = 0x4000;
+    top->s_texelT = 0x4000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x0000ff00);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x0000ff00);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x0000ff00);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x0000ff00);
 
     // Destroy model
     delete top;
@@ -388,59 +408,64 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadTexture(top);
 
-    top->clampS = 1;
-    top->clampT = 1;
+    top->s_clampS = 1;
+    top->s_clampT = 1;
 
     // texel (0.0, 0.0)
-    top->texelS = 0x0000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0xff000000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0xff000000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.5, 0.0)
-    top->texelS = 0x4000;
-    top->texelT = 0x0000;
+    top->s_texelS = 0x4000;
+    top->s_texelT = 0x0000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x00ff0000);
-    REQUIRE(top->texel01 == 0x00ff0000);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x00ff0000);
+    REQUIRE(top->m_texel01 == 0x00ff0000);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.0, 0.5)
-    top->texelS = 0x0000;
-    top->texelT = 0x4000;
+    top->s_texelS = 0x0000;
+    top->s_texelT = 0x4000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x0000ff00);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x0000ff00);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x0000ff00);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0x0000ff00);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // texel (0.5, 0.5)
-    top->texelS = 0x4000;
-    top->texelT = 0x4000;
+    top->s_texelS = 0x4000;
+    top->s_texelT = 0x4000;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x000000ff);
-    REQUIRE(top->texel01 == 0x000000ff);
-    REQUIRE(top->texel10 == 0x000000ff);
-    REQUIRE(top->texel11 == 0x000000ff);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x000000ff);
+    REQUIRE(top->m_texel10 == 0x000000ff);
+    REQUIRE(top->m_texel11 == 0x000000ff);
 
     // Destroy model
     delete top;
@@ -469,7 +494,7 @@ void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
     // |  51 |
     top->textureSizeWidth = 0x2;
     top->textureSizeHeight = 0x3;
-    top->textureLod = 0;
+    top->s_textureLod = 0;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
@@ -526,68 +551,73 @@ void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
 
-    top->clampS = 0;
-    top->clampT = 0;
+    top->s_clampS = 0;
+    top->s_clampT = 0;
 }
 
 TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadMipMap4x8Texture(top);
 
     // (0, 0)
-    top->textureLod = 0;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 0;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x11);
-    REQUIRE(top->texel01 == 0x22);
-    REQUIRE(top->texel10 == 0x55);
-    REQUIRE(top->texel11 == 0x66);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x11);
+    REQUIRE(top->m_texel01 == 0x22);
+    REQUIRE(top->m_texel10 == 0x55);
+    REQUIRE(top->m_texel11 == 0x66);
 
     // (0, 0)
-    top->textureLod = 1;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 1;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x3311);
-    REQUIRE(top->texel01 == 0x3322);
-    REQUIRE(top->texel10 == 0x3333);
-    REQUIRE(top->texel11 == 0x3344);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x3311);
+    REQUIRE(top->m_texel01 == 0x3322);
+    REQUIRE(top->m_texel10 == 0x3333);
+    REQUIRE(top->m_texel11 == 0x3344);
 
     // (0, 0)
-    top->textureLod = 2;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 2;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x4411);
-    REQUIRE(top->texel01 == 0x4411);
-    REQUIRE(top->texel10 == 0x4422);
-    REQUIRE(top->texel11 == 0x4422);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x4411);
+    REQUIRE(top->m_texel01 == 0x4411);
+    REQUIRE(top->m_texel10 == 0x4422);
+    REQUIRE(top->m_texel11 == 0x4422);
 
     // (0, 0)
-    top->textureLod = 3;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 3;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x5511);
-    REQUIRE(top->texel01 == 0x5511);
-    REQUIRE(top->texel10 == 0x5511);
-    REQUIRE(top->texel11 == 0x5511);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x5511);
+    REQUIRE(top->m_texel01 == 0x5511);
+    REQUIRE(top->m_texel10 == 0x5511);
+    REQUIRE(top->m_texel11 == 0x5511);
 
     // Destroy model
     delete top;
@@ -607,7 +637,7 @@ void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
     // |  51 |
     top->textureSizeWidth = 0x2;
     top->textureSizeHeight = 0x2;
-    top->textureLod = 0;
+    top->s_textureLod = 0;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
@@ -641,55 +671,59 @@ void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
 
-    top->clampS = 0;
-    top->clampT = 0;
+    top->s_clampS = 0;
+    top->s_clampT = 0;
 }
 
 TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadMipMap4x4Texture(top);
 
     // (0, 0)
-    top->textureLod = 0;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 0;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x11);
-    REQUIRE(top->texel01 == 0x22);
-    REQUIRE(top->texel10 == 0x55);
-    REQUIRE(top->texel11 == 0x66);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x11);
+    REQUIRE(top->m_texel01 == 0x22);
+    REQUIRE(top->m_texel10 == 0x55);
+    REQUIRE(top->m_texel11 == 0x66);
 
     // (0, 0)
-    top->textureLod = 1;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 1;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x3311);
-    REQUIRE(top->texel01 == 0x3322);
-    REQUIRE(top->texel10 == 0x3333);
-    REQUIRE(top->texel11 == 0x3344);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x3311);
+    REQUIRE(top->m_texel01 == 0x3322);
+    REQUIRE(top->m_texel10 == 0x3333);
+    REQUIRE(top->m_texel11 == 0x3344);
 
     // (0, 0)
-    top->textureLod = 2;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 2;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x5511);
-    REQUIRE(top->texel01 == 0x5511);
-    REQUIRE(top->texel10 == 0x5511);
-    REQUIRE(top->texel11 == 0x5511);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x5511);
+    REQUIRE(top->m_texel01 == 0x5511);
+    REQUIRE(top->m_texel10 == 0x5511);
+    REQUIRE(top->m_texel11 == 0x5511);
 
     // Destroy model
     delete top;
@@ -735,7 +769,7 @@ void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
     // |  61 |
     top->textureSizeWidth = 0x2;
     top->textureSizeHeight = 0x4;
-    top->textureLod = 0;
+    top->s_textureLod = 0;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;
@@ -837,81 +871,137 @@ void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
     top->s_axis_tvalid = 0;
     top->s_axis_tlast = 0;
 
-    top->clampS = 0;
-    top->clampT = 0;
+    top->s_clampS = 0;
+    top->s_clampT = 0;
 }
 
 TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
 {
     VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
     rr::ut::reset(top);
+    top->m_ready = 1;
 
     uploadMipMap4x16Texture(top);
 
     // (0, 0)
-    top->textureLod = 0;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 0;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x11);
-    REQUIRE(top->texel01 == 0x22);
-    REQUIRE(top->texel10 == 0x55);
-    REQUIRE(top->texel11 == 0x66);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x11);
+    REQUIRE(top->m_texel01 == 0x22);
+    REQUIRE(top->m_texel10 == 0x55);
+    REQUIRE(top->m_texel11 == 0x66);
 
     // (0, 0)
-    top->textureLod = 1;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 1;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x3311);
-    REQUIRE(top->texel01 == 0x3322);
-    REQUIRE(top->texel10 == 0x3333);
-    REQUIRE(top->texel11 == 0x3344);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x3311);
+    REQUIRE(top->m_texel01 == 0x3322);
+    REQUIRE(top->m_texel10 == 0x3333);
+    REQUIRE(top->m_texel11 == 0x3344);
 
     // (0, 0)
-    top->textureLod = 2;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 2;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x4411);
-    REQUIRE(top->texel01 == 0x4411);
-    REQUIRE(top->texel10 == 0x4422);
-    REQUIRE(top->texel11 == 0x4422);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x4411);
+    REQUIRE(top->m_texel01 == 0x4411);
+    REQUIRE(top->m_texel10 == 0x4422);
+    REQUIRE(top->m_texel11 == 0x4422);
 
     // (0, 0)
-    top->textureLod = 3;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 3;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x5511);
-    REQUIRE(top->texel01 == 0x5511);
-    REQUIRE(top->texel10 == 0x5522);
-    REQUIRE(top->texel11 == 0x5522);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x5511);
+    REQUIRE(top->m_texel01 == 0x5511);
+    REQUIRE(top->m_texel10 == 0x5522);
+    REQUIRE(top->m_texel11 == 0x5522);
 
     // (0, 0)
-    top->textureLod = 4;
-    top->texelS = 0;
-    top->texelT = 0;
+    top->s_textureLod = 4;
+    top->s_texelS = 0;
+    top->s_texelT = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->texel00 == 0x6611);
-    REQUIRE(top->texel01 == 0x6611);
-    REQUIRE(top->texel10 == 0x6611);
-    REQUIRE(top->texel11 == 0x6611);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x6611);
+    REQUIRE(top->m_texel01 == 0x6611);
+    REQUIRE(top->m_texel10 == 0x6611);
+    REQUIRE(top->m_texel11 == 0x6611);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check stall", "[TextureBuffer]")
+{
+    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    rr::ut::reset(top);
+    top->m_ready = 1;
+
+    uploadTexture(top);
+
+    // (0.999, 0.999)
+    top->s_texelS = 0x7fff;
+    top->s_texelT = 0x7fff;
+    top->s_user = 1;
+    top->s_valid = 1;
+    rr::ut::clk(top);
+    REQUIRE(top->s_ready == 1);
+
+    // (1.0, 1.0)
+    top->s_texelS = 0x8000;
+    top->s_texelT = 0x8000;
+    top->s_user = 0;
+    top->s_valid = 0;
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    top->m_ready = 0; // Do the stall here, because here is the memory request triggered
+    rr::ut::clk(top);
+    REQUIRE(top->s_ready == 0);
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 != 0x000000ff);
+    REQUIRE(top->m_texel01 != 0x0000ff00);
+    REQUIRE(top->m_texel10 != 0x00ff0000);
+    REQUIRE(top->m_texel11 != 0xff000000);
+    REQUIRE(top->m_valid != 1);
+    REQUIRE(top->m_ready != 1);
+
+    top->m_ready = 1;
+    rr::ut::clk(top);
+    REQUIRE(top->s_ready == 1);
+    rr::ut::clk(top);
+    REQUIRE(top->m_texel00 == 0x000000ff);
+    REQUIRE(top->m_texel01 == 0x0000ff00);
+    REQUIRE(top->m_texel10 == 0x00ff0000);
+    REQUIRE(top->m_texel11 == 0xff000000);
+    REQUIRE(top->m_valid == 1);
+    REQUIRE(top->m_ready == 1);
 
     // Destroy model
     delete top;

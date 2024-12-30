@@ -34,6 +34,7 @@ module StencilOp
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
     
     input  wire [ 2 : 0]                opZFail,
     input  wire [ 2 : 0]                opZPass,
@@ -52,7 +53,7 @@ module StencilOp
     localparam MAX_VAL = { STENCIL_WIDTH {1'b1} };
 
     always @(posedge aclk)
-    begin : TestFunc
+    if (ce) begin : TestFunc
         reg [2 : 0] op;
         if (!sTest)
         begin

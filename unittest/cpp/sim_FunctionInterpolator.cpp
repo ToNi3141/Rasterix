@@ -87,6 +87,7 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
     const float end = 100000;
     VFunctionInterpolator* top = new VFunctionInterpolator();
     rr::ut::reset(top);
+    top->ce = 1;
     generateLinearTable(top, start, end);
 
     uint32_t pipelineSteps = 0;
@@ -114,3 +115,32 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
     delete top;
 }
 
+TEST_CASE("Check stall", "[FunctionInterpolator]")
+{
+    const float start = 0;
+    const float end = 100000;
+    VFunctionInterpolator* top = new VFunctionInterpolator();
+    rr::ut::reset(top);
+    top->ce = 1;
+    generateLinearTable(top, start, end);
+
+    float x = 50000.0f;
+    top->x = *((uint32_t*)&x);
+    rr::ut::clk(top);
+
+    top->x = 0;
+    rr::ut::clk(top);
+    top->ce = 0;
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+
+    top->ce = 1;
+    rr::ut::clk(top);
+    rr::ut::clk(top);
+
+    const float fx = (float)(top->fx) / powf(2, 22); // Note: Needs to be divided by 22 because the resulting fix point number has 22 fraction bits (S1.22)
+    REQUIRE(0.5f == Approx(fx).margin(0.005));
+
+    // Destroy model
+    delete top;
+}

@@ -27,207 +27,258 @@
 TEST_CASE("Check max lod", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 8;
-    t->textureSizeHeight = 8;
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
 
-    t->texelS = 0x1 << (15 - 8);
-    t->texelT = 0x1 << (15 - 8);
-
-    t->texelSxy = 0x1 << (15 + 16);
-    t->texelTxy = 0x1 << (15 + 16);
-
+    
+    t->s_texelS = 0x1 << (15 - 8);
+    t->s_texelT = 0x1 << (15 - 8);
+    t->s_texelSxy = 0x1 << (15 + 16);
+    t->s_texelTxy = 0x1 << (15 + 16);
     rr::ut::clk(t);
 
-    REQUIRE(t->lod == 8);
+    REQUIRE(t->m_lod == 8);
 }
 
 TEST_CASE("Check lod xy", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 8;
-    t->textureSizeHeight = 8;
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
 
-    t->texelS = 0x1 << (15 - 8);
-    t->texelT = 0x1 << (15 - 8);
 
+    t->s_texelS = 0x1 << (15 - 8);
+    t->s_texelT = 0x1 << (15 - 8);
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->texelSxy = 0x1 << (15 - i);
-        t->texelTxy = 0x1 << (15 - i);
+        t->s_texelSxy = 0x1 << (15 - i);
+        t->s_texelTxy = 0x1 << (15 - i);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 8 - i);
+        REQUIRE(t->m_lod == 8 - i);
     }
 }
 
 TEST_CASE("Check lod x", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 8;
-    t->textureSizeHeight = 8;
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
 
-    t->texelS = 0x1 << (15 - 8);
-    t->texelT = 0x1 << (15 - 8);
+    t->s_texelS = 0x1 << (15 - 8);
+    t->s_texelT = 0x1 << (15 - 8);
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->texelSxy = 0x1 << (15 - i);
-        t->texelTxy = 0x1 << (15 - 8);
+        t->s_texelSxy = 0x1 << (15 - i);
+        t->s_texelTxy = 0x1 << (15 - 8);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 8 - i);
+        REQUIRE(t->m_lod == 8 - i);
     }
 }
 
 TEST_CASE("Check lod y", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 8;
-    t->textureSizeHeight = 8;
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
 
-    t->texelS = 0x1 << (15 - 8);
-    t->texelT = 0x1 << (15 - 8);
+    t->s_texelS = 0x1 << (15 - 8);
+    t->s_texelT = 0x1 << (15 - 8);
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->texelSxy = 0x1 << (15 - 8);
-        t->texelTxy = 0x1 << (15 - i);
+        t->s_texelSxy = 0x1 << (15 - 8);
+        t->s_texelTxy = 0x1 << (15 - i);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 8 - i);
+        REQUIRE(t->m_lod == 8 - i);
     }
 }
 
 TEST_CASE("Check lod xy negative", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 8;
-    t->textureSizeHeight = 8;
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
 
-    t->texelS = 0x80000000 | (0x1 << (15 - 8));
-    t->texelT = 0x80000000 | (0x1 << (15 - 8));
+    t->s_texelS = 0x80000000 | (0x1 << (15 - 8));
+    t->s_texelT = 0x80000000 | (0x1 << (15 - 8));
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->texelSxy = 0x80000000 | (0x1 << (15 - i));
-        t->texelTxy = 0x80000000 | (0x1 << (15 - i));
+        t->s_texelSxy = 0x80000000 | (0x1 << (15 - i));
+        t->s_texelTxy = 0x80000000 | (0x1 << (15 - i));
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 8 - i);
+        REQUIRE(t->m_lod == 8 - i);
     }
 }
 
 TEST_CASE("Check lod xy max with varying texture size", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->textureSizeWidth = i;
-        t->textureSizeHeight = i;
+        t->s_textureSizeWidth = i;
+        t->s_textureSizeHeight = i;
 
-        t->texelS = 0x1 << (15 - i);
-        t->texelT = 0x1 << (15 - i);
+        t->s_texelS = 0x1 << (15 - i);
+        t->s_texelT = 0x1 << (15 - i);
 
-        t->texelSxy = 0x1 << (15 + 0);
-        t->texelTxy = 0x1 << (15 + 0);
+        t->s_texelSxy = 0x1 << (15 + 0);
+        t->s_texelTxy = 0x1 << (15 + 0);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == i);
+        REQUIRE(t->m_lod == i);
     }
 }
 
 TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->textureSizeWidth = i;
-        t->textureSizeHeight = i;
+        t->s_textureSizeWidth = i;
+        t->s_textureSizeHeight = i;
 
-        t->texelS = 0x1 << (15 - i);
-        t->texelT = 0x1 << (15 - i);
+        t->s_texelS = 0x1 << (15 - i);
+        t->s_texelT = 0x1 << (15 - i);
 
-        t->texelSxy = 0x1 << (15 - i);
-        t->texelTxy = 0x1 << (15 - i);
+        t->s_texelSxy = 0x1 << (15 - i);
+        t->s_texelTxy = 0x1 << (15 - i);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 0);
+        REQUIRE(t->m_lod == 0);
     }
 }
 
 TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = true;
 
-    t->textureSizeWidth = 4;
-    t->textureSizeHeight = 4;
+    t->s_textureSizeWidth = 4;
+    t->s_textureSizeHeight = 4;
 
-    t->texelS = 0x1 << (15 - 4);
-    t->texelT = 0x1 << (15 - 4);
+    t->s_texelS = 0x1 << (15 - 4);
+    t->s_texelT = 0x1 << (15 - 4);
 
     for (uint32_t i = 0; i < 16; i++)
     {
-        t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
-        t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
+        t->s_texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
+        t->s_texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * i);
         rr::ut::clk(t);
-        REQUIRE(t->lod == 0);
+        REQUIRE(t->m_lod == 0);
     }
 
     // Check that the overflow causes a LOD increment
-    t->texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
-    t->texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
+    t->s_texelSxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
+    t->s_texelTxy = (0x1 << (15 - 4)) + ((0x1 << (15 - 8)) * 17);
     rr::ut::clk(t);
-    REQUIRE(t->lod == 1);
+    REQUIRE(t->m_lod == 1);
 }
 
 TEST_CASE("Check lod xy when calculation is disabled", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
 
     t->confEnable = false;
 
     for (uint32_t i = 0; i < 8; i++)
     {
-        t->textureSizeWidth = i;
-        t->textureSizeHeight = i;
+        t->s_textureSizeWidth = i;
+        t->s_textureSizeHeight = i;
 
-        t->texelS = 0x1 << (15 - i);
-        t->texelT = 0x1 << (15 - i);
+        t->s_texelS = 0x1 << (15 - i);
+        t->s_texelT = 0x1 << (15 - i);
 
-        t->texelSxy = 0x1 << (15 + 0);
-        t->texelTxy = 0x1 << (15 + 0);
+        t->s_texelSxy = 0x1 << (15 + 0);
+        t->s_texelTxy = 0x1 << (15 + 0);
 
         rr::ut::clk(t);
 
-        REQUIRE(t->lod == 0);
+        REQUIRE(t->m_lod == 0);
     }
+}
+
+TEST_CASE("Check stall", "[LodCalculator]")
+{
+    VLodCalculator* t = new VLodCalculator();
+    t->m_ready = 1;
+
+    t->confEnable = true;
+
+    t->s_textureSizeWidth = 8;
+    t->s_textureSizeHeight = 8;
+
+    t->s_texelS = 0x1 << (15 - 8);
+    t->s_texelT = 0x1 << (15 - 8);
+    t->s_texelSxy = 0x1 << (15 + 16);
+    t->s_texelTxy = 0x1 << (15 + 16);
+    t->s_valid = 1;
+    t->s_user = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_lod == 8);
+    REQUIRE(t->m_user == 1);
+    REQUIRE(t->m_valid == 1);
+    REQUIRE(t->s_ready == 1);
+
+    t->s_texelS = 0;
+    t->s_texelT = 0;
+    t->s_texelSxy = 0;
+    t->s_texelTxy = 0;
+    t->m_ready = 0;
+    t->s_valid = 0;
+    t->s_user = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->m_lod == 8); // Stays at 8
+    REQUIRE(t->m_user == 1);
+    REQUIRE(t->m_valid == 1);
+    REQUIRE(t->s_ready == 0);
+
+    t->m_ready = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_lod == 0);
+    REQUIRE(t->m_user == 0);
+    REQUIRE(t->m_valid == 0);
+    REQUIRE(t->s_ready == 1);
 }

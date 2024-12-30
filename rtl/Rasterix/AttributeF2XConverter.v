@@ -35,6 +35,7 @@ module AttributeF2XConverter #(
     input  wire                             aclk,
     input  wire                             resetn,
     
+    output wire                             s_ftx_tready,
     input  wire                             s_ftx_tvalid,
     input  wire                             s_ftx_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]        s_ftx_tkeep,
@@ -57,6 +58,7 @@ module AttributeF2XConverter #(
     input  wire [FLOAT_SIZE - 1 : 0]        s_ftx_tcolor_r,
 
     // Pixel Stream Interpolated
+    input  wire                             m_ftx_tready,
     output wire                             m_ftx_tvalid,
     output wire                             m_ftx_tlast,
     output wire [KEEP_WIDTH - 1 : 0]        m_ftx_tkeep,
@@ -79,6 +81,11 @@ module AttributeF2XConverter #(
     output wire [SUB_PIXEL_WIDTH - 1 : 0]   m_ftx_tcolor_r // Qn
 );
     localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH { 1'h1 } };
+
+    // Flow Control
+    wire ce;
+    assign ce = m_ftx_tready;
+    assign s_ftx_tready = m_ftx_tready;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
@@ -110,41 +117,41 @@ module AttributeF2XConverter #(
 
     // Framebuffer Index
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(CONV_DELAY)) 
-        convert_framebuffer_delay (.clk(aclk), .in(s_ftx_tindex), .out(step_convert_framebuffer_index));
+        convert_framebuffer_delay (.clk(aclk), .ce(ce), .in(s_ftx_tindex), .out(step_convert_framebuffer_index));
 
     // Screen Poisition
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(CONV_DELAY)) 
-        convert_screen_pos_x_delay (.clk(aclk), .in(s_ftx_tspx), .out(step_convert_screen_pos_x));
+        convert_screen_pos_x_delay (.clk(aclk), .ce(ce), .in(s_ftx_tspx), .out(step_convert_screen_pos_x));
     ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(CONV_DELAY)) 
-        convert_screen_pos_y_delay (.clk(aclk), .in(s_ftx_tspy), .out(step_convert_screen_pos_y));
+        convert_screen_pos_y_delay (.clk(aclk), .ce(ce), .in(s_ftx_tspy), .out(step_convert_screen_pos_y));
 
     // Fragment stream flags
     ValueDelay #(.VALUE_SIZE(1), .DELAY(CONV_DELAY)) 
-        convert_valid_delay (.clk(aclk), .in(s_ftx_tvalid), .out(step_convert_tvalid));
+        convert_valid_delay (.clk(aclk), .ce(ce), .in(s_ftx_tvalid), .out(step_convert_tvalid));
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(CONV_DELAY)) 
-        convert_keep_delay (.clk(aclk), .in(s_ftx_tkeep), .out(step_convert_tkeep));
+        convert_keep_delay (.clk(aclk), .ce(ce), .in(s_ftx_tkeep), .out(step_convert_tkeep));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(CONV_DELAY)) 
-        convert_last_delay (.clk(aclk), .in(s_ftx_tlast), .out(step_convert_tlast));
+        convert_last_delay (.clk(aclk), .ce(ce), .in(s_ftx_tlast), .out(step_convert_tlast));
 
     // Depth
     ValueDelay #(.VALUE_SIZE(FLOAT_SIZE), .DELAY(CONV_DELAY)) 
-        convert_depth_delay (.clk(aclk), .in(s_ftx_tdepth_w), .out(step_convert_depth_w_float));
+        convert_depth_delay (.clk(aclk), .ce(ce), .in(s_ftx_tdepth_w), .out(step_convert_depth_w_float));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_DepthZ (.clk(aclk), .offset(-$signed(DEPTH_WIDTH)),.in(s_ftx_tdepth_z), .out(step_convert_depth_z)); 
+        convert_floatToInt_DepthZ (.clk(aclk), .ce(ce), .offset(-$signed(DEPTH_WIDTH)),.in(s_ftx_tdepth_z), .out(step_convert_depth_z)); 
 
     // Tex Coords TMU0
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_tmu0_textureS (.clk(aclk), .offset(-15), .in(s_ftx_ttexture0_s), .out(step_convert_texture0_s));
+        convert_floatToInt_tmu0_textureS (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_ttexture0_s), .out(step_convert_texture0_s));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_tmu0_textureT (.clk(aclk), .offset(-15), .in(s_ftx_ttexture0_t), .out(step_convert_texture0_t));   
+        convert_floatToInt_tmu0_textureT (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_ttexture0_t), .out(step_convert_texture0_t));   
 
     generate 
         if (ENABLE_LOD_CALC)
         begin
             FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap0_s), .out(step_convert_mipmap0_s));
+                convert_floatToInt_tmu0_mipmapS (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_tmipmap0_s), .out(step_convert_mipmap0_s));
             FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap0_t), .out(step_convert_mipmap0_t));   
+                convert_floatToInt_tmu0_mipmapT (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_tmipmap0_t), .out(step_convert_mipmap0_t));   
         end
     endgenerate
 
@@ -154,29 +161,29 @@ module AttributeF2XConverter #(
         begin
 
             FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                convert_floatToInt_tmu1_textureS (.clk(aclk), .offset(-15), .in(s_ftx_ttexture1_s), .out(step_convert_texture1_s));
+                convert_floatToInt_tmu1_textureS (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_ttexture1_s), .out(step_convert_texture1_s));
             FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                convert_floatToInt_tmu1_textureT (.clk(aclk), .offset(-15), .in(s_ftx_ttexture1_t), .out(step_convert_texture1_t));
+                convert_floatToInt_tmu1_textureT (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_ttexture1_t), .out(step_convert_texture1_t));
 
             if (ENABLE_LOD_CALC)
             begin
                 FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap1_s), .out(step_convert_mipmap1_s));
+                    convert_floatToInt_tmu1_mipmapS (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_tmipmap1_s), .out(step_convert_mipmap1_s));
                 FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .offset(-15), .in(s_ftx_tmipmap1_t), .out(step_convert_mipmap1_t));        
+                    convert_floatToInt_tmu1_mipmapT (.clk(aclk), .ce(ce), .offset(-15), .in(s_ftx_tmipmap1_t), .out(step_convert_mipmap1_t));        
             end
         end
     endgenerate
 
     // Fragment Color
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_ColorR (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_r), .out(step_convert_color_r));
+        convert_floatToInt_ColorR (.clk(aclk), .ce(ce), .offset(-16), .in(s_ftx_tcolor_r), .out(step_convert_color_r));
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_ColorG (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_g), .out(step_convert_color_g));   
+        convert_floatToInt_ColorG (.clk(aclk), .ce(ce), .offset(-16), .in(s_ftx_tcolor_g), .out(step_convert_color_g));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_ColorB (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_b), .out(step_convert_color_b));   
+        convert_floatToInt_ColorB (.clk(aclk), .ce(ce), .offset(-16), .in(s_ftx_tcolor_b), .out(step_convert_color_b));   
     FloatToInt #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(32), .DELAY(0))
-        convert_floatToInt_ColorA (.clk(aclk), .offset(-16), .in(s_ftx_tcolor_a), .out(step_convert_color_a));   
+        convert_floatToInt_ColorA (.clk(aclk), .ce(ce), .offset(-16), .in(s_ftx_tcolor_a), .out(step_convert_color_a));   
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1 

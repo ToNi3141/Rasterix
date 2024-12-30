@@ -16,8 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Concatenates four streams into one stream.
-// Note that the output stream is not registered. m_stream_tready will have direct impact
-// unlike with AXI Streams. Advantage: Skid buffer is not required when handling m_stream_tready.
 module StreamConcatFifo
 #(
     parameter STREAM0_WIDTH = 8,
@@ -90,7 +88,7 @@ module StreamConcatFifo
             sfifo #(
                 .BW(STREAM0_WIDTH),
                 .LGFLEN(FIFO_DEPTH0_POW2),
-                .OPT_ASYNC_READ(1),
+                .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
                 .OPT_READ_ON_EMPTY(0)
             ) stream0_fifo (
@@ -121,7 +119,7 @@ module StreamConcatFifo
             sfifo #(
                 .BW(STREAM1_WIDTH),
                 .LGFLEN(FIFO_DEPTH1_POW2),
-                .OPT_ASYNC_READ(1),
+                .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
                 .OPT_READ_ON_EMPTY(0)
             ) stream1_fifo (
@@ -152,7 +150,7 @@ module StreamConcatFifo
             sfifo #(
                 .BW(STREAM2_WIDTH),
                 .LGFLEN(FIFO_DEPTH2_POW2),
-                .OPT_ASYNC_READ(1),
+                .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
                 .OPT_READ_ON_EMPTY(0)
             ) stream2_fifo (
@@ -183,7 +181,7 @@ module StreamConcatFifo
             sfifo #(
                 .BW(STREAM3_WIDTH),
                 .LGFLEN(FIFO_DEPTH3_POW2),
-                .OPT_ASYNC_READ(1),
+                .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
                 .OPT_READ_ON_EMPTY(0)
             ) stream3_fifo (

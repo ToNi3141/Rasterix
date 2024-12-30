@@ -35,6 +35,7 @@ module AttributePerspectiveCorrectionX #(
 (
     input  wire                                 aclk,
     input  wire                                 resetn,
+    input  wire                                 ce,
 
     // Pixel Stream
     input  wire                                 s_attrb_tvalid,
@@ -52,18 +53,18 @@ module AttributePerspectiveCorrectionX #(
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_s, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_t, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex0_mipmap_q, // S3.28
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_s,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_t,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_q,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_s,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_t,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_q,
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_s, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_t, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_q, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_s, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_t, // S3.28
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] tex1_mipmap_q, // S3.28
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] depth_w, // S1.30
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] depth_z, // S1.30
     input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_r, // S7.24
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_g,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_b,
-    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_a,
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_g, // S7.24
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_b, // S7.24
+    input  wire signed [ATTRIBUTE_SIZE - 1 : 0] color_a, // S7.24
 
     // Pixel Stream Interpolated
     output wire                                 m_attrb_tvalid,
@@ -124,120 +125,86 @@ module AttributePerspectiveCorrectionX #(
     wire        [SCREEN_POS_WIDTH - 1 : 0]      step1_tspy;
     wire        [INDEX_WIDTH - 1 : 0]           step1_tindex;
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(RECIP_DELAY)) 
-        step1_tvalid_delay (.clk(aclk), .in(s_attrb_tvalid & s_attrb_tpixel), .out(step1_tvalid));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(RECIP_DELAY)) 
-        step1_tlast_delay (.clk(aclk), .in(s_attrb_tlast), .out(step1_tlast));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(RECIP_DELAY)) 
-        step1_tkeep_delay (.clk(aclk), .in(s_attrb_tkeep), .out(step1_tkeep));
+    ValueDelay #(
+        .VALUE_SIZE(1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION)), 
+        .DELAY(RECIP_DELAY)
+    ) step1_delay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in({
+            s_attrb_tvalid & s_attrb_tpixel,
+            s_attrb_tlast,
+            s_attrb_tkeep,
+            s_attrb_tspx,
+            s_attrb_tspy,
+            s_attrb_tindex,
+            color_r[16 +: 16],
+            color_g[16 +: 16],
+            color_b[16 +: 16],
+            color_a[16 +: 16],
+            (depth_z[31]) ? { DEPTH_WIDTH { 1'b0 } } : (depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : depth_z[14 +: DEPTH_WIDTH],
+            tex0_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex0_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex0_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex0_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex1_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex1_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex1_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]
+        }), 
+        .out({
+            step1_tvalid,
+            step1_tlast,
+            step1_tkeep,
+            step1_tspx,
+            step1_tspy,
+            step1_tindex,
+            step1_color_r,
+            step1_color_g,
+            step1_color_b,
+            step1_color_a,
+            step1_depth_z,
+            step1_tex0_s,
+            step1_tex0_t,
+            step1_tex0_mipmap_s,
+            step1_tex0_mipmap_t,
+            step1_tex1_s,
+            step1_tex1_t,
+            step1_tex1_mipmap_s,
+            step1_tex1_mipmap_t
+        })
+    );
 
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(RECIP_DELAY)) 
-        step1_tspx_delay (.clk(aclk), .in(s_attrb_tspx), .out(step1_tspx));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(RECIP_DELAY)) 
-        step1_tspy_delay (.clk(aclk), .in(s_attrb_tspy), .out(step1_tspy));
-
-    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(RECIP_DELAY)) 
-        step1_tindex_delay (.clk(aclk), .in(s_attrb_tindex), .out(step1_tindex));
-    
-    ValueDelay #(
-        .VALUE_SIZE(16), 
-        .DELAY(RECIP_DELAY)
-    ) step1_color_r_delay (
-        .clk(aclk), 
-        .in(color_r[16 +: 16]), 
-        .out(step1_color_r)
-    );
-    ValueDelay #(
-        .VALUE_SIZE(16), 
-        .DELAY(RECIP_DELAY)
-    ) step1_color_g_delay (
-        .clk(aclk), 
-        .in(color_g[16 +: 16]), 
-        .out(step1_color_g)
-    );
-    ValueDelay #(
-        .VALUE_SIZE(16), 
-        .DELAY(RECIP_DELAY)
-    ) step1_color_b_delay (
-        .clk(aclk), 
-        .in(color_b[16 +: 16]), 
-        .out(step1_color_b)
-    );
-    ValueDelay #(
-        .VALUE_SIZE(16), 
-        .DELAY(RECIP_DELAY)
-    ) step1_color_a_delay (
-        .clk(aclk), 
-        .in(color_a[16 +: 16]), 
-        .out(step1_color_a)
-    );
-
-    ValueDelay #(
-        .VALUE_SIZE(DEPTH_WIDTH), 
-        .DELAY(RECIP_DELAY)
-    ) step1_depth_z_delay (
-        .clk(aclk), 
-        .in((depth_z[31]) ? { DEPTH_WIDTH { 1'b0 } } : (depth_z[30]) ? { DEPTH_WIDTH { 1'b1 } } : depth_z[14 +: DEPTH_WIDTH]), 
-        .out(step1_depth_z)
-    );
     XRecip #(
         .NUMBER_WIDTH(FOG_PRECISION),
         .ITERATIONS(FOG_ITERATIONS)
     ) step1_depth_w_recip (
         .clk(aclk), 
+        .ce(ce), 
         .in(depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 1 +: FOG_PRECISION]), 
         .out(step1_depth_w)
     );
 
-    ValueDelay #(
-        .VALUE_SIZE(TEXQ_PRECISION), 
-        .DELAY(RECIP_DELAY)
-    ) step1_tex0_s_delay (
-        .clk(aclk), 
-        .in(tex0_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-        .out(step1_tex0_s)
-    );
-    ValueDelay #(
-        .VALUE_SIZE(TEXQ_PRECISION), 
-        .DELAY(RECIP_DELAY)
-    ) step1_tex0_t_delay (
-        .clk(aclk), 
-        .in(tex0_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-        .out(step1_tex0_t)
-    );
     XRecip #(
         .NUMBER_WIDTH(TEXQ_PRECISION),
         .ITERATIONS(TEXQ_ITERATIONS)
     ) step1_tex0_q_recip (
         .clk(aclk), 
+        .ce(ce), 
         // S3.30 >> 7 = U3.21 Clamp to 24 bit and remove sign, because the value is normalized between 1.0 and 0.0
         .in(tex0_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
         .out(step1_tex0_q)
     );
+
     generate
         if (ENABLE_LOD_CALC)
         begin
-            ValueDelay #(
-                .VALUE_SIZE(TEXQ_PRECISION), 
-                .DELAY(RECIP_DELAY)
-            ) step1_tex0_mipmap_s_delay (
-                .clk(aclk), 
-                .in(tex0_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                .out(step1_tex0_mipmap_s)
-            );
-            ValueDelay #(
-                .VALUE_SIZE(TEXQ_PRECISION), 
-                .DELAY(RECIP_DELAY)
-            ) step1_tex0_mipmap_t_delay (
-                .clk(aclk), 
-                .in(tex0_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                .out(step1_tex0_mipmap_t)
-            );
             XRecip #(
                 .NUMBER_WIDTH(TEXQ_PRECISION),
                 .ITERATIONS(TEXQ_ITERATIONS)
             ) step1_tex0_mipmap_q_recip (
-                .clk(aclk), 
+                .clk(aclk),
+                .ce(ce),  
                 .in(tex0_mipmap_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
                 .out(step1_tex0_mipmap_q)
             );
@@ -247,53 +214,23 @@ module AttributePerspectiveCorrectionX #(
     generate
         if (ENABLE_SECOND_TMU)
         begin
-            ValueDelay #(
-                .VALUE_SIZE(TEXQ_PRECISION), 
-                .DELAY(RECIP_DELAY)
-            ) step1_tex1_s_delay (
-                .clk(aclk), 
-                .in(tex1_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                .out(step1_tex1_s)
-            );
-            ValueDelay #(
-                .VALUE_SIZE(TEXQ_PRECISION), 
-                .DELAY(RECIP_DELAY)
-            ) step1_tex1_t_delay (
-                .clk(aclk), 
-                .in(tex1_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                .out(step1_tex1_t)
-            );
             XRecip #(
                 .NUMBER_WIDTH(TEXQ_PRECISION),
                 .ITERATIONS(TEXQ_ITERATIONS)
             ) step1_tex1_q_recip (
                 .clk(aclk), 
+                .ce(ce), 
                 .in(tex1_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
                 .out(step1_tex1_q)
             );
             if (ENABLE_LOD_CALC)
             begin
-                ValueDelay #(
-                    .VALUE_SIZE(TEXQ_PRECISION), 
-                    .DELAY(RECIP_DELAY)
-                ) step1_tex1_mipmap_s_delay (
-                    .clk(aclk), 
-                    .in(tex1_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                    .out(step1_tex1_mipmap_s)
-                );
-                ValueDelay #(
-                    .VALUE_SIZE(TEXQ_PRECISION), 
-                    .DELAY(RECIP_DELAY)
-                ) step1_tex1_mipmap_t_delay (
-                    .clk(aclk), 
-                    .in(tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]), 
-                    .out(step1_tex1_mipmap_t)
-                );
                 XRecip #(
                     .NUMBER_WIDTH(TEXQ_PRECISION),
                     .ITERATIONS(TEXQ_ITERATIONS)
                 ) step1_tex1_mipmap_q_recip (
                     .clk(aclk), 
+                    .ce(ce), 
                     .in(tex1_mipmap_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
                     .out(step1_tex1_mipmap_q)
                 );
@@ -328,26 +265,43 @@ module AttributePerspectiveCorrectionX #(
     wire [SCREEN_POS_WIDTH - 1 : 0]  step2_tspy;
     wire [INDEX_WIDTH - 1 : 0]       step2_tindex;
 
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(I2F_DELAY)) 
-        step2_tvalid_delay (.clk(aclk), .in(step1_tvalid), .out(step2_tvalid));
-    ValueDelay #(.VALUE_SIZE(1), .DELAY(I2F_DELAY)) 
-        step2_tlast_delay (.clk(aclk), .in(step1_tlast), .out(step2_tlast));
-    ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(I2F_DELAY)) 
-        step2_tkeep_delay (.clk(aclk), .in(step1_tkeep), .out(step2_tkeep));
+    ValueDelay #(
+        .VALUE_SIZE(1 + 1 + KEEP_WIDTH + (2 * SCREEN_POS_WIDTH) + INDEX_WIDTH + DEPTH_WIDTH), 
+        .DELAY(I2F_DELAY)
+    ) step2_delay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in({
+            step1_tvalid,
+            step1_tlast,
+            step1_tkeep,
+            step1_tspx,
+            step1_tspy,
+            step1_tindex,
+            step1_depth_z
+        }), 
+        .out({
+            step2_tvalid,
+            step2_tlast,
+            step2_tkeep,
+            step2_tspx,
+            step2_tspy,
+            step2_tindex,
+            step2_depth_z
+        })
+    );
 
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(I2F_DELAY)) 
-        step2_tspx_delay (.clk(aclk), .in(step1_tspx), .out(step2_tspx));
-    ValueDelay #(.VALUE_SIZE(SCREEN_POS_WIDTH), .DELAY(I2F_DELAY)) 
-        step2_tspy_delay (.clk(aclk), .in(step1_tspy), .out(step2_tspy));
-
-    ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(I2F_DELAY)) 
-        step2_tindex_delay (.clk(aclk), .in(step1_tindex), .out(step2_tindex));
-
-    ValueDelay #(.VALUE_SIZE(DEPTH_WIDTH), .DELAY(I2F_DELAY)) 
-        step2_tdepth_z_delay (.clk(aclk), .in(step1_depth_z), .out(step2_depth_z));
-
-    IntToFloat #(.MANTISSA_SIZE(FLOAT_SIZE - 9), .EXPONENT_SIZE(8), .INT_SIZE(ATTRIBUTE_SIZE))
-        step2_tdepth_w_i2f (.clk(aclk), .offset(-9), .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), .out(step2_depth_w));
+    IntToFloat #(
+        .MANTISSA_SIZE(FLOAT_SIZE - 9), 
+        .EXPONENT_SIZE(8), 
+        .INT_SIZE(ATTRIBUTE_SIZE)
+    ) step2_tdepth_w_i2f (
+        .clk(aclk), 
+        .ce(ce), 
+        .offset(-9), 
+        .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), 
+        .out(step2_depth_w)
+    );
 
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_s_reg; // S16.15
     reg  [TEXQ_PRECISION * 2 : 0]    step2_tex0_t_reg;
@@ -362,7 +316,7 @@ module AttributePerspectiveCorrectionX #(
     reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_b_reg;
     reg  [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_a_reg;
     always @(posedge aclk)
-    begin : PerspCorrection
+    if (ce) begin : PerspCorrection
         step2_color_a_reg <= (step1_color_a[15]) ? 0 : (|step1_color_a[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_a[0 +: SUB_PIXEL_WIDTH];
         step2_color_b_reg <= (step1_color_b[15]) ? 0 : (|step1_color_b[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_b[0 +: SUB_PIXEL_WIDTH];
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
@@ -405,30 +359,41 @@ module AttributePerspectiveCorrectionX #(
         end
     end
 
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_s_delay (.clk(aclk), .in(step2_tex0_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_s));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_t_delay (.clk(aclk), .in(step2_tex0_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_t));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_s_delay (.clk(aclk), .in(step2_tex0_mipmap_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_mipmap_s));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex0_mipmap_t_delay (.clk(aclk), .in(step2_tex0_mipmap_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex0_mipmap_t));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_s_delay (.clk(aclk), .in(step2_tex1_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_s));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_t_delay (.clk(aclk), .in(step2_tex1_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_t));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_s_delay (.clk(aclk), .in(step2_tex1_mipmap_s_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_mipmap_s));
-    ValueDelay #(.VALUE_SIZE(ATTRIBUTE_SIZE), .DELAY(I2F_DELAY - 1)) 
-        step2_ttex1_mipmap_t_delay (.clk(aclk), .in(step2_tex1_mipmap_t_reg[0 +: ATTRIBUTE_SIZE]), .out(step2_tex1_mipmap_t));
-    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
-        step2_tcolor_r_delay (.clk(aclk), .in(step2_color_r_reg), .out(step2_color_r));
-    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
-        step2_tcolor_g_delay (.clk(aclk), .in(step2_color_g_reg), .out(step2_color_g));
-    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
-        step2_tcolor_b_delay (.clk(aclk), .in(step2_color_b_reg), .out(step2_color_b));
-    ValueDelay #(.VALUE_SIZE(SUB_PIXEL_WIDTH), .DELAY(I2F_DELAY - 1)) 
-        step2_tcolor_a_delay (.clk(aclk), .in(step2_color_a_reg), .out(step2_color_a));
+    ValueDelay #(
+        .VALUE_SIZE(( 8 * ATTRIBUTE_SIZE) + (4 * SUB_PIXEL_WIDTH)), 
+        .DELAY(I2F_DELAY - 1)
+    ) step2_delay2 (
+        .clk(aclk), 
+        .ce(ce), 
+        .in({
+            step2_tex0_s_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex0_t_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex0_mipmap_s_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex0_mipmap_t_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex1_s_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex1_t_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex1_mipmap_s_reg[0 +: ATTRIBUTE_SIZE],
+            step2_tex1_mipmap_t_reg[0 +: ATTRIBUTE_SIZE],
+            step2_color_r_reg,
+            step2_color_g_reg,
+            step2_color_b_reg,
+            step2_color_a_reg
+        }), 
+        .out({
+            step2_tex0_s,
+            step2_tex0_t,
+            step2_tex0_mipmap_s,
+            step2_tex0_mipmap_t,
+            step2_tex1_s,
+            step2_tex1_t,
+            step2_tex1_mipmap_s,
+            step2_tex1_mipmap_t,
+            step2_color_r,
+            step2_color_g,
+            step2_color_b,
+            step2_color_a
+        })
+    );
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3

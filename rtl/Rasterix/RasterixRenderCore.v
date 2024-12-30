@@ -41,8 +41,15 @@ module RasterixRenderCore #(
     // The size of the texture in bytes
     parameter TEXTURE_BUFFER_SIZE = 17,
 
-    // Enables the flow control. Disabling can safe logic resources.
-    parameter ENABLE_FLOW_CTRL = 1,
+    // Enables FIFOs on the memory write channel. It can improve the performance by batching write requests.
+    parameter ENABLE_WRITE_FIFO = 1,
+    // Size of the write FIFO in log2(size)
+    parameter WRITE_FIFO_SIZE = 4,
+
+    // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
+    parameter ENABLE_READ_FIFO = 1,
+    // Size of the read FIFO in log2(size). Keep this size to make sure, it works with the rrxif configuration
+    parameter READ_FIFO_SIZE = 7,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -284,7 +291,7 @@ module RasterixRenderCore #(
     wire             cmd_tmu1_axis_tready;
     wire             cmd_config_axis_tready;
     // Control
-    wire             pipelineEmpty;
+    wire             pixelInPipeline;
     wire             startRendering;
     wire             color_fifo_empty;
     wire             depth_fifo_empty;
@@ -317,7 +324,7 @@ module RasterixRenderCore #(
         // Rasterizer
         // Control
         .rasterizerRunning(rasterizerRunning),
-        .pixelInPipeline(!pipelineEmpty || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
+        .pixelInPipeline(pixelInPipeline || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -749,145 +756,19 @@ module RasterixRenderCore #(
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
-    // Implementation of the flow control via a stream semaphore and stream barrier
-    // In combination with the StreamBarrier and StreamSemaphore, it prevents 
-    // overflows of the write FIFOs by ensuring that the pipeline contains a maximum  
-    // of MAX_NUMBER_OF_PIXELS_LG pixels. The StreamBarrier starts to stall,
-    // as soon as the fill level of FIFOs are exceeding MAX_NUMBER_OF_PIXELS_LG.
-    // Both in combination ensuring that only a maximum of MAX_NUMBER_OF_PIXELS_LG + 1
-    // can be on the fly. That means for the write FIFOs: They require a minimum 
-    // size of MAX_NUMBER_OF_PIXELS_LG + 1.
-    // Clocks: 2
+    // Counting of the pixels which are send from the rasterizer and which leave
+    // the pipeline. Used to determine if there are pixel on the fly or not.
     ////////////////////////////////////////////////////////////////////////////
-    wire                            rasterizer_sem_tvalid;
-    wire                            rasterizer_sem_tpixel;
-    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sem_tcmd;
-    wire                            rasterizer_sem_tlast;
-    wire                            rasterizer_sem_tkeep;
-    wire                            rasterizer_sem_tready;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tbbx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tbby;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tspx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sem_tspy;
-    wire [INDEX_WIDTH - 1 : 0]      rasterizer_sem_tindex;
-    wire                            rasterizer_sbr_tvalid;
-    wire                            rasterizer_sbr_tpixel;
-    wire [RR_CMD_SIZE - 1 : 0]      rasterizer_sbr_tcmd;
-    wire                            rasterizer_sbr_tready;
-    wire                            rasterizer_sbr_tlast;
-    wire                            rasterizer_sbr_tkeep;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tbbx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tbby;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tspx;
-    wire [SCREEN_POS_WIDTH - 1 : 0] rasterizer_sbr_tspy;
-    wire [INDEX_WIDTH - 1 : 0]      rasterizer_sbr_tindex;
+    wire fragmentProcessed;
 
-    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  color_fifo_fill;
-    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  depth_fifo_fill;
-    wire [MAX_NUMBER_OF_PIXELS_LG + 1 : 0]  stencil_fifo_fill;
-    wire                                    fifosAlmostFull;
-    wire                                    fragmentProcessed;
-
-    StreamSemaphore ssem (
+    ValueTrack vt (
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_axis_tvalid(rasterizer_tvalid),
-        .s_axis_tready(rasterizer_tready),
-        .s_axis_tlast(rasterizer_tlast),
-        .s_axis_tdata({
-            rasterizer_tbbx,
-            rasterizer_tbby,
-            rasterizer_tspx,
-            rasterizer_tspy,
-            rasterizer_tindex,
-            rasterizer_tpixel,
-            rasterizer_tcmd
-        }),
-        .s_axis_tkeep(rasterizer_tkeep),
-
-        .m_axis_tvalid(rasterizer_sem_tvalid),
-        .m_axis_tready(rasterizer_sem_tready),
-        .m_axis_tlast(rasterizer_sem_tlast),
-        .m_axis_tdata({
-            rasterizer_sem_tbbx,
-            rasterizer_sem_tbby,
-            rasterizer_sem_tspx,
-            rasterizer_sem_tspy,
-            rasterizer_sem_tindex,
-            rasterizer_sem_tpixel,
-            rasterizer_sem_tcmd
-        }),
-        .m_axis_tkeep(rasterizer_sem_tkeep),
-
-        .sigLock(rasterizer_tpixel),
-        .sigRelease(fragmentProcessed),
-        .released(pipelineEmpty)
+        .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
+        .sigOutgoingValue(fragmentProcessed & framebuffer_pfp_wvalid & framebuffer_pfp_wready),
+        .valueInPipeline(pixelInPipeline)
     );
-    defparam ssem.MAX_NUMBER_OF_ELEMENTS = 2 ** MAX_NUMBER_OF_PIXELS_LG;
-    defparam ssem.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
-    defparam ssem.KEEP_WIDTH = 1;
-
-    generate
-        if (ENABLE_FLOW_CTRL)
-        begin
-            assign fifosAlmostFull = (color_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1)
-                || (depth_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1)
-                || (stencil_fifo_fill >= ((2 ** MAX_NUMBER_OF_PIXELS_LG)) - 1);
-
-            // Used to prevent overflows of the write fifos
-            StreamBarrier sbr (
-                .aclk(aclk),
-                .resetn(resetn),
-
-                .s_axis_tvalid(rasterizer_sem_tvalid),
-                .s_axis_tready(rasterizer_sem_tready),
-                .s_axis_tlast(rasterizer_sem_tlast),
-                .s_axis_tdata({
-                    rasterizer_sem_tbbx,
-                    rasterizer_sem_tbby,
-                    rasterizer_sem_tspx,
-                    rasterizer_sem_tspy,
-                    rasterizer_sem_tindex,
-                    rasterizer_sem_tpixel,
-                    rasterizer_sem_tcmd
-                }),
-                .s_axis_tkeep(rasterizer_sem_tkeep),
-
-                .m_axis_tvalid(rasterizer_sbr_tvalid),
-                .m_axis_tready(rasterizer_sbr_tready),
-                .m_axis_tlast(rasterizer_sbr_tlast),
-                .m_axis_tdata({
-                    rasterizer_sbr_tbbx,
-                    rasterizer_sbr_tbby,
-                    rasterizer_sbr_tspx,
-                    rasterizer_sbr_tspy,
-                    rasterizer_sbr_tindex,
-                    rasterizer_sbr_tpixel,
-                    rasterizer_sbr_tcmd
-                }),
-                .m_axis_tkeep(rasterizer_sbr_tkeep),
-
-                .stall(fifosAlmostFull)
-            );
-            defparam sbr.STREAM_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
-            defparam sbr.KEEP_WIDTH = 1;
-        end
-        else
-        begin
-            assign rasterizer_sbr_tvalid = rasterizer_sem_tvalid;
-            assign rasterizer_sbr_tpixel = rasterizer_sem_tpixel;
-            assign rasterizer_sem_tready = rasterizer_sbr_tready;
-            assign rasterizer_sbr_tlast = rasterizer_sem_tlast;
-            assign rasterizer_sbr_tbbx = rasterizer_sem_tbbx;
-            assign rasterizer_sbr_tbby = rasterizer_sem_tbby;
-            assign rasterizer_sbr_tspx = rasterizer_sem_tspx;
-            assign rasterizer_sbr_tspy = rasterizer_sem_tspy;
-            assign rasterizer_sbr_tindex = rasterizer_sem_tindex;
-            assign rasterizer_sbr_tkeep = rasterizer_sem_tkeep;
-            assign rasterizer_sbr_tcmd = rasterizer_sem_tcmd;
-        end
-    endgenerate
     
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
@@ -905,7 +786,7 @@ module RasterixRenderCore #(
     wire [(RR_CMD_SIZE * 4) - 1 : 0]        bc_cmd;
     wire [ 3 : 0]                           bc_last;
     wire [ 3 : 0]                           bc_keep;
-    wire                                    bc_arready_attrib;
+    wire [ 3 : 0]                           bc_ready;
     assign m_color_araddr     = bc_index[INDEX_WIDTH * 3 +: INDEX_WIDTH];
     assign m_depth_araddr     = bc_index[INDEX_WIDTH * 2 +: INDEX_WIDTH];
     assign m_stencil_araddr   = bc_index[INDEX_WIDTH * 1 +: INDEX_WIDTH];
@@ -915,24 +796,27 @@ module RasterixRenderCore #(
     assign m_color_arlast     = bc_last[3];
     assign m_depth_arlast     = bc_last[2];
     assign m_stencil_arlast   = bc_last[1];
+    assign bc_ready[3] = m_color_arready | !colorBufferEnable;
+    assign bc_ready[2] = m_depth_arready | !depthBufferEnable;
+    assign bc_ready[1] = m_stencil_arready | !stencilBufferEnable;
 
-    axis_broadcast axisBroadcast (
+    axis_broadcast rasterizerBroadcast (
         .clk(aclk),
         .rst(!resetn),
 
         .s_axis_tdata({
-            rasterizer_sbr_tbbx,
-            rasterizer_sbr_tbby,
-            rasterizer_sbr_tspx,
-            rasterizer_sbr_tspy,
-            rasterizer_sbr_tindex,
-            rasterizer_sbr_tpixel,
-            rasterizer_sbr_tcmd
+            rasterizer_tbbx,
+            rasterizer_tbby,
+            rasterizer_tspx,
+            rasterizer_tspy,
+            rasterizer_tindex,
+            rasterizer_tpixel,
+            rasterizer_tcmd
         }),
-        .s_axis_tlast(rasterizer_sbr_tlast),
-        .s_axis_tvalid(rasterizer_sbr_tvalid),
-        .s_axis_tready(rasterizer_sbr_tready),
-        .s_axis_tkeep(rasterizer_sbr_tkeep),
+        .s_axis_tlast(rasterizer_tlast),
+        .s_axis_tvalid(rasterizer_tvalid),
+        .s_axis_tready(rasterizer_tready),
+        .s_axis_tkeep(rasterizer_tkeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
@@ -968,32 +852,28 @@ module RasterixRenderCore #(
             bc_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
         }),
         .m_axis_tvalid(bc_valid),
-        .m_axis_tready({ 
-            m_color_arready | !colorBufferEnable, 
-            m_depth_arready | !depthBufferEnable, 
-            m_stencil_arready | !stencilBufferEnable, 
-            bc_arready_attrib 
-        }),
+        .m_axis_tready(bc_ready),
         .m_axis_tlast(bc_last),
         .m_axis_tkeep(bc_keep),
         .m_axis_tid(),
         .m_axis_tdest(),
         .m_axis_tuser()
     );
-    defparam axisBroadcast.M_COUNT = 4;
-    defparam axisBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
-    defparam axisBroadcast.KEEP_ENABLE = 1;
-    defparam axisBroadcast.KEEP_WIDTH = 1;
-    defparam axisBroadcast.LAST_ENABLE = 1;
-    defparam axisBroadcast.ID_ENABLE = 0;
-    defparam axisBroadcast.DEST_ENABLE = 0;
-    defparam axisBroadcast.USER_ENABLE = 0;
+    defparam rasterizerBroadcast.M_COUNT = 4;
+    defparam rasterizerBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
+    defparam rasterizerBroadcast.KEEP_ENABLE = 1;
+    defparam rasterizerBroadcast.KEEP_WIDTH = 1;
+    defparam rasterizerBroadcast.LAST_ENABLE = 1;
+    defparam rasterizerBroadcast.ID_ENABLE = 0;
+    defparam rasterizerBroadcast.DEST_ENABLE = 0;
+    defparam rasterizerBroadcast.USER_ENABLE = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Interpolation of attributes
     // Clocks: 33
     ////////////////////////////////////////////////////////////////////////////
+    wire                                    alrp_tready;
     wire                                    alrp_tvalid;
     wire                                    alrp_tlast;
     wire                                    alrp_tkeep;
@@ -1022,6 +902,7 @@ module RasterixRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
+                .s_attrb_tready(bc_ready[0]),
                 .s_attrb_tvalid(bc_valid[0]),
                 .s_attrb_tlast(bc_last[0]),
                 .s_attrb_tkeep(bc_keep[0]),
@@ -1068,6 +949,7 @@ module RasterixRenderCore #(
                 .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
                 .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
+                .m_attrb_tready(alrp_tready),
                 .m_attrb_tvalid(alrp_tvalid),
                 .m_attrb_tlast(alrp_tlast),
                 .m_attrb_tkeep(alrp_tkeep),
@@ -1094,11 +976,10 @@ module RasterixRenderCore #(
             defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
             defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
             defparam attributeInterpolator.CALC_PRECISION = RASTERIZER_FIXPOINT_PRECISION;
-
-            assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
         end
         else
         begin
+            wire                            ftx_tready;
             wire                            ftx_tvalid;
             wire                            ftx_tlast;
             wire                            ftx_tkeep;
@@ -1123,8 +1004,8 @@ module RasterixRenderCore #(
             AttributeInterpolator attributeInterpolator (
                 .aclk(aclk),
                 .resetn(resetn),
-                .pixelInPipeline(),
 
+                .s_attrb_tready(bc_ready[0]),
                 .s_attrb_tvalid(bc_valid[0] & bc_pixel[0]),
                 .s_attrb_tlast(bc_last[0]),
                 .s_attrb_tkeep(bc_keep[0]),
@@ -1171,6 +1052,7 @@ module RasterixRenderCore #(
                 .color_a_inc_x(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_X * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
                 .color_a_inc_y(triangleParams[TRIANGLE_STREAM_INC_COLOR_A_Y * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
 
+                .m_attrb_tready(ftx_tready),
                 .m_attrb_tvalid(ftx_tvalid),
                 .m_attrb_tlast(ftx_tlast),
                 .m_attrb_tkeep(ftx_tkeep),
@@ -1198,13 +1080,11 @@ module RasterixRenderCore #(
             defparam attributeInterpolator.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
             defparam attributeInterpolator.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
 
-            assign bc_arready_attrib = 1; // The attribute interpolater is always ready because of missing flow ctrl
-
-
             AttributeF2XConverter af2x (
                 .aclk(aclk),
                 .resetn(resetn),
 
+                .s_ftx_tready(ftx_tready),
                 .s_ftx_tvalid(ftx_tvalid),
                 .s_ftx_tlast(ftx_tlast),
                 .s_ftx_tkeep(ftx_tkeep),
@@ -1226,6 +1106,7 @@ module RasterixRenderCore #(
                 .s_ftx_tcolor_g(ftx_tcolor_g),
                 .s_ftx_tcolor_r(ftx_tcolor_r),
 
+                .m_ftx_tready(alrp_tready),
                 .m_ftx_tvalid(alrp_tvalid),
                 .m_ftx_tlast(alrp_tlast),
                 .m_ftx_tkeep(alrp_tkeep),
@@ -1259,16 +1140,17 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     // STEP 4
     // Texturing triangle, fogging
-    // Clocks: 28
+    // Clocks: 30
     ////////////////////////////////////////////////////////////////////////////
-    wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_fragmentColor;
-    wire [INDEX_WIDTH - 1 : 0]                  framebuffer_index;
-    wire [SCREEN_POS_WIDTH - 1 : 0]             framebuffer_screenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]             framebuffer_screenPosY;
-    wire [31 : 0]                               framebuffer_depth;
-    wire                                        framebuffer_valid;
-    wire                                        framebuffer_last;
-    wire                                        framebuffer_keep;
+    wire                                        framebuffer_tready;
+    wire [(COLOR_SUB_PIXEL_WIDTH * 4) - 1 : 0]  framebuffer_tfragmentColor;
+    wire [INDEX_WIDTH - 1 : 0]                  framebuffer_tindex;
+    wire [SCREEN_POS_WIDTH - 1 : 0]             framebuffer_tscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0]             framebuffer_tscreenPosY;
+    wire [31 : 0]                               framebuffer_tdepth;
+    wire                                        framebuffer_tvalid;
+    wire                                        framebuffer_tlast;
+    wire                                        framebuffer_tkeep;
 
     PixelPipeline pixelPipeline (    
         .aclk(aclk),
@@ -1290,6 +1172,7 @@ module RasterixRenderCore #(
         .confTMU1TextureConfig(confTMU1TextureConfig),
         .confTMU1TexEnvColor(confTMU1TexEnvColor),
 
+        .s_attrb_tready(alrp_tready),
         .s_attrb_tvalid(alrp_tvalid),
         .s_attrb_tlast(alrp_tlast),
         .s_attrb_tkeep(alrp_tkeep),
@@ -1331,19 +1214,19 @@ module RasterixRenderCore #(
         .texel1Input10(texel1Input10),
         .texel1Input11(texel1Input11),
 
-        .m_framebuffer_valid(framebuffer_valid),
-        .m_framebuffer_last(framebuffer_last),
-        .m_framebuffer_keep(framebuffer_keep),
-        .m_framebuffer_fragmentColor(framebuffer_fragmentColor),
-        .m_framebuffer_depth(framebuffer_depth),
-        .m_framebuffer_index(framebuffer_index),
-        .m_framebuffer_screenPosX(framebuffer_screenPosX),
-        .m_framebuffer_screenPosY(framebuffer_screenPosY)
+        .m_frag_tready(framebuffer_tready),
+        .m_frag_tvalid(framebuffer_tvalid),
+        .m_frag_tlast(framebuffer_tlast),
+        .m_frag_tkeep(framebuffer_tkeep),
+        .m_frag_tfragmentColor(framebuffer_tfragmentColor),
+        .m_frag_tdepth(framebuffer_tdepth),
+        .m_frag_tindex(framebuffer_tindex),
+        .m_frag_tscreenPosX(framebuffer_tscreenPosX),
+        .m_frag_tscreenPosY(framebuffer_tscreenPosY)
     );
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
-    defparam pixelPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
 
@@ -1363,17 +1246,17 @@ module RasterixRenderCore #(
         .resetn(resetn),
 
         .s_stream0_tenable(1'b1),
-        .s_stream0_tvalid(framebuffer_valid),
+        .s_stream0_tvalid(framebuffer_tvalid),
         .s_stream0_tdata({ 
-            framebuffer_keep,
-            framebuffer_last,
-            framebuffer_screenPosY,
-            framebuffer_screenPosX,
-            framebuffer_index,
-            framebuffer_depth, 
-            framebuffer_fragmentColor 
+            framebuffer_tkeep,
+            framebuffer_tlast,
+            framebuffer_tscreenPosY,
+            framebuffer_tscreenPosX,
+            framebuffer_tindex,
+            framebuffer_tdepth, 
+            framebuffer_tfragmentColor 
         }),
-        .s_stream0_tready(),
+        .s_stream0_tready(framebuffer_tready),
 
         .s_stream1_tenable(colorBufferEnable),
         .s_stream1_tvalid(m_color_rvalid),
@@ -1394,10 +1277,10 @@ module RasterixRenderCore #(
         .m_stream_tdata(fragment_stream_out_tdata),
         .m_stream_tready(fragment_stream_out_tready)
     );
-    defparam streamConcatFifo.FIFO_DEPTH0_POW2 = (ENABLE_FLOW_CTRL) ? MAX_NUMBER_OF_PIXELS_LG : 0;
-    defparam streamConcatFifo.FIFO_DEPTH1_POW2 = MAX_NUMBER_OF_PIXELS_LG;
-    defparam streamConcatFifo.FIFO_DEPTH2_POW2 = MAX_NUMBER_OF_PIXELS_LG;
-    defparam streamConcatFifo.FIFO_DEPTH3_POW2 = MAX_NUMBER_OF_PIXELS_LG;
+    defparam streamConcatFifo.FIFO_DEPTH0_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH1_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH2_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
+    defparam streamConcatFifo.FIFO_DEPTH3_POW2 = (ENABLE_READ_FIFO == 1) ? READ_FIFO_SIZE : 1;
     defparam streamConcatFifo.STREAM0_WIDTH = FRAGMENT_STREAM_WIDTH;
     defparam streamConcatFifo.STREAM1_WIDTH = PIXEL_WIDTH;
     defparam streamConcatFifo.STREAM2_WIDTH = DEPTH_WIDTH;
@@ -1408,29 +1291,21 @@ module RasterixRenderCore #(
     // Access framebuffer, blend, test and save pixel in framebuffer
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
-    wire [INDEX_WIDTH - 1 : 0]      color_fifo_waddr;
-    wire                            color_fifo_wvalid;
-    wire                            color_fifo_wlast;
-    wire [PIXEL_WIDTH - 1 : 0]      color_fifo_wdata;
-    wire                            color_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] color_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] color_fifo_wscreenPosY;
+    wire [INDEX_WIDTH - 1 : 0]      framebuffer_pfp_waddr;
+    wire                            framebuffer_pfp_wvalid;
+    wire                            framebuffer_pfp_wlast;
+    wire                            framebuffer_pfp_wready;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_pfp_wscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_pfp_wscreenPosY;
 
-    wire [INDEX_WIDTH - 1 : 0]      depth_fifo_waddr;
-    wire                            depth_fifo_wvalid;
-    wire                            depth_fifo_wlast;
-    wire [DEPTH_WIDTH - 1 : 0]      depth_fifo_wdata;
-    wire                            depth_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] depth_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] depth_fifo_wscreenPosY;
+    wire [PIXEL_WIDTH - 1 : 0]      framebuffer_color_pfp_wdata;
+    wire                            framebuffer_color_pfp_wstrb;
 
-    wire [INDEX_WIDTH - 1 : 0]      stencil_fifo_waddr;
-    wire                            stencil_fifo_wvalid;
-    wire                            stencil_fifo_wlast;
-    wire [STENCIL_WIDTH - 1 : 0]    stencil_fifo_wdata;
-    wire                            stencil_fifo_wstrb;
-    wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] stencil_fifo_wscreenPosY;
+    wire [DEPTH_WIDTH - 1 : 0]      framebuffer_depth_pfp_wdata;
+    wire                            framebuffer_depth_pfp_wstrb;
+
+    wire [STENCIL_WIDTH - 1 : 0]    framebuffer_stencil_pfp_wdata;
+    wire                            framebuffer_stencil_pfp_wstrb;
 
     PerFragmentPipeline perFragmentPipeline (
         .aclk(aclk),
@@ -1440,6 +1315,7 @@ module RasterixRenderCore #(
         .confFeatureEnable(confFeatureEnable),
         .confStencilBufferConfig(confStencilBufferConfig),
 
+        .s_frag_tready(fragment_stream_out_tready),
         .s_frag_tlast(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) +: 1]),
         .s_frag_tkeep(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + (SCREEN_POS_WIDTH * 2) + 1 +: 1]),
         .s_frag_tvalid(fragment_stream_out_tvalid),
@@ -1448,81 +1324,161 @@ module RasterixRenderCore #(
         .s_frag_tindex(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 +: INDEX_WIDTH]),
         .s_frag_tscreenPosX(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH +: SCREEN_POS_WIDTH]),
         .s_frag_tscreenPosY(fragment_stream_out_tdata[(COLOR_SUB_PIXEL_WIDTH * 4) + 32 + INDEX_WIDTH + SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+        .s_frag_color_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
+        .s_frag_depth_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
+        .s_frag_stencil_tdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
 
         .fragmentProcessed(fragmentProcessed),
 
-        .s_color_rvalid(fragment_stream_out_tvalid),
-        .s_color_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH +: PIXEL_WIDTH]),
-        .m_color_waddr(color_fifo_waddr),
-        .m_color_wvalid(color_fifo_wvalid),
-        .m_color_wlast(color_fifo_wlast),
-        .m_color_wdata(color_fifo_wdata),
-        .m_color_wstrb(color_fifo_wstrb),
-        .m_color_wscreenPosX(color_fifo_wscreenPosX),
-        .m_color_wscreenPosY(color_fifo_wscreenPosY),
+        .m_frag_tready(framebuffer_pfp_wready),
+        .m_frag_taddr(framebuffer_pfp_waddr),
+        .m_frag_tvalid(framebuffer_pfp_wvalid),
+        .m_frag_tlast(framebuffer_pfp_wlast),
+        .m_frag_tscreenPosX(framebuffer_pfp_wscreenPosX),
+        .m_frag_tscreenPosY(framebuffer_pfp_wscreenPosY),
+        
+        .m_frag_color_tdata(framebuffer_color_pfp_wdata),
+        .m_frag_color_tstrb(framebuffer_color_pfp_wstrb),
 
-        .s_depth_rvalid(fragment_stream_out_tvalid),
-        .s_depth_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
-        .m_depth_waddr(depth_fifo_waddr),
-        .m_depth_wvalid(depth_fifo_wvalid),
-        .m_depth_wlast(depth_fifo_wlast),
-        .m_depth_wdata(depth_fifo_wdata),
-        .m_depth_wstrb(depth_fifo_wstrb),
-        .m_depth_wscreenPosX(depth_fifo_wscreenPosX),
-        .m_depth_wscreenPosY(depth_fifo_wscreenPosY),
+        .m_frag_depth_tdata(framebuffer_depth_pfp_wdata),
+        .m_frag_depth_tstrb(framebuffer_depth_pfp_wstrb),
 
-        .s_stencil_rvalid(fragment_stream_out_tvalid),
-        .s_stencil_rdata(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
-        .m_stencil_waddr(stencil_fifo_waddr),
-        .m_stencil_wvalid(stencil_fifo_wvalid),
-        .m_stencil_wlast(stencil_fifo_wlast),
-        .m_stencil_wdata(stencil_fifo_wdata),
-        .m_stencil_wstrb(stencil_fifo_wstrb),
-        .m_stencil_wscreenPosX(stencil_fifo_wscreenPosX),
-        .m_stencil_wscreenPosY(stencil_fifo_wscreenPosY)
+        .m_frag_stencil_tdata(framebuffer_stencil_pfp_wdata),
+        .m_frag_stencil_tstrb(framebuffer_stencil_pfp_wstrb)
     );
     defparam perFragmentPipeline.FRAMEBUFFER_INDEX_WIDTH = INDEX_WIDTH;
     defparam perFragmentPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
-    assign fragment_stream_out_tready = 1; // No flow ctrl -> always active
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7
+    // Broadcast fragment stream to output fifos
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    wire [(INDEX_WIDTH * 3) - 1 : 0]        framebuffer_bc_waddr;
+    wire [ 2 : 0]                           framebuffer_bc_wvalid;
+    wire [ 2 : 0]                           framebuffer_bc_wlast;
+    wire [ 2 : 0]                           framebuffer_bc_wfull; // it's a !wready signal
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   framebuffer_bc_wscreenPosX;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   framebuffer_bc_wscreenPosY;
+
+    wire [(PIXEL_WIDTH * 3) - 1 : 0]        framebuffer_color_bc_wdata;
+    wire  [ 2 : 0]                          framebuffer_color_bc_wstrb;
+
+    wire [(DEPTH_WIDTH * 3) - 1 : 0]        framebuffer_depth_bc_wdata;
+    wire [ 2 : 0]                           framebuffer_depth_bc_wstrb;
+
+    wire [(STENCIL_WIDTH * 3) - 1 : 0]      framebuffer_stencil_bc_wdata;
+    wire [ 2 : 0]                           framebuffer_stencil_bc_wstrb;
+
+    axis_broadcast fragmentBroadcast (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata({
+            framebuffer_pfp_waddr,
+            framebuffer_pfp_wscreenPosX,
+            framebuffer_pfp_wscreenPosY,
+            framebuffer_color_pfp_wdata,
+            framebuffer_color_pfp_wstrb,
+            framebuffer_depth_pfp_wdata,
+            framebuffer_depth_pfp_wstrb,
+            framebuffer_stencil_pfp_wdata,
+            framebuffer_stencil_pfp_wstrb
+        }),
+        .s_axis_tlast(framebuffer_pfp_wlast),
+        .s_axis_tvalid(framebuffer_pfp_wvalid),
+        .s_axis_tready(framebuffer_pfp_wready), 
+        .s_axis_tkeep(~0),
+        .s_axis_tid(0),
+        .s_axis_tdest(0),
+        .s_axis_tuser(0),
+
+        .m_axis_tdata({
+            framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[2],
+            framebuffer_depth_bc_wdata[2 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[2],
+            framebuffer_stencil_bc_wdata[2 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[2],
+            framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[1 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[1],
+            framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[1],
+            framebuffer_stencil_bc_wdata[1 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[1],
+            framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH],
+            framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            framebuffer_color_bc_wdata[0 * PIXEL_WIDTH +: PIXEL_WIDTH],
+            framebuffer_color_bc_wstrb[0],
+            framebuffer_depth_bc_wdata[0 * DEPTH_WIDTH +: DEPTH_WIDTH],
+            framebuffer_depth_bc_wstrb[0],
+            framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH],
+            framebuffer_stencil_bc_wstrb[0]
+        }),
+        .m_axis_tvalid(framebuffer_bc_wvalid),
+        .m_axis_tready({
+            !framebuffer_bc_wfull[2],
+            !framebuffer_bc_wfull[1],
+            !framebuffer_bc_wfull[0]
+        }),
+        .m_axis_tlast(framebuffer_bc_wlast),
+        .m_axis_tkeep(),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
+    );
+    defparam fragmentBroadcast.M_COUNT = 3;
+    defparam fragmentBroadcast.DATA_WIDTH = INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + PIXEL_WIDTH + 1 + DEPTH_WIDTH + 1 + STENCIL_WIDTH + 1;
+    defparam fragmentBroadcast.KEEP_ENABLE = 0;
+    defparam fragmentBroadcast.KEEP_WIDTH = 1;
+    defparam fragmentBroadcast.LAST_ENABLE = 1;
+    defparam fragmentBroadcast.ID_ENABLE = 0;
+    defparam fragmentBroadcast.DEST_ENABLE = 0;
+    defparam fragmentBroadcast.USER_ENABLE = 0;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 8
     // FIFOs for the flow control on the write channel
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
-    localparam WRITE_FIFO_SIZE = MAX_NUMBER_OF_PIXELS_LG + 1;
-
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam COLOR_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + PIXEL_WIDTH;
             sfifo colorWriteFifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(color_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[2]),
                 .i_data({ 
-                    color_fifo_wlast, 
-                    color_fifo_wstrb, 
-                    color_fifo_wscreenPosY, 
-                    color_fifo_wscreenPosX, 
-                    color_fifo_waddr, 
-                    color_fifo_wdata 
+                    framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[2], 
+                    framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH], 
+                    framebuffer_color_bc_wstrb[2]
                 }),
-                .o_full(),
-                .o_fill(color_fifo_fill),
+                .o_full(framebuffer_bc_wfull[2]),
+                .o_fill(),
 
                 .i_rd(m_color_wready),
                 .o_data({
-                    m_color_wlast,
-                    m_color_wstrb,
-                    m_color_wscreenPosY,
-                    m_color_wscreenPosX,
                     m_color_waddr,
-                    m_color_wdata
+                    m_color_wlast,
+                    m_color_wscreenPosX,
+                    m_color_wscreenPosY,
+                    m_color_wdata,
+                    m_color_wstrb
                 }),
                 .o_empty(color_fifo_empty)    
             );
@@ -1534,47 +1490,47 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_color_wdata = color_fifo_wdata;
-            assign m_color_waddr = color_fifo_waddr;
-            assign m_color_wscreenPosX = color_fifo_wscreenPosX;
-            assign m_color_wscreenPosY = color_fifo_wscreenPosY;
-            assign m_color_wstrb = color_fifo_wstrb;
-            assign m_color_wlast = color_fifo_wlast;
-            assign m_color_wvalid = color_fifo_wvalid;
+            assign m_color_wvalid = framebuffer_bc_wvalid[2];
+            assign m_color_waddr = framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_color_wlast = framebuffer_bc_wlast[2];
+            assign m_color_wscreenPosX = framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wscreenPosY = framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_color_wdata = framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH];
+            assign m_color_wstrb = framebuffer_color_bc_wstrb[2];
+            assign framebuffer_bc_wfull[2] = !m_color_wready;
 
-            assign color_fifo_fill = 0;
             assign color_fifo_empty = 1;
         end
     endgenerate
 
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam DEPTH_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + DEPTH_WIDTH;
             sfifo depthWriteFifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(depth_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[1]),
                 .i_data({ 
-                    depth_fifo_wlast, 
-                    depth_fifo_wstrb, 
-                    depth_fifo_wscreenPosY, 
-                    depth_fifo_wscreenPosX, 
-                    depth_fifo_waddr, 
-                    depth_fifo_wdata 
+                    framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[1], 
+                    framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH], 
+                    framebuffer_depth_bc_wstrb[1]
                 }),
-                .o_full(),
-                .o_fill(depth_fifo_fill),
+                .o_full(framebuffer_bc_wfull[1]),
+                .o_fill(),
 
                 .i_rd(m_depth_wready),
                 .o_data({
-                    m_depth_wlast,
-                    m_depth_wstrb,
-                    m_depth_wscreenPosY,
-                    m_depth_wscreenPosX,
                     m_depth_waddr,
-                    m_depth_wdata
+                    m_depth_wlast,
+                    m_depth_wscreenPosX,
+                    m_depth_wscreenPosY,
+                    m_depth_wdata,
+                    m_depth_wstrb
                 }),
                 .o_empty(depth_fifo_empty)    
             );
@@ -1586,47 +1542,47 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_depth_wdata = depth_fifo_wdata;
-            assign m_depth_waddr = depth_fifo_waddr;
-            assign m_depth_wscreenPosX = depth_fifo_wscreenPosX;
-            assign m_depth_wscreenPosY = depth_fifo_wscreenPosY;
-            assign m_depth_wstrb = depth_fifo_wstrb;
-            assign m_depth_wlast = depth_fifo_wlast;
-            assign m_depth_wvalid = depth_fifo_wvalid;
+            assign m_depth_wvalid = framebuffer_bc_wvalid[1];
+            assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_depth_wlast = framebuffer_bc_wlast[1];
+            assign m_depth_wscreenPosX = framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wscreenPosY = framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_depth_wdata = framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH];
+            assign m_depth_wstrb = framebuffer_depth_bc_wstrb[1];
+            assign framebuffer_bc_wfull[1] = !m_depth_wready;
 
-            assign depth_fifo_fill = 0;
             assign depth_fifo_empty = 1;
         end
     endgenerate
     
     generate
-        if (ENABLE_FLOW_CTRL)
+        if (ENABLE_WRITE_FIFO)
         begin
             localparam STENCIL_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + STENCIL_WIDTH;
             sfifo stencilWriteFifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
 
-                .i_wr(stencil_fifo_wvalid),
+                .i_wr(framebuffer_bc_wvalid[0]),
                 .i_data({ 
-                    stencil_fifo_wlast, 
-                    stencil_fifo_wstrb, 
-                    stencil_fifo_wscreenPosY, 
-                    stencil_fifo_wscreenPosX, 
-                    stencil_fifo_waddr, 
-                    stencil_fifo_wdata 
+                    framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH],
+                    framebuffer_bc_wlast[0], 
+                    framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
+                    framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH], 
+                    framebuffer_stencil_bc_wstrb[0]
                 }),
-                .o_full(),
-                .o_fill(stencil_fifo_fill),
+                .o_full(framebuffer_bc_wfull[0]),
+                .o_fill(),
 
                 .i_rd(m_stencil_wready),
                 .o_data({
-                    m_stencil_wlast,
-                    m_stencil_wstrb,
-                    m_stencil_wscreenPosY,
-                    m_stencil_wscreenPosX,
                     m_stencil_waddr,
-                    m_stencil_wdata
+                    m_stencil_wlast,
+                    m_stencil_wscreenPosX,
+                    m_stencil_wscreenPosY,
+                    m_stencil_wdata,
+                    m_stencil_wstrb
                 }),
                 .o_empty(stencil_fifo_empty)    
             );
@@ -1638,15 +1594,15 @@ module RasterixRenderCore #(
         end
         else
         begin
-            assign m_stencil_wdata = stencil_fifo_wdata;
-            assign m_stencil_waddr = stencil_fifo_waddr;
-            assign m_stencil_wscreenPosX = stencil_fifo_wscreenPosX;
-            assign m_stencil_wscreenPosY = stencil_fifo_wscreenPosY;
-            assign m_stencil_wstrb = stencil_fifo_wstrb;
-            assign m_stencil_wlast = stencil_fifo_wlast;
-            assign m_stencil_wvalid = stencil_fifo_wvalid;
+            assign m_stencil_wvalid = framebuffer_bc_wvalid[0];
+            assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
+            assign m_stencil_wlast = framebuffer_bc_wlast[0];
+            assign m_stencil_wscreenPosX = framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wscreenPosY = framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+            assign m_stencil_wdata = framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH];
+            assign m_stencil_wstrb = framebuffer_stencil_bc_wstrb[0];
+            assign framebuffer_bc_wfull[0] = !m_stencil_wready;
 
-            assign stencil_fifo_fill = 0;
             assign stencil_fifo_empty = 1;
         end
     endgenerate

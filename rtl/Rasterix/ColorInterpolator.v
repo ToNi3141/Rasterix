@@ -29,6 +29,7 @@ module ColorInterpolator #(
 (
     input  wire                         aclk,
     input  wire                         resetn,
+    input  wire                         ce,
 
     input  wire [15 : 0]                intensity,
     input  wire [PIXEL_WIDTH - 1 : 0]   colorA,
@@ -48,6 +49,7 @@ module ColorInterpolator #(
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),
+        .ce(ce),
 
         .colorA(colorA),
         .colorB({
