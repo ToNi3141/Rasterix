@@ -30,12 +30,14 @@
 #include "commands/TextureStreamCmd.hpp"
 #include "CommandDisplayListAssembler.hpp"
 #include "DSEDisplayListAssembler.hpp"
+#include "DisplayListTextureLoadOptimizer.hpp"
 
 namespace rr
 {
 
 template <class RenderConfig>
-class DisplayListAssembler {
+class DisplayListAssembler 
+{
 public:
     static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using List = DisplayList<ALIGNMENT>;
@@ -54,7 +56,7 @@ public:
     {
         m_displayList.clear();
         m_streamCommand = nullptr;
-        m_wasLastCommandATextureCommand.reset();
+        m_textureLoadOptimizer.reset();
     }
 
     void finish()
@@ -70,32 +72,7 @@ public:
             return false;
         }
 
-        // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
-        // If the texture wasn't used, then it is not necessary to send to he renderer a load command.
-        // Unfortunately this optimization breaks the code separation. It can be removed, the functionality of the command
-        // shouldn't be affected.
-        if constexpr (std::is_same<TCommand, TriangleStreamCmd<List>>::value)
-        {
-            // Mark that a triangle was rendered
-            m_wasLastCommandATextureCommand.reset();
-        }
-        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
-        {
-            const std::size_t tmu = cmd.getTmu();
-            if (tmu >= m_wasLastCommandATextureCommand.size()) 
-            {
-                return false;
-            }
-            // Check if the last command was a texture command. If so, remove the commands from the display list
-            if (m_wasLastCommandATextureCommand[tmu]) 
-            {
-                m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
-            }
-            // Remember the current position in the display list
-            m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-            // Mark that a texture was loaded
-            m_wasLastCommandATextureCommand.set(tmu);
-        }
+        m_textureLoadOptimizer.optimize(cmd);
 
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
@@ -110,13 +87,6 @@ public:
         {
             closeStreamSection();
             m_dseDisplayListAssembler.addCommand(cmd);
-        }
-
-        if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
-        {
-            const std::size_t tmu = cmd.getTmu();
-            // Store the end position of the display list.
-            m_texSizeInDisplayList[tmu] = m_displayList.getCurrentWritePos() - m_texPosInDisplayList[tmu];
         }
 
         return true;
@@ -197,13 +167,9 @@ private:
     List m_displayList {};
     CommandDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
+    DisplayListTextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
 
     DSEC::SCT *m_streamCommand { nullptr };
-
-    // Helper variables to optimize the texture loading
-    std::bitset<RenderConfig::TMU_COUNT> m_wasLastCommandATextureCommand {};
-    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texPosInDisplayList {};
-    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texSizeInDisplayList {};
 };
 
 } // namespace rr
