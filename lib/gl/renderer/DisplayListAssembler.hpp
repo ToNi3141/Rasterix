@@ -28,7 +28,7 @@
 #include "DmaStreamEngineCommands.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
-#include "CommandDisplayListAssembler.hpp"
+#include "RRXDisplayListAssembler.hpp"
 #include "DSEDisplayListAssembler.hpp"
 #include "DisplayListTextureLoadOptimizer.hpp"
 
@@ -165,7 +165,7 @@ private:
     }
 
     List m_displayList {};
-    CommandDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
+    RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
     DisplayListTextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
 

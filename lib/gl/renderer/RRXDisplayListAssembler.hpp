@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef COMMANDDISPLAYLISTASSEMBLER_HPP
-#define COMMANDDISPLAYLISTASSEMBLER_HPP
+#ifndef RRXDISPLAYLISTASSEMBLER_HPP
+#define RRXDISPLAYLISTASSEMBLER_HPP
 
 #include <stdint.h>
 #include <array>
@@ -27,10 +27,10 @@ namespace rr
 {
 
 template <typename TDisplayList>
-class CommandDisplayListAssembler 
+class RRXDisplayListAssembler 
 {
 public:
-    CommandDisplayListAssembler(TDisplayList& displayList)
+    RRXDisplayListAssembler(TDisplayList& displayList)
         : m_displayList { displayList }
     {
     }
@@ -71,4 +71,4 @@ private:
 
 } // namespace rr
 
-#endif // COMMANDDISPLAYLISTASSEMBLER_HPP
+#endif // RRXDISPLAYLISTASSEMBLER_HPP

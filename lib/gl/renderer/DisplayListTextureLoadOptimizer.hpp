@@ -25,7 +25,7 @@
 #include <tcb/span.hpp>
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
-#include "CommandDisplayListAssembler.hpp"
+#include "RRXDisplayListAssembler.hpp"
 
 namespace rr
 {
@@ -78,7 +78,7 @@ private:
             }
             m_textureCommandFlag.set(tmu);
             m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-            m_texSizeInDisplayList[tmu] = CommandDisplayListAssembler<TDisplayList>::template getCommandSize(cmd);
+            m_texSizeInDisplayList[tmu] = RRXDisplayListAssembler<TDisplayList>::template getCommandSize(cmd);
         }
     }
 
