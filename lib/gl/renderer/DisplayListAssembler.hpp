@@ -28,6 +28,8 @@
 #include "DmaStreamEngineCommands.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
+#include "CommandDisplayListAssembler.hpp"
+#include "DSEDisplayListAssembler.hpp"
 
 namespace rr
 {
@@ -41,6 +43,11 @@ public:
     void setBuffer(tcb::span<uint8_t> buffer)
     {
         m_displayList.setBuffer(buffer);
+    }
+
+    const List* getDisplayList() const
+    {
+        return &m_displayList;
     }
 
     void clearAssembler()
@@ -92,12 +99,17 @@ public:
 
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            writeCommand(cmd);
+            if (!openNewStreamSection())
+            {
+                return false;
+            }
+            m_rrxDisplayListAssembler.addCommand(cmd);
         }
 
         if constexpr (HasDseCommand<decltype(cmd)>::value)
         {
-            writeDseCommand(cmd);
+            closeStreamSection();
+            m_dseDisplayListAssembler.addCommand(cmd);
         }
 
         if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
@@ -109,17 +121,6 @@ public:
 
         return true;
     }
-
-    const List* getDisplayList() const
-    {
-        return &m_displayList;
-    }
-
-    static constexpr uint32_t uploadCommandSize()
-    {
-        return List::template sizeOf<DSEC::SCT>() + List::template sizeOf<uint32_t>();
-    }
-
 private:
     template<typename T> 
     class HasDseCommand 
@@ -143,30 +144,19 @@ private:
         static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
 
-    void appendStreamCommand(const DSEC::Command command, const tcb::span<const uint8_t>& payload)
-    {
-        DSEC::Command *cmd = m_displayList.template create<DSEC::Command>();
-        *cmd = command;
-
-        if (!payload.empty())
-        {
-            void *dest = m_displayList.alloc(command.op & DSEC::IMM_MASK );
-            memcpy(dest, payload.data(), payload.size());
-        }
-    }
-
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
         std::size_t expectedSize = 0;
+        
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            expectedSize += List::template sizeOf<typename TCommand::CommandType>();
-            expectedSize += List::template sizeOf<typename TCommand::PayloadType::element_type>() * cmd.payload().size();
+            expectedSize += m_rrxDisplayListAssembler.getCommandSize<TCommand>(cmd);
         }
+
         if constexpr (HasDseCommand<decltype(cmd)>::value)
         {
-            expectedSize += List::template sizeOf<DSEC::Command>() + cmd.dsePayload().size();
+            expectedSize += m_dseDisplayListAssembler.getCommandSize<TCommand>(cmd);
         }
 
         if (expectedSize >= m_displayList.getFreeSpace()) 
@@ -177,34 +167,6 @@ private:
         return true;
     }
 
-    template <typename TCommand>
-    void writeCommand(const TCommand& cmd)
-    {
-        if (openNewStreamSection()) 
-        {
-            // Write command
-            using CommandType = typename TCommand::CommandType;
-            CommandType *opDl = m_displayList.template create<CommandType>();
-            *opDl = cmd.command();
-
-            // Create elements
-            for (auto& a : cmd.payload())
-            {
-                using PayloadType = typename std::remove_const<typename TCommand::PayloadType::element_type>::type;
-                *(m_displayList.template create<PayloadType>()) = a;
-            }
-        }
-    }
-
-    template <typename TCommand>
-    void writeDseCommand(const TCommand& cmd)
-    {
-        if ((cmd.dseCommand().op & DSEC::OP_MASK) != DSEC::OP_NOP)
-        {
-            closeStreamSection();
-            appendStreamCommand(cmd.dseCommand(), cmd.dsePayload());
-        }
-    }
 
     bool openNewStreamSection()
     {
@@ -220,7 +182,7 @@ private:
         return m_streamCommand != nullptr;
     }
 
-    bool closeStreamSection()
+    void closeStreamSection()
     {
         // Note during open, we write the current size of the display list into this command.
         // Now we just have to subtract from the current display list size the last display list size
@@ -229,12 +191,12 @@ private:
         {
             *m_streamCommand = DSEC::OP_STREAM | (m_displayList.getSize() - *m_streamCommand);
             m_streamCommand = nullptr;
-            return true;
         }
-        return false;
     }
 
     List m_displayList {};
+    CommandDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
+    DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
 
     DSEC::SCT *m_streamCommand { nullptr };
 
