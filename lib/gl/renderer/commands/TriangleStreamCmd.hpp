@@ -67,9 +67,10 @@ public:
 
     bool isVisible() const { return m_visible; };
 
-    using Payload = tcb::span<const TrDesc>;
-    const Payload& payload() const { return m_payload; }
-    static constexpr uint32_t command() { return TRIANGLE_STREAM | (List::template sizeOf<TrDesc>()); }
+    using PayloadType = tcb::span<const TrDesc>;
+    const PayloadType& payload() const { return m_payload; }
+    using CommandType = uint32_t;
+    static constexpr CommandType command() { return TRIANGLE_STREAM | (List::template sizeOf<TrDesc>()); }
 
     TriangleStreamCmd<List>& operator=(const TriangleStreamCmd<List>& rhs)
     {
@@ -81,7 +82,7 @@ public:
 
 private:
     std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;
-    Payload m_payload;
+    PayloadType m_payload;
     bool m_visible { false };
 };
 

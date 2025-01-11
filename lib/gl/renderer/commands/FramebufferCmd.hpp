@@ -36,7 +36,6 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
-    using DseTransferType = std::array<DSEC::Transfer, 1>;
 public:
     FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer, const bool selStencilBuffer)
     {
@@ -57,47 +56,48 @@ public:
     void swapFramebuffer()
     {
         m_op |= OP_FRAMEBUFFER_SWAP;
-        m_dseOp = DSEC::OP_NOP;
+        m_dseCommand.op = DSEC::OP_NOP;
     }
     void streamFromFramebuffer(const std::size_t size, const uint32_t addr)
     {
         m_op = 0;
-        m_dseOp = DSEC::OP_STREAM_FROM_MEMORY;
-        m_dseData = { { addr, static_cast<uint32_t>(size) } };
+        m_dseCommand.op = DSEC::OP_STREAM_FROM_MEMORY | static_cast<uint32_t>(size);
+        m_dseCommand.addr = addr;
     }
     void commitFramebuffer(const std::size_t size, const uint32_t addr, const bool commitToStream) 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
         {
-            m_dseOp = DSEC::OP_COMMIT_TO_STREAM;
+            m_dseCommand.op = DSEC::OP_COMMIT_TO_STREAM | static_cast<uint32_t>(size);
         }
         else
         {
-            m_dseOp = DSEC::OP_COMMIT_TO_MEMORY;
+            m_dseCommand.op = DSEC::OP_COMMIT_TO_MEMORY | static_cast<uint32_t>(size);
         }
-        m_dseData = { { addr, static_cast<uint32_t>(size) } };
+        m_dseCommand.addr = addr;
     }
     void enableMemset() 
     { 
         m_op |= OP_FRAMEBUFFER_MEMSET;
-        m_dseOp = DSEC::OP_NOP;
+        m_dseCommand.op = DSEC::OP_NOP;
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
     void selectStencilBuffer() { m_op |= OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT; }
 
-    using Payload = tcb::span<const uint8_t>;
-    const Payload payload() const { return {}; }
-    uint32_t command() const { return m_op; }
+    using PayloadType = tcb::span<const uint8_t>;
+    const PayloadType payload() const { return {}; }
+    using CommandType = uint32_t;
+    CommandType command() const { return m_op; }
 
-    DSEC::SCT dseOp() const { return m_dseOp; }
-    const DseTransferType& dseTransfer() const { return m_dseData; }
+    DSEC::Command dseCommand() const { return m_dseCommand; }
+    const tcb::span<const uint8_t>& dsePayload() const { return m_dsePayload; }
 
 private:
-    uint32_t m_op {};
-    DSEC::SCT m_dseOp { DSEC::OP_NOP };
-    DseTransferType m_dseData {};
+    CommandType m_op {};
+    DSEC::Command m_dseCommand { DSEC::OP_NOP, 0 };
+    tcb::span<const uint8_t> m_dsePayload {};
 };
 
 } // namespace rr

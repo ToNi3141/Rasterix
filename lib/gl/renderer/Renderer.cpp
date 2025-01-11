@@ -358,7 +358,7 @@ void Renderer::uploadTextures()
     {
         DisplayListAssembler<RenderConfig> uploader;
         uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
-        uploader.uploadToDeviceMemory(gramAddr, data);
+        uploader.addCommand(WriteMemoryCmd { gramAddr, data });
 
         while (!m_busConnector.clearToSend())
             ;

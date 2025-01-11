@@ -50,34 +50,6 @@ public:
         m_wasLastCommandATextureCommand.reset();
     }
 
-    bool uploadToDeviceMemory(const uint32_t addr, const tcb::span<const uint8_t> data)
-    {
-        const std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) }; // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        const std::size_t expectedSize = List::template sizeOf<DSEC::SCT>() + sizeOnDevice;
-        if (expectedSize > m_displayList.getFreeSpace()) 
-        {
-            return false;
-        }
-        closeStreamSection();
-        
-        appendStreamCommand<DSEC::SCT>(DSEC::OP_STORE | sizeOnDevice, RenderConfig::GRAM_MEMORY_LOC + addr);
-        void *dest = m_displayList.alloc(sizeOnDevice);
-        memcpy(dest, data.data(), data.size());
-        return true;
-    }
-
-    void setCheckpoint()
-    {
-        closeStreamSection();
-        m_displayList.setCheckpoint();
-    }
-
-    void resetToCheckpoint()
-    {
-        m_streamCommand = nullptr;
-        m_displayList.resetToCheckpoint();
-    }
-
     void finish()
     {
         closeStreamSection();
@@ -118,9 +90,12 @@ public:
             m_wasLastCommandATextureCommand.set(tmu);
         }
 
-        writeCommand(cmd);
+        if constexpr (HasCommand<decltype(cmd)>::value)
+        {
+            writeCommand(cmd);
+        }
 
-        if constexpr (HasDseOp<decltype(cmd)>::value)
+        if constexpr (HasDseCommand<decltype(cmd)>::value)
         {
             writeDseCommand(cmd);
         }
@@ -147,34 +122,51 @@ public:
 
 private:
     template<typename T> 
-    class HasDseOp 
+    class HasDseCommand 
     {
         template<typename> 
         static std::false_type test(...);
         template<typename U> 
-        static auto test(int) -> decltype(std::declval<U>().dseOp(), std::true_type());
+        static auto test(int) -> decltype(std::declval<U>().dseCommand(), std::true_type());
     public:
         static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
 
-    template <typename TArg>
-    void appendStreamCommand(const DSEC::SCT op, const TArg& arg)
+    template<typename T> 
+    class HasCommand 
     {
-        DSEC::SCT *opDl = m_displayList.template create<DSEC::SCT>();
-        TArg *argDl = m_displayList.template create<TArg>();
-        *opDl = op;
-        *argDl = arg;
+        template<typename> 
+        static std::false_type test(...);
+        template<typename U> 
+        static auto test(int) -> decltype(std::declval<U>().command(), std::true_type());
+    public:
+        static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
+    };
+
+    void appendStreamCommand(const DSEC::Command command, const tcb::span<const uint8_t>& payload)
+    {
+        DSEC::Command *cmd = m_displayList.template create<DSEC::Command>();
+        *cmd = command;
+
+        if (!payload.empty())
+        {
+            void *dest = m_displayList.alloc(command.op & DSEC::IMM_MASK );
+            memcpy(dest, payload.data(), payload.size());
+        }
     }
 
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
-        // Check if the display list contains enough space
-        std::size_t expectedSize = List::template sizeOf<uint32_t>() + List::template sizeOf<DSEC::SCT>();
-        expectedSize += List::template sizeOf<typename TCommand::Payload::element_type>() * cmd.payload().size();
-        if constexpr (HasDseOp<decltype(cmd)>::value)
+        std::size_t expectedSize = 0;
+        if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            expectedSize += List::template sizeOf<DSEC::SCT>() * 2 * cmd.dseTransfer().size();
+            expectedSize += List::template sizeOf<typename TCommand::CommandType>();
+            expectedSize += List::template sizeOf<typename TCommand::PayloadType::element_type>() * cmd.payload().size();
+        }
+        if constexpr (HasDseCommand<decltype(cmd)>::value)
+        {
+            expectedSize += List::template sizeOf<DSEC::Command>() + cmd.dsePayload().size();
         }
 
         if (expectedSize >= m_displayList.getFreeSpace()) 
@@ -191,14 +183,15 @@ private:
         if (openNewStreamSection()) 
         {
             // Write command
-            uint32_t *opDl = m_displayList.template create<uint32_t>();
+            using CommandType = typename TCommand::CommandType;
+            CommandType *opDl = m_displayList.template create<CommandType>();
             *opDl = cmd.command();
 
             // Create elements
             for (auto& a : cmd.payload())
             {
-                using Payload = typename std::remove_const<typename TCommand::Payload::element_type>::type;
-                *(m_displayList.template create<Payload>()) = a;
+                using PayloadType = typename std::remove_const<typename TCommand::PayloadType::element_type>::type;
+                *(m_displayList.template create<PayloadType>()) = a;
             }
         }
     }
@@ -206,13 +199,10 @@ private:
     template <typename TCommand>
     void writeDseCommand(const TCommand& cmd)
     {
-        if (cmd.dseOp() != DSEC::OP_NOP)
+        if ((cmd.dseCommand().op & DSEC::OP_MASK) != DSEC::OP_NOP)
         {
             closeStreamSection();
-            for (const DSEC::Transfer& t : cmd.dseTransfer())
-            {
-                appendStreamCommand<DSEC::SCT>(cmd.dseOp() | t.size, t.addr);
-            }
+            appendStreamCommand(cmd.dseCommand(), cmd.dsePayload());
         }
     }
 
@@ -221,7 +211,7 @@ private:
         if (m_streamCommand == nullptr) 
         {
             m_streamCommand = m_displayList.template create<DSEC::SCT>();
-            m_displayList.template create<DSEC::SCT>(); // Dummy
+            m_displayList.template create<DSEC::SCT>(); // Address field, but unused in a stream to stream command
             if (m_streamCommand)
             {
                 *m_streamCommand = m_displayList.getSize();

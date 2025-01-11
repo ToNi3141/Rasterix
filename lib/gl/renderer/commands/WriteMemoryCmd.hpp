@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,39 +16,36 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _WRITE_REGISTER_CMD_HPP_
-#define _WRITE_REGISTER_CMD_HPP_
+#ifndef _WRITE_MEMORY_CMD_HPP_
+#define _WRITE_MEMORY_CMD_HPP_
 
 #include <cstdint>
 #include <array>
 #include <tcb/span.hpp>
+#include "renderer/DmaStreamEngineCommands.hpp"
 
 namespace rr
 {
 
-template <class TRegister>
-class WriteRegisterCmd
+class WriteMemoryCmd
 {
-    static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
 public:
-    WriteRegisterCmd(const TRegister& reg)
+    WriteMemoryCmd(const uint32_t addr, const tcb::span<const uint8_t> data)
     {
-        m_val[0] = reg.serialize();
-        m_op = OP_RENDER_CONFIG | reg.getAddr();
-        m_payload = { m_val };
+        // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
+        std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) };
+        m_dseCommand = { DSEC::OP_STORE | sizeOnDevice, addr };
+        m_dsePayload = data;
     }
 
-    using PayloadType = tcb::span<const uint32_t>;
-    const PayloadType& payload() const { return m_payload; }
-    using CommandType = uint32_t;
-    CommandType command() const { return m_op; }
+    DSEC::Command dseCommand() const { return m_dseCommand; }
+    const tcb::span<const uint8_t>& dsePayload() const { return m_dsePayload; }
 
 private:
-    CommandType m_op {};
-    std::array<uint32_t, 1> m_val;
-    PayloadType m_payload;
+    DSEC::Command m_dseCommand {};
+    tcb::span<const uint8_t> m_dsePayload;
 };
 
 } // namespace rr
 
-#endif // _WRITE_REGISTER_CMD_HPP_
+#endif // _WRITE_MEMORY_CMD_HPP_

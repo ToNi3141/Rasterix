@@ -59,9 +59,10 @@ public:
         m_payload = { m_lut };
     }
 
-    using Payload = tcb::span<const uint32_t>;
-    const Payload& payload() const { return m_payload; }
-    static constexpr uint32_t command() { return FOG_LUT_STREAM; }
+    using PayloadType = tcb::span<const uint32_t>;
+    const PayloadType& payload() const { return m_payload; }
+    using CommandType = uint32_t;
+    static constexpr CommandType command() { return FOG_LUT_STREAM; }
 private:
     void setBounds(const float lower, const float upper)
     {
@@ -76,7 +77,7 @@ private:
     }
 
     std::array<uint32_t, LUT_SIZE> m_lut;
-    Payload m_payload;
+    PayloadType m_payload;
 };
 
 } // namespace rr

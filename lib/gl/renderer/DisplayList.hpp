@@ -75,16 +75,6 @@ public:
         writePos = 0;
     }
 
-    void setCheckpoint()
-    {
-        checkpoint = writePos;
-    }
-
-    void resetToCheckpoint()
-    {
-        writePos = checkpoint;
-    }
-
     tcb::span<const uint8_t> getMemPtr() const
     {
         return { mem.data(), getSize() };
@@ -150,7 +140,6 @@ private:
     tcb::span<uint8_t> mem;
     std::size_t writePos { 0 };
     std::size_t readPos { 0 };
-    std::size_t checkpoint { 0 };
 };
 
 } // namespace rr
