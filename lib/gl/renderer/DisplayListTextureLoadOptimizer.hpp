@@ -30,7 +30,7 @@
 namespace rr
 {
 // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
-// If the texture wasn't used, then it is not necessary to send to the renderer a load command.
+// If the texture wasn't used, then it replaces previous texture load with NOPs.
 template <typename RenderConfig, typename TDisplayList>
 class DisplayListTextureLoadOptimizer 
 {

@@ -31,6 +31,7 @@
 #include "RRXDisplayListAssembler.hpp"
 #include "DSEDisplayListAssembler.hpp"
 #include "DisplayListTextureLoadOptimizer.hpp"
+#include "DisplayListStreamSectionManager.hpp"
 
 namespace rr
 {
@@ -55,13 +56,13 @@ public:
     void clearAssembler()
     {
         m_displayList.clear();
-        m_streamCommand = nullptr;
+        m_streamSectionManager.reset();
         m_textureLoadOptimizer.reset();
     }
 
     void finish()
     {
-        closeStreamSection();
+        m_streamSectionManager.closeStreamSection();
     }
 
     template <typename TCommand>
@@ -76,7 +77,7 @@ public:
 
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            if (!openNewStreamSection())
+            if (!m_streamSectionManager.openNewStreamSection())
             {
                 return false;
             }
@@ -85,7 +86,7 @@ public:
 
         if constexpr (HasDseCommand<decltype(cmd)>::value)
         {
-            closeStreamSection();
+            m_streamSectionManager.closeStreamSection();
             m_dseDisplayListAssembler.addCommand(cmd);
         }
 
@@ -137,37 +138,11 @@ private:
         return true;
     }
 
-
-    bool openNewStreamSection()
-    {
-        if (m_streamCommand == nullptr) 
-        {
-            m_streamCommand = m_displayList.template create<DSEC::SCT>();
-            m_displayList.template create<DSEC::SCT>(); // Address field, but unused in a stream to stream command
-            if (m_streamCommand)
-            {
-                *m_streamCommand = m_displayList.getSize();
-            }
-        }
-        return m_streamCommand != nullptr;
-    }
-
-    void closeStreamSection()
-    {
-        // Note during open, we write the current size of the display list into this command.
-        // Now we just have to subtract from the current display list size the last display list size
-        // to know how big our stream section is.
-        if (m_streamCommand)
-        {
-            *m_streamCommand = DSEC::OP_STREAM | (m_displayList.getSize() - *m_streamCommand);
-            m_streamCommand = nullptr;
-        }
-    }
-
     List m_displayList {};
     RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
     DisplayListTextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
+    DisplayListStreamSectionManager<List> m_streamSectionManager { m_displayList };
 
     DSEC::SCT *m_streamCommand { nullptr };
 };
