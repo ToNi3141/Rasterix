@@ -28,6 +28,7 @@
 #include "DmaStreamEngineCommands.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
+#include "commands/StreamFromStreamCmd.hpp"
 #include "RRXDisplayListAssembler.hpp"
 #include "DSEDisplayListAssembler.hpp"
 #include "DisplayListTextureLoadOptimizer.hpp"
@@ -84,7 +85,7 @@ public:
             m_rrxDisplayListAssembler.addCommand(cmd);
         }
 
-        if constexpr (HasDseCommand<decltype(cmd)>::value)
+        if constexpr (HasDseTransfer<decltype(cmd)>::value)
         {
             m_streamSectionManager.closeStreamSection();
             m_dseDisplayListAssembler.addCommand(cmd);
@@ -94,12 +95,12 @@ public:
     }
 private:
     template<typename T> 
-    class HasDseCommand 
+    class HasDseTransfer 
     {
         template<typename> 
         static std::false_type test(...);
         template<typename U> 
-        static auto test(int) -> decltype(std::declval<U>().dseCommand(), std::true_type());
+        static auto test(int) -> decltype(std::declval<U>().dseTransfer(), std::true_type());
     public:
         static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
@@ -125,7 +126,7 @@ private:
             expectedSize += m_rrxDisplayListAssembler.getCommandSize<TCommand>(cmd);
         }
 
-        if constexpr (HasDseCommand<decltype(cmd)>::value)
+        if constexpr (HasDseTransfer<decltype(cmd)>::value)
         {
             expectedSize += m_dseDisplayListAssembler.getCommandSize<TCommand>(cmd);
         }
@@ -142,7 +143,9 @@ private:
     RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
     DisplayListTextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
-    DisplayListStreamSectionManager<List> m_streamSectionManager { m_displayList };
+    DisplayListStreamSectionManager<List,
+                                    DSEDisplayListAssembler<List>,
+                                    StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
 
     DSEC::SCT *m_streamCommand { nullptr };
 };

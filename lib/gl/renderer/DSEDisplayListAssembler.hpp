@@ -31,6 +31,12 @@ namespace rr
 template <typename TDisplayList>
 class DSEDisplayListAssembler {
 public:
+    struct DisplayListEntry
+    {
+        DSEC::Command& command;
+        tcb::span<uint8_t> payload;
+    };
+
     DSEDisplayListAssembler(TDisplayList& displayList)
         : m_displayList { displayList }
     {
@@ -39,41 +45,53 @@ public:
     template <typename TCommand>
     static std::size_t getCommandSize(const TCommand& cmd)
     {
-        return TDisplayList::template sizeOf<DSEC::Command>() + cmd.dsePayload().size();;
+        return TDisplayList::template sizeOf<DSEC::Command>() + cmd.dseTransfer().len;
     }
 
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace()) 
+        if (cmd.dseTransfer().op == DSEC::OP_NOP)
+        {
+            return true;
+        }
+        std::optional<DisplayListEntry> entry = allocateCommand(cmd);
+        if (!entry) 
         {
             return false;
         }
-        writeCommand(cmd);
+        writeCommandToEntry(*entry, cmd);
         return true;
     }
-private:
+
     template <typename TCommand>
-    void writeCommand(const TCommand& cmd)
+    std::optional<DisplayListEntry> allocateCommand(const TCommand& cmd)
     {
-        if ((cmd.dseCommand().op & DSEC::OP_MASK) != DSEC::OP_NOP)
+        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace()) 
         {
-            writeCommand(cmd.dseCommand(), cmd.dsePayload());
+            return std::nullopt;
         }
+
+        DSEC::Command* c = m_displayList.template create<DSEC::Command>();
+        tcb::span<uint8_t> p {};
+        if (!cmd.dseTransfer().payload.empty())
+        {
+            const std::size_t dataSize = cmd.dseTransfer().len;
+            void* dest = m_displayList.alloc(dataSize);
+            p = { reinterpret_cast<uint8_t*>(dest), dataSize };
+        }
+        return DisplayListEntry { *c, p };
     }
 
-    void writeCommand(const DSEC::Command command, const tcb::span<const uint8_t>& payload)
+    template <typename TCommand>
+    void writeCommandToEntry(DisplayListEntry& entry, const TCommand& cmd)
     {
-        DSEC::Command *cmd = m_displayList.template create<DSEC::Command>();
-        *cmd = command;
-
-        if (!payload.empty())
-        {
-            void *dest = m_displayList.alloc(command.op & DSEC::IMM_MASK );
-            memcpy(dest, payload.data(), payload.size());
-        }
+        const DSEC::Transfer& transfer = cmd.dseTransfer();
+        entry.command.op = transfer.op | transfer.len;
+        entry.command.addr = transfer.addr;
+        std::copy(transfer.payload.begin(), transfer.payload.end(), entry.payload.begin());
     }
-
+private:
     TDisplayList& m_displayList;
 };
 

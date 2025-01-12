@@ -56,31 +56,33 @@ public:
     void swapFramebuffer()
     {
         m_op |= OP_FRAMEBUFFER_SWAP;
-        m_dseCommand.op = DSEC::OP_NOP;
+        m_dseTransfer.op = DSEC::OP_NOP;
     }
     void streamFromFramebuffer(const std::size_t size, const uint32_t addr)
     {
         m_op = 0;
-        m_dseCommand.op = DSEC::OP_STREAM_FROM_MEMORY | static_cast<uint32_t>(size);
-        m_dseCommand.addr = addr;
+        m_dseTransfer.len = size;
+        m_dseTransfer.op = DSEC::OP_STREAM_FROM_MEMORY;
+        m_dseTransfer.addr = addr;
     }
     void commitFramebuffer(const std::size_t size, const uint32_t addr, const bool commitToStream) 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
         if (commitToStream)
         {
-            m_dseCommand.op = DSEC::OP_COMMIT_TO_STREAM | static_cast<uint32_t>(size);
+            m_dseTransfer.op = DSEC::OP_COMMIT_TO_STREAM;
         }
         else
         {
-            m_dseCommand.op = DSEC::OP_COMMIT_TO_MEMORY | static_cast<uint32_t>(size);
+            m_dseTransfer.op = DSEC::OP_COMMIT_TO_MEMORY;
         }
-        m_dseCommand.addr = addr;
+        m_dseTransfer.len = size;
+        m_dseTransfer.addr = addr;
     }
     void enableMemset() 
     { 
         m_op |= OP_FRAMEBUFFER_MEMSET;
-        m_dseCommand.op = DSEC::OP_NOP;
+        m_dseTransfer.op = DSEC::OP_NOP;
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
@@ -91,13 +93,11 @@ public:
     using CommandType = uint32_t;
     CommandType command() const { return m_op; }
 
-    DSEC::Command dseCommand() const { return m_dseCommand; }
-    const tcb::span<const uint8_t>& dsePayload() const { return m_dsePayload; }
+    const DSEC::Transfer& dseTransfer() const { return m_dseTransfer; }
 
 private:
     CommandType m_op {};
-    DSEC::Command m_dseCommand { DSEC::OP_NOP, 0 };
-    tcb::span<const uint8_t> m_dsePayload {};
+    DSEC::Transfer m_dseTransfer { DSEC::OP_NOP, 0, 0, {} };
 };
 
 } // namespace rr

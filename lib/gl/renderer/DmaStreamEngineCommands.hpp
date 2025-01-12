@@ -20,6 +20,7 @@
 #define _DMA_STREAM_ENGINE_COMMANDS_HPP_
 
 #include <cstdint>
+#include "tcb/span.hpp"
 
 namespace rr
 {
@@ -60,6 +61,14 @@ struct Command
 {
     uint32_t op;
     uint32_t addr;
+};
+
+struct Transfer
+{
+    uint32_t op;
+    std::size_t len;
+    uint32_t addr;
+    tcb::span<const uint8_t> payload;
 };
 
 } // namespace DSEC

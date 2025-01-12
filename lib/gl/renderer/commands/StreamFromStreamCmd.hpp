@@ -16,29 +16,31 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _WRITE_MEMORY_CMD_HPP_
-#define _WRITE_MEMORY_CMD_HPP_
+#ifndef _STREAM_FROM_STREAM_CMD_HPP_
+#define _STREAM_FROM_STREAM_CMD_HPP_
 
 #include <cstdint>
 #include <array>
 #include <tcb/span.hpp>
 #include "renderer/DmaStreamEngineCommands.hpp"
-#include "RenderConfigs.hpp"
 
 namespace rr
 {
 
-class WriteMemoryCmd
+class StreamFromStreamCmd
 {
 public:
-    WriteMemoryCmd(const uint32_t addr, const tcb::span<const uint8_t> data)
+    StreamFromStreamCmd(const uint32_t, const std::size_t len)
+        : StreamFromStreamCmd{len}
     {
-        // TODO: Maybe also check if the texture is a multiple of DEVICE_MIN_TRANSFER_SIZE
-        std::size_t sizeOnDevice { (std::max)(data.size(), DSEC::DEVICE_MIN_TRANSFER_SIZE) };
-        m_dseTransfer = { DSEC::OP_STORE, sizeOnDevice, addr + RenderConfig::GRAM_MEMORY_LOC, data };
     }
 
-    const DSEC::Transfer& dseTransfer() const { return m_dseTransfer; }
+    StreamFromStreamCmd(const std::size_t len)
+    {
+        m_dseTransfer = { DSEC::OP_STREAM, len, 0, {} };
+    }
+
+    DSEC::Transfer dseTransfer() const { return m_dseTransfer; }
 
 private:
     DSEC::Transfer m_dseTransfer {};
@@ -46,4 +48,4 @@ private:
 
 } // namespace rr
 
-#endif // _WRITE_MEMORY_CMD_HPP_
+#endif // _STREAM_FROM_STREAM_CMD_HPP_

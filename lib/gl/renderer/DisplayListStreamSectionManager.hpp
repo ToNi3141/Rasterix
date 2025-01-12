@@ -28,49 +28,51 @@
 namespace rr
 {
 
-template <typename TDisplayList>
+template <typename TRRXDisplayList, typename TDSEDisplayListAssembler, typename TCommand>
 class DisplayListStreamSectionManager 
 {
 public:
-    DisplayListStreamSectionManager(TDisplayList& displayList)
-        : m_displayList { displayList }
+    DisplayListStreamSectionManager(TRRXDisplayList& rrxDisplayList,
+                                    TDSEDisplayListAssembler& dseDisplayListAssembler)
+        : m_rrxDisplayList { rrxDisplayList }
+        , m_dseDisplayListAssembler { dseDisplayListAssembler }
     {
     }
 
     void reset()
     {
-        m_streamCommand = nullptr;
+        m_streamCommand = std::nullopt;
     }
 
     bool openNewStreamSection()
     {
-        if (m_streamCommand == nullptr) 
+        if (!m_streamCommand) 
         {
-            m_streamCommand = m_displayList.template create<DSEC::SCT>();
-            m_displayList.template create<DSEC::SCT>(); // Address field, but unused in a stream to stream command
-            if (m_streamCommand)
+            auto streamCommand = m_dseDisplayListAssembler.template allocateCommand(TCommand { 0 });
+            if (streamCommand)
             {
-                *m_streamCommand = m_displayList.getSize();
+                m_streamCommand.emplace(*streamCommand);
+                m_currentDisplayListSize = m_rrxDisplayList.getSize();
             }
         }
-        return m_streamCommand != nullptr;
+        return m_streamCommand.has_value();
     }
 
     void closeStreamSection()
     {
-        // Note during open, we write the current size of the display list into this command.
-        // Now we just have to subtract from the current display list size the last display list size
-        // to know how big our stream section is.
         if (m_streamCommand)
         {
-            *m_streamCommand = DSEC::OP_STREAM | (m_displayList.getSize() - *m_streamCommand);
-            m_streamCommand = nullptr;
+            std::size_t len = m_rrxDisplayList.getSize() - m_currentDisplayListSize;
+            m_dseDisplayListAssembler.writeCommandToEntry(*m_streamCommand, TCommand { len });
+            m_streamCommand = std::nullopt;
         }
     }
 
 private:
-    TDisplayList& m_displayList;
-    DSEC::SCT *m_streamCommand { nullptr };
+    TRRXDisplayList& m_rrxDisplayList;
+    TDSEDisplayListAssembler& m_dseDisplayListAssembler;
+    std::optional<typename TDSEDisplayListAssembler::DisplayListEntry> m_streamCommand {};
+    std::size_t m_currentDisplayListSize {};
 };
 
 } // namespace rr
