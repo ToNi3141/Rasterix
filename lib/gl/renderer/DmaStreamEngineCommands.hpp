@@ -20,7 +20,7 @@
 #define _DMA_STREAM_ENGINE_COMMANDS_HPP_
 
 #include <cstdint>
-#include "tcb/span.hpp"
+#include <tcb/span.hpp>
 
 namespace rr
 {

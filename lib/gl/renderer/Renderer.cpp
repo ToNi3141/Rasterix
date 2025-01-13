@@ -356,7 +356,7 @@ void Renderer::uploadTextures()
 {
     m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
     {
-        DisplayListAssembler<RenderConfig> uploader;
+        displaylist::DisplayListAssembler<RenderConfig> uploader;
         uploader.setBuffer(m_busConnector.requestBuffer(m_busConnector.getBufferCount() - 1));
         uploader.addCommand(WriteMemoryCmd { gramAddr, data });
 

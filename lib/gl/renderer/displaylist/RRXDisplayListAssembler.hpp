@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <typename TDisplayList>
@@ -69,6 +69,6 @@ private:
     TDisplayList& m_displayList;
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 
 #endif // RRXDISPLAYLISTASSEMBLER_HPP

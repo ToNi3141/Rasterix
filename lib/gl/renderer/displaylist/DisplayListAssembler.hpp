@@ -24,17 +24,13 @@
 #include <algorithm>
 #include <tcb/span.hpp>
 #include "DisplayList.hpp"
-#include "Rasterizer.hpp"
-#include "DmaStreamEngineCommands.hpp"
-#include "commands/TriangleStreamCmd.hpp"
-#include "commands/TextureStreamCmd.hpp"
-#include "commands/StreamFromStreamCmd.hpp"
 #include "RRXDisplayListAssembler.hpp"
 #include "DSEDisplayListAssembler.hpp"
-#include "DisplayListTextureLoadOptimizer.hpp"
-#include "DisplayListStreamSectionManager.hpp"
+#include "TextureLoadOptimizer.hpp"
+#include "StreamSectionManager.hpp"
+#include "renderer/commands/StreamFromStreamCmd.hpp"
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <class RenderConfig>
@@ -142,14 +138,12 @@ private:
     List m_displayList {};
     RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
-    DisplayListTextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
-    DisplayListStreamSectionManager<List,
-                                    DSEDisplayListAssembler<List>,
-                                    StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
-
-    DSEC::SCT *m_streamCommand { nullptr };
+    TextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
+    StreamSectionManager<List,
+                         DSEDisplayListAssembler<List>,
+                         StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 
 #endif // DISPLAYLISTASSEMBLER_HPP

@@ -23,19 +23,19 @@
 #include <bitset>
 #include <algorithm>
 #include <tcb/span.hpp>
-#include "commands/TriangleStreamCmd.hpp"
-#include "commands/TextureStreamCmd.hpp"
 #include "RRXDisplayListAssembler.hpp"
+#include "renderer/commands/TriangleStreamCmd.hpp"
+#include "renderer/commands/TextureStreamCmd.hpp"
 
-namespace rr
+namespace rr::displaylist
 {
 // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
 // If the texture wasn't used, then it replaces previous texture load with NOPs.
 template <typename RenderConfig, typename TDisplayList>
-class DisplayListTextureLoadOptimizer 
+class TextureLoadOptimizer 
 {
 public:
-    DisplayListTextureLoadOptimizer(TDisplayList& displayList)
+    TextureLoadOptimizer(TDisplayList& displayList)
         : m_displayList { displayList }
     {
         reset();
@@ -89,6 +89,6 @@ private:
     std::array<uint32_t, RenderConfig::TMU_COUNT> m_texSizeInDisplayList {};
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 
 #endif // TEXTURELOADOPTIMIZER_HPP

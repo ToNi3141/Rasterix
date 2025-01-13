@@ -24,10 +24,10 @@
 #include "math/Vec.hpp"
 #include "Renderer.hpp"
 #include "IBusConnector.hpp"
-#include "DisplayList.hpp"
+#include "displaylist/DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include <string.h>
-#include "DisplayListAssembler.hpp"
+#include "displaylist/DisplayListAssembler.hpp"
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
@@ -255,7 +255,7 @@ public:
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using ListAssembler = DisplayListAssembler<RenderConfig>;
+    using ListAssembler = displaylist::DisplayListAssembler<RenderConfig>;
     using TextureManager = TextureMemoryManager<RenderConfig>; 
 
     template <typename TArg>

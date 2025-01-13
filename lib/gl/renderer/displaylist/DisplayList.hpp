@@ -22,7 +22,7 @@
 #include <cstring>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <std::size_t ALIGNMENT>
@@ -142,5 +142,5 @@ private:
     std::size_t readPos { 0 };
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 #endif // DISPLAYLIST_HPP

@@ -23,9 +23,9 @@
 #include <bitset>
 #include <algorithm>
 #include <tcb/span.hpp>
-#include "DmaStreamEngineCommands.hpp"
+#include "renderer/DmaStreamEngineCommands.hpp"
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <typename TDisplayList>
@@ -95,6 +95,6 @@ private:
     TDisplayList& m_displayList;
 };
 
-} // namespace rr
+} // namespace rr::displaylists
 
 #endif // DSEDISPLAYLISTASSEMBLER_HPP

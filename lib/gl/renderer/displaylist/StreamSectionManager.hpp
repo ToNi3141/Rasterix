@@ -15,24 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DISPLAYLISTSTREAMSECTIONMANAGER_HPP
-#define DISPLAYLISTSTREAMSECTIONMANAGER_HPP
+#ifndef STREAMSECTIONMANAGER_HPP
+#define STREAMSECTIONMANAGER_HPP
 
 #include <stdint.h>
 #include <array>
 #include <bitset>
 #include <algorithm>
 #include <tcb/span.hpp>
-#include "DmaStreamEngineCommands.hpp"
+#include "renderer/DmaStreamEngineCommands.hpp"
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <typename TRRXDisplayList, typename TDSEDisplayListAssembler, typename TCommand>
-class DisplayListStreamSectionManager 
+class StreamSectionManager 
 {
 public:
-    DisplayListStreamSectionManager(TRRXDisplayList& rrxDisplayList,
+    StreamSectionManager(TRRXDisplayList& rrxDisplayList,
                                     TDSEDisplayListAssembler& dseDisplayListAssembler)
         : m_rrxDisplayList { rrxDisplayList }
         , m_dseDisplayListAssembler { dseDisplayListAssembler }
@@ -75,6 +75,6 @@ private:
     std::size_t m_currentDisplayListSize {};
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 
-#endif // DISPLAYLISTSTREAMSECTIONMANAGER_HPP
+#endif // STREAMSECTIONMANAGER_HPP
