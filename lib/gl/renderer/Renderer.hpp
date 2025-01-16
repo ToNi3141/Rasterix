@@ -55,6 +55,9 @@
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
 #include "commands/WriteMemoryCmd.hpp"
+#include "commands/StreamFromMemoryToDisplayCmd.hpp"
+#include "commands/StreamFromRrxToDisplayCmd.hpp"
+#include "commands/StreamFromRrxToMemoryCmd.hpp"
 #include "RenderConfigs.hpp"
 
 namespace rr
@@ -281,20 +284,27 @@ private:
         return ret;
     }
 
-    void enableColorBufferInMemory() { m_colorBufferUseMemory = true; }
-    void enableColorBufferStream() { m_colorBufferUseMemory = false; }
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
-    std::optional<FramebufferCmd> createCommitFramebufferCommand(const uint32_t i);
-    FramebufferCmd createSwapFramebufferCommand();
-    void clearAndInitDisplayList(const uint32_t i);
+    bool addCommitFramebufferCommand();
+    bool addDseFramebufferCommand();
+    bool addSwapExternalDisplayFramebufferCommand();
+    void clearDisplayListAssembler();
     void swapFramebuffer();
     void intermediateUpload();
 
-    bool m_colorBufferUseMemory { true };
+    void beginFrame();
+    void endFrame();
+    void saveSectionStart();
+    void removeSection();
+    void switchDisplayLists();
+
+    ListAssembler& getFrontDisplayListAssembler(const std::size_t index);
+    ListAssembler& getBackDisplayListAssembler(const std::size_t index);
+
     uint32_t m_colorBufferAddr {};
 
     std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;

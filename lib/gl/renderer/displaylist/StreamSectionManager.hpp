@@ -68,6 +68,11 @@ public:
         }
     }
 
+    bool sectionOpen() const
+    {
+        return m_streamCommand.has_value();
+    }
+
 private:
     TRRXDisplayList& m_rrxDisplayList;
     TDSEDisplayListAssembler& m_dseDisplayListAssembler;

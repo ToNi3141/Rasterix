@@ -100,6 +100,16 @@ public:
         return writePos;
     }
 
+    void saveSectionStart()
+    {
+        sectionStartPos = writePos;
+    }
+
+    void removeSection()
+    {
+        initArea(sectionStartPos, writePos - sectionStartPos);
+    }
+
     // Interface for reading the display list
 
     template <typename GET_TYPE>
@@ -140,6 +150,7 @@ private:
     tcb::span<uint8_t> mem;
     std::size_t writePos { 0 };
     std::size_t readPos { 0 };
+    std::size_t sectionStartPos { 0 };
 };
 
 } // namespace rr::displaylist

@@ -56,33 +56,15 @@ public:
     void swapFramebuffer()
     {
         m_op |= OP_FRAMEBUFFER_SWAP;
-        m_dseTransfer.op = DSEC::OP_NOP;
     }
-    void streamFromFramebuffer(const std::size_t size, const uint32_t addr)
-    {
-        m_op = 0;
-        m_dseTransfer.len = size;
-        m_dseTransfer.op = DSEC::OP_STREAM_FROM_MEMORY;
-        m_dseTransfer.addr = addr;
-    }
-    void commitFramebuffer(const std::size_t size, const uint32_t addr, const bool commitToStream) 
+
+    void commitFramebuffer() 
     { 
         m_op |= OP_FRAMEBUFFER_COMMIT; 
-        if (commitToStream)
-        {
-            m_dseTransfer.op = DSEC::OP_COMMIT_TO_STREAM;
-        }
-        else
-        {
-            m_dseTransfer.op = DSEC::OP_COMMIT_TO_MEMORY;
-        }
-        m_dseTransfer.len = size;
-        m_dseTransfer.addr = addr;
     }
     void enableMemset() 
     { 
         m_op |= OP_FRAMEBUFFER_MEMSET;
-        m_dseTransfer.op = DSEC::OP_NOP;
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
     void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
@@ -93,11 +75,8 @@ public:
     using CommandType = uint32_t;
     CommandType command() const { return m_op; }
 
-    const DSEC::Transfer& dseTransfer() const { return m_dseTransfer; }
-
 private:
     CommandType m_op {};
-    DSEC::Transfer m_dseTransfer { DSEC::OP_NOP, 0, 0, {} };
 };
 
 } // namespace rr

@@ -31,7 +31,7 @@ namespace rr::displaylist
 {
 // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
 // If the texture wasn't used, then it replaces previous texture load with NOPs.
-template <typename RenderConfig, typename TDisplayList>
+template <std::size_t TMU_COUNT, typename TDisplayList>
 class TextureLoadOptimizer 
 {
 public:
@@ -84,9 +84,9 @@ private:
 
     TDisplayList& m_displayList;
 
-    std::bitset<RenderConfig::TMU_COUNT> m_textureCommandFlag {};
-    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texPosInDisplayList {};
-    std::array<uint32_t, RenderConfig::TMU_COUNT> m_texSizeInDisplayList {};
+    std::bitset<TMU_COUNT> m_textureCommandFlag {};
+    std::array<uint32_t, TMU_COUNT> m_texPosInDisplayList {};
+    std::array<uint32_t, TMU_COUNT> m_texSizeInDisplayList {};
 };
 
 } // namespace rr::displaylist

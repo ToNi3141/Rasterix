@@ -57,34 +57,66 @@ public:
         m_textureLoadOptimizer.reset();
     }
 
-    void finish()
+    bool begin()
+    {
+        return m_streamSectionManager.openNewStreamSection();
+    }
+
+    void end()
     {
         m_streamSectionManager.closeStreamSection();
     }
 
     template <typename TCommand>
-    bool addCommand(const TCommand& cmd)
+    std::size_t getCommandSize(const TCommand& cmd)
     {
-        if (!hasDisplayListEnoughSpace(cmd)) 
-        {
-            return false;
-        }
-
-        m_textureLoadOptimizer.optimize(cmd);
-
+        std::size_t expectedSize = 0;
+        
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            if (!m_streamSectionManager.openNewStreamSection())
-            {
-                return false;
-            }
-            m_rrxDisplayListAssembler.addCommand(cmd);
+            expectedSize += m_rrxDisplayListAssembler.getCommandSize<TCommand>(cmd);
         }
 
         if constexpr (HasDseTransfer<decltype(cmd)>::value)
         {
-            m_streamSectionManager.closeStreamSection();
-            m_dseDisplayListAssembler.addCommand(cmd);
+            expectedSize += m_dseDisplayListAssembler.getCommandSize<TCommand>(cmd);
+        }
+        return expectedSize;
+    }
+
+    void saveSectionStart()
+    {
+        m_displayList.saveSectionStart();
+    }
+
+    void removeSection()
+    {
+        m_displayList.removeSection();
+    }
+
+    template <typename TCommand>
+    bool addCommand(const TCommand& cmd)
+    {
+        m_textureLoadOptimizer.optimize(cmd);
+
+        if constexpr (HasCommand<decltype(cmd)>::value)
+        {
+            // Only add a new RRX command when the stream section is open
+            if (!m_streamSectionManager.sectionOpen())
+            {
+                return false;
+            }
+            return m_rrxDisplayListAssembler.addCommand(cmd);
+        }
+
+        if constexpr (HasDseTransfer<decltype(cmd)>::value)
+        {
+            // Only add a new DSE command when the section is open
+            if (m_streamSectionManager.sectionOpen())
+            {
+                return false;
+            }
+            return m_dseDisplayListAssembler.addCommand(cmd);
         }
 
         return true;
@@ -115,21 +147,8 @@ private:
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
-        std::size_t expectedSize = 0;
-        
-        if constexpr (HasCommand<decltype(cmd)>::value)
+        if (getCommandSize(cmd) >= m_displayList.getFreeSpace()) 
         {
-            expectedSize += m_rrxDisplayListAssembler.getCommandSize<TCommand>(cmd);
-        }
-
-        if constexpr (HasDseTransfer<decltype(cmd)>::value)
-        {
-            expectedSize += m_dseDisplayListAssembler.getCommandSize<TCommand>(cmd);
-        }
-
-        if (expectedSize >= m_displayList.getFreeSpace()) 
-        {
-            // Not enough memory to finish the operation
             return false;
         }
         return true;
@@ -138,7 +157,7 @@ private:
     List m_displayList {};
     RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
     DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
-    TextureLoadOptimizer<RenderConfig, List> m_textureLoadOptimizer { m_displayList };
+    TextureLoadOptimizer<RenderConfig::TMU_COUNT, List> m_textureLoadOptimizer { m_displayList };
     StreamSectionManager<List,
                          DSEDisplayListAssembler<List>,
                          StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };

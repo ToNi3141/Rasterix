@@ -556,7 +556,7 @@ RRXGL::~RRXGL()
 
 void RRXGL::swapDisplayList()
 {
-    SPDLOG_INFO("swapDisplayLIst called");
+    SPDLOG_INFO("swapDisplayList called");
     m_renderDevice->renderer.swapDisplayList();
 }
 
