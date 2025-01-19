@@ -29,6 +29,11 @@ class BaseXYReg
 {
 public:
     BaseXYReg() = default;
+    BaseXYReg(const uint16_t x, const uint16_t y)
+    {
+        setX(x);
+        setY(y);
+    }
 
     void setX(const uint16_t val) { m_regValX = val & MASK_X; }
     void setY(const uint16_t val) { m_regValY = val & MASK_Y; }

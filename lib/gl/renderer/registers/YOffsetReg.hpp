@@ -26,6 +26,10 @@ namespace rr
 class YOffsetReg : public BaseXYReg<0x0, 0x7ff>
 {
 public:
+    YOffsetReg() : BaseXYReg<0x0, 0x7ff>{} {}
+    YOffsetReg(const uint16_t x, const uint16_t y)
+        : BaseXYReg<0x0, 0x7ff>{x, y}
+    {}
     static constexpr uint32_t getAddr() { return 0x8; }
 };
 } // namespace rr

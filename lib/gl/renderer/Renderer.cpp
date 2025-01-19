@@ -67,7 +67,7 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    TriangleStreamCmd<typename ListAssembler::List> triangleCmd { m_rasterizer, triangle };
+    TriangleStreamCmd<ListAssembler::List> triangleCmd { m_rasterizer, triangle };
 
     if (!triangleCmd.isVisible()) 
     {
@@ -81,35 +81,27 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     }
     else
     {
-        const std::size_t displayLines = m_displayLines;
-        const std::size_t yLineResolution = m_yLineResolution;
-        for (std::size_t i = 0; i < displayLines; i++)
-        {
-            const std::size_t currentScreenPositionStart = i * yLineResolution;
-            const std::size_t currentScreenPositionEnd = (i + 1) * yLineResolution;
+        return addCommandWithFactory<TriangleStreamCmd<ListAssembler::List>>([&triangleCmd](std::size_t i, std::size_t, std::size_t, std::size_t resY) {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = (i + 1) * resY;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
-                bool ret { false };
-                
                 // The floating point rasterizer can automatically increment all attributes to the current screen position
                 // Therefor no further computing is necessary
                 if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
                 {
-                    ret = addCommand(i, triangleCmd);
+                    return std::optional { triangleCmd };
                 }
                 else
                 {
                     // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<typename ListAssembler::List> triangleCmdInc = triangleCmd;
+                    TriangleStreamCmd<ListAssembler::List> triangleCmdInc = triangleCmd;
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = addCommand(i, triangleCmdInc);
-                }
-                if (ret == false) 
-                {
-                    return false;
+                    return std::optional { triangleCmdInc };
                 }
             }
-        }
+            return std::optional<TriangleStreamCmd<ListAssembler::List>> {};
+        });
     }
     return true;
 }
@@ -144,6 +136,14 @@ void Renderer::removeSection()
     {
         getBackDisplayListAssembler(i).removeSection();
     } 
+}
+
+void Renderer::clearDisplayListAssembler()
+{
+    for (int32_t i = m_displayLines - 1; i >= 0; i--)
+    {
+        getBackDisplayListAssembler(i).clearAssembler();
+    }
 }
 
 Renderer::ListAssembler& Renderer::getFrontDisplayListAssembler(const std::size_t index)
@@ -188,12 +188,12 @@ void Renderer::swapDisplayList()
     uploadTextures();
     clearDisplayListAssembler();
     beginFrame();
-    for (int32_t i = m_displayLines - 1; i >= 0; i--)
-    {
-        YOffsetReg reg;
-        reg.setY(i * m_yLineResolution);
-        getBackDisplayListAssembler(i).addCommand(WriteRegisterCmd { reg });
-    }
+
+    addCommandWithFactory<WriteRegisterCmd<YOffsetReg>>([](std::size_t i, std::size_t lines, std::size_t, std::size_t resY) {
+        const uint16_t yOffset = i * resY;
+        return std::optional { WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } } };
+    });
+
     swapFramebuffer();
 }
 
@@ -212,25 +212,24 @@ bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool 
 {
     FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
     cmd.enableMemset();
-    bool ret = true;
-    for (std::size_t i = 0; i < m_displayLines; i++)
-    {
-        const std::size_t currentScreenPositionStart = i * m_yLineResolution;
-        const std::size_t currentScreenPositionEnd = (i + 1) * m_yLineResolution;
+    return addCommandWithFactory<FramebufferCmd>([this, &cmd](std::size_t i, std::size_t, std::size_t, std::size_t resY) {
+        
         if (m_scissorEnabled) 
         {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = (i + 1) * resY;
             if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart) 
                 && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
             {
-                ret = ret && addCommand(i, cmd);
+                return std::optional { cmd };
             }
         }
         else
         {
-            ret = ret && addCommand(i, cmd);
+            return std::optional { cmd };
         }
-    }
-    return ret;
+        return std::optional<FramebufferCmd>{};
+    });
 }
 
 bool Renderer::setClearColor(const Vec4i& color)
@@ -264,15 +263,7 @@ bool Renderer::setFogColor(const Vec4i& color)
 
 bool Renderer::setFogLut(const std::array<float, 33>& fogLut, float start, float end)
 {
-    bool ret = true;
-    const FogLutStreamCmd fogLutDesc { fogLut, start, end };
-
-    // Upload data to the display lists
-    for (std::size_t i = 0; i < m_displayLines; i++)
-    {
-        ret = ret && addCommand(i, fogLutDesc);
-    }
-    return ret;
+    return addCommand(FogLutStreamCmd { fogLut, start, end });
 }
 
 bool Renderer::useTexture(const std::size_t target, const uint16_t texId) 
@@ -283,14 +274,14 @@ bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
         return false;
     }
     bool ret { true };
+
     const tcb::span<const std::size_t> pages = m_textureManager.getPages(texId);
-    for (std::size_t i = 0; i < m_displayLines; i++)
-    {
-        ret = ret && addCommand(i, TextureStreamCmd { target, pages });
-        TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
-        reg.setTmu(target);
-        ret = ret && addCommand(i, WriteRegisterCmd { reg });
-    }
+    ret = ret && addCommand(TextureStreamCmd { target, pages });
+
+    TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
+    reg.setTmu(target);
+    ret = ret && addCommand(WriteRegisterCmd { reg });
+
     return ret;
 }
 
@@ -409,52 +400,52 @@ void Renderer::uploadTextures()
 
 bool Renderer::addCommitFramebufferCommand()
 {
-    bool ret = true;
-    for (std::size_t i = 0; i < m_displayLines; i++)
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
     {
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-        {
-            FramebufferCmd cmd { true, true, true };
-            cmd.commitFramebuffer();
-            ret = ret && addCommand(i, cmd);
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-        {
-            FramebufferCmd cmd { true, true, true };
-            cmd.commitFramebuffer();
-            ret = ret && addCommand(i, cmd);
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-        {
-            // The external framebuffer does not require special handling
-        }
+        FramebufferCmd cmd { true, true, true };
+        cmd.commitFramebuffer();
+        return addCommand(cmd);
+    }
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+    {
+        FramebufferCmd cmd { true, true, true };
+        cmd.commitFramebuffer();
+        return addCommand(cmd);
+    }
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
+    {
+        // The external framebuffer does not require special handling
     }
 
-    return ret;
+    return false;
 }
 
 bool Renderer::addDseFramebufferCommand()
 {
-    bool ret = true;
-    const uint32_t screenSize = static_cast<uint32_t>(m_yLineResolution) * m_xResolution * 2;
-    for (std::size_t i = 0; i < m_displayLines; i++)
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
     {
-        const uint32_t addr = m_colorBufferAddr + (screenSize * (m_displayLines - i - 1));
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-        {
-            ret = ret && addCommand(i, StreamFromRrxToMemoryCmd { addr, screenSize });
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-        {
-            ret = ret && addCommand(i, StreamFromRrxToDisplayCmd { screenSize });
-        }
-        if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-        {
-            ret = ret && addCommand(i, StreamFromMemoryToDisplayCmd { addr, screenSize });
-        }
+        return addCommandWithFactory<StreamFromRrxToMemoryCmd>([this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY) {
+            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+            return std::optional { StreamFromRrxToMemoryCmd { addr, screenSize } };
+        });
     }
-
-    return ret;
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+    {
+        return addCommandWithFactory<StreamFromRrxToDisplayCmd>([](std::size_t, std::size_t, std::size_t resX, std::size_t resY) {
+            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+            return std::optional { StreamFromRrxToDisplayCmd { screenSize } };
+        });
+    }
+    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
+    {
+        return addCommandWithFactory<StreamFromMemoryToDisplayCmd>([this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY) {
+            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+            return std::optional { StreamFromMemoryToDisplayCmd { addr, screenSize } };
+        });
+    }
+    return false;
 }
 
 bool Renderer::addSwapExternalDisplayFramebufferCommand()
@@ -476,14 +467,6 @@ bool Renderer::addSwapExternalDisplayFramebufferCommand()
         displayList.removeSection();
     }
     return ret;
-}
-
-void Renderer::clearDisplayListAssembler()
-{
-    for (int32_t i = m_displayLines - 1; i >= 0; i--)
-    {
-        getBackDisplayListAssembler(i).clearAssembler();
-    }
 }
 
 void Renderer::swapFramebuffer()

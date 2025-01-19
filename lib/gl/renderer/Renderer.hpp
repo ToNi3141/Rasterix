@@ -264,22 +264,43 @@ private:
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
-        bool ret = true;
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && addCommand(i, WriteRegisterCmd { regVal });
-        }
-        return ret;
+        return addCommand(WriteRegisterCmd { regVal });
     }
 
     template <typename Command>
     bool addCommand(const std::size_t index, const Command& cmd)
     {
-        bool ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+        bool ret = getBackDisplayListAssembler(index).addCommand(cmd);
         if (!ret && (m_displayLines == 1))
         {
             intermediateUpload();
-            ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
+            ret = getBackDisplayListAssembler(index).addCommand(cmd);
+        }
+        return ret;
+    }
+
+    template <typename Command>
+    bool addCommand(const Command& cmd)
+    {
+        bool ret = true;
+        for (std::size_t i = 0; i < m_displayLines; i++)
+        {
+            ret = ret && addCommand(i, cmd);
+        }
+        return ret;
+    }
+
+    template <typename Command>
+    bool addCommandWithFactory(const std::function<std::optional<Command>(std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)>& commandFactory)
+    {
+        bool ret = true;
+        for (std::size_t i = 0; i < m_displayLines; i++)
+        {
+            const std::optional<Command> cmd = commandFactory(i, m_displayLines, m_xResolution, m_yLineResolution);
+            if (cmd)
+            {
+                ret = ret && addCommand(i, *cmd);
+            }
         }
         return ret;
     }
