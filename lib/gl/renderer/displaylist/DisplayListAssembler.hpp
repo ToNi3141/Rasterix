@@ -40,14 +40,20 @@ public:
     static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using List = DisplayList<ALIGNMENT>;
 
-    void setBuffer(tcb::span<uint8_t> buffer)
+    void setBuffer(tcb::span<uint8_t> buffer, std::size_t bufferId)
     {
+        m_displayListBufferId = bufferId;
         m_displayList.setBuffer(buffer);
     }
 
-    const List* getDisplayList() const
+    std::size_t getDisplayListSize() const
     {
-        return &m_displayList;
+        return m_displayList.getSize();
+    }
+
+    std::size_t getDisplayListBufferId() const 
+    {
+        return m_displayListBufferId;
     }
 
     void clearAssembler()
@@ -161,6 +167,7 @@ private:
     StreamSectionManager<List,
                          DSEDisplayListAssembler<List>,
                          StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
+    std::size_t m_displayListBufferId { 0 };
 };
 
 } // namespace rr::displaylist

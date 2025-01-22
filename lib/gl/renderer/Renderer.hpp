@@ -28,6 +28,8 @@
 #include "Rasterizer.hpp"
 #include <string.h>
 #include "displaylist/DisplayListAssembler.hpp"
+#include "displaylist/DisplayListDispatcher.hpp"
+#include "displaylist/DisplayListDoubleBuffer.hpp"
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
@@ -90,8 +92,6 @@ namespace rr
 // but requires much more memory because of lots of duplicated data.
 class Renderer
 {
-    static constexpr std::size_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
-                                                                                                                                                                : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
     Renderer(IBusConnector& busConnector);
@@ -260,6 +260,52 @@ private:
 
     using ListAssembler = displaylist::DisplayListAssembler<RenderConfig>;
     using TextureManager = TextureMemoryManager<RenderConfig>; 
+    using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, ListAssembler>;
+
+    // Triangles are send to the display list this way because this is the fastest way.
+    // The addCommandWithFactory methods have a performance penalty of around 10%.
+    template <typename DisplayListDispatcher>
+    class TriangleLooper
+    {
+    public:
+        TriangleLooper(DisplayListDispatcher& dld) : m_dld { dld } {} 
+        bool operator()(const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd->isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                bool ret { false };
+                
+                // The floating point rasterizer can automatically increment all attributes to the current screen position
+                // Therefor no further computing is necessary
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    ret = m_dld.addCommand(i, *triangleCmd);
+                }
+                else
+                {
+                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
+                    TriangleStreamCmd<typename ListAssembler::List> triangleCmdInc = *triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = m_dld.addCommand(i, triangleCmdInc);
+                }
+                if (ret == false) 
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        void setTriangleCmd(const TriangleStreamCmd<typename ListAssembler::List>* cmd)
+        {
+            triangleCmd = cmd;
+        }
+    private:
+        DisplayListDispatcher& m_dld;
+        const TriangleStreamCmd<typename ListAssembler::List>* triangleCmd { nullptr };
+    };
 
     template <typename TArg>
     bool writeReg(const TArg& regVal)
@@ -270,11 +316,11 @@ private:
     template <typename Command>
     bool addCommand(const std::size_t index, const Command& cmd)
     {
-        bool ret = getBackDisplayListAssembler(index).addCommand(cmd);
-        if (!ret && (m_displayLines == 1))
+        bool ret = m_displayListBuffer.getBack().addCommand(index, cmd);
+        if (!ret && (m_displayListBuffer.getBack().getMaxDisplayLines() == 1))
         {
             intermediateUpload();
-            ret = getBackDisplayListAssembler(index).addCommand(cmd);
+            ret = m_displayListBuffer.getBack().addCommand(index, cmd);
         }
         return ret;
     }
@@ -282,27 +328,61 @@ private:
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
-        bool ret = true;
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            ret = ret && addCommand(i, cmd);
-        }
-        return ret;
+        return m_displayListBuffer.getBack().addCommand(cmd);
     }
 
     template <typename Command>
-    bool addCommandWithFactory(const std::function<std::optional<Command>(std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)>& commandFactory)
+    bool addLastCommand(const Command& cmd)
     {
-        bool ret = true;
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            const std::optional<Command> cmd = commandFactory(i, m_displayLines, m_xResolution, m_yLineResolution);
-            if (cmd)
-            {
-                ret = ret && addCommand(i, *cmd);
-            }
-        }
-        return ret;
+        return m_displayListBuffer.getBack().addLastCommand(cmd);
+    }
+
+    template <typename Factory>
+    bool addCommandWithFactory(const Factory& commandFactory)
+    {
+        return m_displayListBuffer.getBack().addCommandWithFactory(commandFactory);
+    }
+
+    template <typename Factory, typename Pred>
+    bool addCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
+    {
+        return m_displayListBuffer.getBack().addCommandWithFactory_if(commandFactory, pred);
+    }
+
+    template <typename Function>
+    bool displayListLooper(const Function& func)
+    {
+        return m_displayListBuffer.getBack().displayListLooper(func);
+    }
+
+    void beginFrame()
+    {
+        m_displayListBuffer.getBack().beginFrame();
+    }
+
+    void endFrame()
+    {
+        m_displayListBuffer.getBack().endFrame();
+    }
+
+    void saveSectionStart()
+    {
+        m_displayListBuffer.getBack().saveSectionStart();
+    }
+
+    void removeSection()
+    {
+        m_displayListBuffer.getBack().removeSection(); 
+    }
+
+    void clearDisplayListAssembler()
+    {
+        m_displayListBuffer.getBack().clearDisplayListAssembler();
+    }
+
+    void switchDisplayLists()
+    {
+        m_displayListBuffer.swap();
     }
 
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
@@ -313,33 +393,16 @@ private:
     bool addCommitFramebufferCommand();
     bool addDseFramebufferCommand();
     bool addSwapExternalDisplayFramebufferCommand();
-    void clearDisplayListAssembler();
     void swapFramebuffer();
     void intermediateUpload();
-
-    void beginFrame();
-    void endFrame();
-    void saveSectionStart();
-    void removeSection();
-    void switchDisplayLists();
-
-    ListAssembler& getFrontDisplayListAssembler(const std::size_t index);
-    ListAssembler& getBackDisplayListAssembler(const std::size_t index);
+    void setYOffset();
 
     uint32_t m_colorBufferAddr {};
-
-    std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
-    std::size_t m_frontList = 0;
-    std::size_t m_backList = 1;
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };
-
-    std::size_t m_yLineResolution { 128 };
-    std::size_t m_xResolution { 640 };
-    std::size_t m_displayLines { DISPLAY_LINES };
 
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
@@ -349,6 +412,11 @@ private:
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 
     bool m_switchColorBuffer { true };
+
+    TriangleLooper<Renderer> m_triangleLooper {*this};
+
+    std::array<DisplayListDispatcherType, 2> m_displayListDispatcher {};
+    displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType> m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
 };
 
 } // namespace rr
