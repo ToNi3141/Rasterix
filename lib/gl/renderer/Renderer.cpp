@@ -24,16 +24,7 @@ Renderer::Renderer(IBusConnector& busConnector)
     m_displayListBuffer.getBack().clearDisplayListAssembler();
     m_displayListBuffer.getFront().clearDisplayListAssembler();
 
-    for (std::size_t i = 0, buffId = 0; true; i++)
-    {
-        bool ret = true;
-        ret = ret && m_displayListBuffer.getBack().setBuffer(i, m_busConnector.requestBuffer(buffId), buffId);
-        buffId++;
-        ret = ret && m_displayListBuffer.getFront().setBuffer(i, m_busConnector.requestBuffer(buffId), buffId);
-        buffId++;
-        if (!ret)
-            break;
-    }
+    initDisplayLists();
 
     beginFrame();
     setYOffset();
@@ -62,7 +53,7 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    const TriangleStreamCmd<typename DisplayListAssembler::List> triangleCmd { m_rasterizer, triangle };
+    const TriangleStreamCmd<typename DisplayListAssemblerType::List> triangleCmd { m_rasterizer, triangle };
 
     if (!triangleCmd.isVisible()) 
     {
@@ -80,6 +71,17 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
         return displayListLooper(m_triangleIncr);
     }
     return true;
+}
+
+void Renderer::initDisplayLists()
+{
+    for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)
+    {
+        m_displayListAssembler[0][i].setBuffer(m_busConnector.requestBuffer(buffId), buffId);
+        buffId++;
+        m_displayListAssembler[1][i].setBuffer(m_busConnector.requestBuffer(buffId), buffId);
+        buffId++;
+    }
 }
 
 void Renderer::swapDisplayList()

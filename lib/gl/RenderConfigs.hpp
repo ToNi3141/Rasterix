@@ -43,6 +43,16 @@ struct RenderConfig
     static constexpr uint32_t COLOR_BUFFER_LOC_2 { RRX_CORE_COLOR_BUFFER_LOC_2 };
     static constexpr uint32_t DEPTH_BUFFER_LOC { RRX_CORE_DEPTH_BUFFER_LOC };
     static constexpr uint32_t STENCIL_BUFFER_LOC { RRX_CORE_STENCIL_BUFFER_LOC };
+
+    static constexpr std::size_t getDisplayLines()
+    {
+        constexpr std::size_t MAX_FRAMEBUFFER_SIZE = MAX_DISPLAY_WIDTH * MAX_DISPLAY_HEIGHT;
+        if  constexpr (MAX_FRAMEBUFFER_SIZE == FRAMEBUFFER_SIZE_IN_WORDS)
+        {
+            return 1;
+        }
+        return (MAX_FRAMEBUFFER_SIZE / FRAMEBUFFER_SIZE_IN_WORDS) + 1;
+    }
 };
 
 } // namespace rr

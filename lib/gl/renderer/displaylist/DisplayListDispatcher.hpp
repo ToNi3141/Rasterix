@@ -28,6 +28,10 @@ template <typename RenderConfig, typename TDisplayListAssembler>
 class DisplayListDispatcher
 {
 public:
+    DisplayListDispatcher(TDisplayListAssembler& displayListAssembler)
+        : m_displayListAssembler { displayListAssembler }
+    {}
+
     template <typename Command>
     bool addCommand(const std::size_t index, const Command& cmd)
     {
@@ -85,8 +89,9 @@ public:
     bool setResolution(const std::size_t x, const std::size_t y)
     {
         const std::size_t framebufferSize = x * y;
-        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
-        if (framebufferLines > getDisplayLines())
+        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) 
+            + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
+        if (framebufferLines > RenderConfig::getDisplayLines())
         {
             // More lines required than lines available
             return false;
@@ -105,7 +110,7 @@ public:
 
     static constexpr bool singleList()
     {
-        return getDisplayLines() == 1;
+        return RenderConfig::getDisplayLines() == 1;
     }
 
     void beginFrame()
@@ -152,7 +157,7 @@ public:
 
     void clearDisplayListAssembler()
     {
-        for (int32_t i = m_displayLines - 1; i >= 0; i--)
+        for (std::size_t i = 0; i < m_displayLines; i++)
         {
             m_displayListAssembler[i].clearAssembler();
         }
@@ -168,29 +173,11 @@ public:
         return m_displayListAssembler[displayList].getDisplayListSize();
     }
 
-    bool setBuffer(const std::size_t i, const tcb::span<uint8_t> buffer, const std::size_t bufferId)
-    {
-        if (i >= getDisplayLines())
-            return false;
-        m_displayListAssembler[i].setBuffer(buffer, bufferId);
-        return true;
-    }
-
 private:
-    static constexpr std::size_t getDisplayLines()
-    {
-        constexpr std::size_t MAX_FRAMEBUFFER_SIZE = RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT;
-        if  constexpr (MAX_FRAMEBUFFER_SIZE == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS)
-        {
-            return 1;
-        }
-        return (MAX_FRAMEBUFFER_SIZE / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1;
-    }
-
     std::size_t m_yLineResolution { 128 };
     std::size_t m_xResolution { 640 };
-    std::size_t m_displayLines { getDisplayLines() };
-    std::array<TDisplayListAssembler, getDisplayLines()> m_displayListAssembler {};
+    std::size_t m_displayLines { RenderConfig::getDisplayLines() };
+    TDisplayListAssembler& m_displayListAssembler;
 };
 
 } // namespace rr::displaylist
