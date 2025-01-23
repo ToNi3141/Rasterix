@@ -48,7 +48,7 @@ public:
     {
         if (!m_streamCommand) 
         {
-            auto streamCommand = m_dseDisplayListAssembler.template allocateCommand(TCommand { 0 });
+            auto streamCommand = m_dseDisplayListAssembler.allocateCommand(TCommand { 0 });
             if (streamCommand)
             {
                 m_streamCommand.emplace(*streamCommand);
