@@ -258,18 +258,18 @@ public:
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using ListAssembler = displaylist::DisplayListAssembler<RenderConfig>;
+    using DisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig>;
     using TextureManager = TextureMemoryManager<RenderConfig>; 
-    using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, ListAssembler>;
+    using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssembler>;
 
     // Triangles are send to the display list this way because this is the fastest way.
     // The addCommandWithFactory methods have a performance penalty of around 10%.
     template <typename DisplayListDispatcher>
-    class TriangleLooper
+    class TriangleCommandIncr
     {
     public:
-        TriangleLooper(DisplayListDispatcher& dld) : m_dld { dld } {} 
-        bool operator()(const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
+        TriangleCommandIncr(DisplayListDispatcher& dld) : m_dld { dld } {} 
+        bool operator()(DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
         {
             const std::size_t currentScreenPositionStart = i * resY;
             const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
@@ -281,14 +281,14 @@ private:
                 // Therefor no further computing is necessary
                 if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
                 {
-                    ret = m_dld.addCommand(i, *triangleCmd);
+                    ret = dispatcher.addCommand(i, *triangleCmd);
                 }
                 else
                 {
                     // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<typename ListAssembler::List> triangleCmdInc = *triangleCmd;
+                    TriangleStreamCmd<typename DisplayListAssembler::List> triangleCmdInc = *triangleCmd;
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = m_dld.addCommand(i, triangleCmdInc);
+                    ret = dispatcher.addCommand(i, triangleCmdInc);
                 }
                 if (ret == false) 
                 {
@@ -298,13 +298,13 @@ private:
             return true;
         };
 
-        void setTriangleCmd(const TriangleStreamCmd<typename ListAssembler::List>* cmd)
+        void setTriangleCmd(const TriangleStreamCmd<typename DisplayListAssembler::List>* cmd)
         {
             triangleCmd = cmd;
         }
     private:
         DisplayListDispatcher& m_dld;
-        const TriangleStreamCmd<typename ListAssembler::List>* triangleCmd { nullptr };
+        const TriangleStreamCmd<typename DisplayListAssembler::List>* triangleCmd { nullptr };
     };
 
     template <typename TArg>
@@ -317,7 +317,7 @@ private:
     bool addCommand(const std::size_t index, const Command& cmd)
     {
         bool ret = m_displayListBuffer.getBack().addCommand(index, cmd);
-        if (!ret && (m_displayListBuffer.getBack().getMaxDisplayLines() == 1))
+        if (!ret && m_displayListBuffer.getBack().singleList())
         {
             intermediateUpload();
             ret = m_displayListBuffer.getBack().addCommand(index, cmd);
@@ -396,8 +396,10 @@ private:
     void swapFramebuffer();
     void intermediateUpload();
     void setYOffset();
+    void addCommitFramebufferSequenceAndEndFrame();
 
     uint32_t m_colorBufferAddr {};
+    bool m_switchColorBuffer { true };
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
@@ -407,16 +409,13 @@ private:
     IBusConnector& m_busConnector;
     TextureManager m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+    std::array<DisplayListDispatcherType, 2> m_displayListDispatcher {};
+    displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType> m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
 
     // Mapping of texture id and TMU
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 
-    bool m_switchColorBuffer { true };
-
-    TriangleLooper<Renderer> m_triangleLooper {*this};
-
-    std::array<DisplayListDispatcherType, 2> m_displayListDispatcher {};
-    displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType> m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
+    TriangleCommandIncr<Renderer> m_triangleIncr { *this };
 };
 
 } // namespace rr
