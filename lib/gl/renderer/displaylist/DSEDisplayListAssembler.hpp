@@ -45,7 +45,7 @@ public:
     template <typename TCommand>
     static std::size_t getCommandSize(const TCommand& cmd)
     {
-        return TDisplayList::template sizeOf<DSEC::Command>() + cmd.dseTransfer().len;
+        return TDisplayList::template sizeOf<DSEC::Command>() + cmd.dseTransfer().payload.size();
     }
 
     template <typename TCommand>
