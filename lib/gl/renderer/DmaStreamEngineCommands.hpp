@@ -59,8 +59,10 @@ static constexpr std::size_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only s
 
 struct Command
 {
+#pragma pack(push, 4)
     uint32_t op;
     uint32_t addr;
+#pragma pack(pop)
 };
 
 struct Transfer

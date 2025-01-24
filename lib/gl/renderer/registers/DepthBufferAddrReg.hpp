@@ -20,12 +20,17 @@
 #define _DEPTH_BUFFER_ADDR_REG_
 
 #include "renderer/registers/BaseSingleReg.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
 class DepthBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
+    DepthBufferAddrReg(const uint32_t addr)
+        : BaseSingleReg<0xffffffff>{addr + RenderConfig::GRAM_MEMORY_LOC}
+    {}
+
     static constexpr uint32_t getAddr() { return 17; }
 };
 } // namespace rr

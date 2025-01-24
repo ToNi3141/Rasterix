@@ -384,8 +384,8 @@ private:
         m_displayListBuffer.swap();
     }
 
-    bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
-    bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
+    bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
+    bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();

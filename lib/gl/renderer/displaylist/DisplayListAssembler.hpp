@@ -117,7 +117,7 @@ public:
 
         if constexpr (HasDseTransfer<decltype(cmd)>::value)
         {
-            // Only add a new DSE command when the section is open
+            // Only add a new DSE command when the section is not open
             if (m_streamSectionManager.sectionOpen())
             {
                 return false;
