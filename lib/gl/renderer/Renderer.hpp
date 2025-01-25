@@ -27,6 +27,7 @@
 #include "displaylist/DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include <string.h>
+#include "displaylist/DisplayList.hpp"
 #include "displaylist/DisplayListAssembler.hpp"
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
@@ -259,7 +260,9 @@ public:
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig>;
+    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
+    using DisplayListType = displaylist::DisplayList<ALIGNMENT>;
+    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, DisplayListType>;
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>; 
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
@@ -267,6 +270,7 @@ private:
 
     // Triangles are send to the display list this way because this is the fastest way.
     // The addCommandWithFactory methods have a performance penalty of around 10%.
+    template <typename DisplayList>
     class TriangleCommandIncr
     {
     public:
@@ -287,7 +291,7 @@ private:
                 else
                 {
                     // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<typename DisplayListAssemblerType::List> triangleCmdInc = *triangleCmd;
+                    TriangleStreamCmd<DisplayList> triangleCmdInc = *triangleCmd;
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
                     ret = dispatcher.addCommand(i, triangleCmdInc);
                 }
@@ -299,12 +303,12 @@ private:
             return true;
         };
 
-        void setTriangleCmd(const TriangleStreamCmd<typename DisplayListAssemblerType::List>* cmd)
+        void setTriangleCmd(const TriangleStreamCmd<DisplayList>* cmd)
         {
             triangleCmd = cmd;
         }
     private:
-        const TriangleStreamCmd<typename DisplayListAssemblerType::List>* triangleCmd { nullptr };
+        const TriangleStreamCmd<DisplayList>* triangleCmd { nullptr };
     };
 
     template <typename TArg>
@@ -314,21 +318,15 @@ private:
     }
 
     template <typename Command>
-    bool addCommand(const std::size_t index, const Command& cmd)
+    bool addCommand(const Command& cmd)
     {
-        bool ret = m_displayListBuffer.getBack().addCommand(index, cmd);
+        bool ret = m_displayListBuffer.getBack().addCommand(cmd);
         if (!ret && m_displayListBuffer.getBack().singleList())
         {
             intermediateUpload();
-            ret = m_displayListBuffer.getBack().addCommand(index, cmd);
+            ret = m_displayListBuffer.getBack().addCommand(cmd);
         }
         return ret;
-    }
-
-    template <typename Command>
-    bool addCommand(const Command& cmd)
-    {
-        return m_displayListBuffer.getBack().addCommand(cmd);
     }
 
     template <typename Command>
@@ -340,7 +338,7 @@ private:
     template <typename Factory>
     bool addCommandWithFactory(const Factory& commandFactory)
     {
-        return m_displayListBuffer.getBack().addCommandWithFactory(commandFactory);
+        return addCommandWithFactory_if(commandFactory, [](std::size_t, std::size_t, std::size_t, std::size_t){ return true; });
     }
 
     template <typename Factory, typename Pred>
@@ -419,7 +417,7 @@ private:
     // Mapping of texture id and TMU
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 
-    TriangleCommandIncr m_triangleIncr {};
+    TriangleCommandIncr<DisplayListType> m_triangleIncr {};
 };
 
 } // namespace rr

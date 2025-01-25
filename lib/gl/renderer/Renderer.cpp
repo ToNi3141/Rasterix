@@ -53,7 +53,7 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    const TriangleStreamCmd<typename DisplayListAssemblerType::List> triangleCmd { m_rasterizer, triangle };
+    const TriangleStreamCmd<DisplayListType> triangleCmd { m_rasterizer, triangle };
 
     if (!triangleCmd.isVisible()) 
     {
@@ -63,7 +63,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 
     if constexpr (DisplayListDispatcherType::singleList())
     {
-        return addLastCommand(triangleCmd);
+        return addCommand(triangleCmd);
     }
     else
     {
@@ -312,7 +312,7 @@ void Renderer::uploadTextures()
 {
     m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
     {
-        displaylist::DisplayListAssembler<RenderConfig> uploader;
+        DisplayListAssemblerType uploader;
         const std::size_t bufferId = m_busConnector.getBufferCount() - 1;
         uploader.setBuffer(m_busConnector.requestBuffer(bufferId), bufferId);
         uploader.addCommand(WriteMemoryCmd { gramAddr, data });
@@ -340,8 +340,8 @@ bool Renderer::addCommitFramebufferCommand()
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
     {
-        // A nop is used to force the DSE to wait till the (maybe) currently drawn or other operation
-        // on the framebuffer is finished before the DSE reads from the framebuffer.
+        // A nop is used to force the DSE to wait till the (maybe) currently drawn triangle or 
+        // (other operation) on the framebuffer has finished before the DSE reads from the framebuffer.
         // Otherwise the DSE might read a not finished frame.
         return addCommand(NopCmd {});
     }

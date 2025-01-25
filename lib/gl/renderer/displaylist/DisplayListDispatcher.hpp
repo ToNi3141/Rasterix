@@ -55,12 +55,6 @@ public:
         return ret;
     }
 
-    template <typename Factory>
-    bool addCommandWithFactory(const Factory& commandFactory)
-    {
-        return addCommandWithFactory_if(commandFactory, [](std::size_t, std::size_t, std::size_t, std::size_t){ return true; });
-    }
-
     template <typename Factory, typename Pred>
     bool addCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
     {

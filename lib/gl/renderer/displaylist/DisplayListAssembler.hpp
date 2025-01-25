@@ -33,13 +33,10 @@
 namespace rr::displaylist
 {
 
-template <class RenderConfig>
+template <std::size_t TMU_COUNT, typename DisplayList>
 class DisplayListAssembler 
 {
 public:
-    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
-    using List = DisplayList<ALIGNMENT>;
-
     void setBuffer(tcb::span<uint8_t> buffer, std::size_t bufferId)
     {
         m_displayListBufferId = bufferId;
@@ -80,12 +77,12 @@ public:
         
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
-            expectedSize += m_rrxDisplayListAssembler.getCommandSize<TCommand>(cmd);
+            expectedSize += m_rrxDisplayListAssembler.getCommandSize(cmd);
         }
 
         if constexpr (HasDseTransfer<decltype(cmd)>::value)
         {
-            expectedSize += m_dseDisplayListAssembler.getCommandSize<TCommand>(cmd);
+            expectedSize += m_dseDisplayListAssembler.getCommandSize(cmd);
         }
         return expectedSize;
     }
@@ -160,12 +157,12 @@ private:
         return true;
     }
 
-    List m_displayList {};
-    RRXDisplayListAssembler<List> m_rrxDisplayListAssembler { m_displayList };
-    DSEDisplayListAssembler<List> m_dseDisplayListAssembler { m_displayList };
-    TextureLoadOptimizer<RenderConfig::TMU_COUNT, List> m_textureLoadOptimizer { m_displayList };
-    StreamSectionManager<List,
-                         DSEDisplayListAssembler<List>,
+    DisplayList m_displayList {};
+    RRXDisplayListAssembler<DisplayList> m_rrxDisplayListAssembler { m_displayList };
+    DSEDisplayListAssembler<DisplayList> m_dseDisplayListAssembler { m_displayList };
+    TextureLoadOptimizer<TMU_COUNT, DisplayList> m_textureLoadOptimizer { m_displayList };
+    StreamSectionManager<DisplayList,
+                         DSEDisplayListAssembler<DisplayList>,
                          StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
     std::size_t m_displayListBufferId { 0 };
 };
