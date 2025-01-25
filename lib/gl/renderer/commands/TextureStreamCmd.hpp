@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <array>
 #include <tcb/span.hpp>
-#include "renderer/DmaStreamEngineCommands.hpp"
 #include "RenderConfigs.hpp"
 
 namespace rr
@@ -34,7 +33,6 @@ class TextureStreamCmd
     static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
-    using DseTransferType = tcb::span<const DSEC::Transfer>;
 public:
     TextureStreamCmd(const std::size_t tmu,
                      const tcb::span<const std::size_t>& pages)
@@ -50,9 +48,10 @@ public:
 
     std::size_t getTmu() const { return m_tmu; }
 
-    using Payload = tcb::span<const uint32_t>;
-    const Payload& payload() const { return m_payload; }
-    uint32_t command() const 
+    using PayloadType = tcb::span<const uint32_t>;
+    const PayloadType& payload() const { return m_payload; }
+    using CommandType = uint32_t;
+    CommandType command() const 
     { 
         const uint32_t texSize = static_cast<uint32_t>(m_texSize) << TEXTURE_STREAM_SIZE_POS;
         const uint32_t tmuShifted = static_cast<uint32_t>(m_tmu) << TEXTURE_STREAM_TMU_NR_POS;
@@ -63,7 +62,7 @@ private:
     std::size_t m_tmu {};
     std::array<uint32_t, MAX_PAGES> m_pages;
     std::size_t m_texSize {};
-    Payload m_payload {};
+    PayloadType m_payload {};
 };
 
 } // namespace rr

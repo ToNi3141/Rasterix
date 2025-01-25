@@ -38,14 +38,15 @@ public:
         m_payload = { m_val };
     }
 
-    using Payload = tcb::span<const uint32_t>;
-    const Payload& payload() const { return m_payload; }
-    uint32_t command() const { return m_op; }
+    using PayloadType = tcb::span<const uint32_t>;
+    const PayloadType& payload() const { return m_payload; }
+    using CommandType = uint32_t;
+    CommandType command() const { return m_op; }
 
 private:
-    uint32_t m_op {};
+    CommandType m_op {};
     std::array<uint32_t, 1> m_val;
-    Payload m_payload;
+    PayloadType m_payload;
 };
 
 } // namespace rr

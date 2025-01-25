@@ -25,16 +25,14 @@
 #include <type_traits>
 #include <typeinfo>
 #include "math/Vec.hpp"
-#include "math/Veci.hpp"
 #include "renderer/Triangle.hpp"
 #include "renderer/Rasterizer.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
-#include "RenderConfigs.hpp"
 
 namespace rr
 {
 
-template <typename List>
+template <typename DisplayList>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -67,11 +65,12 @@ public:
 
     bool isVisible() const { return m_visible; };
 
-    using Payload = tcb::span<const TrDesc>;
-    const Payload& payload() const { return m_payload; }
-    static constexpr uint32_t command() { return TRIANGLE_STREAM | (List::template sizeOf<TrDesc>()); }
+    using PayloadType = tcb::span<const TrDesc>;
+    const PayloadType& payload() const { return m_payload; }
+    using CommandType = uint32_t;
+    static constexpr CommandType command() { return TRIANGLE_STREAM | (DisplayList::template sizeOf<TrDesc>()); }
 
-    TriangleStreamCmd<List>& operator=(const TriangleStreamCmd<List>& rhs)
+    TriangleStreamCmd<DisplayList>& operator=(const TriangleStreamCmd<DisplayList>& rhs)
     {
         m_desc = rhs.m_desc;
         m_payload = { m_desc };
@@ -81,7 +80,7 @@ public:
 
 private:
     std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;
-    Payload m_payload;
+    PayloadType m_payload;
     bool m_visible { false };
 };
 

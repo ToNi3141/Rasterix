@@ -22,7 +22,7 @@
 #include <cstring>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::displaylist
 {
 
 template <std::size_t ALIGNMENT>
@@ -75,16 +75,6 @@ public:
         writePos = 0;
     }
 
-    void setCheckpoint()
-    {
-        checkpoint = writePos;
-    }
-
-    void resetToCheckpoint()
-    {
-        writePos = checkpoint;
-    }
-
     tcb::span<const uint8_t> getMemPtr() const
     {
         return { mem.data(), getSize() };
@@ -108,6 +98,16 @@ public:
     std::size_t getCurrentWritePos() const
     {
         return writePos;
+    }
+
+    void saveSectionStart()
+    {
+        sectionStartPos = writePos;
+    }
+
+    void removeSection()
+    {
+        initArea(sectionStartPos, writePos - sectionStartPos);
     }
 
     // Interface for reading the display list
@@ -150,8 +150,8 @@ private:
     tcb::span<uint8_t> mem;
     std::size_t writePos { 0 };
     std::size_t readPos { 0 };
-    std::size_t checkpoint { 0 };
+    std::size_t sectionStartPos { 0 };
 };
 
-} // namespace rr
+} // namespace rr::displaylist
 #endif // DISPLAYLIST_HPP

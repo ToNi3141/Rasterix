@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,23 +16,27 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _DEPTH_BUFFER_ADDR_REG_
-#define _DEPTH_BUFFER_ADDR_REG_
+#ifndef _NOP_CMD_HPP_
+#define _NOP_CMD_HPP_
 
-#include "renderer/registers/BaseSingleReg.hpp"
-#include "RenderConfigs.hpp"
+#include <cstdint>
+#include <array>
+#include <tcb/span.hpp>
+#include "renderer/DmaStreamEngineCommands.hpp"
 
 namespace rr
 {
-class DepthBufferAddrReg : public BaseSingleReg<0xffffffff>
-{
-public:
-    DepthBufferAddrReg(const uint32_t addr)
-        : BaseSingleReg<0xffffffff>{addr + RenderConfig::GRAM_MEMORY_LOC}
-    {}
 
-    static constexpr uint32_t getAddr() { return 17; }
+class NopCmd
+{
+    static constexpr uint32_t OP_NOP { 0 };
+public:
+    using PayloadType = tcb::span<const uint8_t>;
+    const PayloadType payload() const { return {}; }
+    using CommandType = uint32_t;
+    CommandType command() const { return OP_NOP; }
 };
+
 } // namespace rr
 
-#endif // _DEPTH_BUFFER_ADDR_REG_
+#endif // _NOP_CMD_HPP_

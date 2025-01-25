@@ -24,10 +24,13 @@
 #include "math/Vec.hpp"
 #include "Renderer.hpp"
 #include "IBusConnector.hpp"
-#include "DisplayList.hpp"
+#include "displaylist/DisplayList.hpp"
 #include "Rasterizer.hpp"
 #include <string.h>
-#include "DisplayListAssembler.hpp"
+#include "displaylist/DisplayList.hpp"
+#include "displaylist/DisplayListAssembler.hpp"
+#include "displaylist/DisplayListDispatcher.hpp"
+#include "displaylist/DisplayListDoubleBuffer.hpp"
 #include <algorithm>
 #include "TextureMemoryManager.hpp"
 #include <limits>
@@ -54,6 +57,11 @@
 #include "commands/FramebufferCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
+#include "commands/WriteMemoryCmd.hpp"
+#include "commands/StreamFromMemoryToDisplayCmd.hpp"
+#include "commands/StreamFromRrxToDisplayCmd.hpp"
+#include "commands/StreamFromRrxToMemoryCmd.hpp"
+#include "commands/NopCmd.hpp"
 #include "RenderConfigs.hpp"
 
 namespace rr
@@ -86,8 +94,6 @@ namespace rr
 // but requires much more memory because of lots of duplicated data.
 class Renderer
 {
-    static constexpr std::size_t DISPLAY_LINES { ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) == RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 
-                                                                                                                                                                : ((RenderConfig::MAX_DISPLAY_WIDTH * RenderConfig::MAX_DISPLAY_HEIGHT) / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) + 1 };
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
     Renderer(IBusConnector& busConnector);
@@ -254,69 +260,164 @@ public:
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
-    using ListAssembler = DisplayListAssembler<RenderConfig>;
-    using TextureManager = TextureMemoryManager<RenderConfig>; 
+    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
+    using DisplayListType = displaylist::DisplayList<ALIGNMENT>;
+    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, DisplayListType>;
+    using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
+    using TextureManagerType = TextureMemoryManager<RenderConfig>; 
+    using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
+    using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
+
+    // Triangles are send to the display list this way because this is the fastest way.
+    // The addCommandWithFactory methods have a performance penalty of around 10%.
+    template <typename DisplayList>
+    class TriangleCommandIncr
+    {
+    public:
+        bool operator()(DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd->isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                bool ret { false };
+                
+                // The floating point rasterizer can automatically increment all attributes to the current screen position
+                // Therefor no further computing is necessary
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    ret = dispatcher.addCommand(i, *triangleCmd);
+                }
+                else
+                {
+                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
+                    TriangleStreamCmd<DisplayList> triangleCmdInc = *triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = dispatcher.addCommand(i, triangleCmdInc);
+                }
+                if (ret == false) 
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        void setTriangleCmd(const TriangleStreamCmd<DisplayList>* cmd)
+        {
+            triangleCmd = cmd;
+        }
+    private:
+        const TriangleStreamCmd<DisplayList>* triangleCmd { nullptr };
+    };
 
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
-        bool ret = true;
-        for (std::size_t i = 0; i < m_displayLines; i++)
+        return addCommand(WriteRegisterCmd { regVal });
+    }
+
+    template <typename Command>
+    bool addCommand(const Command& cmd)
+    {
+        bool ret = m_displayListBuffer.getBack().addCommand(cmd);
+        if (!ret && m_displayListBuffer.getBack().singleList())
         {
-            ret = ret && addCommand(i, WriteRegisterCmd { regVal });
+            intermediateUpload();
+            ret = m_displayListBuffer.getBack().addCommand(cmd);
         }
         return ret;
     }
 
     template <typename Command>
-    bool addCommand(const std::size_t index, const Command& cmd)
+    bool addLastCommand(const Command& cmd)
     {
-        bool ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-        if (!ret && (m_displayLines == 1))
-        {
-            intermediateUpload();
-            ret = m_displayListAssembler[index + (DISPLAY_LINES * m_backList)].addCommand(cmd);
-        }
-        return ret;
+        return m_displayListBuffer.getBack().addLastCommand(cmd);
     }
 
-    void enableColorBufferInMemory() { m_colorBufferUseMemory = true; }
-    void enableColorBufferStream() { m_colorBufferUseMemory = false; }
-    bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
-    bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr + RenderConfig::GRAM_MEMORY_LOC }); }
+    template <typename Factory>
+    bool addCommandWithFactory(const Factory& commandFactory)
+    {
+        return addCommandWithFactory_if(commandFactory, [](std::size_t, std::size_t, std::size_t, std::size_t){ return true; });
+    }
+
+    template <typename Factory, typename Pred>
+    bool addCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
+    {
+        return m_displayListBuffer.getBack().addCommandWithFactory_if(commandFactory, pred);
+    }
+
+    template <typename Function>
+    bool displayListLooper(const Function& func)
+    {
+        return m_displayListBuffer.getBack().displayListLooper(func);
+    }
+
+    void beginFrame()
+    {
+        m_displayListBuffer.getBack().beginFrame();
+    }
+
+    void endFrame()
+    {
+        m_displayListBuffer.getBack().endFrame();
+    }
+
+    void saveSectionStart()
+    {
+        m_displayListBuffer.getBack().saveSectionStart();
+    }
+
+    void removeSection()
+    {
+        m_displayListBuffer.getBack().removeSection(); 
+    }
+
+    void clearDisplayListAssembler()
+    {
+        m_displayListBuffer.getBack().clearDisplayListAssembler();
+    }
+
+    void switchDisplayLists()
+    {
+        m_displayListBuffer.swap();
+    }
+
+    bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
+    bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
-    std::optional<FramebufferCmd> createCommitFramebufferCommand(const uint32_t i);
-    FramebufferCmd createSwapFramebufferCommand();
-    void clearAndInitDisplayList(const uint32_t i);
+    bool addCommitFramebufferCommand();
+    bool addDseFramebufferCommand();
+    bool addSwapExternalDisplayFramebufferCommand();
     void swapFramebuffer();
     void intermediateUpload();
+    void setYOffset();
+    void addCommitFramebufferSequenceAndEndFrame();
+    void initDisplayLists();
 
-    bool m_colorBufferUseMemory { true };
     uint32_t m_colorBufferAddr {};
-
-    std::array<ListAssembler, DISPLAY_LINES * 2> m_displayListAssembler;
-    std::size_t m_frontList = 0;
-    std::size_t m_backList = 1;
+    bool m_switchColorBuffer { true };
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };
 
-    std::size_t m_yLineResolution { 128 };
-    std::size_t m_xResolution { 640 };
-    std::size_t m_displayLines { DISPLAY_LINES };
-
     IBusConnector& m_busConnector;
-    TextureManager m_textureManager;
+    TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+
+    // Instantiation of the displaylist assemblers
+    std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
+    std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
+    DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
 
     // Mapping of texture id and TMU
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 
-    bool m_switchColorBuffer { true };
+    TriangleCommandIncr<DisplayListType> m_triangleIncr {};
 };
 
 } // namespace rr

@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,23 +16,32 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#ifndef _DEPTH_BUFFER_ADDR_REG_
-#define _DEPTH_BUFFER_ADDR_REG_
+#ifndef _STREAM_FROM_RRX_TO_DISPLAY_CMD_HPP_
+#define _STREAM_FROM_RRX_TO_DISPLAY_CMD_HPP_
 
-#include "renderer/registers/BaseSingleReg.hpp"
+#include <cstdint>
+#include <array>
+#include <tcb/span.hpp>
+#include "renderer/DmaStreamEngineCommands.hpp"
 #include "RenderConfigs.hpp"
 
 namespace rr
 {
-class DepthBufferAddrReg : public BaseSingleReg<0xffffffff>
+
+class StreamFromRrxToDisplayCmd
 {
 public:
-    DepthBufferAddrReg(const uint32_t addr)
-        : BaseSingleReg<0xffffffff>{addr + RenderConfig::GRAM_MEMORY_LOC}
-    {}
+    StreamFromRrxToDisplayCmd(const std::size_t size)
+    {
+        m_dseTransfer = { DSEC::OP_COMMIT_TO_STREAM, size, 0, {} };
+    }
 
-    static constexpr uint32_t getAddr() { return 17; }
+    const DSEC::Transfer& dseTransfer() const { return m_dseTransfer; }
+
+private:
+    DSEC::Transfer m_dseTransfer {};
 };
+
 } // namespace rr
 
-#endif // _DEPTH_BUFFER_ADDR_REG_
+#endif // _STREAM_FROM_RRX_TO_DISPLAY_CMD_HPP_

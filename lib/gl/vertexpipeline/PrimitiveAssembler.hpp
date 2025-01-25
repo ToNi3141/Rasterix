@@ -21,7 +21,6 @@
 #include <tcb/span.hpp>
 
 #include "RenderObj.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
 #include "FixedSizeQueue.hpp"
 #include "ViewPort.hpp"
 #include "Types.hpp"

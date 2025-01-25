@@ -20,12 +20,17 @@
 #define _COLOR_BUFFER_ADDR_REG_
 
 #include "renderer/registers/BaseSingleReg.hpp"
+#include "RenderConfigs.hpp"
 
 namespace rr
 {
 class ColorBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
+    ColorBufferAddrReg(const uint32_t addr)
+        : BaseSingleReg<0xffffffff>{addr + RenderConfig::GRAM_MEMORY_LOC}
+    {}
+
     static constexpr uint32_t getAddr() { return 16; }
 };
 } // namespace rr
