@@ -51,10 +51,6 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (cmd.dseTransfer().op == DSEC::OP_NOP)
-        {
-            return true;
-        }
         std::optional<DisplayListEntry> entry = allocateCommand(cmd);
         if (!entry) 
         {
