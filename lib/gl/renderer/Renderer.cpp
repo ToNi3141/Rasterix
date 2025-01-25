@@ -340,10 +340,12 @@ bool Renderer::addCommitFramebufferCommand()
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
     {
-        // The external framebuffer does not require special handling
+        // A nop is used to force the DSE to wait till the (maybe) currently drawn or other operation
+        // on the framebuffer is finished before the DSE reads from the framebuffer.
+        // Otherwise the DSE might read a not finished frame.
+        return addCommand(NopCmd {});
     }
-
-    return true;
+    return false;
 }
 
 bool Renderer::addDseFramebufferCommand()

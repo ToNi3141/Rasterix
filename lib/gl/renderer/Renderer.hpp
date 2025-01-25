@@ -60,6 +60,7 @@
 #include "commands/StreamFromMemoryToDisplayCmd.hpp"
 #include "commands/StreamFromRrxToDisplayCmd.hpp"
 #include "commands/StreamFromRrxToMemoryCmd.hpp"
+#include "commands/NopCmd.hpp"
 #include "RenderConfigs.hpp"
 
 namespace rr
