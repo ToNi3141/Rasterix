@@ -36,11 +36,6 @@ bool RenderObj::isLine() const
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
 }
 
-Vec4 RenderObj::getVertex(const std::size_t index) const
-{
-    return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index);
-}
-
 Vec4 RenderObj::getTexCoord(const std::size_t tmu, const std::size_t index) const
 {
     if (m_texCoordArrayEnabled[tmu])

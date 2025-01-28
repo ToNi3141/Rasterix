@@ -38,9 +38,10 @@ public:
     template <typename TCommand>
     static std::size_t getCommandSize(const TCommand& cmd)
     {
+        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(cmd.payload()[0])>::type>::type;
         std::size_t expectedSize = 0;
         expectedSize += TDisplayList::template sizeOf<typename TCommand::CommandType>();
-        expectedSize += TDisplayList::template sizeOf<typename TCommand::PayloadType::element_type>() * cmd.payload().size();
+        expectedSize += TDisplayList::template sizeOf<PayloadType>() * cmd.payload().size();
         return expectedSize;
     }
 
@@ -61,7 +62,7 @@ private:
         *(m_displayList.template create<typename TCommand::CommandType>()) = cmd.command();
         for (auto& a : cmd.payload())
         {
-            using PayloadType = typename std::remove_const<typename TCommand::PayloadType::element_type>::type;
+            using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(a)>::type>::type;
             *(m_displayList.template create<PayloadType>()) = a;
         }
     }

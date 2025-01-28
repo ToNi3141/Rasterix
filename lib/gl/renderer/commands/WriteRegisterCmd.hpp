@@ -35,18 +35,16 @@ public:
     {
         m_val[0] = reg.serialize();
         m_op = OP_RENDER_CONFIG | reg.getAddr();
-        m_payload = { m_val };
     }
 
-    using PayloadType = tcb::span<const uint32_t>;
-    const PayloadType& payload() const { return m_payload; }
+    using PayloadType = std::array<uint32_t, 1>;
+    const PayloadType& payload() const { return m_val; }
     using CommandType = uint32_t;
     CommandType command() const { return m_op; }
 
 private:
     CommandType m_op {};
     std::array<uint32_t, 1> m_val;
-    PayloadType m_payload;
 };
 
 } // namespace rr

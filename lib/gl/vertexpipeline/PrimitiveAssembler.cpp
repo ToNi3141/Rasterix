@@ -20,14 +20,6 @@
 namespace rr
 {
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::getPrimitive()
-{
-    if (m_line) 
-    {
-        return constructLine();
-    }
-    return constructTriangle();
-}
 
 tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTriangle()
 {
