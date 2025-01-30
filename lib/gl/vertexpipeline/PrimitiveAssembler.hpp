@@ -35,7 +35,14 @@ public:
 
     PrimitiveAssembler(ViewPort& viewPort) : m_viewPort(viewPort) { }
 
-    tcb::span<const Triangle> getPrimitive();
+    tcb::span<const Triangle> getPrimitive()
+    {
+        if (m_line) 
+        {
+            return constructLine();
+        }
+        return constructTriangle();
+    }
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
     void setExpectedPrimitiveCount(const std::size_t count) { m_expectedPrimitiveCount = count; }

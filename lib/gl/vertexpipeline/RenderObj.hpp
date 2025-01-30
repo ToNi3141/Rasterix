@@ -60,7 +60,7 @@ public:
     void logCurrentConfig() const;
 
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
-    Vec4 getVertex(const std::size_t index) const;
+    Vec4 getVertex(const std::size_t index) const { return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index); }
     inline const std::bitset<MAX_TMU_COUNT>& texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     Vec4 getTexCoord(const std::size_t tmu, const std::size_t index) const;
     inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }

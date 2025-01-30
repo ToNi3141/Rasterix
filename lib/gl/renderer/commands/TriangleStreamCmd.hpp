@@ -47,14 +47,13 @@ public:
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc[0], triangle);
-        m_payload = { m_desc };
     }
 
     TriangleStreamCmd(const TriangleStreamCmd& c) { operator=(c); }
 
     bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const 
     {
-        return Rasterizer::checkIfTriangleIsInBounds(m_payload[0].param, lineStart, lineEnd);
+        return Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
     }
 
     bool increment(const std::size_t lineStart, const std::size_t lineEnd)
@@ -65,22 +64,20 @@ public:
 
     bool isVisible() const { return m_visible; };
 
-    using PayloadType = tcb::span<const TrDesc>;
-    const PayloadType& payload() const { return m_payload; }
+    using PayloadType = std::array<TriangleStreamTypes::TriangleDesc, 1>;
+    const PayloadType& payload() const { return m_desc; }
     using CommandType = uint32_t;
     static constexpr CommandType command() { return TRIANGLE_STREAM | (DisplayList::template sizeOf<TrDesc>()); }
 
     TriangleStreamCmd<DisplayList>& operator=(const TriangleStreamCmd<DisplayList>& rhs)
     {
         m_desc = rhs.m_desc;
-        m_payload = { m_desc };
         m_visible = rhs.m_visible;
         return *this;
     }
 
 private:
     std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;
-    PayloadType m_payload;
     bool m_visible { false };
 };
 

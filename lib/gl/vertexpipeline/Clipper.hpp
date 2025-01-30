@@ -98,7 +98,10 @@ private:
     friend Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
 };
 
-Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
+inline Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs)
+{
+    return lhs = static_cast<Clipper::OutCode>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
 
 } // namespace rr
 

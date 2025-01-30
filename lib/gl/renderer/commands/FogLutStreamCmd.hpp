@@ -56,11 +56,10 @@ public:
 
             setLutValue(i, m, b);
         }
-        m_payload = { m_lut };
     }
 
-    using PayloadType = tcb::span<const uint32_t>;
-    const PayloadType& payload() const { return m_payload; }
+    using PayloadType = std::array<uint32_t, LUT_SIZE>;
+    const PayloadType& payload() const { return m_lut; }
     using CommandType = uint32_t;
     static constexpr CommandType command() { return FOG_LUT_STREAM; }
 private:
@@ -77,7 +76,6 @@ private:
     }
 
     std::array<uint32_t, LUT_SIZE> m_lut;
-    PayloadType m_payload;
 };
 
 } // namespace rr
