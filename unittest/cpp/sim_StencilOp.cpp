@@ -16,10 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <math.h>
-#include <array>
 #include <algorithm>
-
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VStencilOp.h"
@@ -276,7 +275,6 @@ TEST_CASE("Test wrapping", "[VStencilOp]")
     // Destroy model
     delete top;
 }
-
 
 TEST_CASE("Check stall", "[VStencilOp]")
 {

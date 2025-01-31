@@ -18,16 +18,16 @@
 #ifndef RRXDISPLAYLISTASSEMBLER_HPP
 #define RRXDISPLAYLISTASSEMBLER_HPP
 
-#include <stdint.h>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <stdint.h>
 #include <tcb/span.hpp>
 
 namespace rr::displaylist
 {
 
 template <typename TDisplayList>
-class RRXDisplayListAssembler 
+class RRXDisplayListAssembler
 {
 public:
     RRXDisplayListAssembler(TDisplayList& displayList)
@@ -48,13 +48,14 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace()) 
+        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace())
         {
             return false;
         }
         writeCommand(cmd);
         return true;
     }
+
 private:
     template <typename TCommand>
     void writeCommand(const TCommand& cmd)

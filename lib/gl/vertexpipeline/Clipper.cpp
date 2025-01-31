@@ -23,10 +23,10 @@ namespace rr
 Vec4 Clipper::lerpVert(const Vec4& v0, const Vec4& v1, const float amt)
 {
     Vec4 vOut;
-    vOut[3] = ((v0[3] - v1[3]) * (1-amt)) + v1[3];
-    vOut[2] = ((v0[2] - v1[2]) * (1-amt)) + v1[2];
-    vOut[1] = ((v0[1] - v1[1]) * (1-amt)) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * (1-amt)) + v1[0];
+    vOut[3] = ((v0[3] - v1[3]) * (1 - amt)) + v1[3];
+    vOut[2] = ((v0[2] - v1[2]) * (1 - amt)) + v1[2];
+    vOut[1] = ((v0[1] - v1[1]) * (1 - amt)) + v1[1];
+    vOut[0] = ((v0[0] - v1[0]) * (1 - amt)) + v1[0];
     return vOut;
 }
 
@@ -63,19 +63,6 @@ bool Clipper::hasOutCode(const Vec4& v, const OutCode oc)
 
 float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
 {
-#ifdef CLIP_UNITCUBE
-    // The clipping with a unit cube is easier to imagine, because it uses normal coordinates instead of homogeneous.
-    // In the unit cube, we just have to check, if the axis against we want to clip is greater than one. If this is the case
-    // than we have to check how much is the point over the one to get our factor by how much we have the lerp.
-
-    // Clipping against near clipping plane
-    float clip = -1; // This is the clipping plane. Values over -1 are clipped
-    float a = v0[2] / v0[3]; // Convert from homogeneous coords to normal ones (Perspective division)
-    float b = v1[2] / v1[3];
-    return (clip-b) / (a - b); // Calculate the difference between two points. Then calculate how much b is over the clipping range
-    // and then divide that with the difference of the two points and we will get our amount, how much
-    // the values from the clipped point have to be lerped to the not clipped point
-#else
     // For a better explanation see https://chaosinmotion.com/2016/05/22/3d-clipping-in-homogeneous-coordinates/
     // and https://github.com/w3woody/arduboy/blob/master/Demo3D/pipeline.cpp
     float zDot0 = 0.0f;
@@ -110,7 +97,6 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
         break;
     }
     return zDot0 / (zDot0 - zDot1);
-#endif
 }
 
 tcb::span<VertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __restrict listBuffer)
@@ -121,7 +107,7 @@ tcb::span<VertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __
     std::size_t numberOfVerts = 3; // Initial the list contains 3 vertices
     std::size_t numberOfVertsCurrentPlane = 0;
 
-    for (auto oc : {OutCode::OC_NEAR, OutCode::OC_FAR, OutCode::OC_LEFT, OutCode::OC_RIGHT, OutCode::OC_TOP, OutCode::OC_BOTTOM})
+    for (auto oc : { OutCode::OC_NEAR, OutCode::OC_FAR, OutCode::OC_LEFT, OutCode::OC_RIGHT, OutCode::OC_TOP, OutCode::OC_BOTTOM })
     {
         // Optimization hint: If no vertex has an outcode given from oc, then it can just be
         // ignored. We just have to avoid that the swapping of the buffers is executed.

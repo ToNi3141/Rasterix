@@ -15,22 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef TEXTUREMEMORYMANAGER_HPP
 #define TEXTUREMEMORYMANAGER_HPP
-#include <array>
-#include "registers/TmuTextureReg.hpp"
 #include "TextureObject.hpp"
+#include "registers/TmuTextureReg.hpp"
+#include <array>
+#include <cmath>
+#include <cstring>
 #include <functional>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <tcb/span.hpp>
-#include <optional>
-#include <cmath>
 
 namespace rr
 {
 template <class RenderConfig>
-class TextureMemoryManager 
+class TextureMemoryManager
 {
 public:
     static constexpr std::size_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
@@ -40,7 +40,7 @@ public:
     {
     }
 
-    std::pair<bool, uint16_t> createTexture() 
+    std::pair<bool, uint16_t> createTexture()
     {
         for (std::size_t i = 1; i < RenderConfig::NUMBER_OF_TEXTURES; i++)
         {
@@ -52,7 +52,7 @@ public:
         return { false, 0 };
     }
 
-    bool createTextureWithName(const uint16_t texId) 
+    bool createTextureWithName(const uint16_t texId)
     {
         m_textureLut[texId] = allocTexture();
         if (m_textureLut[texId])
@@ -67,9 +67,9 @@ public:
         return false;
     }
 
-    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) 
+    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("updateTexture with invalid texID called");
             return false;
@@ -111,7 +111,7 @@ public:
         m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getPixelFormat());
         m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject[0].width);
         m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject[0].height);
- 
+
         // Allocate memory pages
         const std::size_t textureSize = m_textures[textureSlot].getTextureSize();
         const std::size_t texturePages = (textureSize / TEXTURE_PAGE_SIZE) + ((textureSize % TEXTURE_PAGE_SIZE) ? 1 : 0);
@@ -130,7 +130,7 @@ public:
 
     void setTextureWrapModeS(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("setTextureWrapModeS with invalid texID called");
             return;
@@ -141,7 +141,7 @@ public:
 
     void setTextureWrapModeT(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("setTextureWrapModeT with invalid texID called");
             return;
@@ -152,7 +152,7 @@ public:
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("enableTextureMagFiltering with invalid texID called");
             return;
@@ -163,7 +163,7 @@ public:
 
     void enableTextureMinFiltering(const uint16_t texId, bool filter)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("enableTextureMinFiltering with invalid texID called");
             return;
@@ -172,9 +172,9 @@ public:
         tex.tmuConfig.setEnableMinFilter(filter);
     }
 
-    bool textureValid(const uint16_t texId) const 
+    bool textureValid(const uint16_t texId) const
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("textureValid with invalid texID called");
             return false;
@@ -185,7 +185,7 @@ public:
 
     TmuTextureReg getTmuConfig(const uint16_t texId) const
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("getTmuConfig with invalid texID called");
             return {};
@@ -196,7 +196,7 @@ public:
 
     tcb::span<const std::size_t> getPages(const uint16_t texId) const
     {
-        if (textureValid(texId)) 
+        if (textureValid(texId))
         {
             const Texture& tex = m_textures[*m_textureLut[texId]];
             return { tex.pageTable.data(), tex.pages };
@@ -206,22 +206,22 @@ public:
 
     TextureObjectMipmap getTexture(const uint16_t texId)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("getTexture with invalid texID called");
             return {};
         }
         const std::size_t textureSlot = *m_textureLut[texId];
-        if (!m_textureEntryFlags[textureSlot].inUse) 
+        if (!m_textureEntryFlags[textureSlot].inUse)
         {
             return {};
         }
         return m_textures[textureSlot].textures;
     }
 
-    bool deleteTexture(const uint16_t texId) 
+    bool deleteTexture(const uint16_t texId)
     {
-        if (!m_textureLut[texId]) 
+        if (!m_textureLut[texId])
         {
             SPDLOG_ERROR("deleteTexture with invalid texID called");
             return false;
@@ -233,9 +233,9 @@ public:
         return true;
     }
 
-    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader) 
+    bool uploadTextures(const std::function<bool(uint32_t gramAddr, const tcb::span<const uint8_t> data)> uploader)
     {
-        if (!m_textureUpdateRequired) 
+        if (!m_textureUpdateRequired)
             return true;
 
         // Upload textures
@@ -243,7 +243,7 @@ public:
         {
             Texture& texture = m_textures[i];
             TextureEntry& textureEntry = m_textureEntryFlags[i];
-            if (textureEntry.requiresUpload) 
+            if (textureEntry.requiresUpload)
             {
                 bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
@@ -255,7 +255,7 @@ public:
                 textureEntry.requiresUpload = !ret;
             }
 
-            if (textureEntry.requiresDelete) 
+            if (textureEntry.requiresDelete)
             {
                 textureEntry.requiresDelete = false;
                 textureEntry.inUse = false;
@@ -290,7 +290,7 @@ private:
         std::size_t getTextureSize() const
         {
             std::size_t counter = 0;
-            for (auto &e : textures)
+            for (auto& e : textures)
             {
                 counter += e.width * e.height * 2;
             }
@@ -317,7 +317,7 @@ private:
             for (; level < textures.size(); level++)
             {
                 const std::size_t texSize = textures[level].width * textures[level].height * 2;
-                const uint8_t *pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
+                const uint8_t* pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
                 const std::size_t dataSize = (std::min)(texSize - static_cast<std::size_t>(mipMapAddr), buffer.size() - bufferSize);
                 std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
                 bufferSize += dataSize;

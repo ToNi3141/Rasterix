@@ -35,13 +35,15 @@ public:
     virtual bool clearToSend() override;
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override;
     virtual uint8_t getBufferCount() const override;
+
 private:
-    struct Channel {
-        struct channel_buffer *buf_ptr;
+    struct Channel
+    {
+        struct channel_buffer* buf_ptr;
         int fd;
     };
     Channel m_txChannel;
-    tcb::span<uint8_t> m_tmpBuffer{};
+    tcb::span<uint8_t> m_tmpBuffer {};
     std::atomic<bool> m_transferOngoing { false };
 };
 

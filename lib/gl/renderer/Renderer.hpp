@@ -18,80 +18,54 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
-#include <stdint.h>
-#include <array>
-#include <optional>
-#include "math/Vec.hpp"
-#include "Renderer.hpp"
 #include "IBusConnector.hpp"
-#include "displaylist/DisplayList.hpp"
 #include "Rasterizer.hpp"
-#include <string.h>
+#include "Renderer.hpp"
+#include "TextureMemoryManager.hpp"
 #include "displaylist/DisplayList.hpp"
 #include "displaylist/DisplayListAssembler.hpp"
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
+#include "math/Vec.hpp"
 #include <algorithm>
-#include "TextureMemoryManager.hpp"
+#include <array>
 #include <limits>
+#include <optional>
+#include <stdint.h>
+#include <string.h>
 
-#include "registers/BaseColorReg.hpp"
-#include "registers/TexEnvReg.hpp"
-#include "registers/FragmentPipelineReg.hpp"
-#include "registers/FeatureEnableReg.hpp"
-#include "registers/TmuTextureReg.hpp"
-#include "registers/ColorBufferClearColorReg.hpp"
-#include "registers/DepthBufferClearDepthReg.hpp"
-#include "registers/FogColorReg.hpp"
-#include "registers/RenderResolutionReg.hpp"
-#include "registers/ScissorEndReg.hpp"
-#include "registers/ScissorStartReg.hpp"
-#include "registers/TexEnvColorReg.hpp"
-#include "registers/YOffsetReg.hpp"
-#include "registers/StencilReg.hpp"
-#include "registers/ColorBufferAddrReg.hpp"
-#include "registers/DepthBufferAddrReg.hpp"
-#include "registers/StencilBufferAddrReg.hpp"
-#include "commands/TriangleStreamCmd.hpp"
+#include "RenderConfigs.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
-#include "commands/TextureStreamCmd.hpp"
-#include "commands/WriteRegisterCmd.hpp"
-#include "commands/WriteMemoryCmd.hpp"
+#include "commands/NopCmd.hpp"
 #include "commands/StreamFromMemoryToDisplayCmd.hpp"
 #include "commands/StreamFromRrxToDisplayCmd.hpp"
 #include "commands/StreamFromRrxToMemoryCmd.hpp"
-#include "commands/NopCmd.hpp"
-#include "RenderConfigs.hpp"
+#include "commands/TextureStreamCmd.hpp"
+#include "commands/TriangleStreamCmd.hpp"
+#include "commands/WriteMemoryCmd.hpp"
+#include "commands/WriteRegisterCmd.hpp"
+#include "registers/BaseColorReg.hpp"
+#include "registers/ColorBufferAddrReg.hpp"
+#include "registers/ColorBufferClearColorReg.hpp"
+#include "registers/DepthBufferAddrReg.hpp"
+#include "registers/DepthBufferClearDepthReg.hpp"
+#include "registers/FeatureEnableReg.hpp"
+#include "registers/FogColorReg.hpp"
+#include "registers/FragmentPipelineReg.hpp"
+#include "registers/RenderResolutionReg.hpp"
+#include "registers/ScissorEndReg.hpp"
+#include "registers/ScissorStartReg.hpp"
+#include "registers/StencilBufferAddrReg.hpp"
+#include "registers/StencilReg.hpp"
+#include "registers/TexEnvColorReg.hpp"
+#include "registers/TexEnvReg.hpp"
+#include "registers/TmuTextureReg.hpp"
+#include "registers/YOffsetReg.hpp"
 
 namespace rr
 {
-// Screen
-// <-----------------X_RESOLUTION--------------------------->
-// +--------------------------------------------------------+ ^
-// |        ^                                               | |
-// |        | m_yLineResolution      m_displayLines         | |
-// |        |                                               | |
-// |        v                                               | |
-// |<------------------------------------------------------>| Y
-// |                                                        | _
-// |                                 m_displayLines         | R
-// |                                                        | E
-// |                                                        | S
-// |<------------------------------------------------------>| O
-// |                                                        | L
-// |                                 m_displayLines         | U
-// |                                                        | T
-// |                                                        | I
-// |<------------------------------------------------------>| O
-// |                                                        | N
-// |                                 m_displayLines         | |
-// |                                                        | |
-// |                                                        | |
-// +--------------------------------------------------------+ v
-// This renderer collects all triangles in a single display list. It will create for each display line a unique display list where
-// all triangles and operations are stored, which belonging to this display line. This is probably the fastest method to do this
-// but requires much more memory because of lots of duplicated data.
+
 class Renderer
 {
 public:
@@ -129,8 +103,8 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setClearDepth(uint16_t depth);
 
-    /// @brief Updates the fragment pipeline configuration 
-    /// @param pipelineConf The new pipeline configuration 
+    /// @brief Updates the fragment pipeline configuration
+    /// @param pipelineConf The new pipeline configuration
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
 
@@ -161,7 +135,7 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFogLut(const std::array<float, 33>& fogLut, float start, float end);
 
-    /// @brief Creates a new texture 
+    /// @brief Creates a new texture
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     std::pair<bool, uint16_t> createTexture() { return m_textureManager.createTexture(); }
 
@@ -169,7 +143,7 @@ public:
     /// @param texId the name of the new texture
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     bool createTextureWithName(const uint16_t texId) { return m_textureManager.createTextureWithName(texId); }
-    
+
     /// @brief This will update the texture data of the texture with the given id
     /// @param texId The texture id which texture has to be updated
     /// @param textureObject The object which contains the texture and all its meta data
@@ -192,7 +166,7 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool useTexture(const std::size_t target, const uint16_t texId);
 
-    /// @brief Deletes a texture 
+    /// @brief Deletes a texture
     /// @param texId The id of the texture to delete
     /// @return true if succeeded
     bool deleteTexture(const uint16_t texId) { return m_textureManager.deleteTexture(texId); }
@@ -243,7 +217,7 @@ public:
     /// @brief Queries the maximum texture size in pixels
     /// @return The maximum texture size in pixel
     std::size_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
-    
+
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
     std::size_t getTmuCount() const { return RenderConfig::TMU_COUNT; }
@@ -264,7 +238,7 @@ private:
     using DisplayListType = displaylist::DisplayList<ALIGNMENT>;
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, DisplayListType>;
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
-    using TextureManagerType = TextureMemoryManager<RenderConfig>; 
+    using TextureManagerType = TextureMemoryManager<RenderConfig>;
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
 
@@ -281,7 +255,7 @@ private:
             if (triangleCmd->isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
                 bool ret { false };
-                
+
                 // The floating point rasterizer can automatically increment all attributes to the current screen position
                 // Therefor no further computing is necessary
                 if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
@@ -295,7 +269,7 @@ private:
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
                     ret = dispatcher.addCommand(i, triangleCmdInc);
                 }
-                if (ret == false) 
+                if (ret == false)
                 {
                     return false;
                 }
@@ -307,6 +281,7 @@ private:
         {
             triangleCmd = cmd;
         }
+
     private:
         const TriangleStreamCmd<DisplayList>* triangleCmd { nullptr };
     };
@@ -338,7 +313,9 @@ private:
     template <typename Factory>
     bool addCommandWithFactory(const Factory& commandFactory)
     {
-        return addCommandWithFactory_if(commandFactory, [](std::size_t, std::size_t, std::size_t, std::size_t){ return true; });
+        return addCommandWithFactory_if(commandFactory,
+            [](std::size_t, std::size_t, std::size_t, std::size_t)
+            { return true; });
     }
 
     template <typename Factory, typename Pred>
@@ -370,7 +347,7 @@ private:
 
     void removeSection()
     {
-        m_displayListBuffer.getBack().removeSection(); 
+        m_displayListBuffer.getBack().removeSection();
     }
 
     void clearDisplayListAssembler()

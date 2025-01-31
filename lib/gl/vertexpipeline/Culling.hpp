@@ -23,7 +23,7 @@
 
 namespace rr
 {
-class Culling 
+class Culling
 {
 public:
     Culling();

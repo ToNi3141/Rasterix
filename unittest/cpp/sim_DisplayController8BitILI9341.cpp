@@ -23,8 +23,6 @@
 // Include model header, generated from Verilating "top.v"
 #include "VDisplayController8BitILI9341.h"
 
-
-
 void reset(VDisplayController8BitILI9341& t)
 {
     t.resetn = 0;
@@ -42,7 +40,7 @@ void reset(VDisplayController8BitILI9341& t)
     REQUIRE(t.rst == 1);
 }
 
-void initTest(VDisplayController8BitILI9341& t, const bool dc, const uint8_t data, bool last = false) 
+void initTest(VDisplayController8BitILI9341& t, const bool dc, const uint8_t data, bool last = false)
 {
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
@@ -71,51 +69,51 @@ TEST_CASE("Stream data", "[Display]")
     t.s_axis_tdata = 0xffaa;
 
     // Initialization sequence for a ILI9341 with 240x320px
-    initTest(t, false, 0x01);  
-    initTest(t, true, 0); 
-    initTest(t, false, 0x28);  
-    initTest(t, true, 0); 
-    initTest(t, false, 0xC0);  
-    initTest(t, true, 0x23); 
-    initTest(t, false, 0xC1);  
-    initTest(t, true, 0x10); 
-    initTest(t, false, 0xC5);  
-    initTest(t, true, 0x2B); 
-    initTest(t, true, 0x2B); 
-    initTest(t, false, 0xC7);  
-    initTest(t, true, 0xC0); 
-    initTest(t, false, 0x36);  
-    initTest(t, true, 0x00 | 0x00 | 0x40 | 0x08);
-    initTest(t, false, 0x3A);  
-    initTest(t, true, 0x55); 
-    initTest(t, false, 0xB1);  
-    initTest(t, true, 0x00); 
-    initTest(t, true, 0x1B); 
-    initTest(t, false, 0xB7); 
-    initTest(t, true, 0x07); 
-    initTest(t, false, 0x11); 
+    initTest(t, false, 0x01);
     initTest(t, true, 0);
-    initTest(t, false, 0x29); 
+    initTest(t, false, 0x28);
+    initTest(t, true, 0);
+    initTest(t, false, 0xC0);
+    initTest(t, true, 0x23);
+    initTest(t, false, 0xC1);
+    initTest(t, true, 0x10);
+    initTest(t, false, 0xC5);
+    initTest(t, true, 0x2B);
+    initTest(t, true, 0x2B);
+    initTest(t, false, 0xC7);
+    initTest(t, true, 0xC0);
+    initTest(t, false, 0x36);
+    initTest(t, true, 0x00 | 0x00 | 0x40 | 0x08);
+    initTest(t, false, 0x3A);
+    initTest(t, true, 0x55);
+    initTest(t, false, 0xB1);
+    initTest(t, true, 0x00);
+    initTest(t, true, 0x1B);
+    initTest(t, false, 0xB7);
+    initTest(t, true, 0x07);
+    initTest(t, false, 0x11);
+    initTest(t, true, 0);
+    initTest(t, false, 0x29);
     initTest(t, true, 0);
     initTest(t, false, 0x2A);
-    initTest(t, true, 0); 
-    initTest(t, true, 0); 
-    initTest(t, true, 0x00); 
-    initTest(t, true, 0xEF); 
+    initTest(t, true, 0);
+    initTest(t, true, 0);
+    initTest(t, true, 0x00);
+    initTest(t, true, 0xEF);
     initTest(t, false, 0x2B);
-    initTest(t, true, 0); 
-    initTest(t, true, 0); 
-    initTest(t, true, 0x01); 
-    initTest(t, true, 0x3F); 
+    initTest(t, true, 0);
+    initTest(t, true, 0);
+    initTest(t, true, 0x01);
+    initTest(t, true, 0x3F);
     initTest(t, false, 0x2C, true);
-    
+
     // stream clk 0 fetch
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
-    //REQUIRE(t.dc == 1);
-    //REQUIRE(t.data == 0x08);
+    // REQUIRE(t.dc == 1);
+    // REQUIRE(t.data == 0x08);
     t.s_axis_tvalid = 1;
     t.s_axis_tdata = 0x550f;
     rr::ut::clk(top);
@@ -152,15 +150,13 @@ TEST_CASE("Stream data", "[Display]")
     REQUIRE(t.data == 0xaa);
     rr::ut::clk(top);
 
-
-
     // stream clk 1 fetch
     REQUIRE(t.s_axis_tready == 0);
     REQUIRE(t.rd == 1);
     REQUIRE(t.wr == 1);
     REQUIRE(t.cs == 0);
-    //REQUIRE(t.dc == 1);
-    //REQUIRE(t.data == 0x08);
+    // REQUIRE(t.dc == 1);
+    // REQUIRE(t.data == 0x08);
     rr::ut::clk(top);
     // stream clk 1 stream
     REQUIRE(t.s_axis_tready == 0);
@@ -201,4 +197,3 @@ TEST_CASE("Stream data", "[Display]")
     // Destroy model
     delete top;
 }
-

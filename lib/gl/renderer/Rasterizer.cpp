@@ -18,14 +18,14 @@
 #include "Rasterizer.hpp"
 #include <cstring>
 
-#include <algorithm>    // std::max
+#include <algorithm> // std::max
 
 namespace rr
 {
 
 bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
-                           const std::size_t lineStart,
-                           const std::size_t lineEnd)
+    const std::size_t lineStart,
+    const std::size_t lineEnd)
 {
     TriangleStreamTypes::StaticParams& params = desc.param;
     if ((lineStart == 0) && (params.bbStartY < lineEnd))
@@ -37,8 +37,7 @@ bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
     {
         // Check if the triangle is in the current area by checking if the end position is below the start line
         // and if the start of the triangle is within this area
-        if ((params.bbEndY >= lineStart) &&
-                (params.bbStartY < lineEnd))
+        if ((params.bbEndY >= lineStart) && (params.bbStartY < lineEnd))
         {
             // The triangle is within the current display area
             // Check if the triangle started in the previous area. If so, we have to move the interpolation factors
@@ -75,7 +74,7 @@ bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
     return false;
 }
 
-VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Vec2i &c)
+VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i& a, const Vec2i& b, const Vec2i& c)
 {
     VecInt val1 = (c[0] - a[0]) * (b[1] - a[1]);
     VecInt val2 = (c[1] - a[1]) * (b[0] - a[0]);
@@ -83,8 +82,8 @@ VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i &a, const Vec2i &b, const Ve
     return ges;
 }
 
-bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc, 
-                           const TransformedTriangle& triangle) const
+bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
+    const TransformedTriangle& triangle) const
 {
     TriangleStreamTypes::StaticParams& params = desc.param;
     Vec2i v0 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex0[0], triangle.vertex0[1] });
@@ -95,11 +94,11 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     VecInt sign = -1; // 1 backface culling; -1 frontface culling
     sign = (area <= 0) ? -1 : 1; // No culling
     area *= sign;
-    if (area <= 0x0) 
+    if (area <= 0x0)
     {
         return false;
     }
-    
+
     // Initialize Bounding box
     // Get the bounding box
     int32_t bbStartX = std::min(std::min(v0[0], v1[0]), v2[0]);
@@ -135,15 +134,15 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
         }
     }
 
-//    // Clamp against the view port
-//    // Should not be needed when the clipping is enabled
-//         bbStartX = std::max(bbStartX, (int32_t)0);
-//         bbStartY = std::max(bbStartY, (int32_t)0);
-//         bbEndX = std::min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
-//         bbEndY = std::min(bbEndY + 1, 320);
-//     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
-//        if ((bbEndX - bbStartX) == 0)
-//            return false;
+    //    // Clamp against the view port
+    //    // Should not be needed when the clipping is enabled
+    //         bbStartX = std::max(bbStartX, (int32_t)0);
+    //         bbStartY = std::max(bbStartY, (int32_t)0);
+    //         bbEndX = std::min(bbEndX + 1, 480); // Increase the size at the end of the bounding box a bit. It can happen otherwise that triangles is discarded because it was too small
+    //         bbEndY = std::min(bbEndY + 1, 320);
+    //     // Check if the bounding box has at least a width of one. Otherwise the hardware will stuck.
+    //        if ((bbEndX - bbStartX) == 0)
+    //            return false;
 
     bbStartX = params.bbStartX << EDGE_FUNC_SIZE;
     bbStartY = params.bbStartY << EDGE_FUNC_SIZE;
@@ -196,8 +195,8 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
             Vec3 texS { triangle.texture0[i][0], triangle.texture1[i][0], triangle.texture2[i][0] };
             Vec3 texT { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] };
             Vec3 texQ { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] };
-            
-            // Avoid overflowing the integer part by adding an offset 
+
+            // Avoid overflowing the integer part by adding an offset
             if (m_enableScaling)
             {
                 const float minS = std::min(texS[0], std::min(texS[1], texS[2]));
@@ -287,7 +286,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     return true;
 }
 
-float Rasterizer::edgeFunctionFloat(const Vec4 &a, const Vec4 &b, const Vec4 &c)
+float Rasterizer::edgeFunctionFloat(const Vec4& a, const Vec4& b, const Vec4& c)
 {
     float val1 = (c[0] - a[0]) * (b[1] - a[1]);
     float val2 = (c[1] - a[1]) * (b[0] - a[0]);

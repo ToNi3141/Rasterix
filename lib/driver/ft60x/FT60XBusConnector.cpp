@@ -11,12 +11,13 @@ FT60XBusConnector::FT60XBusConnector()
 {
     FT_STATUS ftStatus = FT_OK;
     ftStatus = FT_Create(0, FT_OPEN_BY_INDEX, &fthandle);
-    if (!fthandle) {
+    if (!fthandle)
+    {
         printf("Failed to create device\r\n");
         return;
     }
 
-    ftStatus = FT_EnableGPIO(fthandle, 0x3, 0x3); //bit 0 and 1 both set.
+    ftStatus = FT_EnableGPIO(fthandle, 0x3, 0x3); // bit 0 and 1 both set.
     ftStatus = FT_SetGPIOPull(fthandle, 0x3, 0x2);
 
     ftStatus = FT_WriteGPIO(fthandle, 0x3, 0x0);

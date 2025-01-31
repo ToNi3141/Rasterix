@@ -18,16 +18,15 @@
 #include "VertexPipeline.hpp"
 #include "math/Vec.hpp"
 #include "math/Veci.hpp"
-#include <string.h>
-#include <stdlib.h>
 #include <cmath>
 #include <spdlog/spdlog.h>
+#include <stdlib.h>
+#include <string.h>
 
 // The Arduino IDE will produce compile errors when using std::min and std::max
-#include <algorithm>    // std::max
+#include <algorithm> // std::max
 #define max std::max
 #define min std::min
-
 
 namespace rr
 {
@@ -46,19 +45,19 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
             m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
-            parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]); 
+            parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]);
         }
     }
 
     // TODO: Check if this required? The standard requires but is it really used?
-    //m_c[j].transform(color, color); // Calculate this in one batch to improve performance
+    // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
     parameter.color = obj.getColor(pos);
     if (m_lighting.lightingEnabled())
     {
         Vec4 vl;
         Vec3 normal = m_matrixStack.getNormal().transform(obj.getNormal(pos));
 
-        if (m_enableNormalizing) 
+        if (m_enableNormalizing)
         {
             normal.normalize();
         }
@@ -74,7 +73,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
 bool VertexPipeline::drawObj(const RenderObj& obj)
 {
     m_matrixStack.recalculateMatrices();
-    if (!m_renderer.updatePipeline()) 
+    if (!m_renderer.updatePipeline())
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
@@ -92,7 +91,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         const tcb::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
         {
-            if (!drawTriangle(triangle)) 
+            if (!drawTriangle(triangle))
             {
                 return false;
             }
@@ -121,8 +120,8 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         //     // Perspective correction of the texture coordinates
         //     if (m_renderer.getEnableTmu(j))
         //         texCoordListClipped[i][j].mul(vertListClipped[i][3]); // since w is already divided, just multiply the 1/w to all elements. Saves one division.
-        //     // TODO: Perspective correction of the color 
-        //     // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must 
+        //     // TODO: Perspective correction of the color
+        //     // Each texture uses it's own scaled w (basically q*w). Therefore the hardware must
         //     // interpolate (q*w) for each texture. w alone is not enough because OpenGL allows to set q coordinate.
         // }
 
@@ -131,14 +130,14 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
     }
 
     // Cull triangle
-    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
+    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
     if (m_culling.cull(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return true;
     }
-    
-    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex)) 
+
+    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return false;
     }
@@ -146,17 +145,16 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
     // Render the triangle
     for (std::size_t i = 3; i <= clippedVertexListSize; i++)
     {
-        const bool success = m_renderer.drawTriangle({ 
-                list[0].vertex,
-                list[i - 2].vertex,
-                list[i - 1].vertex,
-                list[0].tex,
-                list[i - 2].tex,
-                list[i - 1].tex,
-                list[0].color,
-                list[i - 2].color,
-                list[i - 1].color });
-        if (!success) 
+        const bool success = m_renderer.drawTriangle({ list[0].vertex,
+            list[i - 2].vertex,
+            list[i - 1].vertex,
+            list[0].tex,
+            list[i - 2].tex,
+            list[i - 1].tex,
+            list[0].color,
+            list[i - 2].color,
+            list[i - 1].color });
+        if (!success)
         {
             return false;
         }
@@ -181,30 +179,29 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
     m_viewPort.transform(v0);
     m_viewPort.transform(v1);
     m_viewPort.transform(v2);
-    
+
     // Cull triangle
-    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is 
+    // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
     if (m_culling.cull(v0, v1, v2))
     {
         return true;
     }
-    
-    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2)) 
+
+    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2))
     {
         return false;
     }
 
-    return m_renderer.drawTriangle({ 
-            v0,
-            v1,
-            v2,
-            triangle[0].get().tex,
-            triangle[1].get().tex,
-            triangle[2].get().tex,
-            triangle[0].get().color,
-            triangle[1].get().color,
-            triangle[2].get().color });
+    return m_renderer.drawTriangle({ v0,
+        v1,
+        v2,
+        triangle[0].get().tex,
+        triangle[1].get().tex,
+        triangle[2].get().tex,
+        triangle[0].get().color,
+        triangle[1].get().color,
+        triangle[2].get().color });
 }
 
 bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)

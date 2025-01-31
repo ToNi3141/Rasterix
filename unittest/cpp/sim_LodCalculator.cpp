@@ -23,7 +23,6 @@
 // Include model header, generated from Verilating "top.v"
 #include "VLodCalculator.h"
 
-
 TEST_CASE("Check max lod", "[LodCalculator]")
 {
     VLodCalculator* t = new VLodCalculator();
@@ -34,7 +33,6 @@ TEST_CASE("Check max lod", "[LodCalculator]")
     t->s_textureSizeWidth = 8;
     t->s_textureSizeHeight = 8;
 
-    
     t->s_texelS = 0x1 << (15 - 8);
     t->s_texelT = 0x1 << (15 - 8);
     t->s_texelSxy = 0x1 << (15 + 16);
@@ -53,7 +51,6 @@ TEST_CASE("Check lod xy", "[LodCalculator]")
 
     t->s_textureSizeWidth = 8;
     t->s_textureSizeHeight = 8;
-
 
     t->s_texelS = 0x1 << (15 - 8);
     t->s_texelT = 0x1 << (15 - 8);

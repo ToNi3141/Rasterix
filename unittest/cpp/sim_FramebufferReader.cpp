@@ -104,7 +104,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
 
     // Check that the fifo is full
     t->s_fetch_tvalid = 1;
-    t->s_fetch_tlast = 0; 
+    t->s_fetch_tlast = 0;
     t->s_fetch_taddr = 300;
     rr::ut::clk(t);
     CHECK(t->s_fetch_tready == 0);

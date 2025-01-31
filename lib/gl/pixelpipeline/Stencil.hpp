@@ -18,8 +18,8 @@
 #ifndef STENCIL_HPP_
 #define STENCIL_HPP_
 
-#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/Renderer.hpp"
 #include <optional>
 
 namespace rr

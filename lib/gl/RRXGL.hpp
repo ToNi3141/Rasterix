@@ -18,12 +18,12 @@
 #ifndef RRXGL_HPP
 #define RRXGL_HPP
 
-#include <vector>
-#include <array>
-#include <string>
-#include <functional>
 #include "IBusConnector.hpp"
+#include <array>
+#include <functional>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace rr
 {
@@ -50,10 +50,10 @@ public:
     void swapDisplayList();
     void uploadDisplayList();
 
-    const char *getLibExtensions() const;
-    const void *getLibProcedure(std::string name) const;
+    const char* getLibExtensions() const;
+    const void* getLibProcedure(std::string name) const;
 
-    void addLibProcedure(std::string name, const void *address);
+    void addLibProcedure(std::string name, const void* address);
     void addLibExtension(std::string extension);
 
     /// @brief Queries the maximum texture size in pixels
@@ -77,6 +77,7 @@ public:
     /// @param y screen height
     /// @return true if succeeded
     bool setRenderResolution(const std::size_t x, const std::size_t y);
+
 private:
     RRXGL(IBusConnector& busConnector);
     ~RRXGL();
@@ -85,8 +86,8 @@ private:
     // Errors
     uint32_t m_error { 0 };
 
-    // OpenGL extensions 
-    std::map<std::string, const void *> m_glProcedures;
+    // OpenGL extensions
+    std::map<std::string, const void*> m_glProcedures;
     std::string m_glExtensions;
 };
 

@@ -18,8 +18,8 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
-#include "math/Vec.hpp"
 #include "RenderConfigs.hpp"
+#include "math/Vec.hpp"
 #include <array>
 
 namespace rr

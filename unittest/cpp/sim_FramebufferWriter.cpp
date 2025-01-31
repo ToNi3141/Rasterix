@@ -36,7 +36,7 @@ TEST_CASE("Write one pixel into framebuffer", "[FramebufferWriter]")
 
     t->m_mem_axi_awready = 1;
     t->m_mem_axi_wready = 1;
-    
+
     rr::ut::reset(t);
 
     CHECK(t->m_mem_axi_awvalid == 0);
@@ -67,12 +67,12 @@ TEST_CASE("Write one pixel into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 1);
         CHECK(t->m_mem_axi_wvalid == 1);
@@ -85,7 +85,7 @@ TEST_CASE("Write one pixel into framebuffer", "[FramebufferWriter]")
         rr::ut::clk(t);
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
-        CHECK(t->m_mem_axi_wvalid == 0); 
+        CHECK(t->m_mem_axi_wvalid == 0);
     }
 
     delete t;
@@ -104,7 +104,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
 
     t->m_mem_axi_awready = 1;
     t->m_mem_axi_wready = 1;
-    
+
     rr::ut::reset(t);
 
     CHECK(t->s_frag_tready == 1);
@@ -159,7 +159,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xcccc;
         t->s_frag_taddr = 4;
@@ -174,7 +174,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0x5678'1234);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xdddd;
         t->s_frag_taddr = 5;
@@ -185,7 +185,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_mem_axi_awvalid == 1);
@@ -196,13 +196,13 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xbbbb'aaaa);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 1);
@@ -213,7 +213,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xdddd'cccc);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
@@ -236,7 +236,7 @@ TEST_CASE("Write stream of pixels with interruptions", "[FramebufferWriter]")
 
     t->m_mem_axi_awready = 1;
     t->m_mem_axi_wready = 1;
-    
+
     rr::ut::reset(t);
 
     CHECK(t->s_frag_tready == 1);
@@ -301,7 +301,6 @@ TEST_CASE("Write stream of pixels with interruptions", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-
         rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xaaaa;
@@ -339,19 +338,19 @@ TEST_CASE("Write stream of pixels with interruptions", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0x5678'1234);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 1);
@@ -362,7 +361,7 @@ TEST_CASE("Write stream of pixels with interruptions", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xbbbb'aaaa);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
@@ -384,7 +383,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
 
     t->m_mem_axi_awready = 0;
     t->m_mem_axi_wready = 0;
-    
+
     rr::ut::reset(t);
 
     CHECK(t->s_frag_tready == 1);
@@ -442,7 +441,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xcccc;
         t->s_frag_taddr = 4;
@@ -457,7 +456,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0x5678'1234);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xdddd;
         t->s_frag_taddr = 5;
@@ -468,7 +467,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 1);
         CHECK(t->m_mem_axi_wvalid == 1);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xeeee;
         t->s_frag_taddr = 6;
@@ -479,7 +478,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 1);
         CHECK(t->m_mem_axi_wvalid == 1);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xffff;
         t->s_frag_taddr = 7;
@@ -490,8 +489,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 1);
         CHECK(t->m_mem_axi_wvalid == 1);
 
-
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xffff;
         t->s_frag_taddr = 7;
@@ -509,7 +507,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0x5678'1234);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xffff;
         t->s_frag_taddr = 7;
@@ -522,7 +520,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xffff;
         t->s_frag_taddr = 7;
@@ -540,7 +538,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xbbbb'aaaa);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xffff;
         t->s_frag_taddr = 7;
@@ -553,7 +551,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         t->m_mem_axi_awready = 1;
         t->m_mem_axi_wready = 1;
@@ -566,7 +564,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xdddd'cccc);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         t->m_mem_axi_awready = 1;
         t->m_mem_axi_wready = 1;
@@ -574,7 +572,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         t->m_mem_axi_awready = 1;
         t->m_mem_axi_wready = 1;
@@ -587,7 +585,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xffff'eeee);
         CHECK(t->m_mem_axi_wstrb == 0b11'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         t->m_mem_axi_awready = 1;
         t->m_mem_axi_wready = 1;
@@ -614,7 +612,7 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
 
     t->m_mem_axi_awready = 1;
     t->m_mem_axi_wready = 1;
-    
+
     rr::ut::reset(t);
 
     CHECK(t->s_frag_tready == 1);
@@ -675,7 +673,7 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xcccc;
         t->s_frag_taddr = 4;
@@ -690,7 +688,7 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0x5678'1234);
         CHECK(t->m_mem_axi_wstrb == 0b00'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 1;
         t->s_frag_tdata = 0xdddd;
         t->s_frag_taddr = 5;
@@ -701,7 +699,7 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 0);
         CHECK(t->m_mem_axi_awvalid == 1);
@@ -712,13 +710,13 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         CHECK(t->m_mem_axi_wdata == 0xbbbb'aaaa);
         CHECK(t->m_mem_axi_wstrb == 0b00'11);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);
         CHECK(t->m_mem_axi_wvalid == 0);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0); // all strobe bits are zero -> no write is executed
@@ -728,7 +726,7 @@ TEST_CASE("Enable scissor and write a 1x2px quad", "[FramebufferWriter]")
         // CHECK(t->m_mem_axi_wdata == 0xdddd'cccc);
         // CHECK(t->m_mem_axi_wstrb == 0b00'00);
 
-        rr::ut::clk(t); 
+        rr::ut::clk(t);
         t->s_frag_tvalid = 0;
         CHECK(t->s_frag_tready == 1);
         CHECK(t->m_mem_axi_awvalid == 0);

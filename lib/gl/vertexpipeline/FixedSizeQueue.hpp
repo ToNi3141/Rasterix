@@ -18,6 +18,9 @@
 #ifndef FIXED_SIZE_QUEUE_HPP
 #define FIXED_SIZE_QUEUE_HPP
 
+#include <array>
+#include <cstdint>
+
 namespace rr
 {
 

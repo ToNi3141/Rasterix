@@ -17,14 +17,12 @@
 
 #include "general.hpp"
 
-#include <math.h>
-#include <array>
 #include <algorithm>
-
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VFunctionInterpolator.h"
-
 
 float clamp(float v, float lo, float hi)
 {
@@ -38,7 +36,7 @@ float clamp(float v, float lo, float hi)
 float calculateLinearValue(const float start, const float end, const float z)
 {
     float f = (end - z) / (end - start);
-    return f; 
+    return f;
 }
 
 void generateLinearTable(VFunctionInterpolator* t, const float start, const float end)
@@ -47,7 +45,7 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
     uint64_t table[LUT_SIZE];
     // The verilog code is not able to handle float values smaller than 1.0f.
     // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
-    // the set x to 1. 
+    // the set x to 1.
     const float startInc = start < 1.0f ? 1.0f : start;
     const float lutLowerBound = startInc;
     const float lutUpperBound = end;
@@ -66,7 +64,7 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
         float f = calculateLinearValue(start, end, powf(2, i));
         float fn = calculateLinearValue(start, end, powf(2, i + 1));
 
-        float diff = fn - f; 
+        float diff = fn - f;
         float step = diff / 256.0f;
 
         // printf("%d z: %f f: %f fn: %f step: %f axi: 0x%llX\r\n", i, z, f, fn, step, lutEntry.axiVal);
@@ -103,9 +101,9 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
         {
             const float ref = clamp(calculateLinearValue(start, end, i - (PIPELINE_STEPS * STEPS)), 0.0f, 1.0f);
             const float actual = (float)(top->fx) / powf(2, 22);
-            //printf("i: %f, ref %f, actual: %f\r\n", i, ref, actual);
+            // printf("i: %f, ref %f, actual: %f\r\n", i, ref, actual);
             REQUIRE(ref == Approx(actual).margin(0.005));
-            
+
             REQUIRE(actual <= 1.0f);
             REQUIRE(actual >= 0.0f);
         }

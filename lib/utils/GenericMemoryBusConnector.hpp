@@ -20,8 +20,8 @@
 
 #include "IBusConnector.hpp"
 #include <array>
-#include <tcb/span.hpp>
 #include <cstdint>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -33,6 +33,7 @@ public:
 
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override { return { m_dlMem[index] }; }
     virtual uint8_t getBufferCount() const override { return m_dlMem.size(); }
+
 protected:
     std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_dlMem;
 };

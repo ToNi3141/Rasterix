@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "glu.h"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
@@ -31,7 +30,8 @@ GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, 
 
     deltaZ = zFar - zNear;
     sine = sinf(radians);
-    if ((deltaZ == 0.0f) || (sine == 0.0f) || (aspect == 0.0f)) {
+    if ((deltaZ == 0.0f) || (sine == 0.0f) || (aspect == 0.0f))
+    {
         return;
     }
     cotangent = cosf(radians) / sine;
@@ -47,18 +47,18 @@ GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, 
 }
 
 GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
-                              GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
-                              GLfloat upz)
+    GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
+    GLfloat upz)
 {
-    rr::Vec3 forward{{centerx - eyex,
-                    centery - eyey,
-                    centerz - eyez}};
-    rr::Vec3 up{{upx, upy, upz}};
+    rr::Vec3 forward { { centerx - eyex,
+        centery - eyey,
+        centerz - eyez } };
+    rr::Vec3 up { { upx, upy, upz } };
 
     rr::Mat44 m;
 
     forward.normalize();
-    rr::Vec3 side{forward};
+    rr::Vec3 side { forward };
 
     /* Side = forward x up */
     side.cross(up);

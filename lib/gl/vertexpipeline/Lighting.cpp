@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "Lighting.hpp"
 
 namespace rr
@@ -45,9 +44,9 @@ Lighting::Lighting()
 }
 
 void Lighting::calculateLights(Vec4& __restrict color,
-                               const Vec4& triangleColor,
-                               const Vec4& vertex,
-                               const Vec3& normal) 
+    const Vec4& triangleColor,
+    const Vec4& vertex,
+    const Vec3& normal)
 {
     const float alphaOld = triangleColor[3];
     if (m_lightingEnabled)
@@ -56,7 +55,7 @@ void Lighting::calculateLights(Vec4& __restrict color,
         const Vec4& ambientColor = (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor;
         const Vec4& diffuseColor = (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor;
         const Vec4& specularColor = (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor;
-        
+
         Vec4 colorTmp;
         calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_material.ambientColorScene);
 
@@ -66,13 +65,13 @@ void Lighting::calculateLights(Vec4& __restrict color,
             if (!m_lightEnable[i])
                 continue;
             calculateLight(colorTmp,
-                           m_lights[i],
-                           m_material.specularExponent,
-                           ambientColor,
-                           diffuseColor,
-                           specularColor,
-                           vertex,
-                           n);
+                m_lights[i],
+                m_material.specularExponent,
+                ambientColor,
+                diffuseColor,
+                specularColor,
+                vertex,
+                n);
         }
 
         color = colorTmp;
@@ -81,13 +80,13 @@ void Lighting::calculateLights(Vec4& __restrict color,
 }
 
 void Lighting::calculateLight(Vec4& __restrict color,
-                         const LightConfig& lightConfig,
-                         const float materialSpecularExponent,
-                         const Vec4& materialAmbientColor,
-                         const Vec4& materialDiffuseColor,
-                         const Vec4& materialSpecularColor,
-                         const Vec4& v0,
-                         const Vec4& n0) const
+    const LightConfig& lightConfig,
+    const float materialSpecularExponent,
+    const Vec4& materialAmbientColor,
+    const Vec4& materialDiffuseColor,
+    const Vec4& materialSpecularColor,
+    const Vec4& v0,
+    const Vec4& n0) const
 {
     // Calculate light from lights
     Vec4 dir;
@@ -203,22 +202,22 @@ void Lighting::enableLight(const std::size_t light, const bool enable)
     m_lightEnable[light] = enable;
 }
 
-void Lighting::setAmbientColorLight(const std::size_t light, const Vec4 &color)
+void Lighting::setAmbientColorLight(const std::size_t light, const Vec4& color)
 {
     m_lights[light].ambientColor = color;
 }
 
-void Lighting::setDiffuseColorLight(const std::size_t light, const Vec4 &color)
+void Lighting::setDiffuseColorLight(const std::size_t light, const Vec4& color)
 {
     m_lights[light].diffuseColor = color;
 }
 
-void Lighting::setSpecularColorLight(const std::size_t light, const Vec4 &color)
+void Lighting::setSpecularColorLight(const std::size_t light, const Vec4& color)
 {
     m_lights[light].specularColor = color;
 }
 
-void Lighting::setPosLight(const std::size_t light, const Vec4 &pos)
+void Lighting::setPosLight(const std::size_t light, const Vec4& pos)
 {
     m_lights[light].position = pos;
     m_lights[light].preCalcVectors();
@@ -247,27 +246,27 @@ void Lighting::enableColorMaterial(bool emission, bool ambient, bool diffuse, bo
     m_enableColorMaterialSpecular = specular;
 }
 
-void Lighting::setEmissiveColorMaterial(const Vec4 &color)
+void Lighting::setEmissiveColorMaterial(const Vec4& color)
 {
     m_material.emissiveColor = color;
 }
 
-void Lighting::setAmbientColorMaterial(const Vec4 &color)
+void Lighting::setAmbientColorMaterial(const Vec4& color)
 {
     m_material.ambientColor = color;
 }
 
-void Lighting::setAmbientColorScene(const Vec4 &color)
+void Lighting::setAmbientColorScene(const Vec4& color)
 {
     m_material.ambientColorScene = color;
 }
 
-void Lighting::setDiffuseColorMaterial(const Vec4 &color)
+void Lighting::setDiffuseColorMaterial(const Vec4& color)
 {
     m_material.diffuseColor = color;
 }
 
-void Lighting::setSpecularColorMaterial(const Vec4 &color)
+void Lighting::setSpecularColorMaterial(const Vec4& color)
 {
     m_material.specularColor = color;
 }
@@ -279,31 +278,32 @@ void Lighting::setSpecularExponentMaterial(const float val)
 
 void Lighting::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)
 {
-    switch (material) {
-        case ColorMaterialTracking::AMBIENT:
-            if (m_enableColorMaterial)
-                enableColorMaterial(false, true, false, false);
-            break;
-        case ColorMaterialTracking::DIFFUSE:
-            if (m_enableColorMaterial)
-                enableColorMaterial(false, false, true, false);
-            break;
-        case ColorMaterialTracking::AMBIENT_AND_DIFFUSE:
-            if (m_enableColorMaterial)
-                enableColorMaterial(false, true, true, false);
-            break;
-        case ColorMaterialTracking::SPECULAR:
-            if (m_enableColorMaterial)
-                enableColorMaterial(false, false, false, true);
-            break;
-            case ColorMaterialTracking::EMISSION:
-            if (m_enableColorMaterial)
-                enableColorMaterial(true, false, false, false);
-            break;
-        default:
-            if (m_enableColorMaterial)
-                enableColorMaterial(false, true, true, false);
-            break;
+    switch (material)
+    {
+    case ColorMaterialTracking::AMBIENT:
+        if (m_enableColorMaterial)
+            enableColorMaterial(false, true, false, false);
+        break;
+    case ColorMaterialTracking::DIFFUSE:
+        if (m_enableColorMaterial)
+            enableColorMaterial(false, false, true, false);
+        break;
+    case ColorMaterialTracking::AMBIENT_AND_DIFFUSE:
+        if (m_enableColorMaterial)
+            enableColorMaterial(false, true, true, false);
+        break;
+    case ColorMaterialTracking::SPECULAR:
+        if (m_enableColorMaterial)
+            enableColorMaterial(false, false, false, true);
+        break;
+    case ColorMaterialTracking::EMISSION:
+        if (m_enableColorMaterial)
+            enableColorMaterial(true, false, false, false);
+        break;
+    default:
+        if (m_enableColorMaterial)
+            enableColorMaterial(false, true, true, false);
+        break;
     }
     m_colorMaterialTracking = material;
     m_colorMaterialFace = face;
@@ -316,7 +316,7 @@ void Lighting::enableColorMaterial(const bool enable)
     {
         setColorMaterialTracking(m_colorMaterialFace, m_colorMaterialTracking);
     }
-    else 
+    else
     {
         enableColorMaterial(false, false, false, false);
     }

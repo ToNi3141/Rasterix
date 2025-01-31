@@ -28,26 +28,24 @@ public:
         // Configure data port
         FT_STATUS status;
         status = FT_Open(0, &fthandle);
-        if(status != FT_OK)
+        if (status != FT_OK)
             printf("open status not ok %d\n", status);
 
         status = FT_ResetDevice(fthandle);
 
-        if(status != FT_OK)
+        if (status != FT_OK)
             printf("reset status not ok %d\n", status);
 
-        if(status != FT_OK)
+        if (status != FT_OK)
             printf("mode status not ok %d\n", status);
-
-
 
         // Configure GPIO to control the reset line
         status = FT_Open(1, &fthandlegpio);
-        if(status != FT_OK)
+        if (status != FT_OK)
             printf("open gpio status not ok %d\n", status);
 
         status = FT_ResetDevice(fthandlegpio);
-        if(status != FT_OK)
+        if (status != FT_OK)
             printf("reset gpio status not ok %d\n", status);
 
         status = FT_SetBitMode(fthandlegpio, 0, 0);
@@ -94,6 +92,7 @@ public:
     virtual void startColorBufferTransfer(const uint8_t) override
     {
     }
+
 private:
     FT_HANDLE fthandle;
     FT_HANDLE fthandlegpio;

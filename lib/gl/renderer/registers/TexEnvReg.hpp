@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TEX_ENV_REG_
 #define _TEX_ENV_REG_
 
@@ -92,31 +91,33 @@ public:
     void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t serialize() const { return m_regVal.data; }
     uint32_t getAddr() const { return 0xA + m_offset; }
+
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };
     union RegVal
     {
-        #pragma pack(push, 1)
+#pragma pack(push, 1)
         struct RegContent
         {
-            RegContent() :
-                combineRgb(static_cast<uint32_t>(Combine::MODULATE)),
-                combineAlpha(static_cast<uint32_t>(Combine::MODULATE)),
-                srcRegRgb0(static_cast<uint32_t>(SrcReg::TEXTURE)),
-                srcRegRgb1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
-                srcRegRgb2(static_cast<uint32_t>(SrcReg::CONSTANT)),
-                srcRegAlpha0(static_cast<uint32_t>(SrcReg::TEXTURE)),
-                srcRegAlpha1(static_cast<uint32_t>(SrcReg::PREVIOUS)),
-                srcRegAlpha2(static_cast<uint32_t>(SrcReg::CONSTANT)),
-                operandRgb0(static_cast<uint32_t>(Operand::SRC_COLOR)),
-                operandRgb1(static_cast<uint32_t>(Operand::SRC_COLOR)),
-                operandRgb2(static_cast<uint32_t>(Operand::SRC_COLOR)),
-                operandAlpha0(static_cast<uint32_t>(Operand::SRC_ALPHA)),
-                operandAlpha1(static_cast<uint32_t>(Operand::SRC_ALPHA)),
-                operandAlpha2(static_cast<uint32_t>(Operand::SRC_ALPHA)),
-                shiftRgb(0),
-                shiftAlpha(0)
-            { }
+            RegContent()
+                : combineRgb { static_cast<uint32_t>(Combine::MODULATE) }
+                , combineAlpha { static_cast<uint32_t>(Combine::MODULATE) }
+                , srcRegRgb0 { static_cast<uint32_t>(SrcReg::TEXTURE) }
+                , srcRegRgb1 { static_cast<uint32_t>(SrcReg::PREVIOUS) }
+                , srcRegRgb2 { static_cast<uint32_t>(SrcReg::CONSTANT) }
+                , srcRegAlpha0 { static_cast<uint32_t>(SrcReg::TEXTURE) }
+                , srcRegAlpha1 { static_cast<uint32_t>(SrcReg::PREVIOUS) }
+                , srcRegAlpha2 { static_cast<uint32_t>(SrcReg::CONSTANT) }
+                , operandRgb0 { static_cast<uint32_t>(Operand::SRC_COLOR) }
+                , operandRgb1 { static_cast<uint32_t>(Operand::SRC_COLOR) }
+                , operandRgb2 { static_cast<uint32_t>(Operand::SRC_COLOR) }
+                , operandAlpha0 { static_cast<uint32_t>(Operand::SRC_ALPHA) }
+                , operandAlpha1 { static_cast<uint32_t>(Operand::SRC_ALPHA) }
+                , operandAlpha2 { static_cast<uint32_t>(Operand::SRC_ALPHA) }
+                , shiftRgb { 0 }
+                , shiftAlpha { 0 }
+            {
+            }
 
             uint32_t combineRgb : 3;
             uint32_t combineAlpha : 3;
@@ -136,7 +137,7 @@ private:
             uint32_t shiftAlpha : 2;
         } fields {};
         uint32_t data;
-        #pragma pack(pop)
+#pragma pack(pop)
     } m_regVal;
     uint8_t m_offset { 0 };
 };

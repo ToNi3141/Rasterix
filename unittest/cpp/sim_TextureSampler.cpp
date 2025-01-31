@@ -16,14 +16,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <math.h>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VTextureSamplerTestModule.h"
 
-void uploadTexture(VTextureSamplerTestModule* top) 
+void uploadTexture(VTextureSamplerTestModule* top)
 {
     // 2x2 texture
     // | 0xf000 | 0x0f00 |
@@ -107,7 +107,6 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
     REQUIRE(top->m_texel01 == 0x0000ff00);
     REQUIRE(top->m_texel10 == 0x00ff0000);
     REQUIRE(top->m_texel11 == 0xff000000);
-
 
     // (1.0, 0.0)
     top->s_texelS = 0x8000;
@@ -208,7 +207,6 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
     REQUIRE(top->m_texel10 == 0x00ff0000);
     REQUIRE(top->m_texel11 == 0xff000000);
 
-
     // Destroy model
     delete top;
 }
@@ -234,9 +232,8 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     REQUIRE(top->m_texel10 == 0x0000ff00);
     REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.0, 0.0)
-    REQUIRE(top->m_texelSubCoordS == 0x0); 
+    REQUIRE(top->m_texelSubCoordS == 0x0);
     REQUIRE(top->m_texelSubCoordT == 0x0);
-
 
     // To get the sub coordinate of (0.25, 0.0), we have to imagine the following things:
     // In a 2x2 texture, the coordinate (0.0, 0.0) accesses texel (0, 0). The coordinate (0.5, 0.0) accesses (1, 0).
@@ -244,7 +241,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     // now to multiply the vector with the texel distance of 0.5 which results in (0.125, 0.0). If we want to convert this
     // to access the texel (1, 0), we would have to add 0.5 to the x value which results in (0.625, 0.0).
 
-    // texel (0.125, 0.125) 
+    // texel (0.125, 0.125)
     top->s_texelS = 0x1000;
     top->s_texelT = 0x1000;
     rr::ut::clk(top);
@@ -257,10 +254,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     REQUIRE(top->m_texel10 == 0x0000ff00);
     REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.25, 0.25)
-    REQUIRE(top->m_texelSubCoordS == 0x4000); 
-    REQUIRE(top->m_texelSubCoordT == 0x4000); 
+    REQUIRE(top->m_texelSubCoordS == 0x4000);
+    REQUIRE(top->m_texelSubCoordT == 0x4000);
 
-    // texel (0.125, 0.375) 
+    // texel (0.125, 0.375)
     top->s_texelS = 0x1000;
     top->s_texelT = 0x3000;
     rr::ut::clk(top);
@@ -273,10 +270,10 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
     REQUIRE(top->m_texel10 == 0x0000ff00);
     REQUIRE(top->m_texel11 == 0x000000ff);
     // sub texel (0.25, 0.75)
-    REQUIRE(top->m_texelSubCoordS == 0x4000); 
+    REQUIRE(top->m_texelSubCoordS == 0x4000);
     REQUIRE(top->m_texelSubCoordT == 0xc000);
 
-    // texel (0.375, 0.125) 
+    // texel (0.375, 0.125)
     top->s_texelS = 0x3000;
     top->s_texelT = 0x1000;
     rr::ut::clk(top);
@@ -471,7 +468,7 @@ TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
     delete top;
 }
 
-void uploadMipMap4x8Texture(VTextureSamplerTestModule* top) 
+void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
 {
     // 4x8 texture
     // |   1 |   2 |   3 |   4 |
@@ -623,7 +620,7 @@ TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
     delete top;
 }
 
-void uploadMipMap4x4Texture(VTextureSamplerTestModule* top) 
+void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
 {
     // 4x4 texture
     // |   1 |   2 |   3 |   4 |
@@ -729,7 +726,7 @@ TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
     delete top;
 }
 
-void uploadMipMap4x16Texture(VTextureSamplerTestModule* top) 
+void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
 {
     // 4x16 texture
     // |   1 |   2 |   3 |   4 |

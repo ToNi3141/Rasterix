@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "Stencil.hpp"
 #include "renderer/Rasterizer.hpp"
 #include <spdlog/spdlog.h>
@@ -29,7 +28,7 @@ Stencil::Stencil(Renderer& renderer)
 }
 
 Stencil::StencilConfig& Stencil::stencilConfig()
-{ 
+{
     if (m_enableTwoSideStencil)
     {
         if (m_stencilFace == StencilFace::FRONT)
@@ -47,15 +46,15 @@ bool Stencil::update()
 
     if (m_enableTwoSideStencil)
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize()) 
+        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize())
         {
             ret = ret && m_renderer.setStencilBufferConfig(*m_stencilConfTwoSide);
             m_stencilConfUploaded = *m_stencilConfTwoSide;
         }
     }
-    else 
+    else
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize()) 
+        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
         {
             ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
             m_stencilConfUploaded = m_stencilConf;
@@ -79,7 +78,7 @@ bool Stencil::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2)
         {
             selectStencilTwoSideBackForDevice();
         }
-        if (!update()) 
+        if (!update())
         {
             SPDLOG_ERROR("updateStencilFace(): Cannot update pixel pipeline");
             return false;

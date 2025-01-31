@@ -18,13 +18,13 @@
 #ifndef LIGHTING_HPP
 #define LIGHTING_HPP
 
-#include <array>
-#include "math/Vec.hpp"
 #include "Types.hpp"
+#include "math/Vec.hpp"
+#include <array>
 
 namespace rr
 {
-class Lighting 
+class Lighting
 {
 public:
     static constexpr std::size_t MAX_LIGHTS { 8 };
@@ -41,9 +41,9 @@ public:
     Lighting();
 
     void calculateLights(Vec4& __restrict color,
-                         const Vec4& triangleColor,
-                         const Vec4& vertex,
-                         const Vec3& normal);
+        const Vec4& triangleColor,
+        const Vec4& vertex,
+        const Vec3& normal);
 
     bool lightingEnabled() const { return m_lightingEnabled; }
 
@@ -65,6 +65,7 @@ public:
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
+
 private:
     struct MaterialConfig
     {
@@ -111,16 +112,16 @@ private:
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
     void calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const;
     void calculateLight(Vec4& __restrict color,
-                        const LightConfig& lightConfig,
-                        const float materialSpecularExponent,
-                        const Vec4& materialAmbientColor,
-                        const Vec4& materialDiffuseColor,
-                        const Vec4& materialSpecularColor,
-                        const Vec4& v0,
-                        const Vec4& n0) const;
+        const LightConfig& lightConfig,
+        const float materialSpecularExponent,
+        const Vec4& materialAmbientColor,
+        const Vec4& materialDiffuseColor,
+        const Vec4& materialSpecularColor,
+        const Vec4& v0,
+        const Vec4& n0) const;
 
     std::array<LightConfig, MAX_LIGHTS> m_lights {};
-    MaterialConfig m_material{};
+    MaterialConfig m_material {};
     std::array<bool, MAX_LIGHTS> m_lightEnable {};
     bool m_lightingEnabled { false };
     bool m_enableColorMaterialEmission { false };
@@ -132,7 +133,6 @@ private:
     bool m_enableColorMaterial { false };
     ColorMaterialTracking m_colorMaterialTracking { ColorMaterialTracking::AMBIENT_AND_DIFFUSE };
     Face m_colorMaterialFace { Face::FRONT_AND_BACK };
-
 };
 
 } // namespace rr

@@ -15,19 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TRIANGLE_STREAM_CMD_HPP_
 #define _TRIANGLE_STREAM_CMD_HPP_
 
-#include <cstdint>
+#include "math/Vec.hpp"
+#include "renderer/Rasterizer.hpp"
+#include "renderer/Triangle.hpp"
+#include "renderer/commands/TriangleStreamTypes.hpp"
 #include <array>
+#include <cstdint>
 #include <tcb/span.hpp>
 #include <type_traits>
 #include <typeinfo>
-#include "math/Vec.hpp"
-#include "renderer/Triangle.hpp"
-#include "renderer/Rasterizer.hpp"
-#include "renderer/commands/TriangleStreamTypes.hpp"
 
 namespace rr
 {
@@ -36,14 +35,13 @@ template <typename DisplayList>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
+
 public:
-
-
     // Both, the float and fix point variant expecting the triangle parameters as float.
     // Therefore: Set the interpolation by default to float.
     static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
-    
+
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc[0], triangle);
@@ -51,7 +49,7 @@ public:
 
     TriangleStreamCmd(const TriangleStreamCmd& c) { operator=(c); }
 
-    bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const 
+    bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const
     {
         return Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
     }

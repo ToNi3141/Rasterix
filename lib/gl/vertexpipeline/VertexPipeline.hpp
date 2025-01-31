@@ -18,32 +18,36 @@
 #ifndef VERTEXPIPELINE_HPP
 #define VERTEXPIPELINE_HPP
 
-#include "math/Vec.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
-#include "math/Mat44.hpp"
-#include "vertexpipeline/Clipper.hpp"
-#include "vertexpipeline/Lighting.hpp"
-#include "vertexpipeline/ViewPort.hpp"
-#include "vertexpipeline/TexGen.hpp"
+#include "FixedSizeQueue.hpp"
 #include "RenderObj.hpp"
 #include "Stack.hpp"
-#include "vertexpipeline/MatrixStack.hpp"
-#include "vertexpipeline/Culling.hpp"
 #include "Types.hpp"
-#include "FixedSizeQueue.hpp"
+#include "math/Mat44.hpp"
+#include "math/Vec.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/Clipper.hpp"
+#include "vertexpipeline/Culling.hpp"
+#include "vertexpipeline/Lighting.hpp"
+#include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/PrimitiveAssembler.hpp"
+#include "vertexpipeline/TexGen.hpp"
+#include "vertexpipeline/ViewPort.hpp"
+#include <cstdint>
 
 namespace rr
 {
 class VertexPipeline
 {
 public:
-
     VertexPipeline(PixelPipeline& renderer);
 
-    bool drawObj(const RenderObj &obj);
+    bool drawObj(const RenderObj& obj);
     void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
-    void activateTmu(const std::size_t tmu) { m_tmu = tmu; m_matrixStack.setTmu(tmu); }
+    void activateTmu(const std::size_t tmu)
+    {
+        m_tmu = tmu;
+        m_matrixStack.setTmu(tmu);
+    }
 
     Lighting& getLighting() { return m_lighting; }
     TexGen& getTexGen() { return m_texGen[m_tmu]; }
@@ -53,7 +57,7 @@ public:
     PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    bool drawTriangle(const PrimitiveAssembler::Triangle &triangle);
+    bool drawTriangle(const PrimitiveAssembler::Triangle& triangle);
     void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
     bool drawClippedTriangleList(tcb::span<VertexParameter> list);
     bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);

@@ -16,19 +16,19 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <math.h>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VPagedMemoryReader.h"
 
 TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
-{        
+{
     static constexpr std::size_t BEATS { 256 };
     static constexpr std::size_t PAGE_SIZE { 2048 };
     static constexpr std::size_t TRANSFER_SIZE { BEATS * 4 };
-    
+
     VPagedMemoryReader* t = new VPagedMemoryReader();
     auto testMemoryAddressGeneration = [t]()
     {

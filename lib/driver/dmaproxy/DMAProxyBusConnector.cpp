@@ -1,42 +1,43 @@
 #include "DMAProxyBusConnector.hpp"
 #include "kernel/dma-proxy/files/include/dma-proxy.h"
 
+#include <cstring>
+#include <errno.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <sched.h>
+#include <signal.h>
+#include <spdlog/spdlog.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
-#include <pthread.h>
-#include <time.h>
-#include <sys/time.h>
-#include <stdint.h>
-#include <signal.h>
-#include <sched.h>
-#include <time.h>
-#include <errno.h>
+#include <sys/mman.h>
 #include <sys/param.h>
-#include <spdlog/spdlog.h>
-#include <cstring>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
 
 namespace rr
 {
 
 DMAProxyBusConnector::DMAProxyBusConnector()
 {
-    const char *tx_channel_names[] = { "dma_proxy_tx" };
+    const char* tx_channel_names[] = { "dma_proxy_tx" };
     // const char *rx_channel_names[] = { "dma_proxy_rx" };
 
     char channel_name[64] = "/dev/";
     strcat(channel_name, tx_channel_names[0]);
     m_txChannel.fd = open(channel_name, O_RDWR);
-    if (m_txChannel.fd < 1) {
+    if (m_txChannel.fd < 1)
+    {
         SPDLOG_ERROR("Unable to open DMA proxy device file: {}", channel_name);
         exit(EXIT_FAILURE);
     }
-    m_txChannel.buf_ptr = reinterpret_cast<struct channel_buffer *>(mmap(NULL, sizeof(channel_buffer) * TX_BUFFER_COUNT,
-                                    PROT_READ | PROT_WRITE, MAP_SHARED, m_txChannel.fd, 0));
-    if (m_txChannel.buf_ptr == MAP_FAILED) {
+    m_txChannel.buf_ptr = reinterpret_cast<struct channel_buffer*>(mmap(NULL, sizeof(channel_buffer) * TX_BUFFER_COUNT,
+        PROT_READ | PROT_WRITE, MAP_SHARED, m_txChannel.fd, 0));
+    if (m_txChannel.buf_ptr == MAP_FAILED)
+    {
         printf("Failed to mmap tx channel\n");
         SPDLOG_ERROR("Failed to mmap tx channel");
         exit(EXIT_FAILURE);

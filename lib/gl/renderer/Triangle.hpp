@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TRIANGLE_HPP_
 #define _TRIANGLE_HPP_
 
+#include "RenderConfigs.hpp"
+#include "math/Vec.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
-#include "math/Vec.hpp"
-#include "RenderConfigs.hpp"
 
 namespace rr
 {

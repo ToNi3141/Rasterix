@@ -25,7 +25,7 @@ namespace rr
 class ViewPort
 {
 public:
-    void transform(Vec4 &v);
+    void transform(Vec4& v);
     void setViewport(const float x, const float y, const float width, const float height);
     void setDepthRange(const float zNear, const float zFar);
 

@@ -18,21 +18,21 @@
 #ifndef TEXTURELOADOPTIMIZER_HPP
 #define TEXTURELOADOPTIMIZER_HPP
 
-#include <stdint.h>
+#include "RRXDisplayListAssembler.hpp"
+#include "renderer/commands/TextureStreamCmd.hpp"
+#include "renderer/commands/TriangleStreamCmd.hpp"
+#include <algorithm>
 #include <array>
 #include <bitset>
-#include <algorithm>
+#include <stdint.h>
 #include <tcb/span.hpp>
-#include "RRXDisplayListAssembler.hpp"
-#include "renderer/commands/TriangleStreamCmd.hpp"
-#include "renderer/commands/TextureStreamCmd.hpp"
 
 namespace rr::displaylist
 {
 // Optimization for texture loading: To avoid unecessary texture loads, track if a texture was used by a triangle.
 // If the texture wasn't used, then it replaces previous texture load with NOPs.
 template <std::size_t TMU_COUNT, typename TDisplayList>
-class TextureLoadOptimizer 
+class TextureLoadOptimizer
 {
 public:
     TextureLoadOptimizer(TDisplayList& displayList)
@@ -52,6 +52,7 @@ public:
         markTriangleCommand<TCommand>();
         optimizeTextureLoad(cmd);
     }
+
 private:
     template <typename TCommand>
     void markTriangleCommand()
@@ -68,11 +69,11 @@ private:
         if constexpr (std::is_same<TCommand, TextureStreamCmd>::value)
         {
             const std::size_t tmu = cmd.getTmu();
-            if (tmu >= m_textureCommandFlag.size()) 
+            if (tmu >= m_textureCommandFlag.size())
             {
                 return;
             }
-            if (m_textureCommandFlag[tmu]) 
+            if (m_textureCommandFlag[tmu])
             {
                 m_displayList.initArea(m_texPosInDisplayList[tmu], m_texSizeInDisplayList[tmu]);
             }

@@ -27,9 +27,9 @@ public:
     ThreadedRenderer()
     {
         // Initialize the render thread by running it once
-        m_renderThread = std::async([&](){
-            return true;
-        });
+        m_renderThread = std::async(
+            [&]()
+            { return true; });
     }
 
     ~ThreadedRenderer()
@@ -52,11 +52,14 @@ public:
     void render()
     {
         m_renderer->swapDisplayList();
-        m_renderThread = std::async([this](){
-            m_renderer->uploadDisplayList();
-            return true;
-        });
+        m_renderThread = std::async(
+            [this]()
+            {
+                m_renderer->uploadDisplayList();
+                return true;
+            });
     }
+
 private:
     Renderer* m_renderer { nullptr };
     std::future<bool> m_renderThread;

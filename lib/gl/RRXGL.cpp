@@ -16,20 +16,20 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "RRXGL.hpp"
-#include "glImpl.h"
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <spdlog/spdlog.h>
 #include "RenderConfigs.hpp"
+#include "glImpl.h"
+#include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Renderer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
+#include "vertexpipeline/VertexQueue.hpp"
+#include <assert.h>
+#include <math.h>
+#include <spdlog/spdlog.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
+#define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
 namespace rr
 {
 RRXGL* instance { nullptr };
@@ -80,7 +80,7 @@ RRXGL::RRXGL(IBusConnector& busConnector)
 {
     // Set initial values
     m_renderDevice->renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
-    m_renderDevice->renderer.setClearColor({ {0, 0, 0, 0 } });
+    m_renderDevice->renderer.setClearColor({ { 0, 0, 0, 0 } });
     m_renderDevice->renderer.setClearDepth(65535);
     m_renderDevice->renderer.setFogColor({ { 255, 255, 255, 255 } });
     std::array<float, 33> fogLut {};
@@ -566,12 +566,12 @@ void RRXGL::uploadDisplayList()
     m_renderDevice->renderer.uploadDisplayList();
 }
 
-const char *RRXGL::getLibExtensions() const
+const char* RRXGL::getLibExtensions() const
 {
     return m_glExtensions.c_str();
 }
 
-const void *RRXGL::getLibProcedure(std::string name) const
+const void* RRXGL::getLibProcedure(std::string name) const
 {
     auto proc = m_glProcedures.find(name);
     if (proc != m_glProcedures.end())
@@ -585,7 +585,7 @@ const void *RRXGL::getLibProcedure(std::string name) const
     return nullptr;
 }
 
-void RRXGL::addLibProcedure(std::string name, const void *address)
+void RRXGL::addLibProcedure(std::string name, const void* address)
 {
     m_glProcedures[name] = address;
 }

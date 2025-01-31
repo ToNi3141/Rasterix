@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "Texture.hpp"
 
 namespace rr
@@ -37,7 +36,8 @@ bool Texture::uploadTexture()
 
     for (std::size_t i = 0; i < m_tmuConf.size(); i++)
     {
-        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE) && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize())) 
+        if ((m_tmuConf[i].texEnvMode == TexEnvMode::COMBINE)
+            && (m_tmuConf[i].texEnvConfUploaded.serialize() != m_tmuConf[i].texEnvConf.serialize()))
         {
             m_tmuConf[i].texEnvConf.setTmu(i);
             ret = ret && m_renderer.setTexEnv(m_tmuConf[i].texEnvConf);
@@ -66,8 +66,6 @@ TextureObjectMipmap& Texture::getTexture()
     return *m_textureObjectMipmap;
 }
 
-
-
 bool Texture::useTexture()
 {
     uploadTexture();
@@ -78,7 +76,8 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
 {
     m_tmuConf[m_tmu].texEnvMode = mode;
     TexEnvReg texEnvConf {};
-    switch (mode) {
+    switch (mode)
+    {
     case TexEnvMode::DISABLE:
         texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
         texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
@@ -118,7 +117,7 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
         texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
         texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
         texEnvConf.setOperandRgb2(TexEnvReg::Operand::SRC_ALPHA);
-        if (m_tmu != 0) // Is this the right mode? 
+        if (m_tmu != 0) // Is this the right mode?
         {
             texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
             texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
@@ -167,9 +166,10 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
 
 bool Texture::setTexEnvColor(const Vec4& color)
 {
-    return m_renderer.setTexEnvColor(m_tmu, { { static_cast<uint8_t>(color[0] * 255.0f),
-                                                static_cast<uint8_t>(color[1] * 255.0f),
-                                                static_cast<uint8_t>(color[2] * 255.0f),
-                                                static_cast<uint8_t>(color[3] * 255.0f) } });
+    return m_renderer.setTexEnvColor(m_tmu,
+        { { static_cast<uint8_t>(color[0] * 255.0f),
+            static_cast<uint8_t>(color[1] * 255.0f),
+            static_cast<uint8_t>(color[2] * 255.0f),
+            static_cast<uint8_t>(color[3] * 255.0f) } });
 }
 } // namespace rr

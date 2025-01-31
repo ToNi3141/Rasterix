@@ -17,9 +17,9 @@
 
 #ifndef VECI_HPP
 #define VECI_HPP
+#include <algorithm>
 #include <array>
 #include <cstdint>
-#include <algorithm>
 
 namespace rr
 {
@@ -28,20 +28,20 @@ template <typename T, std::size_t VecSize>
 class Veci
 {
 public:
-    Veci() {}
+    Veci() { }
     Veci(const Veci<T, VecSize>& val) { operator=(val.vec); }
     Veci(const std::array<T, VecSize>& val) { operator=(val); }
-    Veci(const std::initializer_list<T> val) { std::copy(val.begin(), val.end(), vec.begin()); } 
-    ~Veci() {}
+    Veci(const std::initializer_list<T> val) { std::copy(val.begin(), val.end(), vec.begin()); }
+    ~Veci() { }
 
-    Veci<T, VecSize>& operator*= (T val)
+    Veci<T, VecSize>& operator*=(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * val;
         return *this;
     }
 
-    Veci<T, VecSize>& operator*= (const Veci<T, VecSize>& val)
+    Veci<T, VecSize>& operator*=(const Veci<T, VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * val[i];
@@ -69,28 +69,28 @@ public:
             vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> shift;
     }
 
-    Veci<T, VecSize>& operator+= (const Veci<T, VecSize>& val)
+    Veci<T, VecSize>& operator+=(const Veci<T, VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] += val[i];
         return *this;
     }
 
-    Veci<T, VecSize>& operator-= (const Veci<T, VecSize>& val)
+    Veci<T, VecSize>& operator-=(const Veci<T, VecSize>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val[i];
         return *this;
     }
 
-    Veci<T, VecSize> operator<<= (std::size_t val)
+    Veci<T, VecSize> operator<<=(std::size_t val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] <<= val;
         return *this;
     }
 
-    Veci<T, VecSize> operator>>= (std::size_t val)
+    Veci<T, VecSize> operator>>=(std::size_t val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] >>= val;
@@ -113,10 +113,18 @@ public:
             vec[i] = (val[i] * (1ul << shift)) + 0.5f;
     }
 
-    T& operator[] (int index) { return vec[index]; }
-    T operator[] (int index) const { return vec[index]; }
-    Veci<T, VecSize>& operator=(const Veci<T, VecSize>& val) { vec = val.vec; return *this; }
-    Veci<T, VecSize>& operator=(const std::array<T, VecSize>& val) { vec = val; return *this; }
+    T& operator[](int index) { return vec[index]; }
+    T operator[](int index) const { return vec[index]; }
+    Veci<T, VecSize>& operator=(const Veci<T, VecSize>& val)
+    {
+        vec = val.vec;
+        return *this;
+    }
+    Veci<T, VecSize>& operator=(const std::array<T, VecSize>& val)
+    {
+        vec = val;
+        return *this;
+    }
 
     template <std::size_t shift = 0>
     int64_t dot(const Veci<T, VecSize>& val) const

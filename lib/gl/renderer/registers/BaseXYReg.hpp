@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _BASE_XY_REG_
 #define _BASE_XY_REG_
 
-#include <cstdint>
 #include "math/Veci.hpp"
+#include <cstdint>
 
 namespace rr
 {
@@ -42,6 +41,7 @@ public:
     uint16_t getY() const { return m_regValY; }
 
     uint32_t serialize() const { return (static_cast<uint32_t>(m_regValY) << 16) | (static_cast<uint32_t>(m_regValX)); }
+
 private:
     uint16_t m_regValX { 0 };
     uint16_t m_regValY { 0 };

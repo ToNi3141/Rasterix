@@ -80,9 +80,9 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
 
         // Send 5. fetch
         t->s_fetch_tvalid = true;
-        // Only important for the next cycle, to request again 0. Otherwise it wouldn't 
+        // Only important for the next cycle, to request again 0. Otherwise it wouldn't
         // request zero again, because it seems that the same address was already requested
-        t->s_fetch_tlast = true; 
+        t->s_fetch_tlast = true;
         t->s_fetch_taddr = 0;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
@@ -90,7 +90,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
 
         // Request
         t->s_fetch_tvalid = false;
-        t->s_fetch_tlast = false; 
+        t->s_fetch_tlast = false;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);

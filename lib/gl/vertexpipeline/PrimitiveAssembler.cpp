@@ -20,7 +20,6 @@
 namespace rr
 {
 
-
 tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTriangle()
 {
     if (m_queue.size() < 3)
@@ -28,7 +27,8 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         return {};
     }
 
-    switch (m_drawMode) {
+    switch (m_drawMode)
+    {
     case RenderObj::DrawMode::TRIANGLES:
         m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
         m_decrement = 3;
@@ -78,7 +78,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
         }
         m_decrement = 1;
         break;
-     default:
+    default:
         return {};
     }
 
@@ -97,7 +97,8 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
     VertexParameter* p0;
     VertexParameter* p1;
 
-    switch (m_drawMode) {
+    switch (m_drawMode)
+    {
     case RenderObj::DrawMode::LINES:
         p0 = &m_queue[0];
         p1 = &m_queue[1];
@@ -125,7 +126,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
         p1 = &m_queue[1];
         m_decrement = 1;
         break;
-     default:
+    default:
         return {};
     }
 
@@ -143,7 +144,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
 
     // Calculate the lines normal n = normalize(-dx, dy)
     float nx = -((v1[1] / v1[3]) - (v0[1] / v0[3]));
-    float ny =  ((v1[0] / v1[3]) - (v0[0] / v0[3]));
+    float ny = ((v1[0] / v1[3]) - (v0[0] / v0[3]));
     float rcpLength = 1.0f / std::sqrt(nx * nx + ny * ny);
     nx *= rcpLength;
     ny *= rcpLength;
@@ -159,13 +160,13 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     Vec4 nv2 = v1;
     Vec4 nv3 = v1;
 
-    nv0[0] += ( nx * v0[3]) * rcpViewportScaleX;
-    nv0[1] += ( ny * v0[3]) * rcpViewportScaleY;
+    nv0[0] += (nx * v0[3]) * rcpViewportScaleX;
+    nv0[1] += (ny * v0[3]) * rcpViewportScaleY;
     nv1[0] += (-nx * v0[3]) * rcpViewportScaleX;
     nv1[1] += (-ny * v0[3]) * rcpViewportScaleY;
 
-    nv2[0] += ( nx * v1[3]) * rcpViewportScaleX;
-    nv2[1] += ( ny * v1[3]) * rcpViewportScaleY;
+    nv2[0] += (nx * v1[3]) * rcpViewportScaleX;
+    nv2[1] += (ny * v1[3]) * rcpViewportScaleY;
     nv3[0] += (-nx * v1[3]) * rcpViewportScaleX;
     nv3[1] += (-ny * v1[3]) * rcpViewportScaleY;
 
@@ -178,19 +179,20 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     m_triangleBuffer[0] = { m_vertexParameters[0], m_vertexParameters[1], m_vertexParameters[2] };
     m_triangleBuffer[1] = { m_vertexParameters[3], m_vertexParameters[4], m_vertexParameters[5] };
 
-   return { m_triangleBuffer };
+    return { m_triangleBuffer };
 }
 
 void PrimitiveAssembler::setDrawMode(const RenderObj::DrawMode mode)
 {
     m_drawMode = mode;
-    switch (m_drawMode) {
+    switch (m_drawMode)
+    {
     case RenderObj::DrawMode::LINES:
     case RenderObj::DrawMode::LINE_LOOP:
     case RenderObj::DrawMode::LINE_STRIP:
         m_line = true;
         break;
-     default:
+    default:
         m_line = false;
         break;
     }

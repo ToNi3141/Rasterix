@@ -18,15 +18,10 @@
 // #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 // #include "../Unittests/3rdParty/catch.hpp"
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
 #include "VFramebufferWriterStrobeGen.h"
-
 
 TEST_CASE("Check stream concatenation", "[FramebufferWriterStrobeGen]")
 {

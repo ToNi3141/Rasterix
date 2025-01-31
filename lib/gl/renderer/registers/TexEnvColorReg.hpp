@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TEX_ENV_COLOR_REG_
 #define _TEX_ENV_COLOR_REG_
 
@@ -28,6 +27,7 @@ class TexEnvColorReg : public BaseColorReg
 public:
     void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t getAddr() const { return 0xB + m_offset; }
+
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };
     std::size_t m_offset { 0 };

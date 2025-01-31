@@ -16,11 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "wgl.h"
-#include <spdlog/spdlog.h>
-#include "RRXGL.hpp"
 #include "FT60XBusConnector.hpp"
-#include <spdlog/sinks/basic_file_sink.h>
+#include "RRXGL.hpp"
 #include "ThreadedRenderer.hpp"
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/spdlog.h>
 
 using namespace rr;
 
@@ -34,7 +34,7 @@ public:
     GLInitGuard()
     {
         rr::RRXGL::createInstance(m_busConnector);
-#define ADDRESS_OF(X) reinterpret_cast<const void *>(&X)
+#define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RRXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
         rr::RRXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
         rr::RRXGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
@@ -72,7 +72,7 @@ private:
 
 // Wiggle API
 // -------------------------------------------------------
-GLAPI int APIENTRY impl_wglChoosePixelFormat(HDC hdc, CONST PIXELFORMATDESCRIPTOR *ppfd)
+GLAPI int APIENTRY impl_wglChoosePixelFormat(HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd)
 {
     SPDLOG_DEBUG("wglChoosePixelFormat Flags: {}, Stencil Bits: {}, Accum Bits: {}, Color Bits: {}, Alpha Bits: {}, Red Bits: {}, Green Bits: {}, Blue Bits: {}, Depth Bits: {} called", ppfd->dwFlags, ppfd->cStencilBits, ppfd->cAccumBits, ppfd->cColorBits, ppfd->cAlphaBits, ppfd->cRedBits, ppfd->cGreenBits, ppfd->cBlueBits, ppfd->cDepthBits);
     return 1;
@@ -122,7 +122,8 @@ GLAPI int APIENTRY impl_wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT n
 {
     SPDLOG_DEBUG("wglDescribePixelFormat Pixelformat: {}, Bytes: {} called", iPixelFormat, nBytes);
 
-    if (ppfd != nullptr) {
+    if (ppfd != nullptr)
+    {
 
         memset(ppfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 
@@ -131,10 +132,14 @@ GLAPI int APIENTRY impl_wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT n
         ppfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL;
         ppfd->iPixelType = PFD_TYPE_RGBA;
         ppfd->cColorBits = 32;
-        ppfd->cAlphaBits = 8; ppfd->cAlphaShift = 24;
-        ppfd->cRedBits = 8; ppfd->cRedShift = 16;
-        ppfd->cGreenBits = 8; ppfd->cGreenShift = 8;
-        ppfd->cBlueBits = 8; ppfd->cBlueShift = 0;
+        ppfd->cAlphaBits = 8;
+        ppfd->cAlphaShift = 24;
+        ppfd->cRedBits = 8;
+        ppfd->cRedShift = 16;
+        ppfd->cGreenBits = 8;
+        ppfd->cGreenShift = 8;
+        ppfd->cBlueBits = 8;
+        ppfd->cBlueShift = 0;
         ppfd->cDepthBits = 24;
     }
 
@@ -153,7 +158,7 @@ GLAPI HDC APIENTRY impl_wglGetCurrentDC()
     return reinterpret_cast<HDC>(1);
 }
 
-GLAPI int APIENTRY impl_wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane, int iStart, int cEntries, COLORREF *pcr)
+GLAPI int APIENTRY impl_wglGetLayerPaletteEntries(HDC hdc, int iLayerPlane, int iStart, int cEntries, COLORREF* pcr)
 {
     SPDLOG_WARN("wglGetLayerPaletteEntries not implemented");
     return 0;
@@ -184,13 +189,13 @@ GLAPI BOOL APIENTRY impl_wglRealizeLayerPalette(HDC hdc, int iLayerPlane, BOOL b
     return FALSE;
 }
 
-GLAPI int APIENTRY impl_wglSetLayerPaletteEntries(HDC hdc, int iLayerPlane, int iStart, int cEntries, CONST COLORREF *pcr)
+GLAPI int APIENTRY impl_wglSetLayerPaletteEntries(HDC hdc, int iLayerPlane, int iStart, int cEntries, CONST COLORREF* pcr)
 {
     SPDLOG_WARN("wglSetLayerPaletteEntries not implemented");
     return FALSE;
 }
 
-GLAPI BOOL APIENTRY impl_wglSetPixelFormat(HDC hdc, int format, CONST PIXELFORMATDESCRIPTOR *ppfd)
+GLAPI BOOL APIENTRY impl_wglSetPixelFormat(HDC hdc, int format, CONST PIXELFORMATDESCRIPTOR* ppfd)
 {
     SPDLOG_DEBUG("wglSetPixelFormat Format: {}", format);
 
@@ -214,7 +219,8 @@ GLAPI BOOL APIENTRY impl_wglSwapLayerBuffers(HDC hdc, UINT planes)
 {
     SPDLOG_DEBUG("wglSwapLayerBuffers planes {} called", planes);
 
-    if ((planes & WGL_SWAP_MAIN_PLANE) != 0U) {
+    if ((planes & WGL_SWAP_MAIN_PLANE) != 0U)
+    {
 
         guard.render();
     }
@@ -262,17 +268,17 @@ GLAPI BOOL APIENTRY impl_wglGetDeviceGammaRamp(HDC hdc, LPVOID lpRamp)
     return FALSE;
 }
 
-GLAPI const char * APIENTRY impl_wglGetExtensionsString(HDC hdc)
+GLAPI const char* APIENTRY impl_wglGetExtensionsString(HDC hdc)
 {
     SPDLOG_DEBUG("wglGetExtensionsString called");
     return rr::RRXGL::getInstance().getLibExtensions();
 }
 
 GLAPI HPBUFFERARB APIENTRY impl_wglCreatePbufferARB(HDC hDC,
-                                int iPixelFormat,
-                                int iWidth,
-                                int iHeight,
-                                const int *piAttribList)
+    int iPixelFormat,
+    int iWidth,
+    int iHeight,
+    const int* piAttribList)
 {
     SPDLOG_WARN("wglCreatePbufferARB not implemented");
     return reinterpret_cast<HPBUFFERARB>(3);
@@ -297,41 +303,41 @@ GLAPI BOOL APIENTRY impl_wglDestroyPbufferARB(HPBUFFERARB hPbuffer)
 }
 
 GLAPI BOOL APIENTRY impl_wglQueryPbufferARB(HPBUFFERARB hPbuffer,
-                            int iAttribute,
-                            int *piValue)
+    int iAttribute,
+    int* piValue)
 {
     SPDLOG_WARN("wglQueryPbufferARB not implemented");
     return FALSE;
 }
 
 GLAPI BOOL APIENTRY impl_wglGetPixelFormatAttribivARB(HDC hdc,
-                                      int iPixelFormat,
-                                      int iLayerPlane,
-                                      UINT nAttributes,
-                                      const int *piAttributes,
-                                      int *piValues)
+    int iPixelFormat,
+    int iLayerPlane,
+    UINT nAttributes,
+    const int* piAttributes,
+    int* piValues)
 {
     SPDLOG_WARN("wglGetPixelFormatAttribivARB not implemented");
     return FALSE;
 }
 
 GLAPI BOOL APIENTRY impl_wglGetPixelFormatAttribfvARB(HDC hdc,
-                                      int iPixelFormat,
-                                      int iLayerPlane,
-                                      UINT nAttributes,
-                                      const int *piAttributes,
-                                      FLOAT *pfValues)
+    int iPixelFormat,
+    int iLayerPlane,
+    UINT nAttributes,
+    const int* piAttributes,
+    FLOAT* pfValues)
 {
     SPDLOG_WARN("wglGetPixelFormatAttribfvARB not implemented");
     return FALSE;
 }
 
 GLAPI BOOL APIENTRY impl_wglChoosePixelFormatARB(HDC hdc,
-                                 const int *piAttribIList,
-                                 const FLOAT *pfAttribFList,
-                                 UINT nMaxFormats,
-                                 int *piFormats,
-                                 UINT *nNumFormats)
+    const int* piAttribIList,
+    const FLOAT* pfAttribFList,
+    UINT nMaxFormats,
+    int* piFormats,
+    UINT* nNumFormats)
 {
     SPDLOG_WARN("wglChoosePixelFormatARB not implemented");
     return FALSE;
@@ -346,11 +352,11 @@ GLAPI BOOL APIENTRY impl_wglBindTexImageARB(HPBUFFERARB hPbuffer, int iBuffer)
 GLAPI BOOL APIENTRY impl_wglReleaseTexImageARB(HPBUFFERARB hPbuffer, int iBuffer)
 {
     SPDLOG_WARN("wglReleaseTexImageARB not implemented");
-    return FALSE;    
+    return FALSE;
 }
 
-GLAPI BOOL APIENTRY impl_wglSetPbufferAttribARB(HPBUFFERARB hPbuffer, 
-        const int *piAttribList)
+GLAPI BOOL APIENTRY impl_wglSetPbufferAttribARB(HPBUFFERARB hPbuffer,
+    const int* piAttribList)
 {
     SPDLOG_WARN("wglSetPbufferAttribARB not implemented");
     return FALSE;

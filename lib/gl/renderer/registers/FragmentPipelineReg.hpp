@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _FRAGMENT_PIPELINE_REG_
 #define _FRAGMENT_PIPELINE_REG_
 
@@ -68,10 +67,10 @@ public:
     void setAlphaFunc(const TestFunc val) { m_regVal.fields.alphaFunc = static_cast<uint32_t>(val); }
     void setRefAlphaValue(const uint8_t val) { m_regVal.fields.referenceAlphaValue = val; }
     void setDepthMask(const bool val) { m_regVal.fields.depthMask = val; }
-    void setColorMaskA(const bool val) { m_regVal.fields.colorMaskA  = val; }
-    void setColorMaskR(const bool val) { m_regVal.fields.colorMaskR  = val; }
-    void setColorMaskG(const bool val) { m_regVal.fields.colorMaskG  = val; }
-    void setColorMaskB(const bool val) { m_regVal.fields.colorMaskB  = val; }
+    void setColorMaskA(const bool val) { m_regVal.fields.colorMaskA = val; }
+    void setColorMaskR(const bool val) { m_regVal.fields.colorMaskR = val; }
+    void setColorMaskG(const bool val) { m_regVal.fields.colorMaskG = val; }
+    void setColorMaskB(const bool val) { m_regVal.fields.colorMaskB = val; }
     void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = static_cast<uint32_t>(val); }
     void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = static_cast<uint32_t>(val); }
 
@@ -92,21 +91,22 @@ public:
 private:
     union RegVal
     {
-        #pragma pack(push, 1)
+#pragma pack(push, 1)
         struct RegContent
         {
-            RegContent() :
-                depthFunc(static_cast<uint32_t>(TestFunc::LESS)),
-                alphaFunc(static_cast<uint32_t>(TestFunc::ALWAYS)),
-                referenceAlphaValue(0xff),
-                depthMask(false),
-                colorMaskA(true),
-                colorMaskB(true),
-                colorMaskG(true),
-                colorMaskR(true),
-                blendFuncSFactor(static_cast<uint32_t>(BlendFunc::ONE)),
-                blendFuncDFactor(static_cast<uint32_t>(BlendFunc::ZERO))
-            { }
+            RegContent()
+                : depthFunc { static_cast<uint32_t>(TestFunc::LESS) }
+                , alphaFunc { static_cast<uint32_t>(TestFunc::ALWAYS) }
+                , referenceAlphaValue { 0xff }
+                , depthMask { false }
+                , colorMaskA { true }
+                , colorMaskB { true }
+                , colorMaskG { true }
+                , colorMaskR { true }
+                , blendFuncSFactor { static_cast<uint32_t>(BlendFunc::ONE) }
+                , blendFuncDFactor { static_cast<uint32_t>(BlendFunc::ZERO) }
+            {
+            }
 
             uint32_t depthFunc : 3;
             uint32_t alphaFunc : 3;
@@ -120,7 +120,7 @@ private:
             uint32_t blendFuncDFactor : 4;
         } fields {};
         uint32_t data;
-        #pragma pack(pop)
+#pragma pack(pop)
     } m_regVal;
 };
 } // namespace rr

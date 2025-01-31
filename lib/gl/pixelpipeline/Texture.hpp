@@ -18,8 +18,8 @@
 #ifndef TEXTURE_HPP_
 #define TEXTURE_HPP_
 
-#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/Renderer.hpp"
 #include <optional>
 
 namespace rr
@@ -50,7 +50,11 @@ public:
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
     bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
     bool deleteTexture(const uint16_t texture) { return m_renderer.deleteTexture(texture); }
-    void setBoundTexture(const uint16_t val) { uploadTexture(); m_tmuConf[m_tmu].boundTexture = val; }
+    void setBoundTexture(const uint16_t val)
+    {
+        uploadTexture();
+        m_tmuConf[m_tmu].boundTexture = val;
+    }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
@@ -59,7 +63,11 @@ public:
     bool setTexEnvMode(const TexEnvMode mode);
     TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
-    void activateTmu(const std::size_t tmu) { uploadTexture(); m_tmu = tmu; }
+    void activateTmu(const std::size_t tmu)
+    {
+        uploadTexture();
+        m_tmu = tmu;
+    }
     std::size_t getActiveTmu() const { return m_tmu; }
 
 private:
@@ -69,9 +77,9 @@ private:
         uint16_t boundTexture { 0 };
 
         // TMU
-       TexEnvMode texEnvMode { TexEnvMode::REPLACE };
-       TexEnv texEnvConf {};
-       TexEnv texEnvConfUploaded {};
+        TexEnvMode texEnvMode { TexEnvMode::REPLACE };
+        TexEnv texEnvConf {};
+        TexEnv texEnvConfUploaded {};
     };
 
     Renderer& m_renderer;

@@ -18,22 +18,22 @@
 #ifndef STREAMSECTIONMANAGER_HPP
 #define STREAMSECTIONMANAGER_HPP
 
-#include <stdint.h>
+#include "renderer/DmaStreamEngineCommands.hpp"
+#include <algorithm>
 #include <array>
 #include <bitset>
-#include <algorithm>
+#include <stdint.h>
 #include <tcb/span.hpp>
-#include "renderer/DmaStreamEngineCommands.hpp"
 
 namespace rr::displaylist
 {
 
 template <typename TRRXDisplayList, typename TDSEDisplayListAssembler, typename TCommand>
-class StreamSectionManager 
+class StreamSectionManager
 {
 public:
     StreamSectionManager(TRRXDisplayList& rrxDisplayList,
-                                    TDSEDisplayListAssembler& dseDisplayListAssembler)
+        TDSEDisplayListAssembler& dseDisplayListAssembler)
         : m_rrxDisplayList { rrxDisplayList }
         , m_dseDisplayListAssembler { dseDisplayListAssembler }
     {
@@ -46,7 +46,7 @@ public:
 
     bool openNewStreamSection()
     {
-        if (!m_streamCommand) 
+        if (!m_streamCommand)
         {
             auto streamCommand = m_dseDisplayListAssembler.allocateCommand(TCommand { 0 });
             if (streamCommand)

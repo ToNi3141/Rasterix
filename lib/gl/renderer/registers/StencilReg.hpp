@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _STENCIL_REG_
 #define _STENCIL_REG_
 
-#include <cstdint>
 #include "TestFuncDef.hpp"
+#include <cstdint>
 
 namespace rr
 {
@@ -63,22 +62,24 @@ public:
 
     uint32_t serialize() const { return m_regVal.data; }
     uint32_t getAddr() const { return 0x4; }
+
 private:
     union RegVal
     {
-        #pragma pack(push, 1)
+#pragma pack(push, 1)
         struct RegContent
         {
-            RegContent() :
-                testFunc(static_cast<uint32_t>(TestFunc::ALWAYS)),
-                mask(0xf),
-                ref(0),
-                opZPass(static_cast<uint32_t>(StencilOp::KEEP)),
-                opZFail(static_cast<uint32_t>(StencilOp::KEEP)),
-                opFail(static_cast<uint32_t>(StencilOp::KEEP)),
-                clearStencil(0),
-                stencilMask(0xf)
-            { }
+            RegContent()
+                : testFunc { static_cast<uint32_t>(TestFunc::ALWAYS) }
+                , mask { 0xf }
+                , ref { 0 }
+                , opZPass { static_cast<uint32_t>(StencilOp::KEEP) }
+                , opZFail { static_cast<uint32_t>(StencilOp::KEEP) }
+                , opFail { static_cast<uint32_t>(StencilOp::KEEP) }
+                , clearStencil { 0 }
+                , stencilMask { 0xf }
+            {
+            }
 
             uint32_t testFunc : 3;
             uint32_t mask : 4;
@@ -91,7 +92,7 @@ private:
 
         } fields {};
         uint32_t data;
-        #pragma pack(pop)
+#pragma pack(pop)
     } m_regVal;
 };
 

@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef TEXGEN_HPP
 #define TEXGEN_HPP
 
-#include "math/Vec.hpp"
 #include "math/Mat44.hpp"
+#include "math/Vec.hpp"
 
 namespace rr
 {
@@ -48,6 +47,7 @@ public:
     void setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val);
     void setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val);
     void setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val);
+
 private:
     Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const;
 

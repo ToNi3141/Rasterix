@@ -32,7 +32,6 @@ void clk(Vtop* t)
     t->eval();
 }
 
-
 int main()
 {
     Vtop* top = new Vtop();

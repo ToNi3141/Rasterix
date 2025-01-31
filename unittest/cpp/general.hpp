@@ -15,16 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#include "3rdParty/catch.hpp"
+#define CATCH_CONFIG_MAIN // This tells Catch to provide a main() - only do this in one cpp file
+#include "../3rdParty/catch.hpp"
 
 // Include common routines
 #include <verilated.h>
 
-namespace rr
-{
-
-namespace ut
+namespace rr::ut
 {
 
 template <typename T>
@@ -45,6 +42,4 @@ void reset(T* t)
     clk(t);
 }
 
-} // namespace ut
-
-} // namespace rr
+} // namespace rr::ut
