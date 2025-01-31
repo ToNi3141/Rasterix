@@ -61,7 +61,12 @@ public:
 private:
     tcb::span<const Triangle> constructTriangle();
     tcb::span<const Triangle> constructLine();
-    tcb::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
+    tcb::span<const Triangle> drawLine(const Vec4& v0,
+        const Vec4& v1,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1,
+        const Vec4& c0,
+        const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
     FixedSizeQueue<VertexParameter, 3> m_queue {};

@@ -110,7 +110,10 @@ private:
     };
 
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
-    void calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const;
+    void calculateSceneLight(Vec4& __restrict sceneLight,
+        const Vec4& emissiveColor,
+        const Vec4& ambientColor,
+        const Vec4& ambientColorScene) const;
     void calculateLight(Vec4& __restrict color,
         const LightConfig& lightConfig,
         const float materialSpecularExponent,

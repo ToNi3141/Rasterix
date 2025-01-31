@@ -183,7 +183,10 @@ void Lighting::calculateLight(Vec4& __restrict color,
     color += colorLight;
 }
 
-void Lighting::calculateSceneLight(Vec4& __restrict sceneLight, const Vec4& emissiveColor, const Vec4& ambientColor, const Vec4& ambientColorScene) const
+void Lighting::calculateSceneLight(Vec4& __restrict sceneLight,
+    const Vec4& emissiveColor,
+    const Vec4& ambientColor,
+    const Vec4& ambientColorScene) const
 {
     // Ambient Color Material and ambient scene color
     sceneLight = ambientColor;

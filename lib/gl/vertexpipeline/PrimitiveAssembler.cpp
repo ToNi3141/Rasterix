@@ -134,7 +134,12 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
     return drawLine(p0->vertex, p1->vertex, p0->tex, p1->tex, p0->color, p1->color);
 }
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1)
+tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const Vec4& v0,
+    const Vec4& v1,
+    const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0,
+    const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1,
+    const Vec4& c0,
+    const Vec4& c1)
 {
     // Copied from swGL and adapted.
 
