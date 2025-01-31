@@ -18,9 +18,9 @@
 #ifndef DISPLAYLISTDOUBLEBUFFER_HPP
 #define DISPLAYLISTDOUBLEBUFFER_HPP
 
+#include "DisplayListDispatcher.hpp"
 #include <stdint.h>
 #include <tcb/span.hpp>
-#include "DisplayListDispatcher.hpp"
 
 namespace rr::displaylist
 {
@@ -30,8 +30,9 @@ class DisplayListDoubleBuffer
 {
 public:
     DisplayListDoubleBuffer(TDisplayList& dl1, TDisplayList& dl2)
-        : m_displayList{dl1, dl2}
-    {}
+        : m_displayList { dl1, dl2 }
+    {
+    }
 
     void swap()
     {
@@ -57,7 +58,7 @@ public:
 
 private:
     std::array<std::reference_wrapper<TDisplayList>, 2> m_displayList {};
-    std::size_t m_selectedDisplayList {0};
+    std::size_t m_selectedDisplayList { 0 };
 };
 
 } // namespace rr::displaylist

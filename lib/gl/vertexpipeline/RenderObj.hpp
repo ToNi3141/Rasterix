@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef RENDEROBJ_HPP
 #define RENDEROBJ_HPP
 
-#include "math/Vec.hpp"
 #include "RenderConfigs.hpp"
+#include "math/Vec.hpp"
 #include <array>
 #include <bitset>
 #include <optional>
@@ -88,7 +87,7 @@ public:
     void setTexCoordType(const std::size_t tmu, Type type) { m_texCoordType[tmu] = type; }
     void setTexCoordStride(const std::size_t tmu, std::size_t stride) { m_texCoordStride[tmu] = stride; }
     void setTexCoordPointer(const std::size_t tmu, const void* ptr) { m_texCoordPointer[tmu] = ptr; }
-    void setTexCoord(const std::size_t tmu, const Vec4& texCoord){ m_texCoord[tmu] = texCoord; }
+    void setTexCoord(const std::size_t tmu, const Vec4& texCoord) { m_texCoord[tmu] = texCoord; }
 
     void enableNormalArray(bool enable) { m_normalArrayEnabled = enable; }
     void setNormalType(Type type) { m_normalType = type; }
@@ -104,7 +103,7 @@ public:
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
 
     void setDrawMode(DrawMode mode) { m_drawMode = mode; }
-    
+
     void enableIndices(bool enable) { m_indicesEnabled = enable; }
     void setCount(std::size_t count) { m_count = count; }
     void setIndicesType(Type type) { m_indicesType = type; }
@@ -119,7 +118,8 @@ private:
         if (arr)
         {
             const int8_t* a = reinterpret_cast<const int8_t*>(arr);
-            if (stride == 0) {
+            if (stride == 0)
+            {
                 const std::size_t indexWithStride = index * size;
                 switch (type)
                 {

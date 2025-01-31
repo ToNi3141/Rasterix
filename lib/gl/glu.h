@@ -15,18 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-#ifndef GLU_H 
+#ifndef GLU_H
 #define GLU_H
 
 #include "gl.h"
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar);
-GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
-                              GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
-                              GLfloat upz);
+    GLAPI void APIENTRY gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar);
+    GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
+        GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
+        GLfloat upz);
 
 #ifdef __cplusplus
 }

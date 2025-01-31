@@ -16,10 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <math.h>
-#include <array>
 #include <algorithm>
-
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VTexEnv.h"
@@ -52,7 +51,7 @@ enum SrcReg
     PREVIOUS
 };
 
-struct __attribute__ ((__packed__)) ConfReg2
+struct __attribute__((__packed__)) ConfReg2
 {
     Combine combineRgb : 3;
     Combine combineAlpha : 3;
@@ -72,7 +71,8 @@ struct __attribute__ ((__packed__)) ConfReg2
     uint8_t shiftAlpha : 2;
 };
 
-union Conf {
+union Conf
+{
     ConfReg2 conf;
     uint32_t value;
 } conf;
@@ -96,8 +96,6 @@ void initConf(Conf& conf)
     conf.conf.shiftAlpha = 0;
     conf.conf.shiftRgb = 0;
 }
-
-
 
 TEST_CASE("Check TexEnv SRC_RGB TEXTURE", "[TexEnv]")
 {
@@ -147,7 +145,7 @@ TEST_CASE("Check TexEnv SRC_RGB PREVIOUS", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0xff000002);
+    REQUIRE(top->m_color == 0xff000002);
 
     // Destroy model
     delete top;
@@ -174,7 +172,7 @@ TEST_CASE("Check TexEnv SRC_RGB CONSTANT", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0x00000002);
+    REQUIRE(top->m_color == 0x00000002);
 
     // Destroy model
     delete top;
@@ -201,7 +199,7 @@ TEST_CASE("Check TexEnv SRC_RGB PRIMARY_COLOR", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0x0000ff02);
+    REQUIRE(top->m_color == 0x0000ff02);
 
     // Destroy model
     delete top;
@@ -255,7 +253,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PREVIOUS", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0x00ff0001);
+    REQUIRE(top->m_color == 0x00ff0001);
 
     // Destroy model
     delete top;
@@ -282,7 +280,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA CONSTANT", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0x00ff00ff);
+    REQUIRE(top->m_color == 0x00ff00ff);
 
     // Destroy model
     delete top;
@@ -309,7 +307,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PRIMARY_COLOR", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     rr::ut::clk(top);
-    REQUIRE(top->m_color ==  0x00ff0003);
+    REQUIRE(top->m_color == 0x00ff0003);
 
     // Destroy model
     delete top;
@@ -531,7 +529,7 @@ TEST_CASE("Check TexEnv INTERPOLATE (RGB)", "[TexEnv]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     REQUIRE(top->m_color == 0x4c627601);
-    
+
     // arg0 * arg1 = 0x040A12
     // 1 - arg2 = 0xbfaf9f
     // arg1 * (1 - arg2) = 0x475763
@@ -893,7 +891,6 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
     conf.conf.srcRegRgb0 = TEXTURE;
     conf.conf.srcRegRgb1 = PRIMARY_COLOR;
     conf.conf.srcRegRgb2 = PREVIOUS;
-    
 
     // Scale of 1
     conf.conf.shiftRgb = 1;

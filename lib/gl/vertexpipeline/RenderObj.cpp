@@ -15,10 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "RenderObj.hpp"
-#include <spdlog/spdlog.h>
 #include <functional>
+#include <spdlog/spdlog.h>
 
 namespace rr
 {
@@ -50,7 +49,8 @@ Vec4 RenderObj::getColor(const std::size_t index) const
     if (colorArrayEnabled())
     {
         Vec4 vec = getFromArray<Vec4>(m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
-        switch (m_colorType) {
+        switch (m_colorType)
+        {
         case Type::UNSIGNED_BYTE:
         case Type::UNSIGNED_SHORT:
         case Type::UNSIGNED_INT:
@@ -101,37 +101,37 @@ std::size_t RenderObj::getIndex(const std::size_t index) const
     return index + m_arrayOffset;
 }
 
-const char* RenderObj::drawModeToString(const DrawMode drawMode) const 
+const char* RenderObj::drawModeToString(const DrawMode drawMode) const
 {
     switch (drawMode)
     {
     case TRIANGLES:
         return "TRIANGLES";
-    
+
     case TRIANGLE_FAN:
         return "TRIANGLE_FAN";
-    
+
     case TRIANGLE_STRIP:
         return "TRIANGLE_STRIP";
-    
+
     case POLYGON:
         return "POLYGON";
-    
+
     case QUADS:
         return "QUADS";
-    
+
     case QUAD_STRIP:
         return "QUAD_STRIP";
-    
+
     case LINES:
         return "LINES";
-    
+
     case LINE_STRIP:
         return "LINE_STRIP";
-    
+
     case LINE_LOOP:
         return "LINE_LOOP";
-    
+
     default:
         return "UNKNWON";
     }
@@ -143,28 +143,28 @@ const char* RenderObj::typeToString(const Type type) const
     {
     case BYTE:
         return "BYTE";
-    
+
     case UNSIGNED_BYTE:
         return "UNSIGNED_BYTE";
-    
+
     case SHORT:
         return "SHORT";
-    
+
     case UNSIGNED_SHORT:
         return "UNSIGNED_SHORT";
-    
+
     case FLOAT:
         return "FLOAT";
-    
+
     case UNSIGNED_INT:
         return "UNSIGNED_INT";
-    
+
     default:
         return "UNKNWON";
     }
 }
 
-void RenderObj::logCurrentConfig() const 
+void RenderObj::logCurrentConfig() const
 {
     SPDLOG_DEBUG("RenderObj:");
     SPDLOG_DEBUG("  m_indicesEnabled {}", m_indicesEnabled);

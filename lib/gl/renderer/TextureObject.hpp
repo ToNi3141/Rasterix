@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef TEXTURE_OBJECT_HPP
 #define TEXTURE_OBJECT_HPP
 
+#include "renderer/registers/TmuTextureReg.hpp"
 #include <array>
 #include <memory>
-#include "renderer/registers/TmuTextureReg.hpp"
 
 namespace rr
 {
@@ -45,44 +44,44 @@ struct TextureObject
         uint16_t color {};
         switch (intendedPixelFormat)
         {
-            case IntendedInternalPixelFormat::ALPHA: // RGBA4444
-                color = static_cast<uint16_t>(a >> 4);
-                break;
-            case IntendedInternalPixelFormat::LUMINANCE: // RGB565
-                color |= static_cast<uint16_t>(r >> 3) << 11;
-                color |= static_cast<uint16_t>(r >> 2) << 5;
-                color |= static_cast<uint16_t>(r >> 3) << 0;
-                break;
-            case IntendedInternalPixelFormat::INTENSITY: // RGBA4444
-                color |= static_cast<uint16_t>(r >> 4) << 12;
-                color |= static_cast<uint16_t>(r >> 4) << 8;
-                color |= static_cast<uint16_t>(r >> 4) << 4;
-                color |= static_cast<uint16_t>(r >> 4) << 0;
-                break;
-            case IntendedInternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
-                color |= static_cast<uint16_t>(r >> 4) << 12;
-                color |= static_cast<uint16_t>(r >> 4) << 8;
-                color |= static_cast<uint16_t>(r >> 4) << 4;
-                color |= static_cast<uint16_t>(a >> 4) << 0;
-                break;
-            case IntendedInternalPixelFormat::RGB: // RGB565
-                color |= static_cast<uint16_t>(r >> 3) << 11;
-                color |= static_cast<uint16_t>(g >> 2) << 5;
-                color |= static_cast<uint16_t>(b >> 3) << 0;
-                break;
-            case IntendedInternalPixelFormat::RGBA: // RGBA4444
-                color |= static_cast<uint16_t>(r >> 4) << 12;
-                color |= static_cast<uint16_t>(g >> 4) << 8;
-                color |= static_cast<uint16_t>(b >> 4) << 4;
-                color |= static_cast<uint16_t>(a >> 4) << 0;
-                break;
-            case IntendedInternalPixelFormat::RGBA1: // RGBA5551
-                color |= static_cast<uint16_t>(r >> 3) << 11;
-                color |= static_cast<uint16_t>(g >> 3) << 6;
-                color |= static_cast<uint16_t>(b >> 3) << 1;
-                color |= static_cast<uint16_t>(a >> 7) << 0;
-                break;
-            default:
+        case IntendedInternalPixelFormat::ALPHA: // RGBA4444
+            color = static_cast<uint16_t>(a >> 4);
+            break;
+        case IntendedInternalPixelFormat::LUMINANCE: // RGB565
+            color |= static_cast<uint16_t>(r >> 3) << 11;
+            color |= static_cast<uint16_t>(r >> 2) << 5;
+            color |= static_cast<uint16_t>(r >> 3) << 0;
+            break;
+        case IntendedInternalPixelFormat::INTENSITY: // RGBA4444
+            color |= static_cast<uint16_t>(r >> 4) << 12;
+            color |= static_cast<uint16_t>(r >> 4) << 8;
+            color |= static_cast<uint16_t>(r >> 4) << 4;
+            color |= static_cast<uint16_t>(r >> 4) << 0;
+            break;
+        case IntendedInternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
+            color |= static_cast<uint16_t>(r >> 4) << 12;
+            color |= static_cast<uint16_t>(r >> 4) << 8;
+            color |= static_cast<uint16_t>(r >> 4) << 4;
+            color |= static_cast<uint16_t>(a >> 4) << 0;
+            break;
+        case IntendedInternalPixelFormat::RGB: // RGB565
+            color |= static_cast<uint16_t>(r >> 3) << 11;
+            color |= static_cast<uint16_t>(g >> 2) << 5;
+            color |= static_cast<uint16_t>(b >> 3) << 0;
+            break;
+        case IntendedInternalPixelFormat::RGBA: // RGBA4444
+            color |= static_cast<uint16_t>(r >> 4) << 12;
+            color |= static_cast<uint16_t>(g >> 4) << 8;
+            color |= static_cast<uint16_t>(b >> 4) << 4;
+            color |= static_cast<uint16_t>(a >> 4) << 0;
+            break;
+        case IntendedInternalPixelFormat::RGBA1: // RGBA5551
+            color |= static_cast<uint16_t>(r >> 3) << 11;
+            color |= static_cast<uint16_t>(g >> 3) << 6;
+            color |= static_cast<uint16_t>(b >> 3) << 1;
+            color |= static_cast<uint16_t>(a >> 7) << 0;
+            break;
+        default:
             break;
         }
         return color;
@@ -93,28 +92,28 @@ struct TextureObject
         PixelFormat format {};
         switch (intendedPixelFormat)
         {
-            case IntendedInternalPixelFormat::ALPHA:
-                format = PixelFormat::RGBA4444;
-                break;
-            case IntendedInternalPixelFormat::LUMINANCE:
-                format = PixelFormat::RGB565;
-                break;
-            case IntendedInternalPixelFormat::INTENSITY:
-                format = PixelFormat::RGBA4444;
-                break;
-            case IntendedInternalPixelFormat::LUMINANCE_ALPHA:
-                format = PixelFormat::RGBA4444;
-                break;
-            case IntendedInternalPixelFormat::RGB:
-                format = PixelFormat::RGB565;
-                break;
-            case IntendedInternalPixelFormat::RGBA:
-                format = PixelFormat::RGBA4444;
-                break;
-            case IntendedInternalPixelFormat::RGBA1:
-                format = PixelFormat::RGBA5551;
-                break;
-            default:
+        case IntendedInternalPixelFormat::ALPHA:
+            format = PixelFormat::RGBA4444;
+            break;
+        case IntendedInternalPixelFormat::LUMINANCE:
+            format = PixelFormat::RGB565;
+            break;
+        case IntendedInternalPixelFormat::INTENSITY:
+            format = PixelFormat::RGBA4444;
+            break;
+        case IntendedInternalPixelFormat::LUMINANCE_ALPHA:
+            format = PixelFormat::RGBA4444;
+            break;
+        case IntendedInternalPixelFormat::RGB:
+            format = PixelFormat::RGB565;
+            break;
+        case IntendedInternalPixelFormat::RGBA:
+            format = PixelFormat::RGBA4444;
+            break;
+        case IntendedInternalPixelFormat::RGBA1:
+            format = PixelFormat::RGBA5551;
+            break;
+        default:
             break;
         }
         return format;

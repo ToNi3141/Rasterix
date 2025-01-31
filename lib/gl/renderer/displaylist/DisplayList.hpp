@@ -18,15 +18,16 @@
 #ifndef DISPLAYLIST_HPP
 #define DISPLAYLIST_HPP
 
-#include <stdint.h>
 #include <cstring>
+#include <stdint.h>
 #include <tcb/span.hpp>
 
 namespace rr::displaylist
 {
 
 template <std::size_t ALIGNMENT>
-class DisplayList {
+class DisplayList
+{
 public:
     void setBuffer(tcb::span<uint8_t> buffer)
     {
@@ -37,7 +38,7 @@ public:
 
     void* __restrict alloc(const std::size_t size)
     {
-        if ((size + writePos) <= mem.size()) 
+        if ((size + writePos) <= mem.size())
         {
             void* memPlace = &mem[writePos];
             writePos += size;
@@ -57,7 +58,7 @@ public:
     void remove()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
-        if (size <= writePos) 
+        if (size <= writePos)
         {
             writePos -= size;
         }
@@ -116,7 +117,7 @@ public:
     GET_TYPE* __restrict lookAhead()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) 
+        if ((size + readPos) <= writePos)
         {
             return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
         }
@@ -127,7 +128,7 @@ public:
     GET_TYPE* __restrict getNext()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos) 
+        if ((size + readPos) <= writePos)
         {
             void* memPlace = &mem[readPos];
             readPos += size;

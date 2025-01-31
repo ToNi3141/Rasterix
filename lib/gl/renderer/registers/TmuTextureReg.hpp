@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TMU_TEXTURE_REG_
 #define _TMU_TEXTURE_REG_
 
-#include <functional>
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
+#include <functional>
 
 namespace rr
 {
@@ -61,22 +60,24 @@ public:
     void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
     uint32_t serialize() const { return m_regVal.data; }
     uint32_t getAddr() const { return 0xC + m_offset; }
+
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };
     union RegVal
     {
-        #pragma pack(push, 1)
+#pragma pack(push, 1)
         struct RegContent
         {
             RegContent()
-                : texWidth(0)
-                , texHeight(0)
-                , wrapModeS(static_cast<uint32_t>(TextureWrapMode::REPEAT))
-                , wrapModeT(static_cast<uint32_t>(TextureWrapMode::REPEAT))
-                , enableMagFilter(false)
-                , enableMinFilter(true)
-                , pixelFormat(static_cast<uint32_t>(PixelFormat::RGBA4444))
-            { }
+                : texWidth { 0 }
+                , texHeight { 0 }
+                , wrapModeS { static_cast<uint32_t>(TextureWrapMode::REPEAT) }
+                , wrapModeT { static_cast<uint32_t>(TextureWrapMode::REPEAT) }
+                , enableMagFilter { false }
+                , enableMinFilter { true }
+                , pixelFormat { static_cast<uint32_t>(PixelFormat::RGBA4444) }
+            {
+            }
 
             uint32_t texWidth : 4;
             uint32_t texHeight : 4;
@@ -87,7 +88,7 @@ private:
             uint32_t pixelFormat : 4;
         } fields {};
         uint32_t data;
-        #pragma pack(pop)
+#pragma pack(pop)
     } m_regVal;
     std::size_t m_offset { 0 };
 };

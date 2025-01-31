@@ -18,8 +18,8 @@
 #ifndef FRAGMENT_PIPELINE_HPP_
 #define FRAGMENT_PIPELINE_HPP_
 
-#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/Renderer.hpp"
 #include <optional>
 
 namespace rr
@@ -29,7 +29,8 @@ class FragmentPipeline
 public:
     using PipelineConfig = FragmentPipelineReg;
 
-    FragmentPipeline(Renderer& renderer) : m_renderer(renderer)
+    FragmentPipeline(Renderer& renderer)
+        : m_renderer { renderer }
     {
         m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
     }
@@ -40,7 +41,7 @@ public:
     {
         bool ret { true };
 
-        if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize()) 
+        if (m_fragmentPipelineConfUploaded.serialize() != m_fragmentPipelineConf.serialize())
         {
             ret = ret && m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
             m_fragmentPipelineConfUploaded = m_fragmentPipelineConf;

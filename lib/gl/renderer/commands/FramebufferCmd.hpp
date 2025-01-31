@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _FRAMEBUFFER_CMD_HPP_
 #define _FRAMEBUFFER_CMD_HPP_
 
-#include <cstdint>
-#include <array>
-#include <tcb/span.hpp>
 #include "renderer/DmaStreamEngineCommands.hpp"
+#include <array>
+#include <cstdint>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -36,6 +35,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
+
 public:
     FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer, const bool selStencilBuffer)
     {
@@ -58,12 +58,12 @@ public:
         m_op |= OP_FRAMEBUFFER_SWAP;
     }
 
-    void commitFramebuffer() 
-    { 
-        m_op |= OP_FRAMEBUFFER_COMMIT; 
+    void commitFramebuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_COMMIT;
     }
-    void enableMemset() 
-    { 
+    void enableMemset()
+    {
         m_op |= OP_FRAMEBUFFER_MEMSET;
     }
     void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }

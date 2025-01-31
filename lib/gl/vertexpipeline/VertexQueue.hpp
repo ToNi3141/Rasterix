@@ -15,17 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef VERTEXQUEUE_HPP_
 #define VERTEXQUEUE_HPP_
 
-#include "math/Vec.hpp"
 #include "RenderObj.hpp"
+#include "math/Vec.hpp"
 #include <vector>
 
 namespace rr
 {
-class VertexQueue 
+class VertexQueue
 {
 public:
     using DrawMode = RenderObj::DrawMode;
@@ -90,6 +89,7 @@ public:
     }
 
     const Vec4 color() const { return m_vertexColor; }
+
 private:
     // Buffer
     std::vector<Vec4> m_vertexBuffer;

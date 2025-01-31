@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "ViewPort.hpp"
 
 namespace rr
 {
-void ViewPort::transform(Vec4 &v)
+void ViewPort::transform(Vec4& v)
 {
     // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
     // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX

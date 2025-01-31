@@ -30,7 +30,8 @@ class DisplayListDispatcher
 public:
     DisplayListDispatcher(TDisplayListAssembler& displayListAssembler)
         : m_displayListAssembler { displayListAssembler }
-    {}
+    {
+    }
 
     template <typename Command>
     bool addCommand(const std::size_t index, const Command& cmd)
@@ -83,7 +84,7 @@ public:
     bool setResolution(const std::size_t x, const std::size_t y)
     {
         const std::size_t framebufferSize = x * y;
-        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) 
+        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS)
             + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
         if (framebufferLines > RenderConfig::getDisplayLines())
         {
@@ -97,7 +98,7 @@ public:
         return true;
     }
 
-    std::size_t getYLineResolution() const 
+    std::size_t getYLineResolution() const
     {
         return m_yLineResolution;
     }
@@ -146,7 +147,7 @@ public:
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
             m_displayListAssembler[i].removeSection();
-        } 
+        }
     }
 
     void clearDisplayListAssembler()

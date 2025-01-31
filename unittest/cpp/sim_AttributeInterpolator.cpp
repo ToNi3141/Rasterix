@@ -20,15 +20,17 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAttributeInterpolator.h"
 
-union ScreenPos {
+union ScreenPos
+{
     uint32_t u32;
-    struct {
+    struct
+    {
         uint16_t x;
         uint16_t y;
     } val;
 };
 
-struct Attributes 
+struct Attributes
 {
     float sb0 = 0.0f;
     float sx0 = 0.0f;
@@ -90,9 +92,9 @@ struct AttributesResult
     float a = 0.0f;
 };
 
-void calculateVertexAttributes(Attributes attr, 
-                               uint16_t x, uint16_t y, 
-                               AttributesResult& res)
+void calculateVertexAttributes(Attributes attr,
+    uint16_t x, uint16_t y,
+    AttributesResult& res)
 {
     res.ms0 = attr.sx0 + attr.sy0;
     res.mt0 = attr.tx0 + attr.ty0;
@@ -100,7 +102,7 @@ void calculateVertexAttributes(Attributes attr,
     res.ms1 = attr.sx1 + attr.sy1;
     res.mt1 = attr.tx1 + attr.ty1;
     res.mq1 = attr.qx1 + attr.qy1;
-    
+
     attr.sx0 *= x;
     attr.sy0 *= y;
     attr.tx0 *= x;
@@ -355,11 +357,11 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
             AttributesResult expectedResult;
 
             calculateVertexAttributes(attr,
-                                      bb.val.x - CLOCK_DELAY, bb.val.y + CLOCK_DELAY, 
-                                      expectedResult);
-            
-            //printf("%d %f %f %f %f %f %f\n", i, s, sr, t, tr, w, wr);
-            
+                bb.val.x - CLOCK_DELAY, bb.val.y + CLOCK_DELAY,
+                expectedResult);
+
+            // printf("%d %f %f %f %f %f %f\n", i, s, sr, t, tr, w, wr);
+
             REQUIRE(Approx(w).epsilon(0.10) == expectedResult.w);
             REQUIRE(Approx(z).epsilon(0.01) == expectedResult.z);
             REQUIRE(Approx(s0).epsilon(0.005) == expectedResult.s0);
@@ -426,9 +428,9 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         AttributesResult expectedResult;
 
         calculateVertexAttributes(attr,
-                                  bb.val.x, bb.val.y, 
-                                  expectedResult);
-        
+            bb.val.x, bb.val.y,
+            expectedResult);
+
         REQUIRE(Approx(s0).epsilon(0.005) == expectedResult.s0);
         REQUIRE(Approx(t0).epsilon(0.005) == expectedResult.t0);
         REQUIRE(Approx(ms0).epsilon(0.005) == expectedResult.ms0);
@@ -467,4 +469,3 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     // Destroy model
     delete top;
 }
-

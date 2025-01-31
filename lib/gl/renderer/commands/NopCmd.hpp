@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _NOP_CMD_HPP_
 #define _NOP_CMD_HPP_
 
-#include <cstdint>
-#include <array>
-#include <tcb/span.hpp>
 #include "renderer/DmaStreamEngineCommands.hpp"
+#include <array>
+#include <cstdint>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -30,6 +29,7 @@ namespace rr
 class NopCmd
 {
     static constexpr uint32_t OP_NOP { 0 };
+
 public:
     using PayloadType = tcb::span<const uint8_t>;
     const PayloadType payload() const { return {}; }

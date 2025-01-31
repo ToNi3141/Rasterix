@@ -18,10 +18,10 @@
 #ifndef MATRIXSTACK_HPP
 #define MATRIXSTACK_HPP
 
-#include "math/Vec.hpp"
-#include "math/Mat44.hpp"
-#include "Stack.hpp"
 #include "RenderConfigs.hpp"
+#include "Stack.hpp"
+#include "math/Mat44.hpp"
+#include "math/Vec.hpp"
 
 namespace rr
 {
@@ -64,11 +64,12 @@ public:
     void setMatrixMode(const MatrixMode matrixMode);
     void setTmu(const std::size_t tmu);
     bool loadMatrix(const Mat44& m);
-    
+
     void recalculateMatrices();
 
     static std::size_t getModelMatrixStackDepth();
     static std::size_t getProjectionMatrixStackDepth();
+
 private:
     static constexpr std::size_t MODEL_MATRIX_STACK_DEPTH { 16 };
     static constexpr std::size_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
@@ -83,7 +84,7 @@ private:
     Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
     std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, RenderConfig::TMU_COUNT> m_tmStack {};
     Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
-    Mat44 m_p {}; // Projection 
+    Mat44 m_p {}; // Projection
     Mat44 m_t {}; // ModelViewProjection
     Mat44 m_m {}; // ModelView
     Mat44 m_n {}; // Normal

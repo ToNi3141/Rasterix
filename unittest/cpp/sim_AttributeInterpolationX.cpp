@@ -81,7 +81,7 @@ TEST_CASE("Check init", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0);
     CHECK(top->curr_tex0_t == 100);
     CHECK(top->curr_tex0_q == 200);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5);
     CHECK(top->curr_tex0_mipmap_t == 107);
     CHECK(top->curr_tex0_mipmap_q == 209);
@@ -89,7 +89,7 @@ TEST_CASE("Check init", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300);
     CHECK(top->curr_tex1_t == 400);
     CHECK(top->curr_tex1_q == 500);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317);
     CHECK(top->curr_tex1_mipmap_t == 419);
     CHECK(top->curr_tex1_mipmap_q == 521);
@@ -120,7 +120,7 @@ TEST_CASE("Check x inc", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0 + 1);
     CHECK(top->curr_tex0_t == 100 + 2);
     CHECK(top->curr_tex0_q == 200 + 3);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5 + 1);
     CHECK(top->curr_tex0_mipmap_t == 107 + 2);
     CHECK(top->curr_tex0_mipmap_q == 209 + 3);
@@ -128,7 +128,7 @@ TEST_CASE("Check x inc", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300 + 7);
     CHECK(top->curr_tex1_t == 400 + 8);
     CHECK(top->curr_tex1_q == 500 + 9);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317 + 7);
     CHECK(top->curr_tex1_mipmap_t == 419 + 8);
     CHECK(top->curr_tex1_mipmap_q == 521 + 9);
@@ -159,7 +159,7 @@ TEST_CASE("Check x dec", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0 - 1);
     CHECK(top->curr_tex0_t == 100 - 2);
     CHECK(top->curr_tex0_q == 200 - 3);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5 - 1);
     CHECK(top->curr_tex0_mipmap_t == 107 - 2);
     CHECK(top->curr_tex0_mipmap_q == 209 - 3);
@@ -167,7 +167,7 @@ TEST_CASE("Check x dec", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300 - 7);
     CHECK(top->curr_tex1_t == 400 - 8);
     CHECK(top->curr_tex1_q == 500 - 9);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317 - 7);
     CHECK(top->curr_tex1_mipmap_t == 419 - 8);
     CHECK(top->curr_tex1_mipmap_q == 521 - 9);
@@ -198,7 +198,7 @@ TEST_CASE("Check y inc", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0 + 4);
     CHECK(top->curr_tex0_t == 100 + 5);
     CHECK(top->curr_tex0_q == 200 + 6);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5 + 4);
     CHECK(top->curr_tex0_mipmap_t == 107 + 5);
     CHECK(top->curr_tex0_mipmap_q == 209 + 6);
@@ -206,7 +206,7 @@ TEST_CASE("Check y inc", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300 + 10);
     CHECK(top->curr_tex1_t == 400 + 11);
     CHECK(top->curr_tex1_q == 500 + 12);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317 + 10);
     CHECK(top->curr_tex1_mipmap_t == 419 + 11);
     CHECK(top->curr_tex1_mipmap_q == 521 + 12);
@@ -238,7 +238,7 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0);
     CHECK(top->curr_tex0_t == 100);
     CHECK(top->curr_tex0_q == 200);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5);
     CHECK(top->curr_tex0_mipmap_t == 107);
     CHECK(top->curr_tex0_mipmap_q == 209);
@@ -246,7 +246,7 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300);
     CHECK(top->curr_tex1_t == 400);
     CHECK(top->curr_tex1_q == 500);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317);
     CHECK(top->curr_tex1_mipmap_t == 419);
     CHECK(top->curr_tex1_mipmap_q == 521);
@@ -266,7 +266,7 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
     CHECK(top->curr_tex0_s == 0 + 4);
     CHECK(top->curr_tex0_t == 100 + 5);
     CHECK(top->curr_tex0_q == 200 + 6);
-    
+
     CHECK(top->curr_tex0_mipmap_s == 5 + 4);
     CHECK(top->curr_tex0_mipmap_t == 107 + 5);
     CHECK(top->curr_tex0_mipmap_q == 209 + 6);
@@ -274,7 +274,7 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
     CHECK(top->curr_tex1_s == 300 + 10);
     CHECK(top->curr_tex1_t == 400 + 11);
     CHECK(top->curr_tex1_q == 500 + 12);
-    
+
     CHECK(top->curr_tex1_mipmap_s == 317 + 10);
     CHECK(top->curr_tex1_mipmap_t == 419 + 11);
     CHECK(top->curr_tex1_mipmap_q == 521 + 12);

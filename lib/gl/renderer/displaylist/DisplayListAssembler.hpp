@@ -18,23 +18,23 @@
 #ifndef DISPLAYLISTASSEMBLER_HPP
 #define DISPLAYLISTASSEMBLER_HPP
 
-#include <stdint.h>
-#include <array>
-#include <bitset>
-#include <algorithm>
-#include <tcb/span.hpp>
+#include "DSEDisplayListAssembler.hpp"
 #include "DisplayList.hpp"
 #include "RRXDisplayListAssembler.hpp"
-#include "DSEDisplayListAssembler.hpp"
-#include "TextureLoadOptimizer.hpp"
 #include "StreamSectionManager.hpp"
+#include "TextureLoadOptimizer.hpp"
 #include "renderer/commands/StreamFromStreamCmd.hpp"
+#include <algorithm>
+#include <array>
+#include <bitset>
+#include <stdint.h>
+#include <tcb/span.hpp>
 
 namespace rr::displaylist
 {
 
 template <std::size_t TMU_COUNT, typename DisplayList>
-class DisplayListAssembler 
+class DisplayListAssembler
 {
 public:
     void setBuffer(tcb::span<uint8_t> buffer, std::size_t bufferId)
@@ -48,7 +48,7 @@ public:
         return m_displayList.getSize();
     }
 
-    std::size_t getDisplayListBufferId() const 
+    std::size_t getDisplayListBufferId() const
     {
         return m_displayListBufferId;
     }
@@ -74,7 +74,7 @@ public:
     std::size_t getCommandSize(const TCommand& cmd)
     {
         std::size_t expectedSize = 0;
-        
+
         if constexpr (HasCommand<decltype(cmd)>::value)
         {
             expectedSize += m_rrxDisplayListAssembler.getCommandSize(cmd);
@@ -124,25 +124,28 @@ public:
 
         return true;
     }
+
 private:
-    template<typename T> 
-    class HasDseTransfer 
+    template <typename T>
+    class HasDseTransfer
     {
-        template<typename> 
+        template <typename>
         static std::false_type test(...);
-        template<typename U> 
+        template <typename U>
         static auto test(int) -> decltype(std::declval<U>().dseTransfer(), std::true_type());
+
     public:
         static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
 
-    template<typename T> 
-    class HasCommand 
+    template <typename T>
+    class HasCommand
     {
-        template<typename> 
+        template <typename>
         static std::false_type test(...);
-        template<typename U> 
+        template <typename U>
         static auto test(int) -> decltype(std::declval<U>().command(), std::true_type());
+
     public:
         static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
     };
@@ -150,7 +153,7 @@ private:
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
-        if (getCommandSize(cmd) >= m_displayList.getFreeSpace()) 
+        if (getCommandSize(cmd) >= m_displayList.getFreeSpace())
         {
             return false;
         }
@@ -162,8 +165,9 @@ private:
     DSEDisplayListAssembler<DisplayList> m_dseDisplayListAssembler { m_displayList };
     TextureLoadOptimizer<TMU_COUNT, DisplayList> m_textureLoadOptimizer { m_displayList };
     StreamSectionManager<DisplayList,
-                         DSEDisplayListAssembler<DisplayList>,
-                         StreamFromStreamCmd> m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
+        DSEDisplayListAssembler<DisplayList>,
+        StreamFromStreamCmd>
+        m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
     std::size_t m_displayListBufferId { 0 };
 };
 

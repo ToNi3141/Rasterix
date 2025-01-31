@@ -19,7 +19,7 @@ struct RenderConfig
     static constexpr std::size_t TMU_COUNT { RRX_CORE_TMU_COUNT };
     static constexpr std::size_t MAX_TEXTURE_SIZE { RRX_CORE_MAX_TEXTURE_SIZE };
     static constexpr bool ENABLE_MIPMAPPING { RRX_CORE_ENABLE_MIPMAPPING };
-    
+
     // Display Settings
     static constexpr std::size_t MAX_DISPLAY_WIDTH { RRX_CORE_MAX_DISPLAY_WIDTH };
     static constexpr std::size_t MAX_DISPLAY_HEIGHT { RRX_CORE_MAX_DISPLAY_HEIGHT };
@@ -33,7 +33,7 @@ struct RenderConfig
     static constexpr std::size_t NUMBER_OF_TEXTURES { RRX_CORE_NUMBER_OF_TEXTURES };
     static constexpr std::size_t TEXTURE_PAGE_SIZE { RRX_CORE_TEXTURE_PAGE_SIZE };
 
-    // Memory RAM location. This is used as memory offset for all device memory  
+    // Memory RAM location. This is used as memory offset for all device memory
     // address calculations. Mostly useful for architectures with shared memory
     static constexpr uint32_t GRAM_MEMORY_LOC { RRX_CORE_GRAM_MEMORY_LOC }; // Shares memory with linux
 
@@ -47,7 +47,7 @@ struct RenderConfig
     static constexpr std::size_t getDisplayLines()
     {
         constexpr std::size_t MAX_FRAMEBUFFER_SIZE = MAX_DISPLAY_WIDTH * MAX_DISPLAY_HEIGHT;
-        if  constexpr (MAX_FRAMEBUFFER_SIZE == FRAMEBUFFER_SIZE_IN_WORDS)
+        if constexpr (MAX_FRAMEBUFFER_SIZE == FRAMEBUFFER_SIZE_IN_WORDS)
         {
             return 1;
         }

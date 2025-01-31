@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _FEATURE_ENABLE_REG_
 #define _FEATURE_ENABLE_REG_
 
@@ -30,7 +29,13 @@ public:
     void setEnableBlending(const bool val) { m_regVal.fields.blending = val; }
     void setEnableDepthTest(const bool val) { m_regVal.fields.depthTest = val; }
     void setEnableAlphaTest(const bool val) { m_regVal.fields.alphaTest = val; }
-    void setEnableTmu(const std::size_t tmu, const bool val) { if (tmu == 0) m_regVal.fields.tmu0 = val; else m_regVal.fields.tmu1 = val; }
+    void setEnableTmu(const std::size_t tmu, const bool val)
+    {
+        if (tmu == 0)
+            m_regVal.fields.tmu0 = val;
+        else
+            m_regVal.fields.tmu1 = val;
+    }
     void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
     void setEnableStencilTest(const bool val) { m_regVal.fields.stencilTest = val; }
 
@@ -44,10 +49,11 @@ public:
 
     uint32_t serialize() const { return m_regVal.data; }
     static constexpr uint32_t getAddr() { return 0x0; }
+
 private:
     union RegVal
     {
-        #pragma pack(push, 1)
+#pragma pack(push, 1)
         struct RegContent
         {
             RegContent()
@@ -59,7 +65,8 @@ private:
                 , scissor(false)
                 , tmu0(false)
                 , tmu1(false)
-            { }
+            {
+            }
 
             uint32_t fog : 1;
             uint32_t blending : 1;
@@ -71,7 +78,7 @@ private:
             uint32_t tmu1 : 1;
         } fields {};
         uint32_t data;
-        #pragma pack(pop)
+#pragma pack(pop)
     } m_regVal;
 };
 

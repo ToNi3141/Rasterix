@@ -18,18 +18,19 @@
 #ifndef DSEDISPLAYLISTASSEMBLER_HPP
 #define DSEDISPLAYLISTASSEMBLER_HPP
 
-#include <stdint.h>
+#include "renderer/DmaStreamEngineCommands.hpp"
+#include <algorithm>
 #include <array>
 #include <bitset>
-#include <algorithm>
+#include <stdint.h>
 #include <tcb/span.hpp>
-#include "renderer/DmaStreamEngineCommands.hpp"
 
 namespace rr::displaylist
 {
 
 template <typename TDisplayList>
-class DSEDisplayListAssembler {
+class DSEDisplayListAssembler
+{
 public:
     struct DisplayListEntry
     {
@@ -52,7 +53,7 @@ public:
     bool addCommand(const TCommand& cmd)
     {
         std::optional<DisplayListEntry> entry = allocateCommand(cmd);
-        if (!entry) 
+        if (!entry)
         {
             return false;
         }
@@ -63,7 +64,7 @@ public:
     template <typename TCommand>
     std::optional<DisplayListEntry> allocateCommand(const TCommand& cmd)
     {
-        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace()) 
+        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace())
         {
             return std::nullopt;
         }
@@ -87,6 +88,7 @@ public:
         entry.command.addr = transfer.addr;
         std::copy(transfer.payload.begin(), transfer.payload.end(), entry.payload.begin());
     }
+
 private:
     TDisplayList& m_displayList;
 };

@@ -33,18 +33,18 @@ MatrixStack::MatrixStack()
     m_c.identity();
 }
 
-void MatrixStack::setModelProjectionMatrix(const Mat44 &m)
+void MatrixStack::setModelProjectionMatrix(const Mat44& m)
 {
     m_t = m;
 }
 
-void MatrixStack::setModelMatrix(const Mat44 &m)
+void MatrixStack::setModelMatrix(const Mat44& m)
 {
     m_m = m;
     m_modelMatrixChanged = true;
 }
 
-void MatrixStack::setProjectionMatrix(const Mat44 &m)
+void MatrixStack::setProjectionMatrix(const Mat44& m)
 {
     m_p = m;
     m_projectionMatrixChanged = true;
@@ -69,20 +69,20 @@ void MatrixStack::multiply(const Mat44& mat)
 {
     switch (m_matrixMode)
     {
-        case MatrixMode::MODELVIEW:
-            setModelMatrix(mat * m_m);
-            break;
-        case MatrixMode::PROJECTION:
-            setProjectionMatrix(mat * m_p);
-            break;
-        case MatrixMode::TEXTURE:
-            setTextureMatrix(mat * m_tm[m_tmu]);
-            break;
-        case MatrixMode::COLOR:
-            setColorMatrix(mat * m_c);
-            break;
-         default:
-            break;
+    case MatrixMode::MODELVIEW:
+        setModelMatrix(mat * m_m);
+        break;
+    case MatrixMode::PROJECTION:
+        setProjectionMatrix(mat * m_p);
+        break;
+    case MatrixMode::TEXTURE:
+        setTextureMatrix(mat * m_tm[m_tmu]);
+        break;
+    case MatrixMode::COLOR:
+        setColorMatrix(mat * m_c);
+        break;
+    default:
+        break;
     }
 }
 
@@ -109,19 +109,21 @@ void MatrixStack::scale(const float x, const float y, const float z)
 void MatrixStack::rotate(const float angle, const float x, const float y, const float z)
 {
     static constexpr float PI { 3.14159265358979323846f };
-    float angle_rad = angle * (PI/180.0f);
+    float angle_rad = angle * (PI / 180.0f);
 
     float c = cosf(angle_rad);
     float s = sinf(angle_rad);
     float t = 1.0f - c;
 
+    // clang-format off
     Mat44 m
-    {{{
-        {c+x*x*t,   y*x*t+z*s,  z*x*t-y*s,  0.0f},
-        {x*y*t-z*s, c+y*y*t,    z*y*t+x*s,  0.0f},
-        {x*z*t+y*s, y*z*t-x*s,  z*z*t+c,    0.0f},
-        {0.0f,      0.0f,       0.0f,       1.0f}
-    }}};
+    { { {
+        { c + x * x * t    , y * x * t + z * s, z * x * t - y * s, 0.0f},
+        { x * y * t - z * s, c + y * y * t    , z * y * t + x * s, 0.0f},
+        { x * z * t + y * s, y * z * t - x * s, z * z * t + c    , 0.0f},
+        { 0.0f             , 0.0f             , 0.0f             , 1.0f}
+    } } };
+    // clang-format on
 
     multiply(m);
 }
@@ -130,22 +132,22 @@ void MatrixStack::loadIdentity()
 {
     switch (m_matrixMode)
     {
-        case MatrixMode::MODELVIEW:
-            m_m.identity();
-            m_modelMatrixChanged = true;
-            break;
-        case MatrixMode::PROJECTION:
-            m_p.identity();
-            m_projectionMatrixChanged = true;
-            break;
-        case MatrixMode::TEXTURE:
-            m_tm[m_tmu].identity();
-            break;
-        case MatrixMode::COLOR:
-            m_c.identity();
-            break;
-        default:
-            break;
+    case MatrixMode::MODELVIEW:
+        m_m.identity();
+        m_modelMatrixChanged = true;
+        break;
+    case MatrixMode::PROJECTION:
+        m_p.identity();
+        m_projectionMatrixChanged = true;
+        break;
+    case MatrixMode::TEXTURE:
+        m_tm[m_tmu].identity();
+        break;
+    case MatrixMode::COLOR:
+        m_c.identity();
+        break;
+    default:
+        break;
     }
 }
 
@@ -153,16 +155,16 @@ bool MatrixStack::pushMatrix()
 {
     switch (m_matrixMode)
     {
-        case MatrixMode::MODELVIEW:
-            return m_mStack.push(m_m);
-        case MatrixMode::PROJECTION:
-            return m_pStack.push(m_p);
-        case MatrixMode::COLOR:
-            return m_cStack.push(m_c);
-        case MatrixMode::TEXTURE:
-            return m_tmStack[m_tmu].push(m_tm[m_tmu]);
-        default:
-            return false;
+    case MatrixMode::MODELVIEW:
+        return m_mStack.push(m_m);
+    case MatrixMode::PROJECTION:
+        return m_pStack.push(m_p);
+    case MatrixMode::COLOR:
+        return m_cStack.push(m_c);
+    case MatrixMode::TEXTURE:
+        return m_tmStack[m_tmu].push(m_tm[m_tmu]);
+    default:
+        return false;
     }
 }
 
@@ -170,18 +172,18 @@ bool MatrixStack::popMatrix()
 {
     switch (m_matrixMode)
     {
-        case MatrixMode::MODELVIEW:
-            m_modelMatrixChanged = true;
-            return m_mStack.pop(m_m);
-        case MatrixMode::PROJECTION:
-            m_projectionMatrixChanged = true;
-            return m_pStack.pop(m_p);
-        case MatrixMode::COLOR:
-            return m_cStack.pop(m_c);
-        case MatrixMode::TEXTURE:
-            return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
-        default:
-            return false;
+    case MatrixMode::MODELVIEW:
+        m_modelMatrixChanged = true;
+        return m_mStack.pop(m_m);
+    case MatrixMode::PROJECTION:
+        m_projectionMatrixChanged = true;
+        return m_pStack.pop(m_p);
+    case MatrixMode::COLOR:
+        return m_cStack.pop(m_c);
+    case MatrixMode::TEXTURE:
+        return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
+    default:
+        return false;
     }
 }
 

@@ -70,36 +70,41 @@ bool Fogging::setFogColor(const Vec4& val)
 
 bool Fogging::updateFogLut()
 {
-    if (!m_fogDirty) 
+    if (!m_fogDirty)
     {
         return true;
     }
     m_fogDirty = false;
 
-    std::function <float(float)> fogFunction;
+    std::function<float(float)> fogFunction;
 
     // Set fog function
-    switch (m_fogMode) {
+    switch (m_fogMode)
+    {
     case FogMode::LINEAR:
-        fogFunction = [&](float z) {
+        fogFunction = [&](float z)
+        {
             float f = (m_fogEnd - z) / (m_fogEnd - m_fogStart);
             return f;
         };
         break;
     case FogMode::EXP:
-        fogFunction = [&](float z) {
+        fogFunction = [&](float z)
+        {
             float f = expf(-(m_fogDensity * z));
             return f;
         };
         break;
     case FogMode::EXP2:
-        fogFunction = [&](float z) {
+        fogFunction = [&](float z)
+        {
             float f = expf(powf(-(m_fogDensity * z), 2));
             return f;
         };
         break;
     default:
-        fogFunction = [](float) {
+        fogFunction = [](float)
+        {
             return 1.0f;
         };
         break;

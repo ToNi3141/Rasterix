@@ -18,8 +18,8 @@
 #ifndef FOGGING_HPP_
 #define FOGGING_HPP_
 
-#include "renderer/Renderer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/Renderer.hpp"
 #include <optional>
 
 namespace rr

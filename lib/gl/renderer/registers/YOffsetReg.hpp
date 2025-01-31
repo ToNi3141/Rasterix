@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _Y_OFFSET_REG_
 #define _Y_OFFSET_REG_
 
@@ -26,10 +25,14 @@ namespace rr
 class YOffsetReg : public BaseXYReg<0x0, 0x7ff>
 {
 public:
-    YOffsetReg() : BaseXYReg<0x0, 0x7ff>{} {}
+    YOffsetReg()
+        : BaseXYReg<0x0, 0x7ff> {}
+    {
+    }
     YOffsetReg(const uint16_t x, const uint16_t y)
-        : BaseXYReg<0x0, 0x7ff>{x, y}
-    {}
+        : BaseXYReg<0x0, 0x7ff> { x, y }
+    {
+    }
     static constexpr uint32_t getAddr() { return 0x8; }
 };
 } // namespace rr

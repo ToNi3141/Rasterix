@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _FOG_LUT_STREAM_CMD_HPP_
 #define _FOG_LUT_STREAM_CMD_HPP_
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <tcb/span.hpp>
 
 namespace rr
@@ -30,6 +29,7 @@ class FogLutStreamCmd
 {
     static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
     static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
+
 public:
     FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
     {
@@ -62,13 +62,14 @@ public:
     const PayloadType& payload() const { return m_lut; }
     using CommandType = uint32_t;
     static constexpr CommandType command() { return FOG_LUT_STREAM; }
+
 private:
     void setBounds(const float lower, const float upper)
     {
         std::memcpy(&(m_lut[0]), &lower, sizeof(m_lut[0]));
         std::memcpy(&(m_lut[1]), &upper, sizeof(m_lut[1]));
     }
-    
+
     void setLutValue(const std::size_t index, const float m, const float b)
     {
         m_lut[((index + 1) * 2)] = static_cast<int32_t>(m);

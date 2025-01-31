@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "TexGen.hpp"
 
 namespace rr
 {
 void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
 {
-    if (m_texGenEnableS || m_texGenEnableT || m_texGenEnableR) 
+    if (m_texGenEnableS || m_texGenEnableT || m_texGenEnableR)
     {
         Vec4 v0Transformed;
         if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))
@@ -33,7 +32,8 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
         }
         if (m_texGenEnableS)
         {
-            switch (m_texGenModeS) {
+            switch (m_texGenModeS)
+            {
             case TexGenMode::OBJECT_LINEAR:
                 st0[0] = m_texGenVecObjS.dot(v0);
                 break;
@@ -49,7 +49,8 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
         }
         if (m_texGenEnableT)
         {
-            switch (m_texGenModeT) {
+            switch (m_texGenModeT)
+            {
             case TexGenMode::OBJECT_LINEAR:
                 st0[1] = m_texGenVecObjT.dot(v0);
                 break;
@@ -65,7 +66,8 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
         }
         if (m_texGenEnableR)
         {
-            switch (m_texGenModeR) {
+            switch (m_texGenModeR)
+            {
             case TexGenMode::OBJECT_LINEAR:
                 st0[2] = m_texGenVecObjR.dot(v0);
                 break;
@@ -84,7 +86,7 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
 
 Vec4 TexGen::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const
 {
-    Mat44 inv{mat};
+    Mat44 inv { mat };
     inv.invert();
     inv.transpose();
     Vec4 newPlane;
@@ -122,32 +124,32 @@ void TexGen::setTexGenModeR(TexGenMode mode)
     m_texGenModeR = mode;
 }
 
-void TexGen::setTexGenVecObjS(const Vec4 &val)
+void TexGen::setTexGenVecObjS(const Vec4& val)
 {
     m_texGenVecObjS = val;
 }
 
-void TexGen::setTexGenVecObjT(const Vec4 &val)
+void TexGen::setTexGenVecObjT(const Vec4& val)
 {
     m_texGenVecObjT = val;
 }
 
-void TexGen::setTexGenVecObjR(const Vec4 &val)
+void TexGen::setTexGenVecObjR(const Vec4& val)
 {
     m_texGenVecObjR = val;
 }
 
-void TexGen::setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4 &val)
+void TexGen::setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val)
 {
     m_texGenVecEyeS = calcTexGenEyePlane(modelMatrix, val);
 }
 
-void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4 &val)
+void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val)
 {
     m_texGenVecEyeT = calcTexGenEyePlane(modelMatrix, val);
 }
 
-void TexGen::setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4 &val)
+void TexGen::setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val)
 {
     m_texGenVecEyeR = calcTexGenEyePlane(modelMatrix, val);
 }

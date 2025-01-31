@@ -19,7 +19,7 @@
 namespace rr
 {
 Renderer::Renderer(IBusConnector& busConnector)
-    : m_busConnector{ busConnector }
+    : m_busConnector { busConnector }
 {
     m_displayListBuffer.getBack().clearDisplayListAssembler();
     m_displayListBuffer.getFront().clearDisplayListAssembler();
@@ -55,7 +55,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
     const TriangleStreamCmd<DisplayListType> triangleCmd { m_rasterizer, triangle };
 
-    if (!triangleCmd.isVisible()) 
+    if (!triangleCmd.isVisible())
     {
         // Triangle is not visible
         return true;
@@ -111,55 +111,57 @@ void Renderer::addCommitFramebufferSequenceAndEndFrame()
 
 void Renderer::setYOffset()
 {
-    addCommandWithFactory([](std::size_t i, std::size_t, std::size_t, std::size_t resY) {
-        const uint16_t yOffset = i * resY;
-        return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
-    });
+    addCommandWithFactory(
+        [](std::size_t i, std::size_t, std::size_t, std::size_t resY)
+        {
+            const uint16_t yOffset = i * resY;
+            return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
+        });
 }
 
 void Renderer::uploadDisplayList()
 {
-    m_displayListBuffer.getFront().displayListLooper([this](
-        DisplayListDispatcherType& dispatcher, 
-        const std::size_t i, 
-        const std::size_t displayLines, 
-        const std::size_t, 
-        const std::size_t)
+    m_displayListBuffer.getFront().displayListLooper(
+        [this](
+            DisplayListDispatcherType& dispatcher,
+            const std::size_t i,
+            const std::size_t displayLines,
+            const std::size_t,
+            const std::size_t)
         {
             const std::size_t index = (displayLines - 1) - i;
             while (!m_busConnector.clearToSend())
                 ;
             m_busConnector.writeData(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
             return true;
-        }
-    );
+        });
 }
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
 {
     FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
     cmd.enableMemset();
-    return addCommandWithFactory_if([&cmd](std::size_t, std::size_t, std::size_t, std::size_t) {
-        return cmd;
-    },
-    [this](std::size_t i, std::size_t, std::size_t, std::size_t resY) {
-        
-        if (m_scissorEnabled) 
+    return addCommandWithFactory_if(
+        [&cmd](std::size_t, std::size_t, std::size_t, std::size_t)
+        { return cmd; },
+        [this](std::size_t i, std::size_t, std::size_t, std::size_t resY)
         {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = (i + 1) * resY;
-            if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart) 
-                && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
+            if (m_scissorEnabled)
+            {
+                const std::size_t currentScreenPositionStart = i * resY;
+                const std::size_t currentScreenPositionEnd = (i + 1) * resY;
+                if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart)
+                    && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
+                {
+                    return true;
+                }
+            }
+            else
             {
                 return true;
             }
-        }
-        else
-        {
-            return true;
-        }
-        return false;
-    });
+            return false;
+        });
 }
 
 bool Renderer::setClearColor(const Vec4i& color)
@@ -196,10 +198,10 @@ bool Renderer::setFogLut(const std::array<float, 33>& fogLut, float start, float
     return addCommand(FogLutStreamCmd { fogLut, start, end });
 }
 
-bool Renderer::useTexture(const std::size_t target, const uint16_t texId) 
+bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
 {
     m_boundTextures[target] = texId;
-    if (!m_textureManager.textureValid(texId)) 
+    if (!m_textureManager.textureValid(texId))
     {
         return false;
     }
@@ -257,19 +259,19 @@ bool Renderer::setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode)
 bool Renderer::setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeT(texId, mode);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId)); 
+    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
 }
 
 bool Renderer::enableTextureMagFiltering(const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMagFiltering(texId, filter);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
+    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
 }
 
 bool Renderer::enableTextureMinFiltering(const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMinFiltering(texId, filter);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));  
+    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
 }
 
 bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
@@ -296,7 +298,7 @@ bool Renderer::writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfi
         if (m_boundTextures[tmu] == texId)
         {
             tmuConfig.setTmu(tmu);
-            return writeReg(tmuConfig);  
+            return writeReg(tmuConfig);
         }
     }
     return true;
@@ -310,18 +312,19 @@ bool Renderer::setColorBufferAddress(const uint32_t addr)
 
 void Renderer::uploadTextures()
 {
-    m_textureManager.uploadTextures([&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
-    {
-        DisplayListAssemblerType uploader;
-        const std::size_t bufferId = m_busConnector.getBufferCount() - 1;
-        uploader.setBuffer(m_busConnector.requestBuffer(bufferId), bufferId);
-        uploader.addCommand(WriteMemoryCmd { gramAddr, data });
+    m_textureManager.uploadTextures(
+        [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
+        {
+            DisplayListAssemblerType uploader;
+            const std::size_t bufferId = m_busConnector.getBufferCount() - 1;
+            uploader.setBuffer(m_busConnector.requestBuffer(bufferId), bufferId);
+            uploader.addCommand(WriteMemoryCmd { gramAddr, data });
 
-        while (!m_busConnector.clearToSend())
-            ;
-        m_busConnector.writeData(bufferId, uploader.getDisplayListSize());
-        return true;
-    });
+            while (!m_busConnector.clearToSend())
+                ;
+            m_busConnector.writeData(bufferId, uploader.getDisplayListSize());
+            return true;
+        });
 }
 
 bool Renderer::addCommitFramebufferCommand()
@@ -340,7 +343,7 @@ bool Renderer::addCommitFramebufferCommand()
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
     {
-        // A nop is used to force the DSE to wait till the (maybe) currently drawn triangle or 
+        // A nop is used to force the DSE to wait till the (maybe) currently drawn triangle or
         // (other operation) on the framebuffer has finished before the DSE reads from the framebuffer.
         // Otherwise the DSE might read a not finished frame.
         return addCommand(NopCmd {});
@@ -352,26 +355,32 @@ bool Renderer::addDseFramebufferCommand()
 {
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
     {
-        return addCommandWithFactory([this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY) {
-            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-            return StreamFromRrxToMemoryCmd { addr, screenSize };
-        });
+        return addCommandWithFactory(
+            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+                return StreamFromRrxToMemoryCmd { addr, screenSize };
+            });
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
     {
-        return addCommandWithFactory([](std::size_t, std::size_t, std::size_t resX, std::size_t resY) {
-            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-            return StreamFromRrxToDisplayCmd { screenSize };
-        });
+        return addCommandWithFactory(
+            [](std::size_t, std::size_t, std::size_t resX, std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                return StreamFromRrxToDisplayCmd { screenSize };
+            });
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
     {
-        return addCommandWithFactory([this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY) {
-            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-            return StreamFromMemoryToDisplayCmd { addr, screenSize };
-        });
+        return addCommandWithFactory(
+            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+                return StreamFromMemoryToDisplayCmd { addr, screenSize };
+            });
     }
     return true;
 }
@@ -422,4 +431,3 @@ void Renderer::intermediateUpload()
 }
 
 } // namespace rr
-

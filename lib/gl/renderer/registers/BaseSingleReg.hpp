@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _BASE_SINGLE_REG_
 #define _BASE_SINGLE_REG_
 
-#include <cstdint>
 #include "math/Veci.hpp"
+#include <cstdint>
 
 namespace rr
 {
@@ -36,6 +35,7 @@ public:
     uint32_t getValue() const { return m_regVal; }
 
     uint32_t serialize() const { return m_regVal; }
+
 private:
     uint32_t m_regVal { 0 };
 };

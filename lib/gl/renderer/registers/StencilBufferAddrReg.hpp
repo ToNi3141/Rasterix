@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _STENCIL_BUFFER_ADDR_REG_
 #define _STENCIL_BUFFER_ADDR_REG_
 
-#include "renderer/registers/BaseSingleReg.hpp"
 #include "RenderConfigs.hpp"
+#include "renderer/registers/BaseSingleReg.hpp"
 
 namespace rr
 {
@@ -28,8 +27,9 @@ class StencilBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
     StencilBufferAddrReg(const uint32_t addr)
-        : BaseSingleReg<0xffffffff>{addr + RenderConfig::GRAM_MEMORY_LOC}
-    {}
+        : BaseSingleReg<0xffffffff> { addr + RenderConfig::GRAM_MEMORY_LOC }
+    {
+    }
 
     static constexpr uint32_t getAddr() { return 18; }
 };

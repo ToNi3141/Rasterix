@@ -17,9 +17,9 @@
 
 #include "general.hpp"
 
-#include <math.h>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VColorInterpolator.h"
@@ -72,7 +72,7 @@ TEST_CASE("Check pipelining", "[ColorInterpolator]")
 
     rr::ut::clk(top);
     REQUIRE(top->mixedColor == 0xffffffff);
-    
+
     // Destroy model
     delete top;
 }
@@ -108,7 +108,7 @@ TEST_CASE("Check channels", "[ColorInterpolator]")
     rr::ut::clk(top);
     rr::ut::clk(top);
     REQUIRE(top->mixedColor == 0x000000bf);
-    
+
     // Destroy model
     delete top;
 }
@@ -134,7 +134,7 @@ TEST_CASE("Check stalling", "[ColorInterpolator]")
     top->ce = 1;
     rr::ut::clk(top);
     REQUIRE(top->mixedColor == 0xbf000000);
-    
+
     // Destroy model
     delete top;
 }

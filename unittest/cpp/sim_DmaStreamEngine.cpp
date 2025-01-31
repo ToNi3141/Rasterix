@@ -34,7 +34,7 @@ void reset(VDmaStreamEngine& t)
     t.s_st0_axis_tdata = 0;
 
     rr::ut::clk(&t);
-    
+
     t.resetn = 1;
     rr::ut::clk(&t);
 }
@@ -70,7 +70,7 @@ void configPhase(VDmaStreamEngine& t, uint32_t command, uint32_t addr)
     REQUIRE(t.s_st0_axis_tready == 1);
     REQUIRE(t.m_st1_axis_tvalid == 0);
     REQUIRE(t.s_st1_axis_tready == 0);
-    
+
     // Inputs
     // Input command
     t.s_st0_axis_tdata = addr;
@@ -87,14 +87,14 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0004; 
+    static constexpr uint32_t SIZE = 0x0000'0004;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 4 bytes from one stream interface to another
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0);
@@ -170,14 +170,14 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0x9000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0004; 
+    static constexpr uint32_t SIZE = 0x0000'0004;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 4 bytes from one stream interface to another
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0);
@@ -253,14 +253,14 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0xA000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0004; 
+    static constexpr uint32_t SIZE = 0x0000'0004;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 4 bytes from one stream interface to another
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0);
@@ -336,14 +336,14 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0x6000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0004; 
+    static constexpr uint32_t SIZE = 0x0000'0004;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 4 bytes from one stream interface to another
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0);
@@ -419,15 +419,15 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0008; 
+    static constexpr uint32_t SIZE = 0x0000'0008;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
     for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
-        configPhase(t, COMMAND, 0);        
-        
+        configPhase(t, COMMAND, 0);
+
         // STREAM ////////////////////////////
         REQUIRE(t.m_st0_axis_tvalid == 0);
         REQUIRE(t.m_st0_axis_tlast == 0);
@@ -445,7 +445,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
 
         // STREAM ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xaa00ff55);
         REQUIRE(t.m_st0_axis_tlast == 0);
@@ -460,9 +460,9 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         t.m_st0_axis_tready = 0;
 
         rr::ut::clk(top);
-            
+
         // STREAM ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xaa00ff55);
         REQUIRE(t.m_st0_axis_tlast == 0);
@@ -479,7 +479,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
 
         // STREAM ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xff00ff00);
         REQUIRE(t.m_st0_axis_tlast == 1);
@@ -492,7 +492,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
 
         // STREAM ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xff00ff00);
         REQUIRE(t.m_st0_axis_tlast == 1);
@@ -515,7 +515,6 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
     }
 
-
     // Final model cleanup
     top->final();
 
@@ -530,7 +529,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0008; 
+    static constexpr uint32_t SIZE = 0x0000'0008;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 8 bytes from one stream interface to another
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
@@ -546,7 +545,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         // Outputs
         // No valid data because slave has no data
         REQUIRE(t.m_st0_axis_tvalid == 0);
-        
+
         // Telling the slave we can receive data
         REQUIRE(t.s_st0_axis_tready == 1);
 
@@ -575,10 +574,10 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         t.s_st0_axis_tvalid = 1;
 
         rr::ut::clk(top);
-            
+
         // STREAM ////////////////////////////
         // Outputs
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xaa00ff55);
         REQUIRE(t.m_st0_axis_tlast == 0);
@@ -608,7 +607,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
 
         // STREAM ////////////////////////////
-        // Read first 4 bytes from master interface 
+        // Read first 4 bytes from master interface
         REQUIRE(t.m_st0_axis_tvalid == 1);
         REQUIRE(t.m_st0_axis_tdata == 0xff00ff00);
         REQUIRE(t.m_st0_axis_tlast == 1);
@@ -628,7 +627,6 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         rr::ut::clk(top);
     }
 
-
     // Final model cleanup
     top->final();
 
@@ -643,7 +641,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0xd000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
@@ -651,11 +649,10 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
     t.m_st0_axis_tready = 1;
     t.m_mem_axi_awready = 1;
 
-
     t.m_mem_axi_wready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0x8000'0000);
@@ -838,7 +835,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0xe000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
@@ -846,11 +843,10 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
     t.m_st0_axis_tready = 1;
     t.m_mem_axi_awready = 1;
 
-
     t.m_mem_axi_wready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0x100);
@@ -1026,7 +1022,6 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
     delete top;
 }
 
-
 TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 {
     VDmaStreamEngine* top = new VDmaStreamEngine();
@@ -1034,7 +1029,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0x7000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
@@ -1042,11 +1037,10 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
     t.m_st0_axis_tready = 1;
     t.m_mem_axi_arready = 1;
 
-
     t.m_mem_axi_rready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 1; i++) 
+    for (uint32_t i = 0; i < 1; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0x8000'0000);
@@ -1189,7 +1183,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0xb000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100; 
+    static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
     static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
 
@@ -1197,11 +1191,10 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
     t.m_st0_axis_tready = 1;
     t.m_mem_axi_arready = 1;
 
-
     t.m_mem_axi_rready = 0;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 1; i++) 
+    for (uint32_t i = 0; i < 1; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0x8000'0000);
@@ -1343,11 +1336,11 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
     VDmaStreamEngine& t = *top;
 
     reset(t);
-    static constexpr uint32_t SIZE_ST0_TO_INT = 0x0000'0004; 
+    static constexpr uint32_t SIZE_ST0_TO_INT = 0x0000'0004;
     static constexpr uint32_t OP_ST0_TO_INT = 0x1000'0000;
     static constexpr uint32_t COMMAND_ST0_TO_INT = OP_ST0_TO_INT | SIZE_ST0_TO_INT; // Stream 8 bytes from one stream interface to another
-    
-    static constexpr uint32_t SIZE_INT_TO_ST0 = 0x0000'0100; 
+
+    static constexpr uint32_t SIZE_INT_TO_ST0 = 0x0000'0100;
     static constexpr uint32_t OP_INT_TO_ST0 = 0x4000'0000;
     static constexpr uint32_t COMMAND_INT_TO_ST0 = OP_INT_TO_ST0 | SIZE_INT_TO_ST0; // Stream 8 bytes from one stream interface to another
 
@@ -1355,7 +1348,7 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
     t.m_st0_axis_tready = 1;
 
     // Run this test two times, so that we know that we can start a new transfer after the old one
-    for (uint32_t i = 0; i < 2; i++) 
+    for (uint32_t i = 0; i < 2; i++)
     {
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND_ST0_TO_INT, 0);
@@ -1383,7 +1376,6 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
         // IDLE /////////////////////////////
         rr::ut::clk(top);
 
-
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND_INT_TO_ST0, 0);
 
@@ -1409,7 +1401,7 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
 
             rr::ut::clk(top);
         }
-        
+
         // IDLE /////////////////////////////
         rr::ut::clk(top);
     }

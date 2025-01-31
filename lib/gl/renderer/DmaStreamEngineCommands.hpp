@@ -15,18 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _DMA_STREAM_ENGINE_COMMANDS_HPP_
 #define _DMA_STREAM_ENGINE_COMMANDS_HPP_
 
 #include <cstdint>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::DSEC
 {
 
-namespace DSEC
-{
 using SCT = uint32_t;
 
 // OPs for the DMA Stream Engine
@@ -73,8 +70,6 @@ struct Transfer
     tcb::span<const uint8_t> payload;
 };
 
-} // namespace DSEC
-
-} // namespace rr
+} // namespace rr::DSEC
 
 #endif // _DMA_STREAM_ENGINE_COMMANDS_HPP_

@@ -18,15 +18,17 @@
 #ifndef FEATURE_ENABLE_HPP_
 #define FEATURE_ENABLE_HPP_
 
-#include "renderer/Renderer.hpp"
 #include "Texture.hpp"
+#include "renderer/Renderer.hpp"
 
 namespace rr
 {
 class FeatureEnable
 {
 public:
-    FeatureEnable(Renderer& renderer, Texture& texture) : m_renderer(renderer), m_texture(texture)
+    FeatureEnable(Renderer& renderer, Texture& texture)
+        : m_renderer { renderer }
+        , m_texture { texture }
     {
         m_renderer.setFeatureEnableConfig(m_featureEnableUploaded);
     }
@@ -51,7 +53,7 @@ public:
     {
         bool ret { true };
 
-        if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize()) 
+        if (m_featureEnableUploaded.serialize() != m_featureEnable.serialize())
         {
             ret = ret && m_renderer.setFeatureEnableConfig(m_featureEnable);
             m_featureEnableUploaded = m_featureEnable;
@@ -59,6 +61,7 @@ public:
 
         return ret;
     }
+
 private:
     Renderer& m_renderer;
     Texture& m_texture;

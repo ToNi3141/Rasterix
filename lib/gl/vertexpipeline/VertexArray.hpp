@@ -15,17 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef VERTEXARRAY_HPP_
 #define VERTEXARRAY_HPP_
 
-#include "math/Vec.hpp"
 #include "RenderObj.hpp"
+#include "math/Vec.hpp"
 #include <vector>
 
 namespace rr
 {
-class VertexArray 
+class VertexArray
 {
 public:
     using DrawMode = RenderObj::DrawMode;

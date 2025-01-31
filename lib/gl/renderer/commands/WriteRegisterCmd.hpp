@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _WRITE_REGISTER_CMD_HPP_
 #define _WRITE_REGISTER_CMD_HPP_
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <tcb/span.hpp>
 
 namespace rr
@@ -30,6 +29,7 @@ template <class TRegister>
 class WriteRegisterCmd
 {
     static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
+
 public:
     WriteRegisterCmd(const TRegister& reg)
     {

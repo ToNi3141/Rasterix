@@ -23,6 +23,7 @@ public:
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
     virtual bool clearToSend() override;
+
 private:
     FT_HANDLE fthandle;
 };

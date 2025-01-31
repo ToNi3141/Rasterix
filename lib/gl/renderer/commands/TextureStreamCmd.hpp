@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef _TEXTURE_STREAM_CMD_HPP_
 #define _TEXTURE_STREAM_CMD_HPP_
 
-#include <cstdint>
-#include <array>
-#include <tcb/span.hpp>
 #include "RenderConfigs.hpp"
+#include <array>
+#include <cstdint>
+#include <tcb/span.hpp>
 
 namespace rr
 {
@@ -35,7 +34,7 @@ class TextureStreamCmd
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
 public:
     TextureStreamCmd(const std::size_t tmu,
-                     const tcb::span<const std::size_t>& pages)
+        const tcb::span<const std::size_t>& pages)
         : m_tmu { tmu }
         , m_texSize { pages.size() }
     {
@@ -43,7 +42,7 @@ public:
         {
             m_pages[i] = RenderConfig::GRAM_MEMORY_LOC + static_cast<uint32_t>(pages[i] * RenderConfig::TEXTURE_PAGE_SIZE);
         }
-        m_payload = { m_pages.data(), pages.size() };  
+        m_payload = { m_pages.data(), pages.size() };
     }
 
     std::size_t getTmu() const { return m_tmu; }
@@ -51,8 +50,8 @@ public:
     using PayloadType = tcb::span<const uint32_t>;
     const PayloadType& payload() const { return m_payload; }
     using CommandType = uint32_t;
-    CommandType command() const 
-    { 
+    CommandType command() const
+    {
         const uint32_t texSize = static_cast<uint32_t>(m_texSize) << TEXTURE_STREAM_SIZE_POS;
         const uint32_t tmuShifted = static_cast<uint32_t>(m_tmu) << TEXTURE_STREAM_TMU_NR_POS;
         return OP_TEXTURE_STREAM | texSize | tmuShifted;

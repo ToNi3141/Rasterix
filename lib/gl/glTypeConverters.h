@@ -15,20 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-#ifndef GL_TYPE_CONVERTERS_H 
+#ifndef GL_TYPE_CONVERTERS_H
 #define GL_TYPE_CONVERTERS_H
 
-#include "gl.h"
-#include <spdlog/spdlog.h>
 #include "RRXGL.hpp"
-#include <cstring>
+#include "gl.h"
+#include "pixelpipeline/PixelPipeline.hpp"
+#include "pixelpipeline/Texture.hpp"
 #include "vertexpipeline/MatrixStack.hpp"
 #include "vertexpipeline/Types.hpp"
-#include "pixelpipeline/Texture.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
+#include <cstring>
+#include <spdlog/spdlog.h>
 
 namespace rr
 {
@@ -44,10 +43,11 @@ uint8_t convertColorComponentToUint8(const uint16_t color)
 GLint convertTexEnvMode(Texture::TexEnvMode& mode, const GLint param)
 {
     GLint ret = GL_NO_ERROR;
-    switch (param) {
-//    case GL_DISABLE:
-//        mode = Texture::TexEnvMode::DISABLE;
-//        break;
+    switch (param)
+    {
+        //    case GL_DISABLE:
+        //        mode = Texture::TexEnvMode::DISABLE;
+        //        break;
     case GL_REPLACE:
         mode = Texture::TexEnvMode::REPLACE;
         break;
@@ -78,50 +78,50 @@ GLint convertTexEnvMode(Texture::TexEnvMode& mode, const GLint param)
 GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
-    switch (val) 
+    switch (val)
     {
-        case GL_REPLACE:
-            conv = Texture::TexEnv::Combine::REPLACE;
-            break;
-        case GL_MODULATE:
-            conv = Texture::TexEnv::Combine::MODULATE;
-            break;
-        case GL_ADD:
-            conv = Texture::TexEnv::Combine::ADD;
-            break;
-        case GL_ADD_SIGNED:
-            conv = Texture::TexEnv::Combine::ADD_SIGNED;
-            break;
-        case GL_INTERPOLATE:
-            conv = Texture::TexEnv::Combine::INTERPOLATE;
-            break;
-        case GL_SUBTRACT:
-            conv = Texture::TexEnv::Combine::SUBTRACT;
-            break;
-        case GL_DOT3_RGB:
-            if (alpha) 
-            {
-                ret = GL_INVALID_ENUM;
-            }
-            else 
-            {
-                conv = Texture::TexEnv::Combine::DOT3_RGB;
-            }
-            break;
-        case GL_DOT3_RGBA:
-            if (alpha) 
-            {
-                ret = GL_INVALID_ENUM;
-            }
-            else 
-            {
-                conv = Texture::TexEnv::Combine::DOT3_RGBA;
-            }
-            break;
-        default:
-            SPDLOG_WARN("convertCombine 0x{:X} 0x{:X} not suppored", val, alpha);
+    case GL_REPLACE:
+        conv = Texture::TexEnv::Combine::REPLACE;
+        break;
+    case GL_MODULATE:
+        conv = Texture::TexEnv::Combine::MODULATE;
+        break;
+    case GL_ADD:
+        conv = Texture::TexEnv::Combine::ADD;
+        break;
+    case GL_ADD_SIGNED:
+        conv = Texture::TexEnv::Combine::ADD_SIGNED;
+        break;
+    case GL_INTERPOLATE:
+        conv = Texture::TexEnv::Combine::INTERPOLATE;
+        break;
+    case GL_SUBTRACT:
+        conv = Texture::TexEnv::Combine::SUBTRACT;
+        break;
+    case GL_DOT3_RGB:
+        if (alpha)
+        {
             ret = GL_INVALID_ENUM;
-            break;
+        }
+        else
+        {
+            conv = Texture::TexEnv::Combine::DOT3_RGB;
+        }
+        break;
+    case GL_DOT3_RGBA:
+        if (alpha)
+        {
+            ret = GL_INVALID_ENUM;
+        }
+        else
+        {
+            conv = Texture::TexEnv::Combine::DOT3_RGBA;
+        }
+        break;
+    default:
+        SPDLOG_WARN("convertCombine 0x{:X} 0x{:X} not suppored", val, alpha);
+        ret = GL_INVALID_ENUM;
+        break;
     }
     return ret;
 }
@@ -131,35 +131,35 @@ GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
-        case GL_SRC_ALPHA:
-            conf = Texture::TexEnv::Operand::SRC_ALPHA;
-            break;
-        case GL_ONE_MINUS_SRC_ALPHA:
-            conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
-            break;
-        case GL_SRC_COLOR:
-            if (alpha)
-            {
-                ret = GL_INVALID_ENUM;
-            }
-            else
-            {
-                conf = Texture::TexEnv::Operand::SRC_COLOR;
-            }
-            break;
-        case GL_ONE_MINUS_SRC_COLOR:
-            if (alpha)
-            {
-                ret = GL_INVALID_ENUM;
-            }
-            else
-            {
-                conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
-            }
-            break;
-        default:
-            SPDLOG_WARN("convertOperand 0x{:X} 0x{:X} not suppored", val, alpha);
+    case GL_SRC_ALPHA:
+        conf = Texture::TexEnv::Operand::SRC_ALPHA;
+        break;
+    case GL_ONE_MINUS_SRC_ALPHA:
+        conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
+        break;
+    case GL_SRC_COLOR:
+        if (alpha)
+        {
             ret = GL_INVALID_ENUM;
+        }
+        else
+        {
+            conf = Texture::TexEnv::Operand::SRC_COLOR;
+        }
+        break;
+    case GL_ONE_MINUS_SRC_COLOR:
+        if (alpha)
+        {
+            ret = GL_INVALID_ENUM;
+        }
+        else
+        {
+            conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
+        }
+        break;
+    default:
+        SPDLOG_WARN("convertOperand 0x{:X} 0x{:X} not suppored", val, alpha);
+        ret = GL_INVALID_ENUM;
     }
     return ret;
 }
@@ -169,30 +169,30 @@ GLint convertSrcReg(Texture::TexEnv::SrcReg& conf, GLint val)
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
-        case GL_TEXTURE:
-            conf = Texture::TexEnv::SrcReg::TEXTURE;
-            break;
-        case GL_CONSTANT:
-            conf = Texture::TexEnv::SrcReg::CONSTANT;
-            break;
-        case GL_PRIMARY_COLOR:
-            conf = Texture::TexEnv::SrcReg::PRIMARY_COLOR;
-            break;
-        case GL_PREVIOUS:
-            conf = Texture::TexEnv::SrcReg::PREVIOUS;
-            break;
-        default:
-            SPDLOG_WARN("convertSrcReg 0x{:X} not suppored", val);
-            ret = GL_INVALID_ENUM;
-            break;
+    case GL_TEXTURE:
+        conf = Texture::TexEnv::SrcReg::TEXTURE;
+        break;
+    case GL_CONSTANT:
+        conf = Texture::TexEnv::SrcReg::CONSTANT;
+        break;
+    case GL_PRIMARY_COLOR:
+        conf = Texture::TexEnv::SrcReg::PRIMARY_COLOR;
+        break;
+    case GL_PREVIOUS:
+        conf = Texture::TexEnv::SrcReg::PREVIOUS;
+        break;
+    default:
+        SPDLOG_WARN("convertSrcReg 0x{:X} not suppored", val);
+        ret = GL_INVALID_ENUM;
+        break;
     }
     return ret;
 }
 
-
 FragmentPipeline::PipelineConfig::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
-    switch (blendFunc) {
+    switch (blendFunc)
+    {
     case GL_ZERO:
         return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
     case GL_ONE:
@@ -226,7 +226,8 @@ FragmentPipeline::PipelineConfig::BlendFunc convertGlBlendFuncToRenderBlendFunc(
 
 void setClientState(const GLenum array, bool enable)
 {
-    switch (array) {
+    switch (array)
+    {
     case GL_COLOR_ARRAY:
         SPDLOG_DEBUG("setClientState GL_COLOR_ARRAY {}", enable);
         RRXGL::getInstance().vertexArray().enableColorArray(enable);
@@ -252,7 +253,8 @@ void setClientState(const GLenum array, bool enable)
 
 RenderObj::Type convertType(GLenum type)
 {
-    switch (type) {
+    switch (type)
+    {
     case GL_BYTE:
         return RenderObj::Type::BYTE;
     case GL_UNSIGNED_BYTE:
@@ -274,7 +276,8 @@ RenderObj::Type convertType(GLenum type)
 
 RenderObj::DrawMode convertDrawMode(GLenum drawMode)
 {
-    switch (drawMode) {
+    switch (drawMode)
+    {
     case GL_TRIANGLES:
         return RenderObj::DrawMode::TRIANGLES;
     case GL_TRIANGLE_FAN:
@@ -302,7 +305,8 @@ RenderObj::DrawMode convertDrawMode(GLenum drawMode)
 
 Texture::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
 {
-    switch (mode) {
+    switch (mode)
+    {
     case GL_CLAMP_TO_EDGE:
     case GL_CLAMP:
         return Texture::TextureWrapMode::CLAMP_TO_EDGE;

@@ -18,22 +18,22 @@
 #ifndef CLIPPER_HPP
 #define CLIPPER_HPP
 
-#include "math/Vec.hpp"
-#include <tcb/span.hpp>
-#include <array>
 #include "PrimitiveAssembler.hpp"
+#include "math/Vec.hpp"
+#include <array>
+#include <tcb/span.hpp>
 
 namespace rr
 {
 
-class Clipper 
+class Clipper
 {
 public:
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
     using ClipList = std::array<VertexParameter, 9>;
 
     static tcb::span<VertexParameter> clip(ClipList& __restrict list, ClipList& __restrict listBuffer);
-    
+
     static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
     {
         const OutCode oc0 = outCode(v0);
@@ -52,25 +52,29 @@ public:
         return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
     }
 
-
 private:
     enum OutCode
     {
-        OC_NONE    = 0x00,
-        OC_NEAR    = 0x01,
-        OC_FAR     = 0x02,
-        OC_TOP     = 0x04,
-        OC_BOTTOM  = 0x08,
-        OC_LEFT    = 0x10,
-        OC_RIGHT   = 0x20
+        OC_NONE = 0x00,
+        OC_NEAR = 0x01,
+        OC_FAR = 0x02,
+        OC_TOP = 0x04,
+        OC_BOTTOM = 0x08,
+        OC_LEFT = 0x10,
+        OC_RIGHT = 0x20
     };
 
-    inline static float lerpAmt(OutCode plane, const Vec4 &v0, const Vec4 &v1);
+    inline static float lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1);
     inline static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
-    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0, const std::array<Vec4, RenderConfig::TMU_COUNT>& v1, const float amt);
+    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& v1,
+        const float amt);
     inline static bool hasOutCode(const Vec4& v, const OutCode oc);
-    
-    static std::size_t clipAgainstPlane(ClipList& __restrict listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize);
+
+    static std::size_t clipAgainstPlane(ClipList& __restrict listOut,
+        const OutCode clipPlane,
+        const ClipList& listIn,
+        const std::size_t listSize);
 
     inline static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
 

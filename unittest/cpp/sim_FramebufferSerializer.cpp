@@ -23,7 +23,6 @@
 // Include model header, generated from Verilating "top.v"
 #include "VFramebufferSerializer.h"
 
-
 TEST_CASE("Check normal burst transfer with interrupted memory stream", "[FramebufferSerializer]")
 {
     VFramebufferSerializer* t = new VFramebufferSerializer();
@@ -115,7 +114,7 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
     REQUIRE(t->m_frag_tdata == 0x2222);
     REQUIRE(t->m_frag_taddr == 0x104);
     REQUIRE(t->m_frag_tlast == 1);
-    
+
     // Fetch last data (check that the after the tlast a new memory request is forced)
     t->s_fetch_taddr = 0x105;
     t->m_mem_axi_rvalid = 0;
@@ -235,14 +234,14 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         // Fetch data from memory interface and output it
         t->m_frag_tready = 0;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 1); 
+        REQUIRE(t->m_mem_axi_rready == 1);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5555);
         REQUIRE(t->m_frag_taddr == 0x100);
         REQUIRE(t->m_frag_tlast == 0);
 
         // Skid cycle because fragment port is not ready
-        t->s_fetch_taddr = 0x101; 
+        t->s_fetch_taddr = 0x101;
         t->m_frag_tready = 0;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_rready == 0);
@@ -255,14 +254,14 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         t->s_fetch_taddr = 0x101;
         t->m_frag_tready = 1;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xffff);
         REQUIRE(t->m_frag_taddr == 0x101);
         REQUIRE(t->m_frag_tlast == 0);
 
         // Skid cycle because fragment port is not ready
-        t->s_fetch_taddr = 0x102; 
+        t->s_fetch_taddr = 0x102;
         t->m_mem_axi_rdata = 0x1234'5678;
         t->m_frag_tready = 0;
         rr::ut::clk(t);
@@ -276,14 +275,14 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         t->s_fetch_taddr = 0x102;
         t->m_frag_tready = 1;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x5678);
         REQUIRE(t->m_frag_taddr == 0x102);
         REQUIRE(t->m_frag_tlast == 0);
 
         // Skid cycle because fragment port is not ready
-        t->s_fetch_taddr = 0x103; 
+        t->s_fetch_taddr = 0x103;
         t->s_fetch_tlast = 1;
         t->m_frag_tready = 0;
         rr::ut::clk(t);
@@ -297,7 +296,7 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
         t->s_fetch_taddr = 0x103;
         t->m_frag_tready = 1;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0x1234);
         REQUIRE(t->m_frag_taddr == 0x103);
@@ -352,7 +351,7 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
 
         // Wait for valid data on the fetch interface
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
 
         // Fetch data from fetch interface and memory interface, output it
@@ -368,14 +367,14 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         // Wait for valid data on the fetch interface
         t->s_fetch_tvalid = 0;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
 
         // Fetch cached data from fetch interface, output it
         t->s_fetch_tvalid = 1;
         t->s_fetch_taddr = 0x101;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xffff);
         REQUIRE(t->m_frag_taddr == 0x101);
@@ -384,7 +383,7 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         // Wait for valid data on the fetch interface
         t->s_fetch_tvalid = 0;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
 
         // Fetch last data from fetch interface and memory interface, output it
@@ -393,7 +392,7 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
         t->s_fetch_tlast = 1;
         t->m_mem_axi_rdata = 0xaaaa'bbbb;
         rr::ut::clk(t);
-        REQUIRE(t->m_mem_axi_rready == 1); 
+        REQUIRE(t->m_mem_axi_rready == 1);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tdata == 0xbbbb);
         REQUIRE(t->m_frag_taddr == 0x102);
@@ -401,7 +400,7 @@ TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
 
         t->s_fetch_tvalid = 0;
         rr::ut::clk(t); // memory bubble cycle
-        REQUIRE(t->m_mem_axi_rready == 0); 
+        REQUIRE(t->m_mem_axi_rready == 0);
         REQUIRE(t->m_frag_tvalid == 0);
     }
 

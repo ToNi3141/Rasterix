@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "PixelPipeline.hpp"
 
 namespace rr
 {
-PixelPipeline::PixelPipeline(Renderer& renderer) 
-    : m_renderer(renderer)
+PixelPipeline::PixelPipeline(Renderer& renderer)
+    : m_renderer { renderer }
 {
 }
 
@@ -41,9 +40,9 @@ bool PixelPipeline::updatePipeline()
 bool PixelPipeline::setClearColor(const Vec4& color)
 {
     return m_renderer.setClearColor({ { static_cast<uint8_t>(color[0] * 255.0f),
-                                        static_cast<uint8_t>(color[1] * 255.0f),
-                                        static_cast<uint8_t>(color[2] * 255.0f),
-                                        static_cast<uint8_t>(color[3] * 255.0f) } });
+        static_cast<uint8_t>(color[1] * 255.0f),
+        static_cast<uint8_t>(color[2] * 255.0f),
+        static_cast<uint8_t>(color[3] * 255.0f) } });
 }
 
 bool PixelPipeline::setClearDepth(const float depth)
@@ -53,10 +52,10 @@ bool PixelPipeline::setClearDepth(const float depth)
     return m_renderer.setClearDepth(depthx);
 }
 
-bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer) 
-{ 
+bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
+{
     bool ret = updatePipeline();
-    return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer); 
+    return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);
 }
 
 } // namespace rr

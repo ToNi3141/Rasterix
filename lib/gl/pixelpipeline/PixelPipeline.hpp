@@ -15,18 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #ifndef PIXELPIPELINE_HPP_
 #define PIXELPIPELINE_HPP_
 
-#include "renderer/Renderer.hpp"
-#include "math/Vec.hpp"
-#include <optional>
-#include "Fogging.hpp"
-#include "Texture.hpp"
-#include "Stencil.hpp"
-#include "FragmentPipeline.hpp"
 #include "FeatureEnable.hpp"
+#include "Fogging.hpp"
+#include "FragmentPipeline.hpp"
+#include "Stencil.hpp"
+#include "Texture.hpp"
+#include "math/Vec.hpp"
+#include "renderer/Renderer.hpp"
+#include <optional>
 
 namespace rr
 {
@@ -49,7 +48,7 @@ public:
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
-    // Scissor 
+    // Scissor
     void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
 
 private:

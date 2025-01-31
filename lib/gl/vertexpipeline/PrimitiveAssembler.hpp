@@ -20,10 +20,10 @@
 
 #include <tcb/span.hpp>
 
-#include "RenderObj.hpp"
 #include "FixedSizeQueue.hpp"
-#include "ViewPort.hpp"
+#include "RenderObj.hpp"
 #include "Types.hpp"
+#include "ViewPort.hpp"
 
 namespace rr
 {
@@ -33,11 +33,14 @@ class PrimitiveAssembler
 public:
     using Triangle = std::array<std::reference_wrapper<const VertexParameter>, 3>;
 
-    PrimitiveAssembler(ViewPort& viewPort) : m_viewPort(viewPort) { }
+    PrimitiveAssembler(ViewPort& viewPort)
+        : m_viewPort(viewPort)
+    {
+    }
 
     tcb::span<const Triangle> getPrimitive()
     {
-        if (m_line) 
+        if (m_line)
         {
             return constructLine();
         }
@@ -51,13 +54,19 @@ public:
     VertexParameter& createParameter() { return m_queue.create_back(); }
     void clear();
 
-    void setLineWidth(const float width) { m_lineWidth = width; } 
+    void setLineWidth(const float width) { m_lineWidth = width; }
 
     bool hasTriangles() const { return m_queue.size() >= 3; }
+
 private:
     tcb::span<const Triangle> constructTriangle();
     tcb::span<const Triangle> constructLine();
-    tcb::span<const Triangle> drawLine(const Vec4& v0, const Vec4& v1, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0, const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1, const Vec4& c0, const Vec4& c1);
+    tcb::span<const Triangle> drawLine(const Vec4& v0,
+        const Vec4& v1,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1,
+        const Vec4& c0,
+        const Vec4& c1);
 
     RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
     FixedSizeQueue<VertexParameter, 3> m_queue {};
