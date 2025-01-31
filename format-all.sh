@@ -1,4 +1,4 @@
-declare -a arr=(
+declare -a files=(
     lib/gl 
     lib/driver
     lib/glx
@@ -8,11 +8,9 @@ declare -a arr=(
     unittest/cpp
 )
 
-## now loop through the above array
-for i in "${arr[@]}"
+for i in "${files[@]}"
 do
-   echo "format $i"
-   find $i/* -iname '*.hpp' -o -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i
+    echo "format $i"
+    find $i/* -iname '*.hpp' -o -iname '*.h' -o -iname '*.c' -o -iname '*.cpp' | xargs clang-format -i
 done
 
-#find lib/gl/* -iname '*.hpp' -o -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i
