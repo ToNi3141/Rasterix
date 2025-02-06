@@ -51,8 +51,7 @@ bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
                 params.wInit *= bbDiff;
                 params.wInit += wInitTmp;
 
-                params.depthW += params.depthWYInc * bbDiff;
-                params.depthZ += params.depthZYInc * bbDiff;
+                params.depthZw += params.depthZwYInc * bbDiff;
 
                 const auto colorTmp = params.color;
                 params.color = params.colorYInc;
@@ -187,101 +186,103 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
         w.normalize();
     }
 
-    // Interpolate texture
+    // Texture
     for (std::size_t i = 0; i < desc.texture.size(); i++)
     {
         if (m_tmuEnable[i])
         {
-            Vec3 texS { triangle.texture0[i][0], triangle.texture1[i][0], triangle.texture2[i][0] };
-            Vec3 texT { triangle.texture0[i][1], triangle.texture1[i][1], triangle.texture2[i][1] };
-            Vec3 texQ { triangle.texture0[i][3], triangle.texture1[i][3], triangle.texture2[i][3] };
+            Vec3 tex0 { triangle.texture0[i][0], triangle.texture0[i][1], triangle.texture0[i][3] };
+            Vec3 tex1 { triangle.texture1[i][0], triangle.texture1[i][1], triangle.texture1[i][3] };
+            Vec3 tex2 { triangle.texture2[i][0], triangle.texture2[i][1], triangle.texture2[i][3] };
 
             // Avoid overflowing the integer part by adding an offset
             if (m_enableScaling)
             {
-                const float minS = std::min(texS[0], std::min(texS[1], texS[2]));
-                const float minT = std::min(texT[0], std::min(texT[1], texT[2]));
-                const float maxS = std::max(texS[0], std::max(texS[1], texS[2]));
-                const float maxT = std::max(texT[0], std::max(texT[1], texT[2]));
+                const float minS = std::min(tex0[0], std::min(tex1[0], tex2[0]));
+                const float minT = std::min(tex0[1], std::min(tex1[1], tex2[1]));
+                const float maxS = std::max(tex0[0], std::max(tex1[0], tex2[0]));
+                const float maxT = std::max(tex0[1], std::max(tex1[1], tex2[1]));
 
                 if (minS < -4.0f)
                 {
                     const float minSG = static_cast<int32_t>(minS);
-                    texS -= { minSG, minSG, minSG };
+                    tex0[0] -= minSG;
+                    tex1[0] -= minSG;
+                    tex2[0] -= minSG;
                 }
                 if (minT < -4.0f)
                 {
                     const float minTG = static_cast<int32_t>(minT);
-                    texT -= { minTG, minTG, minTG };
+                    tex0[1] -= minTG;
+                    tex1[1] -= minTG;
+                    tex2[1] -= minTG;
                 }
                 if (maxS > 4.0f)
                 {
                     const float maxSG = static_cast<int32_t>(maxS);
-                    texS -= { maxSG, maxSG, maxSG };
+                    tex0[0] -= maxSG;
+                    tex1[0] -= maxSG;
+                    tex2[0] -= maxSG;
                 }
                 if (maxT > 4.0f)
                 {
                     const float maxTG = static_cast<int32_t>(maxT);
-                    texT -= { maxTG, maxTG, maxTG };
+                    tex0[1] -= maxTG;
+                    tex1[1] -= maxTG;
+                    tex2[1] -= maxTG;
                 }
             }
 
             // Perspective correction
-            texQ.mul(w);
-            texS.mul(w);
-            texT.mul(w);
+            tex0.mul(w[0]);
+            tex1.mul(w[1]);
+            tex2.mul(w[2]);
 
             TriangleStreamTypes::Texture& t = desc.texture[i];
 
-            t.texStq[0] = texS.dot(wNorm);
-            t.texStq[1] = texT.dot(wNorm);
-            t.texStq[2] = texQ.dot(wNorm);
+            t.texStq = (tex0 * wNorm[0])
+                + (tex1 * wNorm[1])
+                + (tex2 * wNorm[2]);
 
-            t.texStqXInc[0] = texS.dot(wIncXNorm);
-            t.texStqXInc[1] = texT.dot(wIncXNorm);
-            t.texStqXInc[2] = texQ.dot(wIncXNorm);
+            t.texStqXInc = (tex0 * wIncXNorm[0])
+                + (tex1 * wIncXNorm[1])
+                + (tex2 * wIncXNorm[2]);
 
-            t.texStqYInc[0] = texS.dot(wIncYNorm);
-            t.texStqYInc[1] = texT.dot(wIncYNorm);
-            t.texStqYInc[2] = texQ.dot(wIncYNorm);
+            t.texStqYInc = (tex0 * wIncYNorm[0])
+                + (tex1 * wIncYNorm[1])
+                + (tex2 * wIncYNorm[2]);
         }
     }
 
-    // Interpolate W
-    Vec3 vW { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] };
-    params.depthW = vW.dot(wNorm);
-    params.depthWXInc = vW.dot(wIncXNorm);
-    params.depthWYInc = vW.dot(wIncYNorm);
+    // Depth 
+    const Vec2 zw0 { triangle.vertex0[2], triangle.vertex0[3] };
+    const Vec2 zw1 { triangle.vertex1[2], triangle.vertex1[3] };
+    const Vec2 zw2 { triangle.vertex2[2], triangle.vertex2[3] };
 
-    // Interpolate Z
-    // Using z buffer. Here are two options for the depth buffer:
-    // Advantage of a w buffer: All values are equally distributed between 0 and intmax. It seems also to be a better fit for 16bit z buffers
-    // Advantage of a z buffer: More precise than the w buffer on near objects. Distribution is therefore uneven. Seems to be a bad choice for 16bit z buffers.
-    Vec3 vZ { triangle.vertex0[2], triangle.vertex1[2], triangle.vertex2[2] };
-    params.depthZ = vZ.dot(wNorm);
-    params.depthZXInc = vZ.dot(wIncXNorm);
-    params.depthZYInc = vZ.dot(wIncYNorm);
+    params.depthZw = (zw0 * wNorm[0])
+        + (zw1 * wNorm[1])
+        + (zw2 * wNorm[2]);
 
-    // Interpolate color
-    Vec3 cr { triangle.color0[0], triangle.color1[0], triangle.color2[0] };
-    Vec3 cg { triangle.color0[1], triangle.color1[1], triangle.color2[1] };
-    Vec3 cb { triangle.color0[2], triangle.color1[2], triangle.color2[2] };
-    Vec3 ca { triangle.color0[3], triangle.color1[3], triangle.color2[3] };
+    params.depthZwXInc = (zw0 * wIncXNorm[0])
+        + (zw1 * wIncXNorm[1])
+        + (zw2 * wIncXNorm[2]);
 
-    params.color[0] = cr.dot(wNorm);
-    params.color[1] = cg.dot(wNorm);
-    params.color[2] = cb.dot(wNorm);
-    params.color[3] = ca.dot(wNorm);
+    params.depthZwYInc = (zw0 * wIncYNorm[0])
+        + (zw1 * wIncYNorm[1])
+        + (zw2 * wIncYNorm[2]);
 
-    params.colorXInc[0] = cr.dot(wIncXNorm);
-    params.colorXInc[1] = cg.dot(wIncXNorm);
-    params.colorXInc[2] = cb.dot(wIncXNorm);
-    params.colorXInc[3] = ca.dot(wIncXNorm);
+    // Color
+    params.color = (triangle.color0 * wNorm[0])
+        + (triangle.color1 * wNorm[1])
+        + (triangle.color2 * wNorm[2]);
 
-    params.colorYInc[0] = cr.dot(wIncYNorm);
-    params.colorYInc[1] = cg.dot(wIncYNorm);
-    params.colorYInc[2] = cb.dot(wIncYNorm);
-    params.colorYInc[3] = ca.dot(wIncYNorm);
+    params.colorXInc = (triangle.color0 * wIncXNorm[0])
+        + (triangle.color1 * wIncXNorm[1])
+        + (triangle.color2 * wIncXNorm[2]);
+
+    params.colorYInc = (triangle.color0 * wIncYNorm[0])
+        + (triangle.color1 * wIncYNorm[1])
+        + (triangle.color2 * wIncYNorm[2]);
 
     return true;
 }
