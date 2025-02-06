@@ -100,8 +100,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
     if (lightConfig.position[3] != 0.0f)
     {
         // Point light, is the normalized direction vector
-        dir = lightConfig.position;
-        dir -= v0;
+        dir = lightConfig.position - v0;
         dir.normalize();
 
         const float dist = v0.dist(lightConfig.position);
@@ -160,18 +159,10 @@ void Lighting::calculateLight(Vec4& __restrict color,
         dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
     }
 
-    Vec4 ambientColor = lightConfig.ambientColor;
-    ambientColor *= materialAmbientColor;
-    Vec4 colorLight = lightConfig.diffuseColor;
-    colorLight *= materialDiffuseColor;
-    colorLight *= dotDirDiffuse;
-    colorLight += ambientColor;
-    Vec4 colorLightSpecular = lightConfig.specularColor;
-    colorLightSpecular *= materialSpecularColor;
-    colorLightSpecular *= (f * dotDirSpecular);
-    colorLight += colorLightSpecular;
+    const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * (f * dotDirSpecular);
+    const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
+    const Vec4 colorLight = ((lightConfig.diffuseColor * materialDiffuseColor * dotDirDiffuse) + ambientColor + colorLightSpecular) * att;
 
-    colorLight *= att;
     // TODO: Spotlight has to be implemented. Please see in the OpenGL 1.5 spec equation 2.5.
     // Basically it is a val = dot(normalize(v0 - lightConfig.position), unit(lightConfig.spotlightDirectionLight))
     // spot = pow(val, lightConfig.spotlightExponentLight); when lightConfig.spotlightCutoffLight != 180 and val >= cos(lightConfig.spotlightCutoffLight)
