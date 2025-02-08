@@ -18,9 +18,9 @@
 #ifndef VEC_HPP
 #define VEC_HPP
 #include <array>
-#include <math.h>
 #include <cstdint>
 #include <functional>
+#include <math.h>
 
 namespace rr
 {
@@ -28,11 +28,11 @@ template <std::size_t VecSize>
 class Vec
 {
 public:
-    Vec() {}
+    Vec() { }
     Vec(const Vec<VecSize>& val) { operator=(val.vec); }
     Vec(const std::array<float, VecSize>& val) { operator=(val); }
     Vec(const float* val) { operator=(val); }
-    ~Vec() {}
+    ~Vec() { }
 
     void initHomogeneous()
     {
@@ -54,7 +54,7 @@ public:
     static Vec<VecSize> createFromArray(const T* arr, const std::size_t size)
     {
         Vec<VecSize> vec;
-        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
+        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc
         for (std::size_t i = 0; i < len; i++)
             vec[i] = arr[i];
         return vec;
@@ -63,7 +63,7 @@ public:
     template <typename T>
     void fromArray(const T* arr, const std::size_t size)
     {
-        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc 
+        const std::size_t len = (std::min)(size, VecSize); // Put std::min in parenthesis to increase compatibility with msvc
         for (std::size_t i = 0; i < len; i++)
             vec[i] = arr[i];
     }
@@ -129,8 +129,16 @@ public:
 
     float& operator[](int index) { return vec[index]; }
     float operator[](int index) const { return vec[index]; }
-    Vec<VecSize>& operator=(const Vec<VecSize>& val) { vec = val.vec; return *this; }
-    Vec<VecSize>& operator=(const std::array<float, VecSize>& val) { vec = val; return *this; }
+    Vec<VecSize>& operator=(const Vec<VecSize>& val)
+    {
+        vec = val.vec;
+        return *this;
+    }
+    Vec<VecSize>& operator=(const std::array<float, VecSize>& val)
+    {
+        vec = val;
+        return *this;
+    }
     Vec<VecSize>& operator=(const float* val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
@@ -153,13 +161,12 @@ public:
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f) 
+        if (tmp == 0.0f)
             return;
 
         tmp = 1.0f / tmp;
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = vec[i] * tmp;
-
     }
 
     float dist(const Vec<VecSize>& val) const
@@ -177,7 +184,7 @@ public:
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f) 
+        if (tmp == 0.0f)
             return;
 
         tmp = 1.0f / tmp;
@@ -187,7 +194,7 @@ public:
 
     void cross(const Vec<VecSize>& val)
     {
-        const Vec<VecSize> tmp{*this};
+        const Vec<VecSize> tmp { *this };
         for (std::size_t i = 0; i < VecSize; i++)
         {
             vec[i] = (tmp[(i + 1) % VecSize] * val[(i + 2) % VecSize]) - (tmp[(i + 2) % VecSize] * val[(i + 1) % VecSize]);
@@ -209,31 +216,31 @@ private:
 template <std::size_t S, std::size_t T>
 inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T>{rhs} *= lhs;
+    return Vec<T> { rhs } *= lhs;
 }
 
 template <std::size_t T>
 inline Vec<T> operator*(const float lhs, const Vec<T>& rhs)
 {
-    return Vec<T>{rhs} *= lhs;
+    return Vec<T> { rhs } *= lhs;
 }
 
 template <std::size_t T>
 inline Vec<T> operator*(const Vec<T>& lhs, const float rhs)
 {
-    return Vec<T>{lhs} *= rhs;
+    return Vec<T> { lhs } *= rhs;
 }
 
 template <std::size_t T>
 inline Vec<T> operator-(const Vec<T>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T>{lhs} -= rhs;
+    return Vec<T> { lhs } -= rhs;
 }
 
 template <std::size_t T>
 inline Vec<T> operator+(const Vec<T>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T>{lhs} += rhs;
+    return Vec<T> { lhs } += rhs;
 }
 
 template <std::size_t T>

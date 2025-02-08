@@ -1,11 +1,11 @@
 // This file is an example how to integrate the rrx with an arduino.
 // Note: Only platformio is supported due to the lack of c++17 features in the arduino IDE.
-#include <RRXGL.hpp>
-#include <Minimal.hpp>
-#include <StencilShadow.hpp>
-#include <IBusConnector.hpp>
 #include <Arduino.h>
+#include <IBusConnector.hpp>
+#include <Minimal.hpp>
+#include <RRXGL.hpp>
 #include <SPI.h>
+#include <StencilShadow.hpp>
 
 // Create a connector for the rrx library. This is a wrapper around the arduino SPI interface.
 // This currently uses the blocking SPI interface. It seems, that this is always supported from
@@ -48,24 +48,24 @@ public:
     {
         return digitalRead(CTS);
     }
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override 
-    { 
-        switch (index) 
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override
+    {
+        switch (index)
         {
-            case 0:
-            case 1:
-                return { m_dlMem[index] }; 
-            case 2:
-                return { m_displayListTmp };
-            default:
-                break; 
+        case 0:
+        case 1:
+            return { m_dlMem[index] };
+        case 2:
+            return { m_displayListTmp };
+        default:
+            break;
         }
-        return {}; 
+        return {};
     }
 
-    virtual uint8_t getBufferCount() const override 
-    { 
-        return m_dlMem.size() + 1; 
+    virtual uint8_t getBufferCount() const override
+    {
+        return m_dlMem.size() + 1;
     }
 
     void init()
@@ -78,7 +78,7 @@ public:
         digitalWrite(RESET, HIGH);
         SPI.begin();
         SPI.beginTransaction(SPISettings(22000000, MSBFIRST, SPI_MODE0));
-    
+
         // Reset FPGA
         digitalWrite(RESET, LOW);
         delay(50);
@@ -88,6 +88,7 @@ public:
         digitalWrite(CSN, LOW);
         delay(50);
     }
+
 private:
     std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 2> m_dlMem;
     std::array<uint8_t, 4096 + 64> m_displayListTmp; // The last buffer is used to upload texture chunks and can be smaller
@@ -103,7 +104,7 @@ bool state { false };
 static Minimal m_scene {};
 // static StencilShadow m_scene {};
 
-void setup() 
+void setup()
 {
     pinMode(LED_PIN, OUTPUT);
     // Initialize the connector
@@ -116,7 +117,7 @@ void setup()
     m_scene.init(RESOLUTION_W, RESOLUTION_H);
 }
 
-void loop() 
+void loop()
 {
     // Draw the scene
     m_scene.draw();
@@ -125,7 +126,7 @@ void loop()
     // Upload the finished display list. To improve performance, this can run in a second thread.
     rr::RRXGL::getInstance().uploadDisplayList();
 
-    // Use LED as a heartbeat 
+    // Use LED as a heartbeat
     digitalWrite(LED_PIN, state);
     state = !state;
 }

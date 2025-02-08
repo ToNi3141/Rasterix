@@ -1,9 +1,9 @@
 #ifndef _STENCILSHADOW_HPP_
 #define _STENCILSHADOW_HPP_
-#include <tcb/span.hpp>
-#include "glu.h"
-#include "Vec.hpp"
 #include "Mat44.hpp"
+#include "Vec.hpp"
+#include "glu.h"
+#include <tcb/span.hpp>
 
 // Example of stencil shadows using the zpass algorithm.
 // The following steps will be executed:
@@ -11,15 +11,15 @@
 // 2. Search on the torus array all adjacent triangles.
 //      This array has double the size of the torus array:
 //      The first three vertices are the triangle itself, the next three vertices containing the adjacent vertices:
-//         5________2________4  
+//         5________2________4
 //          \      / \      /
 //           \    /   \    /
 //            \  /     \  /
 //              0_______1
-//              \       / 
+//              \       /
 //               \     /
 //                \   /
-//                  3 
+//                  3
 //      This is done only during startup, in a static mesh the neighbors will never change
 // 3. Draw the scene in shadow
 // 4. Search the silhouette of the current object (with help of the adjacent torus list)
@@ -30,7 +30,7 @@
 // 8. Draw whole scene again with enabled light
 // 9. To draw new frame, start with 3.
 // Note: Self shadowing in general works, but the edges between light and dark look ugly because the light is drawn with
-// smooth shading, but self shadowing does not work smooth so you will get a hard edge between the polygon in light and 
+// smooth shading, but self shadowing does not work smooth so you will get a hard edge between the polygon in light and
 // the one in the dark. A potential fix is flat shading but then the light will generally look ugly.
 class StencilShadow
 {
@@ -42,7 +42,7 @@ public:
         glDepthRange(0.0, 1.0);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(30.0, (float)resolutionW/(float)resolutionH, 1.0, 111.0);
+        gluPerspective(30.0, (float)resolutionW / (float)resolutionH, 1.0, 111.0);
 
         // Enable depth test and depth mask
         glEnable(GL_DEPTH_TEST);
@@ -62,7 +62,7 @@ public:
         glEnable(GL_LIGHT0);
 
         glActiveTexture(GL_TEXTURE0);
-        static constexpr GLfloat colors[4] = {0.0, 0.0, 0.0, 0.0};
+        static constexpr GLfloat colors[4] = { 0.0, 0.0, 0.0, 0.0 };
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colors);
 
@@ -121,12 +121,12 @@ private:
     static constexpr int TRIANGULATED_QUAD_VERTS { 6 };
     void drawGround()
     {
-        static const std::array<rr::Vec3, 4> quadVerts {{
-            {{ -1.0f, 1.0f, -1.0f }},
-            {{ -1.0f,-1.0f, -1.0f }},
-            {{  1.0f,-1.0f, -1.0f }},
-            {{  1.0f, 1.0f, -1.0f }},
-        }};
+        static const std::array<rr::Vec3, 4> quadVerts { {
+            { { -1.0f, 1.0f, -1.0f } },
+            { { -1.0f, -1.0f, -1.0f } },
+            { { 1.0f, -1.0f, -1.0f } },
+            { { 1.0f, 1.0f, -1.0f } },
+        } };
         glScalef(8, 8, 8);
         glTranslatef(-1.5, 0, 0);
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -170,16 +170,16 @@ private:
         glEnable(GL_STENCIL_TEST_TWO_SIDE_EXT);
 
         glActiveStencilFaceEXT(GL_BACK);
-        glStencilOp(GL_KEEP,            // stencil test fail
-                   GL_KEEP,            // depth test fail
-                   GL_DECR_WRAP_EXT);  // depth test pass
+        glStencilOp(GL_KEEP, // stencil test fail
+            GL_KEEP, // depth test fail
+            GL_DECR_WRAP_EXT); // depth test pass
         glStencilMask(0xf);
         glStencilFunc(GL_ALWAYS, 0, 0xf);
 
         glActiveStencilFaceEXT(GL_FRONT);
-        glStencilOp(GL_KEEP,            // stencil test fail
-                   GL_KEEP,            // depth test fail
-                   GL_INCR_WRAP_EXT);  // depth test pass
+        glStencilOp(GL_KEEP, // stencil test fail
+            GL_KEEP, // depth test fail
+            GL_INCR_WRAP_EXT); // depth test pass
         glStencilMask(0xf);
         glStencilFunc(GL_ALWAYS, 0, 0xf);
     }
@@ -211,7 +211,7 @@ private:
         {
             if (i == j) // Avoid to add the own edge to the adjacent list
                 continue;
-            
+
             const rr::Vec3 av0 = verts[j];
             const rr::Vec3 av1 = verts[j + 1];
             const rr::Vec3 av2 = verts[j + 2];
@@ -274,19 +274,18 @@ private:
         lightDir *= EPSILON;
         rr::Vec3 pos1 = start + lightDir;
 
-
         lightDir = end - lightPos;
         lightDir.normalize();
         const rr::Vec3 pos4 = lightDir;
         lightDir *= EPSILON;
         rr::Vec3 pos3 = end + lightDir;
 
-        const std::array<rr::Vec4, 4> quadVerts {{
-            {{ pos1[0], pos1[1], pos1[2], 1.0f }},
-            {{ pos2[0], pos2[1], pos2[2], 0.0f }},
-            {{ pos4[0], pos4[1], pos4[2], 0.0f }},
-            {{ pos3[0], pos3[1], pos3[2], 1.0f }},
-        }};
+        const std::array<rr::Vec4, 4> quadVerts { {
+            { { pos1[0], pos1[1], pos1[2], 1.0f } },
+            { { pos2[0], pos2[1], pos2[2], 0.0f } },
+            { { pos4[0], pos4[1], pos4[2], 0.0f } },
+            { { pos3[0], pos3[1], pos3[2], 1.0f } },
+        } };
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(4, GL_FLOAT, 0, quadVerts.data());
         glDrawArrays(GL_QUADS, 0, quadVerts.size());
@@ -331,7 +330,7 @@ private:
                 {
                     emitQuad(line[1], line[2], tLightPos);
                 }
-                
+
                 normal = e2;
                 normal.cross(e6);
                 lightDir = tLightPos - line[2];
@@ -343,7 +342,7 @@ private:
         }
     }
 
-    void mglut_sincos(float angle, float *sptr, float *cptr)
+    void mglut_sincos(float angle, float* sptr, float* cptr)
     {
         *sptr = sin(angle);
         *cptr = cos(angle);
@@ -361,13 +360,13 @@ private:
         std::array<rr::Vec3, 4> quadNorm;
 
         uint32_t ptrIndex = 0;
-        for(i = 0; i < rings; i++) 
+        for (i = 0; i < rings; i++)
         {
             u = i * du;
-            for(j = 0; j < sides; j++) 
+            for (j = 0; j < sides; j++)
             {
                 v = j * dv;
-                for(k = 0; k < 4; k++) 
+                for (k = 0; k < 4; k++)
                 {
                     gray = k ^ (k >> 1);
                     s = gray & 1 ? u + du : u;
@@ -379,12 +378,12 @@ private:
                     x = sintheta * sinphi;
                     y = costheta * sinphi;
                     z = cosphi;
-                    quadNorm[k] = rr::Vec3{{x, y, z}};
+                    quadNorm[k] = rr::Vec3 { { x, y, z } };
 
                     x = x * inner_rad + sintheta * outer_rad;
                     y = y * inner_rad + costheta * outer_rad;
                     z *= inner_rad;
-                    quadVerts[k] = rr::Vec3{{x, y, z}};
+                    quadVerts[k] = rr::Vec3 { { x, y, z } };
                 }
                 normal[ptrIndex] = quadNorm[0];
                 vertex[ptrIndex] = quadVerts[0];
@@ -409,11 +408,11 @@ private:
         }
     }
 
-    rr::Vec4 m_lightPosition {{ 1.0, 3.0, 6.0, 0.0 }};
+    rr::Vec4 m_lightPosition { { 1.0, 3.0, 6.0, 0.0 } };
 
-    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS>       m_torusNormal;
-    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS>       m_torusVertex;
-    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS * 2>   m_torusWithAdjacentTriangles;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS> m_torusNormal;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS> m_torusVertex;
+    std::array<rr::Vec3, TORUS_SIDES * TORUS_RINGS * TRIANGULATED_QUAD_VERTS * 2> m_torusWithAdjacentTriangles;
 
     float m_torusAngleY { 0.0f };
     float m_torusAngleZ { 0.0f };
