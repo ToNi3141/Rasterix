@@ -254,7 +254,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
         }
     }
 
-    // Depth 
+    // Depth
     const Vec2 zw0 { triangle.vertex0[2], triangle.vertex0[3] };
     const Vec2 zw1 { triangle.vertex1[2], triangle.vertex1[3] };
     const Vec2 zw2 { triangle.vertex2[2], triangle.vertex2[3] };
