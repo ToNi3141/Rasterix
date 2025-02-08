@@ -1,6 +1,7 @@
-#include <stdio.h>
 #include "gl.h"
 #include "glu.h"
+#include <cstdint>
+#include <stdio.h>
 
 class Mipmap
 {
@@ -51,7 +52,7 @@ public:
         // Enable normals
         glEnableClientState(GL_NORMAL_ARRAY);
         glNormalPointer(GL_FLOAT, 0, planeNormals);
-        
+
         // Enable vertex arrays
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, planeVerts);
@@ -62,33 +63,41 @@ public:
 
 private:
     static constexpr uint16_t planeIndex[] = {
+        // clang-format off
         0, 1, 2, 0, 2, 3,
+        // clang-format on
     };
 
     static constexpr float planeVerts[] = {
+        // clang-format off
         -1.0f, 1.0f, 0.0f,
         -1.0f,-1.0f, 0.0f,
         1.0f,-1.0f, 0.0f,
         1.0f, 1.0f, 0.0f,
+        // clang-format on
     };
 
     static constexpr float planeTexCoords[] = {
+        // clang-format off
         0.0f, 1.0f,
         0.0f, 0.0f,
         1.0f, 0.0f,
         1.0f, 1.0f,
+        // clang-format on
     };
 
     static constexpr float planeNormals[] = {
+        // clang-format off
         0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  1.0f,
         0.0f,  0.0f,  1.0f,
+        // clang-format on
     };
 
     void generateTexture(char* buffer, uint32_t w, uint32_t h, uint8_t r, uint8_t g, uint8_t b)
     {
-        for (uint32_t i = 0; i < w * h * 3; i+= 3)
+        for (uint32_t i = 0; i < w * h * 3; i += 3)
         {
             buffer[i + 0] = r;
             buffer[i + 1] = g;
@@ -143,7 +152,7 @@ private:
         // LOD 8
         generateTexture(pixelBuffer, 1, 1, 0, 0, 0);
         glTexImage2D(GL_TEXTURE_2D, 8, GL_RGB, 1, 1, border, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
-        
+
         // define how to filter the texture
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);

@@ -1,5 +1,5 @@
-#include "Runner.hpp"
 #include "Minimal.hpp"
+#include "Runner.hpp"
 
 int main()
 {

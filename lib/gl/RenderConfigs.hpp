@@ -1,6 +1,7 @@
 #ifndef _RENDER_CONFIG_HPP_
 #define _RENDER_CONFIG_HPP_
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rr
