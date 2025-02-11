@@ -30,6 +30,7 @@ class Vec
 public:
     Vec() { }
     Vec(const Vec<VecSize>& val) { vec = val.vec; }
+    Vec(const Vec<VecSize>&& val) { vec = std::move(val.vec); }
     Vec(const std::initializer_list<float> val) { std::copy(val.begin(), val.end(), vec.begin()); }
     Vec(const std::array<float, VecSize>& val) { vec = val; }
     Vec(const float* val) { operator=(val); }
@@ -135,6 +136,11 @@ public:
         vec = val.vec;
         return *this;
     }
+    Vec<VecSize>& operator=(const Vec<VecSize>&& val)
+    {
+        vec = std::move(val.vec);
+        return *this;
+    }
     Vec<VecSize>& operator=(const std::array<float, VecSize>& val)
     {
         vec = val;
@@ -217,31 +223,46 @@ private:
 template <std::size_t S, std::size_t T>
 inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T> { rhs } *= lhs;
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = lhs[i] * rhs[i];
+    return t;
 }
 
 template <std::size_t T>
 inline Vec<T> operator*(const float lhs, const Vec<T>& rhs)
 {
-    return Vec<T> { rhs } *= lhs;
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = lhs * rhs[i];
+    return t;
 }
 
 template <std::size_t T>
 inline Vec<T> operator*(const Vec<T>& lhs, const float rhs)
 {
-    return Vec<T> { lhs } *= rhs;
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = lhs[i] * rhs;
+    return t;
 }
 
 template <std::size_t T>
 inline Vec<T> operator-(const Vec<T>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T> { lhs } -= rhs;
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = lhs[i] - rhs[i];
+    return t;
 }
 
 template <std::size_t T>
 inline Vec<T> operator+(const Vec<T>& lhs, const Vec<T>& rhs)
 {
-    return Vec<T> { lhs } += rhs;
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = lhs[i] + rhs[i];
+    return t;
 }
 
 template <std::size_t T>

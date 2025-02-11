@@ -1,16 +1,16 @@
-#include <stdio.h>
-#include <spdlog/spdlog.h>
 #include "FT60XBusConnector.hpp"
 #include "RRXGL.hpp"
+#include "ThreadedRenderer.hpp"
 #include "gl.h"
 #include "glu.h"
-#include "ThreadedRenderer.hpp"
+#include <spdlog/spdlog.h>
+#include <stdio.h>
 
 template <typename Scene>
 class Runner
 {
 public:
-    Runner() 
+    Runner()
     {
         spdlog::set_level(spdlog::level::trace);
         rr::RRXGL::createInstance(m_busConnector);
@@ -28,6 +28,7 @@ public:
             m_threadedRenderer.render();
         }
     }
+
 private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;

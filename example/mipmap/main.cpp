@@ -1,5 +1,5 @@
-#include "Runner.hpp"
 #include "Mipmap.hpp"
+#include "Runner.hpp"
 
 int main()
 {

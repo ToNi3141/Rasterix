@@ -6,6 +6,11 @@ declare -a files=(
     lib/utils
     lib/wgl
     unittest/cpp
+    example/minimal
+    example/mipmap
+    example/stencilShadow
+    example/util
+    example/platformio
 )
 
 for i in "${files[@]}"

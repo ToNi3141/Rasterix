@@ -2,10 +2,10 @@
 #include "gl.h"
 #include "glu.h"
 
-#include <pico/stdlib.h>
-#include <pico/binary_info.h>
-#include <hardware/spi.h>
 #include <hardware/dma.h>
+#include <hardware/spi.h>
+#include <pico/binary_info.h>
+#include <pico/stdlib.h>
 
 #include <algorithm>
 
@@ -17,12 +17,12 @@ public:
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
     static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
-    
+
     BusConnector() { }
 
     virtual ~BusConnector() = default;
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override 
+    virtual void writeData(const uint8_t index, const uint32_t size) override
     {
         tcb::span<const uint8_t> data = requestBuffer(index);
         uint32_t dataToSend = size;
@@ -39,34 +39,34 @@ public:
             channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
             channel_config_set_dreq(&c, spi_get_dreq(spi_default, true));
             dma_channel_configure(dma_tx, &c,
-                            &spi_get_hw(spi_default)->dr, // write address
-                            data.data() + counter, // read address
-                            chunkSize, // element count (each element is of size transfer_data_size)
-                            true); // Start immediately
+                &spi_get_hw(spi_default)->dr, // write address
+                data.data() + counter, // read address
+                chunkSize, // element count (each element is of size transfer_data_size)
+                true); // Start immediately
             counter += chunkSize;
             dataToSend -= chunkSize;
         }
     }
 
-    virtual bool clearToSend() override 
+    virtual bool clearToSend() override
     {
         return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
     }
 
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override 
-    { 
-        switch (index) 
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override
+    {
+        switch (index)
         {
-            case 2:
-                return { m_displayListTmp }; 
-            default:
-                return { m_dlMem[index] }; 
+        case 2:
+            return { m_displayListTmp };
+        default:
+            return { m_dlMem[index] };
         }
-        return {}; 
+        return {};
     }
-    virtual uint8_t getBufferCount() const override 
-    { 
-        return m_dlMem.size() + 1; 
+    virtual uint8_t getBufferCount() const override
+    {
+        return m_dlMem.size() + 1;
     }
 
     void init()
@@ -99,6 +99,7 @@ public:
         gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
         sleep_ms(50);
     }
+
 private:
     uint dma_tx;
     std::array<std::array<uint8_t, DISPLAYLIST_SIZE>, 2> m_dlMem;
@@ -109,7 +110,7 @@ template <typename Scene>
 class Runner
 {
 public:
-    Runner() 
+    Runner()
     {
         stdio_init_all();
         gpio_init(LED_PIN);
@@ -131,6 +132,7 @@ public:
             rr::RRXGL::getInstance().uploadDisplayList();
         }
     }
+
 private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
