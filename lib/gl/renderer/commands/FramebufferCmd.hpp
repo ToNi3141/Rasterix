@@ -37,6 +37,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_POS { 8 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_MASK { 0xFFFFF };
+
 public:
     FramebufferCmd(const bool selColorBuffer,
         const bool selDepthBuffer,

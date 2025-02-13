@@ -333,35 +333,17 @@ void Renderer::uploadTextures()
 
 bool Renderer::addCommitFramebufferCommand()
 {
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = resY * resX;
-                FramebufferCmd cmd { true, true, true, screenSize };
-                cmd.commitFramebuffer();
-                return cmd;
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = resY * resX;
-                FramebufferCmd cmd { true, true, true, screenSize };
-                cmd.commitFramebuffer();
-                return cmd;
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-    {
-        // A nop is used to force the DSE to wait till the (maybe) currently drawn triangle or
-        // (other operation) on the framebuffer has finished before the DSE reads from the framebuffer.
-        // Otherwise the DSE might read a not finished frame.
-        return addCommand(NopCmd {});
-    }
+    // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
+    // to flush the pipeline. This is the easiest way to solve WAR conflicts.
+    return addCommandWithFactory(
+        [](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+        {
+            const uint32_t screenSize = resY * resX;
+            FramebufferCmd cmd { true, true, true, screenSize };
+            cmd.commitFramebuffer();
+            return cmd;
+        });
+
     return false;
 }
 
