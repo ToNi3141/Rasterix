@@ -204,6 +204,8 @@ module RasterixIF #(
     `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
 
+    localparam FRAMEBUFFER_STREAM_SIZE = 20;
+
     wire                             cmd_axis_tvalid;
     wire                             cmd_axis_tready;
     wire                             cmd_axis_tlast;
@@ -331,6 +333,7 @@ module RasterixIF #(
     // Color buffer access
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              colorBufferClearColor;
     wire [ADDR_WIDTH - 1 : 0]                        colorBufferAddr;
+    wire [FRAMEBUFFER_STREAM_SIZE - 1 : 0]           colorBufferSize; 
     wire                                             colorBufferApply;
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
@@ -353,6 +356,7 @@ module RasterixIF #(
 
     // Depth buffer access
     wire [DEPTH_WIDTH - 1 : 0]                       depthBufferClearDepth;
+    wire [FRAMEBUFFER_STREAM_SIZE - 1 : 0]           depthBufferSize; 
     wire                                             depthBufferApply;
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
@@ -374,6 +378,7 @@ module RasterixIF #(
 
     // Stencil buffer access
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferClearStencil;
+    wire [FRAMEBUFFER_STREAM_SIZE -1 : 0]            stencilBufferSize; 
     wire                                             stencilBufferApply;
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
@@ -426,6 +431,7 @@ module RasterixIF #(
         .applied(depthBufferApplied),
         .cmdCommit(depthBufferCmdCommit),
         .cmdMemset(depthBufferCmdMemset),
+        .cmdSize(depthBufferSize),
 
         .m_axis_tvalid(),
         .m_axis_tready(1'b1),
@@ -438,6 +444,7 @@ module RasterixIF #(
     defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
     defparam depthBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+    defparam depthBuffer.CMD_SIZE_IN_PIXEL = FRAMEBUFFER_STREAM_SIZE;
 
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] s_framebuffer_unconverted_axis_tdata;
     FrameBuffer colorBuffer (  
@@ -473,6 +480,7 @@ module RasterixIF #(
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
+        .cmdSize(colorBufferSize),
 
         .m_axis_tvalid(framebuffer_axis_tvalid),
         .m_axis_tready(framebuffer_axis_tready),
@@ -485,6 +493,7 @@ module RasterixIF #(
     defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
     defparam colorBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+    defparam colorBuffer.CMD_SIZE_IN_PIXEL = FRAMEBUFFER_STREAM_SIZE;
 
     // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
     generate
@@ -537,6 +546,7 @@ module RasterixIF #(
                 .applied(stencilBufferApplied),
                 .cmdCommit(stencilBufferCmdCommit),
                 .cmdMemset(stencilBufferCmdMemset),
+                .cmdSize(stencilBufferSize),
 
                 .m_axis_tvalid(),
                 .m_axis_tready(1'b1),
@@ -549,6 +559,7 @@ module RasterixIF #(
             defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
             defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
             defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
+            defparam stencilBuffer.CMD_SIZE_IN_PIXEL = FRAMEBUFFER_STREAM_SIZE;
         end
         else
         begin
@@ -592,6 +603,7 @@ module RasterixIF #(
 
         .colorBufferClearColor(colorBufferClearColor),
         .colorBufferAddr(colorBufferAddr),
+        .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
@@ -617,6 +629,7 @@ module RasterixIF #(
 
         .depthBufferClearDepth(depthBufferClearDepth),
         .depthBufferAddr(), // Unused in the rrxif config
+        .depthBufferSize(depthBufferSize),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
@@ -641,6 +654,7 @@ module RasterixIF #(
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
         .stencilBufferAddr(), // Unused in the rrxif config
+        .stencilBufferSize(stencilBufferSize),
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),

@@ -35,9 +35,13 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
-
+    static constexpr uint32_t OP_FRAMEBUFFER_SIZE_POS { 8 };
+    static constexpr uint32_t OP_FRAMEBUFFER_SIZE_MASK { 0xFFFFF };
 public:
-    FramebufferCmd(const bool selColorBuffer, const bool selDepthBuffer, const bool selStencilBuffer)
+    FramebufferCmd(const bool selColorBuffer,
+        const bool selDepthBuffer,
+        const bool selStencilBuffer,
+        const std::size_t sizeInPixel)
     {
         if (selColorBuffer)
         {
@@ -51,6 +55,7 @@ public:
         {
             selectStencilBuffer();
         }
+        setFramebufferSizeInPixel(sizeInPixel);
     }
 
     void swapFramebuffer()
@@ -66,9 +71,22 @@ public:
     {
         m_op |= OP_FRAMEBUFFER_MEMSET;
     }
-    void selectColorBuffer() { m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT; }
-    void selectDepthBuffer() { m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT; }
-    void selectStencilBuffer() { m_op |= OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT; }
+    void selectColorBuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
+    }
+    void selectDepthBuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
+    }
+    void selectStencilBuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT;
+    }
+    void setFramebufferSizeInPixel(const std::size_t size)
+    {
+        m_op |= (static_cast<uint32_t>(size) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
+    }
 
     using PayloadType = tcb::span<const uint8_t>;
     const PayloadType payload() const { return {}; }

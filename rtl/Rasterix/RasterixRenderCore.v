@@ -85,7 +85,9 @@ module RasterixRenderCore #(
     localparam SCREEN_POS_WIDTH = 11,
 
     // Number of pixel the pipeline can maximal contain until a stall event occurs in power of two
-    localparam MAX_NUMBER_OF_PIXELS_LG = 7
+    localparam MAX_NUMBER_OF_PIXELS_LG = 7,
+
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                                 aclk,
@@ -109,6 +111,7 @@ module RasterixRenderCore #(
     // Color buffer access
     output wire [PIXEL_WIDTH - 1 : 0]           colorBufferClearColor,
     output wire [ADDR_WIDTH - 1 : 0]            colorBufferAddr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
     output wire                                 colorBufferApply,
     input  wire                                 colorBufferApplied,
     output wire                                 colorBufferCmdCommit,
@@ -135,6 +138,7 @@ module RasterixRenderCore #(
     // Depth buffer access
     output wire [DEPTH_WIDTH - 1 : 0]           depthBufferClearDepth,
     output wire [ADDR_WIDTH - 1 : 0]            depthBufferAddr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   depthBufferSize,
     output wire                                 depthBufferApply,
     input  wire                                 depthBufferApplied,
     output wire                                 depthBufferCmdCommit,
@@ -160,6 +164,7 @@ module RasterixRenderCore #(
     // Stencil buffer access
     output wire [STENCIL_WIDTH - 1 : 0]         stencilBufferClearStencil,
     output wire [ADDR_WIDTH - 1 : 0]            stencilBufferAddr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize,
     output wire                                 stencilBufferApply,
     input  wire                                 stencilBufferApplied,
     output wire                                 stencilBufferCmdCommit,
@@ -332,14 +337,17 @@ module RasterixRenderCore #(
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
+        .colorBufferSize(colorBufferSize),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthBufferSize(depthBufferSize),
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
-        .stencilBufferCmdMemset(stencilBufferCmdMemset)
+        .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilBufferSize(stencilBufferSize)
     );
     defparam commandParser.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam commandParser.TEXTURE_STREAM_WIDTH = TEXTURE_STREAM_WIDTH;

@@ -139,17 +139,21 @@ void Renderer::uploadDisplayList()
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
 {
-    FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
-    cmd.enableMemset();
     return addCommandWithFactory_if(
-        [&cmd](std::size_t, std::size_t, std::size_t, std::size_t)
-        { return cmd; },
-        [this](std::size_t i, std::size_t, std::size_t, std::size_t resY)
+        [&](std::size_t, std::size_t, std::size_t x, std::size_t y)
         {
+            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
+            cmd.enableMemset();
+            return cmd;
+        },
+        [&](std::size_t i, std::size_t, std::size_t x, std::size_t y)
+        {
+            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
+            cmd.enableMemset();
             if (m_scissorEnabled)
             {
-                const std::size_t currentScreenPositionStart = i * resY;
-                const std::size_t currentScreenPositionEnd = (i + 1) * resY;
+                const std::size_t currentScreenPositionStart = i * y;
+                const std::size_t currentScreenPositionEnd = (i + 1) * y;
                 if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart)
                     && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
                 {
@@ -331,15 +335,25 @@ bool Renderer::addCommitFramebufferCommand()
 {
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
     {
-        FramebufferCmd cmd { true, true, true };
-        cmd.commitFramebuffer();
-        return addCommand(cmd);
+        return addCommandWithFactory(
+            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+            {
+                const uint32_t screenSize = resY * resX;
+                FramebufferCmd cmd { true, true, true, screenSize };
+                cmd.commitFramebuffer();
+                return cmd;
+            });
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
     {
-        FramebufferCmd cmd { true, true, true };
-        cmd.commitFramebuffer();
-        return addCommand(cmd);
+        return addCommandWithFactory(
+            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+            {
+                const uint32_t screenSize = resY * resX;
+                FramebufferCmd cmd { true, true, true, screenSize };
+                cmd.commitFramebuffer();
+                return cmd;
+            });
     }
     if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
     {
@@ -392,7 +406,7 @@ bool Renderer::addSwapExternalDisplayFramebufferCommand()
     m_displayListBuffer.getBack().saveSectionStart();
     bool ret = true;
     ret = ret && m_displayListBuffer.getBack().beginLastFrame();
-    FramebufferCmd cmd { false, false, false };
+    FramebufferCmd cmd { false, false, false, 0 };
     cmd.selectColorBuffer();
     cmd.swapFramebuffer();
     ret = ret && addLastCommand(cmd);

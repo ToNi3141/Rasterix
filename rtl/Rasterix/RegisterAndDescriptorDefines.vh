@@ -89,6 +89,8 @@ localparam OP_FRAMEBUFFER_SWAP_POS = 2; // Swaps the framebuffer to the address 
 localparam OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
 localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 localparam OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS = 6;
+localparam OP_FRAMEBUFFER_SIZE_POS = 8;
+localparam OP_FRAMEBUFFER_SIZE_SIZE = 20;
 
 //---------------------------------------------------------------------------------------------------------
 // Triangle Stream

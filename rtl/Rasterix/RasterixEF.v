@@ -797,6 +797,7 @@ module RasterixEF #(
 
         .colorBufferClearColor(colorBufferClearColor),
         .colorBufferAddr(colorBufferAddr),
+        .colorBufferSize(),
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
@@ -822,6 +823,7 @@ module RasterixEF #(
 
         .depthBufferClearDepth(depthBufferClearDepth),
         .depthBufferAddr(depthBufferAddr),
+        .depthBufferSize(),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
@@ -846,6 +848,7 @@ module RasterixEF #(
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
         .stencilBufferAddr(stencilBufferAddr),
+        .stencilBufferSize(),
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),

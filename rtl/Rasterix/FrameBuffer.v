@@ -47,6 +47,9 @@ module FrameBuffer
     parameter Y_BIT_WIDTH = 11,
     parameter FRAMEBUFFER_SIZE_IN_WORDS = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
+    // The maximum size stream size
+    parameter CMD_SIZE_IN_PIXEL = 20,
+
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
@@ -109,6 +112,7 @@ module FrameBuffer
     output reg                              applied, // This marks if the commands have been applied.
     input  wire                             cmdCommit, // Starts to stream the memory content via the AXIS interface
     input  wire                             cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
+    input  wire [CMD_SIZE_IN_PIXEL - 1 : 0] cmdSize, // Size of the stream 
 
     // AXI Stream master interface
     output reg                              m_axis_tvalid,
@@ -284,7 +288,6 @@ module FrameBuffer
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
-                reg [X_BIT_WIDTH + Y_BIT_WIDTH -1 : 0] fbSize;
                 cmdIndex <= 0;
                 cmdMemsetX <= 0;
 
@@ -293,8 +296,7 @@ module FrameBuffer
                 // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
                 cmdMemsetY <= confYOffset + confYResolution - 1;
 
-                fbSize = confYResolution * confXResolution;
-                cmdFbSizeInBeats <= fbSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
+                cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
                 if (apply)
                 begin
