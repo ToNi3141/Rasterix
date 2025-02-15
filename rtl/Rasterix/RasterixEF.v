@@ -58,11 +58,6 @@ module RasterixEF #(
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
 
-    // Memory data width for the common channel
-    localparam COMMON_DATA_WIDTH = CMD_STREAM_WIDTH,
-    // Memory strobe width for the common channel
-    localparam COMMON_STRB_WIDTH = COMMON_DATA_WIDTH / 8,
-
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
     // distortions in the rendered image.
@@ -76,7 +71,9 @@ module RasterixEF #(
     parameter RASTERIZER_FIXPOINT_PRECISION = 25,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1
+    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                             aclk,
@@ -90,54 +87,10 @@ module RasterixEF #(
 
     // Framebuffer output
     // AXI Stream master interface (RGB565)
-    output wire                             m_framebuffer_axis_tvalid,
-    input  wire                             m_framebuffer_axis_tready,
-    output wire                             m_framebuffer_axis_tlast,
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
-    output wire                             swap_fb,
-    output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
-    input  wire                             fb_swapped,
-
-    // Common memory interface
-    output wire [ID_WIDTH - 1 : 0]          m_common_axi_awid,
-    output wire [ADDR_WIDTH - 1 : 0]        m_common_axi_awaddr,
-    output wire [ 7 : 0]                    m_common_axi_awlen,
-    output wire [ 2 : 0]                    m_common_axi_awsize,
-    output wire [ 1 : 0]                    m_common_axi_awburst,
-    output wire                             m_common_axi_awlock,
-    output wire [ 3 : 0]                    m_common_axi_awcache,
-    output wire [ 2 : 0]                    m_common_axi_awprot, 
-    output wire                             m_common_axi_awvalid,
-    input  wire                             m_common_axi_awready,
-
-    output wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_wdata,
-    output wire [COMMON_STRB_WIDTH - 1 : 0] m_common_axi_wstrb,
-    output wire                             m_common_axi_wlast,
-    output wire                             m_common_axi_wvalid,
-    input  wire                             m_common_axi_wready,
-
-    input  wire [ID_WIDTH - 1 : 0]          m_common_axi_bid,
-    input  wire [ 1 : 0]                    m_common_axi_bresp,
-    input  wire                             m_common_axi_bvalid,
-    output wire                             m_common_axi_bready,
-
-    output wire [ID_WIDTH - 1 : 0]          m_common_axi_arid,
-    output wire [ADDR_WIDTH - 1 : 0]        m_common_axi_araddr,
-    output wire [ 7 : 0]                    m_common_axi_arlen,
-    output wire [ 2 : 0]                    m_common_axi_arsize,
-    output wire [ 1 : 0]                    m_common_axi_arburst,
-    output wire                             m_common_axi_arlock,
-    output wire [ 3 : 0]                    m_common_axi_arcache,
-    output wire [ 2 : 0]                    m_common_axi_arprot,
-    output wire                             m_common_axi_arvalid,
-    input  wire                             m_common_axi_arready,
-
-    input  wire [ID_WIDTH - 1 : 0]          m_common_axi_rid,
-    input  wire [COMMON_DATA_WIDTH - 1 : 0] m_common_axi_rdata,
-    input  wire [ 1 : 0]                    m_common_axi_rresp,
-    input  wire                             m_common_axi_rlast,
-    input  wire                             m_common_axi_rvalid,
-    output wire                             m_common_axi_rready,
+    output wire                                 swap_fb,
+    output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
+    input  wire                                 fb_swapped,
 
     // Color Buffer
     output wire [ID_WIDTH - 1 : 0]          m_color_axi_awid,
@@ -316,85 +269,6 @@ module RasterixEF #(
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
-
-    wire                             cmd_axis_tvalid;
-    wire                             cmd_axis_tready;
-    wire                             cmd_axis_tlast;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
-
-    wire                             framebuffer_axis_tvalid = 1;
-    wire                             framebuffer_axis_tready;
-    wire                             framebuffer_axis_tlast = 1;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  framebuffer_axis_tdata = 0;
-
-    DmaStreamEngine #(
-        .STREAM_WIDTH(COMMON_DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH)
-    ) dma (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .m_st1_axis_tvalid(cmd_axis_tvalid),
-        .m_st1_axis_tready(cmd_axis_tready),
-        .m_st1_axis_tlast(cmd_axis_tlast),
-        .m_st1_axis_tdata(cmd_axis_tdata),
-
-        .s_st1_axis_tvalid(framebuffer_axis_tvalid),
-        .s_st1_axis_tready(framebuffer_axis_tready),
-        .s_st1_axis_tlast(framebuffer_axis_tlast),
-        .s_st1_axis_tdata(framebuffer_axis_tdata),
-
-        .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_st0_axis_tready(m_framebuffer_axis_tready),
-        .m_st0_axis_tlast(m_framebuffer_axis_tlast),
-        .m_st0_axis_tdata(m_framebuffer_axis_tdata),
-
-        .s_st0_axis_tvalid(s_cmd_axis_tvalid),
-        .s_st0_axis_tready(s_cmd_axis_tready),
-        .s_st0_axis_tlast(s_cmd_axis_tlast),
-        .s_st0_axis_tdata(s_cmd_axis_tdata),
-
-        .m_mem_axi_awid(m_common_axi_awid),
-        .m_mem_axi_awaddr(m_common_axi_awaddr),
-        .m_mem_axi_awlen(m_common_axi_awlen), 
-        .m_mem_axi_awsize(m_common_axi_awsize), 
-        .m_mem_axi_awburst(m_common_axi_awburst), 
-        .m_mem_axi_awlock(m_common_axi_awlock), 
-        .m_mem_axi_awcache(m_common_axi_awcache), 
-        .m_mem_axi_awprot(m_common_axi_awprot), 
-        .m_mem_axi_awvalid(m_common_axi_awvalid),
-        .m_mem_axi_awready(m_common_axi_awready),
-
-        .m_mem_axi_wdata(m_common_axi_wdata),
-        .m_mem_axi_wstrb(m_common_axi_wstrb),
-        .m_mem_axi_wlast(m_common_axi_wlast),
-        .m_mem_axi_wvalid(m_common_axi_wvalid),
-        .m_mem_axi_wready(m_common_axi_wready),
-
-        .m_mem_axi_bid(m_common_axi_bid),
-        .m_mem_axi_bresp(m_common_axi_bresp),
-        .m_mem_axi_bvalid(m_common_axi_bvalid),
-        .m_mem_axi_bready(m_common_axi_bready),
-
-        .m_mem_axi_arid(m_common_axi_arid),
-        .m_mem_axi_araddr(m_common_axi_araddr),
-        .m_mem_axi_arlen(m_common_axi_arlen),
-        .m_mem_axi_arsize(m_common_axi_arsize),
-        .m_mem_axi_arburst(m_common_axi_arburst),
-        .m_mem_axi_arlock(m_common_axi_arlock),
-        .m_mem_axi_arcache(m_common_axi_arcache),
-        .m_mem_axi_arprot(m_common_axi_arprot),
-        .m_mem_axi_arvalid(m_common_axi_arvalid),
-        .m_mem_axi_arready(m_common_axi_arready),
-
-        .m_mem_axi_rid(m_common_axi_rid),
-        .m_mem_axi_rdata(m_common_axi_rdata),
-        .m_mem_axi_rresp(m_common_axi_rresp),
-        .m_mem_axi_rlast(m_common_axi_rlast),
-        .m_mem_axi_rvalid(m_common_axi_rvalid),
-        .m_mem_axi_rready(m_common_axi_rready)
-    );
 
     wire                                             framebufferParamEnableScissor;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartX;
@@ -781,10 +655,10 @@ module RasterixEF #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .s_cmd_axis_tvalid(cmd_axis_tvalid),
-        .s_cmd_axis_tready(cmd_axis_tready),
-        .s_cmd_axis_tlast(cmd_axis_tlast),
-        .s_cmd_axis_tdata(cmd_axis_tdata),
+        .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
+        .s_cmd_axis_tready(s_cmd_axis_tready),
+        .s_cmd_axis_tlast(s_cmd_axis_tlast),
+        .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
         .framebufferParamEnableScissor(framebufferParamEnableScissor),
         .framebufferParamScissorStartX(framebufferParamScissorStartX),
@@ -797,7 +671,7 @@ module RasterixEF #(
 
         .colorBufferClearColor(colorBufferClearColor),
         .colorBufferAddr(colorBufferAddr),
-        .colorBufferSize(),
+        .colorBufferSize(fb_size),
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied && fb_swapped && !(colorBufferCmdCommit && colorBufferApply)),
         .colorBufferCmdCommit(colorBufferCmdCommit),
