@@ -311,6 +311,14 @@ private:
     }
 
     template <typename Factory>
+    bool addLastCommandWithFactory(const Factory& commandFactory)
+    {
+        return m_displayListBuffer.getBack().addLastCommandWithFactory_if(commandFactory,
+            [](std::size_t, std::size_t, std::size_t, std::size_t)
+            { return true; });
+    }
+
+    template <typename Factory>
     bool addCommandWithFactory(const Factory& commandFactory)
     {
         return addCommandWithFactory_if(commandFactory,

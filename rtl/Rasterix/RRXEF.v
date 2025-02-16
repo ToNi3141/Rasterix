@@ -19,6 +19,10 @@ module RRXEF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
+    // Enables the stream interface. This is exclusive to the fb_* interface.
+    // When this is enabled, the fb_* interface can't be used
+    parameter ENABLE_FRAMEBUFFER_STREAM = 1,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
@@ -51,7 +55,8 @@ module RRXEF #(
     // to the fix point interpolation
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
 
-    localparam CMD_STREAM_WIDTH = 32
+    localparam CMD_STREAM_WIDTH = 32,
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                             aclk,
@@ -71,6 +76,7 @@ module RRXEF #(
     // Framebuffer
     output wire                             swap_fb,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
+    output wire [FB_SIZE_IN_PIXEL_LG -1 : 0]fb_size,
     input  wire                             fb_swapped,
 
     // Memory Interface
@@ -111,7 +117,7 @@ module RRXEF #(
     output wire                             m_axi_rready
 );
     localparam ID_WIDTH_LOC = ID_WIDTH - 3;
-    localparam NRS = 6;
+    localparam NRS = (ENABLE_FRAMEBUFFER_STREAM) ? 7 : 6;
 
     initial
     begin
@@ -449,10 +455,10 @@ module RRXEF #(
         .s_st1_axis_tlast(framebuffer_axis_tlast),
         .s_st1_axis_tdata(framebuffer_axis_tdata),
 
-        .m_st0_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_st0_axis_tready(m_framebuffer_axis_tready),
-        .m_st0_axis_tlast(m_framebuffer_axis_tlast),
-        .m_st0_axis_tdata(m_framebuffer_axis_tdata),
+        .m_st0_axis_tvalid(),
+        .m_st0_axis_tready(1'b1),
+        .m_st0_axis_tlast(),
+        .m_st0_axis_tdata(),
 
         .s_st0_axis_tvalid(s_cmd_axis_tvalid),
         .s_st0_axis_tready(s_cmd_axis_tready),
@@ -500,6 +506,58 @@ module RRXEF #(
         .m_mem_axi_rready(common_axi_rready)
     );
 
+    wire fb_swapped_display;
+
+    generate
+    begin
+        if (ENABLE_FRAMEBUFFER_STREAM)
+        begin
+            DisplayFramebufferReader #(
+                .DISPLAY_STREAM_WIDTH(CMD_STREAM_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .ID_WIDTH(ID_WIDTH_LOC)
+            ) displayFramebufferReader (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .swap_fb(swap_fb),
+                .fb_addr(fb_addr),
+                .fb_size(fb_size),
+                .fb_swapped(fb_swapped_display),
+
+                .m_disp_axis_tvalid(m_framebuffer_axis_tvalid),
+                .m_disp_axis_tready(m_framebuffer_axis_tready),
+                .m_disp_axis_tlast(m_framebuffer_axis_tlast),
+                .m_disp_axis_tdata(m_framebuffer_axis_tdata),
+
+                .m_mem_axi_arid(xbar_axi_arid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_araddr(xbar_axi_araddr[6 * ADDR_WIDTH +: ADDR_WIDTH]),
+                .m_mem_axi_arlen(xbar_axi_arlen[6 * 8 +: 8]),
+                .m_mem_axi_arsize(xbar_axi_arsize[6 * 3 +: 3]),
+                .m_mem_axi_arburst(xbar_axi_arburst[6 * 2 +: 2]),
+                .m_mem_axi_arlock(xbar_axi_arlock[6 * 1 +: 1]),
+                .m_mem_axi_arcache(xbar_axi_arcache[6 * 4 +: 4]),
+                .m_mem_axi_arprot(xbar_axi_arprot[6 * 3 +: 3]),
+                .m_mem_axi_arvalid(xbar_axi_arvalid[6 * 1 +: 1]),
+                .m_mem_axi_arready(xbar_axi_arready[6 * 1 +: 1]),
+
+                .m_mem_axi_rid(xbar_axi_rid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_rdata(xbar_axi_rdata[6 * DATA_WIDTH +: DATA_WIDTH]),
+                .m_mem_axi_rresp(xbar_axi_rresp[6 * 2 +: 2]),
+                .m_mem_axi_rlast(xbar_axi_rlast[6 * 1 +: 1]),
+                .m_mem_axi_rvalid(xbar_axi_rvalid[6 * 1 +: 1]),
+                .m_mem_axi_rready(xbar_axi_rready[6 * 1 +: 1])
+            );
+        end
+        else
+        begin
+            assign fb_swapped_display = 1;
+        end
+    end
+    endgenerate
+
     RasterixEF #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -523,8 +581,8 @@ module RRXEF #(
 
         .swap_fb(swap_fb),
         .fb_addr(fb_addr),
-        .fb_size(),
-        .fb_swapped(fb_swapped),
+        .fb_size(fb_size),
+        .fb_swapped((ENABLE_FRAMEBUFFER_STREAM) ? fb_swapped_display : fb_swapped),
 
         .m_color_axi_awid(xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_color_axi_awaddr(xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
@@ -717,4 +775,26 @@ module RRXEF #(
     assign xbar_axi_wlast[5 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[5 * 1 +: 1] = tmpZero;
     assign xbar_axi_bready[5 * 1 +: 1] = tmpZero;
+
+    generate
+    begin
+        if (ENABLE_FRAMEBUFFER_STREAM)
+        begin
+            assign xbar_axi_awid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
+            assign xbar_axi_awaddr[6 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
+            assign xbar_axi_awlen[6 * 8 +: 8] = { 8 { tmpZero } };
+            assign xbar_axi_awsize[6 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_awburst[6 * 2 +: 2] = { 2 { tmpZero } };
+            assign xbar_axi_awlock[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_awcache[6 * 4 +: 4] = { 4 { tmpZero } };
+            assign xbar_axi_awprot[6 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_awvalid[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_wdata[6 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
+            assign xbar_axi_wstrb[6 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
+            assign xbar_axi_wlast[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_wvalid[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_bready[6 * 1 +: 1] = tmpZero;
+        end
+    end
+    endgenerate
 endmodule

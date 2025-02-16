@@ -307,8 +307,9 @@ Texture::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
 {
     switch (mode)
     {
-    case GL_CLAMP_TO_EDGE:
     case GL_CLAMP:
+        SPDLOG_WARN("GL_CLAMP is not fully supported and emulated with GL_CLAMP_TO_EDGE");
+    case GL_CLAMP_TO_EDGE:
         return Texture::TextureWrapMode::CLAMP_TO_EDGE;
     case GL_REPEAT:
         return Texture::TextureWrapMode::REPEAT;

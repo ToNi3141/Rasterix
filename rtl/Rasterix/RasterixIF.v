@@ -102,9 +102,11 @@ module RasterixIF #(
 
     // Color
     output wire                                 swap_fb,
+    input  wire                                 fb_swapped,
+    output wire                                 commit_fb,
+    input  wire                                 fb_committed,
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
-    input  wire                                 fb_swapped,
 
     // TMU 0 memory access
     output wire [ID_WIDTH - 1 : 0]              m_tmu0_axi_arid,
@@ -445,7 +447,7 @@ module RasterixIF #(
         .colorBufferAddr(colorBufferAddr),  // Diese Adresse kann für das Streamen in den Framebuffer genommen werden
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied && fb_swapped),
+        .colorBufferApplied(colorBufferApplied && fb_swapped && fb_committed),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
@@ -553,6 +555,7 @@ module RasterixIF #(
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
+    assign commit_fb = colorBufferApply && colorBufferCmdCommit;
     assign fb_addr = colorBufferAddr;
     assign fb_size = colorBufferSize;
 

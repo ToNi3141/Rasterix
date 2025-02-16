@@ -70,6 +70,17 @@ public:
         return ret;
     }
 
+    template <typename Factory, typename Pred>
+    bool addLastCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
+    {
+        bool ret = true;
+        if (pred(0, m_displayLines, m_xResolution, m_yLineResolution))
+        {
+            ret = ret && addCommand(0, commandFactory(0, m_displayLines, m_xResolution, m_yLineResolution));
+        }
+        return ret;
+    }
+
     template <typename Function>
     bool displayListLooper(const Function& func)
     {

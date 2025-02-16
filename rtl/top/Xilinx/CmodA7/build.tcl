@@ -27,6 +27,7 @@ read_verilog ./../../../../Rasterix/ColorInterpolator.v
 read_verilog ./../../../../Rasterix/ColorMixerSigned.v
 read_verilog ./../../../../Rasterix/ColorMixer.v
 read_verilog ./../../../../Rasterix/CommandParser.v
+read_verilog ./../../../../Rasterix/DisplayFramebufferReader.v
 read_verilog ./../../../../Rasterix/DmaStreamEngine.v
 read_verilog ./../../../../Rasterix/DualPortRam.v
 read_verilog ./../../../../Rasterix/Fog.v

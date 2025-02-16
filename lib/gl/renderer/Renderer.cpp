@@ -87,7 +87,7 @@ void Renderer::initDisplayLists()
 void Renderer::swapDisplayList()
 {
     addCommitFramebufferSequenceAndEndFrame();
-    addSwapExternalDisplayFramebufferCommand();
+    // addSwapExternalDisplayFramebufferCommand();
     switchDisplayLists();
     uploadTextures();
     clearDisplayListAssembler();
@@ -101,6 +101,16 @@ void Renderer::addCommitFramebufferSequenceAndEndFrame()
     bool ret = true;
     saveSectionStart();
     ret = ret && addCommitFramebufferCommand();
+    const auto factory = [this](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+    {
+        const std::size_t screenSize = resY * resX;
+        FramebufferCmd cmd { false, false, false, screenSize };
+        cmd.selectColorBuffer();
+        cmd.swapFramebuffer();
+        return cmd;
+    };
+    ret = addLastCommandWithFactory(factory);
+
     endFrame();
     ret = ret && addDseFramebufferCommand();
     if (!ret)
@@ -335,7 +345,17 @@ bool Renderer::addCommitFramebufferCommand()
 {
     // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
     // to flush the pipeline. This is the easiest way to solve WAR conflicts.
-    return addCommandWithFactory(
+
+    addCommandWithFactory(
+        [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+        {
+            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+            return WriteRegisterCmd { ColorBufferAddrReg { addr } };
+        });
+
+    
+    addCommandWithFactory(
         [](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
         {
             const uint32_t screenSize = resY * resX;
@@ -343,41 +363,41 @@ bool Renderer::addCommitFramebufferCommand()
             cmd.commitFramebuffer();
             return cmd;
         });
-
-    return false;
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+    return true;
 }
 
 bool Renderer::addDseFramebufferCommand()
 {
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-                return StreamFromRrxToMemoryCmd { addr, screenSize };
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-    {
-        return addCommandWithFactory(
-            [](std::size_t, std::size_t, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                return StreamFromRrxToDisplayCmd { screenSize };
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-                return StreamFromMemoryToDisplayCmd { addr, screenSize };
-            });
-    }
+    // if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
+    // {
+    //     return addCommandWithFactory(
+    //         [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+    //         {
+    //             const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+    //             const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+    //             return StreamFromRrxToMemoryCmd { addr, screenSize };
+    //         });
+    // }
+    // if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
+    // {
+    //     return addCommandWithFactory(
+    //         [](std::size_t, std::size_t, std::size_t resX, std::size_t resY)
+    //         {
+    //             const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+    //             return StreamFromRrxToDisplayCmd { screenSize };
+    //         });
+    // }
+    // if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
+    // {
+    //     return addCommandWithFactory(
+    //         [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
+    //         {
+    //             const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+    //             const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+    //             return StreamFromMemoryToDisplayCmd { addr, screenSize };
+    //         });
+    // }
     return true;
 }
 
