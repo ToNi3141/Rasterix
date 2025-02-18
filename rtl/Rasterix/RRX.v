@@ -19,6 +19,15 @@ module RRX #(
     // Selects the variant. Allowed values: if, ef
     parameter VARIANT = "if",
 
+    // When this is enabled, the framebuffer data is streamed via the 
+    // m_framebuffer_axis_*. Otherwise swap_fb interface is used for
+    // memory mapped interfaces.
+    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
+    // This parameter enables a blocking stream transfer useful when only
+    // one color buffer is used. If this option is false, a double buffer
+    // is required.
+    parameter ENABLE_BLOCKING_STREAM = 0,
+
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
@@ -70,7 +79,8 @@ module RRX #(
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
 
 
-    localparam CMD_STREAM_WIDTH = 32
+    localparam CMD_STREAM_WIDTH = 32,
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                             aclk,
@@ -90,6 +100,7 @@ module RRX #(
     // Framebuffer
     output wire                             swap_fb,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0] fb_size,
     input  wire                             fb_swapped,
 
     // Memory Interface
@@ -134,6 +145,7 @@ module RRX #(
         begin
             RRXIF #(
                 .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
+                .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .TMU_COUNT(TMU_COUNT),
@@ -163,6 +175,7 @@ module RRX #(
 
                 .swap_fb(swap_fb),
                 .fb_addr(fb_addr),
+                .fb_size(fb_size),
                 .fb_swapped(fb_swapped),
 
                 .m_axi_awid(m_axi_awid),
@@ -206,6 +219,8 @@ module RRX #(
         begin
             RRXEF #(
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
+                .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
+                .ENABLE_BLOCKING_STREAM(ENABLE_BLOCKING_STREAM),
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
                 .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
@@ -233,6 +248,7 @@ module RRX #(
 
                 .swap_fb(swap_fb),
                 .fb_addr(fb_addr),
+                .fb_size(fb_size),
                 .fb_swapped(fb_swapped),
                 
                 .m_axi_awid(m_axi_awid),

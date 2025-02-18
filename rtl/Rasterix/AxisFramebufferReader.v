@@ -22,7 +22,7 @@
 // Node: An acknowledged framebuffer does not mean that it is fully
 // transferred. It just means, that this module starts to transfer
 // it to the display.
-module DisplayFramebufferReader #(
+module AxisFramebufferReader #(
     // Width of the display stream
     parameter DISPLAY_STREAM_WIDTH = 16,
 
@@ -34,6 +34,9 @@ module DisplayFramebufferReader #(
     parameter STRB_WIDTH = 4,
     // Width of ID signal
     parameter ID_WIDTH = 8,
+    // When this parameter is set, the swap is acknowledged when the 
+    // framebuffer is completely streamed
+    parameter BLOCKING = 1,
 
     localparam FB_SIZE_IN_PIXEL_LG = 20
 ) (
@@ -83,6 +86,7 @@ module DisplayFramebufferReader #(
     localparam STATE_CMD = 0;
     localparam STATE_ADDR = 1;
     localparam STATE_WAIT_DSE = 2;
+    localparam STATE_NOP = 3;
     reg [ 1 : 0] state;
 
     DmaStreamEngine #(
@@ -209,16 +213,38 @@ module DisplayFramebufferReader #(
                     begin
                         st0_axis_tdata <= fb_addr;
                         st0_axis_tlast <= 1;
-                        fb_swapped <= 1; // Early acknowledge to the framebuffer
+                        if (BLOCKING == 0)
+                        begin
+                            fb_swapped <= 1; // Early acknowledge to the framebuffer
+                        end
                         state <= STATE_WAIT_DSE;
                     end
                 end
                 STATE_WAIT_DSE:
                 begin
+                    if ((BLOCKING == 1) && st0_axis_tready)
+                    begin
+                        // Use a NOP as fence
+                        st0_axis_tdata <= 0; // NOP
+                        st0_axis_tlast <= 1;
+                        state <= STATE_NOP;
+                    end
+
+                    if ((BLOCKING == 0) && st0_axis_tready)
+                    begin
+                        st0_axis_tvalid <= 0;
+                        st0_axis_tlast <= 0;
+                        fb_swapped <= 1;
+                        state <= STATE_CMD;
+                    end
+                end
+                STATE_NOP:
+                begin
                     if (st0_axis_tready)
                     begin
                         st0_axis_tvalid <= 0;
                         st0_axis_tlast <= 0;
+                        fb_swapped <= 1;
                         state <= STATE_CMD;
                     end
                 end

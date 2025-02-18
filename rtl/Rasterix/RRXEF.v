@@ -19,9 +19,12 @@ module RRXEF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
-    // Enables the stream interface. This is exclusive to the fb_* interface.
-    // When this is enabled, the fb_* interface can't be used
-    parameter ENABLE_FRAMEBUFFER_STREAM = 1,
+    // Enables the m_framebuffer_axis_* interface. This is exclusive to the
+    // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
+    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
+    // Only releases the framebuffer, when the framebuffer is completely streamed.
+    // Enable this when only one color buffer is used.
+    parameter ENABLE_BLOCKING_STREAM = 0,
 
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
@@ -432,15 +435,10 @@ module RRXEF #(
     wire                             cmd_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
 
-    wire                             framebuffer_axis_tvalid = 1;
-    wire                             framebuffer_axis_tready;
-    wire                             framebuffer_axis_tlast = 1;
-    wire [CMD_STREAM_WIDTH - 1 : 0]  framebuffer_axis_tdata = 0;
-
     DmaStreamEngine #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH)
+        .ID_WIDTH(ID_WIDTH_LOC)
     ) dma (
         .aclk(aclk),
         .resetn(resetn),
@@ -450,13 +448,13 @@ module RRXEF #(
         .m_st1_axis_tlast(cmd_axis_tlast),
         .m_st1_axis_tdata(cmd_axis_tdata),
 
-        .s_st1_axis_tvalid(framebuffer_axis_tvalid),
-        .s_st1_axis_tready(framebuffer_axis_tready),
-        .s_st1_axis_tlast(framebuffer_axis_tlast),
-        .s_st1_axis_tdata(framebuffer_axis_tdata),
+        .s_st1_axis_tvalid(0),
+        .s_st1_axis_tready(),
+        .s_st1_axis_tlast(0),
+        .s_st1_axis_tdata(0),
 
         .m_st0_axis_tvalid(),
-        .m_st0_axis_tready(1'b1),
+        .m_st0_axis_tready(0),
         .m_st0_axis_tlast(),
         .m_st0_axis_tdata(),
 
@@ -512,13 +510,14 @@ module RRXEF #(
     begin
         if (ENABLE_FRAMEBUFFER_STREAM)
         begin
-            DisplayFramebufferReader #(
+            AxisFramebufferReader #(
                 .DISPLAY_STREAM_WIDTH(CMD_STREAM_WIDTH),
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH),
-                .ID_WIDTH(ID_WIDTH_LOC)
-            ) displayFramebufferReader (
+                .ID_WIDTH(ID_WIDTH_LOC),
+                .BLOCKING(ENABLE_BLOCKING_STREAM)
+            ) axisFramebufferReader (
                 .aclk(aclk),
                 .resetn(resetn),
 

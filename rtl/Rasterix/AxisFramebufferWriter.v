@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Receives a stream from a framebuffer and writes it into the memory
-module DisplayFramebufferWriter #(
+module AxisFramebufferWriter #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,
     // Width of address bus in bits

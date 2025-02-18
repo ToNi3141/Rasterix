@@ -21,8 +21,8 @@ module RRXIF #(
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
     parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
 
-    // Enables the stream interface. This is exclusive to the fb_* interface.
-    // When this is enabled, the fb_* interface can't be used
+    // Enables the m_framebuffer_axis_* interface. This is exclusive to the
+    // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
     parameter ENABLE_FRAMEBUFFER_STREAM = 0,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
@@ -549,12 +549,12 @@ module RRXIF #(
         end
         else
         begin
-            DisplayFramebufferWriter #(
+            AxisFramebufferWriter #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH),
                 .ID_WIDTH(ID_WIDTH_LOC)
-            ) displayFramebufferWriter (
+            ) axisFramebufferWriter (
                 .aclk(aclk),
                 .resetn(resetn),
 

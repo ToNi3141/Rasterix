@@ -277,6 +277,7 @@ proc create_root_design { parentCell } {
     CONFIG.STRB_WIDTH {8} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.TEXTURE_PAGE_SIZE {4096} \
+    CONFIG.ENABLE_FRAMEBUFFER_STREAM {0} \
     CONFIG.VARIANT {ef} \
   ] $RRX_0
 
