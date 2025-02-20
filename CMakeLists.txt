@@ -24,7 +24,7 @@ set(RRX_CORE_ENABLE_MIPMAPPING "true" CACHE STRING "Enables mipmapping")
 # Display settings
 set(RRX_CORE_MAX_DISPLAY_WIDTH "1024" CACHE STRING "The maximum width of the display")
 set(RRX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the display")
-set(RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS "65536" CACHE STRING "The size of the framebuffer in 16 bit words / in pixel")
+set(RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG "16" CACHE STRING "The log2(size) of the framebuffer in 16 bit words / in pixel")
 # Rasterizer settings
 set(RRX_CORE_USE_FLOAT_INTERPOLATION "false" CACHE STRING "Enables float interpolation")
 # Texture memory settings
