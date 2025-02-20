@@ -38,8 +38,8 @@ module RasterixRenderCore #(
     // Allowed values: 32, 64, 128, 256 bit
     localparam CMD_STREAM_WIDTH = 32,
 
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17,
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Enables FIFOs on the memory write channel. It can improve the performance by batching write requests.
     parameter ENABLE_WRITE_FIFO = 1,
@@ -238,40 +238,42 @@ module RasterixRenderCore #(
         if (TMU_COUNT > 2)
         begin
             $error("Only a maximum of 2 TMUs are supported");
+            $finish;
         end
         if (TMU_COUNT < 1)
         begin
             $error("At least one TMU must be enabled");
+            $finish;
         end
 
         if ((SCREEN_POS_WIDTH != RENDER_CONFIG_X_SIZE) || (SCREEN_POS_WIDTH != RENDER_CONFIG_Y_SIZE))
         begin
             $error("Screen size width in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $finish;
         end
 
         if (COLOR_SUB_PIXEL_WIDTH != SUB_PIXEL_WIDTH)
         begin
             $error("The sub pixel width in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $finish;
         end
 
         if (COLOR_NUMBER_OF_SUB_PIXEL != NUMBER_OF_SUB_PIXELS)
         begin
             $error("The number of sub pixels in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $finish;
         end
 
         if ((RASTERIZER_FLOAT_PRECISION > 32) || (RASTERIZER_FLOAT_PRECISION < 20))
         begin
             $error("RASTERIZER_FLOAT_PRECISION must be between 25 and 20");
+            $finish;
         end
 
         if ((RASTERIZER_FIXPOINT_PRECISION > 25) || (RASTERIZER_FIXPOINT_PRECISION < 16))
         begin
             $error("RASTERIZER_FIXPOINT_PRECISION must be between 16 and 25");
-        end
-
-        if ((TEXTURE_BUFFER_SIZE > 17) || (TEXTURE_BUFFER_SIZE < 11))
-        begin
-            $error("TEXTURE_BUFFER_SIZE must be between 11 and 17");
+            $finish;
         end
     end
 
@@ -601,7 +603,7 @@ module RasterixRenderCore #(
         .s_axis_tdata(axis_tmu0_tdata)
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
-    defparam textureBufferTMU0.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
+    defparam textureBufferTMU0.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
     defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
     defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
 
@@ -680,7 +682,7 @@ module RasterixRenderCore #(
                 .s_axis_tdata(axis_tmu1_tdata)
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TMU_MEMORY_WIDTH;
-            defparam textureBufferTMU1.SIZE_IN_BYTES = TEXTURE_BUFFER_SIZE;
+            defparam textureBufferTMU1.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
             defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
             defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
         end

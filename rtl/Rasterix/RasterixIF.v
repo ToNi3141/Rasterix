@@ -54,8 +54,8 @@ module RasterixIF #(
     // Allowed values: 32, 64, 128, 256 bit
     localparam CMD_STREAM_WIDTH = 32,
 
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 24,
@@ -285,7 +285,7 @@ module RasterixIF #(
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
     defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG; // TODO: SIZE_IN_WORDS in SIZE_IN_PIXEL unbenennen
+    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
     defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
@@ -413,7 +413,7 @@ module RasterixIF #(
 
     RasterixRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),

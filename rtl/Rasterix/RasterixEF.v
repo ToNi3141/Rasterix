@@ -46,8 +46,8 @@ module RasterixEF #(
     // Allowed values: 32, 64, 128, 256 bit
     localparam CMD_STREAM_WIDTH = 32,
 
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17,
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address witdth
     parameter ADDR_WIDTH = 32,
@@ -638,7 +638,7 @@ module RasterixEF #(
 
     RasterixRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),

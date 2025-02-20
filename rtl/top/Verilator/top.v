@@ -37,7 +37,7 @@ module top #(
 `define STR(x) `"x`"
     parameter VARIANT = `STR(`VARIANT);
     parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = `FRAMEBUFFER_SIZE_IN_PIXEL_LG;
-    parameter TEXTURE_BUFFER_SIZE = 17;
+    parameter MAX_TEXTURE_SIZE = 256;
     parameter CMD_STREAM_WIDTH = 32;
 
     initial
@@ -140,7 +140,7 @@ module top #(
         .ID_WIDTH(ID_WIDTH),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(1),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
         .TMU_COUNT(2),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0)

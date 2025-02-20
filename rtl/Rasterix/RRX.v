@@ -51,8 +51,8 @@ module RRX #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter TEXTURE_PAGE_SIZE = 4096,
     
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 32,
@@ -151,7 +151,7 @@ module RRX #(
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
                 .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
-                .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+                .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .DATA_WIDTH(DATA_WIDTH),
@@ -224,7 +224,7 @@ module RRX #(
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
                 .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
-                .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+                .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .DATA_WIDTH(DATA_WIDTH),

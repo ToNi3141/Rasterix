@@ -31,8 +31,8 @@ module RRXEF #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter TEXTURE_PAGE_SIZE = 4096,
     
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 32,
@@ -563,7 +563,7 @@ module RRXEF #(
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
