@@ -17,7 +17,8 @@
 
 module CommandParser #(
     parameter CMD_STREAM_WIDTH = 32,
-    parameter TEXTURE_STREAM_WIDTH = 32
+    parameter TEXTURE_STREAM_WIDTH = 32,
+    parameter FB_SIZE_IN_PIXEL_LG = 20
 ) (
     input  wire         aclk,
     input  wire         resetn,
@@ -47,22 +48,22 @@ module CommandParser #(
     input  wire             pixelInPipeline,
 
     // Color/Depth buffer control
-    output reg              colorBufferApply,
-    input  wire             colorBufferApplied,
-    output reg              colorBufferCmdCommit,
-    output reg              colorBufferCmdMemset,
-    output reg              colorBufferCmdSwap,
-    output reg  [19 : 0]    colorBufferSize,
-    output reg              depthBufferApply,
-    input  wire             depthBufferApplied,
-    output reg              depthBufferCmdCommit,
-    output reg              depthBufferCmdMemset,
-    output reg  [19 : 0]    depthBufferSize,
-    output reg              stencilBufferApply,
-    input  wire             stencilBufferApplied,
-    output reg              stencilBufferCmdCommit,
-    output reg              stencilBufferCmdMemset,
-    output reg  [19 : 0]    stencilBufferSize
+    output reg                                  colorBufferApply,
+    input  wire                                 colorBufferApplied,
+    output reg                                  colorBufferCmdCommit,
+    output reg                                  colorBufferCmdMemset,
+    output reg                                  colorBufferCmdSwap,
+    output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
+    output reg                                  depthBufferApply,
+    input  wire                                 depthBufferApplied,
+    output reg                                  depthBufferCmdCommit,
+    output reg                                  depthBufferCmdMemset,
+    output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   depthBufferSize,
+    output reg                                  stencilBufferApply,
+    input  wire                                 stencilBufferApplied,
+    output reg                                  stencilBufferCmdCommit,
+    output reg                                  stencilBufferCmdMemset,
+    output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DATABUS_SCALE_FACTOR = (CMD_STREAM_WIDTH / 8);
@@ -83,6 +84,14 @@ module CommandParser #(
     // Wait For Cache Apply Statemachine
     localparam FB_CONTROL_WAITFORCOMMAND = 0;
     localparam FB_CONTROL_WAITFOREND = 1;
+
+    initial
+    begin
+        if (FB_SIZE_IN_PIXEL_LG != OP_FRAMEBUFFER_SIZE_SIZE)
+        begin
+            $error("The command size on the OP_FRAMEBUFFER differs from the FB_SIZE_IN_PIXEL_LG. FB_SIZE_IN_PIXEL_LG must be smaller or equal.");
+        end
+    end
 
     // Command Unit Variables
     reg             framebufferCommandApply;

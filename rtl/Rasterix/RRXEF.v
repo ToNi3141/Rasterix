@@ -79,7 +79,7 @@ module RRXEF #(
     // Framebuffer
     output wire                             swap_fb,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
-    output wire [FB_SIZE_IN_PIXEL_LG -1 : 0]fb_size,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0] fb_size,
     input  wire                             fb_swapped,
 
     // Memory Interface

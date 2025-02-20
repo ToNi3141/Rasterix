@@ -48,7 +48,7 @@ module FrameBuffer
     parameter FRAMEBUFFER_SIZE_IN_WORDS = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
     // The maximum size stream size
-    parameter CMD_SIZE_IN_PIXEL = 20,
+    parameter FB_SIZE_IN_PIXEL_LG = 20,
 
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
@@ -108,11 +108,11 @@ module FrameBuffer
     /////////////////////////
 
     // Cmd interface
-    input  wire                             apply, // This start a command 
-    output reg                              applied, // This marks if the commands have been applied.
-    input  wire                             cmdCommit, // Starts to stream the memory content via the AXIS interface
-    input  wire                             cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
-    input  wire [CMD_SIZE_IN_PIXEL - 1 : 0] cmdSize, // Size of the stream 
+    input  wire                                 apply, // This start a command 
+    output reg                                  applied, // This marks if the commands have been applied.
+    input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
+    input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
+    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
 
     // AXI Stream master interface
     output reg                              m_axis_tvalid,
