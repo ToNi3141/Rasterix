@@ -454,7 +454,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.DATA_WIDTH {128} \
-    CONFIG.FRAMEBUFFER_SIZE_IN_WORDS {17} \
+    CONFIG.FRAMEBUFFER_SIZE_IN_PIXEL_LG {17} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {6} \
     CONFIG.STRB_WIDTH {16} \
     CONFIG.ENABLE_FRAMEBUFFER_STREAM {0} \

@@ -23,7 +23,7 @@ module RasterixIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 17,
+    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 17,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -187,8 +187,8 @@ module RasterixIF #(
     wire                                             m_color_arlast;
     wire                                             m_color_rvalid;
     wire                                             m_color_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_color_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_color_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_waddr;
     wire                                             m_color_wvalid;
     wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           m_color_rdata;
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              m_color_wdata;
@@ -209,8 +209,8 @@ module RasterixIF #(
     wire                                             m_depth_arlast;
     wire                                             m_depth_rvalid;
     wire                                             m_depth_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_depth_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_depth_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_waddr;
     wire                                             m_depth_wvalid;
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_rdata;
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_wdata;
@@ -231,8 +231,8 @@ module RasterixIF #(
     wire                                             m_stencil_arlast;
     wire                                             m_stencil_rvalid;
     wire                                             m_stencil_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_stencil_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_stencil_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_waddr;
     wire                                             m_stencil_wvalid;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_rdata;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wdata;
@@ -285,8 +285,8 @@ module RasterixIF #(
     defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
     defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS; // TODO: SIZE_IN_WORDS in SIZE_IN_PIXEL unbenennen
-    defparam depthBuffer.CMD_SIZE_IN_PIXEL = FB_SIZE_IN_PIXEL_LG;
+    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG; // TODO: SIZE_IN_WORDS in SIZE_IN_PIXEL unbenennen
+    defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
     FrameBuffer colorBuffer (  
@@ -334,8 +334,8 @@ module RasterixIF #(
     defparam colorBuffer.SUB_PIXEL_WIDTH = FRAMEBUFFER_SUB_PIXEL_WIDTH;
     defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
-    defparam colorBuffer.CMD_SIZE_IN_PIXEL = FB_SIZE_IN_PIXEL_LG;
+    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+    defparam colorBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
     // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
     generate
@@ -400,8 +400,8 @@ module RasterixIF #(
             defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
             defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
             defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_WORDS = FRAMEBUFFER_SIZE_IN_WORDS;
-            defparam stencilBuffer.CMD_SIZE_IN_PIXEL = FB_SIZE_IN_PIXEL_LG;
+            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+            defparam stencilBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
         end
         else
         begin
@@ -412,7 +412,7 @@ module RasterixIF #(
     endgenerate
 
     RasterixRenderCore #(
-        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
+        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),

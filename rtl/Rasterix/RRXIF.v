@@ -19,7 +19,7 @@ module RRXIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
+    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
 
     // Enables the m_framebuffer_axis_* interface. This is exclusive to the
     // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
@@ -594,7 +594,7 @@ module RRXIF #(
     endgenerate
 
     RasterixIF #(
-        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
+        .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),

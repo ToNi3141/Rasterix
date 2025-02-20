@@ -45,7 +45,7 @@ module FrameBuffer
     // The maximum size of the screen in power of two
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
+    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
     // The maximum size stream size
     parameter FB_SIZE_IN_PIXEL_LG = 20,
@@ -54,7 +54,7 @@ module FrameBuffer
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_WORDS,
+    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
 
     // Width of the AXIS interface with the frame buffer content
     localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH

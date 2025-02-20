@@ -254,7 +254,7 @@ module RasterixEF #(
     output wire                             m_tmu1_axi_rready
 );
 `include "RegisterAndDescriptorDefines.vh"
-    localparam FRAMEBUFFER_SIZE_IN_WORDS = 20; // Width of the framebuffer index. 20 bit is enough for a framebuffer with a size of 2MB (RGB565)
+    localparam FRAMEBUFFER_SIZE_IN_PIXEL_LG = 20; // Width of the framebuffer index. 20 bit is enough for a framebuffer with a size of 2MB (RGB565)
     localparam DEFAULT_ALPHA_VAL = 0;
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
@@ -296,8 +296,8 @@ module RasterixEF #(
     wire                                             m_color_rvalid;
     wire                                             m_color_rready;
     wire                                             m_color_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_color_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_color_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_waddr;
     wire                                             m_color_wvalid;
     wire                                             m_color_wready;
     wire [PIXEL_WIDTH - 1 : 0]                       m_color_rdata;
@@ -322,8 +322,8 @@ module RasterixEF #(
     wire                                             m_depth_rvalid;
     wire                                             m_depth_rready;
     wire                                             m_depth_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_depth_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_depth_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_waddr;
     wire                                             m_depth_wvalid;
     wire                                             m_depth_wready;
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_rdata;
@@ -348,8 +348,8 @@ module RasterixEF #(
     wire                                             m_stencil_rvalid;
     wire                                             m_stencil_rready;
     wire                                             m_stencil_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_stencil_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_WORDS - 1 : 0]         m_stencil_waddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_araddr;
+    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_waddr;
     wire                                             m_stencil_wvalid;
     wire                                             m_stencil_wready;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_rdata;
@@ -637,7 +637,7 @@ module RasterixEF #(
     endgenerate
 
     RasterixRenderCore #(
-        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_WORDS),
+        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),

@@ -32,7 +32,7 @@ module RRX #(
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
     // IF only.
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
+    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -144,7 +144,7 @@ module RRX #(
         if (VARIANT == "if" || VARIANT == "IF")
         begin
             RRXIF #(
-                .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
+                .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
                 .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
