@@ -127,22 +127,12 @@ public:
         }
     }
 
-    bool beginLastFrame()
-    {
-        return m_displayListAssembler[0].begin();
-    }
-
     void endFrame()
     {
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
             m_displayListAssembler[i].end();
         }
-    }
-
-    void endLastFrame()
-    {
-        m_displayListAssembler[0].end();
     }
 
     void saveSectionStart()

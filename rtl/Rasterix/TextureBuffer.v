@@ -40,9 +40,9 @@ module TextureBuffer #(
 
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
 
-    localparam SIZE_IN_PIXEL_LG = $clog2(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE),
-    localparam ADDR_WIDTH = SIZE_IN_PIXEL_LG - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
-    localparam ADDR_WIDTH_DIFF = SIZE_IN_PIXEL_LG - ADDR_WIDTH,
+    localparam SIZE_IN_BYTES_LG = $clog2(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE) + 1,
+    localparam ADDR_WIDTH = SIZE_IN_BYTES_LG - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
+    localparam ADDR_WIDTH_DIFF = SIZE_IN_BYTES_LG - ADDR_WIDTH,
 
     localparam TEX_ADDR_WIDTH = 17
 )

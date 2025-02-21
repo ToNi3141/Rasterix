@@ -1,9 +1,9 @@
 #ifndef _RENDER_CONFIG_HPP_
 #define _RENDER_CONFIG_HPP_
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cmath>
 
 namespace rr
 {
