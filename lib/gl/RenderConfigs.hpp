@@ -19,7 +19,7 @@ struct RenderConfig
     static constexpr std::size_t MAX_DISPLAY_WIDTH { RRX_CORE_MAX_DISPLAY_WIDTH };
     static constexpr std::size_t MAX_DISPLAY_HEIGHT { RRX_CORE_MAX_DISPLAY_HEIGHT };
     static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL_LG { RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG };
-    static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL { static_cast<std::size_t>(pow(2, FRAMEBUFFER_SIZE_IN_PIXEL_LG)) };
+    static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL { 1 << FRAMEBUFFER_SIZE_IN_PIXEL_LG };
 
     // Rasterizer settings
     static constexpr bool USE_FLOAT_INTERPOLATION { RRX_CORE_USE_FLOAT_INTERPOLATION };
