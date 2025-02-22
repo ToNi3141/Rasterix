@@ -95,7 +95,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | Property                               | Description |
 |----------------------------------------|-------------|
 | __RRX_CORE_TMU_COUNT__                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
-| RRX_CORE_MAX_TEXTURE_SIZE              | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Must be the same value as in __MAX_TEXTURE_SIZE__ |
+| __RRX_CORE_MAX_TEXTURE_SIZE__          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Must be the same value as in __MAX_TEXTURE_SIZE__ |
 | __RRX_CORE_ENABLE_MIPMAPPING__         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
 | RRX_CORE_MAX_DISPLAY_WIDTH             | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
 | RRX_CORE_MAX_DISPLAY_HEIGHT            | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
@@ -105,11 +105,11 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
 | __RRX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 4096. |
 | RRX_CORE_GRAM_MEMORY_LOC               | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
-| RRX_CORE_FRAMEBUFFER_TYPE              | Configures the destination of the framebuffer. Must fit to the chosen __VARIANT__. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
-| RRX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
-| RRX_CORE_COLOR_BUFFER_LOC_2            | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
-| RRX_CORE_DEPTH_BUFFER_LOC              | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
-| RRX_CORE_STENCIL_BUFFER_LOC            | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| RRX_CORE_COLOR_BUFFER_LOC_0            | Location of the used framebuffer, when the RRX is off. On linux, usually the address of the buffer used for the fb dev. |
+| RRX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer. |
+| RRX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
+| RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
+| RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
 
 
 ## How to use the Core
@@ -138,7 +138,7 @@ Note: Bold options are required to be equal to the software counterparts.
 | __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
 | __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip mapping. |
-| __MAX_TEXTURE_SIZE__                   | if/ef   | Size of the texture buffer. Valid values: 256, 128, 64, 32. For instance, a 256 texture requires 256 * 256 * 2 bytes of FPGA RAM. Additional RAM is required when __ENABLE_MIPMAPPING__ is selected |
+| __MAX_TEXTURE_SIZE__                      | if/ef   | Size of the texture buffer. Valid values: 256, 128, 64, 32. For instance, a 256 texture requires 256 * 256 * 2 bytes of FPGA RAM. Additional RAM is required when __ENABLE_MIPMAPPING__ is selected |
 | ADDR_WIDTH                                | if/ef   | Width of the AXI address channel. |
 | ID_WIDTH                                  | if/ef   | Width of the AXI id property. Should be at least 4. |
 | DATA_WIDTH                                | if/ef   | Width of the AXI data property. |

@@ -7,13 +7,6 @@
 
 namespace rr
 {
-enum class FramebufferType
-{
-    INTERNAL_TO_STREAM,
-    INTERNAL_TO_MEMORY,
-    EXTERNAL_MEMORY_TO_STREAM,
-    EXTERNAL_MEMORY_DOUBLE_BUFFER
-};
 
 struct RenderConfig
 {
@@ -41,7 +34,7 @@ struct RenderConfig
     static constexpr uint32_t GRAM_MEMORY_LOC { RRX_CORE_GRAM_MEMORY_LOC }; // Shares memory with linux
 
     // Framebuffer Memory Location
-    static constexpr FramebufferType FRAMEBUFFER_TYPE { RRX_CORE_FRAMEBUFFER_TYPE };
+    static constexpr uint32_t COLOR_BUFFER_LOC_0 { RRX_CORE_COLOR_BUFFER_LOC_0 };
     static constexpr uint32_t COLOR_BUFFER_LOC_1 { RRX_CORE_COLOR_BUFFER_LOC_1 };
     static constexpr uint32_t COLOR_BUFFER_LOC_2 { RRX_CORE_COLOR_BUFFER_LOC_2 };
     static constexpr uint32_t DEPTH_BUFFER_LOC { RRX_CORE_DEPTH_BUFFER_LOC };

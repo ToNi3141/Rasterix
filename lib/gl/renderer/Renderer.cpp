@@ -29,23 +29,16 @@ Renderer::Renderer(IBusConnector& busConnector)
     beginFrame();
     setYOffset();
 
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-    }
-    if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-        || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
-    {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
-        setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
-    }
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+    setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
+    setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
+
     setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
 }
 
 Renderer::~Renderer()
 {
-    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);
     swapScreenToNewColorBuffer();
     endFrame();
     swapDisplayList();
@@ -384,18 +377,15 @@ void Renderer::uploadTextures()
 
 void Renderer::swapFramebuffer()
 {
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+    if (m_switchColorBuffer)
     {
-        if (m_switchColorBuffer)
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-        }
-        else
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        }
-        m_switchColorBuffer = !m_switchColorBuffer;
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
     }
+    else
+    {
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+    }
+    m_switchColorBuffer = !m_switchColorBuffer;
 }
 
 } // namespace rr
