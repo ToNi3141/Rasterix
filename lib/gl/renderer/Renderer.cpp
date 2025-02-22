@@ -29,7 +29,7 @@ Renderer::Renderer(IBusConnector& busConnector)
     beginFrame();
     setYOffset();
 
-    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
     setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
     setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
 
@@ -131,8 +131,7 @@ void Renderer::addCommitFramebufferCommand()
 
 void Renderer::addColorBufferAddressOfTheScreen()
 {
-    // Display list zero is always the last list, and this list is responsible to set the overall system state, like
-    // the address for the display output
+    // The last list is responsible for the overall system state
     addLastCommandWithFactory(
         [this](const std::size_t, const std::size_t, const std::size_t, const std::size_t)
         {
