@@ -305,7 +305,7 @@ module RasterixRenderCore #(
     wire             depth_fifo_empty;
     wire             stencil_fifo_empty;
     wire             rasterizerRunning;
-    CommandParser commandParser(
+    CommandParser commandParser (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -731,7 +731,7 @@ module RasterixRenderCore #(
         .reset(!resetn), 
 
         .rasterizerRunning(rasterizerRunning),
-        .startRendering(startRendering),
+        .startRendering(startRendering & !pixelInPipeline),
 
         .yOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
         .xResolution(confRenderResolution[RENDER_CONFIG_X_POS +: SCREEN_POS_WIDTH]),
