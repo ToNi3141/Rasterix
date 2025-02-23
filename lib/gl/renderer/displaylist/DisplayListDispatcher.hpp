@@ -70,6 +70,17 @@ public:
         return ret;
     }
 
+    template <typename Factory, typename Pred>
+    bool addLastCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
+    {
+        bool ret = true;
+        if (pred(0, m_displayLines, m_xResolution, m_yLineResolution))
+        {
+            ret = ret && addCommand(0, commandFactory(0, m_displayLines, m_xResolution, m_yLineResolution));
+        }
+        return ret;
+    }
+
     template <typename Function>
     bool displayListLooper(const Function& func)
     {
@@ -84,8 +95,8 @@ public:
     bool setResolution(const std::size_t x, const std::size_t y)
     {
         const std::size_t framebufferSize = x * y;
-        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS)
-            + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_WORDS) ? 1 : 0);
+        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_PIXEL)
+            + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_PIXEL) ? 1 : 0);
         if (framebufferLines > RenderConfig::getDisplayLines())
         {
             // More lines required than lines available
@@ -116,22 +127,12 @@ public:
         }
     }
 
-    bool beginLastFrame()
-    {
-        return m_displayListAssembler[0].begin();
-    }
-
     void endFrame()
     {
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
             m_displayListAssembler[i].end();
         }
-    }
-
-    void endLastFrame()
-    {
-        m_displayListAssembler[0].end();
     }
 
     void saveSectionStart()

@@ -305,7 +305,11 @@ proc create_root_design { parentCell } {
      return 1
    }
     set_property -dict [list \
-    CONFIG.TEXTURE_BUFFER_SIZE {15} \
+    CONFIG.ENABLE_BLOCKING_STREAM {1} \
+    CONFIG.ENABLE_FRAMEBUFFER_STREAM {1} \
+    CONFIG.ENABLE_MIPMAPPING {1} \
+    CONFIG.ENABLE_STENCIL_BUFFER {1} \
+    CONFIG.MAX_TEXTURE_SIZE {128} \
     CONFIG.TEXTURE_PAGE_SIZE {2048} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.VARIANT {ef} \

@@ -29,23 +29,17 @@ Renderer::Renderer(IBusConnector& busConnector)
     beginFrame();
     setYOffset();
 
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-    }
-    if constexpr ((RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
-        || (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM))
-    {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
-        setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
-    }
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+    setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
+    setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
+
     setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
 }
 
 Renderer::~Renderer()
 {
-    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+    setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);
+    swapScreenToNewColorBuffer();
     endFrame();
     swapDisplayList();
     uploadDisplayList();
@@ -84,10 +78,23 @@ void Renderer::initDisplayLists()
     }
 }
 
+void Renderer::intermediateUpload()
+{
+    endFrame();
+    switchDisplayLists();
+    uploadTextures();
+    uploadDisplayList();
+    clearDisplayListAssembler();
+    beginFrame();
+}
+
 void Renderer::swapDisplayList()
 {
-    addCommitFramebufferSequenceAndEndFrame();
-    addSwapExternalDisplayFramebufferCommand();
+    addLineColorBufferAddresses();
+    addCommitFramebufferCommand();
+    addColorBufferAddressOfTheScreen();
+    swapScreenToNewColorBuffer();
+    endFrame();
     switchDisplayLists();
     uploadTextures();
     clearDisplayListAssembler();
@@ -96,23 +103,59 @@ void Renderer::swapDisplayList()
     swapFramebuffer();
 }
 
-void Renderer::addCommitFramebufferSequenceAndEndFrame()
+void Renderer::addLineColorBufferAddresses()
 {
-    bool ret = true;
-    saveSectionStart();
-    ret = ret && addCommitFramebufferCommand();
-    endFrame();
-    ret = ret && addDseFramebufferCommand();
-    if (!ret)
-    {
-        removeSection();
-    }
+    addCommandWithFactory(
+        [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+        {
+            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+            return WriteRegisterCmd { ColorBufferAddrReg { addr } };
+        });
+}
+
+void Renderer::addCommitFramebufferCommand()
+{
+    addCommandWithFactory(
+        [](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+        {
+            // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
+            // to flush the pipeline. This is the easiest way to solve WAR conflicts.
+            // This command is required for the IF config.
+            const uint32_t screenSize = resY * resX;
+            FramebufferCmd cmd { true, true, true, screenSize };
+            cmd.commitFramebuffer();
+            return cmd;
+        });
+}
+
+void Renderer::addColorBufferAddressOfTheScreen()
+{
+    // The last list is responsible for the overall system state
+    addLastCommandWithFactory(
+        [this](const std::size_t, const std::size_t, const std::size_t, const std::size_t)
+        {
+            return WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } };
+        });
+}
+
+void Renderer::swapScreenToNewColorBuffer()
+{
+    addLastCommandWithFactory(
+        [this](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+        {
+            const std::size_t screenSize = resY * resX;
+            FramebufferCmd cmd { false, false, false, screenSize };
+            cmd.selectColorBuffer();
+            cmd.swapFramebuffer();
+            return cmd;
+        });
 }
 
 void Renderer::setYOffset()
 {
     addCommandWithFactory(
-        [](std::size_t i, std::size_t, std::size_t, std::size_t resY)
+        [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
         {
             const uint16_t yOffset = i * resY;
             return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
@@ -139,17 +182,21 @@ void Renderer::uploadDisplayList()
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
 {
-    FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer };
-    cmd.enableMemset();
     return addCommandWithFactory_if(
-        [&cmd](std::size_t, std::size_t, std::size_t, std::size_t)
-        { return cmd; },
-        [this](std::size_t i, std::size_t, std::size_t, std::size_t resY)
+        [&](const std::size_t, const std::size_t, const std::size_t x, const std::size_t y)
         {
+            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
+            cmd.enableMemset();
+            return cmd;
+        },
+        [&](const std::size_t i, const std::size_t, const std::size_t x, const std::size_t y)
+        {
+            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
+            cmd.enableMemset();
             if (m_scissorEnabled)
             {
-                const std::size_t currentScreenPositionStart = i * resY;
-                const std::size_t currentScreenPositionEnd = (i + 1) * resY;
+                const std::size_t currentScreenPositionStart = i * y;
+                const std::size_t currentScreenPositionEnd = (i + 1) * y;
                 if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart)
                     && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
                 {
@@ -327,107 +374,17 @@ void Renderer::uploadTextures()
         });
 }
 
-bool Renderer::addCommitFramebufferCommand()
-{
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        FramebufferCmd cmd { true, true, true };
-        cmd.commitFramebuffer();
-        return addCommand(cmd);
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-    {
-        FramebufferCmd cmd { true, true, true };
-        cmd.commitFramebuffer();
-        return addCommand(cmd);
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-    {
-        // A nop is used to force the DSE to wait till the (maybe) currently drawn triangle or
-        // (other operation) on the framebuffer has finished before the DSE reads from the framebuffer.
-        // Otherwise the DSE might read a not finished frame.
-        return addCommand(NopCmd {});
-    }
-    return false;
-}
-
-bool Renderer::addDseFramebufferCommand()
-{
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_MEMORY)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-                return StreamFromRrxToMemoryCmd { addr, screenSize };
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::INTERNAL_TO_STREAM)
-    {
-        return addCommandWithFactory(
-            [](std::size_t, std::size_t, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                return StreamFromRrxToDisplayCmd { screenSize };
-            });
-    }
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_TO_STREAM)
-    {
-        return addCommandWithFactory(
-            [this](std::size_t i, std::size_t lines, std::size_t resX, std::size_t resY)
-            {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-                return StreamFromMemoryToDisplayCmd { addr, screenSize };
-            });
-    }
-    return true;
-}
-
-bool Renderer::addSwapExternalDisplayFramebufferCommand()
-{
-    // Display list zero is always the last list, and this list is responsible to set the overall system state, like
-    // the address for the display output
-    m_displayListBuffer.getBack().saveSectionStart();
-    bool ret = true;
-    ret = ret && m_displayListBuffer.getBack().beginLastFrame();
-    FramebufferCmd cmd { false, false, false };
-    cmd.selectColorBuffer();
-    cmd.swapFramebuffer();
-    ret = ret && addLastCommand(cmd);
-    m_displayListBuffer.getBack().endLastFrame();
-    if (!ret)
-    {
-        m_displayListBuffer.getBack().removeSection();
-    }
-    return ret;
-}
-
 void Renderer::swapFramebuffer()
 {
-    if constexpr (RenderConfig::FRAMEBUFFER_TYPE == FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER)
+    if (m_switchColorBuffer)
     {
-        if (m_switchColorBuffer)
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
-        }
-        else
-        {
-            setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
-        }
-        m_switchColorBuffer = !m_switchColorBuffer;
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
     }
-}
-
-void Renderer::intermediateUpload()
-{
-    endFrame();
-    switchDisplayLists();
-    uploadTextures();
-    uploadDisplayList();
-    clearDisplayListAssembler();
-    beginFrame();
+    else
+    {
+        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+    }
+    m_switchColorBuffer = !m_switchColorBuffer;
 }
 
 } // namespace rr

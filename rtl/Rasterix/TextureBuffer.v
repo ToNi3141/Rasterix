@@ -26,8 +26,7 @@ module TextureBuffer #(
     // Width of the write port
     parameter STREAM_WIDTH = 32,
 
-    // Size in bytes in log2
-    parameter SIZE_IN_BYTES = 17,
+    parameter MAX_TEXTURE_SIZE = 256,
 
     parameter ENABLE_LOD = 1,
 
@@ -41,9 +40,9 @@ module TextureBuffer #(
 
     localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
 
-    localparam SIZE_IN_WORDS = (SIZE_IN_BYTES + 1) - $clog2(PIXEL_WIDTH_INT / 8),
-    localparam ADDR_WIDTH = SIZE_IN_WORDS - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
-    localparam ADDR_WIDTH_DIFF = SIZE_IN_WORDS - ADDR_WIDTH,
+    localparam SIZE_IN_BYTES_LG = $clog2(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE) + 1,
+    localparam ADDR_WIDTH = SIZE_IN_BYTES_LG - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
+    localparam ADDR_WIDTH_DIFF = SIZE_IN_BYTES_LG - ADDR_WIDTH,
 
     localparam TEX_ADDR_WIDTH = 17
 )
@@ -89,6 +88,14 @@ module TextureBuffer #(
         if (RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE != 4)
         begin
             $error("RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE must be 4. If not, adapt confPixelFormat.");
+            $finish;
+        end
+        if (!((MAX_TEXTURE_SIZE == 256) 
+            || (MAX_TEXTURE_SIZE == 128)
+            || (MAX_TEXTURE_SIZE == 64)
+            || (MAX_TEXTURE_SIZE == 32)))
+        begin
+            $error("MAX_TEXTURE_SIZE allowed values: 256, 128, 64, 32. Actual: %d", MAX_TEXTURE_SIZE);
             $finish;
         end
     end

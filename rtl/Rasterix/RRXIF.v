@@ -19,7 +19,11 @@ module RRXIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_WORDS = 16,
+    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
+
+    // Enables the m_framebuffer_axis_* interface. This is exclusive to the
+    // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
+    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
@@ -36,8 +40,8 @@ module RRXIF #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter TEXTURE_PAGE_SIZE = 4096,
     
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 32,
@@ -64,7 +68,8 @@ module RRXIF #(
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
 
 
-    localparam CMD_STREAM_WIDTH = 32
+    localparam CMD_STREAM_WIDTH = 32,
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                             aclk,
@@ -84,6 +89,7 @@ module RRXIF #(
     // Framebuffer
     output wire                             swap_fb,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0] fb_size,
     input  wire                             fb_swapped,
 
     // Memory Interface
@@ -124,7 +130,7 @@ module RRXIF #(
     output wire                             m_axi_rready
 );
     localparam ID_WIDTH_LOC = ID_WIDTH - 2;
-    localparam NRS = 3;
+    localparam NRS = (ENABLE_FRAMEBUFFER_STREAM) ? 3 : 4;
 
     initial
     begin
@@ -327,8 +333,7 @@ module RRXIF #(
         .S_DATA_WIDTH(CMD_STREAM_WIDTH),
         .S_STRB_WIDTH(CMD_STREAM_STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC)
-    ) commonAxiAdapter
-    (
+    ) commonAxiAdapter (
         .clk(aclk),
         .rst(!resetn),
 
@@ -423,15 +428,180 @@ module RRXIF #(
         .s_axi_rready(common_axi_rready)
     );
 
+
+    wire                             cmd_axis_tvalid;
+    wire                             cmd_axis_tready;
+    wire                             cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
+
+    DmaStreamEngine #(
+        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH)
+    ) dma (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_st1_axis_tvalid(cmd_axis_tvalid),
+        .m_st1_axis_tready(cmd_axis_tready),
+        .m_st1_axis_tlast(cmd_axis_tlast),
+        .m_st1_axis_tdata(cmd_axis_tdata),
+
+        .s_st1_axis_tvalid(0),
+        .s_st1_axis_tready(),
+        .s_st1_axis_tlast(0),
+        .s_st1_axis_tdata(0),
+
+        .m_st0_axis_tvalid(),
+        .m_st0_axis_tready(0),
+        .m_st0_axis_tlast(),
+        .m_st0_axis_tdata(),
+
+        .s_st0_axis_tvalid(s_cmd_axis_tvalid),
+        .s_st0_axis_tready(s_cmd_axis_tready),
+        .s_st0_axis_tlast(s_cmd_axis_tlast),
+        .s_st0_axis_tdata(s_cmd_axis_tdata),
+
+        .m_mem_axi_awid(common_axi_awid),
+        .m_mem_axi_awaddr(common_axi_awaddr),
+        .m_mem_axi_awlen(common_axi_awlen), 
+        .m_mem_axi_awsize(common_axi_awsize), 
+        .m_mem_axi_awburst(common_axi_awburst), 
+        .m_mem_axi_awlock(common_axi_awlock), 
+        .m_mem_axi_awcache(common_axi_awcache), 
+        .m_mem_axi_awprot(common_axi_awprot), 
+        .m_mem_axi_awvalid(common_axi_awvalid),
+        .m_mem_axi_awready(common_axi_awready),
+
+        .m_mem_axi_wdata(common_axi_wdata),
+        .m_mem_axi_wstrb(common_axi_wstrb),
+        .m_mem_axi_wlast(common_axi_wlast),
+        .m_mem_axi_wvalid(common_axi_wvalid),
+        .m_mem_axi_wready(common_axi_wready),
+
+        .m_mem_axi_bid(common_axi_bid),
+        .m_mem_axi_bresp(common_axi_bresp),
+        .m_mem_axi_bvalid(common_axi_bvalid),
+        .m_mem_axi_bready(common_axi_bready),
+
+        .m_mem_axi_arid(common_axi_arid),
+        .m_mem_axi_araddr(common_axi_araddr),
+        .m_mem_axi_arlen(common_axi_arlen),
+        .m_mem_axi_arsize(common_axi_arsize),
+        .m_mem_axi_arburst(common_axi_arburst),
+        .m_mem_axi_arlock(common_axi_arlock),
+        .m_mem_axi_arcache(common_axi_arcache),
+        .m_mem_axi_arprot(common_axi_arprot),
+        .m_mem_axi_arvalid(common_axi_arvalid),
+        .m_mem_axi_arready(common_axi_arready),
+
+        .m_mem_axi_rid(common_axi_rid),
+        .m_mem_axi_rdata(common_axi_rdata),
+        .m_mem_axi_rresp(common_axi_rresp),
+        .m_mem_axi_rlast(common_axi_rlast),
+        .m_mem_axi_rvalid(common_axi_rvalid),
+        .m_mem_axi_rready(common_axi_rready)
+    );
+
+    wire commit_fb;
+    wire fb_committed;
+
+    wire                        framebuffer_axis_tvalid;
+    wire                        framebuffer_axis_tready;
+    wire                        framebuffer_axis_tlast;
+    wire [DATA_WIDTH - 1 : 0]   framebuffer_axis_tdata;
+    
+    generate
+        if (ENABLE_FRAMEBUFFER_STREAM)
+        begin
+            axis_adapter #(
+                .S_DATA_WIDTH(DATA_WIDTH),
+                .M_DATA_WIDTH(CMD_STREAM_WIDTH),
+                .S_KEEP_ENABLE(1),
+                .M_KEEP_ENABLE(1),
+                .ID_ENABLE(0),
+                .DEST_ENABLE(0),
+                .USER_ENABLE(0)
+            ) framebufferAdapter (
+                .clk(aclk),
+                .rst(!resetn),
+
+                .s_axis_tdata(framebuffer_axis_tdata),
+                .s_axis_tkeep(~0),
+                .s_axis_tvalid(framebuffer_axis_tvalid),
+                .s_axis_tready(framebuffer_axis_tready),
+                .s_axis_tlast(framebuffer_axis_tlast),
+                .s_axis_tid(0),
+                .s_axis_tdest(0),
+                .s_axis_tuser(0),
+
+                .m_axis_tdata(m_framebuffer_axis_tdata),
+                .m_axis_tkeep(),
+                .m_axis_tvalid(m_framebuffer_axis_tvalid),
+                .m_axis_tready(m_framebuffer_axis_tready),
+                .m_axis_tlast(m_framebuffer_axis_tlast),
+                .m_axis_tid(),
+                .m_axis_tdest(),
+                .m_axis_tuser()
+            );
+
+            assign fb_committed = !commit_fb;
+        end
+        else
+        begin
+            AxisFramebufferWriter #(
+                .DATA_WIDTH(DATA_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .ID_WIDTH(ID_WIDTH_LOC)
+            ) axisFramebufferWriter (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .commit_fb(commit_fb),
+                .fb_addr(fb_addr),
+                .fb_size(fb_size),
+                .fb_committed(fb_committed),
+
+                .s_disp_axis_tvalid(framebuffer_axis_tvalid),
+                .s_disp_axis_tready(framebuffer_axis_tready),
+                .s_disp_axis_tlast(framebuffer_axis_tlast),
+                .s_disp_axis_tdata(framebuffer_axis_tdata),
+
+                .m_mem_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+                .m_mem_axi_awlen(xbar_axi_awlen[3 * 8 +: 8]),
+                .m_mem_axi_awsize(xbar_axi_awsize[3 * 3 +: 3]),
+                .m_mem_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
+                .m_mem_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
+                .m_mem_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
+                .m_mem_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]), 
+                .m_mem_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
+                .m_mem_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
+
+                .m_mem_axi_wdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+                .m_mem_axi_wstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
+                .m_mem_axi_wlast(xbar_axi_wlast[3 * 1 +: 1]),
+                .m_mem_axi_wvalid(xbar_axi_wvalid[3 * 1 +: 1]),
+                .m_mem_axi_wready(xbar_axi_wready[3 * 1 +: 1]),
+
+                .m_mem_axi_bid(xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_bresp(xbar_axi_bresp[3 * 2 +: 2]),
+                .m_mem_axi_bvalid(xbar_axi_bvalid[3 * 1 +: 1]),
+                .m_mem_axi_bready(xbar_axi_bready[3 * 1 +: 1])
+            );
+        end
+    endgenerate
+
     RasterixIF #(
-        .FRAMEBUFFER_SIZE_IN_WORDS(FRAMEBUFFER_SIZE_IN_WORDS),
+        .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .TMU_COUNT(TMU_COUNT),
@@ -442,59 +612,22 @@ module RRXIF #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
-        .s_cmd_axis_tready(s_cmd_axis_tready),
-        .s_cmd_axis_tlast(s_cmd_axis_tlast),
-        .s_cmd_axis_tdata(s_cmd_axis_tdata),
+        .s_cmd_axis_tvalid(cmd_axis_tvalid),
+        .s_cmd_axis_tready(cmd_axis_tready),
+        .s_cmd_axis_tlast(cmd_axis_tlast),
+        .s_cmd_axis_tdata(cmd_axis_tdata),
 
-        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
+        .m_framebuffer_axis_tvalid(framebuffer_axis_tvalid),
+        .m_framebuffer_axis_tready(framebuffer_axis_tready),
+        .m_framebuffer_axis_tlast(framebuffer_axis_tlast),
+        .m_framebuffer_axis_tdata(framebuffer_axis_tdata),
 
         .swap_fb(swap_fb),
-        .fb_addr(fb_addr),
         .fb_swapped(fb_swapped),
-
-        .m_common_axi_awid(common_axi_awid),
-        .m_common_axi_awaddr(common_axi_awaddr),
-        .m_common_axi_awlen(common_axi_awlen),
-        .m_common_axi_awsize(common_axi_awsize),
-        .m_common_axi_awburst(common_axi_awburst),
-        .m_common_axi_awlock(common_axi_awlock),
-        .m_common_axi_awcache(common_axi_awcache),
-        .m_common_axi_awprot(common_axi_awprot), 
-        .m_common_axi_awvalid(common_axi_awvalid),
-        .m_common_axi_awready(common_axi_awready),
-
-        .m_common_axi_wdata(common_axi_wdata),
-        .m_common_axi_wstrb(common_axi_wstrb),
-        .m_common_axi_wlast(common_axi_wlast),
-        .m_common_axi_wvalid(common_axi_wvalid),
-        .m_common_axi_wready(common_axi_wready),
-
-        .m_common_axi_bid(common_axi_bid),
-        .m_common_axi_bresp(common_axi_bresp),
-        .m_common_axi_bvalid(common_axi_bvalid),
-        .m_common_axi_bready(common_axi_bready),
-
-        .m_common_axi_arid(common_axi_arid),
-        .m_common_axi_araddr(common_axi_araddr),
-        .m_common_axi_arlen(common_axi_arlen),
-        .m_common_axi_arsize(common_axi_arsize),
-        .m_common_axi_arburst(common_axi_arburst),
-        .m_common_axi_arlock(common_axi_arlock),
-        .m_common_axi_arcache(common_axi_arcache),
-        .m_common_axi_arprot(common_axi_arprot),
-        .m_common_axi_arvalid(common_axi_arvalid),
-        .m_common_axi_arready(common_axi_arready),
-
-        .m_common_axi_rid(common_axi_rid),
-        .m_common_axi_rdata(common_axi_rdata),
-        .m_common_axi_rresp(common_axi_rresp),
-        .m_common_axi_rlast(common_axi_rlast),
-        .m_common_axi_rvalid(common_axi_rvalid),
-        .m_common_axi_rready(common_axi_rready),
+        .commit_fb(commit_fb),
+        .fb_committed(fb_committed),
+        .fb_addr(fb_addr),
+        .fb_size(fb_size),
 
         .m_tmu0_axi_arid(xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_tmu0_axi_araddr(xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
@@ -567,4 +700,20 @@ module RRXIF #(
     assign xbar_axi_wlast[2 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[2 * 1 +: 1] = tmpZero;
     assign xbar_axi_bready[2 * 1 +: 1] = tmpZero;
+
+    generate
+        if (ENABLE_FRAMEBUFFER_STREAM) 
+        begin
+            assign xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
+            assign xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
+            assign xbar_axi_arlen[3 * 8 +: 8] = { 8 { tmpZero } };
+            assign xbar_axi_arsize[3 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_arburst[3 * 2 +: 2] = { 2 { tmpZero } };
+            assign xbar_axi_arlock[3 * 1 +: 1] = tmpZero;
+            assign xbar_axi_arcache[3 * 4 +: 4] = { 4 { tmpZero } };
+            assign xbar_axi_arprot[3 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_arvalid[3 * 1 +: 1] = tmpZero;
+            assign xbar_axi_rready[3 * 1 +: 1] = tmpZero;
+        end
+    endgenerate
 endmodule

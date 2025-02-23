@@ -24,7 +24,7 @@ set(RRX_CORE_ENABLE_MIPMAPPING "true" CACHE STRING "Enables mipmapping")
 # Display settings
 set(RRX_CORE_MAX_DISPLAY_WIDTH "1024" CACHE STRING "The maximum width of the display")
 set(RRX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the display")
-set(RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS "65536" CACHE STRING "The size of the framebuffer in 16 bit words / in pixel")
+set(RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG "16" CACHE STRING "The log2(size) of the framebuffer in 16 bit words / in pixel")
 # Rasterizer settings
 set(RRX_CORE_USE_FLOAT_INTERPOLATION "false" CACHE STRING "Enables float interpolation")
 # Texture memory settings
@@ -35,7 +35,7 @@ set(RRX_CORE_TEXTURE_PAGE_SIZE "4096" CACHE STRING "The size of a texture page")
 # address calculations. Mostly useful for architectures with shared memory
 set(RRX_CORE_GRAM_MEMORY_LOC "0x0E000000" CACHE STRING "The location of the GRAM memory")
 # Framebuffer memory location
-set(RRX_CORE_FRAMEBUFFER_TYPE "FramebufferType::INTERNAL_TO_MEMORY" CACHE STRING "The type of the framebuffer. Allowed values: INTERNAL_TO_STREAM, INTERNAL_TO_MEMORY, EXTERNAL_MEMORY_TO_STREAM, EXTERNAL_MEMORY_DOUBLE_BUFFER") # TODO
+set(RRX_CORE_COLOR_BUFFER_LOC_0 "0x01E00000" CACHE STRING "The location of the color buffer when the RRX is disabled")
 set(RRX_CORE_COLOR_BUFFER_LOC_1 "0x01E00000" CACHE STRING "The location of the first color buffer")
 set(RRX_CORE_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the second color buffer")
 set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")

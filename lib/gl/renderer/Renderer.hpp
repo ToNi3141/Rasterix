@@ -311,6 +311,14 @@ private:
     }
 
     template <typename Factory>
+    bool addLastCommandWithFactory(const Factory& commandFactory)
+    {
+        return m_displayListBuffer.getBack().addLastCommandWithFactory_if(commandFactory,
+            [](std::size_t, std::size_t, std::size_t, std::size_t)
+            { return true; });
+    }
+
+    template <typename Factory>
     bool addCommandWithFactory(const Factory& commandFactory)
     {
         return addCommandWithFactory_if(commandFactory,
@@ -340,16 +348,6 @@ private:
         m_displayListBuffer.getBack().endFrame();
     }
 
-    void saveSectionStart()
-    {
-        m_displayListBuffer.getBack().saveSectionStart();
-    }
-
-    void removeSection()
-    {
-        m_displayListBuffer.getBack().removeSection();
-    }
-
     void clearDisplayListAssembler()
     {
         m_displayListBuffer.getBack().clearDisplayListAssembler();
@@ -365,14 +363,14 @@ private:
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
-    bool addCommitFramebufferCommand();
-    bool addDseFramebufferCommand();
-    bool addSwapExternalDisplayFramebufferCommand();
     void swapFramebuffer();
     void intermediateUpload();
     void setYOffset();
-    void addCommitFramebufferSequenceAndEndFrame();
     void initDisplayLists();
+    void addLineColorBufferAddresses();
+    void addCommitFramebufferCommand();
+    void addColorBufferAddressOfTheScreen();
+    void swapScreenToNewColorBuffer();
 
     uint32_t m_colorBufferAddr {};
     bool m_switchColorBuffer { true };

@@ -19,13 +19,20 @@ module RRXEF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
+    // Enables the m_framebuffer_axis_* interface. This is exclusive to the
+    // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
+    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
+    // Only releases the framebuffer, when the framebuffer is completely streamed.
+    // Enable this when only one color buffer is used.
+    parameter ENABLE_BLOCKING_STREAM = 0,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
     parameter TEXTURE_PAGE_SIZE = 4096,
     
-    // The size of the texture in bytes
-    parameter TEXTURE_BUFFER_SIZE = 17, // 128kB enough for 256x256px textures
+    // The maximum size of a texture
+    parameter MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 32,
@@ -51,7 +58,8 @@ module RRXEF #(
     // to the fix point interpolation
     parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
 
-    localparam CMD_STREAM_WIDTH = 32
+    localparam CMD_STREAM_WIDTH = 32,
+    localparam FB_SIZE_IN_PIXEL_LG = 20
 )
 (
     input  wire                             aclk,
@@ -71,6 +79,7 @@ module RRXEF #(
     // Framebuffer
     output wire                             swap_fb,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
+    output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0] fb_size,
     input  wire                             fb_swapped,
 
     // Memory Interface
@@ -111,7 +120,7 @@ module RRXEF #(
     output wire                             m_axi_rready
 );
     localparam ID_WIDTH_LOC = ID_WIDTH - 3;
-    localparam NRS = 6;
+    localparam NRS = (ENABLE_FRAMEBUFFER_STREAM) ? 7 : 6;
 
     initial
     begin
@@ -326,8 +335,7 @@ module RRXEF #(
         .S_DATA_WIDTH(CMD_STREAM_WIDTH),
         .S_STRB_WIDTH(CMD_STREAM_STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC)
-    ) commonAxiAdapter
-    (
+    ) commonAxiAdapter (
         .clk(aclk),
         .rst(!resetn),
 
@@ -422,13 +430,140 @@ module RRXEF #(
         .s_axi_rready(common_axi_rready)
     );
 
+    wire                             cmd_axis_tvalid;
+    wire                             cmd_axis_tready;
+    wire                             cmd_axis_tlast;
+    wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
+
+    DmaStreamEngine #(
+        .STREAM_WIDTH(CMD_STREAM_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH_LOC)
+    ) dma (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_st1_axis_tvalid(cmd_axis_tvalid),
+        .m_st1_axis_tready(cmd_axis_tready),
+        .m_st1_axis_tlast(cmd_axis_tlast),
+        .m_st1_axis_tdata(cmd_axis_tdata),
+
+        .s_st1_axis_tvalid(0),
+        .s_st1_axis_tready(),
+        .s_st1_axis_tlast(0),
+        .s_st1_axis_tdata(0),
+
+        .m_st0_axis_tvalid(),
+        .m_st0_axis_tready(0),
+        .m_st0_axis_tlast(),
+        .m_st0_axis_tdata(),
+
+        .s_st0_axis_tvalid(s_cmd_axis_tvalid),
+        .s_st0_axis_tready(s_cmd_axis_tready),
+        .s_st0_axis_tlast(s_cmd_axis_tlast),
+        .s_st0_axis_tdata(s_cmd_axis_tdata),
+
+        .m_mem_axi_awid(common_axi_awid),
+        .m_mem_axi_awaddr(common_axi_awaddr),
+        .m_mem_axi_awlen(common_axi_awlen), 
+        .m_mem_axi_awsize(common_axi_awsize), 
+        .m_mem_axi_awburst(common_axi_awburst), 
+        .m_mem_axi_awlock(common_axi_awlock), 
+        .m_mem_axi_awcache(common_axi_awcache), 
+        .m_mem_axi_awprot(common_axi_awprot), 
+        .m_mem_axi_awvalid(common_axi_awvalid),
+        .m_mem_axi_awready(common_axi_awready),
+
+        .m_mem_axi_wdata(common_axi_wdata),
+        .m_mem_axi_wstrb(common_axi_wstrb),
+        .m_mem_axi_wlast(common_axi_wlast),
+        .m_mem_axi_wvalid(common_axi_wvalid),
+        .m_mem_axi_wready(common_axi_wready),
+
+        .m_mem_axi_bid(common_axi_bid),
+        .m_mem_axi_bresp(common_axi_bresp),
+        .m_mem_axi_bvalid(common_axi_bvalid),
+        .m_mem_axi_bready(common_axi_bready),
+
+        .m_mem_axi_arid(common_axi_arid),
+        .m_mem_axi_araddr(common_axi_araddr),
+        .m_mem_axi_arlen(common_axi_arlen),
+        .m_mem_axi_arsize(common_axi_arsize),
+        .m_mem_axi_arburst(common_axi_arburst),
+        .m_mem_axi_arlock(common_axi_arlock),
+        .m_mem_axi_arcache(common_axi_arcache),
+        .m_mem_axi_arprot(common_axi_arprot),
+        .m_mem_axi_arvalid(common_axi_arvalid),
+        .m_mem_axi_arready(common_axi_arready),
+
+        .m_mem_axi_rid(common_axi_rid),
+        .m_mem_axi_rdata(common_axi_rdata),
+        .m_mem_axi_rresp(common_axi_rresp),
+        .m_mem_axi_rlast(common_axi_rlast),
+        .m_mem_axi_rvalid(common_axi_rvalid),
+        .m_mem_axi_rready(common_axi_rready)
+    );
+
+    wire fb_swapped_display;
+
+    generate
+    begin
+        if (ENABLE_FRAMEBUFFER_STREAM)
+        begin
+            AxisFramebufferReader #(
+                .DISPLAY_STREAM_WIDTH(CMD_STREAM_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .ID_WIDTH(ID_WIDTH_LOC),
+                .BLOCKING(ENABLE_BLOCKING_STREAM)
+            ) axisFramebufferReader (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .swap_fb(swap_fb),
+                .fb_addr(fb_addr),
+                .fb_size(fb_size),
+                .fb_swapped(fb_swapped_display),
+
+                .m_disp_axis_tvalid(m_framebuffer_axis_tvalid),
+                .m_disp_axis_tready(m_framebuffer_axis_tready),
+                .m_disp_axis_tlast(m_framebuffer_axis_tlast),
+                .m_disp_axis_tdata(m_framebuffer_axis_tdata),
+
+                .m_mem_axi_arid(xbar_axi_arid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_araddr(xbar_axi_araddr[6 * ADDR_WIDTH +: ADDR_WIDTH]),
+                .m_mem_axi_arlen(xbar_axi_arlen[6 * 8 +: 8]),
+                .m_mem_axi_arsize(xbar_axi_arsize[6 * 3 +: 3]),
+                .m_mem_axi_arburst(xbar_axi_arburst[6 * 2 +: 2]),
+                .m_mem_axi_arlock(xbar_axi_arlock[6 * 1 +: 1]),
+                .m_mem_axi_arcache(xbar_axi_arcache[6 * 4 +: 4]),
+                .m_mem_axi_arprot(xbar_axi_arprot[6 * 3 +: 3]),
+                .m_mem_axi_arvalid(xbar_axi_arvalid[6 * 1 +: 1]),
+                .m_mem_axi_arready(xbar_axi_arready[6 * 1 +: 1]),
+
+                .m_mem_axi_rid(xbar_axi_rid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_mem_axi_rdata(xbar_axi_rdata[6 * DATA_WIDTH +: DATA_WIDTH]),
+                .m_mem_axi_rresp(xbar_axi_rresp[6 * 2 +: 2]),
+                .m_mem_axi_rlast(xbar_axi_rlast[6 * 1 +: 1]),
+                .m_mem_axi_rvalid(xbar_axi_rvalid[6 * 1 +: 1]),
+                .m_mem_axi_rready(xbar_axi_rready[6 * 1 +: 1])
+            );
+        end
+        else
+        begin
+            assign fb_swapped_display = 1;
+        end
+    end
+    endgenerate
+
     RasterixEF #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
-        .TEXTURE_BUFFER_SIZE(TEXTURE_BUFFER_SIZE),
+        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
@@ -438,59 +573,15 @@ module RRXEF #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .s_cmd_axis_tvalid(s_cmd_axis_tvalid),
-        .s_cmd_axis_tready(s_cmd_axis_tready),
-        .s_cmd_axis_tlast(s_cmd_axis_tlast),
-        .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-        .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
+        .s_cmd_axis_tvalid(cmd_axis_tvalid),
+        .s_cmd_axis_tready(cmd_axis_tready),
+        .s_cmd_axis_tlast(cmd_axis_tlast),
+        .s_cmd_axis_tdata(cmd_axis_tdata),
 
         .swap_fb(swap_fb),
         .fb_addr(fb_addr),
-        .fb_swapped(fb_swapped),
-
-        .m_common_axi_awid(common_axi_awid),
-        .m_common_axi_awaddr(common_axi_awaddr),
-        .m_common_axi_awlen(common_axi_awlen),
-        .m_common_axi_awsize(common_axi_awsize),
-        .m_common_axi_awburst(common_axi_awburst),
-        .m_common_axi_awlock(common_axi_awlock),
-        .m_common_axi_awcache(common_axi_awcache),
-        .m_common_axi_awprot(common_axi_awprot), 
-        .m_common_axi_awvalid(common_axi_awvalid),
-        .m_common_axi_awready(common_axi_awready),
-
-        .m_common_axi_wdata(common_axi_wdata),
-        .m_common_axi_wstrb(common_axi_wstrb),
-        .m_common_axi_wlast(common_axi_wlast),
-        .m_common_axi_wvalid(common_axi_wvalid),
-        .m_common_axi_wready(common_axi_wready),
-
-        .m_common_axi_bid(common_axi_bid),
-        .m_common_axi_bresp(common_axi_bresp),
-        .m_common_axi_bvalid(common_axi_bvalid),
-        .m_common_axi_bready(common_axi_bready),
-
-        .m_common_axi_arid(common_axi_arid),
-        .m_common_axi_araddr(common_axi_araddr),
-        .m_common_axi_arlen(common_axi_arlen),
-        .m_common_axi_arsize(common_axi_arsize),
-        .m_common_axi_arburst(common_axi_arburst),
-        .m_common_axi_arlock(common_axi_arlock),
-        .m_common_axi_arcache(common_axi_arcache),
-        .m_common_axi_arprot(common_axi_arprot),
-        .m_common_axi_arvalid(common_axi_arvalid),
-        .m_common_axi_arready(common_axi_arready),
-
-        .m_common_axi_rid(common_axi_rid),
-        .m_common_axi_rdata(common_axi_rdata),
-        .m_common_axi_rresp(common_axi_rresp),
-        .m_common_axi_rlast(common_axi_rlast),
-        .m_common_axi_rvalid(common_axi_rvalid),
-        .m_common_axi_rready(common_axi_rready),
+        .fb_size(fb_size),
+        .fb_swapped((ENABLE_FRAMEBUFFER_STREAM) ? fb_swapped_display : fb_swapped),
 
         .m_color_axi_awid(xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_color_axi_awaddr(xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
@@ -683,4 +774,26 @@ module RRXEF #(
     assign xbar_axi_wlast[5 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[5 * 1 +: 1] = tmpZero;
     assign xbar_axi_bready[5 * 1 +: 1] = tmpZero;
+
+    generate
+    begin
+        if (ENABLE_FRAMEBUFFER_STREAM)
+        begin
+            assign xbar_axi_awid[6 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
+            assign xbar_axi_awaddr[6 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
+            assign xbar_axi_awlen[6 * 8 +: 8] = { 8 { tmpZero } };
+            assign xbar_axi_awsize[6 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_awburst[6 * 2 +: 2] = { 2 { tmpZero } };
+            assign xbar_axi_awlock[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_awcache[6 * 4 +: 4] = { 4 { tmpZero } };
+            assign xbar_axi_awprot[6 * 3 +: 3] = { 3 { tmpZero } };
+            assign xbar_axi_awvalid[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_wdata[6 * DATA_WIDTH +: DATA_WIDTH] = { DATA_WIDTH { tmpZero } };
+            assign xbar_axi_wstrb[6 * STRB_WIDTH +: STRB_WIDTH] = { STRB_WIDTH { tmpZero } };
+            assign xbar_axi_wlast[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_wvalid[6 * 1 +: 1] = tmpZero;
+            assign xbar_axi_bready[6 * 1 +: 1] = tmpZero;
+        end
+    end
+    endgenerate
 endmodule

@@ -95,21 +95,21 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | Property                               | Description |
 |----------------------------------------|-------------|
 | __RRX_CORE_TMU_COUNT__                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
-| RRX_CORE_MAX_TEXTURE_SIZE              | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Make sure that the texture fits in __TEXTURE_BUFFER_SIZE__ of the FPGA. A 256x256px texture requires: __TEXTURE_BUFFER_SIZE__ = log2(256x256x2). |
+| __RRX_CORE_MAX_TEXTURE_SIZE__          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Must be the same value as in __MAX_TEXTURE_SIZE__ |
 | __RRX_CORE_ENABLE_MIPMAPPING__         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
 | RRX_CORE_MAX_DISPLAY_WIDTH             | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
 | RRX_CORE_MAX_DISPLAY_HEIGHT            | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
-| __RRX_CORE_FRAMEBUFFER_SIZE_IN_WORDS__ | The size of the framebuffer in bytes. For the `rrxef` variant, use a value which fits at least the whole screen like 1024 * 600 * 2. For the `rrxif` variant, use the configuration size of the frame buffer. A valid value could be 65536 words. A word is the size of a pixel. Must be equal to the FPGA configuration. |
+| __RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG__ | The log2(size) of the framebuffer in pixel. For the `rrxef` variant, use a value which fits at least the whole screen like log2(1024 * 600) + 1. For the `rrxif` variant, use the same value configured in the FPGA. A valid value could be 16. |
 | __RRX_CORE_USE_FLOAT_INTERPOLATION__   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
 | RRX_CORE_NUMBER_OF_TEXTURE_PAGES       | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
 | RRX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
 | __RRX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 4096. |
 | RRX_CORE_GRAM_MEMORY_LOC               | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
-| RRX_CORE_FRAMEBUFFER_TYPE              | Configures the destination of the framebuffer. Must fit to the chosen __VARIANT__. `FramebufferType::INTERNAL_*` is used for the `rrxif`, `FramebufferType::EXTERNAL_*` is used for `rrxef` |
-| RRX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer when FramebufferType::EXTERNAL_* is used and the destination when FramebufferType::INTERNAL_TO_MEMORY is used. |
-| RRX_CORE_COLOR_BUFFER_LOC_2            | Second framebuffer when `FramebufferType::EXTERNAL_MEMORY_DOUBLE_BUFFER` is used. |
-| RRX_CORE_DEPTH_BUFFER_LOC              | Depth buffer location when `FramebufferType::EXTERNAL_*` is used. |
-| RRX_CORE_STENCIL_BUFFER_LOC            | Stencil buffer location when `FramebufferType::EXTERNAL_*` is used. |
+| RRX_CORE_COLOR_BUFFER_LOC_0            | Location of the used framebuffer, when the RRX is off. On linux, usually the address of the buffer used for the fb dev. |
+| RRX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer. |
+| RRX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
+| RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
+| RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
 
 
 ## How to use the Core
@@ -129,14 +129,16 @@ Note: Bold options are required to be equal to the software counterparts.
 | Property                                  | Variant | Description |
 |-------------------------------------------|---------|-------------|
 | __VARIANT__                               | if/ef   | The selected variant. Valid values are `if` for the rrxif and `ef` for the rrxef. |
-| __FRAMEBUFFER_SIZE_IN_WORDS__             | if      | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
+| ENABLE_FRAMEBUFFER_STREAM                 | if/ef   | Enables the streaming via the m_framebuffer_axis interface, and disables the swap_fb interface for memory mapped displays. |
+| ENABLE_BLOCKING_STREAM                    | if/ef   | The m_frambuffer_axis stream is blocking. No rendering is started until the streaming is done. In this configuration, a single color buffer can be used. Otherwise a double buffer is required. |
+| __FRAMEBUFFER_SIZE_IN_PIXEL_LG__          | if      | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
 | FRAMEBUFFER_SUB_PIXEL_WIDTH               | if      | Sub pixel width in the internal framebuffer. |
 | FRAMEBUFFER_ENABLE_ALPHA_CHANNEL          | if      | Enables the alpha channel in the framebuffer. |
 | __ENABLE_STENCIL_BUFFER__                 | if/ef   | Enables the stencil buffer. |
 | __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
 | __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip mapping. |
-| __TEXTURE_BUFFER_SIZE__                   | if/ef   | Size of the texture buffer in log2(bytes). |
+| __MAX_TEXTURE_SIZE__                      | if/ef   | Size of the texture buffer. Valid values: 256, 128, 64, 32. For instance, a 256 texture requires 256 * 256 * 2 bytes of FPGA RAM. Additional RAM is required when __ENABLE_MIPMAPPING__ is selected |
 | ADDR_WIDTH                                | if/ef   | Width of the AXI address channel. |
 | ID_WIDTH                                  | if/ef   | Width of the AXI id property. Should be at least 4. |
 | DATA_WIDTH                                | if/ef   | Width of the AXI data property. |
