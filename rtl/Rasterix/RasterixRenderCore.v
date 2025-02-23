@@ -299,6 +299,7 @@ module RasterixRenderCore #(
     wire             cmd_config_axis_tready;
     // Control
     wire             pixelInPipeline;
+    wire             dataInTriangleInterpolator;
     wire             startRendering;
     wire             color_fifo_empty;
     wire             depth_fifo_empty;
@@ -332,6 +333,7 @@ module RasterixRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .pixelInPipeline(pixelInPipeline || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
+        .dataInTriangleInterpolator(dataInInterpolator),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -780,14 +782,14 @@ module RasterixRenderCore #(
         .valueInPipeline(pixelInPipeline)
     );
 
-    // ValueTrack vtTriangle (
-    //     .aclk(aclk),
-    //     .resetn(resetn),
+    ValueTrack vtTriangle (
+        .aclk(aclk),
+        .resetn(resetn),
 
-    //     .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
-    //     .sigOutgoingValue(alrp_tkeep & alrp_tvalid & alrp_tready),
-    //     .valueInPipeline(pixelInPipeline)
-    // );
+        .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
+        .sigOutgoingValue(alrp_tpixel & alrp_tvalid & alrp_tready),
+        .valueInPipeline(dataInTriangleInterpolator)
+    );
     
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
