@@ -36,6 +36,7 @@ module AttributeInterpolator #(
     // Pixel Stream
     output wire                             s_attrb_tready,
     input  wire                             s_attrb_tvalid,
+    input  wire                             s_attrb_tpixel,
     input  wire                             s_attrb_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]        s_attrb_tkeep,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_attrb_tbbx,
@@ -85,6 +86,7 @@ module AttributeInterpolator #(
     // Pixel Stream Interpolated
     input  wire                             m_attrb_tready,
     output wire                             m_attrb_tvalid,
+    output wire                             m_attrb_tpixel,
     output wire                             m_attrb_tlast,
     output wire [KEEP_WIDTH - 1 : 0]        m_attrb_tkeep,
     output wire [SCREEN_POS_WIDTH - 1 : 0]  m_attrb_tspx,
@@ -177,6 +179,7 @@ module AttributeInterpolator #(
     wire [SCREEN_POS_WIDTH - 1 : 0] step_0_screen_pos_x; 
     wire [SCREEN_POS_WIDTH - 1 : 0] step_0_screen_pos_y; 
     wire step_0_tvalid;
+    wire step_0_tpixel;
     wire step_0_tlast;
     wire [KEEP_WIDTH - 1 : 0] step_0_tkeep;
     ValueDelay #(.VALUE_SIZE(INDEX_WIDTH), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
@@ -189,6 +192,9 @@ module AttributeInterpolator #(
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_tvalid (.clk(aclk), .ce(ce), .in(s_attrb_tvalid), .out(step_0_tvalid));
+
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
+        step_0_delay_tpixel (.clk(aclk), .ce(ce), .in(s_attrb_tpixel), .out(step_0_tpixel));
 
     ValueDelay #(.VALUE_SIZE(1), .DELAY(FRAMEBUFFER_INDEX_DELAY)) 
         step_0_delay_tlast (.clk(aclk), .ce(ce), .in(s_attrb_tlast), .out(step_0_tlast));
@@ -713,6 +719,7 @@ module AttributeInterpolator #(
     // STEP 7 Output calculated values
     ////////////////////////////////////////////////////////////////////////////
     assign m_attrb_tvalid = step_0_tvalid;
+    assign m_attrb_tpixel = step_0_tpixel;
     assign m_attrb_tlast = step_0_tlast;
     assign m_attrb_tkeep = step_0_tkeep;
     assign m_attrb_tspx = step_0_screen_pos_x;

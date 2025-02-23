@@ -85,14 +85,9 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     rr::ut::clk(top);
 
     top->s_attrb_tvalid = 0;
-    top->s_attrb_tpixel = 1;
-
-    rr::ut::clk(top);
-
-    top->s_attrb_tvalid = 0;
     top->s_attrb_tpixel = 0;
 
-    for (uint32_t i = 0; i < 13; i++)
+    for (uint32_t i = 0; i < 14; i++)
     {
         rr::ut::clk(top);
     }
@@ -107,6 +102,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     rr::ut::clk(top);
 
     CHECK(top->m_attrb_tvalid == 1);
+    CHECK(top->m_attrb_tpixel == 1);
     CHECK(top->m_attrb_tlast == 0);
     CHECK(top->m_attrb_tkeep == 1);
     CHECK(top->m_attrb_tspx == 123);
@@ -130,7 +126,8 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 
     rr::ut::clk(top);
 
-    CHECK(top->m_attrb_tvalid == 0);
+    CHECK(top->m_attrb_tvalid == 1);
+    CHECK(top->m_attrb_tpixel == 0);
     CHECK(top->m_attrb_tlast == 1);
     CHECK(top->m_attrb_tkeep == 1);
     CHECK(top->m_attrb_tspx == 223);
@@ -155,10 +152,12 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     rr::ut::clk(top);
 
     CHECK(top->m_attrb_tvalid == 0);
+    CHECK(top->m_attrb_tpixel == 0);
 
     rr::ut::clk(top);
 
     CHECK(top->m_attrb_tvalid == 0);
+    CHECK(top->m_attrb_tpixel == 0);
 
     // Destroy model
     delete top;

@@ -37,6 +37,7 @@ module AttributeF2XConverter #(
     
     output wire                             s_ftx_tready,
     input  wire                             s_ftx_tvalid,
+    input  wire                             s_ftx_tpixel,
     input  wire                             s_ftx_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]        s_ftx_tkeep,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]  s_ftx_tspx,
@@ -60,6 +61,7 @@ module AttributeF2XConverter #(
     // Pixel Stream Interpolated
     input  wire                             m_ftx_tready,
     output wire                             m_ftx_tvalid,
+    output wire                             m_ftx_tpixel,
     output wire                             m_ftx_tlast,
     output wire [KEEP_WIDTH - 1 : 0]        m_ftx_tkeep,
     output wire [SCREEN_POS_WIDTH - 1 : 0]  m_ftx_tspx,
@@ -110,6 +112,7 @@ module AttributeF2XConverter #(
     wire [31 : 0]               step_convert_color_b;
     wire [31 : 0]               step_convert_color_a;
     wire                        step_convert_tvalid;
+    wire                        step_convert_tpixel;
     wire [KEEP_WIDTH - 1 : 0]   step_convert_tkeep;
     wire                        step_convert_tlast;
 
@@ -128,6 +131,8 @@ module AttributeF2XConverter #(
     // Fragment stream flags
     ValueDelay #(.VALUE_SIZE(1), .DELAY(CONV_DELAY)) 
         convert_valid_delay (.clk(aclk), .ce(ce), .in(s_ftx_tvalid), .out(step_convert_tvalid));
+    ValueDelay #(.VALUE_SIZE(1), .DELAY(CONV_DELAY)) 
+        convert_pixel_delay (.clk(aclk), .ce(ce), .in(s_ftx_tpixel), .out(step_convert_tpixel));
     ValueDelay #(.VALUE_SIZE(KEEP_WIDTH), .DELAY(CONV_DELAY)) 
         convert_keep_delay (.clk(aclk), .ce(ce), .in(s_ftx_tkeep), .out(step_convert_tkeep));
     ValueDelay #(.VALUE_SIZE(1), .DELAY(CONV_DELAY)) 
@@ -191,6 +196,7 @@ module AttributeF2XConverter #(
     // Clocks: 0
     ///////////////////////////////////////////////////////////////////////////
     assign m_ftx_tvalid = step_convert_tvalid;
+    assign m_ftx_tpixel = step_convert_tpixel;
     assign m_ftx_tlast = step_convert_tlast;
     assign m_ftx_tkeep = step_convert_tkeep;
     assign m_ftx_tspx = step_convert_screen_pos_x;

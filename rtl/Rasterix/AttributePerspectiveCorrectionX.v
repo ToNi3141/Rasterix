@@ -68,6 +68,7 @@ module AttributePerspectiveCorrectionX #(
 
     // Pixel Stream Interpolated
     output wire                                 m_attrb_tvalid,
+    output wire                                 m_attrb_tpixel,
     output wire                                 m_attrb_tlast,
     output wire [KEEP_WIDTH - 1 : 0]            m_attrb_tkeep,
     output wire [SCREEN_POS_WIDTH - 1 : 0]      m_attrb_tspx,
@@ -119,6 +120,7 @@ module AttributePerspectiveCorrectionX #(
     wire        [16 - 1 : 0]                    step1_color_b;
     wire        [16 - 1 : 0]                    step1_color_a;
     wire                                        step1_tvalid;
+    wire                                        step1_tpixel;
     wire                                        step1_tlast;
     wire        [KEEP_WIDTH - 1 : 0]            step1_tkeep;
     wire        [SCREEN_POS_WIDTH - 1 : 0]      step1_tspx;
@@ -126,13 +128,14 @@ module AttributePerspectiveCorrectionX #(
     wire        [INDEX_WIDTH - 1 : 0]           step1_tindex;
 
     ValueDelay #(
-        .VALUE_SIZE(1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION)), 
+        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION)), 
         .DELAY(RECIP_DELAY)
     ) step1_delay (
         .clk(aclk), 
         .ce(ce), 
         .in({
-            s_attrb_tvalid & s_attrb_tpixel,
+            s_attrb_tvalid,
+            s_attrb_tpixel,
             s_attrb_tlast,
             s_attrb_tkeep,
             s_attrb_tspx,
@@ -154,6 +157,7 @@ module AttributePerspectiveCorrectionX #(
         }), 
         .out({
             step1_tvalid,
+            step1_tpixel,
             step1_tlast,
             step1_tkeep,
             step1_tspx,
@@ -259,6 +263,7 @@ module AttributePerspectiveCorrectionX #(
     wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_b;
     wire [SUB_PIXEL_WIDTH - 1 : 0]   step2_color_a;
     wire                             step2_tvalid;
+    wire                             step2_tpixel;
     wire                             step2_tlast;
     wire [KEEP_WIDTH - 1 : 0]        step2_tkeep;
     wire [SCREEN_POS_WIDTH - 1 : 0]  step2_tspx;
@@ -266,13 +271,14 @@ module AttributePerspectiveCorrectionX #(
     wire [INDEX_WIDTH - 1 : 0]       step2_tindex;
 
     ValueDelay #(
-        .VALUE_SIZE(1 + 1 + KEEP_WIDTH + (2 * SCREEN_POS_WIDTH) + INDEX_WIDTH + DEPTH_WIDTH), 
+        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (2 * SCREEN_POS_WIDTH) + INDEX_WIDTH + DEPTH_WIDTH), 
         .DELAY(I2F_DELAY)
     ) step2_delay (
         .clk(aclk), 
         .ce(ce), 
         .in({
             step1_tvalid,
+            step1_tpixel,
             step1_tlast,
             step1_tkeep,
             step1_tspx,
@@ -282,6 +288,7 @@ module AttributePerspectiveCorrectionX #(
         }), 
         .out({
             step2_tvalid,
+            step2_tpixel,
             step2_tlast,
             step2_tkeep,
             step2_tspx,
@@ -401,6 +408,7 @@ module AttributePerspectiveCorrectionX #(
     // Clocks: 0
     ///////////////////////////////////////////////////////////////////////////
     assign m_attrb_tvalid = step2_tvalid;
+    assign m_attrb_tpixel = step2_tpixel;
     assign m_attrb_tlast = step2_tlast;
     assign m_attrb_tkeep = step2_tkeep;
     assign m_attrb_tspx = step2_tspx;
