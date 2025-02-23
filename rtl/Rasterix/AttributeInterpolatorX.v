@@ -90,6 +90,7 @@ module AttributeInterpolatorX #(
     // Pixel Stream Interpolated
     input  wire                                 m_attrb_tready,
     output wire                                 m_attrb_tvalid,
+    output wire                                 m_attrb_tpixel,
     output wire                                 m_attrb_tlast,
     output wire [KEEP_WIDTH - 1 : 0]            m_attrb_tkeep,
     output wire [SCREEN_POS_WIDTH - 1 : 0]      m_attrb_tspx,
@@ -241,6 +242,7 @@ module AttributeInterpolatorX #(
         .color_a(curr_color_a),
 
         .m_attrb_tvalid(m_attrb_tvalid),
+        .m_attrb_tpixel(m_attrb_tpixel),
         .m_attrb_tlast(m_attrb_tlast),
         .m_attrb_tkeep(m_attrb_tkeep),
         .m_attrb_tspx(m_attrb_tspx),

@@ -219,6 +219,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         top->s_attrb_tindex = 0;
 
         top->s_attrb_tvalid = 0;
+        top->s_attrb_tpixel = 0;
         top->s_attrb_tlast = 0;
     }
     REQUIRE(top->m_attrb_tindex == 0);
@@ -231,6 +232,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     REQUIRE(top->m_attrb_tcolor_g == 0);
     REQUIRE(top->m_attrb_tcolor_r == 0);
     REQUIRE(top->m_attrb_tvalid == 0);
+    REQUIRE(top->m_attrb_tpixel == 0);
     REQUIRE(top->m_attrb_tlast == 0);
 
     ScreenPos sp;
@@ -324,6 +326,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
     top->s_attrb_tindex = 0;
 
     top->s_attrb_tvalid = 1;
+    top->s_attrb_tpixel = 1;
     top->m_attrb_tready = 1;
     top->s_attrb_tlast = 0;
 
@@ -335,6 +338,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         {
             REQUIRE(top->m_attrb_tindex == i - CLOCK_DELAY);
             REQUIRE(top->m_attrb_tvalid == 1);
+            REQUIRE(top->m_attrb_tpixel == 1);
             REQUIRE(top->m_attrb_tlast == (i - CLOCK_DELAY) % 5);
             REQUIRE(top->m_attrb_tspx == (400 + static_cast<uint16_t>(i - CLOCK_DELAY)));
             REQUIRE(top->m_attrb_tspy == (200 + static_cast<uint16_t>(i - CLOCK_DELAY)));
@@ -379,6 +383,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
         }
 
         top->s_attrb_tvalid = 1;
+        top->s_attrb_tpixel = 1;
         top->s_attrb_tlast = i % 5;
 
         top->s_attrb_tbbx = bb.val.x;
@@ -406,6 +411,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
         REQUIRE(top->m_attrb_tindex == i);
         REQUIRE(top->m_attrb_tvalid == 1);
+        REQUIRE(top->m_attrb_tpixel == 1);
         REQUIRE(top->m_attrb_tlast == i % 5);
         REQUIRE(top->m_attrb_tspx == (400 + static_cast<uint16_t>(i)));
         REQUIRE(top->m_attrb_tspy == (200 + static_cast<uint16_t>(i)));
@@ -448,6 +454,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
         // Set init values
         top->s_attrb_tvalid = 0;
+        top->s_attrb_tpixel = 0;
         top->s_attrb_tlast = 0;
         top->s_attrb_tbbx = 0;
         top->s_attrb_tbby = 0;
@@ -464,6 +471,7 @@ TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolato
 
     REQUIRE(top->m_attrb_tindex == 0);
     REQUIRE(top->m_attrb_tvalid == 0);
+    REQUIRE(top->m_attrb_tpixel == 0);
     REQUIRE(top->m_attrb_tlast == 0);
 
     // Destroy model

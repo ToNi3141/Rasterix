@@ -46,6 +46,7 @@ module CommandParser #(
     // Control
     input  wire             rasterizerRunning,
     input  wire             pixelInPipeline,
+    input  wire             dataInTriangleInterpolator,
 
     // Color/Depth buffer control
     output reg                                  colorBufferApply,
@@ -96,7 +97,7 @@ module CommandParser #(
     // Command Unit Variables
     reg             framebufferCommandApply;
     wire            framebufferCommandApplied;
-    reg             rasterizerWasStarted;
+    reg             rasterizerIsStarted;
     reg  [ 1 : 0]   fbControlState;
 
     // Local Statemachine variables
@@ -143,22 +144,38 @@ module CommandParser #(
 
             tvalidSkid <= 0;
 
-            rasterizerWasStarted <= 1;
+            rasterizerIsStarted <= 1;
         end
         else 
         begin
             case (state)
             WAIT_FOR_IDLE:
-            begin
-                if (rasterizerRunning && !rasterizerWasStarted)
-                    rasterizerWasStarted <= 1;
+            begin : WaitForIdle
+                reg rasterizationFinished;
+                reg framebufferFinished;
+                reg tmuFinished;
+                reg triangleFastPath;
+
+                rasterizationFinished = !rasterizerRunning && rasterizerIsStarted;
+                framebufferFinished = !framebufferCommandApply && framebufferCommandApplied;
+                tmuFinished = m_cmd_tmu0_axis_tready && m_cmd_tmu1_axis_tready;
+                triangleFastPath = !dataInTriangleInterpolator
+                    && s_cmd_axis_tvalid 
+                    && (s_cmd_axis_tdata[OP_POS +: OP_SIZE] == OP_TRIANGLE_STREAM);
+
+                if (rasterizerRunning && !rasterizerIsStarted)
+                    rasterizerIsStarted <= 1;
 
                 if (tready) // Wait till the stream has ended
                 begin
                     mux <= MUX_NONE;
                     tvalid <= 0;
                     m_cmd_xxx_axis_tlast <= 0;
-                    if (!m_cmd_xxx_axis_tlast && !framebufferCommandApply && framebufferCommandApplied && !pixelInPipeline && !rasterizerRunning && rasterizerWasStarted && m_cmd_tmu0_axis_tready && m_cmd_tmu1_axis_tready)
+                    if (!m_cmd_xxx_axis_tlast 
+                        && framebufferFinished
+                        && rasterizationFinished 
+                        && tmuFinished
+                        && (triangleFastPath || !pixelInPipeline))
                     begin
                         s_cmd_axis_tready <= 1;
                         state <= COMMAND_IN;
@@ -176,7 +193,7 @@ module CommandParser #(
                         /* verilator lint_off WIDTH */
                         streamCounter <= s_cmd_axis_tdata[DATABUS_SCALE_FACTOR_LOG2 +: OP_TRIANGLE_STEEAM_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         /* verilator lint_off WIDTH */
-                        rasterizerWasStarted <= 0;
+                        rasterizerIsStarted <= 0;
                         mux <= MUX_TRIANGLE_STREAM;
                         state <= EXEC_STREAM;
                     end

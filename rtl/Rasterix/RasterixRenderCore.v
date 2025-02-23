@@ -299,12 +299,13 @@ module RasterixRenderCore #(
     wire             cmd_config_axis_tready;
     // Control
     wire             pixelInPipeline;
+    wire             dataInTriangleInterpolator;
     wire             startRendering;
     wire             color_fifo_empty;
     wire             depth_fifo_empty;
     wire             stencil_fifo_empty;
     wire             rasterizerRunning;
-    CommandParser commandParser(
+    CommandParser commandParser (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -332,6 +333,7 @@ module RasterixRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .pixelInPipeline(pixelInPipeline || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
+        .dataInTriangleInterpolator(dataInInterpolator),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -729,7 +731,7 @@ module RasterixRenderCore #(
         .reset(!resetn), 
 
         .rasterizerRunning(rasterizerRunning),
-        .startRendering(startRendering),
+        .startRendering(startRendering & !pixelInPipeline),
 
         .yOffset(confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE]),
         .xResolution(confRenderResolution[RENDER_CONFIG_X_POS +: SCREEN_POS_WIDTH]),
@@ -778,6 +780,15 @@ module RasterixRenderCore #(
         .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
         .sigOutgoingValue(fragmentProcessed & framebuffer_pfp_wvalid & framebuffer_pfp_wready),
         .valueInPipeline(pixelInPipeline)
+    );
+
+    ValueTrack vtTriangle (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
+        .sigOutgoingValue(alrp_tpixel & alrp_tvalid & alrp_tready),
+        .valueInPipeline(dataInTriangleInterpolator)
     );
     
     ////////////////////////////////////////////////////////////////////////////
@@ -885,6 +896,7 @@ module RasterixRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     wire                                    alrp_tready;
     wire                                    alrp_tvalid;
+    wire                                    alrp_tpixel;
     wire                                    alrp_tlast;
     wire                                    alrp_tkeep;
     wire [SCREEN_POS_WIDTH - 1 : 0]         alrp_tspx;
@@ -961,6 +973,7 @@ module RasterixRenderCore #(
 
                 .m_attrb_tready(alrp_tready),
                 .m_attrb_tvalid(alrp_tvalid),
+                .m_attrb_tpixel(alrp_tpixel),
                 .m_attrb_tlast(alrp_tlast),
                 .m_attrb_tkeep(alrp_tkeep),
                 .m_attrb_tspx(alrp_tspx),
@@ -991,6 +1004,7 @@ module RasterixRenderCore #(
         begin
             wire                            ftx_tready;
             wire                            ftx_tvalid;
+            wire                            ftx_tpixel;
             wire                            ftx_tlast;
             wire                            ftx_tkeep;
             wire [SCREEN_POS_WIDTH - 1 : 0] ftx_tspx;
@@ -1016,7 +1030,8 @@ module RasterixRenderCore #(
                 .resetn(resetn),
 
                 .s_attrb_tready(bc_ready[0]),
-                .s_attrb_tvalid(bc_valid[0] & bc_pixel[0]),
+                .s_attrb_tvalid(bc_valid[0]),
+                .s_attrb_tpixel(bc_pixel[0]),
                 .s_attrb_tlast(bc_last[0]),
                 .s_attrb_tkeep(bc_keep[0]),
                 .s_attrb_tbbx(bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
@@ -1064,6 +1079,7 @@ module RasterixRenderCore #(
 
                 .m_attrb_tready(ftx_tready),
                 .m_attrb_tvalid(ftx_tvalid),
+                .m_attrb_tpixel(ftx_tpixel),
                 .m_attrb_tlast(ftx_tlast),
                 .m_attrb_tkeep(ftx_tkeep),
                 .m_attrb_tspx(ftx_tspx),
@@ -1096,6 +1112,7 @@ module RasterixRenderCore #(
 
                 .s_ftx_tready(ftx_tready),
                 .s_ftx_tvalid(ftx_tvalid),
+                .s_ftx_tpixel(ftx_tpixel),
                 .s_ftx_tlast(ftx_tlast),
                 .s_ftx_tkeep(ftx_tkeep),
                 .s_ftx_tspx(ftx_tspx),
@@ -1118,6 +1135,7 @@ module RasterixRenderCore #(
 
                 .m_ftx_tready(alrp_tready),
                 .m_ftx_tvalid(alrp_tvalid),
+                .m_ftx_tpixel(alrp_tpixel),
                 .m_ftx_tlast(alrp_tlast),
                 .m_ftx_tkeep(alrp_tkeep),
                 .m_ftx_tspx(alrp_tspx),
@@ -1183,7 +1201,10 @@ module RasterixRenderCore #(
         .confTMU1TexEnvColor(confTMU1TexEnvColor),
 
         .s_attrb_tready(alrp_tready),
-        .s_attrb_tvalid(alrp_tvalid),
+        // Memory requests are only executed for valid pixels.
+        // This pipeline does not need to be executed, when no pixels are available.
+        // Reduces the number of texture lookups.
+        .s_attrb_tvalid(alrp_tvalid & alrp_tpixel),
         .s_attrb_tlast(alrp_tlast),
         .s_attrb_tkeep(alrp_tkeep),
         .s_attrb_tspx(alrp_tspx),
