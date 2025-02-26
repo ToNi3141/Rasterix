@@ -49,6 +49,7 @@ HEADERS  += mainwindow.h \
     $${RRXGL_PATH}/renderer/*.hpp \
     $${RRXGL_PATH}/*.h \
     $${RRXGL_PATH}/renderer/registers/* \
+    $${RRXGL_PATH}/renderer/dse/* \
     $${RRXGL_PATH}/renderer/commands/*
 
 

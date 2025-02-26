@@ -20,6 +20,7 @@
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Renderer.hpp"
+#include "renderer/dse/DmaStreamEngine.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
@@ -43,12 +44,14 @@ class RenderDevice
 {
 public:
     RenderDevice(IBusConnector& busConnector)
-        : renderer { busConnector }
+        : DmaStreamEngine { busConnector }
+        , renderer { DmaStreamEngine }
         , pixelPipeline { renderer }
         , vertexPipeline { pixelPipeline }
     {
     }
 
+    DSEC::DmaStreamEngine DmaStreamEngine;
     Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;

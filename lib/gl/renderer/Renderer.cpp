@@ -18,15 +18,14 @@
 
 namespace rr
 {
-Renderer::Renderer(IBusConnector& busConnector)
-    : m_busConnector { busConnector }
+Renderer::Renderer(DSEC::DmaStreamEngine& dse)
+    : m_dse { dse }
 {
     m_displayListBuffer.getBack().clearDisplayListAssembler();
     m_displayListBuffer.getFront().clearDisplayListAssembler();
 
     initDisplayLists();
 
-    beginFrame();
     setYOffset();
 
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
@@ -40,7 +39,6 @@ Renderer::~Renderer()
 {
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);
     swapScreenToNewColorBuffer();
-    endFrame();
     swapDisplayList();
     uploadDisplayList();
 }
@@ -71,21 +69,19 @@ void Renderer::initDisplayLists()
 {
     for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)
     {
-        m_displayListAssembler[0][i].setBuffer(m_busConnector.requestBuffer(buffId), buffId);
+        m_displayListAssembler[0][i].setBuffer(m_dse.requestDisplayListBuffer(buffId), buffId);
         buffId++;
-        m_displayListAssembler[1][i].setBuffer(m_busConnector.requestBuffer(buffId), buffId);
+        m_displayListAssembler[1][i].setBuffer(m_dse.requestDisplayListBuffer(buffId), buffId);
         buffId++;
     }
 }
 
 void Renderer::intermediateUpload()
 {
-    endFrame();
     switchDisplayLists();
     uploadTextures();
     uploadDisplayList();
     clearDisplayListAssembler();
-    beginFrame();
 }
 
 void Renderer::swapDisplayList()
@@ -94,11 +90,9 @@ void Renderer::swapDisplayList()
     addCommitFramebufferCommand();
     addColorBufferAddressOfTheScreen();
     swapScreenToNewColorBuffer();
-    endFrame();
     switchDisplayLists();
     uploadTextures();
     clearDisplayListAssembler();
-    beginFrame();
     setYOffset();
     swapFramebuffer();
 }
@@ -173,9 +167,9 @@ void Renderer::uploadDisplayList()
             const std::size_t)
         {
             const std::size_t index = (displayLines - 1) - i;
-            while (!m_busConnector.clearToSend())
+            while (!m_dse.clearToSend())
                 ;
-            m_busConnector.writeData(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
+            m_dse.streamDisplayList(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
             return true;
         });
 }
@@ -362,14 +356,9 @@ void Renderer::uploadTextures()
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
-            DisplayListAssemblerType uploader;
-            const std::size_t bufferId = m_busConnector.getBufferCount() - 1;
-            uploader.setBuffer(m_busConnector.requestBuffer(bufferId), bufferId);
-            uploader.addCommand(WriteMemoryCmd { gramAddr, data });
-
-            while (!m_busConnector.clearToSend())
+            while (!m_dse.clearToSend())
                 ;
-            m_busConnector.writeData(bufferId, uploader.getDisplayListSize());
+            m_dse.writeToDeviceMemory(data, gramAddr);
             return true;
         });
 }

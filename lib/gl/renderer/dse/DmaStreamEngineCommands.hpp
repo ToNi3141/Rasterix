@@ -52,7 +52,7 @@ static constexpr SCT OP_COMMIT_TO_STREAM { 0x6000'0000 };
 static constexpr SCT OP_COMMIT_TO_MEMORY { 0xE000'0000 };
 static constexpr SCT OP_STREAM_FROM_MEMORY { 0x7000'0000 };
 
-static constexpr std::size_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports transfers as a multiple of this size and 4 byte aligned.
+static constexpr std::size_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports 16 * 4 byte transfers
 
 struct Command
 {
@@ -60,14 +60,6 @@ struct Command
     uint32_t op;
     uint32_t addr;
 #pragma pack(pop)
-};
-
-struct Transfer
-{
-    uint32_t op;
-    std::size_t len;
-    uint32_t addr;
-    tcb::span<const uint8_t> payload;
 };
 
 } // namespace rr::DSEC

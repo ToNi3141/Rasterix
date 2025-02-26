@@ -18,12 +18,9 @@
 #ifndef DISPLAYLISTASSEMBLER_HPP
 #define DISPLAYLISTASSEMBLER_HPP
 
-#include "DSEDisplayListAssembler.hpp"
 #include "DisplayList.hpp"
 #include "RRXDisplayListAssembler.hpp"
-#include "StreamSectionManager.hpp"
 #include "TextureLoadOptimizer.hpp"
-#include "renderer/commands/StreamFromStreamCmd.hpp"
 #include <algorithm>
 #include <array>
 #include <bitset>
@@ -56,35 +53,13 @@ public:
     void clearAssembler()
     {
         m_displayList.clear();
-        m_streamSectionManager.reset();
         m_textureLoadOptimizer.reset();
-    }
-
-    bool begin()
-    {
-        return m_streamSectionManager.openNewStreamSection();
-    }
-
-    void end()
-    {
-        m_streamSectionManager.closeStreamSection();
     }
 
     template <typename TCommand>
     std::size_t getCommandSize(const TCommand& cmd)
     {
-        std::size_t expectedSize = 0;
-
-        if constexpr (HasCommand<decltype(cmd)>::value)
-        {
-            expectedSize += m_rrxDisplayListAssembler.getCommandSize(cmd);
-        }
-
-        if constexpr (HasDseTransfer<decltype(cmd)>::value)
-        {
-            expectedSize += m_dseDisplayListAssembler.getCommandSize(cmd);
-        }
-        return expectedSize;
+        return m_rrxDisplayListAssembler.getCommandSize(cmd);
     }
 
     void saveSectionStart()
@@ -101,55 +76,10 @@ public:
     bool addCommand(const TCommand& cmd)
     {
         m_textureLoadOptimizer.optimize(cmd);
-
-        if constexpr (HasCommand<decltype(cmd)>::value)
-        {
-            // Only add a new RRX command when the stream section is open
-            if (!m_streamSectionManager.sectionOpen())
-            {
-                return false;
-            }
-            return m_rrxDisplayListAssembler.addCommand(cmd);
-        }
-
-        if constexpr (HasDseTransfer<decltype(cmd)>::value)
-        {
-            // Only add a new DSE command when the section is not open
-            if (m_streamSectionManager.sectionOpen())
-            {
-                return false;
-            }
-            return m_dseDisplayListAssembler.addCommand(cmd);
-        }
-
-        return true;
+        return m_rrxDisplayListAssembler.addCommand(cmd);
     }
 
 private:
-    template <typename T>
-    class HasDseTransfer
-    {
-        template <typename>
-        static std::false_type test(...);
-        template <typename U>
-        static auto test(int) -> decltype(std::declval<U>().dseTransfer(), std::true_type());
-
-    public:
-        static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
-    };
-
-    template <typename T>
-    class HasCommand
-    {
-        template <typename>
-        static std::false_type test(...);
-        template <typename U>
-        static auto test(int) -> decltype(std::declval<U>().command(), std::true_type());
-
-    public:
-        static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
-    };
-
     template <typename TCommand>
     bool hasDisplayListEnoughSpace(const TCommand& cmd)
     {
@@ -162,12 +92,7 @@ private:
 
     DisplayList m_displayList {};
     RRXDisplayListAssembler<DisplayList> m_rrxDisplayListAssembler { m_displayList };
-    DSEDisplayListAssembler<DisplayList> m_dseDisplayListAssembler { m_displayList };
     TextureLoadOptimizer<TMU_COUNT, DisplayList> m_textureLoadOptimizer { m_displayList };
-    StreamSectionManager<DisplayList,
-        DSEDisplayListAssembler<DisplayList>,
-        StreamFromStreamCmd>
-        m_streamSectionManager { m_displayList, m_dseDisplayListAssembler };
     std::size_t m_displayListBufferId { 0 };
 };
 
