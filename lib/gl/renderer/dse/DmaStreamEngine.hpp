@@ -82,7 +82,7 @@ private:
     {
         tcb::span<uint8_t> s = m_busConnector.requestBuffer(getStoreBufferIndex());
         std::copy(payload.begin(), payload.end(), s.last(s.size() - offset).begin());
-        return std::max(payload.size(), DEVICE_MIN_TRANSFER_SIZE);
+        return (std::max)(payload.size(), DEVICE_MIN_TRANSFER_SIZE);
     }
 
     std::size_t addDseCommand(
