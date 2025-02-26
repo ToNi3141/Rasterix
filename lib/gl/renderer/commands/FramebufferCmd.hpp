@@ -18,7 +18,6 @@
 #ifndef _FRAMEBUFFER_CMD_HPP_
 #define _FRAMEBUFFER_CMD_HPP_
 
-#include "renderer/DmaStreamEngineCommands.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>

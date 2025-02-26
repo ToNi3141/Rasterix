@@ -38,12 +38,8 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
-#include "commands/StreamFromMemoryToDisplayCmd.hpp"
-#include "commands/StreamFromRrxToDisplayCmd.hpp"
-#include "commands/StreamFromRrxToMemoryCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
-#include "commands/WriteMemoryCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
 #include "registers/BaseColorReg.hpp"
 #include "registers/ColorBufferAddrReg.hpp"
@@ -63,6 +59,8 @@
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
 
+#include "dse/DmaStreamEngine.hpp"
+
 namespace rr
 {
 
@@ -70,7 +68,7 @@ class Renderer
 {
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
-    Renderer(IBusConnector& busConnector);
+    Renderer(DSEC::DmaStreamEngine& dse);
 
     ~Renderer();
 
@@ -338,16 +336,6 @@ private:
         return m_displayListBuffer.getBack().displayListLooper(func);
     }
 
-    void beginFrame()
-    {
-        m_displayListBuffer.getBack().beginFrame();
-    }
-
-    void endFrame()
-    {
-        m_displayListBuffer.getBack().endFrame();
-    }
-
     void clearDisplayListAssembler()
     {
         m_displayListBuffer.getBack().clearDisplayListAssembler();
@@ -380,7 +368,7 @@ private:
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };
 
-    IBusConnector& m_busConnector;
+    DSEC::DmaStreamEngine& m_dse;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
