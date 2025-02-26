@@ -111,7 +111,7 @@ void Renderer::addLineColorBufferAddresses()
 void Renderer::addCommitFramebufferCommand()
 {
     addCommandWithFactory(
-        [](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+        [](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
         {
             // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
             // to flush the pipeline. This is the easiest way to solve WAR conflicts.
@@ -126,11 +126,7 @@ void Renderer::addCommitFramebufferCommand()
 void Renderer::addColorBufferAddressOfTheScreen()
 {
     // The last list is responsible for the overall system state
-    addLastCommandWithFactory(
-        [this](const std::size_t, const std::size_t, const std::size_t, const std::size_t)
-        {
-            return WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } };
-        });
+    addLastCommand(WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } });
 }
 
 void Renderer::swapScreenToNewColorBuffer()

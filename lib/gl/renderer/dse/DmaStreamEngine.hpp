@@ -46,15 +46,15 @@ public:
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     }
 
+    bool clearToSend()
+    {
+        return m_busConnector.clearToSend();
+    }
+
     tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index)
     {
         tcb::span<uint8_t> s = m_busConnector.requestBuffer(index);
         return s.last(s.size() - sizeof(Command));
-    }
-
-    bool clearToSend()
-    {
-        return m_busConnector.clearToSend();
     }
 
     uint8_t getDisplayListBufferCount() const
@@ -65,7 +65,7 @@ public:
 private:
     std::size_t getStoreBufferIndex() const
     {
-        return getDisplayListBufferCount();
+        return m_busConnector.getBufferCount() - 1;
     }
 
     std::size_t addDseStreamCommand(const uint8_t index, const uint32_t size)
