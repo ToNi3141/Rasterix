@@ -26,7 +26,7 @@ namespace rr::displaylist
 {
 
 template <std::size_t ALIGNMENT>
-class DisplayList
+class GenericDisplayList
 {
 public:
     void setBuffer(tcb::span<uint8_t> buffer)
@@ -153,6 +153,8 @@ private:
     std::size_t readPos { 0 };
     std::size_t sectionStartPos { 0 };
 };
+
+using DisplayList = GenericDisplayList<4>;
 
 } // namespace rr::displaylist
 #endif // DISPLAYLIST_HPP

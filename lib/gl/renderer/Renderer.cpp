@@ -45,7 +45,7 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    const TriangleStreamCmd<DisplayListType> triangleCmd { m_rasterizer, triangle };
+    const TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
 
     if (!triangleCmd.isVisible())
     {
@@ -59,7 +59,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     }
     else
     {
-        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) 
+        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
         {
             const std::size_t currentScreenPositionStart = i * resY;
             const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
@@ -76,7 +76,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
                 else
                 {
                     // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<DisplayListType> triangleCmdInc = triangleCmd;
+                    TriangleStreamCmd triangleCmdInc = triangleCmd;
                     triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
                     ret = dispatcher.addCommand(i, triangleCmdInc);
                 }

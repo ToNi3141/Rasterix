@@ -22,6 +22,7 @@
 #include "renderer/Rasterizer.hpp"
 #include "renderer/Triangle.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -31,7 +32,6 @@
 namespace rr
 {
 
-template <typename DisplayList>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
@@ -65,9 +65,9 @@ public:
     using PayloadType = std::array<TriangleStreamTypes::TriangleDesc, 1>;
     const PayloadType& payload() const { return m_desc; }
     using CommandType = uint32_t;
-    static constexpr CommandType command() { return TRIANGLE_STREAM | (DisplayList::template sizeOf<TrDesc>()); }
+    static constexpr CommandType command() { return TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
 
-    TriangleStreamCmd<DisplayList>& operator=(const TriangleStreamCmd<DisplayList>& rhs)
+    TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
         m_desc = rhs.m_desc;
         m_visible = rhs.m_visible;
