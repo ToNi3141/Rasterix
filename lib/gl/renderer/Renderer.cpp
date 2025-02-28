@@ -59,8 +59,35 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     }
     else
     {
-        m_triangleIncr.setTriangleCmd(&triangleCmd);
-        return displayListLooper(m_triangleIncr);
+        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) 
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                bool ret { false };
+
+                // The floating point rasterizer can automatically increment all attributes to the current screen position
+                // Therefor no further computing is necessary
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    ret = dispatcher.addCommand(i, triangleCmd);
+                }
+                else
+                {
+                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
+                    TriangleStreamCmd<DisplayListType> triangleCmdInc = triangleCmd;
+                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
+                    ret = dispatcher.addCommand(i, triangleCmdInc);
+                }
+                if (ret == false)
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+        return displayListLooper(factory);
     }
     return true;
 }

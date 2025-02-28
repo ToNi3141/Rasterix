@@ -240,50 +240,6 @@ private:
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
 
-    // Triangles are send to the display list this way because this is the fastest way.
-    // The addCommandWithFactory methods have a performance penalty of around 10%.
-    template <typename DisplayList>
-    class TriangleCommandIncr
-    {
-    public:
-        bool operator()(DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
-        {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
-            if (triangleCmd->isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                bool ret { false };
-
-                // The floating point rasterizer can automatically increment all attributes to the current screen position
-                // Therefor no further computing is necessary
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                {
-                    ret = dispatcher.addCommand(i, *triangleCmd);
-                }
-                else
-                {
-                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<DisplayList> triangleCmdInc = *triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = dispatcher.addCommand(i, triangleCmdInc);
-                }
-                if (ret == false)
-                {
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        void setTriangleCmd(const TriangleStreamCmd<DisplayList>* cmd)
-        {
-            triangleCmd = cmd;
-        }
-
-    private:
-        const TriangleStreamCmd<DisplayList>* triangleCmd { nullptr };
-    };
-
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
@@ -379,8 +335,6 @@ private:
 
     // Mapping of texture id and TMU
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
-
-    TriangleCommandIncr<DisplayListType> m_triangleIncr {};
 };
 
 } // namespace rr
