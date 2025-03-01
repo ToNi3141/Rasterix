@@ -18,8 +18,8 @@
 
 namespace rr
 {
-Renderer::Renderer(DSEC::DmaStreamEngine& dse)
-    : m_dse { dse }
+Renderer::Renderer(IDevice& device)
+    : m_device { device }
 {
     m_displayListBuffer.getBack().clearDisplayListAssembler();
     m_displayListBuffer.getFront().clearDisplayListAssembler();
@@ -96,9 +96,9 @@ void Renderer::initDisplayLists()
 {
     for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)
     {
-        m_displayListAssembler[0][i].setBuffer(m_dse.requestDisplayListBuffer(buffId), buffId);
+        m_displayListAssembler[0][i].setBuffer(m_device.requestDisplayListBuffer(buffId), buffId);
         buffId++;
-        m_displayListAssembler[1][i].setBuffer(m_dse.requestDisplayListBuffer(buffId), buffId);
+        m_displayListAssembler[1][i].setBuffer(m_device.requestDisplayListBuffer(buffId), buffId);
         buffId++;
     }
 }
@@ -190,9 +190,9 @@ void Renderer::uploadDisplayList()
             const std::size_t)
         {
             const std::size_t index = (displayLines - 1) - i;
-            while (!m_dse.clearToSend())
+            while (!m_device.clearToSend())
                 ;
-            m_dse.streamDisplayList(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
+            m_device.streamDisplayList(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
             return true;
         });
 }
@@ -379,9 +379,9 @@ void Renderer::uploadTextures()
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
-            while (!m_dse.clearToSend())
+            while (!m_device.clearToSend())
                 ;
-            m_dse.writeToDeviceMemory(data, gramAddr);
+            m_device.writeToDeviceMemory(data, gramAddr);
             return true;
         });
 }

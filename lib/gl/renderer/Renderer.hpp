@@ -18,7 +18,6 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
-#include "IBusConnector.hpp"
 #include "Rasterizer.hpp"
 #include "Renderer.hpp"
 #include "TextureMemoryManager.hpp"
@@ -27,6 +26,7 @@
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/IDevice.hpp"
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -68,7 +68,7 @@ class Renderer
 {
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
-    Renderer(DSEC::DmaStreamEngine& dse);
+    Renderer(IDevice& device);
 
     ~Renderer();
 
@@ -323,7 +323,7 @@ private:
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };
 
-    DSEC::DmaStreamEngine& m_dse;
+    IDevice& m_device;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 

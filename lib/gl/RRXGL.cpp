@@ -21,6 +21,7 @@
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
@@ -44,14 +45,16 @@ class RenderDevice
 {
 public:
     RenderDevice(IBusConnector& busConnector)
-        : DmaStreamEngine { busConnector }
-        , renderer { DmaStreamEngine }
+        : dmaStreamEngine { busConnector }
+        , threadedRasterizer { dmaStreamEngine }
+        , renderer { threadedRasterizer }
         , pixelPipeline { renderer }
         , vertexPipeline { pixelPipeline }
     {
     }
 
-    DSEC::DmaStreamEngine DmaStreamEngine;
+    DSEC::DmaStreamEngine dmaStreamEngine;
+    ThreadedRasterizer threadedRasterizer;
     Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
