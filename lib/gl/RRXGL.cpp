@@ -41,20 +41,44 @@ RRXGL& RRXGL::getInstance()
     return *instance;
 }
 
+class WithThreadedRasterization
+{
+public:
+    WithThreadedRasterization(IBusConnector& busConnector)
+        : dmaStreamEngine { busConnector }
+        , device { dmaStreamEngine }
+    {
+    }
+
+    DSEC::DmaStreamEngine dmaStreamEngine;
+    ThreadedRasterizer device;
+};
+
+class OnlyDse
+{
+public:
+    OnlyDse(IBusConnector& busConnector)
+        : device { busConnector }
+    {
+    }
+
+    DSEC::DmaStreamEngine device;
+};
+
 class RenderDevice
 {
 public:
     RenderDevice(IBusConnector& busConnector)
-        : dmaStreamEngine { busConnector }
-        , threadedRasterizer { dmaStreamEngine }
-        , renderer { threadedRasterizer }
+        : device { busConnector }
+        , renderer { device.device }
         , pixelPipeline { renderer }
         , vertexPipeline { pixelPipeline }
     {
     }
 
-    DSEC::DmaStreamEngine dmaStreamEngine;
-    ThreadedRasterizer threadedRasterizer;
+    using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
+
+    Device device;
     Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;

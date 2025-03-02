@@ -40,6 +40,9 @@ struct RenderConfig
     static constexpr uint32_t DEPTH_BUFFER_LOC { RRX_CORE_DEPTH_BUFFER_LOC };
     static constexpr uint32_t STENCIL_BUFFER_LOC { RRX_CORE_STENCIL_BUFFER_LOC };
 
+    // Misc
+    static constexpr bool THREADED_RASTERIZATION { RRX_CORE_THREADED_RASTERIZATION };
+
     static constexpr std::size_t getDisplayLines()
     {
         constexpr std::size_t MAX_FRAMEBUFFER_SIZE = MAX_DISPLAY_WIDTH * MAX_DISPLAY_HEIGHT;

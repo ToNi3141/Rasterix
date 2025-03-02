@@ -35,6 +35,7 @@ namespace rr
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
+    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
     // Both, the float and fix point variant expecting the triangle parameters as float.
@@ -42,6 +43,7 @@ public:
     static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
 
+    TriangleStreamCmd() = default;
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc[0], triangle);
@@ -73,6 +75,9 @@ public:
         m_visible = rhs.m_visible;
         return *this;
     }
+
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadType> {}; }
+    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == TRIANGLE_STREAM; }
 
 private:
     std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;

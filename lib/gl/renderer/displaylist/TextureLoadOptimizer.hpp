@@ -19,6 +19,7 @@
 #define TEXTURELOADOPTIMIZER_HPP
 
 #include "RRXDisplayListAssembler.hpp"
+#include "renderer/commands/RegularTriangleCmd.hpp"
 #include "renderer/commands/TextureStreamCmd.hpp"
 #include "renderer/commands/TriangleStreamCmd.hpp"
 #include <algorithm>
@@ -57,7 +58,8 @@ private:
     template <typename TCommand>
     void markTriangleCommand()
     {
-        if constexpr (std::is_same<TCommand, TriangleStreamCmd>::value)
+        if constexpr (std::is_same<TCommand, TriangleStreamCmd>::value
+            || std::is_same<TCommand, RegularTriangleCmd>::value)
         {
             m_textureCommandFlag.reset();
         }

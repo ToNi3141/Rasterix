@@ -28,12 +28,15 @@ namespace rr
 class NopCmd
 {
     static constexpr uint32_t OP_NOP { 0 };
+    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
     using PayloadType = tcb::span<const uint8_t>;
     const PayloadType payload() const { return {}; }
     using CommandType = uint32_t;
     CommandType command() const { return OP_NOP; }
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
+    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_NOP; }
 };
 
 } // namespace rr

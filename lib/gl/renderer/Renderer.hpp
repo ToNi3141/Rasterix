@@ -38,6 +38,7 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
+#include "commands/RegularTriangleCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
@@ -58,8 +59,6 @@
 #include "registers/TexEnvReg.hpp"
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
-
-#include "dse/DmaStreamEngine.hpp"
 
 namespace rr
 {
@@ -314,6 +313,8 @@ private:
     void addCommitFramebufferCommand();
     void addColorBufferAddressOfTheScreen();
     void swapScreenToNewColorBuffer();
+    bool rasterizedTriangleStream(const TransformedTriangle& triangle);
+    bool regularTriangleStream(const TransformedTriangle& triangle);
 
     uint32_t m_colorBufferAddr {};
     bool m_switchColorBuffer { true };

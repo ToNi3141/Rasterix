@@ -40,6 +40,16 @@ public:
     void setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
     void enableScissor(const bool enable) { m_enableScissor = enable; }
     void enableTmu(const std::size_t tmu, const bool enable) { m_tmuEnable[tmu] = enable; }
+    void setScissorStart(const int32_t x, const int32_t y)
+    {
+        m_scissorStartX = x << EDGE_FUNC_SIZE;
+        m_scissorStartY = y << EDGE_FUNC_SIZE;
+    }
+    void setScissorEnd(const uint32_t width, const uint32_t height)
+    {
+        m_scissorEndX = (width << EDGE_FUNC_SIZE) + m_scissorStartX;
+        m_scissorEndY = (height << EDGE_FUNC_SIZE) + m_scissorStartY;
+    }
 
     static float edgeFunctionFloat(const Vec4& a, const Vec4& b, const Vec4& c);
 

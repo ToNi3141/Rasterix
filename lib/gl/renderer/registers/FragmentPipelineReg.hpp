@@ -86,6 +86,7 @@ public:
     BlendFunc getBlendFuncDFactor() const { return static_cast<BlendFunc>(m_regVal.fields.blendFuncDFactor); }
 
     uint32_t serialize() const { return m_regVal.data; }
+    void deserialize(const uint32_t data) { m_regVal.data = data; }
     static constexpr uint32_t getAddr() { return 0x3; }
 
 private:

@@ -45,6 +45,18 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
+    if constexpr (RenderConfig::THREADED_RASTERIZATION)
+    {
+        return regularTriangleStream(triangle);
+    }
+    else
+    {
+        return rasterizedTriangleStream(triangle);
+    }
+}
+
+bool Renderer::rasterizedTriangleStream(const TransformedTriangle& triangle)
+{
     const TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
 
     if (!triangleCmd.isVisible())
@@ -84,6 +96,31 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
                 {
                     return false;
                 }
+            }
+            return true;
+        };
+        return displayListLooper(factory);
+    }
+    return true;
+}
+
+bool Renderer::regularTriangleStream(const TransformedTriangle& triangle)
+{
+    RegularTriangleCmd triangleCmd { triangle };
+    if constexpr (DisplayListDispatcherType::singleList())
+    {
+        return addCommand(triangleCmd);
+    }
+    else
+    {
+        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                triangleCmd.setBoundingBox(currentScreenPositionStart, currentScreenPositionEnd);
+                return dispatcher.addCommand(i, triangleCmd);
             }
             return true;
         };
