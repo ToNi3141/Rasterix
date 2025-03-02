@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ class RegularTriangleCmd
     static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
-    struct RawTriangle
+    struct RegularTriangle
     {
 #pragma pack(push, 4)
         Vec4 vertex0;
@@ -54,13 +54,13 @@ public:
         std::size_t lineStart;
         std::size_t lineEnd;
 #pragma pack(pop)
-        RawTriangle& operator=(const RawTriangle&) = default;
+        RegularTriangle& operator=(const RegularTriangle&) = default;
     };
 
     RegularTriangleCmd() = default;
     RegularTriangleCmd(const TransformedTriangle& triangle)
     {
-        RawTriangle& t = m_desc[0];
+        RegularTriangle& t = m_desc[0];
         t.vertex0 = triangle.vertex0;
         t.vertex1 = triangle.vertex1;
         t.vertex2 = triangle.vertex2;
@@ -90,7 +90,7 @@ public:
         m_desc[0].lineEnd = lineEnd;
     }
 
-    using PayloadType = std::array<RawTriangle, 1>;
+    using PayloadType = std::array<RegularTriangle, 1>;
     const PayloadType& payload() const { return m_desc; }
     using CommandType = uint32_t;
     static constexpr CommandType command() { return TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TransformedTriangle>()); }
@@ -101,7 +101,7 @@ public:
     RegularTriangleCmd& operator=(const RegularTriangleCmd&) = default;
 
 private:
-    std::array<RawTriangle, 1> m_desc;
+    std::array<RegularTriangle, 1> m_desc;
     std::size_t m_bbStartY;
     std::size_t m_bbEndY;
 };
