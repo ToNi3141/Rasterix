@@ -56,10 +56,11 @@ public:
         return Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
     }
 
-    bool increment(const std::size_t lineStart, const std::size_t lineEnd)
+    TriangleStreamCmd getIncremented(const std::size_t lineStart, const std::size_t lineEnd)
     {
-        bool ret = Rasterizer::increment(m_desc[0], lineStart, lineEnd);
-        return ret;
+        TriangleStreamCmd cmd = *this;
+        Rasterizer::increment(cmd.m_desc[0], lineStart, lineEnd);
+        return cmd;
     }
 
     bool isVisible() const { return m_visible; };

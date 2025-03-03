@@ -117,22 +117,24 @@ private:
         src.getNext<typename RegularTriangleCmd::CommandType>();
         const PayloadType* t = src.getNext<PayloadType>();
 
-        TriangleStreamCmd tsc { m_rasterizer, {
-                                                  .vertex0 = t->vertex0,
-                                                  .vertex1 = t->vertex1,
-                                                  .vertex2 = t->vertex2,
-                                                  .texture0 = t->texture0,
-                                                  .texture1 = t->texture1,
-                                                  .texture2 = t->texture2,
-                                                  .color0 = t->color0,
-                                                  .color1 = t->color1,
-                                                  .color2 = t->color2,
-                                              } };
+        TriangleStreamCmd tsc {
+            m_rasterizer,
+            {
+                .vertex0 = t->vertex0,
+                .vertex1 = t->vertex1,
+                .vertex2 = t->vertex2,
+                .texture0 = t->texture0,
+                .texture1 = t->texture1,
+                .texture2 = t->texture2,
+                .color0 = t->color0,
+                .color1 = t->color1,
+                .color2 = t->color2,
+            },
+        };
 
         if (tsc.isVisible())
         {
-            tsc.increment(t->lineStart, t->lineEnd);
-            m_displayLists.getBack().addCommand(tsc);
+            m_displayLists.getBack().addCommand(tsc.getIncremented(t->lineStart, t->lineEnd));
         }
         return true;
     }
@@ -226,11 +228,14 @@ private:
         m_displayLists.getBack().clearAssembler();
     }
 
+    using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
+
     IDevice& m_device;
     std::array<std::array<uint8_t, 1024 * 1024>, 32> m_buffer;
-    std::array<displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>, 2> m_displayListAssembler {};
-    displaylist::DisplayListDoubleBuffer<displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>> m_displayLists {
-        m_displayListAssembler[0], m_displayListAssembler[1]
+    std::array<ConcreteDisplayListAssembler, 2> m_displayListAssembler {};
+    displaylist::DisplayListDoubleBuffer<ConcreteDisplayListAssembler> m_displayLists {
+        m_displayListAssembler[0],
+        m_displayListAssembler[1],
     };
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 };

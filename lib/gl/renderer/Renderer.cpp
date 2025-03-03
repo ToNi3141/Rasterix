@@ -47,86 +47,14 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
     if constexpr (RenderConfig::THREADED_RASTERIZATION)
     {
-        return regularTriangleStream(triangle);
+        RegularTriangleCmd triangleCmd { triangle };
+        return addTriangleCmd(triangleCmd);
     }
     else
     {
-        return rasterizedTriangleStream(triangle);
+        TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
+        return addTriangleCmd(triangleCmd);
     }
-}
-
-bool Renderer::rasterizedTriangleStream(const TransformedTriangle& triangle)
-{
-    const TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
-
-    if (!triangleCmd.isVisible())
-    {
-        // Triangle is not visible
-        return true;
-    }
-
-    if constexpr (DisplayListDispatcherType::singleList())
-    {
-        return addCommand(triangleCmd);
-    }
-    else
-    {
-        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-        {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                bool ret { false };
-
-                // The floating point rasterizer can automatically increment all attributes to the current screen position
-                // Therefor no further computing is necessary
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                {
-                    ret = dispatcher.addCommand(i, triangleCmd);
-                }
-                else
-                {
-                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd triangleCmdInc = triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = dispatcher.addCommand(i, triangleCmdInc);
-                }
-                if (ret == false)
-                {
-                    return false;
-                }
-            }
-            return true;
-        };
-        return displayListLooper(factory);
-    }
-    return true;
-}
-
-bool Renderer::regularTriangleStream(const TransformedTriangle& triangle)
-{
-    RegularTriangleCmd triangleCmd { triangle };
-    if constexpr (DisplayListDispatcherType::singleList())
-    {
-        return addCommand(triangleCmd);
-    }
-    else
-    {
-        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-        {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                triangleCmd.setBoundingBox(currentScreenPositionStart, currentScreenPositionEnd);
-                return dispatcher.addCommand(i, triangleCmd);
-            }
-            return true;
-        };
-        return displayListLooper(factory);
-    }
-    return true;
 }
 
 void Renderer::initDisplayLists()

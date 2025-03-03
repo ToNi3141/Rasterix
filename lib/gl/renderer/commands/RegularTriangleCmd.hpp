@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _RAW_TRIANGLE_CMD_HPP_
-#define _RAW_TRIANGLE_CMD_HPP_
+#ifndef _REGULAR_TRIANGLE_CMD_HPP_
+#define _REGULAR_TRIANGLE_CMD_HPP_
 
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
@@ -84,11 +84,14 @@ public:
         return ((m_bbEndY >= lineStart) && (m_bbStartY < lineEnd));
     }
 
-    void setBoundingBox(const std::size_t lineStart, const std::size_t lineEnd)
+    const RegularTriangleCmd& getIncremented(const std::size_t lineStart, const std::size_t lineEnd)
     {
         m_desc[0].lineStart = lineStart;
         m_desc[0].lineEnd = lineEnd;
+        return *this;
     }
+
+    static constexpr bool isVisible() { return true; }
 
     using PayloadType = std::array<RegularTriangle, 1>;
     const PayloadType& payload() const { return m_desc; }
@@ -108,4 +111,4 @@ private:
 
 } // namespace rr
 
-#endif // _RAW_TRIANGLE_CMD_HPP_
+#endif // _REGULAR_TRIANGLE_CMD_HPP_

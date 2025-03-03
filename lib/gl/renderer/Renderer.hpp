@@ -300,6 +300,49 @@ private:
         m_displayListBuffer.swap();
     }
 
+    template <typename TriangleCmd>
+    bool addMultiListTriangle(TriangleCmd& triangleCmd)
+    {
+        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                // The floating point rasterizer can automatically increment all attributes
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    return dispatcher.addCommand(i, triangleCmd);
+                }
+                else
+                {
+                    return dispatcher.addCommand(i, triangleCmd.getIncremented(currentScreenPositionStart, currentScreenPositionEnd));
+                }
+            }
+            return true;
+        };
+        return displayListLooper(factory);
+    }
+
+    template <typename TriangleCmd>
+    bool addTriangleCmd(TriangleCmd& triangleCmd)
+    {
+        if (!triangleCmd.isVisible())
+        {
+            return true;
+        }
+
+        if constexpr (DisplayListDispatcherType::singleList())
+        {
+            return addCommand(triangleCmd);
+        }
+        else
+        {
+            return addMultiListTriangle(triangleCmd);
+        }
+        return true;
+    }
+
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
@@ -313,8 +356,6 @@ private:
     void addCommitFramebufferCommand();
     void addColorBufferAddressOfTheScreen();
     void swapScreenToNewColorBuffer();
-    bool rasterizedTriangleStream(const TransformedTriangle& triangle);
-    bool regularTriangleStream(const TransformedTriangle& triangle);
 
     uint32_t m_colorBufferAddr {};
     bool m_switchColorBuffer { true };
