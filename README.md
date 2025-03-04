@@ -15,39 +15,39 @@ The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed 
 
 The project started as an experiment, how an 3D renderer can be implemented on an FPGA and slowly evolved to something, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
 
-It comes in two variants, `RasterixIF` and `RasterixEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
+It comes in two variants, `RRXIF` and `RRXEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
 
-`RasterixIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
+`RRXIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
 For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended.
 
 The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
 
-Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
+Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
 
-`RasterixEF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RasterixIF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
+`RRXEF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RRXIF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
 
-The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. With this configuration, the renderer works more like a traditional one.
+The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. This configuration works more like a traditional renderer.
 
-Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires a fraction of the logic of the floating point configuration. The floating point version can run faster on the host system because it avoids the conversion from float to fixed point.
+Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires half of the logic of the floating point configuration.
 
 ## Area Usage
 Typical configuration: 
-  - 64 bit command bus / memory bus
+  - 64 bit memory bus
   - 256px textures
   - 1 TMU
   - mip mapping
   - fix point interpolation with 25 bit multipliers
-  - internal framebuffer (rrxif)
+  - internal framebuffer (RRXIF)
 
 Then the core requires __around 10k LUTs__ on a Xilinx Series 7 device.
 
 High performance configuration: 
-  - 128 bit command / memory bus
+  - 128 bit memory bus
   - 256px textures
   - 2 TMUs
   - mip mapping
   - float interpolation with 32 bit floats
-  - external frame buffer (rrxef)
+  - external frame buffer (RRXEF)
 
 Then the core requires __around 36k LUTs__ on a Xilinx Series 7 device.
 
@@ -110,11 +110,11 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
 | RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
 | RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
-
+| RRX_CORE_THREADED_RASTERIZATION        | Will run the rasterization in the display list upload thread. Can improve the performance by around 10%. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/Rasterix/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
-2. Instantiate the `RRX` module.  
+2. Instantiate the `RRX` module and configure it.
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory.
 5. Optionally connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a display for instance). When using a memory mapped framebuffer, then this port is unused.

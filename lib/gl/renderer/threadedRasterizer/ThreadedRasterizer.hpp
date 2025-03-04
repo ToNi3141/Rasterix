@@ -46,6 +46,7 @@
 namespace rr
 {
 
+template <std::size_t BUFFER_COUNT, std::size_t BUFFER_SIZE>
 class ThreadedRasterizer : public IDevice
 {
 public:
@@ -231,7 +232,7 @@ private:
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
 
     IDevice& m_device;
-    std::array<std::array<uint8_t, 1024 * 1024>, 32> m_buffer;
+    std::array<std::array<uint8_t, BUFFER_SIZE>, BUFFER_COUNT> m_buffer;
     std::array<ConcreteDisplayListAssembler, 2> m_displayListAssembler {};
     displaylist::DisplayListDoubleBuffer<ConcreteDisplayListAssembler> m_displayLists {
         m_displayListAssembler[0],
