@@ -73,8 +73,8 @@ public:
         t.lineStart = 0;
         t.lineEnd = 0;
 
-        m_bbStartY = std::min(std::min(t.vertex0[1], t.vertex1[1]), t.vertex2[1]);
-        m_bbEndY = std::max(std::max(t.vertex0[1], t.vertex1[1]), t.vertex2[1]);
+        m_bbStartY = (std::min)((std::min)(t.vertex0[1], t.vertex1[1]), t.vertex2[1]);
+        m_bbEndY = (std::max)((std::max)(t.vertex0[1], t.vertex1[1]), t.vertex2[1]);
     }
 
     RegularTriangleCmd(const RegularTriangleCmd& c) { operator=(c); }

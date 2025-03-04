@@ -120,15 +120,15 @@ private:
         TriangleStreamCmd tsc {
             m_rasterizer,
             {
-                .vertex0 = t->vertex0,
-                .vertex1 = t->vertex1,
-                .vertex2 = t->vertex2,
-                .texture0 = t->texture0,
-                .texture1 = t->texture1,
-                .texture2 = t->texture2,
-                .color0 = t->color0,
-                .color1 = t->color1,
-                .color2 = t->color2,
+                t->vertex0,
+                t->vertex1,
+                t->vertex2,
+                t->texture0,
+                t->texture1,
+                t->texture2,
+                t->color0,
+                t->color1,
+                t->color2,
             },
         };
 
