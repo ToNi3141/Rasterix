@@ -1,37 +1,23 @@
 
 - [About this Project](#about-this-project)
-  - [Area Usage](#area-usage)
+- [Area Usage](#area-usage)
 - [Working Games](#working-games)
 - [Checkout Repository](#checkout-repository)
 - [Platforms](#platforms)
 - [How to integrate](#how-to-integrate)
   - [How to port the Driver](#how-to-port-the-driver)
   - [How to use the Core](#how-to-use-the-core)
+- [Variant](#variant)
 - [Missing Features](#missing-features)
 
 # About this Project
 The Rasterix project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The project started as an experiment, how an 3D renderer can be implemented on an FPGA and slowly evolved to something, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
+The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
 
-It comes in two variants, `RRXIF` and `RRXEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
-
-`RRXIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
-For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended.
-
-The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
-
-Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
-
-`RRXEF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RRXIF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
-
-The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. This configuration works more like a traditional renderer.
-
-Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires half of the logic of the floating point configuration.
-
-## Area Usage
-Typical configuration: 
+# Area Usage
+With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device : 
   - 64 bit memory bus
   - 256px textures
   - 1 TMU
@@ -39,9 +25,7 @@ Typical configuration:
   - fix point interpolation with 25 bit multipliers
   - internal framebuffer (RRXIF)
 
-Then the core requires __around 10k LUTs__ on a Xilinx Series 7 device.
-
-High performance configuration: 
+The core can blow up to __around 36k LUTs__ on a Xilinx Series 7 device when everything is enabled: 
   - 128 bit memory bus
   - 256px textures
   - 2 TMUs
@@ -49,21 +33,16 @@ High performance configuration:
   - float interpolation with 32 bit floats
   - external frame buffer (RRXEF)
 
-Then the core requires __around 36k LUTs__ on a Xilinx Series 7 device.
+Note: The float interpolation has the highest impact on the utilization and is usually not needed. Both configurations have the same behavior via the OpenGL API.
 
 # Working Games
-Tested games are tuxracer (please see https://github.com/ToNi3141/tuxracer.git and the Branch `RasterixPort`), Quake 3 Arena with SDL2 and glX (https://github.com/ToNi3141/Quake3e), Warcraft 3 with WGL and others.
+Tested games are [tuxracer](https://github.com/ToNi3141/tuxracer.git) (statically liked), [Quake 3 Arena](https://github.com/ToNi3141/Quake3e) with SDL2 and glX, Warcraft 3 with WGL and others.
 
 ![race screenshot](screenshots/tuxracerRaceStart.png)
 
 # Checkout Repository
-Use the following commands to checkout the repository:
-
 ```sh
-git clone https://github.com/ToNi3141/Rasterix.git
-cd Rasterix
-git submodule init
-git submodule update
+git clone --recurse-submodules https://github.com/ToNi3141/Rasterix.git
 ```
 
 # Platforms
@@ -147,6 +126,21 @@ Note: Bold options are required to be equal to the software counterparts.
 | RASTERIZER_FIXPOINT_PRECISION             | if/ef   | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
 | RASTERIZER_FLOAT_PRECISION                | if/ef   | Precision of the floating point arithmetic. Valid range: 20-32. |
 
+# Variant
+The core comes in two pre configured variants, `RRXIF` and `RRXEF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
+
+`RRXIF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
+For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended.
+
+The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
+
+Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
+
+`RRXEF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RRXIF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
+
+The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. This configuration works more like a traditional renderer.
+
+Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires half of the logic of the floating point configuration.
 
 # Missing Features
 The following features are currently missing compared to a real OpenGL implementation
