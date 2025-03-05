@@ -40,6 +40,8 @@ set(RRX_CORE_COLOR_BUFFER_LOC_1 "0x01E00000" CACHE STRING "The location of the f
 set(RRX_CORE_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the second color buffer")
 set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")
 set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil buffer")
+# Misc
+set(RRX_CORE_THREADED_RASTERIZATION "false" CACHE STRING "Enables the threaded rasterization. Can improve the performance on multi core linux systems.")
 
 set(CMAKE_CXX_STANDARD 17)
 

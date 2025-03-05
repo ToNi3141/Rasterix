@@ -15,30 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _NOP_CMD_HPP_
-#define _NOP_CMD_HPP_
+#ifndef _IDEVICE_HPP_
+#define _IDEVICE_HPP_
 
-#include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
 
 namespace rr
 {
 
-class NopCmd
+class IDevice
 {
-    static constexpr uint32_t OP_NOP { 0 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
-    using PayloadType = tcb::span<const uint8_t>;
-    const PayloadType payload() const { return {}; }
-    using CommandType = uint32_t;
-    CommandType command() const { return OP_NOP; }
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_NOP; }
+    virtual ~IDevice() = default;
+    virtual void streamDisplayList(const uint8_t index, const uint32_t size) = 0;
+    virtual void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
+    virtual bool clearToSend() = 0;
+    virtual tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) = 0;
+    virtual uint8_t getDisplayListBufferCount() const = 0;
 };
 
 } // namespace rr
 
-#endif // _NOP_CMD_HPP_
+#endif // _IDEVICE_HPP_

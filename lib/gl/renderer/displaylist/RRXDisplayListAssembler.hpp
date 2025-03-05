@@ -36,13 +36,32 @@ public:
     }
 
     template <typename TCommand>
-    static std::size_t getCommandSize(const TCommand& cmd)
+    static std::size_t getCommandSize(const std::size_t payloadSize)
     {
-        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(cmd.payload()[0])>::type>::type;
+        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(TCommand {}.payload()[0])>::type>::type;
         std::size_t expectedSize = 0;
         expectedSize += TDisplayList::template sizeOf<typename TCommand::CommandType>();
-        expectedSize += TDisplayList::template sizeOf<PayloadType>() * cmd.payload().size();
+        expectedSize += TDisplayList::template sizeOf<PayloadType>() * payloadSize;
         return expectedSize;
+    }
+
+    template <typename TCommand>
+    static std::size_t getCommandSize(const TCommand& cmd)
+    {
+        return getCommandSize<TCommand>(cmd.payload().size());
+    }
+
+    template <typename TCommand>
+    bool copyCommand(TDisplayList& srcList)
+    {
+        const typename TCommand::CommandType& op = *(srcList.template lookAhead<typename TCommand::CommandType>());
+        const std::size_t payloadSize = TCommand::getNumberOfElementsInPayloadByCommand(op);
+        if (getCommandSize<TCommand>(payloadSize) >= m_displayList.getFreeSpace())
+        {
+            return false;
+        }
+        copyFromDisplayList<TCommand>(srcList);
+        return true;
     }
 
     template <typename TCommand>
@@ -60,11 +79,30 @@ private:
     template <typename TCommand>
     void writeCommand(const TCommand& cmd)
     {
-        *(m_displayList.template create<typename TCommand::CommandType>()) = cmd.command();
-        for (auto& a : cmd.payload())
+        writeCommand<typename TCommand::CommandType, typename TCommand::PayloadType>(cmd.command(), cmd.payload());
+    }
+
+    template <typename TCommandType, typename TPayloadType>
+    void writeCommand(const TCommandType& op, const TPayloadType& payload)
+    {
+        *(m_displayList.template create<TCommandType>()) = op;
+        for (auto& a : payload)
         {
-            using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(a)>::type>::type;
-            *(m_displayList.template create<PayloadType>()) = a;
+            *(m_displayList.template create<typename TPayloadType::value_type>()) = a;
+        }
+    }
+
+    template <typename TCommand>
+    void copyFromDisplayList(displaylist::DisplayList& srcList)
+    {
+        using CommandType = typename TCommand::CommandType;
+        using PayloadType = typename TCommand::PayloadType::value_type;
+        const CommandType& op = *(srcList.template getNext<CommandType>());
+        const std::size_t payloadSize = TCommand::getNumberOfElementsInPayloadByCommand(op);
+        *(m_displayList.template create<CommandType>()) = op;
+        for (std::size_t i = 0; i < payloadSize; i++)
+        {
+            *(m_displayList.template create<PayloadType>()) = *(srcList.template getNext<PayloadType>());
         }
     }
 

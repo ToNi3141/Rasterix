@@ -29,8 +29,10 @@ template <class TRegister>
 class WriteRegisterCmd
 {
     static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
+    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
+    WriteRegisterCmd() = default;
     WriteRegisterCmd(const TRegister& reg)
     {
         m_val[0] = reg.serialize();
@@ -41,6 +43,10 @@ public:
     const PayloadType& payload() const { return m_val; }
     using CommandType = uint32_t;
     CommandType command() const { return m_op; }
+
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadType> {}; }
+    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_RENDER_CONFIG; }
+    static uint32_t getRegAddr(const CommandType cmd) { return cmd & ~OP_MASK; };
 
 private:
     CommandType m_op {};

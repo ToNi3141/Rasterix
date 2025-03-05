@@ -47,6 +47,7 @@ public:
     uint8_t getAlpha() const { return m_regVal.fields.alpha; }
 
     uint32_t serialize() const { return m_regVal.data; }
+    void deserialize(const uint32_t data) { m_regVal.data = data; }
 
 private:
     union RegVal

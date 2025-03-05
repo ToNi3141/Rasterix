@@ -18,7 +18,6 @@
 #ifndef DISPLAYLISTASSEMBLER_HPP
 #define DISPLAYLISTASSEMBLER_HPP
 
-#include "DisplayList.hpp"
 #include "RRXDisplayListAssembler.hpp"
 #include "TextureLoadOptimizer.hpp"
 #include <algorithm>
@@ -30,7 +29,7 @@
 namespace rr::displaylist
 {
 
-template <std::size_t TMU_COUNT, typename DisplayList>
+template <std::size_t TMU_COUNT, typename TDisplayList, bool Optimize = true>
 class DisplayListAssembler
 {
 public:
@@ -45,6 +44,11 @@ public:
         return m_displayList.getSize();
     }
 
+    std::size_t getFreeSpace() const
+    {
+        return m_displayList.getFreeSpace();
+    }
+
     std::size_t getDisplayListBufferId() const
     {
         return m_displayListBufferId;
@@ -57,7 +61,13 @@ public:
     }
 
     template <typename TCommand>
-    std::size_t getCommandSize(const TCommand& cmd)
+    std::size_t getCommandSize(std::size_t i) const
+    {
+        return m_rrxDisplayListAssembler.template getCommandSize<TCommand>(i);
+    }
+
+    template <typename TCommand>
+    std::size_t getCommandSize(const TCommand& cmd) const
     {
         return m_rrxDisplayListAssembler.getCommandSize(cmd);
     }
@@ -73,9 +83,18 @@ public:
     }
 
     template <typename TCommand>
+    bool copyCommand(TDisplayList& src)
+    {
+        return m_rrxDisplayListAssembler.template copyCommand<TCommand>(src);
+    }
+
+    template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        m_textureLoadOptimizer.optimize(cmd);
+        if constexpr (Optimize)
+        {
+            m_textureLoadOptimizer.optimize(cmd);
+        }
         return m_rrxDisplayListAssembler.addCommand(cmd);
     }
 
@@ -90,9 +109,9 @@ private:
         return true;
     }
 
-    DisplayList m_displayList {};
-    RRXDisplayListAssembler<DisplayList> m_rrxDisplayListAssembler { m_displayList };
-    TextureLoadOptimizer<TMU_COUNT, DisplayList> m_textureLoadOptimizer { m_displayList };
+    TDisplayList m_displayList {};
+    RRXDisplayListAssembler<TDisplayList> m_rrxDisplayListAssembler { m_displayList };
+    TextureLoadOptimizer<TMU_COUNT, TDisplayList> m_textureLoadOptimizer { m_displayList };
     std::size_t m_displayListBufferId { 0 };
 };
 

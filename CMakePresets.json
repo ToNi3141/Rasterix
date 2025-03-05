@@ -29,7 +29,8 @@
                 "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
                 "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01E00000",
                 "RRX_CORE_DEPTH_BUFFER_LOC": "0",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0",
+                "RRX_CORE_THREADED_RASTERIZATION": "false"
             }
         },
         {
@@ -53,7 +54,8 @@
                 "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01E00000",
                 "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01C00000",
                 "RRX_CORE_DEPTH_BUFFER_LOC": "0x01A00000",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01900000"
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01900000",
+                "RRX_CORE_THREADED_RASTERIZATION": "false"
             }
         },
         {
@@ -77,7 +79,8 @@
                 "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01C00000",
                 "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01C00000",
                 "RRX_CORE_DEPTH_BUFFER_LOC": "0",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0"
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0",
+                "RRX_CORE_THREADED_RASTERIZATION": "true"
             }
         },
         {
@@ -101,7 +104,8 @@
                 "RRX_CORE_COLOR_BUFFER_LOC_1": "0x01C00000",
                 "RRX_CORE_COLOR_BUFFER_LOC_2": "0x01A00000",
                 "RRX_CORE_DEPTH_BUFFER_LOC": "0x01800000",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01700000"
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x01700000",
+                "RRX_CORE_THREADED_RASTERIZATION": "true"
             }
         },
         {
@@ -125,7 +129,8 @@
                 "RRX_CORE_COLOR_BUFFER_LOC_1": "0x35000",
                 "RRX_CORE_COLOR_BUFFER_LOC_2": "0x35000",
                 "RRX_CORE_DEPTH_BUFFER_LOC": "0x5A800",
-                "RRX_CORE_STENCIL_BUFFER_LOC": "0x22400"
+                "RRX_CORE_STENCIL_BUFFER_LOC": "0x22400",
+                "RRX_CORE_THREADED_RASTERIZATION": "false"
             }
         },
         {

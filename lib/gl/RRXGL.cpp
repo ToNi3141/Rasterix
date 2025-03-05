@@ -21,6 +21,7 @@
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
@@ -40,18 +41,47 @@ RRXGL& RRXGL::getInstance()
     return *instance;
 }
 
+class WithThreadedRasterization
+{
+public:
+    WithThreadedRasterization(IBusConnector& busConnector)
+        : dmaStreamEngine { busConnector }
+        , device { dmaStreamEngine }
+    {
+    }
+
+    DSEC::DmaStreamEngine dmaStreamEngine;
+    ThreadedRasterizer<
+        RenderConfig::THREADED_RASTERIZATION_BUFFER_COUNT,
+        RenderConfig::THREADED_RASTERIZATION_BUFFER_SIZE>
+        device;
+};
+
+class OnlyDse
+{
+public:
+    OnlyDse(IBusConnector& busConnector)
+        : device { busConnector }
+    {
+    }
+
+    DSEC::DmaStreamEngine device;
+};
+
 class RenderDevice
 {
 public:
     RenderDevice(IBusConnector& busConnector)
-        : DmaStreamEngine { busConnector }
-        , renderer { DmaStreamEngine }
+        : device { busConnector }
+        , renderer { device.device }
         , pixelPipeline { renderer }
         , vertexPipeline { pixelPipeline }
     {
     }
 
-    DSEC::DmaStreamEngine DmaStreamEngine;
+    using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
+
+    Device device;
     Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;

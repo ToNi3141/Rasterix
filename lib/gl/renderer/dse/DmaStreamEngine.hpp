@@ -21,11 +21,12 @@
 #include "DmaStreamEngineCommands.hpp"
 #include "IBusConnector.hpp"
 #include "RenderConfigs.hpp"
+#include "renderer/IDevice.hpp"
 
 namespace rr::DSEC
 {
 
-class DmaStreamEngine
+class DmaStreamEngine : public IDevice
 {
 public:
     DmaStreamEngine(IBusConnector& busConnector)
@@ -33,31 +34,31 @@ public:
     {
     }
 
-    void streamDisplayList(const uint8_t index, const uint32_t size)
+    void streamDisplayList(const uint8_t index, const uint32_t size) override
     {
         const std::size_t commandSize = addDseStreamCommand(index, size);
         m_busConnector.writeData(index, size + commandSize);
     }
 
-    void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr)
+    void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
         const std::size_t commandSize = addDseStoreCommand(data.size(), addr + RenderConfig::GRAM_MEMORY_LOC);
         addDseStorePayload(commandSize, data);
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     }
 
-    bool clearToSend()
+    bool clearToSend() override
     {
         return m_busConnector.clearToSend();
     }
 
-    tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index)
+    tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) override
     {
         tcb::span<uint8_t> s = m_busConnector.requestBuffer(index);
         return s.last(s.size() - sizeof(Command));
     }
 
-    uint8_t getDisplayListBufferCount() const
+    uint8_t getDisplayListBufferCount() const override
     {
         return m_busConnector.getBufferCount() - 1;
     }

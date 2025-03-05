@@ -18,7 +18,6 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
-#include "IBusConnector.hpp"
 #include "Rasterizer.hpp"
 #include "Renderer.hpp"
 #include "TextureMemoryManager.hpp"
@@ -27,6 +26,7 @@
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
 #include "math/Vec.hpp"
+#include "renderer/IDevice.hpp"
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -38,6 +38,7 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
+#include "commands/RegularTriangleCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
@@ -59,8 +60,6 @@
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
 
-#include "dse/DmaStreamEngine.hpp"
-
 namespace rr
 {
 
@@ -68,7 +67,7 @@ class Renderer
 {
 public:
     using TextureWrapMode = TmuTextureReg::TextureWrapMode;
-    Renderer(DSEC::DmaStreamEngine& dse);
+    Renderer(IDevice& device);
 
     ~Renderer();
 
@@ -233,56 +232,11 @@ private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
 
     static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
-    using DisplayListType = displaylist::DisplayList<ALIGNMENT>;
-    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, DisplayListType>;
+    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
-
-    // Triangles are send to the display list this way because this is the fastest way.
-    // The addCommandWithFactory methods have a performance penalty of around 10%.
-    template <typename DisplayList>
-    class TriangleCommandIncr
-    {
-    public:
-        bool operator()(DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY) const
-        {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
-            if (triangleCmd->isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                bool ret { false };
-
-                // The floating point rasterizer can automatically increment all attributes to the current screen position
-                // Therefor no further computing is necessary
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                {
-                    ret = dispatcher.addCommand(i, *triangleCmd);
-                }
-                else
-                {
-                    // The fix point interpolator needs the triangle incremented to the current line (when DISPLAY_LINES is greater 1)
-                    TriangleStreamCmd<DisplayList> triangleCmdInc = *triangleCmd;
-                    triangleCmdInc.increment(currentScreenPositionStart, currentScreenPositionEnd);
-                    ret = dispatcher.addCommand(i, triangleCmdInc);
-                }
-                if (ret == false)
-                {
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        void setTriangleCmd(const TriangleStreamCmd<DisplayList>* cmd)
-        {
-            triangleCmd = cmd;
-        }
-
-    private:
-        const TriangleStreamCmd<DisplayList>* triangleCmd { nullptr };
-    };
 
     template <typename TArg>
     bool writeReg(const TArg& regVal)
@@ -346,6 +300,49 @@ private:
         m_displayListBuffer.swap();
     }
 
+    template <typename TriangleCmd>
+    bool addMultiListTriangle(TriangleCmd& triangleCmd)
+    {
+        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
+        {
+            const std::size_t currentScreenPositionStart = i * resY;
+            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
+            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
+            {
+                // The floating point rasterizer can automatically increment all attributes
+                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+                {
+                    return dispatcher.addCommand(i, triangleCmd);
+                }
+                else
+                {
+                    return dispatcher.addCommand(i, triangleCmd.getIncremented(currentScreenPositionStart, currentScreenPositionEnd));
+                }
+            }
+            return true;
+        };
+        return displayListLooper(factory);
+    }
+
+    template <typename TriangleCmd>
+    bool addTriangleCmd(TriangleCmd& triangleCmd)
+    {
+        if (!triangleCmd.isVisible())
+        {
+            return true;
+        }
+
+        if constexpr (DisplayListDispatcherType::singleList())
+        {
+            return addCommand(triangleCmd);
+        }
+        else
+        {
+            return addMultiListTriangle(triangleCmd);
+        }
+        return true;
+    }
+
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
@@ -368,7 +365,7 @@ private:
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };
 
-    DSEC::DmaStreamEngine& m_dse;
+    IDevice& m_device;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
@@ -379,8 +376,6 @@ private:
 
     // Mapping of texture id and TMU
     std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
-
-    TriangleCommandIncr<DisplayListType> m_triangleIncr {};
 };
 
 } // namespace rr

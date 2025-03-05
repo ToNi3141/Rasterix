@@ -29,8 +29,10 @@ class FogLutStreamCmd
 {
     static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
     static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
+    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
+    FogLutStreamCmd() = default;
     FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
     {
         // The verilog code is not able to handle float values smaller than 1.0f.
@@ -62,6 +64,9 @@ public:
     const PayloadType& payload() const { return m_lut; }
     using CommandType = uint32_t;
     static constexpr CommandType command() { return FOG_LUT_STREAM; }
+
+    static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return std::tuple_size<PayloadType> {}; }
+    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == FOG_LUT_STREAM; }
 
 private:
     void setBounds(const float lower, const float upper)

@@ -26,7 +26,7 @@ namespace rr::displaylist
 {
 
 template <std::size_t ALIGNMENT>
-class DisplayList
+class GenericDisplayList
 {
 public:
     void setBuffer(tcb::span<uint8_t> buffer)
@@ -114,18 +114,18 @@ public:
     // Interface for reading the display list
 
     template <typename GET_TYPE>
-    GET_TYPE* __restrict lookAhead()
+    const GET_TYPE* __restrict lookAhead(const std::size_t token = 1) const
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
-        if ((size + readPos) <= writePos)
+        if (((size * token) + readPos) <= writePos)
         {
-            return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos]);
+            return reinterpret_cast<GET_TYPE* __restrict>(&mem[readPos + (size * (token - 1))]);
         }
         return nullptr;
     }
 
     template <typename GET_TYPE>
-    GET_TYPE* __restrict getNext()
+    const GET_TYPE* __restrict getNext()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if ((size + readPos) <= writePos)
@@ -147,12 +147,19 @@ public:
         readPos = 0;
     }
 
+    void setCurrentSize(const std::size_t size)
+    {
+        writePos = size;
+    }
+
 private:
     tcb::span<uint8_t> mem;
     std::size_t writePos { 0 };
     std::size_t readPos { 0 };
     std::size_t sectionStartPos { 0 };
 };
+
+using DisplayList = GenericDisplayList<4>;
 
 } // namespace rr::displaylist
 #endif // DISPLAYLIST_HPP

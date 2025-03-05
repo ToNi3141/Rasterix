@@ -22,6 +22,7 @@
 #include "renderer/Rasterizer.hpp"
 #include "renderer/Triangle.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -31,10 +32,10 @@
 namespace rr
 {
 
-template <typename DisplayList>
 class TriangleStreamCmd
 {
     static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
+    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
     // Both, the float and fix point variant expecting the triangle parameters as float.
@@ -42,6 +43,7 @@ public:
     static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
 
+    TriangleStreamCmd() = default;
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
         m_visible = rasterizer.rasterize(m_desc[0], triangle);
@@ -54,10 +56,11 @@ public:
         return Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
     }
 
-    bool increment(const std::size_t lineStart, const std::size_t lineEnd)
+    TriangleStreamCmd getIncremented(const std::size_t lineStart, const std::size_t lineEnd)
     {
-        bool ret = Rasterizer::increment(m_desc[0], lineStart, lineEnd);
-        return ret;
+        TriangleStreamCmd cmd = *this;
+        Rasterizer::increment(cmd.m_desc[0], lineStart, lineEnd);
+        return cmd;
     }
 
     bool isVisible() const { return m_visible; };
@@ -65,14 +68,17 @@ public:
     using PayloadType = std::array<TriangleStreamTypes::TriangleDesc, 1>;
     const PayloadType& payload() const { return m_desc; }
     using CommandType = uint32_t;
-    static constexpr CommandType command() { return TRIANGLE_STREAM | (DisplayList::template sizeOf<TrDesc>()); }
+    static constexpr CommandType command() { return TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
 
-    TriangleStreamCmd<DisplayList>& operator=(const TriangleStreamCmd<DisplayList>& rhs)
+    TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
         m_desc = rhs.m_desc;
         m_visible = rhs.m_visible;
         return *this;
     }
+
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadType> {}; }
+    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == TRIANGLE_STREAM; }
 
 private:
     std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;

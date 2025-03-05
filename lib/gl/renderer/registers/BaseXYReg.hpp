@@ -41,6 +41,12 @@ public:
     uint16_t getY() const { return m_regValY; }
 
     uint32_t serialize() const { return (static_cast<uint32_t>(m_regValY) << 16) | (static_cast<uint32_t>(m_regValX)); }
+    void deserialize(uint32_t data)
+    {
+        static constexpr uint32_t mask = 0xffff;
+        m_regValX = data & mask;
+        m_regValY = (data >> 16) & mask;
+    }
 
 private:
     uint16_t m_regValX { 0 };
