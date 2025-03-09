@@ -18,6 +18,7 @@
 #ifndef _TMU_TEXTURE_REG_
 #define _TMU_TEXTURE_REG_
 
+#include "Enums.hpp"
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -27,18 +28,12 @@ namespace rr
 class TmuTextureReg
 {
 public:
-    enum class TextureWrapMode : uint32_t
-    {
-        REPEAT,
-        CLAMP_TO_EDGE
-    };
+    static_assert(static_cast<uint32_t>(TextureWrapMode::REPEAT) == 0);
+    static_assert(static_cast<uint32_t>(TextureWrapMode::CLAMP_TO_EDGE) == 1);
 
-    enum class PixelFormat : uint32_t
-    {
-        RGBA4444,
-        RGBA5551,
-        RGB565
-    };
+    static_assert(static_cast<uint32_t>(PixelFormat::RGBA4444) == 0);
+    static_assert(static_cast<uint32_t>(PixelFormat::RGBA5551) == 1);
+    static_assert(static_cast<uint32_t>(PixelFormat::RGB565) == 2);
 
     TmuTextureReg() = default;
     void setTextureWidth(const uint16_t val) { m_regVal.fields.texWidth = static_cast<uint32_t>(log2f(static_cast<float>(val))); }

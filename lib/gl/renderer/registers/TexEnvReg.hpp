@@ -18,6 +18,7 @@
 #ifndef _TEX_ENV_REG_
 #define _TEX_ENV_REG_
 
+#include "Enums.hpp"
 #include <cstdint>
 
 namespace rr
@@ -26,31 +27,24 @@ namespace rr
 class TexEnvReg
 {
 public:
-    enum class Combine
-    {
-        REPLACE,
-        MODULATE,
-        ADD,
-        ADD_SIGNED,
-        INTERPOLATE,
-        SUBTRACT,
-        DOT3_RGB,
-        DOT3_RGBA
-    };
-    enum class Operand
-    {
-        SRC_ALPHA,
-        ONE_MINUS_SRC_ALPHA,
-        SRC_COLOR,
-        ONE_MINUS_SRC_COLOR
-    };
-    enum class SrcReg
-    {
-        TEXTURE,
-        CONSTANT,
-        PRIMARY_COLOR,
-        PREVIOUS
-    };
+    static_assert(static_cast<uint32_t>(Combine::REPLACE) == 0);
+    static_assert(static_cast<uint32_t>(Combine::MODULATE) == 1);
+    static_assert(static_cast<uint32_t>(Combine::ADD) == 2);
+    static_assert(static_cast<uint32_t>(Combine::ADD_SIGNED) == 3);
+    static_assert(static_cast<uint32_t>(Combine::INTERPOLATE) == 4);
+    static_assert(static_cast<uint32_t>(Combine::SUBTRACT) == 5);
+    static_assert(static_cast<uint32_t>(Combine::DOT3_RGB) == 6);
+    static_assert(static_cast<uint32_t>(Combine::DOT3_RGBA) == 7);
+
+    static_assert(static_cast<uint32_t>(Operand::SRC_ALPHA) == 0);
+    static_assert(static_cast<uint32_t>(Operand::ONE_MINUS_SRC_ALPHA) == 1);
+    static_assert(static_cast<uint32_t>(Operand::SRC_COLOR) == 2);
+    static_assert(static_cast<uint32_t>(Operand::ONE_MINUS_SRC_COLOR) == 3);
+
+    static_assert(static_cast<uint32_t>(SrcReg::TEXTURE) == 0);
+    static_assert(static_cast<uint32_t>(SrcReg::CONSTANT) == 1);
+    static_assert(static_cast<uint32_t>(SrcReg::PRIMARY_COLOR) == 2);
+    static_assert(static_cast<uint32_t>(SrcReg::PREVIOUS) == 3);
 
     TexEnvReg() = default;
 

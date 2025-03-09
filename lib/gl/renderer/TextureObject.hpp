@@ -27,7 +27,6 @@ namespace rr
 struct TextureObject
 {
     static constexpr std::size_t MAX_LOD { 8 };
-    using PixelFormat = TmuTextureReg::PixelFormat;
     enum class IntendedInternalPixelFormat
     {
         ALPHA,

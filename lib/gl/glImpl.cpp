@@ -1543,59 +1543,59 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
 
-    [[maybe_unused]] FragmentPipeline::PipelineConfig::LogicOp logicOp { FragmentPipeline::PipelineConfig::LogicOp::COPY };
+    [[maybe_unused]] LogicOp logicOp { LogicOp::COPY };
     switch (opcode)
     {
     case GL_CLEAR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::CLEAR;
+        logicOp = LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::SET;
+        logicOp = LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
+        logicOp = LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY_INVERTED;
+        logicOp = LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOOP;
+        logicOp = LogicOp::NOOP;
         break;
         //    case GL_INVERTED:
-        //        logicOp = FragmentPipeline::PipelineConfig::LogicOp::INVERTED;
+        //        logicOp = LogicOp::INVERTED;
         //        break;
     case GL_AND:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND;
+        logicOp = LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NAND;
+        logicOp = LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR;
+        logicOp = LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOR;
+        logicOp = LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::XOR;
+        logicOp = LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::EQUIV;
+        logicOp = LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_REVERSE;
+        logicOp = LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_INVERTED;
+        logicOp = LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_REVERSE;
+        logicOp = LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_INVERTED;
+        logicOp = LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
+        logicOp = LogicOp::COPY;
         break;
     }
     // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
@@ -2322,9 +2322,9 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
     SPDLOG_DEBUG("glStencilOp fail 0x{:X} zfail 0x{:X} zpass 0x{:X} called", fail, zfail, zpass);
 
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    const Stencil::StencilConfig::StencilOp failOp { convertStencilOp(fail) };
-    const Stencil::StencilConfig::StencilOp zfailOp { convertStencilOp(zfail) };
-    const Stencil::StencilConfig::StencilOp zpassOp { convertStencilOp(zpass) };
+    const StencilOp failOp { convertStencilOp(fail) };
+    const StencilOp zfailOp { convertStencilOp(zfail) };
+    const StencilOp zpassOp { convertStencilOp(zpass) };
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
@@ -2743,7 +2743,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         {
         case GL_TEXTURE_ENV_MODE:
         {
-            Texture::TexEnvMode mode {};
+            TexEnvMode mode {};
             error = convertTexEnvMode(mode, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().setTexEnvMode(mode);
@@ -2751,7 +2751,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_COMBINE_RGB:
         {
-            Texture::TexEnv::Combine c {};
+            Combine c {};
             error = convertCombine(c, param, false);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineRgb(c);
@@ -2759,7 +2759,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_COMBINE_ALPHA:
         {
-            Texture::TexEnv::Combine c {};
+            Combine c {};
             error = convertCombine(c, param, true);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineAlpha(c);
@@ -2767,7 +2767,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE0_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb0(c);
@@ -2775,7 +2775,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE1_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb1(c);
@@ -2783,7 +2783,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE2_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb2(c);
@@ -2791,7 +2791,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE0_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha0(c);
@@ -2799,7 +2799,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE1_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha1(c);
@@ -2807,7 +2807,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_SOURCE2_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha2(c);
@@ -2815,7 +2815,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND0_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb0(c);
@@ -2823,7 +2823,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND1_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb1(c);
@@ -2831,7 +2831,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND2_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb2(c);
@@ -2839,7 +2839,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND0_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha0(c);
@@ -2847,7 +2847,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND1_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha1(c);
@@ -2855,7 +2855,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_OPERAND2_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha2(c);

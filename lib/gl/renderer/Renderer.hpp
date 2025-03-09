@@ -66,7 +66,6 @@ namespace rr
 class Renderer
 {
 public:
-    using TextureWrapMode = TmuTextureReg::TextureWrapMode;
     Renderer(IDevice& device);
 
     ~Renderer();
