@@ -30,7 +30,7 @@ Texture::Texture(Renderer& renderer)
     }
 }
 
-bool Texture::uploadTexture()
+bool Texture::updateTexture()
 {
     bool ret { true };
 
@@ -52,7 +52,7 @@ bool Texture::uploadTexture()
 
         // Rebind texture to update the rasterizer with the new texture meta information
         // TODO: Check if this is still required
-        ret = ret && useTexture();
+        ret = ret && m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
     }
     return ret;
 }
@@ -68,7 +68,7 @@ TextureObjectMipmap& Texture::getTexture()
 
 bool Texture::useTexture()
 {
-    uploadTexture();
+    updateTexture();
     return m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
 }
 
@@ -166,10 +166,15 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
 
 bool Texture::setTexEnvColor(const Vec4& color)
 {
-    return m_renderer.setTexEnvColor(m_tmu,
-        { { static_cast<uint8_t>(color[0] * 255.0f),
-            static_cast<uint8_t>(color[1] * 255.0f),
-            static_cast<uint8_t>(color[2] * 255.0f),
-            static_cast<uint8_t>(color[3] * 255.0f) } });
+    return m_renderer.setTexEnvColor(
+        {
+            m_tmu,
+            Vec4i {
+                static_cast<uint8_t>(color[0] * 255.0f),
+                static_cast<uint8_t>(color[1] * 255.0f),
+                static_cast<uint8_t>(color[2] * 255.0f),
+                static_cast<uint8_t>(color[3] * 255.0f),
+            },
+        });
 }
 } // namespace rr

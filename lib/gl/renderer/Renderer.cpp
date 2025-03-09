@@ -33,6 +33,15 @@ Renderer::Renderer(IDevice& device)
     setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
 
     setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
+
+    // Set initial values
+    setTexEnvColor({ 0, Vec4i { 0, 0, 0, 0 } });
+    setClearColor({ Vec4i { 0, 0, 0, 0 } });
+    setClearDepth({ 65535 });
+    setFogColor({ Vec4i { 255, 255, 255, 255 } });
+    std::array<float, 33> fogLut {};
+    std::fill(fogLut.begin(), fogLut.end(), 1.0f);
+    setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
 }
 
 Renderer::~Renderer()
@@ -193,43 +202,8 @@ bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool 
         });
 }
 
-bool Renderer::setClearColor(const Vec4i& color)
-{
-    ColorBufferClearColorReg reg;
-    reg.setColor(color);
-    return writeReg(reg);
-}
-
-bool Renderer::setClearDepth(uint16_t depth)
-{
-    DepthBufferClearDepthReg reg;
-    reg.setValue(depth);
-    return writeReg(reg);
-}
-
-bool Renderer::setTexEnvColor(const std::size_t target, const Vec4i& color)
-{
-    TexEnvColorReg reg;
-    reg.setTmu(target);
-    reg.setColor(color);
-    return writeReg(reg);
-}
-
-bool Renderer::setFogColor(const Vec4i& color)
-{
-    FogColorReg reg;
-    reg.setColor(color);
-    return writeReg(reg);
-}
-
-bool Renderer::setFogLut(const std::array<float, 33>& fogLut, float start, float end)
-{
-    return addCommand(FogLutStreamCmd { fogLut, start, end });
-}
-
 bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
 {
-    m_boundTextures[target] = texId;
     if (!m_textureManager.textureValid(texId))
     {
         return false;
@@ -279,28 +253,28 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     return ret;
 }
 
-bool Renderer::setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode)
+bool Renderer::setTextureWrapModeS(const std::size_t target, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeS(texId, mode);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode)
+bool Renderer::setTextureWrapModeT(const std::size_t target, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeT(texId, mode);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::enableTextureMagFiltering(const uint16_t texId, bool filter)
+bool Renderer::enableTextureMagFiltering(const std::size_t target, const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMagFiltering(texId, filter);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::enableTextureMinFiltering(const uint16_t texId, bool filter)
+bool Renderer::enableTextureMinFiltering(const std::size_t target, const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMinFiltering(texId, filter);
-    return writeToTextureConfig(texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
 }
 
 bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
@@ -318,19 +292,10 @@ bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
     return writeReg(reg);
 }
 
-bool Renderer::writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig)
+bool Renderer::writeToTextureConfig(const std::size_t target, const uint16_t texId, TmuTextureReg tmuConfig)
 {
-    // Find the TMU by searching through the bound textures, if the current texture ID is currently used.
-    // If not, just ignore it because then the currently used texture must not be changed.
-    for (std::size_t tmu = 0; tmu < m_boundTextures.size(); tmu++)
-    {
-        if (m_boundTextures[tmu] == texId)
-        {
-            tmuConfig.setTmu(tmu);
-            return writeReg(tmuConfig);
-        }
-    }
-    return true;
+    tmuConfig.setTmu(target);
+    return writeReg(tmuConfig);
 }
 
 bool Renderer::setColorBufferAddress(const uint32_t addr)

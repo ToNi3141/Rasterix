@@ -43,7 +43,7 @@ public:
 
     Texture(Renderer& renderer);
 
-    bool uploadTexture();
+    bool updateTexture();
     TextureObjectMipmap& getTexture();
     bool useTexture();
     bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
@@ -52,20 +52,21 @@ public:
     bool deleteTexture(const uint16_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint16_t val)
     {
-        uploadTexture();
+        updateTexture();
         m_tmuConf[m_tmu].boundTexture = val;
     }
-    void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmuConf[m_tmu].boundTexture, mode); }
-    void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmuConf[m_tmu].boundTexture, mode); }
-    void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmuConf[m_tmu].boundTexture, val); }
-    void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmuConf[m_tmu].boundTexture, val); }
+    void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
+    void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
+    void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
+    void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
 
     bool setTexEnvMode(const TexEnvMode mode);
     TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
     bool setTexEnvColor(const Vec4& color);
+
     void activateTmu(const std::size_t tmu)
     {
-        uploadTexture();
+        updateTexture();
         m_tmu = tmu;
     }
     std::size_t getActiveTmu() const { return m_tmu; }

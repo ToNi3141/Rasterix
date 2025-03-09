@@ -28,7 +28,12 @@ class BaseColorReg
 public:
     BaseColorReg() = default;
 
-    void setColor(const Vec4i val)
+    BaseColorReg(const Vec4i& val)
+    {
+        setColor(val);
+    }
+
+    void setColor(const Vec4i& val)
     {
         setRed(val[0]);
         setGreen(val[1]);

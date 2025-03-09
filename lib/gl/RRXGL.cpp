@@ -111,15 +111,6 @@ void RRXGL::destroy()
 RRXGL::RRXGL(IBusConnector& busConnector)
     : m_renderDevice { new RenderDevice { busConnector } }
 {
-    // Set initial values
-    m_renderDevice->renderer.setTexEnvColor(0, { { 0, 0, 0, 0 } });
-    m_renderDevice->renderer.setClearColor({ { 0, 0, 0, 0 } });
-    m_renderDevice->renderer.setClearDepth(65535);
-    m_renderDevice->renderer.setFogColor({ { 255, 255, 255, 255 } });
-    std::array<float, 33> fogLut {};
-    std::fill(fogLut.begin(), fogLut.end(), 1.0f);
-    m_renderDevice->renderer.setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
-
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(impl_glAccum));
     addLibProcedure("glAlphaFunc", ADDRESS_OF(impl_glAlphaFunc));

@@ -32,14 +32,14 @@ bool PixelPipeline::updatePipeline()
     ret = ret && m_fragmentPipeline.update();
     ret = ret && m_stencil.update();
     ret = ret && m_fog.updateFogLut();
-    ret = ret && m_texture.uploadTexture();
+    ret = ret && m_texture.updateTexture();
 
     return ret;
 }
 
 bool PixelPipeline::setClearColor(const Vec4& color)
 {
-    return m_renderer.setClearColor({ { static_cast<uint8_t>(color[0] * 255.0f),
+    return m_renderer.setClearColor({ Vec4i { static_cast<uint8_t>(color[0] * 255.0f),
         static_cast<uint8_t>(color[1] * 255.0f),
         static_cast<uint8_t>(color[2] * 255.0f),
         static_cast<uint8_t>(color[3] * 255.0f) } });
@@ -49,7 +49,7 @@ bool PixelPipeline::setClearDepth(const float depth)
 {
     // Convert from signed float (-1.0 .. 1.0) to unsigned fix (0 .. 65535)
     const uint16_t depthx = (depth + 1.0f) * 32767;
-    return m_renderer.setClearDepth(depthx);
+    return m_renderer.setClearDepth({ depthx });
 }
 
 bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
