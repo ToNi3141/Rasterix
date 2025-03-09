@@ -145,18 +145,6 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMinFiltering(const std::size_t target, const uint16_t texId, bool filter);
 
-    /// @brief Queries the maximum texture size in pixels
-    /// @return The maximum texture size in pixel
-    std::size_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
-
-    /// @brief Queries the maximum number of TMUs available for the hardware
-    /// @brief The number of TMUs available
-    std::size_t getTmuCount() const { return RenderConfig::TMU_COUNT; }
-
-    /// @brief Queries of mip mapping is available on hardware
-    /// @return true when mipmapping is available
-    bool isMipmappingAvailable() const { return RenderConfig::ENABLE_MIPMAPPING; }
-
     /// @brief Sets the resolution of the renderer
     /// @param x X is the width of the produced image
     /// @param y Y is the height of the produced image

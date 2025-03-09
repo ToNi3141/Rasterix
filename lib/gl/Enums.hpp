@@ -106,13 +106,13 @@ enum class SrcReg
     PREVIOUS
 };
 
-enum class TextureWrapMode : uint32_t
+enum class TextureWrapMode
 {
     REPEAT,
     CLAMP_TO_EDGE
 };
 
-enum class PixelFormat : uint32_t
+enum class PixelFormat
 {
     RGBA4444,
     RGBA5551,

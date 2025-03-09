@@ -37,7 +37,24 @@ public:
 
     Stencil(Renderer& renderer);
 
-    StencilConfig& stencilConfig();
+    void setTestFunc(const TestFunc val) { stencilConfig().setTestFunc(val); }
+    void setOpZPass(const StencilOp val) { stencilConfig().setOpZPass(val); }
+    void setOpZFail(const StencilOp val) { stencilConfig().setOpZFail(val); }
+    void setOpFail(const StencilOp val) { stencilConfig().setOpFail(val); }
+    void setMask(const uint8_t val) { stencilConfig().setMask(val); }
+    void setRef(const uint8_t val) { stencilConfig().setRef(val); }
+    void setClearStencil(const uint8_t val) { stencilConfig().setClearStencil(val); }
+    void setStencilMask(const uint8_t val) { stencilConfig().setStencilMask(val); }
+
+    TestFunc getTestFunc() const { return stencilConfig().getTestFunc(); }
+    StencilOp getOpZPass() const { return stencilConfig().getOpZPass(); }
+    StencilOp getOpZFail() const { return stencilConfig().getOpZFail(); }
+    StencilOp getOpFail() const { return stencilConfig().getOpFail(); }
+    uint8_t getRef() const { return stencilConfig().getRef(); }
+    uint8_t getMask() const { return stencilConfig().getMask(); }
+    uint8_t getClearStencil() const { return stencilConfig().getClearStencil(); }
+    uint8_t getStencilMask() const { return stencilConfig().getStencilMask(); }
+
     void enableTwoSideStencil(const bool enable) { m_enableTwoSideStencil = enable; }
     void setStencilFace(const StencilFace face) { m_stencilFace = face; }
 
@@ -47,6 +64,9 @@ public:
 private:
     void selectStencilTwoSideFrontForDevice() { m_stencilConfTwoSide = &m_stencilConfFront; }
     void selectStencilTwoSideBackForDevice() { m_stencilConfTwoSide = &m_stencilConfBack; }
+
+    StencilConfig& stencilConfig();
+    const StencilConfig& stencilConfig() const { return stencilConfig(); };
 
     Renderer& m_renderer;
 

@@ -53,8 +53,8 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
         {
             refFix = 0xff;
         }
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setAlphaFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setRefAlphaValue(refFix);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setAlphaFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setRefAlphaValue(refFix);
     }
 }
 
@@ -79,8 +79,8 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
     }
     else
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
     }
 }
 
@@ -158,7 +158,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setClearStencil(s);
+    RRXGL::getInstance().pixelPipeline().stencil().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
@@ -579,10 +579,10 @@ GLAPI void APIENTRY impl_glColor4usv(const GLushort* v)
 GLAPI void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     SPDLOG_DEBUG("glColorMask red 0x{:X} green 0x{:X} blue 0x{:X} alpha 0x{:X} called", red, green, blue, alpha);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskR(red == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskG(green == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskB(blue == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskA(alpha == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
@@ -677,14 +677,14 @@ GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthFunc(testFunc);
     }
 }
 
 GLAPI void APIENTRY impl_glDepthMask(GLboolean flag)
 {
     SPDLOG_DEBUG("glDepthMask flag 0x{:X} called", flag);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthMask(flag == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
@@ -2305,16 +2305,16 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setTestFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setRef(ref);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setMask(mask);
+        RRXGL::getInstance().pixelPipeline().stencil().setTestFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().stencil().setRef(ref);
+        RRXGL::getInstance().pixelPipeline().stencil().setMask(mask);
     }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setStencilMask(mask);
+    RRXGL::getInstance().pixelPipeline().stencil().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2328,9 +2328,9 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpFail(failOp);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZFail(zfailOp);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZPass(zpassOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpFail(failOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpZFail(zfailOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpZPass(zpassOp);
     }
 }
 
@@ -2754,7 +2754,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Combine c {};
             error = convertCombine(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineRgb(c);
+                RRXGL::getInstance().pixelPipeline().texture().setCombineRgb(c);
             break;
         }
         case GL_COMBINE_ALPHA:
@@ -2762,7 +2762,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Combine c {};
             error = convertCombine(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineAlpha(c);
+                RRXGL::getInstance().pixelPipeline().texture().setCombineAlpha(c);
             break;
         }
         case GL_SOURCE0_RGB:
@@ -2770,7 +2770,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb0(c);
             break;
         }
         case GL_SOURCE1_RGB:
@@ -2778,7 +2778,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb1(c);
             break;
         }
         case GL_SOURCE2_RGB:
@@ -2786,7 +2786,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb2(c);
             break;
         }
         case GL_SOURCE0_ALPHA:
@@ -2794,7 +2794,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha0(c);
             break;
         }
         case GL_SOURCE1_ALPHA:
@@ -2802,7 +2802,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha1(c);
             break;
         }
         case GL_SOURCE2_ALPHA:
@@ -2810,7 +2810,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha2(c);
             break;
         }
         case GL_OPERAND0_RGB:
@@ -2818,7 +2818,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb0(c);
             break;
         }
         case GL_OPERAND1_RGB:
@@ -2826,7 +2826,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb1(c);
             break;
         }
         case GL_OPERAND2_RGB:
@@ -2834,7 +2834,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb2(c);
             break;
         }
         case GL_OPERAND0_ALPHA:
@@ -2842,7 +2842,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha0(c);
             break;
         }
         case GL_OPERAND1_ALPHA:
@@ -2850,7 +2850,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha1(c);
             break;
         }
         case GL_OPERAND2_ALPHA:
@@ -2858,7 +2858,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha2(c);
             break;
         }
         case GL_RGB_SCALE:
@@ -2866,7 +2866,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftRgb(shift);
+                RRXGL::getInstance().pixelPipeline().texture().setShiftRgb(shift);
                 error = GL_NO_ERROR;
             }
             else
@@ -2880,7 +2880,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftAlpha(shift);
+                RRXGL::getInstance().pixelPipeline().texture().setShiftAlpha(shift);
                 error = GL_NO_ERROR;
             }
             else

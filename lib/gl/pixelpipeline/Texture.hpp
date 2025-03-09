@@ -18,8 +18,8 @@
 #ifndef TEXTURE_HPP_
 #define TEXTURE_HPP_
 
-#include "math/Vec.hpp"
 #include "Enums.hpp"
+#include "math/Vec.hpp"
 #include "renderer/Renderer.hpp"
 #include <optional>
 
@@ -28,8 +28,6 @@ namespace rr
 class Texture
 {
 public:
-    using TexEnv = TexEnvReg;
-
     Texture(Renderer& renderer);
 
     bool updateTexture();
@@ -46,8 +44,40 @@ public:
     void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
 
     bool setTexEnvMode(const TexEnvMode mode);
-    TexEnv& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
+    void setCombineRgb(const Combine val) { texEnv().setCombineRgb(val); }
+    void setCombineAlpha(const Combine val) { texEnv().setCombineAlpha(val); }
+    void setSrcRegRgb0(const SrcReg val) { texEnv().setSrcRegRgb0(val); }
+    void setSrcRegRgb1(const SrcReg val) { texEnv().setSrcRegRgb1(val); }
+    void setSrcRegRgb2(const SrcReg val) { texEnv().setSrcRegRgb2(val); }
+    void setSrcRegAlpha0(const SrcReg val) { texEnv().setSrcRegAlpha0(val); }
+    void setSrcRegAlpha1(const SrcReg val) { texEnv().setSrcRegAlpha1(val); }
+    void setSrcRegAlpha2(const SrcReg val) { texEnv().setSrcRegAlpha2(val); }
+    void setOperandRgb0(const Operand val) { texEnv().setOperandRgb0(val); }
+    void setOperandRgb1(const Operand val) { texEnv().setOperandRgb1(val); }
+    void setOperandRgb2(const Operand val) { texEnv().setOperandRgb2(val); }
+    void setOperandAlpha0(const Operand val) { texEnv().setOperandAlpha0(val); }
+    void setOperandAlpha1(const Operand val) { texEnv().setOperandAlpha1(val); }
+    void setOperandAlpha2(const Operand val) { texEnv().setOperandAlpha2(val); }
+    void setShiftRgb(const uint8_t val) { texEnv().setShiftRgb(val); }
+    void setShiftAlpha(const uint8_t val) { texEnv().setShiftAlpha(val); }
     bool setTexEnvColor(const Vec4& color);
+
+    Combine getCombineRgb() const { return texEnv().getCombineRgb(); }
+    Combine getCombineAlpha() const { return texEnv().getCombineAlpha(); }
+    SrcReg getSrcRegRgb0() const { return texEnv().getSrcRegRgb0(); }
+    SrcReg getSrcRegRgb1() const { return texEnv().getSrcRegRgb1(); }
+    SrcReg getSrcRegRgb2() const { return texEnv().getSrcRegRgb2(); }
+    SrcReg getSrcRegAlpha0() const { return texEnv().getSrcRegAlpha0(); }
+    SrcReg getSrcRegAlpha1() const { return texEnv().getSrcRegAlpha1(); }
+    SrcReg getSrcRegAlpha2() const { return texEnv().getSrcRegAlpha2(); }
+    Operand getOperandRgb0() const { return texEnv().getOperandRgb0(); }
+    Operand getOperandRgb1() const { return texEnv().getOperandRgb1(); }
+    Operand getOperandRgb2() const { return texEnv().getOperandRgb2(); }
+    Operand getOperandAlpha0() const { return texEnv().getOperandAlpha0(); }
+    Operand getOperandAlpha1() const { return texEnv().getOperandAlpha1(); }
+    Operand getOperandAlpha2() const { return texEnv().getOperandAlpha2(); }
+    uint8_t getShiftRgb() const { return texEnv().getShiftRgb(); }
+    uint8_t getShiftAlpha() const { return texEnv().getShiftAlpha(); }
 
     void activateTmu(const std::size_t tmu);
     std::size_t getActiveTmu() const { return m_tmu; }
@@ -60,9 +90,12 @@ private:
 
         // TMU
         TexEnvMode texEnvMode { TexEnvMode::REPLACE };
-        TexEnv texEnvConf {};
-        TexEnv texEnvConfUploaded {};
+        TexEnvReg texEnvConf {};
+        TexEnvReg texEnvConfUploaded {};
     };
+
+    TexEnvReg& texEnv() { return m_tmuConf[m_tmu].texEnvConf; }
+    const TexEnvReg& texEnv() const { return m_tmuConf[m_tmu].texEnvConf; }
 
     Renderer& m_renderer;
 

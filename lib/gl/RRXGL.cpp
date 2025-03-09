@@ -19,7 +19,6 @@
 #include "RenderConfigs.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "renderer/Renderer.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
 #include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
@@ -73,8 +72,7 @@ class RenderDevice
 public:
     RenderDevice(IBusConnector& busConnector)
         : device { busConnector }
-        , renderer { device.device }
-        , pixelPipeline { renderer }
+        , pixelPipeline { device.device }
         , vertexPipeline { pixelPipeline }
     {
     }
@@ -82,7 +80,6 @@ public:
     using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
 
     Device device;
-    Renderer renderer;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
@@ -581,13 +578,13 @@ RRXGL::~RRXGL()
 void RRXGL::swapDisplayList()
 {
     SPDLOG_INFO("swapDisplayList called");
-    m_renderDevice->renderer.swapDisplayList();
+    m_renderDevice->pixelPipeline.swapDisplayList();
 }
 
 void RRXGL::uploadDisplayList()
 {
     SPDLOG_INFO("uploadDisplayList called");
-    m_renderDevice->renderer.uploadDisplayList();
+    m_renderDevice->pixelPipeline.uploadDisplayList();
 }
 
 const char* RRXGL::getLibExtensions() const
@@ -646,22 +643,22 @@ VertexArray& RRXGL::vertexArray()
 
 std::size_t RRXGL::getMaxTextureSize() const
 {
-    return m_renderDevice->renderer.getMaxTextureSize();
+    return RenderConfig::MAX_TEXTURE_SIZE;
 }
 
 std::size_t RRXGL::getTmuCount() const
 {
-    return m_renderDevice->renderer.getTmuCount();
+    return RenderConfig::TMU_COUNT;
 }
 
 bool RRXGL::isMipmappingAvailable() const
 {
-    return m_renderDevice->renderer.isMipmappingAvailable();
+    return RenderConfig::ENABLE_MIPMAPPING;
 }
 
 bool RRXGL::setRenderResolution(const std::size_t x, const std::size_t y)
 {
-    return m_renderDevice->renderer.setRenderResolution(x, y);
+    return m_renderDevice->pixelPipeline.setRenderResolution(x, y);
 }
 
 std::size_t RRXGL::getMaxLOD()
