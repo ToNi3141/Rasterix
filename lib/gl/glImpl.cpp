@@ -18,6 +18,7 @@
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
 #include "RRXGL.hpp"
+#include "TextureConverter.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/MatrixStack.hpp"
@@ -3075,76 +3076,10 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureObject::IntendedInternalPixelFormat::RGBA };
+    const TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureConverter::convertToIntendedPixelFormat(internalformat) };
 
-    switch (internalformat)
+    if (RRXGL::getInstance().getError() != GL_NO_ERROR)
     {
-    case 1:
-    case GL_COMPRESSED_ALPHA:
-    case GL_ALPHA8:
-    case GL_ALPHA12:
-    case GL_ALPHA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::ALPHA;
-        break;
-    case GL_COMPRESSED_LUMINANCE:
-    case GL_LUMINANCE:
-    case GL_LUMINANCE4:
-    case GL_LUMINANCE8:
-    case GL_LUMINANCE12:
-    case GL_LUMINANCE16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE;
-        break;
-    case GL_COMPRESSED_INTENSITY:
-    case GL_INTENSITY:
-    case GL_INTENSITY4:
-    case GL_INTENSITY8:
-    case GL_INTENSITY12:
-    case GL_INTENSITY16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::INTENSITY;
-        break;
-    case 2:
-    case GL_COMPRESSED_LUMINANCE_ALPHA:
-    case GL_LUMINANCE_ALPHA:
-    case GL_LUMINANCE4_ALPHA4:
-    case GL_LUMINANCE6_ALPHA2:
-    case GL_LUMINANCE8_ALPHA8:
-    case GL_LUMINANCE12_ALPHA4:
-    case GL_LUMINANCE12_ALPHA12:
-    case GL_LUMINANCE16_ALPHA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
-        break;
-    case 3:
-    case GL_COMPRESSED_RGB:
-    case GL_R3_G3_B2:
-    case GL_RGB:
-    case GL_RGB4:
-    case GL_RGB5:
-    case GL_RGB8:
-    case GL_RGB10:
-    case GL_RGB12:
-    case GL_RGB16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGB;
-        break;
-    case 4:
-    case GL_COMPRESSED_RGBA:
-    case GL_RGBA:
-    case GL_RGBA2:
-    case GL_RGBA4:
-    case GL_RGBA8:
-    case GL_RGB10_A2:
-    case GL_RGBA12:
-    case GL_RGBA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA;
-        break;
-    case GL_RGB5_A1:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA1;
-        break;
-    case GL_DEPTH_COMPONENT:
-        SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
-        break;
-    default:
-        SPDLOG_ERROR("glTexImage2D invalid internalformat");
-        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return;
     }
 
@@ -3837,208 +3772,16 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        std::size_t i = 0;
-        // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
-        for (std::size_t y = yoffset; y < static_cast<std::size_t>(height + yoffset); y++)
-        {
-            for (std::size_t x = xoffset; x < static_cast<std::size_t>(width + xoffset); x++)
-            {
-                const std::size_t texPos { (y * texObj.width) + x };
-                switch (format)
-                {
-                case GL_RGB:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<11, 5, 0x1f>(color),
-                            convertColorComponentToUint8<5, 6, 0x3f>(color),
-                            convertColorComponentToUint8<0, 5, 0x1f>(color),
-                            0xff);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            0xff);
-                        i += 3;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_RGBA:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<11, 5, 0x1f>(color),
-                            convertColorComponentToUint8<6, 5, 0x1f>(color),
-                            convertColorComponentToUint8<1, 5, 0x1f>(color),
-                            (color & 0x1) ? 0xff : 0);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<12, 4, 0xf>(color),
-                            convertColorComponentToUint8<8, 4, 0xf>(color),
-                            convertColorComponentToUint8<4, 4, 0xf>(color),
-                            convertColorComponentToUint8<0, 4, 0xf>(color));
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_ALPHA:
-                case GL_RED:
-                case GL_GREEN:
-                case GL_BLUE:
-                case GL_BGR:
-                case GL_BGRA:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<10, 5, 0x1f>(color),
-                            convertColorComponentToUint8<5, 5, 0x1f>(color),
-                            convertColorComponentToUint8<0, 5, 0x1f>(color),
-                            ((color >> 15) & 0x1) ? 0xff : 0);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<8, 4, 0xf>(color),
-                            convertColorComponentToUint8<4, 4, 0xf>(color),
-                            convertColorComponentToUint8<0, 4, 0xf>(color),
-                            convertColorComponentToUint8<12, 4, 0xf>(color));
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_LUMINANCE:
-                case GL_LUMINANCE_ALPHA:
-                    SPDLOG_WARN("glTexSubImage2D unsupported format");
-                    return;
-                default:
-                    SPDLOG_WARN("glTexSubImage2D invalid format");
-                    RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                    return;
-                }
-            }
-        }
+        TextureConverter::convert(texMemShared,
+            texObj.intendedPixelFormat,
+            texObj.width,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format,
+            type,
+            reinterpret_cast<const uint8_t*>(pixels));
     }
 
     texObj.pixels = texMemShared;

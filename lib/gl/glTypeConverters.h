@@ -33,14 +33,6 @@
 namespace rr
 {
 
-template <uint8_t ColorPos, uint8_t ComponentSize, uint8_t Mask>
-uint8_t convertColorComponentToUint8(const uint16_t color)
-{
-    static constexpr uint8_t ComponentShift = 8 - ComponentSize;
-    static constexpr uint8_t ComponentShiftFill = ComponentSize - ComponentShift;
-    return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
-}
-
 float cv(const GLclampf val)
 {
     return std::clamp(val, 0.0f, 1.0f);
