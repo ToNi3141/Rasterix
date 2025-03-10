@@ -47,8 +47,8 @@ bool PixelPipeline::setClearColor(const Vec4& color)
 
 bool PixelPipeline::setClearDepth(const float depth)
 {
-    // Convert from signed float (-1.0 .. 1.0) to unsigned fix (0 .. 65535)
-    const uint16_t depthx = (depth + 1.0f) * 32767;
+    // Convert from signed float (0.0 .. 1.0) to unsigned fix (0 .. 65535)
+    const uint16_t depthx = depth * 65535;
     return m_renderer.setClearDepth({ depthx });
 }
 

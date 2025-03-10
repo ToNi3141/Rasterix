@@ -48,6 +48,7 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
         // Convert reference value from float to fix point
+        ref = cv(ref);
         uint8_t refFix = ref * (1 << 8);
         if (ref >= 1.0f)
         {
@@ -116,7 +117,7 @@ GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, 
 GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     SPDLOG_DEBUG("glClearColor ({}, {}, {}, {}) called", red, green, blue, alpha);
-    if (RRXGL::getInstance().pixelPipeline().setClearColor({ red, green, blue, alpha }))
+    if (RRXGL::getInstance().pixelPipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -129,17 +130,8 @@ GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blu
 GLAPI void APIENTRY impl_glClearDepth(GLclampd depth)
 {
     SPDLOG_DEBUG("glClearDepth {} called", depth);
-    if (depth < -1.0f)
-    {
-        depth = -1.0f;
-    }
 
-    if (depth > 1.0f)
-    {
-        depth = 1.0f;
-    }
-
-    if (RRXGL::getInstance().pixelPipeline().setClearDepth(depth))
+    if (RRXGL::getInstance().pixelPipeline().setClearDepth(cv(depth)))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -690,16 +682,7 @@ GLAPI void APIENTRY impl_glDepthMask(GLboolean flag)
 GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
 {
     SPDLOG_DEBUG("glDepthRange zNear {} zFar {} called", zNear, zFar);
-    if (zNear > 1.0f)
-        zNear = 1.0f;
-    if (zNear < -1.0f)
-        zNear = -1.0f;
-    if (zFar > 1.0f)
-        zFar = 1.0f;
-    if (zFar < -1.0f)
-        zFar = -1.0f;
-
-    RRXGL::getInstance().vertexPipeline().getViewPort().setDepthRange(zNear, zFar);
+    RRXGL::getInstance().vertexPipeline().getViewPort().setDepthRange(cv(zNear), cv(zFar));
 }
 
 GLAPI void APIENTRY impl_glDisable(GLenum cap)

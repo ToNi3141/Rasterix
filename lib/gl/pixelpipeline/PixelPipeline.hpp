@@ -43,11 +43,7 @@ public:
 
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
 
-    bool setScissorBox(
-        const int32_t x,
-        const int32_t y,
-        const uint32_t width,
-        const uint32_t height)
+    bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }

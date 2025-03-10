@@ -26,6 +26,7 @@
 #include "vertexpipeline/Types.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
+#include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
 
@@ -38,6 +39,11 @@ uint8_t convertColorComponentToUint8(const uint16_t color)
     static constexpr uint8_t ComponentShift = 8 - ComponentSize;
     static constexpr uint8_t ComponentShiftFill = ComponentSize - ComponentShift;
     return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
+}
+
+float cv(const GLclampf val)
+{
+    return std::clamp(val, 0.0f, 1.0f);
 }
 
 GLint convertTexEnvMode(TexEnvMode& mode, const GLint param)
