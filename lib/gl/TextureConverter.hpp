@@ -18,14 +18,8 @@
 #ifndef GL_TEXTURE_CONVERTER_HPP_
 #define GL_TEXTURE_CONVERTER_HPP_
 
-#include "RRXGL.hpp"
 #include "gl.h"
-#include "pixelpipeline/PixelPipeline.hpp"
 #include "pixelpipeline/Texture.hpp"
-#include "vertexpipeline/MatrixStack.hpp"
-#include "vertexpipeline/Types.hpp"
-#include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>

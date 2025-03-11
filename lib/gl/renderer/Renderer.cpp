@@ -202,7 +202,7 @@ bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool 
         });
 }
 
-bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
+bool Renderer::useTexture(const std::size_t tmu, const uint16_t texId)
 {
     if (!m_textureManager.textureValid(texId))
     {
@@ -211,10 +211,10 @@ bool Renderer::useTexture(const std::size_t target, const uint16_t texId)
     bool ret { true };
 
     const tcb::span<const std::size_t> pages = m_textureManager.getPages(texId);
-    ret = ret && addCommand(TextureStreamCmd { target, pages });
+    ret = ret && addCommand(TextureStreamCmd { tmu, pages });
 
     TmuTextureReg reg = m_textureManager.getTmuConfig(texId);
-    reg.setTmu(target);
+    reg.setTmu(tmu);
     ret = ret && addCommand(WriteRegisterCmd { reg });
 
     return ret;
@@ -253,28 +253,28 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     return ret;
 }
 
-bool Renderer::setTextureWrapModeS(const std::size_t target, const uint16_t texId, TextureWrapMode mode)
+bool Renderer::setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeS(texId, mode);
-    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(tmu, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::setTextureWrapModeT(const std::size_t target, const uint16_t texId, TextureWrapMode mode)
+bool Renderer::setTextureWrapModeT(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeT(texId, mode);
-    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(tmu, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::enableTextureMagFiltering(const std::size_t target, const uint16_t texId, bool filter)
+bool Renderer::enableTextureMagFiltering(const std::size_t tmu, const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMagFiltering(texId, filter);
-    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(tmu, texId, m_textureManager.getTmuConfig(texId));
 }
 
-bool Renderer::enableTextureMinFiltering(const std::size_t target, const uint16_t texId, bool filter)
+bool Renderer::enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter)
 {
     m_textureManager.enableTextureMinFiltering(texId, filter);
-    return writeToTextureConfig(target, texId, m_textureManager.getTmuConfig(texId));
+    return writeToTextureConfig(tmu, texId, m_textureManager.getTmuConfig(texId));
 }
 
 bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
@@ -292,9 +292,9 @@ bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
     return writeReg(reg);
 }
 
-bool Renderer::writeToTextureConfig(const std::size_t target, const uint16_t texId, TmuTextureReg tmuConfig)
+bool Renderer::writeToTextureConfig(const std::size_t tmu, const uint16_t texId, TmuTextureReg tmuConfig)
 {
-    tmuConfig.setTmu(target);
+    tmuConfig.setTmu(tmu);
     return writeReg(tmuConfig);
 }
 

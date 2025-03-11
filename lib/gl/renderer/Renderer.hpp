@@ -107,10 +107,10 @@ public:
     bool isTextureValid(const uint16_t texId) const { return m_textureManager.textureValid(texId); }
 
     /// @brief Activates a texture which then is used for rendering
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool useTexture(const std::size_t target, const uint16_t texId);
+    bool useTexture(const std::size_t tmu, const uint16_t texId);
 
     /// @brief Deletes a texture
     /// @param texId The id of the texture to delete
@@ -118,32 +118,32 @@ public:
     bool deleteTexture(const uint16_t texId) { return m_textureManager.deleteTexture(texId); }
 
     /// @brief The wrapping mode of the texture in s direction
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTextureWrapModeS(const std::size_t target, const uint16_t texId, TextureWrapMode mode);
+    bool setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
     /// @brief The wrapping mode of the texture in t direction
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTextureWrapModeT(const std::size_t target, const uint16_t texId, TextureWrapMode mode);
+    bool setTextureWrapModeT(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
     /// @brief Enables the texture filtering for magnification
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool enableTextureMagFiltering(const std::size_t target, const uint16_t texId, bool filter);
+    bool enableTextureMagFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
     /// @brief Enables the texture filtering for minification (mipmapping)
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool enableTextureMinFiltering(const std::size_t target, const uint16_t texId, bool filter);
+    bool enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
     /// @brief Sets the resolution of the renderer
     /// @param x X is the width of the produced image
@@ -303,7 +303,7 @@ private:
 
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
-    bool writeToTextureConfig(const std::size_t target, const uint16_t texId, TmuTextureReg tmuConfig);
+    bool writeToTextureConfig(const std::size_t tmu, const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
     void swapFramebuffer();
