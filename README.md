@@ -17,7 +17,7 @@ The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed 
 The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
 
 # Area Usage
-With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device : 
+With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device: 
   - 64 bit memory bus
   - 256px textures
   - 1 TMU

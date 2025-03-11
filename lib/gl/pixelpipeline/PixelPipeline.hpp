@@ -24,6 +24,7 @@
 #include "Stencil.hpp"
 #include "Texture.hpp"
 #include "math/Vec.hpp"
+#include "renderer/IDevice.hpp"
 #include "renderer/Renderer.hpp"
 #include <optional>
 
@@ -32,10 +33,20 @@ namespace rr
 class PixelPipeline
 {
 public:
-    PixelPipeline(Renderer& renderer);
+    PixelPipeline(IDevice& device);
 
     bool drawTriangle(const TransformedTriangle& triangle) { return m_renderer.drawTriangle(triangle); }
     bool updatePipeline();
+
+    void swapDisplayList() { m_renderer.swapDisplayList(); }
+    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
+
+    bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
+
+    bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
+    {
+        return m_renderer.setScissorBox(x, y, width, height);
+    }
 
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
@@ -48,11 +59,8 @@ public:
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
-    // Scissor
-    void setScissorBox(const int32_t x, int32_t y, const uint32_t width, const uint32_t height) { m_renderer.setScissorBox(x, y, width, height); }
-
 private:
-    Renderer& m_renderer;
+    Renderer m_renderer;
 
     Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };

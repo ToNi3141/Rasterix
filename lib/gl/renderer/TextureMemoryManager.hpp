@@ -59,8 +59,8 @@ public:
         {
             m_textureEntryFlags[*m_textureLut[texId]].requiresUpload = false;
             m_textureEntryFlags[*m_textureLut[texId]].requiresDelete = false;
-            setTextureWrapModeS(texId, TmuTextureReg::TextureWrapMode::REPEAT);
-            setTextureWrapModeT(texId, TmuTextureReg::TextureWrapMode::REPEAT);
+            setTextureWrapModeS(texId, TextureWrapMode::REPEAT);
+            setTextureWrapModeT(texId, TextureWrapMode::REPEAT);
             enableTextureMagFiltering(texId, true);
             return true;
         }
@@ -128,7 +128,7 @@ public:
         return ret;
     }
 
-    void setTextureWrapModeS(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
+    void setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode)
     {
         if (!m_textureLut[texId])
         {
@@ -139,7 +139,7 @@ public:
         tex.tmuConfig.setWarpModeS(mode);
     }
 
-    void setTextureWrapModeT(const uint16_t texId, TmuTextureReg::TextureWrapMode mode)
+    void setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode)
     {
         if (!m_textureLut[texId])
         {

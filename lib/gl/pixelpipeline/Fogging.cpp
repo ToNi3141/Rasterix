@@ -65,7 +65,7 @@ bool Fogging::setFogColor(const Vec4& val)
 {
     Vec4i color = Vec4i::createFromVec<Vec4, 8>(val);
     color.clamp(0, 255);
-    return m_renderer.setFogColor(color);
+    return m_renderer.setFogColor({ color });
 }
 
 bool Fogging::updateFogLut()

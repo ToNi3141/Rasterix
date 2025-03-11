@@ -18,7 +18,7 @@
 #ifndef _FRAGMENT_PIPELINE_REG_
 #define _FRAGMENT_PIPELINE_REG_
 
-#include "TestFuncDef.hpp"
+#include "Enums.hpp"
 #include <cstdint>
 
 namespace rr
@@ -26,40 +26,43 @@ namespace rr
 class FragmentPipelineReg
 {
 public:
-    enum class BlendFunc
-    {
-        ZERO,
-        ONE,
-        DST_COLOR,
-        SRC_COLOR,
-        ONE_MINUS_DST_COLOR,
-        ONE_MINUS_SRC_COLOR,
-        SRC_ALPHA,
-        ONE_MINUS_SRC_ALPHA,
-        DST_ALPHA,
-        ONE_MINUS_DST_ALPHA,
-        SRC_ALPHA_SATURATE
-    };
+    static_assert(static_cast<uint32_t>(BlendFunc::ZERO) == 0);
+    static_assert(static_cast<uint32_t>(BlendFunc::ONE) == 1);
+    static_assert(static_cast<uint32_t>(BlendFunc::DST_COLOR) == 2);
+    static_assert(static_cast<uint32_t>(BlendFunc::SRC_COLOR) == 3);
+    static_assert(static_cast<uint32_t>(BlendFunc::ONE_MINUS_DST_COLOR) == 4);
+    static_assert(static_cast<uint32_t>(BlendFunc::ONE_MINUS_SRC_COLOR) == 5);
+    static_assert(static_cast<uint32_t>(BlendFunc::SRC_ALPHA) == 6);
+    static_assert(static_cast<uint32_t>(BlendFunc::ONE_MINUS_SRC_ALPHA) == 7);
+    static_assert(static_cast<uint32_t>(BlendFunc::DST_ALPHA) == 8);
+    static_assert(static_cast<uint32_t>(BlendFunc::ONE_MINUS_DST_ALPHA) == 9);
+    static_assert(static_cast<uint32_t>(BlendFunc::SRC_ALPHA_SATURATE) == 10);
 
-    enum class LogicOp
-    {
-        CLEAR,
-        SET,
-        COPY,
-        COPY_INVERTED,
-        NOOP,
-        INVERTED,
-        AND,
-        NAND,
-        OR,
-        NOR,
-        XOR,
-        EQUIV,
-        AND_REVERSE,
-        AND_INVERTED,
-        OR_REVERSE,
-        OR_INVERTED
-    };
+    static_assert(static_cast<uint32_t>(LogicOp::CLEAR) == 0);
+    static_assert(static_cast<uint32_t>(LogicOp::SET) == 1);
+    static_assert(static_cast<uint32_t>(LogicOp::COPY) == 2);
+    static_assert(static_cast<uint32_t>(LogicOp::COPY_INVERTED) == 3);
+    static_assert(static_cast<uint32_t>(LogicOp::NOOP) == 4);
+    static_assert(static_cast<uint32_t>(LogicOp::INVERTED) == 5);
+    static_assert(static_cast<uint32_t>(LogicOp::AND) == 6);
+    static_assert(static_cast<uint32_t>(LogicOp::NAND) == 7);
+    static_assert(static_cast<uint32_t>(LogicOp::OR) == 8);
+    static_assert(static_cast<uint32_t>(LogicOp::NOR) == 9);
+    static_assert(static_cast<uint32_t>(LogicOp::XOR) == 10);
+    static_assert(static_cast<uint32_t>(LogicOp::EQUIV) == 11);
+    static_assert(static_cast<uint32_t>(LogicOp::AND_REVERSE) == 12);
+    static_assert(static_cast<uint32_t>(LogicOp::AND_INVERTED) == 13);
+    static_assert(static_cast<uint32_t>(LogicOp::OR_REVERSE) == 14);
+    static_assert(static_cast<uint32_t>(LogicOp::OR_INVERTED) == 15);
+
+    static_assert(static_cast<uint32_t>(TestFunc::ALWAYS) == 0);
+    static_assert(static_cast<uint32_t>(TestFunc::NEVER) == 1);
+    static_assert(static_cast<uint32_t>(TestFunc::LESS) == 2);
+    static_assert(static_cast<uint32_t>(TestFunc::EQUAL) == 3);
+    static_assert(static_cast<uint32_t>(TestFunc::LEQUAL) == 4);
+    static_assert(static_cast<uint32_t>(TestFunc::GREATER) == 5);
+    static_assert(static_cast<uint32_t>(TestFunc::NOTEQUAL) == 6);
+    static_assert(static_cast<uint32_t>(TestFunc::GEQUAL) == 7);
 
     FragmentPipelineReg() = default;
 

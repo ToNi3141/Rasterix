@@ -27,15 +27,33 @@ namespace rr
 class FragmentPipeline
 {
 public:
-    using PipelineConfig = FragmentPipelineReg;
-
     FragmentPipeline(Renderer& renderer)
         : m_renderer { renderer }
     {
         m_renderer.setFragmentPipelineConfig(m_fragmentPipelineConf);
     }
 
-    PipelineConfig& config() { return m_fragmentPipelineConf; }
+    void setRefAlphaValue(const uint8_t val) { config().setRefAlphaValue(val); }
+    void setDepthMask(const bool val) { config().setDepthMask(val); }
+    void setColorMaskA(const bool val) { config().setColorMaskA(val); }
+    void setColorMaskR(const bool val) { config().setColorMaskR(val); }
+    void setColorMaskG(const bool val) { config().setColorMaskG(val); }
+    void setColorMaskB(const bool val) { config().setColorMaskB(val); }
+    void setDepthFunc(const TestFunc val) { config().setDepthFunc(val); }
+    void setAlphaFunc(const TestFunc val) { config().setAlphaFunc(val); }
+    void setBlendFuncSFactor(const BlendFunc val) { config().setBlendFuncSFactor(val); }
+    void setBlendFuncDFactor(const BlendFunc val) { config().setBlendFuncDFactor(val); }
+
+    uint8_t getRefAlphaValue() const { return config().getRefAlphaValue(); }
+    bool getDepthMask() const { return config().getDepthMask(); }
+    bool getColorMaskA() const { return config().getColorMaskA(); }
+    bool getColorMaskR() const { return config().getColorMaskR(); }
+    bool getColorMaskG() const { return config().getColorMaskG(); }
+    bool getColorMaskB() const { return config().getColorMaskB(); }
+    TestFunc getDepthFunc() const { return config().getDepthFunc(); }
+    TestFunc getAlphaFunc() const { return config().getAlphaFunc(); }
+    BlendFunc getBlendFuncSFactor() const { return config().getBlendFuncSFactor(); }
+    BlendFunc getBlendFuncDFactor() const { return config().getBlendFuncDFactor(); }
 
     bool update()
     {
@@ -51,9 +69,12 @@ public:
     }
 
 private:
+    FragmentPipelineReg& config() { return m_fragmentPipelineConf; }
+    const FragmentPipelineReg& config() const { return m_fragmentPipelineConf; }
+
     Renderer& m_renderer;
-    PipelineConfig m_fragmentPipelineConf {};
-    PipelineConfig m_fragmentPipelineConfUploaded {};
+    FragmentPipelineReg m_fragmentPipelineConf {};
+    FragmentPipelineReg m_fragmentPipelineConfUploaded {};
 };
 
 } // namespace rr

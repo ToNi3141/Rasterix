@@ -30,7 +30,7 @@ Texture::Texture(Renderer& renderer)
     }
 }
 
-bool Texture::uploadTexture()
+bool Texture::updateTexture()
 {
     bool ret { true };
 
@@ -52,7 +52,7 @@ bool Texture::uploadTexture()
 
         // Rebind texture to update the rasterizer with the new texture meta information
         // TODO: Check if this is still required
-        ret = ret && useTexture();
+        ret = ret && m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
     }
     return ret;
 }
@@ -68,7 +68,7 @@ TextureObjectMipmap& Texture::getTexture()
 
 bool Texture::useTexture()
 {
-    uploadTexture();
+    updateTexture();
     return m_renderer.useTexture(m_tmu, m_tmuConf[m_tmu].boundTexture);
 }
 
@@ -79,75 +79,75 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
     switch (mode)
     {
     case TexEnvMode::DISABLE:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(Combine::REPLACE);
+        texEnvConf.setCombineRgb(Combine::REPLACE);
+        texEnvConf.setCombineAlpha(Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(SrcReg::PRIMARY_COLOR);
         if (m_tmu != 0) // Is this the right mode?
         {
-            texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::PREVIOUS);
-            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegRgb0(SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(SrcReg::PREVIOUS);
         }
         break;
     case TexEnvMode::REPLACE:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setCombineRgb(Combine::REPLACE);
+        texEnvConf.setCombineAlpha(Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(SrcReg::TEXTURE);
         break;
     case TexEnvMode::MODULATE:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::MODULATE);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::MODULATE);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(Combine::MODULATE);
+        texEnvConf.setCombineAlpha(Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(SrcReg::PRIMARY_COLOR);
         if (m_tmu != 0) // Is this the right mode?
         {
-            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
-            texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegRgb1(SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha1(SrcReg::PREVIOUS);
         }
         break;
     case TexEnvMode::DECAL:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::REPLACE);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setOperandRgb2(TexEnvReg::Operand::SRC_ALPHA);
+        texEnvConf.setCombineRgb(Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(Combine::REPLACE);
+        texEnvConf.setSrcRegRgb0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setOperandRgb2(Operand::SRC_ALPHA);
         if (m_tmu != 0) // Is this the right mode?
         {
-            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
-            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegRgb1(SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(SrcReg::PREVIOUS);
         }
         break;
     case TexEnvMode::BLEND:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::INTERPOLATE);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::MODULATE);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::CONSTANT);
-        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegRgb2(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::TEXTURE);
+        texEnvConf.setCombineRgb(Combine::INTERPOLATE);
+        texEnvConf.setCombineAlpha(Combine::MODULATE);
+        texEnvConf.setSrcRegRgb0(SrcReg::CONSTANT);
+        texEnvConf.setSrcRegRgb1(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegRgb2(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha0(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha1(SrcReg::TEXTURE);
         if (m_tmu != 0) // Is this the right mode?
         {
-            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
-            texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegRgb1(SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha0(SrcReg::PREVIOUS);
         }
         break;
     case TexEnvMode::ADD:
-        texEnvConf.setCombineRgb(TexEnvReg::Combine::ADD);
-        texEnvConf.setCombineAlpha(TexEnvReg::Combine::ADD);
-        texEnvConf.setSrcRegRgb0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PRIMARY_COLOR);
-        texEnvConf.setSrcRegAlpha0(TexEnvReg::SrcReg::TEXTURE);
-        texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PRIMARY_COLOR);
+        texEnvConf.setCombineRgb(Combine::ADD);
+        texEnvConf.setCombineAlpha(Combine::ADD);
+        texEnvConf.setSrcRegRgb0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegRgb1(SrcReg::PRIMARY_COLOR);
+        texEnvConf.setSrcRegAlpha0(SrcReg::TEXTURE);
+        texEnvConf.setSrcRegAlpha1(SrcReg::PRIMARY_COLOR);
         if (m_tmu != 0) // Is this the right mode?
         {
-            texEnvConf.setSrcRegRgb1(TexEnvReg::SrcReg::PREVIOUS);
-            texEnvConf.setSrcRegAlpha1(TexEnvReg::SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegRgb1(SrcReg::PREVIOUS);
+            texEnvConf.setSrcRegAlpha1(SrcReg::PREVIOUS);
         }
         break;
     case TexEnvMode::COMBINE:
@@ -166,10 +166,27 @@ bool Texture::setTexEnvMode(const TexEnvMode mode)
 
 bool Texture::setTexEnvColor(const Vec4& color)
 {
-    return m_renderer.setTexEnvColor(m_tmu,
-        { { static_cast<uint8_t>(color[0] * 255.0f),
-            static_cast<uint8_t>(color[1] * 255.0f),
-            static_cast<uint8_t>(color[2] * 255.0f),
-            static_cast<uint8_t>(color[3] * 255.0f) } });
+    return m_renderer.setTexEnvColor(
+        {
+            m_tmu,
+            Vec4i {
+                static_cast<uint8_t>(color[0] * 255.0f),
+                static_cast<uint8_t>(color[1] * 255.0f),
+                static_cast<uint8_t>(color[2] * 255.0f),
+                static_cast<uint8_t>(color[3] * 255.0f),
+            },
+        });
+}
+
+void Texture::setBoundTexture(const uint16_t val)
+{
+    updateTexture();
+    m_tmuConf[m_tmu].boundTexture = val;
+}
+
+void Texture::activateTmu(const std::size_t tmu)
+{
+    updateTexture();
+    m_tmu = tmu;
 }
 } // namespace rr

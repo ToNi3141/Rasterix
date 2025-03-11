@@ -58,14 +58,14 @@ private:
         struct RegContent
         {
             RegContent()
-                : fog(false)
-                , blending(false)
-                , depthTest(false)
-                , alphaTest(false)
-                , stencilTest(false)
-                , scissor(false)
-                , tmu0(false)
-                , tmu1(false)
+                : fog { false }
+                , blending { false }
+                , depthTest { false }
+                , alphaTest { false }
+                , stencilTest { false }
+                , scissor { false }
+                , tmu0 { false }
+                , tmu1 { false }
             {
             }
 

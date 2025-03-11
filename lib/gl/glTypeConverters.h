@@ -26,77 +26,75 @@
 #include "vertexpipeline/Types.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
+#include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
 
 namespace rr
 {
 
-template <uint8_t ColorPos, uint8_t ComponentSize, uint8_t Mask>
-uint8_t convertColorComponentToUint8(const uint16_t color)
+float cv(const GLclampf val)
 {
-    static constexpr uint8_t ComponentShift = 8 - ComponentSize;
-    static constexpr uint8_t ComponentShiftFill = ComponentSize - ComponentShift;
-    return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
+    return std::clamp(val, 0.0f, 1.0f);
 }
 
-GLint convertTexEnvMode(Texture::TexEnvMode& mode, const GLint param)
+GLint convertTexEnvMode(TexEnvMode& mode, const GLint param)
 {
     GLint ret = GL_NO_ERROR;
     switch (param)
     {
         //    case GL_DISABLE:
-        //        mode = Texture::TexEnvMode::DISABLE;
+        //        mode = TexEnvMode::DISABLE;
         //        break;
     case GL_REPLACE:
-        mode = Texture::TexEnvMode::REPLACE;
+        mode = TexEnvMode::REPLACE;
         break;
     case GL_MODULATE:
-        mode = Texture::TexEnvMode::MODULATE;
+        mode = TexEnvMode::MODULATE;
         break;
     case GL_DECAL:
-        mode = Texture::TexEnvMode::DECAL;
+        mode = TexEnvMode::DECAL;
         break;
     case GL_BLEND:
-        mode = Texture::TexEnvMode::BLEND;
+        mode = TexEnvMode::BLEND;
         break;
     case GL_ADD:
-        mode = Texture::TexEnvMode::ADD;
+        mode = TexEnvMode::ADD;
         break;
     case GL_COMBINE:
-        mode = Texture::TexEnvMode::COMBINE;
+        mode = TexEnvMode::COMBINE;
         break;
     default:
         SPDLOG_WARN("convertTexEnvMode 0x{:X} not suppored", param);
         ret = GL_INVALID_ENUM;
-        mode = Texture::TexEnvMode::REPLACE;
+        mode = TexEnvMode::REPLACE;
         break;
     }
     return ret;
 }
 
-GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
+GLint convertCombine(Combine& conv, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
     case GL_REPLACE:
-        conv = Texture::TexEnv::Combine::REPLACE;
+        conv = Combine::REPLACE;
         break;
     case GL_MODULATE:
-        conv = Texture::TexEnv::Combine::MODULATE;
+        conv = Combine::MODULATE;
         break;
     case GL_ADD:
-        conv = Texture::TexEnv::Combine::ADD;
+        conv = Combine::ADD;
         break;
     case GL_ADD_SIGNED:
-        conv = Texture::TexEnv::Combine::ADD_SIGNED;
+        conv = Combine::ADD_SIGNED;
         break;
     case GL_INTERPOLATE:
-        conv = Texture::TexEnv::Combine::INTERPOLATE;
+        conv = Combine::INTERPOLATE;
         break;
     case GL_SUBTRACT:
-        conv = Texture::TexEnv::Combine::SUBTRACT;
+        conv = Combine::SUBTRACT;
         break;
     case GL_DOT3_RGB:
         if (alpha)
@@ -105,7 +103,7 @@ GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
         }
         else
         {
-            conv = Texture::TexEnv::Combine::DOT3_RGB;
+            conv = Combine::DOT3_RGB;
         }
         break;
     case GL_DOT3_RGBA:
@@ -115,7 +113,7 @@ GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
         }
         else
         {
-            conv = Texture::TexEnv::Combine::DOT3_RGBA;
+            conv = Combine::DOT3_RGBA;
         }
         break;
     default:
@@ -126,16 +124,16 @@ GLint convertCombine(Texture::TexEnv::Combine& conv, GLint val, bool alpha)
     return ret;
 }
 
-GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
+GLint convertOperand(Operand& conf, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
     case GL_SRC_ALPHA:
-        conf = Texture::TexEnv::Operand::SRC_ALPHA;
+        conf = Operand::SRC_ALPHA;
         break;
     case GL_ONE_MINUS_SRC_ALPHA:
-        conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_ALPHA;
+        conf = Operand::ONE_MINUS_SRC_ALPHA;
         break;
     case GL_SRC_COLOR:
         if (alpha)
@@ -144,7 +142,7 @@ GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
         }
         else
         {
-            conf = Texture::TexEnv::Operand::SRC_COLOR;
+            conf = Operand::SRC_COLOR;
         }
         break;
     case GL_ONE_MINUS_SRC_COLOR:
@@ -154,7 +152,7 @@ GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
         }
         else
         {
-            conf = Texture::TexEnv::Operand::ONE_MINUS_SRC_COLOR;
+            conf = Operand::ONE_MINUS_SRC_COLOR;
         }
         break;
     default:
@@ -164,22 +162,22 @@ GLint convertOperand(Texture::TexEnv::Operand& conf, GLint val, bool alpha)
     return ret;
 }
 
-GLint convertSrcReg(Texture::TexEnv::SrcReg& conf, GLint val)
+GLint convertSrcReg(SrcReg& conf, GLint val)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
     {
     case GL_TEXTURE:
-        conf = Texture::TexEnv::SrcReg::TEXTURE;
+        conf = SrcReg::TEXTURE;
         break;
     case GL_CONSTANT:
-        conf = Texture::TexEnv::SrcReg::CONSTANT;
+        conf = SrcReg::CONSTANT;
         break;
     case GL_PRIMARY_COLOR:
-        conf = Texture::TexEnv::SrcReg::PRIMARY_COLOR;
+        conf = SrcReg::PRIMARY_COLOR;
         break;
     case GL_PREVIOUS:
-        conf = Texture::TexEnv::SrcReg::PREVIOUS;
+        conf = SrcReg::PREVIOUS;
         break;
     default:
         SPDLOG_WARN("convertSrcReg 0x{:X} not suppored", val);
@@ -189,39 +187,39 @@ GLint convertSrcReg(Texture::TexEnv::SrcReg& conf, GLint val)
     return ret;
 }
 
-FragmentPipeline::PipelineConfig::BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc)
     {
     case GL_ZERO:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
+        return BlendFunc::ZERO;
     case GL_ONE:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ONE;
+        return BlendFunc::ONE;
     case GL_DST_COLOR:
-        return FragmentPipeline::PipelineConfig::BlendFunc::DST_COLOR;
+        return BlendFunc::DST_COLOR;
     case GL_SRC_COLOR:
-        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_COLOR;
+        return BlendFunc::SRC_COLOR;
     case GL_ONE_MINUS_DST_COLOR:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_DST_COLOR;
+        return BlendFunc::ONE_MINUS_DST_COLOR;
     case GL_ONE_MINUS_SRC_COLOR:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_SRC_COLOR;
+        return BlendFunc::ONE_MINUS_SRC_COLOR;
     case GL_SRC_ALPHA:
-        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_ALPHA;
+        return BlendFunc::SRC_ALPHA;
     case GL_ONE_MINUS_SRC_ALPHA:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_SRC_ALPHA;
+        return BlendFunc::ONE_MINUS_SRC_ALPHA;
     case GL_DST_ALPHA:
-        return FragmentPipeline::PipelineConfig::BlendFunc::DST_ALPHA;
+        return BlendFunc::DST_ALPHA;
     case GL_ONE_MINUS_DST_ALPHA:
-        return FragmentPipeline::PipelineConfig::BlendFunc::ONE_MINUS_DST_ALPHA;
+        return BlendFunc::ONE_MINUS_DST_ALPHA;
     case GL_SRC_ALPHA_SATURATE:
-        return FragmentPipeline::PipelineConfig::BlendFunc::SRC_ALPHA_SATURATE;
+        return BlendFunc::SRC_ALPHA_SATURATE;
     default:
         SPDLOG_WARN("convertGlBlendFuncToRenderBlendFunc 0x{:X} not suppored", blendFunc);
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
-        return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
+        return BlendFunc::ZERO;
     }
     RRXGL::getInstance().setError(GL_INVALID_ENUM);
-    return FragmentPipeline::PipelineConfig::BlendFunc::ZERO;
+    return BlendFunc::ZERO;
 }
 
 void setClientState(const GLenum array, bool enable)
@@ -303,20 +301,20 @@ RenderObj::DrawMode convertDrawMode(GLenum drawMode)
     }
 }
 
-Texture::TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
+TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
 {
     switch (mode)
     {
     case GL_CLAMP:
         SPDLOG_WARN("GL_CLAMP is not fully supported and emulated with GL_CLAMP_TO_EDGE");
     case GL_CLAMP_TO_EDGE:
-        return Texture::TextureWrapMode::CLAMP_TO_EDGE;
+        return TextureWrapMode::CLAMP_TO_EDGE;
     case GL_REPEAT:
-        return Texture::TextureWrapMode::REPEAT;
+        return TextureWrapMode::REPEAT;
     default:
         SPDLOG_WARN("convertGlTextureWarpMode 0x{:X} not suppored", mode);
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
-        return Texture::TextureWrapMode::REPEAT;
+        return TextureWrapMode::REPEAT;
     }
 }
 
@@ -348,31 +346,31 @@ TestFunc convertTestFunc(const GLenum mode)
     }
 }
 
-Stencil::StencilConfig::StencilOp convertStencilOp(const GLenum mode)
+StencilOp convertStencilOp(const GLenum mode)
 {
     switch (mode)
     {
     case GL_KEEP:
-        return Stencil::StencilConfig::StencilOp::KEEP;
+        return StencilOp::KEEP;
     case GL_ZERO:
-        return Stencil::StencilConfig::StencilOp::ZERO;
+        return StencilOp::ZERO;
     case GL_REPLACE:
-        return Stencil::StencilConfig::StencilOp::REPLACE;
+        return StencilOp::REPLACE;
     case GL_INCR:
-        return Stencil::StencilConfig::StencilOp::INCR;
+        return StencilOp::INCR;
     case GL_INCR_WRAP_EXT:
-        return Stencil::StencilConfig::StencilOp::INCR_WRAP;
+        return StencilOp::INCR_WRAP;
     case GL_DECR:
-        return Stencil::StencilConfig::StencilOp::DECR;
+        return StencilOp::DECR;
     case GL_DECR_WRAP_EXT:
-        return Stencil::StencilConfig::StencilOp::DECR_WRAP;
+        return StencilOp::DECR_WRAP;
     case GL_INVERT:
-        return Stencil::StencilConfig::StencilOp::INVERT;
+        return StencilOp::INVERT;
 
     default:
         SPDLOG_WARN("convertStencilOp 0x{:X} not suppored", mode);
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
-        return Stencil::StencilConfig::StencilOp::KEEP;
+        return StencilOp::KEEP;
     }
 }
 

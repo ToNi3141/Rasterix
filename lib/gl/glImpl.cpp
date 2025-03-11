@@ -18,6 +18,7 @@
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
 #include "RRXGL.hpp"
+#include "TextureConverter.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/MatrixStack.hpp"
@@ -48,13 +49,14 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
         // Convert reference value from float to fix point
+        ref = cv(ref);
         uint8_t refFix = ref * (1 << 8);
         if (ref >= 1.0f)
         {
             refFix = 0xff;
         }
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setAlphaFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setRefAlphaValue(refFix);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setAlphaFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setRefAlphaValue(refFix);
     }
 }
 
@@ -79,8 +81,8 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
     }
     else
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
     }
 }
 
@@ -116,7 +118,7 @@ GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, 
 GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     SPDLOG_DEBUG("glClearColor ({}, {}, {}, {}) called", red, green, blue, alpha);
-    if (RRXGL::getInstance().pixelPipeline().setClearColor({ red, green, blue, alpha }))
+    if (RRXGL::getInstance().pixelPipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -129,17 +131,8 @@ GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blu
 GLAPI void APIENTRY impl_glClearDepth(GLclampd depth)
 {
     SPDLOG_DEBUG("glClearDepth {} called", depth);
-    if (depth < -1.0f)
-    {
-        depth = -1.0f;
-    }
 
-    if (depth > 1.0f)
-    {
-        depth = 1.0f;
-    }
-
-    if (RRXGL::getInstance().pixelPipeline().setClearDepth(depth))
+    if (RRXGL::getInstance().pixelPipeline().setClearDepth(cv(depth)))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -158,7 +151,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setClearStencil(s);
+    RRXGL::getInstance().pixelPipeline().stencil().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
@@ -579,10 +572,10 @@ GLAPI void APIENTRY impl_glColor4usv(const GLushort* v)
 GLAPI void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     SPDLOG_DEBUG("glColorMask red 0x{:X} green 0x{:X} blue 0x{:X} alpha 0x{:X} called", red, green, blue, alpha);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskR(red == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskG(green == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskB(blue == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setColorMaskA(alpha == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
@@ -677,29 +670,20 @@ GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthFunc(testFunc);
     }
 }
 
 GLAPI void APIENTRY impl_glDepthMask(GLboolean flag)
 {
     SPDLOG_DEBUG("glDepthMask flag 0x{:X} called", flag);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().config().setDepthMask(flag == GL_TRUE);
+    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
 {
     SPDLOG_DEBUG("glDepthRange zNear {} zFar {} called", zNear, zFar);
-    if (zNear > 1.0f)
-        zNear = 1.0f;
-    if (zNear < -1.0f)
-        zNear = -1.0f;
-    if (zFar > 1.0f)
-        zFar = 1.0f;
-    if (zFar < -1.0f)
-        zFar = -1.0f;
-
-    RRXGL::getInstance().vertexPipeline().getViewPort().setDepthRange(zNear, zFar);
+    RRXGL::getInstance().vertexPipeline().getViewPort().setDepthRange(cv(zNear), cv(zFar));
 }
 
 GLAPI void APIENTRY impl_glDisable(GLenum cap)
@@ -1543,59 +1527,59 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
 
-    [[maybe_unused]] FragmentPipeline::PipelineConfig::LogicOp logicOp { FragmentPipeline::PipelineConfig::LogicOp::COPY };
+    [[maybe_unused]] LogicOp logicOp { LogicOp::COPY };
     switch (opcode)
     {
     case GL_CLEAR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::CLEAR;
+        logicOp = LogicOp::CLEAR;
         break;
     case GL_SET:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::SET;
+        logicOp = LogicOp::SET;
         break;
     case GL_COPY:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
+        logicOp = LogicOp::COPY;
         break;
     case GL_COPY_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY_INVERTED;
+        logicOp = LogicOp::COPY_INVERTED;
         break;
     case GL_NOOP:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOOP;
+        logicOp = LogicOp::NOOP;
         break;
         //    case GL_INVERTED:
-        //        logicOp = FragmentPipeline::PipelineConfig::LogicOp::INVERTED;
+        //        logicOp = LogicOp::INVERTED;
         //        break;
     case GL_AND:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND;
+        logicOp = LogicOp::AND;
         break;
     case GL_NAND:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NAND;
+        logicOp = LogicOp::NAND;
         break;
     case GL_OR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR;
+        logicOp = LogicOp::OR;
         break;
     case GL_NOR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::NOR;
+        logicOp = LogicOp::NOR;
         break;
     case GL_XOR:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::XOR;
+        logicOp = LogicOp::XOR;
         break;
     case GL_EQUIV:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::EQUIV;
+        logicOp = LogicOp::EQUIV;
         break;
     case GL_AND_REVERSE:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_REVERSE;
+        logicOp = LogicOp::AND_REVERSE;
         break;
     case GL_AND_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::AND_INVERTED;
+        logicOp = LogicOp::AND_INVERTED;
         break;
     case GL_OR_REVERSE:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_REVERSE;
+        logicOp = LogicOp::OR_REVERSE;
         break;
     case GL_OR_INVERTED:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::OR_INVERTED;
+        logicOp = LogicOp::OR_INVERTED;
         break;
     default:
-        logicOp = FragmentPipeline::PipelineConfig::LogicOp::COPY;
+        logicOp = LogicOp::COPY;
         break;
     }
     // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
@@ -2305,16 +2289,16 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setTestFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setRef(ref);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setMask(mask);
+        RRXGL::getInstance().pixelPipeline().stencil().setTestFunc(testFunc);
+        RRXGL::getInstance().pixelPipeline().stencil().setRef(ref);
+        RRXGL::getInstance().pixelPipeline().stencil().setMask(mask);
     }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setStencilMask(mask);
+    RRXGL::getInstance().pixelPipeline().stencil().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2322,15 +2306,15 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
     SPDLOG_DEBUG("glStencilOp fail 0x{:X} zfail 0x{:X} zpass 0x{:X} called", fail, zfail, zpass);
 
     RRXGL::getInstance().setError(GL_NO_ERROR);
-    const Stencil::StencilConfig::StencilOp failOp { convertStencilOp(fail) };
-    const Stencil::StencilConfig::StencilOp zfailOp { convertStencilOp(zfail) };
-    const Stencil::StencilConfig::StencilOp zpassOp { convertStencilOp(zpass) };
+    const StencilOp failOp { convertStencilOp(fail) };
+    const StencilOp zfailOp { convertStencilOp(zfail) };
+    const StencilOp zpassOp { convertStencilOp(zpass) };
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpFail(failOp);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZFail(zfailOp);
-        RRXGL::getInstance().pixelPipeline().stencil().stencilConfig().setOpZPass(zpassOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpFail(failOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpZFail(zfailOp);
+        RRXGL::getInstance().pixelPipeline().stencil().setOpZPass(zpassOp);
     }
 }
 
@@ -2743,7 +2727,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         {
         case GL_TEXTURE_ENV_MODE:
         {
-            Texture::TexEnvMode mode {};
+            TexEnvMode mode {};
             error = convertTexEnvMode(mode, param);
             if (error == GL_NO_ERROR)
                 RRXGL::getInstance().pixelPipeline().texture().setTexEnvMode(mode);
@@ -2751,114 +2735,114 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
         }
         case GL_COMBINE_RGB:
         {
-            Texture::TexEnv::Combine c {};
+            Combine c {};
             error = convertCombine(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineRgb(c);
+                RRXGL::getInstance().pixelPipeline().texture().setCombineRgb(c);
             break;
         }
         case GL_COMBINE_ALPHA:
         {
-            Texture::TexEnv::Combine c {};
+            Combine c {};
             error = convertCombine(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setCombineAlpha(c);
+                RRXGL::getInstance().pixelPipeline().texture().setCombineAlpha(c);
             break;
         }
         case GL_SOURCE0_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb0(c);
             break;
         }
         case GL_SOURCE1_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb1(c);
             break;
         }
         case GL_SOURCE2_RGB:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegRgb2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb2(c);
             break;
         }
         case GL_SOURCE0_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha0(c);
             break;
         }
         case GL_SOURCE1_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha1(c);
             break;
         }
         case GL_SOURCE2_ALPHA:
         {
-            Texture::TexEnv::SrcReg c {};
+            SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setSrcRegAlpha2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha2(c);
             break;
         }
         case GL_OPERAND0_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb0(c);
             break;
         }
         case GL_OPERAND1_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb1(c);
             break;
         }
         case GL_OPERAND2_RGB:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandRgb2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb2(c);
             break;
         }
         case GL_OPERAND0_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha0(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha0(c);
             break;
         }
         case GL_OPERAND1_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha1(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha1(c);
             break;
         }
         case GL_OPERAND2_ALPHA:
         {
-            Texture::TexEnv::Operand c {};
+            Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setOperandAlpha2(c);
+                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha2(c);
             break;
         }
         case GL_RGB_SCALE:
@@ -2866,7 +2850,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftRgb(shift);
+                RRXGL::getInstance().pixelPipeline().texture().setShiftRgb(shift);
                 error = GL_NO_ERROR;
             }
             else
@@ -2880,7 +2864,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().texEnv().setShiftAlpha(shift);
+                RRXGL::getInstance().pixelPipeline().texture().setShiftAlpha(shift);
                 error = GL_NO_ERROR;
             }
             else
@@ -3092,76 +3076,10 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureObject::IntendedInternalPixelFormat::RGBA };
+    const TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureConverter::convertToIntendedPixelFormat(internalformat) };
 
-    switch (internalformat)
+    if (RRXGL::getInstance().getError() != GL_NO_ERROR)
     {
-    case 1:
-    case GL_COMPRESSED_ALPHA:
-    case GL_ALPHA8:
-    case GL_ALPHA12:
-    case GL_ALPHA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::ALPHA;
-        break;
-    case GL_COMPRESSED_LUMINANCE:
-    case GL_LUMINANCE:
-    case GL_LUMINANCE4:
-    case GL_LUMINANCE8:
-    case GL_LUMINANCE12:
-    case GL_LUMINANCE16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE;
-        break;
-    case GL_COMPRESSED_INTENSITY:
-    case GL_INTENSITY:
-    case GL_INTENSITY4:
-    case GL_INTENSITY8:
-    case GL_INTENSITY12:
-    case GL_INTENSITY16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::INTENSITY;
-        break;
-    case 2:
-    case GL_COMPRESSED_LUMINANCE_ALPHA:
-    case GL_LUMINANCE_ALPHA:
-    case GL_LUMINANCE4_ALPHA4:
-    case GL_LUMINANCE6_ALPHA2:
-    case GL_LUMINANCE8_ALPHA8:
-    case GL_LUMINANCE12_ALPHA4:
-    case GL_LUMINANCE12_ALPHA12:
-    case GL_LUMINANCE16_ALPHA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
-        break;
-    case 3:
-    case GL_COMPRESSED_RGB:
-    case GL_R3_G3_B2:
-    case GL_RGB:
-    case GL_RGB4:
-    case GL_RGB5:
-    case GL_RGB8:
-    case GL_RGB10:
-    case GL_RGB12:
-    case GL_RGB16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGB;
-        break;
-    case 4:
-    case GL_COMPRESSED_RGBA:
-    case GL_RGBA:
-    case GL_RGBA2:
-    case GL_RGBA4:
-    case GL_RGBA8:
-    case GL_RGB10_A2:
-    case GL_RGBA12:
-    case GL_RGBA16:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA;
-        break;
-    case GL_RGB5_A1:
-        intendedInternalPixelFormat = TextureObject::IntendedInternalPixelFormat::RGBA1;
-        break;
-    case GL_DEPTH_COMPONENT:
-        SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
-        break;
-    default:
-        SPDLOG_ERROR("glTexImage2D invalid internalformat");
-        RRXGL::getInstance().setError(GL_INVALID_ENUM);
         return;
     }
 
@@ -3854,208 +3772,16 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        std::size_t i = 0;
-        // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
-        for (std::size_t y = yoffset; y < static_cast<std::size_t>(height + yoffset); y++)
-        {
-            for (std::size_t x = xoffset; x < static_cast<std::size_t>(width + xoffset); x++)
-            {
-                const std::size_t texPos { (y * texObj.width) + x };
-                switch (format)
-                {
-                case GL_RGB:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<11, 5, 0x1f>(color),
-                            convertColorComponentToUint8<5, 6, 0x3f>(color),
-                            convertColorComponentToUint8<0, 5, 0x1f>(color),
-                            0xff);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            0xff);
-                        i += 3;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_RGBA:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<11, 5, 0x1f>(color),
-                            convertColorComponentToUint8<6, 5, 0x1f>(color),
-                            convertColorComponentToUint8<1, 5, 0x1f>(color),
-                            (color & 0x1) ? 0xff : 0);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<12, 4, 0xf>(color),
-                            convertColorComponentToUint8<8, 4, 0xf>(color),
-                            convertColorComponentToUint8<4, 4, 0xf>(color),
-                            convertColorComponentToUint8<0, 4, 0xf>(color));
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_ALPHA:
-                case GL_RED:
-                case GL_GREEN:
-                case GL_BLUE:
-                case GL_BGR:
-                case GL_BGRA:
-                    switch (type)
-                    {
-                    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<10, 5, 0x1f>(color),
-                            convertColorComponentToUint8<5, 5, 0x1f>(color),
-                            convertColorComponentToUint8<0, 5, 0x1f>(color),
-                            ((color >> 15) & 0x1) ? 0xff : 0);
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
-                    {
-                        const uint16_t color = reinterpret_cast<const uint16_t*>(pixels)[i];
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            convertColorComponentToUint8<8, 4, 0xf>(color),
-                            convertColorComponentToUint8<4, 4, 0xf>(color),
-                            convertColorComponentToUint8<0, 4, 0xf>(color),
-                            convertColorComponentToUint8<12, 4, 0xf>(color));
-                        i++;
-                    }
-                    break;
-                    case GL_UNSIGNED_BYTE:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_UNSIGNED_INT_8_8_8_8_REV:
-                        texMemShared.get()[texPos] = texObj.convertColor(
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 2],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 1],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 0],
-                            reinterpret_cast<const uint8_t*>(pixels)[i + 3]);
-                        i += 4;
-                        break;
-                    case GL_BYTE:
-                    case GL_BITMAP:
-                    case GL_UNSIGNED_SHORT:
-                    case GL_UNSIGNED_INT:
-                    case GL_INT:
-                    case GL_FLOAT:
-                    case GL_UNSIGNED_SHORT_5_5_5_1:
-                    case GL_UNSIGNED_SHORT_4_4_4_4:
-                    case GL_UNSIGNED_INT_8_8_8_8:
-                    case GL_UNSIGNED_INT_10_10_10_2:
-                    case GL_UNSIGNED_INT_2_10_10_10_REV:
-                        SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-                        return;
-                    case GL_UNSIGNED_BYTE_3_3_2:
-                    case GL_UNSIGNED_BYTE_2_3_3_REV:
-                    case GL_UNSIGNED_SHORT_5_6_5:
-                    case GL_UNSIGNED_SHORT_5_6_5_REV:
-                        SPDLOG_WARN("glTexSubImage2D invalid operation");
-                        RRXGL::getInstance().setError(GL_INVALID_OPERATION);
-                        return;
-                    default:
-                        SPDLOG_WARN("glTexSubImage2D invalid type");
-                        RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                        return;
-                    }
-                    break;
-                case GL_LUMINANCE:
-                case GL_LUMINANCE_ALPHA:
-                    SPDLOG_WARN("glTexSubImage2D unsupported format");
-                    return;
-                default:
-                    SPDLOG_WARN("glTexSubImage2D invalid format");
-                    RRXGL::getInstance().setError(GL_INVALID_ENUM);
-                    return;
-                }
-            }
-        }
+        TextureConverter::convert(texMemShared,
+            texObj.intendedPixelFormat,
+            texObj.width,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format,
+            type,
+            reinterpret_cast<const uint8_t*>(pixels));
     }
 
     texObj.pixels = texMemShared;

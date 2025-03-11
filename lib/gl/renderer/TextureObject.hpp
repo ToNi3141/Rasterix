@@ -27,7 +27,6 @@ namespace rr
 struct TextureObject
 {
     static constexpr std::size_t MAX_LOD { 8 };
-    using PixelFormat = TmuTextureReg::PixelFormat;
     enum class IntendedInternalPixelFormat
     {
         ALPHA,
@@ -39,10 +38,15 @@ struct TextureObject
         RGBA1,
     };
 
-    uint16_t convertColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) const
+    static uint16_t convertColor(
+        const IntendedInternalPixelFormat ipf,
+        const uint8_t r,
+        const uint8_t g,
+        const uint8_t b,
+        const uint8_t a)
     {
         uint16_t color {};
-        switch (intendedPixelFormat)
+        switch (ipf)
         {
         case IntendedInternalPixelFormat::ALPHA: // RGBA4444
             color = static_cast<uint16_t>(a >> 4);

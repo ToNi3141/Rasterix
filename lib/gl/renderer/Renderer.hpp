@@ -66,7 +66,6 @@ namespace rr
 class Renderer
 {
 public:
-    using TextureWrapMode = TmuTextureReg::TextureWrapMode;
     Renderer(IDevice& device);
 
     ~Renderer();
@@ -81,56 +80,6 @@ public:
 
     /// @brief Uploads the display list to the hardware
     void uploadDisplayList();
-
-    /// @brief Will clear a buffer
-    /// @param frameBuffer Will clear the frame buffer
-    /// @param zBuffer Will clear the z buffer
-    /// @param stencilBuffer Will clear the stencil buffer
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer);
-
-    /// @brief Will set a color which is used as clear color for the frame buffer
-    /// when clear() is called
-    /// @param color the color in ABGR
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearColor(const Vec4i& color);
-
-    /// @brief Will set a depth which is used as initial value for the depth buffer when clear() is called
-    /// @param depth The depth which is used by calling clear()
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearDepth(uint16_t depth);
-
-    /// @brief Updates the fragment pipeline configuration
-    /// @param pipelineConf The new pipeline configuration
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
-
-    /// @brief Configures the texture environment. See glTexEnv()
-    /// @param pname parameter name of the env parameter
-    /// @param param Function of the tex env
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTexEnv(const TexEnvReg& texEnvConfig) { return writeReg(texEnvConfig); }
-
-    /// @brief Set a static color for the tex environment
-    /// @param target is used TMU
-    /// @param color the color in ABGR
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTexEnvColor(const std::size_t target, const Vec4i& color);
-
-    /// @brief Set the fog color
-    /// @param color the color in ABGR
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFogColor(const Vec4i& color);
-
-    /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
-    /// and not z (clamped value of 0.0..1.0)
-    /// @param fogLut the fog lookup table
-    /// The fog LUT uses a exponential distribution of w, means fogLut[0] = f(1), fogLut[1] = f(2), fogLut[2] = f(4), fogLut[3] = f(8).
-    /// The fog values between start and end must not exceed 1.0f
-    /// @param start the start value of the fog
-    /// @param end the end value of the fog
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFogLut(const std::array<float, 33>& fogLut, float start, float end);
 
     /// @brief Creates a new texture
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
@@ -158,52 +107,43 @@ public:
     bool isTextureValid(const uint16_t texId) const { return m_textureManager.textureValid(texId); }
 
     /// @brief Activates a texture which then is used for rendering
-    /// @param target The used TMU
+    /// @param tmu The used TMU
     /// @param texId The id of the texture to use
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool useTexture(const std::size_t target, const uint16_t texId);
+    bool useTexture(const std::size_t tmu, const uint16_t texId);
 
     /// @brief Deletes a texture
     /// @param texId The id of the texture to delete
     /// @return true if succeeded
     bool deleteTexture(const uint16_t texId) { return m_textureManager.deleteTexture(texId); }
 
-    /// @brief Enable or disable a feature
-    /// @param featureEnable The enabled features
-    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
-
-    /// @brief Sets the scissor box parameter
-    /// @param x X coordinate of the box
-    /// @param y Y coordinate of the box
-    /// @param width Width of the box
-    /// @param height Height of the box
-    /// @return true if success
-    bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
-
     /// @brief The wrapping mode of the texture in s direction
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTextureWrapModeS(const uint16_t texId, TextureWrapMode mode);
+    bool setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
     /// @brief The wrapping mode of the texture in t direction
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode);
+    bool setTextureWrapModeT(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
     /// @brief Enables the texture filtering for magnification
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool enableTextureMagFiltering(const uint16_t texId, bool filter);
+    bool enableTextureMagFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
     /// @brief Enables the texture filtering for minification (mipmapping)
+    /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool enableTextureMinFiltering(const uint16_t texId, bool filter);
+    bool enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
     /// @brief Sets the resolution of the renderer
     /// @param x X is the width of the produced image
@@ -211,22 +151,40 @@ public:
     /// @return true if success
     bool setRenderResolution(const std::size_t x, const std::size_t y);
 
-    /// @brief Queries the maximum texture size in pixels
-    /// @return The maximum texture size in pixel
-    std::size_t getMaxTextureSize() const { return RenderConfig::MAX_TEXTURE_SIZE; }
+    /// @brief Sets the scissor box parameter
+    /// @param x X coordinate of the box
+    /// @param y Y coordinate of the box
+    /// @param width Width of the box
+    /// @param height Height of the box
+    /// @return true if success
 
-    /// @brief Queries the maximum number of TMUs available for the hardware
-    /// @brief The number of TMUs available
-    std::size_t getTmuCount() const { return RenderConfig::TMU_COUNT; }
+    bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
 
-    /// @brief Queries of mip mapping is available on hardware
-    /// @return true when mipmapping is available
-    bool isMipmappingAvailable() const { return RenderConfig::ENABLE_MIPMAPPING; }
-
-    /// @brief Configures the stencil buffer
-    /// @param stencilConf The config of the stencil buffer
+    /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
+    /// and not z (clamped value of 0.0..1.0)
+    /// @param fogLut the fog lookup table
+    /// The fog LUT uses a exponential distribution of w, means fogLut[0] = f(1), fogLut[1] = f(2), fogLut[2] = f(4), fogLut[3] = f(8).
+    /// The fog values between start and end must not exceed 1.0f
+    /// @param start the start value of the fog
+    /// @param end the end value of the fog
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) { return addCommand(FogLutStreamCmd { fogLut, start, end }); }
+
+    /// @brief Will clear a buffer
+    /// @param frameBuffer Will clear the frame buffer
+    /// @param zBuffer Will clear the z buffer
+    /// @param stencilBuffer Will clear the stencil buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer);
+
     bool setStencilBufferConfig(const StencilReg& stencilConf) { return writeReg(stencilConf); }
+    bool setClearColor(const ColorBufferClearColorReg& color) { return writeReg(color); }
+    bool setClearDepth(const DepthBufferClearDepthReg& depth) { return writeReg(depth); }
+    bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
+    bool setTexEnv(const TexEnvReg& texEnvConfig) { return writeReg(texEnvConfig); }
+    bool setTexEnvColor(const TexEnvColorReg& color) { return writeReg(color); }
+    bool setFogColor(const FogColorReg& color) { return writeReg(color); }
+    bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
 
 private:
     static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
@@ -345,7 +303,7 @@ private:
 
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
-    bool writeToTextureConfig(const uint16_t texId, TmuTextureReg tmuConfig);
+    bool writeToTextureConfig(const std::size_t tmu, const uint16_t texId, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
     void swapFramebuffer();
@@ -373,9 +331,6 @@ private:
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
-
-    // Mapping of texture id and TMU
-    std::array<uint16_t, RenderConfig::TMU_COUNT> m_boundTextures {};
 };
 
 } // namespace rr

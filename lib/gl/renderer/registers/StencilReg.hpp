@@ -18,7 +18,7 @@
 #ifndef _STENCIL_REG_
 #define _STENCIL_REG_
 
-#include "TestFuncDef.hpp"
+#include "Enums.hpp"
 #include <cstdint>
 
 namespace rr
@@ -28,17 +28,24 @@ class StencilReg
 {
 public:
     static constexpr uint8_t MAX_STENCIL_VAL { 0xf };
-    enum class StencilOp
-    {
-        KEEP,
-        ZERO,
-        REPLACE,
-        INCR,
-        INCR_WRAP,
-        DECR,
-        DECR_WRAP,
-        INVERT
-    };
+
+    static_assert(static_cast<uint32_t>(StencilOp::KEEP) == 0);
+    static_assert(static_cast<uint32_t>(StencilOp::ZERO) == 1);
+    static_assert(static_cast<uint32_t>(StencilOp::REPLACE) == 2);
+    static_assert(static_cast<uint32_t>(StencilOp::INCR) == 3);
+    static_assert(static_cast<uint32_t>(StencilOp::INCR_WRAP) == 4);
+    static_assert(static_cast<uint32_t>(StencilOp::DECR) == 5);
+    static_assert(static_cast<uint32_t>(StencilOp::DECR_WRAP) == 6);
+    static_assert(static_cast<uint32_t>(StencilOp::INVERT) == 7);
+
+    static_assert(static_cast<uint32_t>(TestFunc::ALWAYS) == 0);
+    static_assert(static_cast<uint32_t>(TestFunc::NEVER) == 1);
+    static_assert(static_cast<uint32_t>(TestFunc::LESS) == 2);
+    static_assert(static_cast<uint32_t>(TestFunc::EQUAL) == 3);
+    static_assert(static_cast<uint32_t>(TestFunc::LEQUAL) == 4);
+    static_assert(static_cast<uint32_t>(TestFunc::GREATER) == 5);
+    static_assert(static_cast<uint32_t>(TestFunc::NOTEQUAL) == 6);
+    static_assert(static_cast<uint32_t>(TestFunc::GEQUAL) == 7);
 
     StencilReg() = default;
 
