@@ -42,7 +42,7 @@ public:
     template <typename Command>
     bool addLastCommand(const Command& cmd)
     {
-        return m_displayListAssembler[0].addCommand(cmd);
+        return m_displayListAssembler[m_displayLines - 1].addCommand(cmd);
     }
 
     template <typename Command>
@@ -74,9 +74,10 @@ public:
     bool addLastCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
     {
         bool ret = true;
-        if (pred(0, m_displayLines, m_xResolution, m_yLineResolution))
+        const std::size_t lastLine = m_displayLines - 1;
+        if (pred(lastLine, m_displayLines, m_xResolution, m_yLineResolution))
         {
-            ret = ret && addCommand(0, commandFactory(0, m_displayLines, m_xResolution, m_yLineResolution));
+            ret = ret && addCommand(lastLine, commandFactory(lastLine, m_displayLines, m_xResolution, m_yLineResolution));
         }
         return ret;
     }

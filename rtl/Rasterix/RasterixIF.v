@@ -444,7 +444,7 @@ module RasterixIF #(
         .framebufferParamYResolution(framebufferParamYResolution),
 
         .colorBufferClearColor(colorBufferClearColor),
-        .colorBufferAddr(colorBufferAddr),  // Diese Adresse kann für das Streamen in den Framebuffer genommen werden
+        .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied && fb_swapped && fb_committed),

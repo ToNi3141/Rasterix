@@ -46,9 +46,10 @@ Renderer::Renderer(IDevice& device)
 
 Renderer::~Renderer()
 {
+    clearDisplayListAssembler();
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);
     swapScreenToNewColorBuffer();
-    swapDisplayList();
+    switchDisplayLists();
     uploadDisplayList();
 }
 
@@ -159,14 +160,13 @@ void Renderer::uploadDisplayList()
         [this](
             DisplayListDispatcherType& dispatcher,
             const std::size_t i,
-            const std::size_t displayLines,
+            const std::size_t,
             const std::size_t,
             const std::size_t)
         {
-            const std::size_t index = (displayLines - 1) - i;
             while (!m_device.clearToSend())
                 ;
-            m_device.streamDisplayList(dispatcher.getDisplayListBufferId(index), dispatcher.getDisplayListSize(index));
+            m_device.streamDisplayList(dispatcher.getDisplayListBufferId(i), dispatcher.getDisplayListSize(i));
             return true;
         });
 }
