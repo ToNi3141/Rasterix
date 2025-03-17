@@ -159,6 +159,7 @@ module top #(
         .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
         .swap_fb(fb_swap),
+        .swap_fb_enable_vsync(),
         .fb_addr(),
         .fb_swapped(!fb_swap),
 

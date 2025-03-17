@@ -48,6 +48,8 @@ public:
         return m_renderer.setScissorBox(x, y, width, height);
     }
 
+    void enableVSync(const bool enable) { m_renderer.setEnableVSync(enable); }
+
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);

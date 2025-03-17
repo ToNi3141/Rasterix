@@ -457,7 +457,6 @@ proc create_root_design { parentCell } {
     CONFIG.FRAMEBUFFER_SIZE_IN_PIXEL_LG {17} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {6} \
     CONFIG.STRB_WIDTH {16} \
-    CONFIG.ENABLE_FRAMEBUFFER_STREAM {0} \
     CONFIG.VARIANT {if} \
   ] $RRX_0
 
@@ -602,6 +601,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Net2 [get_bd_ports fmc_data] [get_bd_pins MainInterface_0/fmc_data]
   connect_bd_net -net RRX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RRX_0/fb_addr]
   connect_bd_net -net RRX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RRX_0/swap_fb]
+  connect_bd_net -net RRX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RRX_0/swap_fb_enable_vsync]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_smc/aclk1] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins rst_mig_7series_0_81M1/slowest_sync_clk]
   connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins Dvi_0/aclk5x] [get_bd_pins clk_wiz_0/clk_out2]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_mig_7series_0_81M1/dcm_locked]
@@ -637,6 +637,7 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -648,6 +649,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

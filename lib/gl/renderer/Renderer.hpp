@@ -177,6 +177,10 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer);
 
+    /// @brief Enables vsync when swapping the color buffer
+    /// @param enable true to enable vsync
+    void setEnableVSync(const bool enable) { m_enableVSync = enable; }
+
     bool setStencilBufferConfig(const StencilReg& stencilConf) { return writeReg(stencilConf); }
     bool setClearColor(const ColorBufferClearColorReg& color) { return writeReg(color); }
     bool setClearDepth(const DepthBufferClearDepthReg& depth) { return writeReg(depth); }
@@ -316,7 +320,8 @@ private:
     void swapScreenToNewColorBuffer();
 
     uint32_t m_colorBufferAddr {};
-    bool m_switchColorBuffer { true };
+    bool m_selectedColorBuffer { true };
+    bool m_enableVSync { false };
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };

@@ -54,6 +54,7 @@ module CommandParser #(
     output reg                                  colorBufferCmdCommit,
     output reg                                  colorBufferCmdMemset,
     output reg                                  colorBufferCmdSwap,
+    output reg                                  colorBufferCmdSwapEnableVsync,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
     output reg                                  depthBufferApply,
     input  wire                                 depthBufferApplied,
@@ -238,6 +239,7 @@ module CommandParser #(
                         colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         colorBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
                         colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
+                        colorBufferCmdSwapEnableVsync <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
                         colorBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
                         depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         depthBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];

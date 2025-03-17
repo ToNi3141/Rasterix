@@ -270,14 +270,11 @@ proc create_root_design { parentCell } {
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {32} \
     CONFIG.DATA_WIDTH {64} \
-    CONFIG.FRAMEBUFFER_SIZE_IN_PIXEL_LG {16} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
     CONFIG.ID_WIDTH {6} \
     CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
     CONFIG.STRB_WIDTH {8} \
     CONFIG.TMU_COUNT {1} \
-    CONFIG.TEXTURE_PAGE_SIZE {4096} \
-    CONFIG.ENABLE_FRAMEBUFFER_STREAM {0} \
     CONFIG.VARIANT {ef} \
   ] $RRX_0
 
@@ -963,6 +960,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RRX_0/fb_swapped]
   connect_bd_net -net RRX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RRX_0/fb_addr]
   connect_bd_net -net RRX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RRX_0/swap_fb]
+  connect_bd_net -net RRX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RRX_0/swap_fb_enable_vsync]
   connect_bd_net -net axi_dma_0_mm2s_introut [get_bd_pins axi_dma_0/mm2s_introut] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_dwidth_converter_0/s_axi_aclk] [get_bd_pins axi_protocol_convert_0/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins processing_system7_0/S_AXI_HP1_ACLK]
   connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins Dvi_0/aclk5x] [get_bd_pins clk_wiz_0/clk_out2]

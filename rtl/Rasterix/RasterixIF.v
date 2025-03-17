@@ -102,6 +102,7 @@ module RasterixIF #(
 
     // Color
     output wire                                 swap_fb,
+    output wire                                 swap_fb_enable_vsync,
     input  wire                                 fb_swapped,
     output wire                                 commit_fb,
     input  wire                                 fb_committed,
@@ -181,6 +182,7 @@ module RasterixIF #(
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
     wire                                             colorBufferCmdSwap;
+    wire                                             colorBufferCmdSwapEnableVsync;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire                                             m_color_arvalid;
@@ -451,6 +453,7 @@ module RasterixIF #(
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
+        .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
@@ -555,6 +558,7 @@ module RasterixIF #(
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
+    assign swap_fb_enable_vsync = colorBufferCmdSwapEnableVsync;
     assign commit_fb = colorBufferApply && colorBufferCmdCommit;
     assign fb_addr = colorBufferAddr;
     assign fb_size = colorBufferSize;

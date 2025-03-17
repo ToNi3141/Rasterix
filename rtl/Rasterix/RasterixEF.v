@@ -88,6 +88,7 @@ module RasterixEF #(
     // Framebuffer output
     // AXI Stream master interface (RGB565)
     output wire                                 swap_fb,
+    output wire                                 swap_fb_enable_vsync,
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
     input  wire                                 fb_swapped,
@@ -677,6 +678,7 @@ module RasterixEF #(
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
+        .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(m_color_arready),
@@ -781,5 +783,6 @@ module RasterixEF #(
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
+    assign swap_fb_enable_vsync = colorBufferCmdSwapEnableVsync;
 
 endmodule

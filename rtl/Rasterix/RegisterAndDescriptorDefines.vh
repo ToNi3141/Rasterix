@@ -76,9 +76,9 @@ localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 19;
 
 //---------------------------------------------------------------------------------------------------------
 // Framebuffer configuration
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 4'h2 | 20'hx command size | 1'hx reserved | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 1'hx reserved | 1'hx swap | 1'hx memset | 1'hx commit |
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 4'h2 | 20'hx command size | 1'hx swap vsync | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 1'hx reserved | 1'hx swap | 1'hx memset | 1'hx commit |
+//  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 // Steam size 1 32bit value.
 localparam OP_FRAMEBUFFER = 2;
@@ -89,6 +89,7 @@ localparam OP_FRAMEBUFFER_SWAP_POS = 2; // Swaps the framebuffer to the address 
 localparam OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
 localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 localparam OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS = 6;
+localparam OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS = 7; // Enables the vertical synchronization of the OP_FRAMEBUFFER_SWAP_POS command
 localparam OP_FRAMEBUFFER_SIZE_POS = 8;
 localparam OP_FRAMEBUFFER_SIZE_SIZE = 20;
 

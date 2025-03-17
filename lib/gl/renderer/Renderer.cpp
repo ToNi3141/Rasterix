@@ -140,6 +140,10 @@ void Renderer::swapScreenToNewColorBuffer()
             FramebufferCmd cmd { false, false, false, screenSize };
             cmd.selectColorBuffer();
             cmd.swapFramebuffer();
+            if (m_enableVSync)
+            {
+                cmd.enableVSync();
+            }
             return cmd;
         });
 }
@@ -318,7 +322,7 @@ void Renderer::uploadTextures()
 
 void Renderer::swapFramebuffer()
 {
-    if (m_switchColorBuffer)
+    if (m_selectedColorBuffer)
     {
         setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
     }
@@ -326,7 +330,7 @@ void Renderer::swapFramebuffer()
     {
         setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
     }
-    m_switchColorBuffer = !m_switchColorBuffer;
+    m_selectedColorBuffer = !m_selectedColorBuffer;
 }
 
 } // namespace rr

@@ -666,4 +666,9 @@ std::size_t RRXGL::getMaxLOD()
     return TextureObject::MAX_LOD;
 }
 
+void RRXGL::enableVSync(const bool enable)
+{
+    m_renderDevice->pixelPipeline.enableVSync(enable);
+}
+
 } // namespace rr

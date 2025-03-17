@@ -26,18 +26,19 @@ module Dvi #(
     input  wire             resetn,
 
     input  wire             swap,
+    input  wire             enable_vsync,
     input  wire [31 : 0]    fbAddr,
     output reg              swapped,
 
     output wire [ 3 : 0]    m_mem_axi_arid,
-    output wire [31 : 0]    m_mem_axi_araddr,
+    output reg  [31 : 0]    m_mem_axi_araddr,
     output wire [ 7 : 0]    m_mem_axi_arlen,
     output wire [ 2 : 0]    m_mem_axi_arsize,
     output wire [ 1 : 0]    m_mem_axi_arburst,
     output wire             m_mem_axi_arlock,
     output wire [ 3 : 0]    m_mem_axi_arcache,
     output wire [ 2 : 0]    m_mem_axi_arprot,
-    output wire             m_mem_axi_arvalid,
+    output reg              m_mem_axi_arvalid,
     input  wire             m_mem_axi_arready,
     output wire [ 3 : 0]    m_mem_axi_arqos,
 
@@ -57,9 +58,18 @@ module Dvi #(
     assign m_mem_axi_arlock = 0;
     assign m_mem_axi_arcache = 0;
     assign m_mem_axi_arprot = 0;
-    wire [31 : 0] araddr;
-    reg  [31 : 0] addr;
-    assign m_mem_axi_araddr = araddr + addr;
+
+    reg           mem_axi_arready;
+    wire          mem_axi_arvalid;
+    wire [31 : 0] mem_axi_araddr;
+    reg  [31 : 0] araddrSkid;
+    reg           arvalidSkid;
+
+    reg  [31 : 0] addr0;
+    reg  [31 : 0] addr1;
+    reg           addrMuxReg;
+    wire [31 : 0] addrRegMuxed = (addrMuxReg) ? addr1 : addr0;
+    
     assign m_mem_axi_arqos = ~0;
 
     dvi_framebuffer #(
@@ -87,7 +97,7 @@ module Dvi #(
         .outport_bvalid_i(0),
         .outport_bresp_i(0),
         .outport_bid_i(0),
-        .outport_arready_i(m_mem_axi_arready),
+        .outport_arready_i(mem_axi_arready),
         .outport_rvalid_i(m_mem_axi_rvalid),
         .outport_rdata_i(m_mem_axi_rdata),
         .outport_rresp_i(m_mem_axi_rresp),
@@ -113,11 +123,11 @@ module Dvi #(
         .outport_wlast_o(),
         .outport_bready_o(),
 
-        .outport_arvalid_o(m_mem_axi_arvalid),
-        .outport_araddr_o(araddr),
-        .outport_arid_o(m_mem_axi_arid),
-        .outport_arlen_o(m_mem_axi_arlen),
-        .outport_arburst_o(m_mem_axi_arburst),
+        .outport_arvalid_o(mem_axi_arvalid),
+        .outport_araddr_o(mem_axi_araddr),
+        .outport_arid_o(m_mem_axi_arid), // const
+        .outport_arlen_o(m_mem_axi_arlen), // const
+        .outport_arburst_o(m_mem_axi_arburst), // const
         .outport_rready_o(m_mem_axi_rready),
         .dvi_red_o(dvi_red),
         .dvi_green_o(dvi_green),
@@ -129,24 +139,75 @@ module Dvi #(
     // Note: It should use the configuration interface of the DVI core and
     // also there is no clock domain crossing here ...
     // But for now it works good enough.
-    always @(posedge aclkLogic)
+    always @(posedge aclk)
     begin
         if (!resetn)
         begin
-            addr <= FB_ADDR_DEFAULT;
+            addr0 <= FB_ADDR_DEFAULT;
+            addr1 <= FB_ADDR_DEFAULT;
+            addrMuxReg <= 0;
             swapped <= 1;
+            m_mem_axi_arvalid <= 0;
+            mem_axi_arready <= 0;
+            arvalidSkid <= 0;
         end
-        else
+        else 
         begin
             if (swap && swapped)
             begin
-                addr <= fbAddr;
-                swapped <= 0;
+                if (!enable_vsync || (mem_axi_araddr == 0))
+                begin
+                    if (addrMuxReg)
+                    begin
+                        addr0 = fbAddr;
+                        addrMuxReg = 0;
+                    end
+                    else
+                    begin
+                        addr1 = fbAddr;
+                        addrMuxReg = 1;
+                    end
+                    swapped <= 0;
+                end
             end
             if (!swap)
             begin
                 swapped <= 1;
             end
+
+            if (m_mem_axi_arready && m_mem_axi_arvalid)
+            begin
+                m_mem_axi_arvalid <= 0;
+            end
+
+            if (!arvalidSkid && mem_axi_arvalid)
+            begin
+                if (!m_mem_axi_arvalid)
+                begin
+                    m_mem_axi_arvalid <= 1;
+                    m_mem_axi_araddr <= mem_axi_araddr + addrRegMuxed;
+                    mem_axi_arready <= 1;
+                end
+                else
+                begin
+                    araddrSkid <= mem_axi_araddr + addrRegMuxed;
+                    arvalidSkid <= 1;
+                    mem_axi_arready <= 0;
+                end
+            end
+            else
+            begin
+                if (arvalidSkid && m_mem_axi_arready)
+                begin
+                    m_mem_axi_arvalid <= 1;
+                    m_mem_axi_araddr <= araddrSkid;
+                    mem_axi_arready <= 1;
+                    arvalidSkid <= 0;
+                end
+            end
+
+
+
         end
     end
 

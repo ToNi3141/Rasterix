@@ -34,6 +34,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
+    static constexpr uint32_t OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC { OP_FRAMEBUFFER | 0x0000'0080 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_POS { 8 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_MASK { 0xFFFFF };
     static constexpr uint32_t OP_MASK { 0xF000'0000 };
@@ -88,6 +89,10 @@ public:
     void setFramebufferSizeInPixel(const std::size_t size)
     {
         m_op |= (static_cast<uint32_t>(size) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
+    }
+    void enableVSync()
+    {
+        m_op |= OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
     }
 
     using PayloadType = tcb::span<const uint8_t>;

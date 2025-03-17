@@ -78,6 +78,7 @@ module RRXEF #(
     output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
     // Framebuffer
     output wire                             swap_fb,
+    output wire                             swap_fb_enable_vsync,
     output wire [ADDR_WIDTH - 1 : 0]        fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0] fb_size,
     input  wire                             fb_swapped,
@@ -579,6 +580,7 @@ module RRXEF #(
         .s_cmd_axis_tdata(cmd_axis_tdata),
 
         .swap_fb(swap_fb),
+        .swap_fb_enable_vsync(swap_fb_enable_vsync),
         .fb_addr(fb_addr),
         .fb_size(fb_size),
         .fb_swapped((ENABLE_FRAMEBUFFER_STREAM) ? fb_swapped_display : fb_swapped),
