@@ -42,6 +42,7 @@ set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer
 set(RRX_CORE_STENCIL_BUFFER_LOC "0" CACHE STRING "The location of the stencil buffer")
 # Misc
 set(RRX_CORE_THREADED_RASTERIZATION "false" CACHE STRING "Enables the threaded rasterization. Can improve the performance on multi core linux systems.")
+set(RRX_CORE_ENABLE_VSYNC "false" CACHE STRING "Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals.")
 
 set(CMAKE_CXX_STANDARD 17)
 

@@ -78,6 +78,10 @@ public:
     /// @return true if succeeded
     bool setRenderResolution(const std::size_t x, const std::size_t y);
 
+    /// @brief Enables vsync when swapping the color buffer
+    /// @param enable true to enable vsync
+    void enableVSync(const bool enable);
+
 private:
     RRXGL(IBusConnector& busConnector);
     ~RRXGL();

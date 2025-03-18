@@ -90,6 +90,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
 | RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
 | RRX_CORE_THREADED_RASTERIZATION        | Will run the rasterization in the display list upload thread. Can improve the performance by around 10%. |
+| RRX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/Rasterix/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
@@ -97,7 +98,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory.
 5. Optionally connect `m_framebuffer_axis` to an device, which can handle the color buffer stream (a display for instance). When using a memory mapped framebuffer, then this port is unused.
-6. Connect the framebuffer signals (`swap_fb`, `fb_swapped`, `fb_addr`). They are used to signal an display controller, that it should swap the color buffer. `swap_fb` gets high when a swapping is requested, `fb_swapped` is used to signal that the swap request was acknowledged. `fb_addr` contains the address of the new color buffer. If this signals are not used, then connect them the following way: `assign fb_swapped = !swap_fb`. `fb_addr` can be left unconnected.
+6. Connect the framebuffer signals (`swap_fb`, `fb_swapped`, `fb_addr`, `swap_fb_enable_vsync`). They are used to signal an display controller, that it should swap the color buffer. `swap_fb` gets high when a swapping is requested, `fb_swapped` is used to signal that the swap request was executed and the new color buffer is used. `fb_addr` contains the address of the new color buffer. Optionally `swap_fb_enable_vsync` informs the framebuffer to use vsync if available. If the signals are not used, then connect them the following way: `assign fb_swapped = !swap_fb`. `fb_addr` and `swap_fb_enable_vsync` can be left unconnected.
 7. Connect `resetn` to your reset line and `aclk` to your clock domain.
 8. Synthesize.
 
