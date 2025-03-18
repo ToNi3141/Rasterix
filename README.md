@@ -90,6 +90,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
 | RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
 | RRX_CORE_THREADED_RASTERIZATION        | Will run the rasterization in the display list upload thread. Can improve the performance by around 10%. |
+| RRX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/Rasterix/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.

@@ -95,6 +95,7 @@ build_flags =
     -DRRX_CORE_DEPTH_BUFFER_LOC=0x5A800
     -DRRX_CORE_STENCIL_BUFFER_LOC=0x22400
     -DRRX_CORE_THREADED_RASTERIZATION=false
+    -DRRX_CORE_ENABLE_VSYNC=false
 ```
 
 An example for the Arduino framework is available under examples.

@@ -321,7 +321,7 @@ private:
 
     uint32_t m_colorBufferAddr {};
     bool m_selectedColorBuffer { true };
-    bool m_enableVSync { false };
+    bool m_enableVSync { RenderConfig::ENABLE_VSYNC };
 
     // Optimization for the scissor test to filter unecessary clean calls
     bool m_scissorEnabled { false };
