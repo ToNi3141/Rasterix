@@ -164,13 +164,19 @@ void Renderer::uploadDisplayList()
         [this](
             DisplayListDispatcherType& dispatcher,
             const std::size_t i,
-            const std::size_t,
+            const std::size_t displayLines,
             const std::size_t,
             const std::size_t)
         {
             while (!m_device.clearToSend())
                 ;
-            m_device.streamDisplayList(dispatcher.getDisplayListBufferId(i), dispatcher.getDisplayListSize(i));
+            // Reverse the order of the display list to get a continuous stream from the internal framebuffer to a
+            // AXIS display. Otherwise the partial framebuffers appear in the wrong order on the screen.
+            // It does not matter for memory mapped framebuffers. A memory mapped framebuffer supports any order.
+            const std::size_t reversedDisplayLine = displayLines - i - 1;
+            m_device.streamDisplayList(
+                dispatcher.getDisplayListBufferId(reversedDisplayLine),
+                dispatcher.getDisplayListSize(reversedDisplayLine));
             return true;
         });
 }

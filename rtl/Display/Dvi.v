@@ -125,9 +125,9 @@ module Dvi #(
 
         .outport_arvalid_o(mem_axi_arvalid),
         .outport_araddr_o(mem_axi_araddr),
-        .outport_arid_o(m_mem_axi_arid), // const
-        .outport_arlen_o(m_mem_axi_arlen), // const
-        .outport_arburst_o(m_mem_axi_arburst), // const
+        .outport_arid_o(m_mem_axi_arid),
+        .outport_arlen_o(m_mem_axi_arlen),
+        .outport_arburst_o(m_mem_axi_arburst),
         .outport_rready_o(m_mem_axi_rready),
         .dvi_red_o(dvi_red),
         .dvi_green_o(dvi_green),
@@ -205,10 +205,6 @@ module Dvi #(
                     arvalidSkid <= 0;
                 end
             end
-
-
-
         end
     end
-
 endmodule
