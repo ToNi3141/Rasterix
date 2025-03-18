@@ -42,7 +42,7 @@ public:
     template <typename Command>
     bool addLastCommand(const Command& cmd)
     {
-        const std::size_t lastLine = reverseI(m_displayLines - 1);
+        const std::size_t lastLine = reverseDisplayListIndex(m_displayLines - 1);
         return m_displayListAssembler[lastLine].addCommand(cmd);
     }
 
@@ -52,7 +52,7 @@ public:
         bool ret = true;
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && addCommand(reverseI(i), cmd);
+            ret = ret && addCommand(reverseDisplayListIndex(i), cmd);
         }
         return ret;
     }
@@ -63,9 +63,9 @@ public:
         bool ret = true;
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
-            if (pred(reverseI(i), m_displayLines, m_xResolution, m_yLineResolution))
+            if (pred(reverseDisplayListIndex(i), m_displayLines, m_xResolution, m_yLineResolution))
             {
-                ret = ret && addCommand(reverseI(i), commandFactory(reverseI(i), m_displayLines, m_xResolution, m_yLineResolution));
+                ret = ret && addCommand(reverseDisplayListIndex(i), commandFactory(reverseDisplayListIndex(i), m_displayLines, m_xResolution, m_yLineResolution));
             }
         }
         return ret;
@@ -75,7 +75,7 @@ public:
     bool addLastCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
     {
         bool ret = true;
-        const std::size_t lastLine = reverseI(m_displayLines - 1);
+        const std::size_t lastLine = reverseDisplayListIndex(m_displayLines - 1);
         if (pred(lastLine, m_displayLines, m_xResolution, m_yLineResolution))
         {
             ret = ret && addCommand(lastLine, commandFactory(lastLine, m_displayLines, m_xResolution, m_yLineResolution));
@@ -89,7 +89,7 @@ public:
         bool ret = true;
         for (std::size_t i = 0; i < m_displayLines; i++)
         {
-            ret = ret && func(*this, reverseI(i), m_displayLines, m_xResolution, m_yLineResolution);
+            ret = ret && func(*this, reverseDisplayListIndex(i), m_displayLines, m_xResolution, m_yLineResolution);
         }
         return ret;
     }
@@ -172,7 +172,7 @@ public:
     }
 
 private:
-    std::size_t reverseI(const std::size_t i) const
+    std::size_t reverseDisplayListIndex(const std::size_t i) const
     {
         // Reverse the order of the display list to get a continuous stream from the internal framebuffer to a
         // AXIS display. Otherwise the partial framebuffers appear in the wrong order on the screen.
