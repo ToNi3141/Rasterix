@@ -33,6 +33,10 @@ namespace rr
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
+    for (auto& tg : m_texGen)
+    {
+        tg.setMatrixStack(m_matrixStack);
+    }
 }
 
 void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i)
@@ -44,7 +48,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
-            m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
+            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex);
             parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]);
         }
     }

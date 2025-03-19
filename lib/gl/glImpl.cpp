@@ -2943,13 +2943,13 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat* p
         switch (coord)
         {
         case GL_S:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS(RRXGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
+            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS({ params });
             break;
         case GL_T:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT(RRXGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
+            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT({ params });
             break;
         case GL_R:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR(RRXGL::getInstance().vertexPipeline().getMatrixStack().getModelView(), { params });
+            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR({ params });
             break;
         case GL_Q:
             SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");

@@ -19,7 +19,13 @@
 
 namespace rr
 {
-void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const
+
+void TexGen::setMatrixStack(const MatrixStack& matrixStack)
+{
+    m_matrixStack = &matrixStack;
+}
+
+void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0) const
 {
     if (m_texGenEnableS || m_texGenEnableT || m_texGenEnableR)
     {
@@ -28,7 +34,7 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
         {
             // TODO: Move this calculation somehow out of this class to increase the performance.
             // Investigate if this functionality is used at all in games.
-            modelMatrix.transform(v0Transformed, v0);
+            m_matrixStack->getModelView().transform(v0Transformed, v0);
         }
         if (m_texGenEnableS)
         {
@@ -84,16 +90,6 @@ void TexGen::calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Ve
     }
 }
 
-Vec4 TexGen::calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const
-{
-    Mat44 inv { mat };
-    inv.invert();
-    inv.transpose();
-    Vec4 newPlane;
-    inv.transform(newPlane, plane);
-    return newPlane;
-}
-
 void TexGen::enableTexGenS(bool enable)
 {
     m_texGenEnableS = enable;
@@ -139,19 +135,19 @@ void TexGen::setTexGenVecObjR(const Vec4& val)
     m_texGenVecObjR = val;
 }
 
-void TexGen::setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val)
+void TexGen::setTexGenVecEyeS(const Vec4& val)
 {
-    m_texGenVecEyeS = calcTexGenEyePlane(modelMatrix, val);
+    m_texGenVecEyeS = m_matrixStack->getNormal().transform(val);
 }
 
-void TexGen::setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val)
+void TexGen::setTexGenVecEyeT(const Vec4& val)
 {
-    m_texGenVecEyeT = calcTexGenEyePlane(modelMatrix, val);
+    m_texGenVecEyeT = m_matrixStack->getNormal().transform(val);
 }
 
-void TexGen::setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val)
+void TexGen::setTexGenVecEyeR(const Vec4& val)
 {
-    m_texGenVecEyeR = calcTexGenEyePlane(modelMatrix, val);
+    m_texGenVecEyeR = m_matrixStack->getNormal().transform(val);
 }
 
 } // namespace rr

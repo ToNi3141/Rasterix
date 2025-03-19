@@ -20,6 +20,7 @@
 
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
+#include "MatrixStack.hpp"
 
 namespace rr
 {
@@ -32,8 +33,7 @@ public:
         EYE_LINEAR,
         SPHERE_MAP
     };
-
-    void calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const;
+    void calculateTexGenCoords(Vec4& st0, const Vec4& v0) const;
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
@@ -44,12 +44,13 @@ public:
     void setTexGenVecObjS(const Vec4& val);
     void setTexGenVecObjT(const Vec4& val);
     void setTexGenVecObjR(const Vec4& val);
-    void setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val);
-    void setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val);
-    void setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val);
+    void setTexGenVecEyeS(const Vec4& val);
+    void setTexGenVecEyeT(const Vec4& val);
+    void setTexGenVecEyeR(const Vec4& val);
 
+    void setMatrixStack(const MatrixStack& matrixStack);
 private:
-    Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const;
+    const MatrixStack* m_matrixStack {nullptr};
 
     bool m_texGenEnableS { false };
     bool m_texGenEnableT { false };
