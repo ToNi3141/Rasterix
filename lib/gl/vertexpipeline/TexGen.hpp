@@ -18,9 +18,9 @@
 #ifndef TEXGEN_HPP
 #define TEXGEN_HPP
 
+#include "MatrixStack.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
-#include "MatrixStack.hpp"
 
 namespace rr
 {
@@ -33,7 +33,7 @@ public:
         EYE_LINEAR,
         SPHERE_MAP
     };
-    void calculateTexGenCoords(Vec4& st0, const Vec4& v0) const;
+    void calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
@@ -49,8 +49,9 @@ public:
     void setTexGenVecEyeR(const Vec4& val);
 
     void setMatrixStack(const MatrixStack& matrixStack);
+
 private:
-    const MatrixStack* m_matrixStack {nullptr};
+    const MatrixStack* m_matrixStack { nullptr };
 
     bool m_texGenEnableS { false };
     bool m_texGenEnableT { false };

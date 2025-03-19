@@ -25,16 +25,34 @@ void TexGen::setMatrixStack(const MatrixStack& matrixStack)
     m_matrixStack = &matrixStack;
 }
 
-void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0) const
+void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const
 {
     if (m_texGenEnableS || m_texGenEnableT || m_texGenEnableR)
     {
-        Vec4 v0Transformed;
-        if ((m_texGenModeS == TexGenMode::EYE_LINEAR) || (m_texGenModeT == TexGenMode::EYE_LINEAR))
+        Vec4 eyeVertex;
+        Vec4 reflectionVector {};
+        reflectionVector.init();
+        float m = 0.0f;
+        if ((m_texGenModeS == TexGenMode::EYE_LINEAR)
+            || (m_texGenModeT == TexGenMode::EYE_LINEAR)
+            || (m_texGenModeS == TexGenMode::SPHERE_MAP)
+            || (m_texGenModeT == TexGenMode::SPHERE_MAP))
         {
-            // TODO: Move this calculation somehow out of this class to increase the performance.
-            // Investigate if this functionality is used at all in games.
-            m_matrixStack->getModelView().transform(v0Transformed, v0);
+            eyeVertex = m_matrixStack->getModelView().transform(v0);
+        }
+        if ((m_texGenModeS == TexGenMode::SPHERE_MAP)
+            || (m_texGenModeT == TexGenMode::SPHERE_MAP))
+        {
+            eyeVertex.normalize();
+            Vec3 eyeNormal = m_matrixStack->getNormal().transform(n0);
+            Vec4 eyeNormal4 {};
+            eyeNormal4.init();
+            eyeNormal4.fromArray(eyeNormal.data(), 3);
+            reflectionVector = eyeVertex - eyeNormal4 * 2.0 * eyeNormal4.dot(eyeVertex);
+            reflectionVector[2] += 1.0f;
+            Vec3 reflectionVector3 {};
+            reflectionVector3.fromArray(reflectionVector.data(), 3);
+            m = 1.0f / (2.0f * sqrt(reflectionVector3.dot(reflectionVector3)));
         }
         if (m_texGenEnableS)
         {
@@ -44,10 +62,10 @@ void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0) const
                 st0[0] = m_texGenVecObjS.dot(v0);
                 break;
             case TexGenMode::EYE_LINEAR:
-                st0[0] = m_texGenVecEyeS.dot(v0Transformed);
+                st0[0] = m_texGenVecEyeS.dot(eyeVertex);
                 break;
             case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
+                st0[0] = reflectionVector[0] * m + 0.5f;
                 break;
             default:
                 break;
@@ -61,10 +79,10 @@ void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0) const
                 st0[1] = m_texGenVecObjT.dot(v0);
                 break;
             case TexGenMode::EYE_LINEAR:
-                st0[1] = m_texGenVecEyeT.dot(v0Transformed);
+                st0[1] = m_texGenVecEyeT.dot(eyeVertex);
                 break;
             case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
+                st0[1] = reflectionVector[1] * m + 0.5f;
                 break;
             default:
                 break;
@@ -78,10 +96,10 @@ void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0) const
                 st0[2] = m_texGenVecObjR.dot(v0);
                 break;
             case TexGenMode::EYE_LINEAR:
-                st0[2] = m_texGenVecEyeR.dot(v0Transformed);
+                st0[2] = m_texGenVecEyeR.dot(eyeVertex);
                 break;
             case TexGenMode::SPHERE_MAP:
-                // TODO: Implement
+                st0[2] = reflectionVector[2] * m + 0.5f;
                 break;
             default:
                 break;

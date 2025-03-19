@@ -36,6 +36,12 @@ public:
     Vec(const float* val) { operator=(val); }
     ~Vec() { }
 
+    void init()
+    {
+        for (std::size_t i = 0; i < VecSize; i++)
+            vec[i] = 0.0f;
+    }
+
     void initHomogeneous()
     {
         for (std::size_t i = 0; i < VecSize - 1; i++)

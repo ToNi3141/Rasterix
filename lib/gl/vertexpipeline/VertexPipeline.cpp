@@ -48,7 +48,7 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
-            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex);
+            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex, obj.getNormal(pos));
             parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]);
         }
     }
