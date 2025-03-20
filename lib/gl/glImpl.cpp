@@ -2983,6 +2983,9 @@ GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
     case GL_SPHERE_MAP:
         mode = TexGen::TexGenMode::SPHERE_MAP;
         break;
+    case GL_REFLECTION_MAP:
+        mode = TexGen::TexGenMode::REFLECTION_MAP;
+        break;
     default:
         SPDLOG_WARN("glTexGeni param not supported");
         RRXGL::getInstance().setError(GL_INVALID_ENUM);

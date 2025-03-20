@@ -31,7 +31,8 @@ public:
     {
         OBJECT_LINEAR,
         EYE_LINEAR,
-        SPHERE_MAP
+        SPHERE_MAP,
+        REFLECTION_MAP
     };
     void calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
 
@@ -52,6 +53,14 @@ public:
 
 private:
     const MatrixStack* m_matrixStack { nullptr };
+
+    void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
+    void calculateEyeLinear(Vec4& st0, const Vec4& v0) const;
+    void calculateSphereMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
+    void calculateReflectionMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
+
+    Vec3 calculateSphereVector(const Vec4& v0, const Vec3& n0) const;
+    Vec3 calculateReflectionVector(const Vec4& v0, const Vec3& n0) const;
 
     bool m_texGenEnableS { false };
     bool m_texGenEnableT { false };
