@@ -30,29 +30,26 @@ void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) co
     if (m_texGenEnableS || m_texGenEnableT || m_texGenEnableR)
     {
         Vec4 eyeVertex;
-        Vec4 reflectionVector {};
+        Vec3 reflectionVector;
         reflectionVector.init();
         float m = 0.0f;
         if ((m_texGenModeS == TexGenMode::EYE_LINEAR)
             || (m_texGenModeT == TexGenMode::EYE_LINEAR)
-            || (m_texGenModeS == TexGenMode::SPHERE_MAP)
-            || (m_texGenModeT == TexGenMode::SPHERE_MAP))
+            || (m_texGenModeR == TexGenMode::EYE_LINEAR))
         {
             eyeVertex = m_matrixStack->getModelView().transform(v0);
         }
         if ((m_texGenModeS == TexGenMode::SPHERE_MAP)
-            || (m_texGenModeT == TexGenMode::SPHERE_MAP))
+            || (m_texGenModeT == TexGenMode::SPHERE_MAP)
+            || (m_texGenModeR == TexGenMode::SPHERE_MAP))
         {
+            eyeVertex = m_matrixStack->getModelView().transform(v0);
             eyeVertex.normalize();
+            Vec3 eyeVertex3 { eyeVertex.data() };
             Vec3 eyeNormal = m_matrixStack->getNormal().transform(n0);
-            Vec4 eyeNormal4 {};
-            eyeNormal4.init();
-            eyeNormal4.fromArray(eyeNormal.data(), 3);
-            reflectionVector = eyeVertex - eyeNormal4 * 2.0 * eyeNormal4.dot(eyeVertex);
+            reflectionVector = eyeVertex3 - eyeNormal * 2.0 * eyeNormal.dot(eyeVertex3);
             reflectionVector[2] += 1.0f;
-            Vec3 reflectionVector3 {};
-            reflectionVector3.fromArray(reflectionVector.data(), 3);
-            m = 1.0f / (2.0f * sqrt(reflectionVector3.dot(reflectionVector3)));
+            m = 1.0f / (2.0f * sqrt(reflectionVector.dot(reflectionVector)));
         }
         if (m_texGenEnableS)
         {
