@@ -18,7 +18,7 @@
 #ifndef TEXGEN_HPP
 #define TEXGEN_HPP
 
-#include "MatrixStack.hpp"
+#include "MatrixStore.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 
@@ -49,10 +49,10 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    void setMatrixStack(const MatrixStack& matrixStack);
+    void setMatrixStore(const MatrixStore& matrixStore);
 
 private:
-    const MatrixStack* m_matrixStack { nullptr };
+    const MatrixStore* m_matrixStore { nullptr };
 
     void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
     void calculateEyeLinear(Vec4& st0, const Vec4& v0) const;

@@ -28,7 +28,7 @@
 #include "vertexpipeline/Clipper.hpp"
 #include "vertexpipeline/Culling.hpp"
 #include "vertexpipeline/Lighting.hpp"
-#include "vertexpipeline/MatrixStack.hpp"
+#include "vertexpipeline/MatrixStore.hpp"
 #include "vertexpipeline/PrimitiveAssembler.hpp"
 #include "vertexpipeline/TexGen.hpp"
 #include "vertexpipeline/ViewPort.hpp"
@@ -46,13 +46,13 @@ public:
     void activateTmu(const std::size_t tmu)
     {
         m_tmu = tmu;
-        m_matrixStack.setTmu(tmu);
+        m_matrixStore.setTmu(tmu);
     }
 
     Lighting& getLighting() { return m_lighting; }
     TexGen& getTexGen() { return m_texGen[m_tmu]; }
     ViewPort& getViewPort() { return m_viewPort; }
-    MatrixStack& getMatrixStack() { return m_matrixStack; }
+    MatrixStore& getMatrixStore() { return m_matrixStore; }
     Culling& getCulling() { return m_culling; }
     PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
@@ -70,7 +70,7 @@ private:
     PixelPipeline& m_renderer;
     Lighting m_lighting;
     ViewPort m_viewPort;
-    MatrixStack m_matrixStack;
+    MatrixStore m_matrixStore;
     Culling m_culling;
     std::array<TexGen, RenderConfig::TMU_COUNT> m_texGen {};
     PrimitiveAssembler m_primitiveAssembler { m_viewPort };

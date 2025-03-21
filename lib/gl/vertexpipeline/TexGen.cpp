@@ -20,9 +20,9 @@
 namespace rr
 {
 
-void TexGen::setMatrixStack(const MatrixStack& matrixStack)
+void TexGen::setMatrixStore(const MatrixStore& matrixStore)
 {
-    m_matrixStack = &matrixStack;
+    m_matrixStore = &matrixStore;
 }
 
 void TexGen::calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const
@@ -74,7 +74,7 @@ void TexGen::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
 
 void TexGen::calculateEyeLinear(Vec4& st0, const Vec4& v0) const
 {
-    const Vec4 eyeVertex = m_matrixStack->getModelView().transform(v0);
+    const Vec4 eyeVertex = m_matrixStore->getModelView().transform(v0);
     if (m_texGenEnableS && (m_texGenModeS == TexGenMode::EYE_LINEAR))
     {
         st0[0] = m_texGenVecEyeS.dot(eyeVertex);
@@ -125,23 +125,23 @@ void TexGen::calculateReflectionMap(Vec4& st0, const Vec4& v0, const Vec3& n0) c
 
 Vec3 TexGen::calculateSphereVector(const Vec4& v0, const Vec3& n0) const
 {
-    Vec4 eyeVertex = m_matrixStack->getModelView().transform(v0);
+    Vec4 eyeVertex = m_matrixStore->getModelView().transform(v0);
     eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
-    const Vec3 eyeNormal = m_matrixStack->getNormal().transform(n0);
+    const Vec3 eyeNormal = m_matrixStore->getNormal().transform(n0);
     Vec3 reflectionVector = eyeVertex3 - eyeNormal * 2.0f * eyeNormal.dot(eyeVertex3);
     reflectionVector[2] += 1.0f;
     const float m = 1.0f / (2.0f * sqrt(reflectionVector.dot(reflectionVector)));
-    return (reflectionVector * m) + Vec3{0.5f, 0.5f, 0.5f};
+    return (reflectionVector * m) + Vec3 { 0.5f, 0.5f, 0.5f };
 }
 
 Vec3 TexGen::calculateReflectionVector(const Vec4& v0, const Vec3& n0) const
 {
-    Vec4 eyeVertex = m_matrixStack->getModelView().transform(v0);
+    Vec4 eyeVertex = m_matrixStore->getModelView().transform(v0);
     eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
-    const Vec3 eyeNormal = m_matrixStack->getNormal().transform(n0);
-    const float dotResult =  2.0 * eyeVertex3.dot(eyeNormal);
+    const Vec3 eyeNormal = m_matrixStore->getNormal().transform(n0);
+    const float dotResult = 2.0f * eyeVertex3.dot(eyeNormal);
     return eyeVertex3 - (eyeNormal * dotResult);
 }
 
@@ -192,17 +192,17 @@ void TexGen::setTexGenVecObjR(const Vec4& val)
 
 void TexGen::setTexGenVecEyeS(const Vec4& val)
 {
-    m_texGenVecEyeS = m_matrixStack->getNormal().transform(val);
+    m_texGenVecEyeS = m_matrixStore->getNormal().transform(val);
 }
 
 void TexGen::setTexGenVecEyeT(const Vec4& val)
 {
-    m_texGenVecEyeT = m_matrixStack->getNormal().transform(val);
+    m_texGenVecEyeT = m_matrixStore->getNormal().transform(val);
 }
 
 void TexGen::setTexGenVecEyeR(const Vec4& val)
 {
-    m_texGenVecEyeR = m_matrixStack->getNormal().transform(val);
+    m_texGenVecEyeR = m_matrixStore->getNormal().transform(val);
 }
 
 } // namespace rr

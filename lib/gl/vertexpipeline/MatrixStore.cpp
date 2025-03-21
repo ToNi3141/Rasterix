@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "MatrixStack.hpp"
+#include "MatrixStore.hpp"
 #include <cmath>
 
 namespace rr
 {
-MatrixStack::MatrixStack()
+MatrixStore::MatrixStore()
 {
     m_t.identity();
     m_m.identity();
@@ -33,39 +33,39 @@ MatrixStack::MatrixStack()
     m_c.identity();
 }
 
-void MatrixStack::setModelProjectionMatrix(const Mat44& m)
+void MatrixStore::setModelProjectionMatrix(const Mat44& m)
 {
     m_t = m;
 }
 
-void MatrixStack::setModelMatrix(const Mat44& m)
+void MatrixStore::setModelMatrix(const Mat44& m)
 {
     m_m = m;
     m_modelMatrixChanged = true;
 }
 
-void MatrixStack::setProjectionMatrix(const Mat44& m)
+void MatrixStore::setProjectionMatrix(const Mat44& m)
 {
     m_p = m;
     m_projectionMatrixChanged = true;
 }
 
-void MatrixStack::setColorMatrix(const Mat44& m)
+void MatrixStore::setColorMatrix(const Mat44& m)
 {
     m_c = m;
 }
 
-void MatrixStack::setTextureMatrix(const Mat44& m)
+void MatrixStore::setTextureMatrix(const Mat44& m)
 {
     m_tm[m_tmu] = m;
 }
 
-void MatrixStack::setNormalMatrix(const Mat44& m)
+void MatrixStore::setNormalMatrix(const Mat44& m)
 {
     m_n = m;
 }
 
-void MatrixStack::multiply(const Mat44& mat)
+void MatrixStore::multiply(const Mat44& mat)
 {
     switch (m_matrixMode)
     {
@@ -86,7 +86,7 @@ void MatrixStack::multiply(const Mat44& mat)
     }
 }
 
-void MatrixStack::translate(const float x, const float y, const float z)
+void MatrixStore::translate(const float x, const float y, const float z)
 {
     Mat44 m;
     m.identity();
@@ -96,7 +96,7 @@ void MatrixStack::translate(const float x, const float y, const float z)
     multiply(m);
 }
 
-void MatrixStack::scale(const float x, const float y, const float z)
+void MatrixStore::scale(const float x, const float y, const float z)
 {
     Mat44 m;
     m.identity();
@@ -106,7 +106,7 @@ void MatrixStack::scale(const float x, const float y, const float z)
     multiply(m);
 }
 
-void MatrixStack::rotate(const float angle, const float x, const float y, const float z)
+void MatrixStore::rotate(const float angle, const float x, const float y, const float z)
 {
     static constexpr float PI { 3.14159265358979323846f };
     float angle_rad = angle * (PI / 180.0f);
@@ -128,7 +128,7 @@ void MatrixStack::rotate(const float angle, const float x, const float y, const 
     multiply(m);
 }
 
-void MatrixStack::loadIdentity()
+void MatrixStore::loadIdentity()
 {
     switch (m_matrixMode)
     {
@@ -151,7 +151,7 @@ void MatrixStack::loadIdentity()
     }
 }
 
-bool MatrixStack::pushMatrix()
+bool MatrixStore::pushMatrix()
 {
     switch (m_matrixMode)
     {
@@ -168,7 +168,7 @@ bool MatrixStack::pushMatrix()
     }
 }
 
-bool MatrixStack::popMatrix()
+bool MatrixStore::popMatrix()
 {
     switch (m_matrixMode)
     {
@@ -187,7 +187,7 @@ bool MatrixStack::popMatrix()
     }
 }
 
-void MatrixStack::recalculateMatrices()
+void MatrixStore::recalculateMatrices()
 {
     if (m_modelMatrixChanged)
     {
@@ -201,30 +201,30 @@ void MatrixStack::recalculateMatrices()
     m_projectionMatrixChanged = false;
 }
 
-void MatrixStack::recalculateModelProjectionMatrix()
+void MatrixStore::recalculateModelProjectionMatrix()
 {
     // Update transformation matrix
     setModelProjectionMatrix(m_m * m_p);
 }
 
-void MatrixStack::recalculateNormalMatrix()
+void MatrixStore::recalculateNormalMatrix()
 {
     m_n = m_m;
     m_n.invert();
     m_n.transpose();
 }
 
-void MatrixStack::setMatrixMode(const MatrixMode matrixMode)
+void MatrixStore::setMatrixMode(const MatrixMode matrixMode)
 {
     m_matrixMode = matrixMode;
 }
 
-void MatrixStack::setTmu(const std::size_t tmu)
+void MatrixStore::setTmu(const std::size_t tmu)
 {
     m_tmu = tmu;
 }
 
-bool MatrixStack::loadMatrix(const Mat44& m)
+bool MatrixStore::loadMatrix(const Mat44& m)
 {
     switch (m_matrixMode)
     {
@@ -246,12 +246,12 @@ bool MatrixStack::loadMatrix(const Mat44& m)
     return false;
 }
 
-std::size_t MatrixStack::getModelMatrixStackDepth()
+std::size_t MatrixStore::getModelMatrixStackDepth()
 {
     return MODEL_MATRIX_STACK_DEPTH;
 }
 
-std::size_t MatrixStack::getProjectionMatrixStackDepth()
+std::size_t MatrixStore::getProjectionMatrixStackDepth()
 {
     return PROJECTION_MATRIX_STACK_DEPTH;
 }

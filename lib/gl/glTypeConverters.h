@@ -22,7 +22,7 @@
 #include "gl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "pixelpipeline/Texture.hpp"
-#include "vertexpipeline/MatrixStack.hpp"
+#include "vertexpipeline/MatrixStore.hpp"
 #include "vertexpipeline/Types.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
