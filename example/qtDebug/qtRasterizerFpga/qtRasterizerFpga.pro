@@ -31,7 +31,7 @@ SOURCES += main.cpp\
     $${RRXGL_PATH}/renderer/Rasterizer.cpp \
     $${RRXGL_PATH}/renderer/Renderer.cpp \
     $${RRXGL_PATH}/vertexpipeline/ViewPort.cpp \
-    $${RRXGL_PATH}/vertexpipeline/MatrixStack.cpp \
+    $${RRXGL_PATH}/vertexpipeline/MatrixStore.cpp \
     $${RRXGL_PATH}/vertexpipeline/Culling.cpp \
     $${RRXGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
     $${RRXGL_PATH}/pixelpipeline/Fogging.cpp \

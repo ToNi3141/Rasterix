@@ -8,7 +8,7 @@ add_library(gl STATIC
     vertexpipeline/TexGen.cpp
     vertexpipeline/VertexPipeline.cpp
     vertexpipeline/ViewPort.cpp
-    vertexpipeline/MatrixStack.cpp
+    vertexpipeline/MatrixStore.cpp
     vertexpipeline/Culling.cpp
     vertexpipeline/PrimitiveAssembler.cpp
     vertexpipeline/RenderObj.cpp

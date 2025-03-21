@@ -33,6 +33,10 @@ namespace rr
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
+    for (auto& tg : m_texGen)
+    {
+        tg.setMatrixStore(m_matrixStore);
+    }
 }
 
 void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i)
@@ -44,8 +48,8 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
             parameter.tex[tu] = obj.getTexCoord(tu, pos);
-            m_texGen[tu].calculateTexGenCoords(m_matrixStack.getModelView(), parameter.tex[tu], parameter.vertex);
-            parameter.tex[tu] = m_matrixStack.getTexture(tu).transform(parameter.tex[tu]);
+            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex, obj.getNormal(pos));
+            parameter.tex[tu] = m_matrixStore.getTexture(tu).transform(parameter.tex[tu]);
         }
     }
 
@@ -55,24 +59,24 @@ void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderO
     if (m_lighting.lightingEnabled())
     {
         Vec4 vl;
-        Vec3 normal = m_matrixStack.getNormal().transform(obj.getNormal(pos));
+        Vec3 normal = m_matrixStore.getNormal().transform(obj.getNormal(pos));
 
         if (m_enableNormalizing)
         {
             normal.normalize();
         }
         if (obj.vertexArrayEnabled())
-            vl = m_matrixStack.getModelView().transform(parameter.vertex);
+            vl = m_matrixStore.getModelView().transform(parameter.vertex);
         const Vec4 c = parameter.color;
         m_lighting.calculateLights(parameter.color, c, vl, normal);
     }
     if (obj.vertexArrayEnabled())
-        parameter.vertex = m_matrixStack.getModelViewProjection().transform(parameter.vertex);
+        parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
 }
 
 bool VertexPipeline::drawObj(const RenderObj& obj)
 {
-    m_matrixStack.recalculateMatrices();
+    m_matrixStore.recalculateMatrices();
     if (!m_renderer.updatePipeline())
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");

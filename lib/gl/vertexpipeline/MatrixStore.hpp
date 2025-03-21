@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef MATRIXSTACK_HPP
-#define MATRIXSTACK_HPP
+#ifndef MATRIXSTORE_HPP
+#define MATRIXSTORE_HPP
 
 #include "RenderConfigs.hpp"
 #include "Stack.hpp"
@@ -25,7 +25,7 @@
 
 namespace rr
 {
-class MatrixStack
+class MatrixStore
 {
 public:
     enum MatrixMode
@@ -36,7 +36,7 @@ public:
         COLOR
     };
 
-    MatrixStack();
+    MatrixStore();
 
     const Mat44& getModelViewProjection() const { return m_t; }
     const Mat44& getModelView() const { return m_m; }
@@ -96,4 +96,4 @@ private:
 };
 
 } // namespace rr
-#endif // MATRIXSTACK_HPP
+#endif // MATRIXSTORE_HPP

@@ -18,6 +18,7 @@
 #ifndef TEXGEN_HPP
 #define TEXGEN_HPP
 
+#include "MatrixStore.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 
@@ -30,10 +31,10 @@ public:
     {
         OBJECT_LINEAR,
         EYE_LINEAR,
-        SPHERE_MAP
+        SPHERE_MAP,
+        REFLECTION_MAP
     };
-
-    void calculateTexGenCoords(const Mat44& modelMatrix, Vec4& st0, const Vec4& v0) const;
+    void calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
@@ -44,12 +45,22 @@ public:
     void setTexGenVecObjS(const Vec4& val);
     void setTexGenVecObjT(const Vec4& val);
     void setTexGenVecObjR(const Vec4& val);
-    void setTexGenVecEyeS(const Mat44& modelMatrix, const Vec4& val);
-    void setTexGenVecEyeT(const Mat44& modelMatrix, const Vec4& val);
-    void setTexGenVecEyeR(const Mat44& modelMatrix, const Vec4& val);
+    void setTexGenVecEyeS(const Vec4& val);
+    void setTexGenVecEyeT(const Vec4& val);
+    void setTexGenVecEyeR(const Vec4& val);
+
+    void setMatrixStore(const MatrixStore& matrixStore);
 
 private:
-    Vec4 calcTexGenEyePlane(const Mat44& mat, const Vec4& plane) const;
+    const MatrixStore* m_matrixStore { nullptr };
+
+    void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
+    void calculateEyeLinear(Vec4& st0, const Vec4& v0) const;
+    void calculateSphereMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
+    void calculateReflectionMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
+
+    Vec3 calculateSphereVector(const Vec4& v0, const Vec3& n0) const;
+    Vec3 calculateReflectionVector(const Vec4& v0, const Vec3& n0) const;
 
     bool m_texGenEnableS { false };
     bool m_texGenEnableT { false };
