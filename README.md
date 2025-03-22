@@ -40,6 +40,11 @@ Tested games are [tuxracer](https://github.com/ToNi3141/tuxracer.git) (staticall
 
 ![race screenshot](screenshots/tuxracerRaceStart.png)
 
+The following videos are recorded on an [Digilent ArtyZ7-20](/rtl/top/Xilinx/ArtyZ7-20/README.md) with an 1024x600px display running petalinux.
+<video src="https://github.com/user-attachments/assets/909e6167-abf3-4c31-8bfd-f250dc2a8f0c" width="1024" height="500"></video>
+<video src="https://github.com/user-attachments/assets/02aa7dfe-b3e2-4bc1-abdb-361fe1f303f8" width="1024" height="600"></video>
+
+
 # Checkout Repository
 ```sh
 git clone --recurse-submodules https://github.com/ToNi3141/Rasterix.git
