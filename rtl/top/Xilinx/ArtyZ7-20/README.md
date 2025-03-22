@@ -12,6 +12,9 @@
 # Arty Z7-20 Build
 The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petalinux running on the board. It will by default output a 1024x600px video signal on the HDMI OUT. Just connect there a monitor which can handle this resolution.
 
+<img src="https://github.com/user-attachments/assets/2481e940-0bcb-4b07-8bb8-f84af454f469" width="70%"> 
+
+
 There are two variants available:
 
 `rrxif`:  
