@@ -30,6 +30,7 @@
 #include "vertexpipeline/Lighting.hpp"
 #include "vertexpipeline/MatrixStore.hpp"
 #include "vertexpipeline/PrimitiveAssembler.hpp"
+#include "vertexpipeline/Stencil.hpp"
 #include "vertexpipeline/TexGen.hpp"
 #include "vertexpipeline/ViewPort.hpp"
 #include <cstdint>
@@ -49,6 +50,7 @@ public:
         m_matrixStore.setTmu(tmu);
     }
 
+    Stencil& stencil() { return m_stencil; }
     Lighting& getLighting() { return m_lighting; }
     TexGen& getTexGen() { return m_texGen[m_tmu]; }
     ViewPort& getViewPort() { return m_viewPort; }
@@ -69,6 +71,7 @@ private:
     std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
+    Stencil m_stencil { m_renderer };
     Lighting m_lighting;
     ViewPort m_viewPort;
     MatrixStore m_matrixStore;

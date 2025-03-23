@@ -21,7 +21,6 @@
 #include "FeatureEnable.hpp"
 #include "Fogging.hpp"
 #include "FragmentPipeline.hpp"
-#include "Stencil.hpp"
 #include "Texture.hpp"
 #include "math/Vec.hpp"
 #include "renderer/IDevice.hpp"
@@ -50,6 +49,8 @@ public:
 
     void enableVSync(const bool enable) { m_renderer.setEnableVSync(enable); }
 
+    bool setStencilBufferConfig(const StencilReg& stencilConf) { return m_renderer.setStencilBufferConfig(stencilConf); }
+
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);
@@ -57,7 +58,6 @@ public:
 
     Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }
-    Stencil& stencil() { return m_stencil; }
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
@@ -66,7 +66,6 @@ private:
 
     Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };
-    Stencil m_stencil { m_renderer };
     FragmentPipeline m_fragmentPipeline { m_renderer };
     FeatureEnable m_featureEnable { m_renderer, m_texture };
 };

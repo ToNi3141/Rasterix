@@ -66,7 +66,7 @@ void VertexPipeline::transform(VertexParameter& parameter)
     // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
     if (m_lighting.lightingEnabled())
     {
-        Vec3 normal = parameter.normal;
+        Vec3 normal = m_matrixStore.getNormal().transform(parameter.normal);
 
         if (m_enableNormalizing)
         {
@@ -87,6 +87,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         return true;
     }
     m_matrixStore.recalculateMatrices();
+    stencil().update();
     if (!m_renderer.updatePipeline())
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
@@ -152,7 +153,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         return true;
     }
 
-    if (!m_renderer.stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex))
+    if (!stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return false;
     }
@@ -205,7 +206,7 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
         return true;
     }
 
-    if (!m_renderer.stencil().updateStencilFace(v0, v1, v2))
+    if (!stencil().updateStencilFace(v0, v1, v2))
     {
         return false;
     }

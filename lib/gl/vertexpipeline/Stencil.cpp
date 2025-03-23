@@ -21,8 +21,8 @@
 
 namespace rr
 {
-Stencil::Stencil(Renderer& renderer)
-    : m_renderer(renderer)
+Stencil::Stencil(PixelPipeline& renderer)
+    : m_renderer { renderer }
 {
     m_renderer.setStencilBufferConfig(m_stencilConf);
 }

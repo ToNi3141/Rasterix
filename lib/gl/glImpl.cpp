@@ -100,12 +100,16 @@ GLAPI void APIENTRY impl_glClear(GLbitfield mask)
 {
     SPDLOG_DEBUG("glClear mask 0x{:X} called", mask);
 
+    // TODO: Korrigieren indem nicht mehr auf die pixelPipline direkt zugegriffen wird sondern immer über die
+    // vertexPipeline.
+    RRXGL::getInstance().vertexPipeline().stencil().update();
     if (RRXGL::getInstance().pixelPipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClear Out Of Memory");
     }
 }
@@ -124,6 +128,7 @@ GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blu
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearColor Out Of Memory");
     }
 }
@@ -138,6 +143,7 @@ GLAPI void APIENTRY impl_glClearDepth(GLclampd depth)
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearDepth Out Of Memory");
     }
 }
@@ -151,7 +157,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    RRXGL::getInstance().pixelPipeline().stencil().setClearStencil(s);
+    RRXGL::getInstance().vertexPipeline().stencil().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
@@ -767,7 +773,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RRXGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(false);
+        RRXGL::getInstance().vertexPipeline().stencil().enableTwoSideStencil(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
@@ -869,7 +875,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RRXGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(true);
+        RRXGL::getInstance().vertexPipeline().stencil().enableTwoSideStencil(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -2289,16 +2295,16 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setTestFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().stencil().setRef(ref);
-        RRXGL::getInstance().pixelPipeline().stencil().setMask(mask);
+        RRXGL::getInstance().vertexPipeline().stencil().setTestFunc(testFunc);
+        RRXGL::getInstance().vertexPipeline().stencil().setRef(ref);
+        RRXGL::getInstance().vertexPipeline().stencil().setMask(mask);
     }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    RRXGL::getInstance().pixelPipeline().stencil().setStencilMask(mask);
+    RRXGL::getInstance().vertexPipeline().stencil().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2312,9 +2318,9 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setOpFail(failOp);
-        RRXGL::getInstance().pixelPipeline().stencil().setOpZFail(zfailOp);
-        RRXGL::getInstance().pixelPipeline().stencil().setOpZPass(zpassOp);
+        RRXGL::getInstance().vertexPipeline().stencil().setOpFail(failOp);
+        RRXGL::getInstance().vertexPipeline().stencil().setOpZFail(zfailOp);
+        RRXGL::getInstance().vertexPipeline().stencil().setOpZPass(zpassOp);
     }
 }
 
@@ -4324,11 +4330,11 @@ GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
     RRXGL::getInstance().setError(GL_NO_ERROR);
     if (face == GL_FRONT)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::FRONT);
+        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(Stencil::StencilFace::FRONT);
     }
     else if (face == GL_BACK)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::BACK);
+        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(Stencil::StencilFace::BACK);
     }
     else
     {

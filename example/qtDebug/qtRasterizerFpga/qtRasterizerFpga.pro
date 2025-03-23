@@ -36,7 +36,7 @@ SOURCES += main.cpp\
     $${RRXGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
     $${RRXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RRXGL_PATH}/pixelpipeline/Texture.cpp \
-    $${RRXGL_PATH}/pixelpipeline/Stencil.cpp \
+    $${RRXGL_PATH}/vertexpipeline/Stencil.cpp \
     $${RRXGL_PATH}/gl.cpp \
     $${RRXGL_PATH}/glu.cpp
 

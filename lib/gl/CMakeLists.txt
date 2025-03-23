@@ -12,7 +12,7 @@ add_library(gl STATIC
     vertexpipeline/Culling.cpp
     vertexpipeline/PrimitiveAssembler.cpp
     vertexpipeline/RenderObj.cpp
-    pixelpipeline/Stencil.cpp
+    vertexpipeline/Stencil.cpp
     pixelpipeline/PixelPipeline.cpp
     pixelpipeline/Fogging.cpp
     pixelpipeline/Texture.cpp

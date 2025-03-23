@@ -19,7 +19,7 @@
 #define STENCIL_HPP_
 
 #include "math/Vec.hpp"
-#include "renderer/Renderer.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
 #include <optional>
 
 namespace rr
@@ -35,7 +35,7 @@ public:
         BACK
     };
 
-    Stencil(Renderer& renderer);
+    Stencil(PixelPipeline& renderer);
 
     void setTestFunc(const TestFunc val) { stencilConfig().setTestFunc(val); }
     void setOpZPass(const StencilOp val) { stencilConfig().setOpZPass(val); }
@@ -68,7 +68,7 @@ private:
     StencilConfig& stencilConfig();
     const StencilConfig& stencilConfig() const { return stencilConfig(); };
 
-    Renderer& m_renderer;
+    PixelPipeline& m_renderer;
 
     bool m_enableTwoSideStencil { false };
     StencilFace m_stencilFace { StencilFace::FRONT };
