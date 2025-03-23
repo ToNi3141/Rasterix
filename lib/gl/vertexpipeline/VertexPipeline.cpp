@@ -39,43 +39,53 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     }
 }
 
-void VertexPipeline::fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i)
+void VertexPipeline::fetch(VertexParameter& parameter, const RenderObj& obj, std::size_t i)
 {
     const std::size_t pos = obj.getIndex(i);
     parameter.vertex = obj.getVertex(pos);
+    parameter.normal = obj.getNormal(pos);
+    parameter.color = obj.getColor(pos);
+    for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
+    {
+        parameter.tex[tu] = obj.getTexCoord(tu, pos);
+    }
+}
+
+void VertexPipeline::transform(VertexParameter& parameter)
+{
     for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
-            parameter.tex[tu] = obj.getTexCoord(tu, pos);
-            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex, obj.getNormal(pos));
+            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex, parameter.normal);
             parameter.tex[tu] = m_matrixStore.getTexture(tu).transform(parameter.tex[tu]);
         }
     }
 
     // TODO: Check if this required? The standard requires but is it really used?
     // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
-    parameter.color = obj.getColor(pos);
     if (m_lighting.lightingEnabled())
     {
-        Vec4 vl;
-        Vec3 normal = m_matrixStore.getNormal().transform(obj.getNormal(pos));
+        Vec3 normal = parameter.normal;
 
         if (m_enableNormalizing)
         {
             normal.normalize();
         }
-        if (obj.vertexArrayEnabled())
-            vl = m_matrixStore.getModelView().transform(parameter.vertex);
+        const Vec4 vl = m_matrixStore.getModelView().transform(parameter.vertex);
         const Vec4 c = parameter.color;
         m_lighting.calculateLights(parameter.color, c, vl, normal);
     }
-    if (obj.vertexArrayEnabled())
-        parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
+    parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
 }
 
 bool VertexPipeline::drawObj(const RenderObj& obj)
 {
+    if (!obj.vertexArrayEnabled())
+    {
+        SPDLOG_INFO("drawObj(): Vertex array disabled. No primitive is rendered.");
+        return true;
+    }
     m_matrixStore.recalculateMatrices();
     if (!m_renderer.updatePipeline())
     {
@@ -90,7 +100,8 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
     for (std::size_t it = 0; it < count; it++)
     {
         VertexParameter& param = m_primitiveAssembler.createParameter();
-        fetchAndTransform(param, obj, it);
+        fetch(param, obj, it);
+        transform(param);
 
         const tcb::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
         for (const PrimitiveAssembler::Triangle& triangle : triangles)
@@ -149,7 +160,8 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
     // Render the triangle
     for (std::size_t i = 3; i <= clippedVertexListSize; i++)
     {
-        const bool success = m_renderer.drawTriangle({ list[0].vertex,
+        const bool success = m_renderer.drawTriangle({
+            list[0].vertex,
             list[i - 2].vertex,
             list[i - 1].vertex,
             list[0].tex,
@@ -157,7 +169,8 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
             list[i - 1].tex,
             list[0].color,
             list[i - 2].color,
-            list[i - 1].color });
+            list[i - 1].color,
+        });
         if (!success)
         {
             return false;
@@ -197,7 +210,8 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
         return false;
     }
 
-    return m_renderer.drawTriangle({ v0,
+    return m_renderer.drawTriangle({
+        v0,
         v1,
         v2,
         triangle[0].get().tex,
@@ -205,7 +219,8 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
         triangle[2].get().tex,
         triangle[0].get().color,
         triangle[1].get().color,
-        triangle[2].get().color });
+        triangle[2].get().color,
+    });
 }
 
 bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)

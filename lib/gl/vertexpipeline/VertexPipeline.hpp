@@ -58,7 +58,8 @@ public:
 
 private:
     bool drawTriangle(const PrimitiveAssembler::Triangle& triangle);
-    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
+    void fetch(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
+    void transform(VertexParameter& parameter);
     bool drawClippedTriangleList(tcb::span<VertexParameter> list);
     bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
 

@@ -36,6 +36,7 @@ struct VertexParameter
 {
     Vec4 vertex;
     Vec4 color;
+    Vec3 normal;
     std::array<Vec4, RenderConfig::TMU_COUNT> tex;
 };
 

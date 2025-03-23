@@ -175,12 +175,12 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     nv3[0] += (-nx * v1[3]) * rcpViewportScaleX;
     nv3[1] += (-ny * v1[3]) * rcpViewportScaleY;
 
-    m_vertexParameters[0] = { nv0, c0, tc0 };
-    m_vertexParameters[1] = { nv1, c0, tc0 };
-    m_vertexParameters[2] = { nv2, c1, tc1 };
-    m_vertexParameters[3] = { nv2, c1, tc1 };
-    m_vertexParameters[4] = { nv1, c0, tc0 };
-    m_vertexParameters[5] = { nv3, c1, tc1 };
+    m_vertexParameters[0] = { nv0, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
+    m_vertexParameters[1] = { nv1, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
+    m_vertexParameters[2] = { nv2, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
+    m_vertexParameters[3] = { nv2, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
+    m_vertexParameters[4] = { nv1, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
+    m_vertexParameters[5] = { nv3, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
     m_triangleBuffer[0] = { m_vertexParameters[0], m_vertexParameters[1], m_vertexParameters[2] };
     m_triangleBuffer[1] = { m_vertexParameters[3], m_vertexParameters[4], m_vertexParameters[5] };
 
