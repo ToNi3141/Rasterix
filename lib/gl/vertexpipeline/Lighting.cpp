@@ -28,7 +28,7 @@ Lighting::Lighting()
     setSpecularColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0 } });
     setSpecularExponentMaterial(0.0f);
 
-    for (std::size_t i = 0; i < m_lights.size(); i++)
+    for (std::size_t i = 0; i < lightCalc.lights.size(); i++)
     {
         enableLight(i, false);
         setAmbientColorLight(i, { { 0.0f, 0.0f, 0.0f, 1.0f } });
@@ -43,30 +43,31 @@ Lighting::Lighting()
     setSpecularColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
 }
 
-void Lighting::calculateLights(Vec4& __restrict color,
+void Lighting::LightingCalc::calculateLights(
+    Vec4& __restrict color,
     const Vec4& triangleColor,
     const Vec4& vertex,
-    const Vec3& normal)
+    const Vec3& normal) const
 {
     const float alphaOld = triangleColor[3];
-    if (m_lightingEnabled)
+    if (lightingEnabled)
     {
-        const Vec4& emissiveColor = (m_enableColorMaterialEmission) ? triangleColor : m_material.emissiveColor;
-        const Vec4& ambientColor = (m_enableColorMaterialAmbient) ? triangleColor : m_material.ambientColor;
-        const Vec4& diffuseColor = (m_enableColorMaterialDiffuse) ? triangleColor : m_material.diffuseColor;
-        const Vec4& specularColor = (m_enableColorMaterialSpecular) ? triangleColor : m_material.specularColor;
+        const Vec4& emissiveColor = (enableColorMaterialEmission) ? triangleColor : material.emissiveColor;
+        const Vec4& ambientColor = (enableColorMaterialAmbient) ? triangleColor : material.ambientColor;
+        const Vec4& diffuseColor = (enableColorMaterialDiffuse) ? triangleColor : material.diffuseColor;
+        const Vec4& specularColor = (enableColorMaterialSpecular) ? triangleColor : material.specularColor;
 
         Vec4 colorTmp;
-        calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_material.ambientColorScene);
+        calculateSceneLight(colorTmp, emissiveColor, ambientColor, material.ambientColorScene);
 
         const Vec4 n { normal[0], normal[1], normal[2], 0 };
         for (std::size_t i = 0; i < MAX_LIGHTS; i++)
         {
-            if (!m_lightEnable[i])
+            if (!lightEnable[i])
                 continue;
             calculateLight(colorTmp,
-                m_lights[i],
-                m_material.specularExponent,
+                lights[i],
+                material.specularExponent,
                 ambientColor,
                 diffuseColor,
                 specularColor,
@@ -79,7 +80,7 @@ void Lighting::calculateLights(Vec4& __restrict color,
     }
 }
 
-void Lighting::calculateLight(Vec4& __restrict color,
+void Lighting::LightingCalc::calculateLight(Vec4& __restrict color,
     const LightConfig& lightConfig,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
@@ -174,7 +175,7 @@ void Lighting::calculateLight(Vec4& __restrict color,
     color += colorLight;
 }
 
-void Lighting::calculateSceneLight(Vec4& __restrict sceneLight,
+void Lighting::LightingCalc::calculateSceneLight(Vec4& __restrict sceneLight,
     const Vec4& emissiveColor,
     const Vec4& ambientColor,
     const Vec4& ambientColorScene) const
@@ -188,86 +189,86 @@ void Lighting::calculateSceneLight(Vec4& __restrict sceneLight,
 
 void Lighting::enableLighting(bool enable)
 {
-    m_lightingEnabled = enable;
+    lightCalc.lightingEnabled = enable;
 }
 
 void Lighting::enableLight(const std::size_t light, const bool enable)
 {
-    m_lightEnable[light] = enable;
+    lightCalc.lightEnable[light] = enable;
 }
 
 void Lighting::setAmbientColorLight(const std::size_t light, const Vec4& color)
 {
-    m_lights[light].ambientColor = color;
+    lightCalc.lights[light].ambientColor = color;
 }
 
 void Lighting::setDiffuseColorLight(const std::size_t light, const Vec4& color)
 {
-    m_lights[light].diffuseColor = color;
+    lightCalc.lights[light].diffuseColor = color;
 }
 
 void Lighting::setSpecularColorLight(const std::size_t light, const Vec4& color)
 {
-    m_lights[light].specularColor = color;
+    lightCalc.lights[light].specularColor = color;
 }
 
 void Lighting::setPosLight(const std::size_t light, const Vec4& pos)
 {
-    m_lights[light].position = pos;
-    m_lights[light].preCalcVectors();
+    lightCalc.lights[light].position = pos;
+    lightCalc.lights[light].preCalcVectors();
 }
 
 void Lighting::setConstantAttenuationLight(const std::size_t light, const float val)
 {
-    m_lights[light].constantAttenuation = val;
+    lightCalc.lights[light].constantAttenuation = val;
 }
 
 void Lighting::setLinearAttenuationLight(const std::size_t light, const float val)
 {
-    m_lights[light].linearAttenuation = val;
+    lightCalc.lights[light].linearAttenuation = val;
 }
 
 void Lighting::setQuadraticAttenuationLight(const std::size_t light, const float val)
 {
-    m_lights[light].quadraticAttenuation = val;
+    lightCalc.lights[light].quadraticAttenuation = val;
 }
 
 void Lighting::enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular)
 {
-    m_enableColorMaterialEmission = emission;
-    m_enableColorMaterialAmbient = ambient;
-    m_enableColorMaterialDiffuse = diffuse;
-    m_enableColorMaterialSpecular = specular;
+    lightCalc.enableColorMaterialEmission = emission;
+    lightCalc.enableColorMaterialAmbient = ambient;
+    lightCalc.enableColorMaterialDiffuse = diffuse;
+    lightCalc.enableColorMaterialSpecular = specular;
 }
 
 void Lighting::setEmissiveColorMaterial(const Vec4& color)
 {
-    m_material.emissiveColor = color;
+    lightCalc.material.emissiveColor = color;
 }
 
 void Lighting::setAmbientColorMaterial(const Vec4& color)
 {
-    m_material.ambientColor = color;
+    lightCalc.material.ambientColor = color;
 }
 
 void Lighting::setAmbientColorScene(const Vec4& color)
 {
-    m_material.ambientColorScene = color;
+    lightCalc.material.ambientColorScene = color;
 }
 
 void Lighting::setDiffuseColorMaterial(const Vec4& color)
 {
-    m_material.diffuseColor = color;
+    lightCalc.material.diffuseColor = color;
 }
 
 void Lighting::setSpecularColorMaterial(const Vec4& color)
 {
-    m_material.specularColor = color;
+    lightCalc.material.specularColor = color;
 }
 
 void Lighting::setSpecularExponentMaterial(const float val)
 {
-    m_material.specularExponent = val;
+    lightCalc.material.specularExponent = val;
 }
 
 void Lighting::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)

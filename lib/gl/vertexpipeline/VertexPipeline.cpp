@@ -57,7 +57,12 @@ void VertexPipeline::transform(VertexParameter& parameter)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
-            m_texGen[tu].calculateTexGenCoords(parameter.tex[tu], parameter.vertex, parameter.normal);
+            m_texGen[tu].config.calculateTexGenCoords(
+                parameter.tex[tu],
+                m_matrixStore.getModelView(),
+                m_matrixStore.getNormal(),
+                parameter.vertex,
+                parameter.normal);
             parameter.tex[tu] = m_matrixStore.getTexture(tu).transform(parameter.tex[tu]);
         }
     }
@@ -74,7 +79,7 @@ void VertexPipeline::transform(VertexParameter& parameter)
         }
         const Vec4 vl = m_matrixStore.getModelView().transform(parameter.vertex);
         const Vec4 c = parameter.color;
-        m_lighting.calculateLights(parameter.color, c, vl, normal);
+        m_lighting.lightCalc.calculateLights(parameter.color, c, vl, normal);
     }
     parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
 }
@@ -142,20 +147,24 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         // }
 
         // Viewport transformation of the vertex
-        m_viewPort.transform(list[i].vertex);
+        m_viewPort.config.transform(list[i].vertex);
     }
 
     // Cull triangle
     // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
-    if (m_culling.cull(list[0].vertex, list[1].vertex, list[2].vertex))
+    if (m_culling.cullingCalc.cull(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return true;
     }
 
-    if (!stencil().updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex))
+    if (stencil().config.enableTwoSideStencil)
     {
-        return false;
+        const StencilReg reg = stencil().config.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
+        if (!m_renderer.setStencilBufferConfig(reg))
+        {
+            return false;
+        }
     }
 
     // Render the triangle
@@ -194,21 +203,25 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
     v2.perspectiveDivide();
 
     // Viewport transformation of the vertex
-    m_viewPort.transform(v0);
-    m_viewPort.transform(v1);
-    m_viewPort.transform(v2);
+    m_viewPort.config.transform(v0);
+    m_viewPort.config.transform(v1);
+    m_viewPort.config.transform(v2);
 
     // Cull triangle
     // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
-    if (m_culling.cull(v0, v1, v2))
+    if (m_culling.cullingCalc.cull(v0, v1, v2))
     {
         return true;
     }
 
-    if (!stencil().updateStencilFace(v0, v1, v2))
+    if (stencil().config.enableTwoSideStencil)
     {
-        return false;
+        const StencilReg reg = stencil().config.updateStencilFace(v0, v1, v2);
+        if (!m_renderer.setStencilBufferConfig(reg))
+        {
+            return false;
+        }
     }
 
     return m_renderer.drawTriangle({

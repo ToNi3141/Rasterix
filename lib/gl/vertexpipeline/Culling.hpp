@@ -26,16 +26,21 @@ namespace rr
 class Culling
 {
 public:
-    Culling();
+    struct CullingCalc
+    {
+        bool enableCulling { false };
+        Face cullMode { Face::BACK };
+        bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+    };
 
-    bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+    Culling();
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
 
+    CullingCalc cullingCalc {};
+
 private:
-    bool m_enableCulling { false };
-    Face m_cullMode { Face::BACK };
 };
 
 } // namespace rr

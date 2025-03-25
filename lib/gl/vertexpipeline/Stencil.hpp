@@ -27,12 +27,18 @@ namespace rr
 class Stencil
 {
 public:
-    using StencilConfig = StencilReg;
-
     enum class StencilFace
     {
         FRONT,
         BACK
+    };
+
+    struct StencilCalc
+    {
+        StencilReg updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+        bool enableTwoSideStencil { false };
+        StencilReg stencilConfFront {};
+        StencilReg stencilConfBack {};
     };
 
     Stencil(PixelPipeline& renderer);
@@ -55,28 +61,22 @@ public:
     uint8_t getClearStencil() const { return stencilConfig().getClearStencil(); }
     uint8_t getStencilMask() const { return stencilConfig().getStencilMask(); }
 
-    void enableTwoSideStencil(const bool enable) { m_enableTwoSideStencil = enable; }
+    void enableTwoSideStencil(const bool enable) { config.enableTwoSideStencil = enable; }
     void setStencilFace(const StencilFace face) { m_stencilFace = face; }
 
-    bool updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2);
     bool update();
 
-private:
-    void selectStencilTwoSideFrontForDevice() { m_stencilConfTwoSide = &m_stencilConfFront; }
-    void selectStencilTwoSideBackForDevice() { m_stencilConfTwoSide = &m_stencilConfBack; }
+    StencilCalc config {};
 
-    StencilConfig& stencilConfig();
-    const StencilConfig& stencilConfig() const { return stencilConfig(); };
+private:
+    StencilReg& stencilConfig();
+    const StencilReg& stencilConfig() const { return stencilConfig(); };
 
     PixelPipeline& m_renderer;
 
-    bool m_enableTwoSideStencil { false };
     StencilFace m_stencilFace { StencilFace::FRONT };
-    StencilConfig m_stencilConf {};
-    StencilConfig m_stencilConfFront {};
-    StencilConfig m_stencilConfBack {};
-    StencilConfig* m_stencilConfTwoSide { &m_stencilConfFront };
-    StencilConfig m_stencilConfUploaded {};
+    StencilReg m_stencilConf {};
+    StencilReg m_stencilConfUploaded {};
 };
 
 } // namespace rr

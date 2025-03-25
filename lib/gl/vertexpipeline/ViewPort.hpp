@@ -25,24 +25,28 @@ namespace rr
 class ViewPort
 {
 public:
-    void transform(Vec4& v);
+    struct ViewPortCalc
+    {
+        void transform(Vec4& v) const;
+        float depthRangeOffset { 0.0f };
+        float depthRangeScale { 1.0f };
+        float viewportX { 0.0f };
+        float viewportY { 0.0f };
+        float viewportHeightHalf { 0.0f };
+        float viewportWidthHalf { 0.0f };
+    };
+
     void setViewport(const float x, const float y, const float width, const float height);
     void setDepthRange(const float zNear, const float zFar);
 
     float getViewPortWidth() const { return m_viewportWidth; }
     float getViewPortHeight() const { return m_viewportHeight; }
 
+    ViewPortCalc config {};
+
 private:
-    float m_depthRangeZNear { 0.0f };
-    float m_depthRangeZFar { 1.0f };
-    float m_depthRangeOffset { 0.0f };
-    float m_depthRangeScale { 1.0f };
-    float m_viewportX { 0.0f };
-    float m_viewportY { 0.0f };
     float m_viewportHeight { 0.0f };
     float m_viewportWidth { 0.0f };
-    float m_viewportHeightHalf { 0.0f };
-    float m_viewportWidthHalf { 0.0f };
 };
 
 } // namespace rr

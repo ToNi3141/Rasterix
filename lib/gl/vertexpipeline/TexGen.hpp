@@ -34,7 +34,37 @@ public:
         SPHERE_MAP,
         REFLECTION_MAP
     };
-    void calculateTexGenCoords(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
+
+    struct TexGenCalc
+    {
+
+        void calculateTexGenCoords(
+            Vec4& st0,
+            const Mat44& modelViewMat,
+            const Mat44& normalMat,
+            const Vec4& v0,
+            const Vec3& n0) const;
+        bool texGenEnableS { false };
+        bool texGenEnableT { false };
+        bool texGenEnableR { false };
+        TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
+        TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
+        TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
+        Vec4 texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
+        Vec4 texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
+        Vec4 texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+        Vec4 texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
+        Vec4 texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
+        Vec4 texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+
+    private:
+        void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
+        void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
+        void calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
+        void calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
+        Vec3 calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
+        Vec3 calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
+    };
 
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
@@ -49,31 +79,11 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
+    TexGenCalc config {};
     void setMatrixStore(const MatrixStore& matrixStore);
 
 private:
     const MatrixStore* m_matrixStore { nullptr };
-
-    void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
-    void calculateEyeLinear(Vec4& st0, const Vec4& v0) const;
-    void calculateSphereMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
-    void calculateReflectionMap(Vec4& st0, const Vec4& v0, const Vec3& n0) const;
-
-    Vec3 calculateSphereVector(const Vec4& v0, const Vec3& n0) const;
-    Vec3 calculateReflectionVector(const Vec4& v0, const Vec3& n0) const;
-
-    bool m_texGenEnableS { false };
-    bool m_texGenEnableT { false };
-    bool m_texGenEnableR { false };
-    TexGenMode m_texGenModeS { TexGenMode::EYE_LINEAR };
-    TexGenMode m_texGenModeT { TexGenMode::EYE_LINEAR };
-    TexGenMode m_texGenModeR { TexGenMode::EYE_LINEAR };
-    Vec4 m_texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
-    Vec4 m_texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
-    Vec4 m_texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
-    Vec4 m_texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
-    Vec4 m_texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
-    Vec4 m_texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
 };
 
 } // namespace rr

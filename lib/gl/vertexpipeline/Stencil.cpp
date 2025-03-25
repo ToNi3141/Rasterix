@@ -27,15 +27,15 @@ Stencil::Stencil(PixelPipeline& renderer)
     m_renderer.setStencilBufferConfig(m_stencilConf);
 }
 
-Stencil::StencilConfig& Stencil::stencilConfig()
+StencilReg& Stencil::stencilConfig()
 {
-    if (m_enableTwoSideStencil)
+    if (config.enableTwoSideStencil)
     {
         if (m_stencilFace == StencilFace::FRONT)
         {
-            return m_stencilConfFront;
+            return config.stencilConfFront;
         }
-        return m_stencilConfBack;
+        return config.stencilConfBack;
     }
     return m_stencilConf;
 }
@@ -44,47 +44,27 @@ bool Stencil::update()
 {
     bool ret { true };
 
-    if (m_enableTwoSideStencil)
+    // if (!config.enableTwoSideStencil && m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
     {
-        if (m_stencilConfUploaded.serialize() != m_stencilConfTwoSide->serialize())
-        {
-            ret = ret && m_renderer.setStencilBufferConfig(*m_stencilConfTwoSide);
-            m_stencilConfUploaded = *m_stencilConfTwoSide;
-        }
-    }
-    else
-    {
-        if (m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
-        {
-            ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
-            m_stencilConfUploaded = m_stencilConf;
-        }
+        ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
+        m_stencilConfUploaded = m_stencilConf;
     }
 
     return ret;
 }
 
-bool Stencil::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+StencilReg Stencil::StencilCalc::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
 {
-    if (m_enableTwoSideStencil)
+    const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
+    const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
+    if (currentOrientation != StencilFace::FRONT) // The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back does not match.
     {
-        const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
-        const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
-        if (currentOrientation != StencilFace::FRONT) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
-        {
-            selectStencilTwoSideFrontForDevice();
-        }
-        else
-        {
-            selectStencilTwoSideBackForDevice();
-        }
-        if (!update())
-        {
-            SPDLOG_ERROR("updateStencilFace(): Cannot update pixel pipeline");
-            return false;
-        }
+        return stencilConfFront;
     }
-    return true;
+    else
+    {
+        return stencilConfBack;
+    }
 }
 
 } // namespace rr
