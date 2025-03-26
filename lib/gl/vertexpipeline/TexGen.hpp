@@ -18,54 +18,59 @@
 #ifndef TEXGEN_HPP
 #define TEXGEN_HPP
 
+#include "Enums.hpp"
 #include "MatrixStore.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 
-namespace rr
+namespace rr::texgen
 {
-class TexGen
+
+struct TexGenData
+{
+    bool texGenEnableS { false };
+    bool texGenEnableT { false };
+    bool texGenEnableR { false };
+    TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
+    Vec4 texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
+    Vec4 texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
+    Vec4 texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+    Vec4 texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
+    Vec4 texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
+    Vec4 texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+};
+
+class TexGenCalc
 {
 public:
-    enum class TexGenMode
+    TexGenCalc(const TexGenData& texGenData)
+        : m_data { texGenData }
     {
-        OBJECT_LINEAR,
-        EYE_LINEAR,
-        SPHERE_MAP,
-        REFLECTION_MAP
-    };
+    }
 
-    struct TexGenCalc
-    {
+    void calculateTexGenCoords(
+        Vec4& st0,
+        const Mat44& modelViewMat,
+        const Mat44& normalMat,
+        const Vec4& v0,
+        const Vec3& n0) const;
 
-        void calculateTexGenCoords(
-            Vec4& st0,
-            const Mat44& modelViewMat,
-            const Mat44& normalMat,
-            const Vec4& v0,
-            const Vec3& n0) const;
-        bool texGenEnableS { false };
-        bool texGenEnableT { false };
-        bool texGenEnableR { false };
-        TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
-        TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
-        TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
-        Vec4 texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
-        Vec4 texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
-        Vec4 texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
-        Vec4 texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
-        Vec4 texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
-        Vec4 texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+private:
+    void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
+    void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
+    void calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
+    void calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
+    Vec3 calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
+    Vec3 calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
 
-    private:
-        void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
-        void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
-        void calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
-        void calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
-        Vec3 calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
-        Vec3 calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
-    };
+    const TexGenData& m_data;
+};
 
+class TexGenSetter
+{
+public:
     void enableTexGenS(bool enable);
     void enableTexGenT(bool enable);
     void enableTexGenR(bool enable);
@@ -79,12 +84,13 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    TexGenCalc config {};
     void setMatrixStore(const MatrixStore& matrixStore);
+    void setTexGenData(TexGenData& texGenCalc);
 
 private:
     const MatrixStore* m_matrixStore { nullptr };
+    TexGenData* m_data { nullptr };
 };
 
-} // namespace rr
+} // namespace rr::texgen
 #endif // TEXGEN_HPP

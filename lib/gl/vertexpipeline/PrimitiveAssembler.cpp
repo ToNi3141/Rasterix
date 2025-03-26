@@ -17,17 +17,17 @@
 
 #include "PrimitiveAssembler.hpp"
 
-namespace rr
+namespace rr::primitiveassembler
 {
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTriangle()
+tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constructTriangle()
 {
     if (m_queue.size() < 3)
     {
         return {};
     }
 
-    switch (m_drawMode)
+    switch (m_primitiveAssemblerData.mode)
     {
     case RenderObj::DrawMode::TRIANGLES:
         m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
@@ -86,18 +86,18 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructTrian
     return { m_triangleBuffer.data(), 1 };
 }
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine()
+tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constructLine()
 {
     if (m_queue.size() < 2)
     {
         return {};
     }
 
-    std::size_t last = (m_count == (m_expectedPrimitiveCount - 1));
+    std::size_t last = (m_count == (m_primitiveAssemblerData.primitiveCount - 1));
     VertexParameter* p0;
     VertexParameter* p1;
 
-    switch (m_drawMode)
+    switch (m_primitiveAssemblerData.mode)
     {
     case RenderObj::DrawMode::LINES:
         p0 = &m_queue[0];
@@ -134,7 +134,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::constructLine(
     return drawLine(p0->vertex, p1->vertex, p0->tex, p1->tex, p0->color, p1->color);
 }
 
-tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const Vec4& v0,
+tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::drawLine(const Vec4& v0,
     const Vec4& v1,
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0,
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1,
@@ -144,8 +144,8 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     // Copied from swGL and adapted.
 
     // Get the reciprocal viewport scaling factor
-    float rcpViewportScaleX = 2.0f / m_viewPort.getViewPortWidth();
-    float rcpViewportScaleY = 2.0f / m_viewPort.getViewPortHeight();
+    float rcpViewportScaleX = 2.0f / m_viewPortData.viewportWidth;
+    float rcpViewportScaleY = 2.0f / m_viewPortData.viewportHeight;
 
     // Calculate the lines normal n = normalize(-dx, dy)
     float nx = -((v1[1] / v1[3]) - (v0[1] / v0[3]));
@@ -155,7 +155,7 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     ny *= rcpLength;
 
     // Scale normal according to the width of the line
-    float halfLineWidth = m_lineWidth * 0.5f;
+    float halfLineWidth = m_primitiveAssemblerData.lineWidth * 0.5f;
     nx *= halfLineWidth;
     ny *= halfLineWidth;
 
@@ -187,10 +187,9 @@ tcb::span<const PrimitiveAssembler::Triangle> PrimitiveAssembler::drawLine(const
     return { m_triangleBuffer };
 }
 
-void PrimitiveAssembler::setDrawMode(const RenderObj::DrawMode mode)
+void PrimitiveAssemblerCalc::updateMode()
 {
-    m_drawMode = mode;
-    switch (m_drawMode)
+    switch (m_primitiveAssemblerData.mode)
     {
     case RenderObj::DrawMode::LINES:
     case RenderObj::DrawMode::LINE_LOOP:
@@ -203,10 +202,10 @@ void PrimitiveAssembler::setDrawMode(const RenderObj::DrawMode mode)
     }
 }
 
-void PrimitiveAssembler::clear()
+void PrimitiveAssemblerCalc::clear()
 {
     m_queue.clear();
     m_count = 0;
 }
 
-} // namespace rr
+} // namespace rr::primitiveassembler

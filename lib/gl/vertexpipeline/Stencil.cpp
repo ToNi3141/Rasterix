@@ -19,28 +19,29 @@
 #include "renderer/Rasterizer.hpp"
 #include <spdlog/spdlog.h>
 
-namespace rr
+namespace rr::stencil
 {
-Stencil::Stencil(PixelPipeline& renderer)
+StencilSetter::StencilSetter(PixelPipeline& renderer, StencilData& stencilData)
     : m_renderer { renderer }
+    , m_data { stencilData }
 {
     m_renderer.setStencilBufferConfig(m_stencilConf);
 }
 
-StencilReg& Stencil::stencilConfig()
+StencilReg& StencilSetter::stencilConfig()
 {
-    if (config.enableTwoSideStencil)
+    if (m_data.enableTwoSideStencil)
     {
         if (m_stencilFace == StencilFace::FRONT)
         {
-            return config.stencilConfFront;
+            return m_data.stencilConfFront;
         }
-        return config.stencilConfBack;
+        return m_data.stencilConfBack;
     }
     return m_stencilConf;
 }
 
-bool Stencil::update()
+bool StencilSetter::update()
 {
     bool ret { true };
 
@@ -53,18 +54,4 @@ bool Stencil::update()
     return ret;
 }
 
-StencilReg Stencil::StencilCalc::updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
-{
-    const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
-    const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
-    if (currentOrientation != StencilFace::FRONT) // The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back does not match.
-    {
-        return stencilConfFront;
-    }
-    else
-    {
-        return stencilConfBack;
-    }
-}
-
-} // namespace rr
+} // namespace rr::stencil

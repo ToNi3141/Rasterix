@@ -50,20 +50,32 @@ public:
         m_matrixStore.setTmu(tmu);
     }
 
-    Stencil& stencil() { return m_stencil; }
-    Lighting& getLighting() { return m_lighting; }
-    TexGen& getTexGen() { return m_texGen[m_tmu]; }
-    ViewPort& getViewPort() { return m_viewPort; }
+    stencil::StencilSetter& stencil() { return m_stencil; }
+    lighting::LightingSetter& getLighting() { return m_lighting; }
+    texgen::TexGenSetter& getTexGen() { return m_texGen[m_tmu]; }
+    viewport::ViewPortSetter& getViewPort() { return m_viewPort; }
     MatrixStore& getMatrixStore() { return m_matrixStore; }
-    Culling& getCulling() { return m_culling; }
-    PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
+    culling::CullingSetter& getCulling() { return m_culling; }
+    primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    bool drawTriangle(const PrimitiveAssembler::Triangle& triangle);
+    struct VertexContext
+    {
+        viewport::ViewPortData viewPort {};
+        std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
+        stencil::StencilData stencil {};
+        lighting::LightingData lighting {};
+        culling::CullingData culling {};
+        primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
+    };
+
+    bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
     void fetch(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
     void transform(VertexParameter& parameter);
     bool drawClippedTriangleList(tcb::span<VertexParameter> list);
-    bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
+    bool drawUnclippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
+
+    VertexContext m_vertexCtx {};
 
     bool m_enableNormalizing { true };
 
@@ -71,13 +83,13 @@ private:
     std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
-    Stencil m_stencil { m_renderer };
-    Lighting m_lighting;
-    ViewPort m_viewPort;
+    stencil::StencilSetter m_stencil { m_renderer, m_vertexCtx.stencil };
+    lighting::LightingSetter m_lighting { m_vertexCtx.lighting };
+    viewport::ViewPortSetter m_viewPort { m_vertexCtx.viewPort };
     MatrixStore m_matrixStore;
-    Culling m_culling;
-    std::array<TexGen, RenderConfig::TMU_COUNT> m_texGen {};
-    PrimitiveAssembler m_primitiveAssembler { m_viewPort };
+    culling::CullingSetter m_culling { m_vertexCtx.culling };
+    std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
+    primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_vertexCtx.primitiveAssembler };
 };
 
 } // namespace rr

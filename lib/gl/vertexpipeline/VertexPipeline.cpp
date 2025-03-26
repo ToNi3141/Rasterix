@@ -33,9 +33,10 @@ namespace rr
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     : m_renderer(renderer)
 {
-    for (auto& tg : m_texGen)
+    for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
-        tg.setMatrixStore(m_matrixStore);
+        m_texGen[i].setMatrixStore(m_matrixStore);
+        m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
     }
 }
 
@@ -57,7 +58,7 @@ void VertexPipeline::transform(VertexParameter& parameter)
     {
         if (m_renderer.featureEnable().getEnableTmu(tu))
         {
-            m_texGen[tu].config.calculateTexGenCoords(
+            texgen::TexGenCalc { m_vertexCtx.texGen[tu] }.calculateTexGenCoords(
                 parameter.tex[tu],
                 m_matrixStore.getModelView(),
                 m_matrixStore.getNormal(),
@@ -69,7 +70,7 @@ void VertexPipeline::transform(VertexParameter& parameter)
 
     // TODO: Check if this required? The standard requires but is it really used?
     // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
-    if (m_lighting.lightingEnabled())
+    if (m_vertexCtx.lighting.lightingEnabled)
     {
         Vec3 normal = m_matrixStore.getNormal().transform(parameter.normal);
 
@@ -79,7 +80,7 @@ void VertexPipeline::transform(VertexParameter& parameter)
         }
         const Vec4 vl = m_matrixStore.getModelView().transform(parameter.vertex);
         const Vec4 c = parameter.color;
-        m_lighting.lightCalc.calculateLights(parameter.color, c, vl, normal);
+        lighting::LightingCalc { m_vertexCtx.lighting }.calculateLights(parameter.color, c, vl, normal);
     }
     parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
 }
@@ -99,18 +100,19 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         return false;
     }
     obj.logCurrentConfig();
-    m_primitiveAssembler.clear();
     m_primitiveAssembler.setDrawMode(obj.getDrawMode());
     m_primitiveAssembler.setExpectedPrimitiveCount(obj.getCount());
+
+    primitiveassembler::PrimitiveAssemblerCalc primitiveAssembler { m_vertexCtx.viewPort, m_vertexCtx.primitiveAssembler };
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)
     {
-        VertexParameter& param = m_primitiveAssembler.createParameter();
+        VertexParameter& param = primitiveAssembler.createParameter();
         fetch(param, obj, it);
         transform(param);
 
-        const tcb::span<const PrimitiveAssembler::Triangle> triangles = m_primitiveAssembler.getPrimitive();
-        for (const PrimitiveAssembler::Triangle& triangle : triangles)
+        const tcb::span<const primitiveassembler::PrimitiveAssemblerCalc::Triangle> triangles = primitiveAssembler.getPrimitive();
+        for (const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle : triangles)
         {
             if (!drawTriangle(triangle))
             {
@@ -119,7 +121,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         }
         if (!triangles.empty())
         {
-            m_primitiveAssembler.removePrimitive();
+            primitiveAssembler.removePrimitive();
         }
     }
 
@@ -147,20 +149,20 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
         // }
 
         // Viewport transformation of the vertex
-        m_viewPort.config.transform(list[i].vertex);
+        viewport::ViewPortCalc { m_vertexCtx.viewPort }.transform(list[i].vertex);
     }
 
     // Cull triangle
     // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
-    if (m_culling.cullingCalc.cull(list[0].vertex, list[1].vertex, list[2].vertex))
+    if (culling::CullingCalc { m_vertexCtx.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
     {
         return true;
     }
 
-    if (stencil().config.enableTwoSideStencil)
+    if (m_vertexCtx.stencil.enableTwoSideStencil)
     {
-        const StencilReg reg = stencil().config.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
+        const StencilReg reg = stencil::StencilCalc { m_vertexCtx.stencil }.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
         if (!m_renderer.setStencilBufferConfig(reg))
         {
             return false;
@@ -189,7 +191,7 @@ bool VertexPipeline::drawClippedTriangleList(tcb::span<VertexParameter> list)
     return true;
 }
 
-bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle)
+bool VertexPipeline::drawUnclippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
 {
     // Optimized version of the drawTriangle when a triangle is not needed to be clipped.
 
@@ -203,21 +205,21 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
     v2.perspectiveDivide();
 
     // Viewport transformation of the vertex
-    m_viewPort.config.transform(v0);
-    m_viewPort.config.transform(v1);
-    m_viewPort.config.transform(v2);
+    viewport::ViewPortCalc { m_vertexCtx.viewPort }.transform(v0);
+    viewport::ViewPortCalc { m_vertexCtx.viewPort }.transform(v1);
+    viewport::ViewPortCalc { m_vertexCtx.viewPort }.transform(v2);
 
     // Cull triangle
     // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
     // facing backwards, then all in the clipping list will do this and vice versa.
-    if (m_culling.cullingCalc.cull(v0, v1, v2))
+    if (culling::CullingCalc { m_vertexCtx.culling }.cull(v0, v1, v2))
     {
         return true;
     }
 
-    if (stencil().config.enableTwoSideStencil)
+    if (m_vertexCtx.stencil.enableTwoSideStencil)
     {
-        const StencilReg reg = stencil().config.updateStencilFace(v0, v1, v2);
+        const StencilReg reg = stencil::StencilCalc { m_vertexCtx.stencil }.updateStencilFace(v0, v1, v2);
         if (!m_renderer.setStencilBufferConfig(reg))
         {
             return false;
@@ -237,7 +239,7 @@ bool VertexPipeline::drawUnclippedTriangle(const PrimitiveAssembler::Triangle& t
     });
 }
 
-bool VertexPipeline::drawTriangle(const PrimitiveAssembler::Triangle& triangle)
+bool VertexPipeline::drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
 {
     if (Clipper::isInside(triangle[0].get().vertex, triangle[1].get().vertex, triangle[2].get().vertex))
     {

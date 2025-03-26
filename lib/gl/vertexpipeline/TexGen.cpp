@@ -17,112 +17,112 @@
 
 #include "TexGen.hpp"
 
-namespace rr
+namespace rr::texgen
 {
 
-void TexGen::TexGenCalc::calculateTexGenCoords(
+void TexGenCalc::calculateTexGenCoords(
     Vec4& st0,
     const Mat44& modelViewMat,
     const Mat44& normalMat,
     const Vec4& v0,
     const Vec3& n0) const
 {
-    if (texGenEnableS || texGenEnableT || texGenEnableR)
+    if (m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR)
     {
-        if ((texGenModeS == TexGenMode::OBJECT_LINEAR)
-            || (texGenModeT == TexGenMode::OBJECT_LINEAR)
-            || (texGenModeR == TexGenMode::OBJECT_LINEAR))
+        if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
+            || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
+            || (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
         {
             calculateObjectLinear(st0, v0);
         }
-        if ((texGenModeS == TexGenMode::EYE_LINEAR)
-            || (texGenModeT == TexGenMode::EYE_LINEAR)
-            || (texGenModeR == TexGenMode::EYE_LINEAR))
+        if ((m_data.texGenModeS == TexGenMode::EYE_LINEAR)
+            || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
+            || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
         {
             calculateEyeLinear(st0, modelViewMat.transform(v0));
         }
-        if ((texGenModeS == TexGenMode::SPHERE_MAP)
-            || (texGenModeT == TexGenMode::SPHERE_MAP)
-            || (texGenModeR == TexGenMode::SPHERE_MAP))
+        if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
+            || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
+            || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
         {
             calculateSphereMap(st0, modelViewMat.transform(v0), normalMat.transform(n0));
         }
-        if ((texGenModeS == TexGenMode::REFLECTION_MAP)
-            || (texGenModeT == TexGenMode::REFLECTION_MAP)
-            || (texGenModeR == TexGenMode::REFLECTION_MAP))
+        if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
+            || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
+            || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
         {
             calculateReflectionMap(st0, modelViewMat.transform(v0), normalMat.transform(n0));
         }
     }
 }
 
-void TexGen::TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
+void TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
 {
-    if (texGenEnableS && (texGenModeS == TexGenMode::OBJECT_LINEAR))
+    if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::OBJECT_LINEAR))
     {
-        st0[0] = texGenVecObjS.dot(v0);
+        st0[0] = m_data.texGenVecObjS.dot(v0);
     }
-    if (texGenEnableT && (texGenModeT == TexGenMode::OBJECT_LINEAR))
+    if (m_data.texGenEnableT && (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR))
     {
-        st0[1] = texGenVecObjT.dot(v0);
+        st0[1] = m_data.texGenVecObjT.dot(v0);
     }
-    if (texGenEnableR && (texGenModeR == TexGenMode::OBJECT_LINEAR))
+    if (m_data.texGenEnableR && (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
     {
-        st0[2] = texGenVecObjR.dot(v0);
+        st0[2] = m_data.texGenVecObjR.dot(v0);
     }
 }
 
-void TexGen::TexGenCalc::calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const
+void TexGenCalc::calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const
 {
-    if (texGenEnableS && (texGenModeS == TexGenMode::EYE_LINEAR))
+    if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::EYE_LINEAR))
     {
-        st0[0] = texGenVecEyeS.dot(eyeVertex);
+        st0[0] = m_data.texGenVecEyeS.dot(eyeVertex);
     }
-    if (texGenEnableT && (texGenModeT == TexGenMode::EYE_LINEAR))
+    if (m_data.texGenEnableT && (m_data.texGenModeT == TexGenMode::EYE_LINEAR))
     {
-        st0[1] = texGenVecEyeT.dot(eyeVertex);
+        st0[1] = m_data.texGenVecEyeT.dot(eyeVertex);
     }
-    if (texGenEnableR && (texGenModeR == TexGenMode::EYE_LINEAR))
+    if (m_data.texGenEnableR && (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
     {
-        st0[2] = texGenVecEyeR.dot(eyeVertex);
+        st0[2] = m_data.texGenVecEyeR.dot(eyeVertex);
     }
 }
 
-void TexGen::TexGenCalc::calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const
+void TexGenCalc::calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const
 {
     const Vec3 sphereVector = calculateSphereVector(eyeVertex, eyeNormal);
-    if (texGenEnableS && (texGenModeS == TexGenMode::SPHERE_MAP))
+    if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::SPHERE_MAP))
     {
         st0[0] = sphereVector[0];
     }
-    if (texGenEnableT && (texGenModeT == TexGenMode::SPHERE_MAP))
+    if (m_data.texGenEnableT && (m_data.texGenModeT == TexGenMode::SPHERE_MAP))
     {
         st0[1] = sphereVector[1];
     }
-    if (texGenEnableR && (texGenModeR == TexGenMode::SPHERE_MAP))
+    if (m_data.texGenEnableR && (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
     {
         st0[2] = sphereVector[2];
     }
 }
 
-void TexGen::TexGenCalc::calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const
+void TexGenCalc::calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const
 {
     const Vec3 reflectionVector = calculateReflectionVector(eyeVertex, eyeNormal);
-    if (texGenEnableS && (texGenModeS == TexGenMode::REFLECTION_MAP))
+    if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::REFLECTION_MAP))
     {
         st0[0] = reflectionVector[0];
     }
-    if (texGenEnableT && (texGenModeT == TexGenMode::REFLECTION_MAP))
+    if (m_data.texGenEnableT && (m_data.texGenModeT == TexGenMode::REFLECTION_MAP))
     {
         st0[1] = reflectionVector[1];
     }
-    if (texGenEnableR && (texGenModeR == TexGenMode::REFLECTION_MAP))
+    if (m_data.texGenEnableR && (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
     {
         st0[2] = reflectionVector[2];
     }
 }
 
-Vec3 TexGen::TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
+Vec3 TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
     eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
@@ -132,7 +132,7 @@ Vec3 TexGen::TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNo
     return (reflectionVector * m) + Vec3 { 0.5f, 0.5f, 0.5f };
 }
 
-Vec3 TexGen::TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
+Vec3 TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
     eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
@@ -140,69 +140,74 @@ Vec3 TexGen::TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& e
     return eyeVertex3 - (eyeNormal * dotResult);
 }
 
-void TexGen::setMatrixStore(const MatrixStore& matrixStore)
+void TexGenSetter::setMatrixStore(const MatrixStore& matrixStore)
 {
     m_matrixStore = &matrixStore;
 }
 
-void TexGen::enableTexGenS(bool enable)
+void TexGenSetter::setTexGenData(TexGenData& texGenCalc)
 {
-    config.texGenEnableS = enable;
+    m_data = &texGenCalc;
 }
 
-void TexGen::enableTexGenT(bool enable)
+void TexGenSetter::enableTexGenS(bool enable)
 {
-    config.texGenEnableT = enable;
+    m_data->texGenEnableS = enable;
 }
 
-void TexGen::enableTexGenR(bool enable)
+void TexGenSetter::enableTexGenT(bool enable)
 {
-    config.texGenEnableR = enable;
+    m_data->texGenEnableT = enable;
 }
 
-void TexGen::setTexGenModeS(TexGenMode mode)
+void TexGenSetter::enableTexGenR(bool enable)
 {
-    config.texGenModeS = mode;
+    m_data->texGenEnableR = enable;
 }
 
-void TexGen::setTexGenModeT(TexGenMode mode)
+void TexGenSetter::setTexGenModeS(TexGenMode mode)
 {
-    config.texGenModeT = mode;
+    m_data->texGenModeS = mode;
 }
 
-void TexGen::setTexGenModeR(TexGenMode mode)
+void TexGenSetter::setTexGenModeT(TexGenMode mode)
 {
-    config.texGenModeR = mode;
+    m_data->texGenModeT = mode;
 }
 
-void TexGen::setTexGenVecObjS(const Vec4& val)
+void TexGenSetter::setTexGenModeR(TexGenMode mode)
 {
-    config.texGenVecObjS = val;
+    m_data->texGenModeR = mode;
 }
 
-void TexGen::setTexGenVecObjT(const Vec4& val)
+void TexGenSetter::setTexGenVecObjS(const Vec4& val)
 {
-    config.texGenVecObjT = val;
+    m_data->texGenVecObjS = val;
 }
 
-void TexGen::setTexGenVecObjR(const Vec4& val)
+void TexGenSetter::setTexGenVecObjT(const Vec4& val)
 {
-    config.texGenVecObjR = val;
+    m_data->texGenVecObjT = val;
 }
 
-void TexGen::setTexGenVecEyeS(const Vec4& val)
+void TexGenSetter::setTexGenVecObjR(const Vec4& val)
 {
-    config.texGenVecEyeS = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecObjR = val;
 }
 
-void TexGen::setTexGenVecEyeT(const Vec4& val)
+void TexGenSetter::setTexGenVecEyeS(const Vec4& val)
 {
-    config.texGenVecEyeT = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecEyeS = m_matrixStore->getNormal().transform(val);
 }
 
-void TexGen::setTexGenVecEyeR(const Vec4& val)
+void TexGenSetter::setTexGenVecEyeT(const Vec4& val)
 {
-    config.texGenVecEyeR = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecEyeT = m_matrixStore->getNormal().transform(val);
 }
 
-} // namespace rr
+void TexGenSetter::setTexGenVecEyeR(const Vec4& val)
+{
+    m_data->texGenVecEyeR = m_matrixStore->getNormal().transform(val);
+}
+
+} // namespace rr::texgen

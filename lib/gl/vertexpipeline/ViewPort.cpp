@@ -17,32 +17,23 @@
 
 #include "ViewPort.hpp"
 
-namespace rr
+namespace rr::viewport
 {
-void ViewPort::ViewPortCalc::transform(Vec4& v) const
+
+void ViewPortSetter::setViewport(const float x, const float y, const float width, const float height)
 {
-    // v has the range from -1 to 1. When we multiply it, it has a range from -viewPortWidth/2 to viewPortWidth/2
-    // With the addition we shift it from -viewPortWidth/2 to 0 + viewPortX
-    v[0] = ((v[0] + 1.0f) * viewportWidthHalf) + viewportX;
-    v[1] = ((v[1] + 1.0f) * viewportHeightHalf) + viewportY;
-    v[2] = (depthRangeScale * v[2]) + depthRangeOffset;
-    v[2] *= 65534.0f / 65536.0f; // Scales down the z value a bit, because the hardware expects a range of [0 .. 65535], which is basically [0.0 .. 0.999..]
+    m_data.viewportHeight = height;
+    m_data.viewportWidth = width;
+    m_data.viewportX = x;
+    m_data.viewportY = y;
+
+    m_data.viewportHeightHalf = m_data.viewportHeight / 2.0f;
+    m_data.viewportWidthHalf = m_data.viewportWidth / 2.0f;
 }
 
-void ViewPort::setViewport(const float x, const float y, const float width, const float height)
+void ViewPortSetter::setDepthRange(const float zNear, const float zFar)
 {
-    m_viewportHeight = height;
-    m_viewportWidth = width;
-    config.viewportX = x;
-    config.viewportY = y;
-
-    config.viewportHeightHalf = m_viewportHeight / 2.0f;
-    config.viewportWidthHalf = m_viewportWidth / 2.0f;
-}
-
-void ViewPort::setDepthRange(const float zNear, const float zFar)
-{
-    config.depthRangeScale = ((zFar - zNear) / 2.0f);
-    config.depthRangeOffset = ((zNear + zFar) / 2.0f);
+    m_data.depthRangeScale = ((zFar - zNear) / 2.0f);
+    m_data.depthRangeOffset = ((zNear + zFar) / 2.0f);
 }
 } // namespace rr

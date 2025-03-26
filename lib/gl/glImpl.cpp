@@ -613,24 +613,24 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
         switch (mode)
         {
         case GL_AMBIENT:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT);
             break;
         case GL_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::DIFFUSE);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::DIFFUSE);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         case GL_SPECULAR:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::SPECULAR);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::SPECULAR);
             break;
         case GL_EMISSION:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::EMISSION);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::EMISSION);
             break;
         default:
             SPDLOG_WARN("glColorMaterial mode 0x{:X} not supported", mode);
             RRXGL::getInstance().setError(GL_INVALID_ENUM);
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         }
     }
@@ -1135,7 +1135,7 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
     switch (pname)
     {
     case GL_MAX_LIGHTS:
-        *params = RRXGL::getInstance().vertexPipeline().getLighting().MAX_LIGHTS;
+        *params = lighting::LightingData::MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
         *params = MatrixStore::getModelMatrixStackDepth();
@@ -2976,21 +2976,21 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat* p
 GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glTexGeni coord 0x{:X} pname 0x{:X} param 0x{:X} called", coord, pname, param);
-    TexGen::TexGenMode mode {};
+    TexGenMode mode {};
     RRXGL::getInstance().setError(GL_NO_ERROR);
     switch (param)
     {
     case GL_OBJECT_LINEAR:
-        mode = TexGen::TexGenMode::OBJECT_LINEAR;
+        mode = TexGenMode::OBJECT_LINEAR;
         break;
     case GL_EYE_LINEAR:
-        mode = TexGen::TexGenMode::EYE_LINEAR;
+        mode = TexGenMode::EYE_LINEAR;
         break;
     case GL_SPHERE_MAP:
-        mode = TexGen::TexGenMode::SPHERE_MAP;
+        mode = TexGenMode::SPHERE_MAP;
         break;
     case GL_REFLECTION_MAP:
-        mode = TexGen::TexGenMode::REFLECTION_MAP;
+        mode = TexGenMode::REFLECTION_MAP;
         break;
     default:
         SPDLOG_WARN("glTexGeni param not supported");
@@ -4330,11 +4330,11 @@ GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
     RRXGL::getInstance().setError(GL_NO_ERROR);
     if (face == GL_FRONT)
     {
-        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(Stencil::StencilFace::FRONT);
+        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(StencilFace::FRONT);
     }
     else if (face == GL_BACK)
     {
-        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(Stencil::StencilFace::BACK);
+        RRXGL::getInstance().vertexPipeline().stencil().setStencilFace(StencilFace::BACK);
     }
     else
     {

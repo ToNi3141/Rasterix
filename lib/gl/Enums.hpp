@@ -129,6 +129,30 @@ enum class TexEnvMode
     ADD,
     COMBINE
 };
+
+enum class TexGenMode
+{
+    OBJECT_LINEAR,
+    EYE_LINEAR,
+    SPHERE_MAP,
+    REFLECTION_MAP
+};
+
+enum class StencilFace
+{
+    FRONT,
+    BACK
+};
+
+enum class ColorMaterialTracking
+{
+    AMBIENT,
+    DIFFUSE,
+    AMBIENT_AND_DIFFUSE,
+    SPECULAR,
+    EMISSION
+};
+
 } // namespace rr
 
 #endif // _ENUMS_HPP_

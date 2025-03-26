@@ -18,30 +18,59 @@
 #ifndef CULLING_HPP
 #define CULLING_HPP
 
+#include "Enums.hpp"
 #include "Types.hpp"
 #include "math/Vec.hpp"
+#include "renderer/Rasterizer.hpp"
 
-namespace rr
+namespace rr::culling
 {
-class Culling
+
+struct CullingData
+{
+    bool enableCulling { false };
+    Face cullMode { Face::BACK };
+};
+
+class CullingCalc
 {
 public:
-    struct CullingCalc
+    CullingCalc(const CullingData& cullingData)
+        : m_data { cullingData }
     {
-        bool enableCulling { false };
-        Face cullMode { Face::BACK };
-        bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
-    };
+    }
+    bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
+    {
+        if (m_data.enableCulling)
+        {
+            const float edgeVal { Rasterizer::edgeFunctionFloat(v0, v1, v2) };
+            const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
+            if (currentOrientation != m_data.cullMode) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
-    Culling();
+private:
+    const CullingData& m_data;
+};
+
+class CullingSetter
+{
+public:
+    CullingSetter(CullingData& cullingData)
+        : m_data { cullingData }
+    {
+    }
 
     void enableCulling(const bool enable);
     void setCullMode(const Face mode);
 
-    CullingCalc cullingCalc {};
-
 private:
+    CullingData& m_data;
 };
 
-} // namespace rr
+} // namespace rr::culling
 #endif // CULLING_HPP

@@ -18,30 +18,50 @@
 #ifndef STENCIL_HPP_
 #define STENCIL_HPP_
 
+#include "Enums.hpp"
 #include "math/Vec.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include <optional>
 
-namespace rr
+namespace rr::stencil
 {
-class Stencil
+struct StencilData
+{
+    bool enableTwoSideStencil { false };
+    StencilReg stencilConfFront {};
+    StencilReg stencilConfBack {};
+};
+
+class StencilCalc
 {
 public:
-    enum class StencilFace
+    StencilCalc(const StencilData& stencilData)
+        : m_data { stencilData }
     {
-        FRONT,
-        BACK
-    };
+    }
 
-    struct StencilCalc
+    StencilReg updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
     {
-        StencilReg updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
-        bool enableTwoSideStencil { false };
-        StencilReg stencilConfFront {};
-        StencilReg stencilConfBack {};
-    };
+        const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
+        const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
+        if (currentOrientation != StencilFace::FRONT) // The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back does not match.
+        {
+            return m_data.stencilConfFront;
+        }
+        else
+        {
+            return m_data.stencilConfBack;
+        }
+    }
 
-    Stencil(PixelPipeline& renderer);
+private:
+    const StencilData& m_data;
+};
+
+class StencilSetter
+{
+public:
+    StencilSetter(PixelPipeline& renderer, StencilData& stencilData);
 
     void setTestFunc(const TestFunc val) { stencilConfig().setTestFunc(val); }
     void setOpZPass(const StencilOp val) { stencilConfig().setOpZPass(val); }
@@ -61,23 +81,22 @@ public:
     uint8_t getClearStencil() const { return stencilConfig().getClearStencil(); }
     uint8_t getStencilMask() const { return stencilConfig().getStencilMask(); }
 
-    void enableTwoSideStencil(const bool enable) { config.enableTwoSideStencil = enable; }
+    void enableTwoSideStencil(const bool enable) { m_data.enableTwoSideStencil = enable; }
     void setStencilFace(const StencilFace face) { m_stencilFace = face; }
 
     bool update();
-
-    StencilCalc config {};
 
 private:
     StencilReg& stencilConfig();
     const StencilReg& stencilConfig() const { return stencilConfig(); };
 
     PixelPipeline& m_renderer;
+    StencilData& m_data;
 
     StencilFace m_stencilFace { StencilFace::FRONT };
     StencilReg m_stencilConf {};
     StencilReg m_stencilConfUploaded {};
 };
 
-} // namespace rr
+} // namespace rr::stencil
 #endif // STENCIL_HPP_
