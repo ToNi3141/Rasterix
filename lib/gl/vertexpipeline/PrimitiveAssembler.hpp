@@ -59,6 +59,7 @@ public:
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
     VertexParameter& createParameter() { return m_queue.create_back(); }
+    void pushParameter(const VertexParameter& param) { m_queue.push_back(param); };
 
     bool hasTriangles() const { return m_queue.size() >= 3; }
 

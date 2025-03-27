@@ -32,6 +32,7 @@
 #include "vertexpipeline/PrimitiveAssembler.hpp"
 #include "vertexpipeline/Stencil.hpp"
 #include "vertexpipeline/TexGen.hpp"
+#include "vertexpipeline/VertexTransforming.hpp"
 #include "vertexpipeline/ViewPort.hpp"
 #include <cstdint>
 
@@ -43,7 +44,7 @@ public:
     VertexPipeline(PixelPipeline& renderer);
 
     bool drawObj(const RenderObj& obj);
-    void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
+    void setEnableNormalizing(const bool enable) { m_vertexCtx.normalizeLightNormal = enable; }
     void activateTmu(const std::size_t tmu)
     {
         m_tmu = tmu;
@@ -59,26 +60,10 @@ public:
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    struct VertexContext
-    {
-        matrixstore::TransformMatricesData transformMatrices {};
-        viewport::ViewPortData viewPort {};
-        lighting::LightingData lighting {};
-        culling::CullingData culling {};
-        stencil::StencilData stencil {};
-        std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
-        primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
-    };
-
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
-    void fetch(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
-    void transform(VertexParameter& parameter);
-    bool drawClippedTriangleList(tcb::span<VertexParameter> list);
-    bool drawUnclippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
+    VertexParameter fetch(const RenderObj& obj, std::size_t i);
 
-    VertexContext m_vertexCtx {};
-
-    bool m_enableNormalizing { true };
+    vertextransforming::VertexTransformingData m_vertexCtx {};
 
     // Current active TMU
     std::size_t m_tmu {};
