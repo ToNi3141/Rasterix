@@ -1138,10 +1138,10 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
         *params = lighting::LightingData::MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
-        *params = MatrixStore::getModelMatrixStackDepth();
+        *params = matrixstore::MatrixStore::getModelMatrixStackDepth();
         break;
     case GL_MAX_PROJECTION_STACK_DEPTH:
-        *params = MatrixStore::getProjectionMatrixStackDepth();
+        *params = matrixstore::MatrixStore::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
         *params = RRXGL::getInstance().getMaxTextureSize();
@@ -1710,22 +1710,22 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::MODELVIEW);
+        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::MODELVIEW);
     }
     else if (mode == GL_PROJECTION)
     {
         SPDLOG_DEBUG("glMatrixMode GL_PROJECTION called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::PROJECTION);
+        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::PROJECTION);
     }
     else if (mode == GL_TEXTURE)
     {
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::TEXTURE);
+        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::TEXTURE);
     }
     else if (mode == GL_COLOR)
     {
         SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::COLOR);
+        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::COLOR);
     }
     else
     {

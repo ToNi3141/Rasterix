@@ -84,11 +84,11 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    void setMatrixStore(const MatrixStore& matrixStore);
+    void setMatrixStore(const matrixstore::TransformMatricesData& transformMatrices);
     void setTexGenData(TexGenData& texGenCalc);
 
 private:
-    const MatrixStore* m_matrixStore { nullptr };
+    const matrixstore::TransformMatricesData* m_transformMatrices { nullptr };
     TexGenData* m_data { nullptr };
 };
 

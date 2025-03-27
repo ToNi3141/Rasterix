@@ -23,8 +23,19 @@
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 
-namespace rr
+namespace rr::matrixstore
 {
+
+struct TransformMatricesData
+{
+    Mat44 modelView {};
+    Mat44 projection {};
+    Mat44 modelViewProjection {};
+    Mat44 normal {};
+    Mat44 color {};
+    std::array<Mat44, RenderConfig::TMU_COUNT> texture {};
+};
+
 class MatrixStore
 {
 public:
@@ -36,14 +47,14 @@ public:
         COLOR
     };
 
-    MatrixStore();
+    MatrixStore(TransformMatricesData& transformMatrices);
 
-    const Mat44& getModelViewProjection() const { return m_t; }
-    const Mat44& getModelView() const { return m_m; }
-    const Mat44& getProjection() const { return m_p; }
-    const Mat44& getTexture(const std::size_t tmu) const { return m_tm[tmu]; }
-    const Mat44& getColor() const { return m_c; }
-    const Mat44& getNormal() const { return m_n; }
+    const Mat44& getModelViewProjection() const { return m_data.modelViewProjection; }
+    const Mat44& getModelView() const { return m_data.modelView; }
+    const Mat44& getProjection() const { return m_data.projection; }
+    const Mat44& getTexture(const std::size_t tmu) const { return m_data.texture[tmu]; }
+    const Mat44& getColor() const { return m_data.color; }
+    const Mat44& getNormal() const { return m_data.normal; }
 
     void setModelProjectionMatrix(const Mat44& m);
     void setModelMatrix(const Mat44& m);
@@ -84,16 +95,11 @@ private:
     Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
     std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, RenderConfig::TMU_COUNT> m_tmStack {};
     Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
-    Mat44 m_p {}; // Projection
-    Mat44 m_t {}; // ModelViewProjection
-    Mat44 m_m {}; // ModelView
-    Mat44 m_n {}; // Normal
-    std::array<Mat44, RenderConfig::TMU_COUNT> m_tm; // Texture Matrix
-    Mat44 m_c {}; // Color
+    TransformMatricesData& m_data;
     bool m_modelMatrixChanged { true };
     bool m_projectionMatrixChanged { true };
     std::size_t m_tmu { 0 };
 };
 
-} // namespace rr
+} // namespace rr::matrixstore
 #endif // MATRIXSTORE_HPP

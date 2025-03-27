@@ -35,7 +35,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
     for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
-        m_texGen[i].setMatrixStore(m_matrixStore);
+        m_texGen[i].setMatrixStore(m_vertexCtx.transformMatrices);
         m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
     }
 }
@@ -60,11 +60,11 @@ void VertexPipeline::transform(VertexParameter& parameter)
         {
             texgen::TexGenCalc { m_vertexCtx.texGen[tu] }.calculateTexGenCoords(
                 parameter.tex[tu],
-                m_matrixStore.getModelView(),
-                m_matrixStore.getNormal(),
+                m_vertexCtx.transformMatrices.modelView,
+                m_vertexCtx.transformMatrices.normal,
                 parameter.vertex,
                 parameter.normal);
-            parameter.tex[tu] = m_matrixStore.getTexture(tu).transform(parameter.tex[tu]);
+            parameter.tex[tu] = m_vertexCtx.transformMatrices.texture[tu].transform(parameter.tex[tu]);
         }
     }
 
@@ -72,17 +72,17 @@ void VertexPipeline::transform(VertexParameter& parameter)
     // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
     if (m_vertexCtx.lighting.lightingEnabled)
     {
-        Vec3 normal = m_matrixStore.getNormal().transform(parameter.normal);
+        Vec3 normal = m_vertexCtx.transformMatrices.normal.transform(parameter.normal);
 
         if (m_enableNormalizing)
         {
             normal.normalize();
         }
-        const Vec4 vl = m_matrixStore.getModelView().transform(parameter.vertex);
+        const Vec4 vl = m_vertexCtx.transformMatrices.modelView.transform(parameter.vertex);
         const Vec4 c = parameter.color;
         lighting::LightingCalc { m_vertexCtx.lighting }.calculateLights(parameter.color, c, vl, normal);
     }
-    parameter.vertex = m_matrixStore.getModelViewProjection().transform(parameter.vertex);
+    parameter.vertex = m_vertexCtx.transformMatrices.modelViewProjection.transform(parameter.vertex);
 }
 
 bool VertexPipeline::drawObj(const RenderObj& obj)
@@ -100,6 +100,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         return false;
     }
     obj.logCurrentConfig();
+
     m_primitiveAssembler.setDrawMode(obj.getDrawMode());
     m_primitiveAssembler.setExpectedPrimitiveCount(obj.getCount());
 

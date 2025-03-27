@@ -140,9 +140,9 @@ Vec3 TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal
     return eyeVertex3 - (eyeNormal * dotResult);
 }
 
-void TexGenSetter::setMatrixStore(const MatrixStore& matrixStore)
+void TexGenSetter::setMatrixStore(const matrixstore::TransformMatricesData& transformMatrices)
 {
-    m_matrixStore = &matrixStore;
+    m_transformMatrices = &transformMatrices;
 }
 
 void TexGenSetter::setTexGenData(TexGenData& texGenCalc)
@@ -197,17 +197,17 @@ void TexGenSetter::setTexGenVecObjR(const Vec4& val)
 
 void TexGenSetter::setTexGenVecEyeS(const Vec4& val)
 {
-    m_data->texGenVecEyeS = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecEyeS = m_transformMatrices->normal.transform(val);
 }
 
 void TexGenSetter::setTexGenVecEyeT(const Vec4& val)
 {
-    m_data->texGenVecEyeT = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecEyeT = m_transformMatrices->normal.transform(val);
 }
 
 void TexGenSetter::setTexGenVecEyeR(const Vec4& val)
 {
-    m_data->texGenVecEyeR = m_matrixStore->getNormal().transform(val);
+    m_data->texGenVecEyeR = m_transformMatrices->normal.transform(val);
 }
 
 } // namespace rr::texgen
