@@ -35,7 +35,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
     for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
-        m_texGen[i].setMatrixStore(m_vertexCtx.transformMatrices);
+        m_texGen[i].setNormalMat(m_vertexCtx.transformMatrices.normal);
         m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
     }
 }

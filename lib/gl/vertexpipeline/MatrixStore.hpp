@@ -28,12 +28,12 @@ namespace rr::matrixstore
 
 struct TransformMatricesData
 {
+    Mat44 modelViewProjection {};
+    std::array<Mat44, RenderConfig::TMU_COUNT> texture {};
     Mat44 modelView {};
     Mat44 projection {};
-    Mat44 modelViewProjection {};
     Mat44 normal {};
     Mat44 color {};
-    std::array<Mat44, RenderConfig::TMU_COUNT> texture {};
 };
 
 class MatrixStore

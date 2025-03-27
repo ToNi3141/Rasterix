@@ -62,8 +62,8 @@ private:
     struct VertexContext
     {
         matrixstore::TransformMatricesData transformMatrices {};
-        lighting::LightingData lighting {};
         viewport::ViewPortData viewPort {};
+        lighting::LightingData lighting {};
         culling::CullingData culling {};
         stencil::StencilData stencil {};
         std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
