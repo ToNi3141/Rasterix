@@ -77,24 +77,14 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
     {
         m_vertexCtx.tmuEnabled[i] = m_renderer.featureEnable().getEnableTmu(i);
     }
-
-    vertextransforming::VertexTransformingCalc vertexTransforming {
-        m_vertexCtx,
-        [this](const TransformedTriangle& triangle)
-        { return m_renderer.drawTriangle(triangle); },
-        [this](const StencilReg& stencilConf)
-        { return m_renderer.setStencilBufferConfig(stencilConf); },
-    };
+    m_renderer.setVertexContext(m_vertexCtx);
 
     primitiveassembler::PrimitiveAssemblerCalc primitiveAssembler { m_vertexCtx.viewPort, m_vertexCtx.primitiveAssembler };
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)
     {
-        VertexParameter param = fetch(obj, it);
-        if (!vertexTransforming.pushVertex(param))
-        {
-            return false;
-        }
+        VertexParameter vertex = fetch(obj, it);
+        m_renderer.pushVertex(vertex);
     }
 
     return true;

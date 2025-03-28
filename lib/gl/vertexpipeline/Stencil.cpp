@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Stencil.hpp"
+#include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Rasterizer.hpp"
 #include <spdlog/spdlog.h>
 

@@ -59,6 +59,7 @@
 #include "registers/TexEnvReg.hpp"
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "vertexpipeline/VertexTransforming.hpp"
 
 namespace rr
 {
@@ -73,6 +74,22 @@ public:
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     bool drawTriangle(const TransformedTriangle& triangle);
+
+    /// @brief Sets a new vertex context
+    /// @param ctx The vertex context with transformation matrices, light configs and others.
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx)
+    {
+        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
+            ctx,
+            drawTriangleLambda,
+            setStencilBufferConfigLambda,
+        };
+    }
+
+    /// @brief Pushes a vertex into the renderer
+    /// @param vertex The new vertex
+    /// @return true when the vertex was accepted. False could be a out of memory error.
+    bool pushVertex(VertexParameter& vertex) { return m_vertexTransform.pushVertex(vertex); }
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
@@ -331,6 +348,17 @@ private:
     IDevice& m_device;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+
+    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    { return drawTriangle(triangle); };
+    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    { return setStencilBufferConfig(stencilConf); };
+
+    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
+        {},
+        drawTriangleLambda,
+        setStencilBufferConfigLambda,
+    };
 
     // Instantiation of the displaylist assemblers
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};

@@ -81,6 +81,8 @@ public:
         return true;
     }
 
+    void* operator new(size_t, VertexTransformingCalc<TDrawTriangleFunc, TUpdateStencilFunc>* p) { return p; }
+
 private:
     void transform(VertexParameter& parameter)
     {

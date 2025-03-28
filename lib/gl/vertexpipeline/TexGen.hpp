@@ -19,7 +19,6 @@
 #define TEXGEN_HPP
 
 #include "Enums.hpp"
-#include "MatrixStore.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 

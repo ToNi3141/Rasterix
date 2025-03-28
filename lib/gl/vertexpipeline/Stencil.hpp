@@ -20,9 +20,14 @@
 
 #include "Enums.hpp"
 #include "math/Vec.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
+#include "renderer/Rasterizer.hpp"
+#include "renderer/registers/StencilReg.hpp"
 #include <optional>
 
+namespace rr
+{
+class PixelPipeline;
+} // namespace rr
 namespace rr::stencil
 {
 struct StencilData

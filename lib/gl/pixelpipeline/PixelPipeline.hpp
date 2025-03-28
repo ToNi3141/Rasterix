@@ -40,6 +40,9 @@ public:
     void swapDisplayList() { m_renderer.swapDisplayList(); }
     void uploadDisplayList() { m_renderer.uploadDisplayList(); }
 
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
+    bool pushVertex(VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
+
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
 
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
