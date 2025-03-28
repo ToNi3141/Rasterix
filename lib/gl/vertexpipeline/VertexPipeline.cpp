@@ -31,13 +31,14 @@
 namespace rr
 {
 VertexPipeline::VertexPipeline(PixelPipeline& renderer)
-    : m_renderer(renderer)
+    : m_renderer { renderer }
 {
     for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
         m_texGen[i].setNormalMat(m_vertexCtx.transformMatrices.normal);
         m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
     }
+    setEnableNormalizing(true);
 }
 
 VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
@@ -79,7 +80,6 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
     }
     m_renderer.setVertexContext(m_vertexCtx);
 
-    primitiveassembler::PrimitiveAssemblerCalc primitiveAssembler { m_vertexCtx.viewPort, m_vertexCtx.primitiveAssembler };
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)
     {
