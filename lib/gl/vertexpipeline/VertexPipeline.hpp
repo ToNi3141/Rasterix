@@ -69,7 +69,9 @@ private:
     std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
-    stencil::StencilSetter m_stencil { m_renderer, m_vertexCtx.stencil };
+    stencil::StencilSetter m_stencil { [this](const StencilReg& reg)
+        { return m_renderer.setStencilBufferConfig(reg); },
+        m_vertexCtx.stencil };
     lighting::LightingSetter m_lighting { m_vertexCtx.lighting };
     viewport::ViewPortSetter m_viewPort { m_vertexCtx.viewPort };
     matrixstore::MatrixStore m_matrixStore { m_vertexCtx.transformMatrices };

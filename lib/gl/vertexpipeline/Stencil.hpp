@@ -22,12 +22,8 @@
 #include "math/Vec.hpp"
 #include "renderer/Rasterizer.hpp"
 #include "renderer/registers/StencilReg.hpp"
-#include <optional>
+#include <functional>
 
-namespace rr
-{
-class PixelPipeline;
-} // namespace rr
 namespace rr::stencil
 {
 struct StencilData
@@ -66,7 +62,7 @@ private:
 class StencilSetter
 {
 public:
-    StencilSetter(PixelPipeline& renderer, StencilData& stencilData);
+    StencilSetter(const std::function<bool(const StencilReg&)>& sender, StencilData& stencilData);
 
     void setTestFunc(const TestFunc val) { stencilConfig().setTestFunc(val); }
     void setOpZPass(const StencilOp val) { stencilConfig().setOpZPass(val); }
@@ -95,12 +91,12 @@ private:
     StencilReg& stencilConfig();
     const StencilReg& stencilConfig() const { return stencilConfig(); };
 
-    PixelPipeline& m_renderer;
+    std::function<bool(const StencilReg&)> m_sender {};
     StencilData& m_data;
 
+    bool m_stencilDirty { true };
     StencilFace m_stencilFace { StencilFace::FRONT };
     StencilReg m_stencilConf {};
-    StencilReg m_stencilConfUploaded {};
 };
 
 } // namespace rr::stencil

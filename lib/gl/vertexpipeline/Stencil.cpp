@@ -16,17 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Stencil.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/Rasterizer.hpp"
 #include <spdlog/spdlog.h>
 
 namespace rr::stencil
 {
-StencilSetter::StencilSetter(PixelPipeline& renderer, StencilData& stencilData)
-    : m_renderer { renderer }
+StencilSetter::StencilSetter(const std::function<bool(const StencilReg&)>& sender, StencilData& stencilData)
+    : m_sender { sender }
     , m_data { stencilData }
 {
-    m_renderer.setStencilBufferConfig(m_stencilConf);
+    m_sender(m_stencilConf);
 }
 
 StencilReg& StencilSetter::stencilConfig()
@@ -39,6 +38,7 @@ StencilReg& StencilSetter::stencilConfig()
         }
         return m_data.stencilConfBack;
     }
+    m_stencilDirty = true;
     return m_stencilConf;
 }
 
@@ -46,10 +46,10 @@ bool StencilSetter::update()
 {
     bool ret { true };
 
-    // if (!config.enableTwoSideStencil && m_stencilConfUploaded.serialize() != m_stencilConf.serialize())
+    if (!m_data.enableTwoSideStencil && m_stencilDirty)
     {
-        ret = ret && m_renderer.setStencilBufferConfig(m_stencilConf);
-        m_stencilConfUploaded = m_stencilConf;
+        ret = m_sender(m_stencilConf);
+        m_stencilDirty = !ret;
     }
 
     return ret;
