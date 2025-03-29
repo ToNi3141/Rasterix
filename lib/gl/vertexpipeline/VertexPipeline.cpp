@@ -38,7 +38,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
         m_texGen[i].setNormalMat(m_vertexCtx.transformMatrices.normal);
         m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
     }
-    setEnableNormalizing(true);
+    setEnableNormalizing(false);
 }
 
 VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
