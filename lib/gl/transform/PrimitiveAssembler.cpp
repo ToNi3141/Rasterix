@@ -29,12 +29,12 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
 
     switch (m_primitiveAssemblerData.mode)
     {
-    case RenderObj::DrawMode::TRIANGLES:
+    case DrawMode::TRIANGLES:
         m_triangleBuffer[0] = { m_queue[0], m_queue[1], m_queue[2] };
         m_decrement = 3;
         break;
-    case RenderObj::DrawMode::POLYGON:
-    case RenderObj::DrawMode::TRIANGLE_FAN:
+    case DrawMode::POLYGON:
+    case DrawMode::TRIANGLE_FAN:
         if (m_count == 0)
         {
             m_pTmp = m_queue[0];
@@ -42,7 +42,7 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
         m_triangleBuffer[0] = { m_pTmp, m_queue[1], m_queue[2] };
         m_decrement = 1;
         break;
-    case RenderObj::DrawMode::TRIANGLE_STRIP:
+    case DrawMode::TRIANGLE_STRIP:
         if (m_count & 0x1)
         {
             m_triangleBuffer[0] = { m_queue[1], m_queue[0], m_queue[2] };
@@ -53,7 +53,7 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
         }
         m_decrement = 1;
         break;
-    case RenderObj::DrawMode::QUADS:
+    case DrawMode::QUADS:
         if (m_count & 0x1)
         {
             m_triangleBuffer[0] = { m_pTmp, m_queue[1], m_queue[2] };
@@ -67,7 +67,7 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
             m_decrement = 1;
         }
         break;
-    case RenderObj::DrawMode::QUAD_STRIP:
+    case DrawMode::QUAD_STRIP:
         if (m_count & 0x1)
         {
             m_triangleBuffer[0] = { m_queue[0], m_queue[2], m_queue[1] };
@@ -99,12 +99,12 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
 
     switch (m_primitiveAssemblerData.mode)
     {
-    case RenderObj::DrawMode::LINES:
+    case DrawMode::LINES:
         p0 = &m_queue[0];
         p1 = &m_queue[1];
         m_decrement = 2;
         break;
-    case RenderObj::DrawMode::LINE_LOOP:
+    case DrawMode::LINE_LOOP:
         if (m_count == 0)
         {
             m_pTmp = m_queue[0];
@@ -121,7 +121,7 @@ tcb::span<const PrimitiveAssemblerCalc::Triangle> PrimitiveAssemblerCalc::constr
         }
         m_decrement = 1;
         break;
-    case RenderObj::DrawMode::LINE_STRIP:
+    case DrawMode::LINE_STRIP:
         p0 = &m_queue[0];
         p1 = &m_queue[1];
         m_decrement = 1;
@@ -191,9 +191,9 @@ void PrimitiveAssemblerCalc::updateMode()
 {
     switch (m_primitiveAssemblerData.mode)
     {
-    case RenderObj::DrawMode::LINES:
-    case RenderObj::DrawMode::LINE_LOOP:
-    case RenderObj::DrawMode::LINE_STRIP:
+    case DrawMode::LINES:
+    case DrawMode::LINE_LOOP:
+    case DrawMode::LINE_STRIP:
         m_line = true;
         break;
     default:

@@ -19,24 +19,24 @@ TEMPLATE = app
 TARGET = qtRasterizerFpga
 
 SOURCES += main.cpp\
-    $${RRXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
         mainwindow.cpp \
     $${RRXGL_PATH}/RRXGL.cpp \
-    $${RRXGL_PATH}/vertexpipeline/Clipper.cpp \
-    $${RRXGL_PATH}/vertexpipeline/Lighting.cpp \
-    $${RRXGL_PATH}/vertexpipeline/TexGen.cpp \
+    $${RRXGL_PATH}/transform/Clipper.cpp \
+    $${RRXGL_PATH}/transform/Lighting.cpp \
+    $${RRXGL_PATH}/transform/TexGen.cpp \
+    $${RRXGL_PATH}/transform/ViewPort.cpp \
+    $${RRXGL_PATH}/transform/MatrixStore.cpp \
+    $${RRXGL_PATH}/transform/Culling.cpp \
+    $${RRXGL_PATH}/transform/PrimitiveAssembler.cpp \
+    $${RRXGL_PATH}/transform/Stencil.cpp \
+    $${RRXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
     $${RRXGL_PATH}/vertexpipeline/RenderObj.cpp \
     $${RRXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
     $${RRXGL_PATH}/glImpl.cpp \
     $${RRXGL_PATH}/renderer/Rasterizer.cpp \
     $${RRXGL_PATH}/renderer/Renderer.cpp \
-    $${RRXGL_PATH}/vertexpipeline/ViewPort.cpp \
-    $${RRXGL_PATH}/vertexpipeline/MatrixStore.cpp \
-    $${RRXGL_PATH}/vertexpipeline/Culling.cpp \
-    $${RRXGL_PATH}/vertexpipeline/PrimitiveAssembler.cpp \
     $${RRXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RRXGL_PATH}/pixelpipeline/Texture.cpp \
-    $${RRXGL_PATH}/vertexpipeline/Stencil.cpp \
     $${RRXGL_PATH}/gl.cpp \
     $${RRXGL_PATH}/glu.cpp
 

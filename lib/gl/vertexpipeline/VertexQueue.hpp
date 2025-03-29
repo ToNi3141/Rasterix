@@ -18,6 +18,7 @@
 #ifndef VERTEXQUEUE_HPP_
 #define VERTEXQUEUE_HPP_
 
+#include "Enums.hpp"
 #include "RenderObj.hpp"
 #include "math/Vec.hpp"
 #include <vector>
@@ -27,9 +28,6 @@ namespace rr
 class VertexQueue
 {
 public:
-    using DrawMode = RenderObj::DrawMode;
-    using Type = RenderObj::Type;
-
     void setActiveTexture(const std::size_t tmu) { m_tmu = tmu; }
 
     void begin(const DrawMode drawMode)
@@ -57,7 +55,7 @@ public:
 
         m_objBeginEnd.enableVertexArray(!m_vertexBuffer.empty());
         m_objBeginEnd.setVertexSize(4);
-        m_objBeginEnd.setVertexType(RenderObj::Type::FLOAT);
+        m_objBeginEnd.setVertexType(Type::FLOAT);
         m_objBeginEnd.setVertexStride(0);
         m_objBeginEnd.setVertexPointer(m_vertexBuffer.data());
 
@@ -65,19 +63,19 @@ public:
         {
             m_objBeginEnd.enableTexCoordArray(i, !m_textureVertexBuffer.empty());
             m_objBeginEnd.setTexCoordSize(i, 4);
-            m_objBeginEnd.setTexCoordType(i, RenderObj::Type::FLOAT);
+            m_objBeginEnd.setTexCoordType(i, Type::FLOAT);
             m_objBeginEnd.setTexCoordStride(i, RenderObj::MAX_TMU_COUNT * sizeof(Vec4));
             m_objBeginEnd.setTexCoordPointer(i, m_textureVertexBuffer.data() + i);
         }
 
         m_objBeginEnd.enableNormalArray(!m_normalVertexBuffer.empty());
-        m_objBeginEnd.setNormalType(RenderObj::Type::FLOAT);
+        m_objBeginEnd.setNormalType(Type::FLOAT);
         m_objBeginEnd.setNormalStride(0);
         m_objBeginEnd.setNormalPointer(m_normalVertexBuffer.data());
 
         m_objBeginEnd.enableColorArray(!m_colorVertexBuffer.empty());
         m_objBeginEnd.setColorSize(4);
-        m_objBeginEnd.setColorType(RenderObj::Type::FLOAT);
+        m_objBeginEnd.setColorType(Type::FLOAT);
         m_objBeginEnd.setColorStride(0);
         m_objBeginEnd.setColorPointer(m_colorVertexBuffer.data());
 

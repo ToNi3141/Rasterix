@@ -21,8 +21,6 @@
 #include "TextureConverter.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/Types.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
@@ -3596,13 +3594,13 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     switch (type)
     {
     case GL_UNSIGNED_BYTE:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::BYTE);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::BYTE);
         break;
     case GL_UNSIGNED_SHORT:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::UNSIGNED_SHORT);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::UNSIGNED_SHORT);
         break;
     case GL_UNSIGNED_INT:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::UNSIGNED_INT);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::UNSIGNED_INT);
         break;
     default:
         RRXGL::getInstance().setError(GL_INVALID_ENUM);

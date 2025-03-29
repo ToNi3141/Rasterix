@@ -25,13 +25,6 @@
 namespace rr
 {
 
-enum class Face
-{
-    BACK,
-    FRONT,
-    FRONT_AND_BACK
-};
-
 struct VertexParameter
 {
     Vec4 vertex;

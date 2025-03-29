@@ -20,8 +20,8 @@
 
 #include <tcb/span.hpp>
 
+#include "Enums.hpp"
 #include "FixedSizeQueue.hpp"
-#include "RenderObj.hpp"
 #include "Types.hpp"
 #include "ViewPort.hpp"
 
@@ -30,7 +30,7 @@ namespace rr::primitiveassembler
 
 struct PrimitiveAssemblerData
 {
-    RenderObj::DrawMode mode;
+    DrawMode mode;
     std::size_t primitiveCount;
     float lineWidth;
 };
@@ -98,7 +98,7 @@ public:
     }
 
     void setExpectedPrimitiveCount(const std::size_t count) { m_data.primitiveCount = count; }
-    void setDrawMode(const RenderObj::DrawMode mode) { m_data.mode = mode; };
+    void setDrawMode(const DrawMode mode) { m_data.mode = mode; };
     void setLineWidth(const float width) { m_data.lineWidth = width; }
 
 private:

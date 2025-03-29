@@ -18,16 +18,16 @@
 #ifndef VERTEXTRANSFORMING_HPP
 #define VERTEXTRANSFORMING_HPP
 
+#include "Clipper.hpp"
+#include "Culling.hpp"
+#include "Lighting.hpp"
+#include "MatrixStore.hpp"
+#include "PrimitiveAssembler.hpp"
 #include "RenderConfigs.hpp"
+#include "Stencil.hpp"
+#include "TexGen.hpp"
+#include "ViewPort.hpp"
 #include "math/Vec.hpp"
-#include "vertexpipeline/Clipper.hpp"
-#include "vertexpipeline/Culling.hpp"
-#include "vertexpipeline/Lighting.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/PrimitiveAssembler.hpp"
-#include "vertexpipeline/Stencil.hpp"
-#include "vertexpipeline/TexGen.hpp"
-#include "vertexpipeline/ViewPort.hpp"
 #include <bitset>
 #include <tcb/span.hpp>
 

@@ -153,6 +153,36 @@ enum class ColorMaterialTracking
     EMISSION
 };
 
+enum DrawMode
+{
+    TRIANGLES,
+    TRIANGLE_FAN,
+    TRIANGLE_STRIP,
+    POLYGON,
+    QUADS,
+    QUAD_STRIP,
+    LINES,
+    LINE_STRIP,
+    LINE_LOOP
+};
+
+enum Type
+{
+    BYTE,
+    UNSIGNED_BYTE,
+    SHORT,
+    UNSIGNED_SHORT,
+    FLOAT,
+    UNSIGNED_INT
+};
+
+enum class Face
+{
+    BACK,
+    FRONT,
+    FRONT_AND_BACK
+};
+
 } // namespace rr
 
 #endif // _ENUMS_HPP_

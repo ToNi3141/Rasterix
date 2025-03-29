@@ -59,7 +59,7 @@
 #include "registers/TexEnvReg.hpp"
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
-#include "vertexpipeline/VertexTransforming.hpp"
+#include "transform/VertexTransforming.hpp"
 
 namespace rr
 {

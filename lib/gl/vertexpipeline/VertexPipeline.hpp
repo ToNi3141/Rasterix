@@ -18,22 +18,19 @@
 #ifndef VERTEXPIPELINE_HPP
 #define VERTEXPIPELINE_HPP
 
-#include "FixedSizeQueue.hpp"
 #include "RenderObj.hpp"
-#include "Stack.hpp"
-#include "Types.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/Clipper.hpp"
-#include "vertexpipeline/Culling.hpp"
-#include "vertexpipeline/Lighting.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/PrimitiveAssembler.hpp"
-#include "vertexpipeline/Stencil.hpp"
-#include "vertexpipeline/TexGen.hpp"
-#include "vertexpipeline/VertexTransforming.hpp"
-#include "vertexpipeline/ViewPort.hpp"
+#include "transform/Clipper.hpp"
+#include "transform/Culling.hpp"
+#include "transform/Lighting.hpp"
+#include "transform/MatrixStore.hpp"
+#include "transform/PrimitiveAssembler.hpp"
+#include "transform/Stencil.hpp"
+#include "transform/TexGen.hpp"
+#include "transform/VertexTransforming.hpp"
+#include "transform/ViewPort.hpp"
 #include <cstdint>
 
 namespace rr

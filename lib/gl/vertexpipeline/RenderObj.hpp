@@ -18,6 +18,7 @@
 #ifndef RENDEROBJ_HPP
 #define RENDEROBJ_HPP
 
+#include "Enums.hpp"
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
 #include <array>
@@ -30,29 +31,6 @@ class RenderObj
 {
 public:
     static constexpr std::size_t MAX_TMU_COUNT { RenderConfig::TMU_COUNT };
-
-    enum DrawMode
-    {
-        TRIANGLES,
-        TRIANGLE_FAN,
-        TRIANGLE_STRIP,
-        POLYGON,
-        QUADS,
-        QUAD_STRIP,
-        LINES,
-        LINE_STRIP,
-        LINE_LOOP
-    };
-
-    enum Type
-    {
-        BYTE,
-        UNSIGNED_BYTE,
-        SHORT,
-        UNSIGNED_SHORT,
-        FLOAT,
-        UNSIGNED_INT
-    };
 
     RenderObj();
 
