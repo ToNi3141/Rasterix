@@ -22,8 +22,7 @@ namespace rr::texgen
 
 void TexGenCalc::calculateTexGenCoords(
     Vec4& st0,
-    const Mat44& modelViewMat,
-    const Mat44& normalMat,
+    const matrixstore::TransformMatricesData& matrices,
     const Vec4& v0,
     const Vec3& n0) const
 {
@@ -39,19 +38,19 @@ void TexGenCalc::calculateTexGenCoords(
             || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
             || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
         {
-            calculateEyeLinear(st0, modelViewMat.transform(v0));
+            calculateEyeLinear(st0, matrices.modelView.transform(v0));
         }
         if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
             || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
             || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
         {
-            calculateSphereMap(st0, modelViewMat.transform(v0), normalMat.transform(n0));
+            calculateSphereMap(st0, matrices.modelView.transform(v0), matrices.normal.transform(n0));
         }
         if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
             || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
             || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
         {
-            calculateReflectionMap(st0, modelViewMat.transform(v0), normalMat.transform(n0));
+            calculateReflectionMap(st0, matrices.modelView.transform(v0), matrices.normal.transform(n0));
         }
     }
 }

@@ -92,8 +92,7 @@ private:
             {
                 texgen::TexGenCalc { m_data.texGen[tu] }.calculateTexGenCoords(
                     parameter.tex[tu],
-                    m_data.transformMatrices.modelView,
-                    m_data.transformMatrices.normal,
+                    m_data.transformMatrices,
                     parameter.vertex,
                     parameter.normal);
                 parameter.tex[tu] = m_data.transformMatrices.texture[tu].transform(parameter.tex[tu]);

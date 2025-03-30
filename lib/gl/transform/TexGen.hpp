@@ -21,6 +21,7 @@
 #include "Enums.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
+#include "transform/MatrixStore.hpp"
 
 namespace rr::texgen
 {
@@ -51,8 +52,7 @@ public:
 
     void calculateTexGenCoords(
         Vec4& st0,
-        const Mat44& modelViewMat,
-        const Mat44& normalMat,
+        const matrixstore::TransformMatricesData& matrices,
         const Vec4& v0,
         const Vec3& n0) const;
 
