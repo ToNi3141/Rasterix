@@ -57,8 +57,7 @@ bool PixelPipeline::setClearDepth(const float depth)
 
 bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
 {
-    bool ret = updatePipeline();
-    return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);
+    return m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);
 }
 
 } // namespace rr

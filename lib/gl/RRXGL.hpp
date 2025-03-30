@@ -42,8 +42,7 @@ public:
     void setError(const uint32_t error) { m_error = error; }
     uint32_t getError() const { return m_error; }
 
-    VertexPipeline& vertexPipeline();
-    PixelPipeline& pixelPipeline();
+    VertexPipeline& pipeline();
     VertexQueue& vertexQueue();
     VertexArray& vertexArray();
 

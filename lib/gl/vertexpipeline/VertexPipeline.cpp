@@ -63,8 +63,8 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         return true;
     }
     m_matrixStore.recalculateMatrices();
-    stencil().update();
-    if (!m_renderer.updatePipeline())
+
+    if (!updatePipeline())
     {
         SPDLOG_ERROR("drawObj(): Cannot update pixel pipeline");
         return false;
@@ -88,6 +88,20 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
     }
 
     return true;
+}
+
+bool VertexPipeline::updatePipeline()
+{
+    bool ret = m_renderer.updatePipeline();
+    ret = ret && stencil().update();
+    return ret;
+}
+
+bool VertexPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
+{
+    bool ret = updatePipeline();
+    ret = ret && m_renderer.clearFramebuffer(frameBuffer, zBuffer, stencilBuffer);
+    return ret;
 }
 
 } // namespace rr

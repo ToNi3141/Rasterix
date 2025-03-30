@@ -40,14 +40,44 @@ class VertexPipeline
 public:
     VertexPipeline(PixelPipeline& renderer);
 
+    // Drawing
     bool drawObj(const RenderObj& obj);
-    void setEnableNormalizing(const bool enable) { m_vertexCtx.normalizeLightNormal = enable; }
+
+    // Misc
     void activateTmu(const std::size_t tmu)
     {
         m_tmu = tmu;
         m_matrixStore.setTmu(tmu);
     }
 
+    // Switching and uploading of display lists
+    void swapDisplayList() { m_renderer.swapDisplayList(); }
+    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
+
+    // General configs
+    bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
+    bool setScissorBox(const int32_t x,
+        const int32_t y,
+        const uint32_t width,
+        const uint32_t height)
+    {
+        return m_renderer.setScissorBox(x, y, width, height);
+    }
+    void setEnableNormalizing(const bool enable) { m_vertexCtx.normalizeLightNormal = enable; }
+    void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
+
+    // Framebuffer
+    bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
+    bool setClearColor(const Vec4& color) { return m_renderer.setClearColor(color); };
+    bool setClearDepth(const float depth) { return m_renderer.setClearDepth(depth); };
+
+    // Pixel pipeline configs
+    Fogging& fog() { return m_renderer.fog(); }
+    Texture& texture() { return m_renderer.texture(); }
+    FragmentPipeline& fragmentPipeline() { return m_renderer.fragmentPipeline(); }
+    FeatureEnable& featureEnable() { return m_renderer.featureEnable(); }
+
+    // Vertex pipeline configs
     stencil::StencilSetter& stencil() { return m_stencil; }
     lighting::LightingSetter& getLighting() { return m_lighting; }
     texgen::TexGenSetter& getTexGen() { return m_texGen[m_tmu]; }
@@ -57,8 +87,11 @@ public:
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
+    bool pushVertex(VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
+    bool updatePipeline();
 
     vertextransforming::VertexTransformingData m_vertexCtx {};
 
