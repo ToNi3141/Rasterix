@@ -34,15 +34,18 @@ public:
     {
     }
 
-    void streamDisplayList(const uint8_t index, const uint32_t size) override
+    void streamDisplayList(const uint8_t index, uint32_t size) override
     {
-        const std::size_t commandSize = addDseStreamCommand(index, size);
+        size = fillWhenDataIsTooSmall(index, size);
+        const uint32_t commandSize = addDseStreamCommand(index, size);
         m_busConnector.writeData(index, size + commandSize);
     }
 
     void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
-        const std::size_t commandSize = addDseStoreCommand(data.size(), addr + RenderConfig::GRAM_MEMORY_LOC);
+        const uint32_t commandSize = addDseStoreCommand(
+            (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
+            addr + RenderConfig::GRAM_MEMORY_LOC);
         addDseStorePayload(commandSize, data);
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     }
@@ -64,29 +67,29 @@ public:
     }
 
 private:
-    std::size_t getStoreBufferIndex() const
+    uint32_t getStoreBufferIndex() const
     {
         return m_busConnector.getBufferCount() - 1;
     }
 
-    std::size_t addDseStreamCommand(const uint8_t index, const uint32_t size)
+    uint32_t addDseStreamCommand(const uint8_t index, const uint32_t size)
     {
         return addDseCommand(index, OP_STREAM, size, 0);
     }
 
-    std::size_t addDseStoreCommand(const uint32_t size, const uint32_t addr)
+    uint32_t addDseStoreCommand(const uint32_t size, const uint32_t addr)
     {
         return addDseCommand(getStoreBufferIndex(), OP_STORE, size, addr);
     }
 
-    std::size_t addDseStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
+    uint32_t addDseStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
     {
         tcb::span<uint8_t> s = m_busConnector.requestBuffer(getStoreBufferIndex());
         std::copy(payload.begin(), payload.end(), s.last(s.size() - offset).begin());
-        return (std::max)(payload.size(), DEVICE_MIN_TRANSFER_SIZE);
+        return (std::max)(static_cast<uint32_t>(payload.size()), DEVICE_MIN_TRANSFER_SIZE);
     }
 
-    std::size_t addDseCommand(
+    uint32_t addDseCommand(
         const uint8_t index,
         const uint32_t op,
         const uint32_t size,
@@ -97,6 +100,16 @@ private:
         c->op = op | (IMM_MASK & size);
         c->addr = addr;
         return sizeof(Command);
+    }
+
+    uint32_t fillWhenDataIsTooSmall(const uint8_t index, const uint32_t size)
+    {
+        if (size < DEVICE_MIN_TRANSFER_SIZE)
+        {
+            tcb::span<uint8_t> buffer = requestDisplayListBuffer(index).subspan(size, DEVICE_MIN_TRANSFER_SIZE - size);
+            std::fill(buffer.begin(), buffer.end(), 0);
+        }
+        return (std::max)(size, DEVICE_MIN_TRANSFER_SIZE);
     }
 
     IBusConnector& m_busConnector;

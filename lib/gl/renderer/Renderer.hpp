@@ -38,7 +38,9 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
+#include "commands/PushVertexCmd.hpp"
 #include "commands/RegularTriangleCmd.hpp"
+#include "commands/SetVertexCtxCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
@@ -77,19 +79,12 @@ public:
 
     /// @brief Sets a new vertex context
     /// @param ctx The vertex context with transformation matrices, light configs and others.
-    void setVertexContext(const vertextransforming::VertexTransformingData& ctx)
-    {
-        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            ctx,
-            drawTriangleLambda,
-            setStencilBufferConfigLambda,
-        };
-    }
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx);
 
     /// @brief Pushes a vertex into the renderer
     /// @param vertex The new vertex
     /// @return true when the vertex was accepted. False could be a out of memory error.
-    bool pushVertex(VertexParameter& vertex) { return m_vertexTransform.pushVertex(vertex); }
+    bool pushVertex(VertexParameter& vertex);
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers

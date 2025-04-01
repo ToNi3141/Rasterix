@@ -29,7 +29,9 @@
 #include "renderer/commands/FogLutStreamCmd.hpp"
 #include "renderer/commands/FramebufferCmd.hpp"
 #include "renderer/commands/NopCmd.hpp"
+#include "renderer/commands/PushVertexCmd.hpp"
 #include "renderer/commands/RegularTriangleCmd.hpp"
+#include "renderer/commands/SetVertexCtxCmd.hpp"
 #include "renderer/commands/TextureStreamCmd.hpp"
 #include "renderer/commands/TriangleStreamCmd.hpp"
 #include "renderer/commands/WriteRegisterCmd.hpp"
@@ -101,10 +103,54 @@ public:
     }
 
 private:
+    // It is advantageous to split the display list in smaller chunks for uploading.
+    // The goal is to start a rendering as early as possible and to run the rendering
+    // and transforming in parallel.
+    static constexpr std::size_t VERTEX_INTERMEDIATE_UPLOAD_SIZE { 100 };
+
+    // This describes the free capacity in the display list for the triangles.
+    // When the triangle is transformed and clipped, around 9 new triangles can
+    // be generated. This variable keeps a minimum of 10 (to be safe) triangle
+    // commands in the display list free for the worst case.
+    static constexpr std::size_t TRIANGLE_RESERVE_CAPACITY { 10 };
+
     template <typename TCmd>
     bool copyCmd(displaylist::DisplayList& src)
     {
         return m_displayLists.getBack().copyCommand<TCmd>(src);
+    }
+
+    bool setVertexCtx(displaylist::DisplayList& src)
+    {
+        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(SetVertexCtxCmd {}.payload()[0])>::type>::type;
+        src.getNext<typename SetVertexCtxCmd::CommandType>();
+        const PayloadType* t = src.getNext<PayloadType>();
+
+        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
+            t->ctx,
+            drawTriangleLambda,
+            setStencilBufferConfigLambda,
+        };
+
+        m_verticesInList = 0;
+
+        return true;
+    }
+
+    bool pushVertex(displaylist::DisplayList& src)
+    {
+        if (m_displayLists.getBack().getFreeSpace() < (m_displayLists.getBack().getCommandSize<TriangleStreamCmd>(1) * TRIANGLE_RESERVE_CAPACITY)
+            || (m_verticesInList >= VERTEX_INTERMEDIATE_UPLOAD_SIZE))
+        {
+            swapAndPrepareDisplayList();
+            m_verticesInList = 0;
+        }
+        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(PushVertexCmd {}.payload()[0])>::type>::type;
+        src.getNext<typename PushVertexCmd::CommandType>();
+        const PayloadType* t = src.getNext<PayloadType>();
+
+        PayloadType cpy = *t;
+        return m_vertexTransform.pushVertex(cpy.vertex);
     }
 
     bool addTriangleCmd(displaylist::DisplayList& src)
@@ -118,24 +164,38 @@ private:
         src.getNext<typename RegularTriangleCmd::CommandType>();
         const PayloadType* t = src.getNext<PayloadType>();
 
-        TriangleStreamCmd tsc {
-            m_rasterizer,
-            {
-                t->vertex0,
-                t->vertex1,
-                t->vertex2,
-                t->texture0,
-                t->texture1,
-                t->texture2,
-                t->color0,
-                t->color1,
-                t->color2,
-            },
-        };
+        return addTriangleCmd({
+                                  t->vertex0,
+                                  t->vertex1,
+                                  t->vertex2,
+                                  t->texture0,
+                                  t->texture1,
+                                  t->texture2,
+                                  t->color0,
+                                  t->color1,
+                                  t->color2,
+                              },
+            t->lineStart, t->lineEnd);
+    }
+
+    bool addTriangleCmd(const TransformedTriangle& triangle, const std::size_t lineStart, const std::size_t lineEnd)
+    {
+        TriangleStreamCmd tsc { m_rasterizer, triangle };
 
         if (tsc.isVisible())
         {
-            m_displayLists.getBack().addCommand(tsc.getIncremented(t->lineStart, t->lineEnd));
+            return m_displayLists.getBack().addCommand(tsc.getIncremented(lineStart, lineEnd));
+        }
+        return true;
+    }
+
+    bool addTriangleCmd(const TransformedTriangle& triangle)
+    {
+        TriangleStreamCmd tsc { m_rasterizer, triangle };
+
+        if (tsc.isVisible())
+        {
+            return m_displayLists.getBack().addCommand(tsc);
         }
         return true;
     }
@@ -187,6 +247,14 @@ private:
         {
             ret = copyCmd<TriangleStreamCmd>(srcList);
         }
+        else if (SetVertexCtxCmd::isThis(op))
+        {
+            ret = setVertexCtx(srcList);
+        }
+        else if (PushVertexCmd::isThis(op))
+        {
+            ret = pushVertex(srcList);
+        }
         else if (WriteRegisterCmd<BaseColorReg>::isThis(op))
         {
             updateRasterizer(srcList);
@@ -229,6 +297,11 @@ private:
         m_displayLists.getBack().clearAssembler();
     }
 
+    bool setStencilBufferConfig(const StencilReg& stencilConf)
+    {
+        return m_displayLists.getBack().addCommand(WriteRegisterCmd<StencilReg> { stencilConf });
+    }
+
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
 
     IDevice& m_device;
@@ -239,6 +312,22 @@ private:
         m_displayListAssembler[1],
     };
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+
+    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    {
+        m_verticesInList++;
+        return addTriangleCmd(triangle);
+    };
+    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    { return setStencilBufferConfig(stencilConf); };
+
+    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
+        {},
+        drawTriangleLambda,
+        setStencilBufferConfigLambda,
+    };
+
+    std::size_t m_verticesInList { 0 };
 };
 
 } // namespace rr
