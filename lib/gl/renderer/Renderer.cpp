@@ -123,7 +123,7 @@ void Renderer::intermediateUpload()
     // thread can occur.
     // It can only work for single lists. Loading of partial framebuffers in the rrxif config
     // is not supported which is a requirement to get it to work.
-    if constexpr (!RenderConfig::THREADED_RASTERIZATION
+    if (!RenderConfig::THREADED_RASTERIZATION
         && m_displayListBuffer.getBack().singleList())
     {
         switchDisplayLists();
