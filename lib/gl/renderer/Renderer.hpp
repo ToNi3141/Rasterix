@@ -84,7 +84,7 @@ public:
     /// @brief Pushes a vertex into the renderer
     /// @param vertex The new vertex
     /// @return true when the vertex was accepted. False could be a out of memory error.
-    bool pushVertex(VertexParameter& vertex);
+    bool pushVertex(const VertexParameter& vertex) { return pushVertexImpl(vertex); }
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
@@ -344,6 +344,25 @@ private:
             return addMultiListTriangle(triangleCmd);
         }
         return true;
+    }
+
+    // Inlining this function enables the return code optimization from the start of the chain to the transformation
+    bool pushVertexImpl(const VertexParameter& vertex)
+    {
+        if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
+        {
+            return m_vertexTransform.pushVertex(vertex);
+        }
+
+        if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
+        {
+            if (!addCommand(PushVertexCmd { vertex }))
+            {
+                SPDLOG_CRITICAL("Cannot push vertex into queue. This may brake the rendering.");
+                return false;
+            }
+            return true;
+        }
     }
 
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }

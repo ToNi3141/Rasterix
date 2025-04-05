@@ -61,7 +61,7 @@ public:
     {
     }
 
-    bool pushVertex(VertexParameter& param)
+    bool pushVertex(VertexParameter param)
     {
         transform(param);
         m_primitiveAssembler.pushParameter(param);

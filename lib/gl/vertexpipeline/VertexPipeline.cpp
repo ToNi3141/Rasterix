@@ -83,8 +83,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)
     {
-        VertexParameter vertex = fetch(obj, it);
-        m_renderer.pushVertex(vertex);
+        m_renderer.pushVertex(fetch(obj, it));
     }
 
     return true;

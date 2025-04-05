@@ -87,24 +87,6 @@ void Renderer::setVertexContext(const vertextransforming::VertexTransformingData
     }
 }
 
-bool Renderer::pushVertex(VertexParameter& vertex)
-{
-    if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
-    {
-        return m_vertexTransform.pushVertex(vertex);
-    }
-
-    if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
-    {
-        if (!addCommand(PushVertexCmd { vertex }))
-        {
-            SPDLOG_CRITICAL("Cannot push vertex into queue. This may brake the rendering.");
-            return false;
-        }
-        return true;
-    }
-}
-
 void Renderer::initDisplayLists()
 {
     for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)

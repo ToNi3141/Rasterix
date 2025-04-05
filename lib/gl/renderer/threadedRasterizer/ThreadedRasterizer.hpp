@@ -147,10 +147,7 @@ private:
         }
         using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(PushVertexCmd {}.payload()[0])>::type>::type;
         src.getNext<typename PushVertexCmd::CommandType>();
-        const PayloadType* t = src.getNext<PayloadType>();
-
-        PayloadType cpy = *t;
-        return m_vertexTransform.pushVertex(cpy.vertex);
+        return m_vertexTransform.pushVertex(src.getNext<PayloadType>()->vertex);
     }
 
     bool addTriangleCmd(displaylist::DisplayList& src)

@@ -41,7 +41,7 @@ public:
     void uploadDisplayList() { m_renderer.uploadDisplayList(); }
 
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
-    bool pushVertex(VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
+    bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
 
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
 
