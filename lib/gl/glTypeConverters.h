@@ -18,12 +18,12 @@
 #ifndef GL_TYPE_CONVERTERS_H
 #define GL_TYPE_CONVERTERS_H
 
+#include "Enums.hpp"
 #include "RRXGL.hpp"
 #include "gl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "pixelpipeline/Texture.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/Types.hpp"
+#include "transform/MatrixStore.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include <algorithm>
@@ -249,55 +249,55 @@ void setClientState(const GLenum array, bool enable)
     }
 }
 
-RenderObj::Type convertType(GLenum type)
+Type convertType(GLenum type)
 {
     switch (type)
     {
     case GL_BYTE:
-        return RenderObj::Type::BYTE;
+        return Type::BYTE;
     case GL_UNSIGNED_BYTE:
-        return RenderObj::Type::UNSIGNED_BYTE;
+        return Type::UNSIGNED_BYTE;
     case GL_SHORT:
-        return RenderObj::Type::SHORT;
+        return Type::SHORT;
     case GL_UNSIGNED_SHORT:
-        return RenderObj::Type::UNSIGNED_SHORT;
+        return Type::UNSIGNED_SHORT;
     case GL_FLOAT:
-        return RenderObj::Type::FLOAT;
+        return Type::FLOAT;
     case GL_UNSIGNED_INT:
-        return RenderObj::Type::UNSIGNED_INT;
+        return Type::UNSIGNED_INT;
     default:
         SPDLOG_WARN("convertType 0x{:X} not suppored", type);
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
-        return RenderObj::Type::BYTE;
+        return Type::BYTE;
     }
 }
 
-RenderObj::DrawMode convertDrawMode(GLenum drawMode)
+DrawMode convertDrawMode(GLenum drawMode)
 {
     switch (drawMode)
     {
     case GL_TRIANGLES:
-        return RenderObj::DrawMode::TRIANGLES;
+        return DrawMode::TRIANGLES;
     case GL_TRIANGLE_FAN:
-        return RenderObj::DrawMode::TRIANGLE_FAN;
+        return DrawMode::TRIANGLE_FAN;
     case GL_TRIANGLE_STRIP:
-        return RenderObj::DrawMode::TRIANGLE_STRIP;
+        return DrawMode::TRIANGLE_STRIP;
     case GL_QUAD_STRIP:
-        return RenderObj::DrawMode::QUAD_STRIP;
+        return DrawMode::QUAD_STRIP;
     case GL_QUADS:
-        return RenderObj::DrawMode::QUADS;
+        return DrawMode::QUADS;
     case GL_POLYGON:
-        return RenderObj::DrawMode::POLYGON;
+        return DrawMode::POLYGON;
     case GL_LINES:
-        return RenderObj::DrawMode::LINES;
+        return DrawMode::LINES;
     case GL_LINE_STRIP:
-        return RenderObj::DrawMode::LINE_STRIP;
+        return DrawMode::LINE_STRIP;
     case GL_LINE_LOOP:
-        return RenderObj::DrawMode::LINE_LOOP;
+        return DrawMode::LINE_LOOP;
     default:
         SPDLOG_WARN("convertDrawMode 0x{:X} not suppored", drawMode);
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
-        return RenderObj::DrawMode::TRIANGLES;
+        return DrawMode::TRIANGLES;
     }
 }
 

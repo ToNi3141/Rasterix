@@ -3,16 +3,16 @@ add_library(gl STATIC
     glImpl.cpp
     gl.cpp
     glu.cpp
-    vertexpipeline/Lighting.cpp
-    vertexpipeline/Clipper.cpp
-    vertexpipeline/TexGen.cpp
     vertexpipeline/VertexPipeline.cpp
-    vertexpipeline/ViewPort.cpp
-    vertexpipeline/MatrixStore.cpp
-    vertexpipeline/Culling.cpp
-    vertexpipeline/PrimitiveAssembler.cpp
     vertexpipeline/RenderObj.cpp
-    pixelpipeline/Stencil.cpp
+    transform/Lighting.cpp
+    transform/Clipper.cpp
+    transform/TexGen.cpp
+    transform/ViewPort.cpp
+    transform/MatrixStore.cpp
+    transform/Culling.cpp
+    transform/PrimitiveAssembler.cpp
+    transform/Stencil.cpp
     pixelpipeline/PixelPipeline.cpp
     pixelpipeline/Fogging.cpp
     pixelpipeline/Texture.cpp

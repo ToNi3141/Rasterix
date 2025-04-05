@@ -42,9 +42,13 @@ private:
         struct channel_buffer* buf_ptr;
         int fd;
     };
+
+    void waitForDma();
+
+    static const std::size_t INVALID_BUFFER;
     Channel m_txChannel;
     tcb::span<uint8_t> m_tmpBuffer {};
-    std::atomic<bool> m_transferOngoing { false };
+    std::size_t m_busyBufferId { INVALID_BUFFER };
 };
 
 } // namespace rr

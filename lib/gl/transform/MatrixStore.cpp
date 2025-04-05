@@ -18,51 +18,52 @@
 #include "MatrixStore.hpp"
 #include <cmath>
 
-namespace rr
+namespace rr::matrixstore
 {
-MatrixStore::MatrixStore()
+MatrixStore::MatrixStore(TransformMatricesData& transformMatrices)
+    : m_data { transformMatrices }
 {
-    m_t.identity();
-    m_m.identity();
-    m_p.identity();
-    m_n.identity();
-    for (auto& mat : m_tm)
+    m_data.modelViewProjection.identity();
+    m_data.modelView.identity();
+    m_data.projection.identity();
+    m_data.normal.identity();
+    for (auto& mat : m_data.texture)
     {
         mat.identity();
     }
-    m_c.identity();
+    m_data.color.identity();
 }
 
 void MatrixStore::setModelProjectionMatrix(const Mat44& m)
 {
-    m_t = m;
+    m_data.modelViewProjection = m;
 }
 
 void MatrixStore::setModelMatrix(const Mat44& m)
 {
-    m_m = m;
+    m_data.modelView = m;
     m_modelMatrixChanged = true;
 }
 
 void MatrixStore::setProjectionMatrix(const Mat44& m)
 {
-    m_p = m;
+    m_data.projection = m;
     m_projectionMatrixChanged = true;
 }
 
 void MatrixStore::setColorMatrix(const Mat44& m)
 {
-    m_c = m;
+    m_data.color = m;
 }
 
 void MatrixStore::setTextureMatrix(const Mat44& m)
 {
-    m_tm[m_tmu] = m;
+    m_data.texture[m_tmu] = m;
 }
 
 void MatrixStore::setNormalMatrix(const Mat44& m)
 {
-    m_n = m;
+    m_data.normal = m;
 }
 
 void MatrixStore::multiply(const Mat44& mat)
@@ -70,16 +71,16 @@ void MatrixStore::multiply(const Mat44& mat)
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
-        setModelMatrix(mat * m_m);
+        setModelMatrix(mat * m_data.modelView);
         break;
     case MatrixMode::PROJECTION:
-        setProjectionMatrix(mat * m_p);
+        setProjectionMatrix(mat * m_data.projection);
         break;
     case MatrixMode::TEXTURE:
-        setTextureMatrix(mat * m_tm[m_tmu]);
+        setTextureMatrix(mat * m_data.texture[m_tmu]);
         break;
     case MatrixMode::COLOR:
-        setColorMatrix(mat * m_c);
+        setColorMatrix(mat * m_data.color);
         break;
     default:
         break;
@@ -133,18 +134,18 @@ void MatrixStore::loadIdentity()
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
-        m_m.identity();
+        m_data.modelView.identity();
         m_modelMatrixChanged = true;
         break;
     case MatrixMode::PROJECTION:
-        m_p.identity();
+        m_data.projection.identity();
         m_projectionMatrixChanged = true;
         break;
     case MatrixMode::TEXTURE:
-        m_tm[m_tmu].identity();
+        m_data.texture[m_tmu].identity();
         break;
     case MatrixMode::COLOR:
-        m_c.identity();
+        m_data.color.identity();
         break;
     default:
         break;
@@ -156,13 +157,13 @@ bool MatrixStore::pushMatrix()
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
-        return m_mStack.push(m_m);
+        return m_mStack.push(m_data.modelView);
     case MatrixMode::PROJECTION:
-        return m_pStack.push(m_p);
+        return m_pStack.push(m_data.projection);
     case MatrixMode::COLOR:
-        return m_cStack.push(m_c);
+        return m_cStack.push(m_data.color);
     case MatrixMode::TEXTURE:
-        return m_tmStack[m_tmu].push(m_tm[m_tmu]);
+        return m_tmStack[m_tmu].push(m_data.texture[m_tmu]);
     default:
         return false;
     }
@@ -174,14 +175,14 @@ bool MatrixStore::popMatrix()
     {
     case MatrixMode::MODELVIEW:
         m_modelMatrixChanged = true;
-        return m_mStack.pop(m_m);
+        return m_mStack.pop(m_data.modelView);
     case MatrixMode::PROJECTION:
         m_projectionMatrixChanged = true;
-        return m_pStack.pop(m_p);
+        return m_pStack.pop(m_data.projection);
     case MatrixMode::COLOR:
-        return m_cStack.pop(m_c);
+        return m_cStack.pop(m_data.color);
     case MatrixMode::TEXTURE:
-        return m_tmStack[m_tmu].pop(m_tm[m_tmu]);
+        return m_tmStack[m_tmu].pop(m_data.texture[m_tmu]);
     default:
         return false;
     }
@@ -204,14 +205,14 @@ void MatrixStore::recalculateMatrices()
 void MatrixStore::recalculateModelProjectionMatrix()
 {
     // Update transformation matrix
-    setModelProjectionMatrix(m_m * m_p);
+    setModelProjectionMatrix(m_data.modelView * m_data.projection);
 }
 
 void MatrixStore::recalculateNormalMatrix()
 {
-    m_n = m_m;
-    m_n.invert();
-    m_n.transpose();
+    m_data.normal = m_data.modelView;
+    m_data.normal.invert();
+    m_data.normal.transpose();
 }
 
 void MatrixStore::setMatrixMode(const MatrixMode matrixMode)
@@ -256,4 +257,4 @@ std::size_t MatrixStore::getProjectionMatrixStackDepth()
     return PROJECTION_MATRIX_STACK_DEPTH;
 }
 
-} // namespace rr
+} // namespace rr::matrixstore

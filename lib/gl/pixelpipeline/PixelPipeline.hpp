@@ -21,7 +21,6 @@
 #include "FeatureEnable.hpp"
 #include "Fogging.hpp"
 #include "FragmentPipeline.hpp"
-#include "Stencil.hpp"
 #include "Texture.hpp"
 #include "math/Vec.hpp"
 #include "renderer/IDevice.hpp"
@@ -41,6 +40,9 @@ public:
     void swapDisplayList() { m_renderer.swapDisplayList(); }
     void uploadDisplayList() { m_renderer.uploadDisplayList(); }
 
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
+    bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
+
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
 
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
@@ -50,6 +52,8 @@ public:
 
     void enableVSync(const bool enable) { m_renderer.setEnableVSync(enable); }
 
+    bool setStencilBufferConfig(const StencilReg& stencilConf) { return m_renderer.setStencilBufferConfig(stencilConf); }
+
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);
@@ -57,7 +61,6 @@ public:
 
     Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }
-    Stencil& stencil() { return m_stencil; }
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
     FeatureEnable& featureEnable() { return m_featureEnable; }
 
@@ -66,7 +69,6 @@ private:
 
     Fogging m_fog { m_renderer };
     Texture m_texture { m_renderer };
-    Stencil m_stencil { m_renderer };
     FragmentPipeline m_fragmentPipeline { m_renderer };
     FeatureEnable m_featureEnable { m_renderer, m_texture };
 };

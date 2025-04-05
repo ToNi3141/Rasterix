@@ -21,6 +21,8 @@
 namespace rr
 {
 
+const std::size_t DMAProxyBusConnector::INVALID_BUFFER { BUFFER_SIZE + 1 };
+
 DMAProxyBusConnector::DMAProxyBusConnector()
 {
     const char* tx_channel_names[] = { "dma_proxy_tx" };
@@ -46,20 +48,21 @@ DMAProxyBusConnector::DMAProxyBusConnector()
 
 void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
+    waitForDma();
     int buffer_id = index;
     m_txChannel.buf_ptr[buffer_id].length = size;
-    m_transferOngoing = true;
-    ioctl(m_txChannel.fd, XFER, &buffer_id);
+    ioctl(m_txChannel.fd, START_XFER, &buffer_id);
     if (m_txChannel.buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
     {
         SPDLOG_ERROR("Proxy tx transfer error");
     }
-    m_transferOngoing = false;
+    m_busyBufferId = index;
 }
 
 bool DMAProxyBusConnector::clearToSend()
 {
-    return !m_transferOngoing;
+    waitForDma();
+    return true;
 }
 
 tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
@@ -76,6 +79,14 @@ tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
 uint8_t DMAProxyBusConnector::getBufferCount() const
 {
     return BUFFER_COUNT;
+}
+
+void DMAProxyBusConnector::waitForDma()
+{
+    if (m_busyBufferId == INVALID_BUFFER)
+        return;
+    ioctl(m_txChannel.fd, FINISH_XFER, &m_busyBufferId);
+    m_busyBufferId = INVALID_BUFFER;
 }
 
 } // namespace rr

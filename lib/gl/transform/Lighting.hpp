@@ -18,55 +18,17 @@
 #ifndef LIGHTING_HPP
 #define LIGHTING_HPP
 
+#include "Enums.hpp"
 #include "Types.hpp"
 #include "math/Vec.hpp"
 #include <array>
 
-namespace rr
+namespace rr::lighting
 {
-class Lighting
+
+struct LightingData
 {
-public:
     static constexpr std::size_t MAX_LIGHTS { 8 };
-
-    enum class ColorMaterialTracking
-    {
-        AMBIENT,
-        DIFFUSE,
-        AMBIENT_AND_DIFFUSE,
-        SPECULAR,
-        EMISSION
-    };
-
-    Lighting();
-
-    void calculateLights(Vec4& __restrict color,
-        const Vec4& triangleColor,
-        const Vec4& vertex,
-        const Vec3& normal);
-
-    bool lightingEnabled() const { return m_lightingEnabled; }
-
-    void enableLighting(bool enable);
-    void setEmissiveColorMaterial(const Vec4& color);
-    void setAmbientColorMaterial(const Vec4& color);
-    void setAmbientColorScene(const Vec4& color);
-    void setDiffuseColorMaterial(const Vec4& color);
-    void setSpecularColorMaterial(const Vec4& color);
-    void setSpecularExponentMaterial(const float val);
-    void enableLight(const std::size_t light, const bool enable);
-    void setAmbientColorLight(const std::size_t light, const Vec4& color);
-    void setDiffuseColorLight(const std::size_t light, const Vec4& color);
-    void setSpecularColorLight(const std::size_t light, const Vec4& color);
-    void setPosLight(const std::size_t light, const Vec4& pos);
-    void setConstantAttenuationLight(const std::size_t light, const float val);
-    void setLinearAttenuationLight(const std::size_t light, const float val);
-    void setQuadraticAttenuationLight(const std::size_t light, const float val);
-
-    void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
-    void enableColorMaterial(const bool enable);
-
-private:
     struct MaterialConfig
     {
         Vec4 emissiveColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -109,13 +71,33 @@ private:
         }
     };
 
-    void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
-    void calculateSceneLight(Vec4& __restrict sceneLight,
+    std::array<LightConfig, MAX_LIGHTS> lights {};
+    MaterialConfig material {};
+    std::array<bool, MAX_LIGHTS> lightEnable {};
+    bool lightingEnabled { false };
+    bool enableColorMaterialEmission { false };
+    bool enableColorMaterialAmbient { false };
+    bool enableColorMaterialDiffuse { false };
+    bool enableColorMaterialSpecular { false };
+};
+
+class LightingCalc
+{
+public:
+    LightingCalc(const LightingData& lightingData)
+        : m_data { lightingData }
+    {
+    }
+
+    void calculateSceneLight(
+        Vec4& __restrict sceneLight,
         const Vec4& emissiveColor,
         const Vec4& ambientColor,
         const Vec4& ambientColorScene) const;
-    void calculateLight(Vec4& __restrict color,
-        const LightConfig& lightConfig,
+
+    void calculateLight(
+        Vec4& __restrict color,
+        const LightingData::LightConfig& lightConfig,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
         const Vec4& materialDiffuseColor,
@@ -123,14 +105,46 @@ private:
         const Vec4& v0,
         const Vec4& n0) const;
 
-    std::array<LightConfig, MAX_LIGHTS> m_lights {};
-    MaterialConfig m_material {};
-    std::array<bool, MAX_LIGHTS> m_lightEnable {};
-    bool m_lightingEnabled { false };
-    bool m_enableColorMaterialEmission { false };
-    bool m_enableColorMaterialAmbient { false };
-    bool m_enableColorMaterialDiffuse { false };
-    bool m_enableColorMaterialSpecular { false };
+    void calculateLights(
+        Vec4& __restrict color,
+        const Vec4& triangleColor,
+        const Vec4& vertex,
+        const Vec3& normal) const;
+
+private:
+    const LightingData& m_data;
+};
+
+class LightingSetter
+{
+public:
+    LightingSetter(LightingData& lightingData);
+
+    bool lightingEnabled() const { return m_data.lightingEnabled; }
+
+    void enableLighting(bool enable);
+    void setEmissiveColorMaterial(const Vec4& color);
+    void setAmbientColorMaterial(const Vec4& color);
+    void setAmbientColorScene(const Vec4& color);
+    void setDiffuseColorMaterial(const Vec4& color);
+    void setSpecularColorMaterial(const Vec4& color);
+    void setSpecularExponentMaterial(const float val);
+    void enableLight(const std::size_t light, const bool enable);
+    void setAmbientColorLight(const std::size_t light, const Vec4& color);
+    void setDiffuseColorLight(const std::size_t light, const Vec4& color);
+    void setSpecularColorLight(const std::size_t light, const Vec4& color);
+    void setPosLight(const std::size_t light, const Vec4& pos);
+    void setConstantAttenuationLight(const std::size_t light, const float val);
+    void setLinearAttenuationLight(const std::size_t light, const float val);
+    void setQuadraticAttenuationLight(const std::size_t light, const float val);
+
+    void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
+    void enableColorMaterial(const bool enable);
+
+private:
+    void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
+
+    LightingData& m_data;
 
     // Color material
     bool m_enableColorMaterial { false };
@@ -138,5 +152,5 @@ private:
     Face m_colorMaterialFace { Face::FRONT_AND_BACK };
 };
 
-} // namespace rr
+} // namespace rr::lighting
 #endif // LIGHTING_HPP

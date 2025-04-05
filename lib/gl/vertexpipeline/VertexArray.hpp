@@ -18,6 +18,7 @@
 #ifndef VERTEXARRAY_HPP_
 #define VERTEXARRAY_HPP_
 
+#include "Enums.hpp"
 #include "RenderObj.hpp"
 #include "math/Vec.hpp"
 #include <vector>
@@ -27,9 +28,6 @@ namespace rr
 class VertexArray
 {
 public:
-    using DrawMode = RenderObj::DrawMode;
-    using Type = RenderObj::Type;
-
     void setActiveTexture(const uint8_t tmu) { m_tmu = tmu; }
 
     void setColor(const Vec4& color) { m_objPtr.setVertexColor(color); }

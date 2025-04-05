@@ -21,8 +21,6 @@
 #include "TextureConverter.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/Types.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
@@ -55,8 +53,8 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
         {
             refFix = 0xff;
         }
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setAlphaFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setRefAlphaValue(refFix);
+        RRXGL::getInstance().pipeline().fragmentPipeline().setAlphaFunc(testFunc);
+        RRXGL::getInstance().pipeline().fragmentPipeline().setRefAlphaValue(refFix);
     }
 }
 
@@ -81,8 +79,8 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
     }
     else
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
+        RRXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
+        RRXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
     }
 }
 
@@ -100,12 +98,13 @@ GLAPI void APIENTRY impl_glClear(GLbitfield mask)
 {
     SPDLOG_DEBUG("glClear mask 0x{:X} called", mask);
 
-    if (RRXGL::getInstance().pixelPipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
+    if (RRXGL::getInstance().pipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClear Out Of Memory");
     }
 }
@@ -118,12 +117,13 @@ GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, 
 GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     SPDLOG_DEBUG("glClearColor ({}, {}, {}, {}) called", red, green, blue, alpha);
-    if (RRXGL::getInstance().pixelPipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
+    if (RRXGL::getInstance().pipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearColor Out Of Memory");
     }
 }
@@ -132,12 +132,13 @@ GLAPI void APIENTRY impl_glClearDepth(GLclampd depth)
 {
     SPDLOG_DEBUG("glClearDepth {} called", depth);
 
-    if (RRXGL::getInstance().pixelPipeline().setClearDepth(cv(depth)))
+    if (RRXGL::getInstance().pipeline().setClearDepth(cv(depth)))
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
     else
     {
+        RRXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearDepth Out Of Memory");
     }
 }
@@ -151,7 +152,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    RRXGL::getInstance().pixelPipeline().stencil().setClearStencil(s);
+    RRXGL::getInstance().pipeline().stencil().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
@@ -572,10 +573,10 @@ GLAPI void APIENTRY impl_glColor4usv(const GLushort* v)
 GLAPI void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     SPDLOG_DEBUG("glColorMask red 0x{:X} green 0x{:X} blue 0x{:X} alpha 0x{:X} called", red, green, blue, alpha);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
+    RRXGL::getInstance().pipeline().fragmentPipeline().setColorMaskR(red == GL_TRUE);
+    RRXGL::getInstance().pipeline().fragmentPipeline().setColorMaskG(green == GL_TRUE);
+    RRXGL::getInstance().pipeline().fragmentPipeline().setColorMaskB(blue == GL_TRUE);
+    RRXGL::getInstance().pipeline().fragmentPipeline().setColorMaskA(alpha == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
@@ -607,24 +608,24 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
         switch (mode)
         {
         case GL_AMBIENT:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT);
             break;
         case GL_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::DIFFUSE);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::DIFFUSE);
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         case GL_SPECULAR:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::SPECULAR);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::SPECULAR);
             break;
         case GL_EMISSION:
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::EMISSION);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::EMISSION);
             break;
         default:
             SPDLOG_WARN("glColorMaterial mode 0x{:X} not supported", mode);
             RRXGL::getInstance().setError(GL_INVALID_ENUM);
-            RRXGL::getInstance().vertexPipeline().getLighting().setColorMaterialTracking(faceConverted, Lighting::ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
+            RRXGL::getInstance().pipeline().getLighting().setColorMaterialTracking(faceConverted, ColorMaterialTracking::AMBIENT_AND_DIFFUSE);
             break;
         }
     }
@@ -642,13 +643,13 @@ GLAPI void APIENTRY impl_glCullFace(GLenum mode)
     switch (mode)
     {
     case GL_BACK:
-        RRXGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::BACK);
+        RRXGL::getInstance().pipeline().getCulling().setCullMode(Face::BACK);
         break;
     case GL_FRONT:
-        RRXGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::FRONT);
+        RRXGL::getInstance().pipeline().getCulling().setCullMode(Face::FRONT);
         break;
     case GL_FRONT_AND_BACK:
-        RRXGL::getInstance().vertexPipeline().getCulling().setCullMode(Face::FRONT_AND_BACK);
+        RRXGL::getInstance().pipeline().getCulling().setCullMode(Face::FRONT_AND_BACK);
         break;
     default:
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -670,20 +671,20 @@ GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthFunc(testFunc);
+        RRXGL::getInstance().pipeline().fragmentPipeline().setDepthFunc(testFunc);
     }
 }
 
 GLAPI void APIENTRY impl_glDepthMask(GLboolean flag)
 {
     SPDLOG_DEBUG("glDepthMask flag 0x{:X} called", flag);
-    RRXGL::getInstance().pixelPipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
+    RRXGL::getInstance().pipeline().fragmentPipeline().setDepthMask(flag == GL_TRUE);
 }
 
 GLAPI void APIENTRY impl_glDepthRange(GLclampd zNear, GLclampd zFar)
 {
     SPDLOG_DEBUG("glDepthRange zNear {} zFar {} called", zNear, zFar);
-    RRXGL::getInstance().vertexPipeline().getViewPort().setDepthRange(cv(zNear), cv(zFar));
+    RRXGL::getInstance().pipeline().getViewPort().setDepthRange(cv(zNear), cv(zFar));
 }
 
 GLAPI void APIENTRY impl_glDisable(GLenum cap)
@@ -693,30 +694,30 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
     case GL_TEXTURE_2D:
     {
         SPDLOG_DEBUG("glDisable GL_TEXTURE_2D called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableTmu(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableTmu(false);
         break;
     }
     case GL_ALPHA_TEST:
     {
         SPDLOG_DEBUG("glDisable GL_ALPHA_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableAlphaTest(false);
         break;
     }
     case GL_DEPTH_TEST:
     {
         SPDLOG_DEBUG("glDisable GL_DEPTH_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableDepthTest(false);
         break;
     }
     case GL_BLEND:
     {
         SPDLOG_DEBUG("glDisable GL_BLEND called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableBlending(false);
         break;
     }
     case GL_LIGHTING:
         SPDLOG_DEBUG("glDisable GL_LIGHTING called");
-        RRXGL::getInstance().vertexPipeline().getLighting().enableLighting(false);
+        RRXGL::getInstance().pipeline().getLighting().enableLighting(false);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -727,47 +728,47 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
     case GL_LIGHT6:
     case GL_LIGHT7:
         SPDLOG_DEBUG("glDisable GL_LIGHT{} called", cap - GL_LIGHT0);
-        RRXGL::getInstance().vertexPipeline().getLighting().enableLight(cap - GL_LIGHT0, false);
+        RRXGL::getInstance().pipeline().getLighting().enableLight(cap - GL_LIGHT0, false);
         break;
     case GL_TEXTURE_GEN_S:
         SPDLOG_DEBUG("glDisable GL_TEXTURE_GEN_S called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenS(false);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenS(false);
         break;
     case GL_TEXTURE_GEN_T:
         SPDLOG_DEBUG("glDisable GL_TEXTURE_GEN_T called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenT(false);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenT(false);
         break;
     case GL_TEXTURE_GEN_R:
         SPDLOG_DEBUG("glDisable GL_TEXTURE_GEN_R called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenR(false);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenR(false);
         break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glDisable GL_CULL_FACE called");
-        RRXGL::getInstance().vertexPipeline().getCulling().enableCulling(false);
+        RRXGL::getInstance().pipeline().getCulling().enableCulling(false);
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glDisable GL_COLOR_MATERIAL called");
-        RRXGL::getInstance().vertexPipeline().getLighting().enableColorMaterial(false);
+        RRXGL::getInstance().pipeline().getLighting().enableColorMaterial(false);
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glDisable GL_FOG called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableFog(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableFog(false);
         break;
     case GL_SCISSOR_TEST:
         SPDLOG_DEBUG("glDisable GL_SCISSOR_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableScissor(false);
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
-        RRXGL::getInstance().vertexPipeline().setEnableNormalizing(false);
+        RRXGL::getInstance().pipeline().setEnableNormalizing(false);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableStencil(false);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableStencil(false);
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RRXGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(false);
+        RRXGL::getInstance().pipeline().stencil().enableTwoSideStencil(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
@@ -802,23 +803,23 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     {
     case GL_TEXTURE_2D:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_2D called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableTmu(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableTmu(true);
         break;
     case GL_ALPHA_TEST:
         SPDLOG_DEBUG("glEnable GL_ALPHA_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableAlphaTest(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableAlphaTest(true);
         break;
     case GL_DEPTH_TEST:
         SPDLOG_DEBUG("glEnable GL_DEPTH_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableDepthTest(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableDepthTest(true);
         break;
     case GL_BLEND:
         SPDLOG_DEBUG("glEnable GL_BLEND called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableBlending(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableBlending(true);
         break;
     case GL_LIGHTING:
         SPDLOG_DEBUG("glEnable GL_LIGHTING called");
-        RRXGL::getInstance().vertexPipeline().getLighting().enableLighting(true);
+        RRXGL::getInstance().pipeline().getLighting().enableLighting(true);
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -829,47 +830,47 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_LIGHT6:
     case GL_LIGHT7:
         SPDLOG_DEBUG("glEnable GL_LIGHT{} called", cap - GL_LIGHT0);
-        RRXGL::getInstance().vertexPipeline().getLighting().enableLight(cap - GL_LIGHT0, true);
+        RRXGL::getInstance().pipeline().getLighting().enableLight(cap - GL_LIGHT0, true);
         break;
     case GL_TEXTURE_GEN_S:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_GEN_S called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenS(true);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenS(true);
         break;
     case GL_TEXTURE_GEN_T:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_GEN_T called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenT(true);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenT(true);
         break;
     case GL_TEXTURE_GEN_R:
         SPDLOG_DEBUG("glEnable GL_TEXTURE_GEN_R called");
-        RRXGL::getInstance().vertexPipeline().getTexGen().enableTexGenR(true);
+        RRXGL::getInstance().pipeline().getTexGen().enableTexGenR(true);
         break;
     case GL_CULL_FACE:
         SPDLOG_DEBUG("glEnable GL_CULL_FACE called");
-        RRXGL::getInstance().vertexPipeline().getCulling().enableCulling(true);
+        RRXGL::getInstance().pipeline().getCulling().enableCulling(true);
         break;
     case GL_COLOR_MATERIAL:
         SPDLOG_DEBUG("glEnable GL_COLOR_MATERIAL called");
-        RRXGL::getInstance().vertexPipeline().getLighting().enableColorMaterial(true);
+        RRXGL::getInstance().pipeline().getLighting().enableColorMaterial(true);
         break;
     case GL_FOG:
         SPDLOG_DEBUG("glEnable GL_FOG called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableFog(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableFog(true);
         break;
     case GL_SCISSOR_TEST:
         SPDLOG_DEBUG("glEnable GL_SCISSOR_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableScissor(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableScissor(true);
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
-        RRXGL::getInstance().vertexPipeline().setEnableNormalizing(true);
+        RRXGL::getInstance().pipeline().setEnableNormalizing(true);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST called");
-        RRXGL::getInstance().pixelPipeline().featureEnable().setEnableStencil(true);
+        RRXGL::getInstance().pipeline().featureEnable().setEnableStencil(true);
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RRXGL::getInstance().pixelPipeline().stencil().enableTwoSideStencil(true);
+        RRXGL::getInstance().pipeline().stencil().enableTwoSideStencil(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -881,7 +882,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
 GLAPI void APIENTRY impl_glEnd(void)
 {
     SPDLOG_DEBUG("glEnd called");
-    RRXGL::getInstance().vertexPipeline().drawObj(RRXGL::getInstance().vertexQueue().end());
+    RRXGL::getInstance().pipeline().drawObj(RRXGL::getInstance().vertexQueue().end());
 }
 
 GLAPI void APIENTRY impl_glEndList(void)
@@ -974,13 +975,13 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         switch (static_cast<GLenum>(param))
         {
         case GL_EXP:
-            RRXGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::EXP);
+            RRXGL::getInstance().pipeline().fog().setFogMode(Fogging::FogMode::EXP);
             break;
         case GL_EXP2:
-            RRXGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::EXP2);
+            RRXGL::getInstance().pipeline().fog().setFogMode(Fogging::FogMode::EXP2);
             break;
         case GL_LINEAR:
-            RRXGL::getInstance().pixelPipeline().fog().setFogMode(Fogging::FogMode::LINEAR);
+            RRXGL::getInstance().pipeline().fog().setFogMode(Fogging::FogMode::LINEAR);
             break;
         default:
             RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -989,7 +990,7 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
     case GL_FOG_DENSITY:
         if (param >= 0.0f)
         {
-            RRXGL::getInstance().pixelPipeline().fog().setFogDensity(param);
+            RRXGL::getInstance().pipeline().fog().setFogDensity(param);
         }
         else
         {
@@ -997,10 +998,10 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         }
         break;
     case GL_FOG_START:
-        RRXGL::getInstance().pixelPipeline().fog().setFogStart(param);
+        RRXGL::getInstance().pipeline().fog().setFogStart(param);
         break;
     case GL_FOG_END:
-        RRXGL::getInstance().pixelPipeline().fog().setFogEnd(param);
+        RRXGL::getInstance().pipeline().fog().setFogEnd(param);
         break;
     default:
         SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artefacts.");
@@ -1025,7 +1026,7 @@ GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat* params)
         break;
     case GL_FOG_COLOR:
     {
-        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ params[0], params[1], params[2], params[3] });
+        RRXGL::getInstance().pipeline().fog().setFogColor({ params[0], params[1], params[2], params[3] });
     }
     break;
     default:
@@ -1057,7 +1058,7 @@ GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint* params)
     {
         Vec4 fogColor = Vec4::createFromArray<GLint, 4>(params);
         fogColor.div(255);
-        RRXGL::getInstance().pixelPipeline().fog().setFogColor({ fogColor[0], fogColor[1], fogColor[2], fogColor[3] });
+        RRXGL::getInstance().pipeline().fog().setFogColor({ fogColor[0], fogColor[1], fogColor[2], fogColor[3] });
         break;
     }
     default:
@@ -1112,7 +1113,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
     switch (pname)
     {
     case GL_MODELVIEW_MATRIX:
-        memcpy(params, RRXGL::getInstance().vertexPipeline().getMatrixStore().getModelView().data(), 16 * 4);
+        memcpy(params, RRXGL::getInstance().pipeline().getMatrixStore().getModelView().data(), 16 * 4);
         break;
     default:
         SPDLOG_DEBUG("glGetFloatv redirected to glGetIntegerv");
@@ -1129,13 +1130,13 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
     switch (pname)
     {
     case GL_MAX_LIGHTS:
-        *params = RRXGL::getInstance().vertexPipeline().getLighting().MAX_LIGHTS;
+        *params = lighting::LightingData::MAX_LIGHTS;
         break;
     case GL_MAX_MODELVIEW_STACK_DEPTH:
-        *params = MatrixStore::getModelMatrixStackDepth();
+        *params = matrixstore::MatrixStore::getModelMatrixStackDepth();
         break;
     case GL_MAX_PROJECTION_STACK_DEPTH:
-        *params = MatrixStore::getProjectionMatrixStackDepth();
+        *params = matrixstore::MatrixStore::getProjectionMatrixStackDepth();
         break;
     case GL_MAX_TEXTURE_SIZE:
         *params = RRXGL::getInstance().getMaxTextureSize();
@@ -1368,7 +1369,7 @@ GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat* params)
 
     if (pname == GL_LIGHT_MODEL_AMBIENT)
     {
-        RRXGL::getInstance().vertexPipeline().getLighting().setAmbientColorScene({ params });
+        RRXGL::getInstance().pipeline().getLighting().setAmbientColorScene({ params });
     }
     else
     {
@@ -1409,13 +1410,13 @@ GLAPI void APIENTRY impl_glLightf(GLenum light, GLenum pname, GLfloat param)
         SPDLOG_WARN("glLightf GL_SPOT_CUTOFF not implemented");
         break;
     case GL_CONSTANT_ATTENUATION:
-        RRXGL::getInstance().vertexPipeline().getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
+        RRXGL::getInstance().pipeline().getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_LINEAR_ATTENUATION:
-        RRXGL::getInstance().vertexPipeline().getLighting().setLinearAttenuationLight(light - GL_LIGHT0, param);
+        RRXGL::getInstance().pipeline().getLighting().setLinearAttenuationLight(light - GL_LIGHT0, param);
         break;
     case GL_QUADRATIC_ATTENUATION:
-        RRXGL::getInstance().vertexPipeline().getLighting().setQuadraticAttenuationLight(light - GL_LIGHT0, param);
+        RRXGL::getInstance().pipeline().getLighting().setQuadraticAttenuationLight(light - GL_LIGHT0, param);
         break;
     default:
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -1436,20 +1437,20 @@ GLAPI void APIENTRY impl_glLightfv(GLenum light, GLenum pname, const GLfloat* pa
     switch (pname)
     {
     case GL_AMBIENT:
-        RRXGL::getInstance().vertexPipeline().getLighting().setAmbientColorLight(light - GL_LIGHT0, { params });
+        RRXGL::getInstance().pipeline().getLighting().setAmbientColorLight(light - GL_LIGHT0, { params });
         break;
     case GL_DIFFUSE:
-        RRXGL::getInstance().vertexPipeline().getLighting().setDiffuseColorLight(light - GL_LIGHT0, { params });
+        RRXGL::getInstance().pipeline().getLighting().setDiffuseColorLight(light - GL_LIGHT0, { params });
         break;
     case GL_SPECULAR:
-        RRXGL::getInstance().vertexPipeline().getLighting().setSpecularColorLight(light - GL_LIGHT0, { params });
+        RRXGL::getInstance().pipeline().getLighting().setSpecularColorLight(light - GL_LIGHT0, { params });
         break;
     case GL_POSITION:
     {
         Vec4 lightPos { params };
         Vec4 lightPosTransformed {};
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().getModelView().transform(lightPosTransformed, lightPos);
-        RRXGL::getInstance().vertexPipeline().getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
+        RRXGL::getInstance().pipeline().getMatrixStore().getModelView().transform(lightPosTransformed, lightPos);
+        RRXGL::getInstance().pipeline().getLighting().setPosLight(light - GL_LIGHT0, lightPosTransformed);
         break;
     }
     case GL_SPOT_DIRECTION:
@@ -1489,7 +1490,7 @@ GLAPI void APIENTRY impl_glLineWidth(GLfloat width)
     {
         RRXGL::getInstance().setError(GL_INVALID_VALUE);
     }
-    RRXGL::getInstance().vertexPipeline().getPrimitiveAssembler().setLineWidth(width);
+    RRXGL::getInstance().pipeline().getPrimitiveAssembler().setLineWidth(width);
 }
 
 GLAPI void APIENTRY impl_glListBase(GLuint base)
@@ -1500,7 +1501,7 @@ GLAPI void APIENTRY impl_glListBase(GLuint base)
 GLAPI void APIENTRY impl_glLoadIdentity(void)
 {
     SPDLOG_DEBUG("glLoadIdentity called");
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().loadIdentity();
+    RRXGL::getInstance().pipeline().getMatrixStore().loadIdentity();
 }
 
 GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble* m)
@@ -1511,7 +1512,7 @@ GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble* m)
 GLAPI void APIENTRY impl_glLoadMatrixf(const GLfloat* m)
 {
     SPDLOG_DEBUG("glLoadMatrixf called");
-    bool ret = RRXGL::getInstance().vertexPipeline().getMatrixStore().loadMatrix(*reinterpret_cast<const Mat44*>(m));
+    bool ret = RRXGL::getInstance().pipeline().getMatrixStore().loadMatrix(*reinterpret_cast<const Mat44*>(m));
     if (ret == false)
     {
         SPDLOG_WARN("glLoadMatrixf matrix mode not supported");
@@ -1582,7 +1583,7 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
         logicOp = LogicOp::COPY;
         break;
     }
-    // pixelPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
+    // vertexPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
 }
 
 GLAPI void APIENTRY impl_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points)
@@ -1633,7 +1634,7 @@ GLAPI void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param)
     {
         if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
         {
-            RRXGL::getInstance().vertexPipeline().getLighting().setSpecularExponentMaterial(param);
+            RRXGL::getInstance().pipeline().getLighting().setSpecularExponentMaterial(param);
         }
         else
         {
@@ -1657,20 +1658,20 @@ GLAPI void APIENTRY impl_glMaterialfv(GLenum face, GLenum pname, const GLfloat* 
         switch (pname)
         {
         case GL_AMBIENT:
-            RRXGL::getInstance().vertexPipeline().getLighting().setAmbientColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
             break;
         case GL_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setDiffuseColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
             break;
         case GL_AMBIENT_AND_DIFFUSE:
-            RRXGL::getInstance().vertexPipeline().getLighting().setAmbientColorMaterial({ params });
-            RRXGL::getInstance().vertexPipeline().getLighting().setDiffuseColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
             break;
         case GL_SPECULAR:
-            RRXGL::getInstance().vertexPipeline().getLighting().setSpecularColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setSpecularColorMaterial({ params });
             break;
         case GL_EMISSION:
-            RRXGL::getInstance().vertexPipeline().getLighting().setEmissiveColorMaterial({ params });
+            RRXGL::getInstance().pipeline().getLighting().setEmissiveColorMaterial({ params });
             break;
         default:
             impl_glMaterialf(face, pname, params[0]);
@@ -1704,22 +1705,22 @@ GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::MODELVIEW);
+        RRXGL::getInstance().pipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::MODELVIEW);
     }
     else if (mode == GL_PROJECTION)
     {
         SPDLOG_DEBUG("glMatrixMode GL_PROJECTION called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::PROJECTION);
+        RRXGL::getInstance().pipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::PROJECTION);
     }
     else if (mode == GL_TEXTURE)
     {
         SPDLOG_DEBUG("glMatrixMode GL_TEXTURE called");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::TEXTURE);
+        RRXGL::getInstance().pipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::TEXTURE);
     }
     else if (mode == GL_COLOR)
     {
         SPDLOG_WARN("glMatrixMode GL_COLOR called but has currently no effect (see VertexPipeline.cpp)");
-        RRXGL::getInstance().vertexPipeline().getMatrixStore().setMatrixMode(MatrixStore::MatrixMode::COLOR);
+        RRXGL::getInstance().pipeline().getMatrixStore().setMatrixMode(matrixstore::MatrixStore::MatrixMode::COLOR);
     }
     else
     {
@@ -1743,7 +1744,7 @@ GLAPI void APIENTRY impl_glMultMatrixf(const GLfloat* m)
 {
     SPDLOG_DEBUG("glMultMatrixf called");
     const Mat44* m44 = reinterpret_cast<const Mat44*>(m);
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().multiply(*m44);
+    RRXGL::getInstance().pipeline().getMatrixStore().multiply(*m44);
 }
 
 GLAPI void APIENTRY impl_glNewList(GLuint list, GLenum mode)
@@ -1998,7 +1999,7 @@ GLAPI void APIENTRY impl_glPopAttrib(void)
 GLAPI void APIENTRY impl_glPopMatrix(void)
 {
     SPDLOG_DEBUG("glPopMatrix called");
-    if (RRXGL::getInstance().vertexPipeline().getMatrixStore().popMatrix())
+    if (RRXGL::getInstance().pipeline().getMatrixStore().popMatrix())
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -2022,7 +2023,7 @@ GLAPI void APIENTRY impl_glPushMatrix(void)
 {
     SPDLOG_DEBUG("glPushMatrix called");
 
-    if (RRXGL::getInstance().vertexPipeline().getMatrixStore().pushMatrix())
+    if (RRXGL::getInstance().pipeline().getMatrixStore().pushMatrix())
     {
         RRXGL::getInstance().setError(GL_NO_ERROR);
     }
@@ -2228,7 +2229,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().rotate(static_cast<float>(angle),
+    RRXGL::getInstance().pipeline().getMatrixStore().rotate(static_cast<float>(angle),
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
@@ -2237,7 +2238,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
 GLAPI void APIENTRY impl_glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glRotatef ({}, {}, {}, {}) called", angle, x, y, z);
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().rotate(angle, x, y, z);
+    RRXGL::getInstance().pipeline().getMatrixStore().rotate(angle, x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
@@ -2246,7 +2247,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().scale(static_cast<float>(x),
+    RRXGL::getInstance().pipeline().getMatrixStore().scale(static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
 }
@@ -2254,7 +2255,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glScalef ({}, {}, {}) called", x, y, z);
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().scale(x, y, z);
+    RRXGL::getInstance().pipeline().getMatrixStore().scale(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -2266,7 +2267,7 @@ GLAPI void APIENTRY impl_glScissor(GLint x, GLint y, GLsizei width, GLsizei heig
     }
     else
     {
-        RRXGL::getInstance().pixelPipeline().setScissorBox(x, y, width, height);
+        RRXGL::getInstance().pipeline().setScissorBox(x, y, width, height);
     }
 }
 
@@ -2289,16 +2290,16 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setTestFunc(testFunc);
-        RRXGL::getInstance().pixelPipeline().stencil().setRef(ref);
-        RRXGL::getInstance().pixelPipeline().stencil().setMask(mask);
+        RRXGL::getInstance().pipeline().stencil().setTestFunc(testFunc);
+        RRXGL::getInstance().pipeline().stencil().setRef(ref);
+        RRXGL::getInstance().pipeline().stencil().setMask(mask);
     }
 }
 
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    RRXGL::getInstance().pixelPipeline().stencil().setStencilMask(mask);
+    RRXGL::getInstance().pipeline().stencil().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2312,9 +2313,9 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setOpFail(failOp);
-        RRXGL::getInstance().pixelPipeline().stencil().setOpZFail(zfailOp);
-        RRXGL::getInstance().pixelPipeline().stencil().setOpZPass(zpassOp);
+        RRXGL::getInstance().pipeline().stencil().setOpFail(failOp);
+        RRXGL::getInstance().pipeline().stencil().setOpZFail(zfailOp);
+        RRXGL::getInstance().pipeline().stencil().setOpZPass(zpassOp);
     }
 }
 
@@ -2700,7 +2701,7 @@ GLAPI void APIENTRY impl_glTexEnvfv(GLenum target, GLenum pname, const GLfloat* 
 
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (RRXGL::getInstance().pixelPipeline().texture().setTexEnvColor({ params[0], params[1], params[2], params[3] }))
+        if (RRXGL::getInstance().pipeline().texture().setTexEnvColor({ params[0], params[1], params[2], params[3] }))
         {
             RRXGL::getInstance().setError(GL_NO_ERROR);
         }
@@ -2730,7 +2731,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             TexEnvMode mode {};
             error = convertTexEnvMode(mode, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setTexEnvMode(mode);
+                RRXGL::getInstance().pipeline().texture().setTexEnvMode(mode);
             break;
         }
         case GL_COMBINE_RGB:
@@ -2738,7 +2739,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Combine c {};
             error = convertCombine(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setCombineRgb(c);
+                RRXGL::getInstance().pipeline().texture().setCombineRgb(c);
             break;
         }
         case GL_COMBINE_ALPHA:
@@ -2746,7 +2747,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Combine c {};
             error = convertCombine(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setCombineAlpha(c);
+                RRXGL::getInstance().pipeline().texture().setCombineAlpha(c);
             break;
         }
         case GL_SOURCE0_RGB:
@@ -2754,7 +2755,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb0(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegRgb0(c);
             break;
         }
         case GL_SOURCE1_RGB:
@@ -2762,7 +2763,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb1(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegRgb1(c);
             break;
         }
         case GL_SOURCE2_RGB:
@@ -2770,7 +2771,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegRgb2(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegRgb2(c);
             break;
         }
         case GL_SOURCE0_ALPHA:
@@ -2778,7 +2779,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha0(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegAlpha0(c);
             break;
         }
         case GL_SOURCE1_ALPHA:
@@ -2786,7 +2787,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha1(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegAlpha1(c);
             break;
         }
         case GL_SOURCE2_ALPHA:
@@ -2794,7 +2795,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             SrcReg c {};
             error = convertSrcReg(c, param);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setSrcRegAlpha2(c);
+                RRXGL::getInstance().pipeline().texture().setSrcRegAlpha2(c);
             break;
         }
         case GL_OPERAND0_RGB:
@@ -2802,7 +2803,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb0(c);
+                RRXGL::getInstance().pipeline().texture().setOperandRgb0(c);
             break;
         }
         case GL_OPERAND1_RGB:
@@ -2810,7 +2811,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb1(c);
+                RRXGL::getInstance().pipeline().texture().setOperandRgb1(c);
             break;
         }
         case GL_OPERAND2_RGB:
@@ -2818,7 +2819,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, false);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandRgb2(c);
+                RRXGL::getInstance().pipeline().texture().setOperandRgb2(c);
             break;
         }
         case GL_OPERAND0_ALPHA:
@@ -2826,7 +2827,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha0(c);
+                RRXGL::getInstance().pipeline().texture().setOperandAlpha0(c);
             break;
         }
         case GL_OPERAND1_ALPHA:
@@ -2834,7 +2835,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha1(c);
+                RRXGL::getInstance().pipeline().texture().setOperandAlpha1(c);
             break;
         }
         case GL_OPERAND2_ALPHA:
@@ -2842,7 +2843,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             Operand c {};
             error = convertOperand(c, param, true);
             if (error == GL_NO_ERROR)
-                RRXGL::getInstance().pixelPipeline().texture().setOperandAlpha2(c);
+                RRXGL::getInstance().pipeline().texture().setOperandAlpha2(c);
             break;
         }
         case GL_RGB_SCALE:
@@ -2850,7 +2851,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().setShiftRgb(shift);
+                RRXGL::getInstance().pipeline().texture().setShiftRgb(shift);
                 error = GL_NO_ERROR;
             }
             else
@@ -2864,7 +2865,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             const uint8_t shift = log2f(param);
             if (shift <= 2)
             {
-                RRXGL::getInstance().pixelPipeline().texture().setShiftAlpha(shift);
+                RRXGL::getInstance().pipeline().texture().setShiftAlpha(shift);
                 error = GL_NO_ERROR;
             }
             else
@@ -2922,13 +2923,13 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat* p
         switch (coord)
         {
         case GL_S:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjS({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecObjS({ params });
             break;
         case GL_T:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjT({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecObjT({ params });
             break;
         case GL_R:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecObjR({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecObjR({ params });
             break;
         case GL_Q:
             SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
@@ -2943,13 +2944,13 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat* p
         switch (coord)
         {
         case GL_S:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeS({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecEyeS({ params });
             break;
         case GL_T:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeT({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecEyeT({ params });
             break;
         case GL_R:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenVecEyeR({ params });
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenVecEyeR({ params });
             break;
         case GL_Q:
             SPDLOG_WARN("glTexGenfv GL_OBJECT_PLANE GL_Q not implemented");
@@ -2970,21 +2971,21 @@ GLAPI void APIENTRY impl_glTexGenfv(GLenum coord, GLenum pname, const GLfloat* p
 GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glTexGeni coord 0x{:X} pname 0x{:X} param 0x{:X} called", coord, pname, param);
-    TexGen::TexGenMode mode {};
+    TexGenMode mode {};
     RRXGL::getInstance().setError(GL_NO_ERROR);
     switch (param)
     {
     case GL_OBJECT_LINEAR:
-        mode = TexGen::TexGenMode::OBJECT_LINEAR;
+        mode = TexGenMode::OBJECT_LINEAR;
         break;
     case GL_EYE_LINEAR:
-        mode = TexGen::TexGenMode::EYE_LINEAR;
+        mode = TexGenMode::EYE_LINEAR;
         break;
     case GL_SPHERE_MAP:
-        mode = TexGen::TexGenMode::SPHERE_MAP;
+        mode = TexGenMode::SPHERE_MAP;
         break;
     case GL_REFLECTION_MAP:
-        mode = TexGen::TexGenMode::REFLECTION_MAP;
+        mode = TexGenMode::REFLECTION_MAP;
         break;
     default:
         SPDLOG_WARN("glTexGeni param not supported");
@@ -2997,13 +2998,13 @@ GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
         switch (coord)
         {
         case GL_S:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenModeS(mode);
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenModeS(mode);
             break;
         case GL_T:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenModeT(mode);
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenModeT(mode);
             break;
         case GL_R:
-            RRXGL::getInstance().vertexPipeline().getTexGen().setTexGenModeR(mode);
+            RRXGL::getInstance().pipeline().getTexGen().setTexGenModeR(mode);
             break;
         case GL_Q:
             SPDLOG_WARN("glTexGeni GL_Q not implemented");
@@ -3086,7 +3087,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    TextureObject& texObj { RRXGL::getInstance().pixelPipeline().texture().getTexture()[level] };
+    TextureObject& texObj { RRXGL::getInstance().pipeline().texture().getTexture()[level] };
     texObj.width = widthRounded;
     texObj.height = heightRounded;
     texObj.intendedPixelFormat = intendedInternalPixelFormat;
@@ -3119,7 +3120,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (RRXGL::getInstance().getError() == GL_NO_ERROR)
             {
-                RRXGL::getInstance().pixelPipeline().texture().setTexWrapModeS(mode);
+                RRXGL::getInstance().pipeline().texture().setTexWrapModeS(mode);
             }
             break;
         }
@@ -3128,14 +3129,14 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
             if (RRXGL::getInstance().getError() == GL_NO_ERROR)
             {
-                RRXGL::getInstance().pixelPipeline().texture().setTexWrapModeT(mode);
+                RRXGL::getInstance().pipeline().texture().setTexWrapModeT(mode);
             }
             break;
         }
         case GL_TEXTURE_MAG_FILTER:
             if ((param == GL_LINEAR) || (param == GL_NEAREST))
             {
-                RRXGL::getInstance().pixelPipeline().texture().setEnableMagFilter(param == GL_LINEAR);
+                RRXGL::getInstance().pipeline().texture().setEnableMagFilter(param == GL_LINEAR);
             }
             else
             {
@@ -3147,13 +3148,13 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             {
             case GL_NEAREST:
             case GL_LINEAR:
-                RRXGL::getInstance().pixelPipeline().texture().setEnableMinFilter(false);
+                RRXGL::getInstance().pipeline().texture().setEnableMinFilter(false);
                 break;
             case GL_NEAREST_MIPMAP_NEAREST:
             case GL_LINEAR_MIPMAP_NEAREST:
             case GL_NEAREST_MIPMAP_LINEAR:
             case GL_LINEAR_MIPMAP_LINEAR:
-                RRXGL::getInstance().pixelPipeline().texture().setEnableMinFilter(true);
+                RRXGL::getInstance().pipeline().texture().setEnableMinFilter(true);
                 break;
             default:
                 RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3184,7 +3185,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().translate(
+    RRXGL::getInstance().pipeline().getMatrixStore().translate(
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
@@ -3193,7 +3194,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glTranslatef ({}, {}, {}) called", x, y, z);
-    RRXGL::getInstance().vertexPipeline().getMatrixStore().translate(x, y, z);
+    RRXGL::getInstance().pipeline().getMatrixStore().translate(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glVertex2d(GLdouble x, GLdouble y)
@@ -3457,7 +3458,7 @@ GLAPI void APIENTRY impl_glViewport(GLint x, GLint y, GLsizei width, GLsizei hei
     // 0 and height which means a effective screen resolution of height + 1. For instance, a resolution of
     // 480 x 272. The view port transformation would go from 0 to 480 which is then 481px. Thats the reason why the
     // resolution is decremented by one.
-    RRXGL::getInstance().vertexPipeline().getViewPort().setViewport(x, y, width, height);
+    RRXGL::getInstance().pipeline().getViewPort().setViewport(x, y, width, height);
 }
 
 // -------------------------------------------------------
@@ -3486,9 +3487,9 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         return;
     }
 
-    if (!RRXGL::getInstance().pixelPipeline().texture().isTextureValid(texture))
+    if (!RRXGL::getInstance().pipeline().texture().isTextureValid(texture))
     {
-        bool ret { RRXGL::getInstance().pixelPipeline().texture().createTextureWithName(texture) };
+        bool ret { RRXGL::getInstance().pipeline().texture().createTextureWithName(texture) };
         if (!ret)
         {
             // TODO: Free allocated textures to avoid leaks
@@ -3497,11 +3498,11 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         }
     }
 
-    RRXGL::getInstance().pixelPipeline().texture().setBoundTexture(texture);
+    RRXGL::getInstance().pipeline().texture().setBoundTexture(texture);
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().pixelPipeline().texture().useTexture();
+        RRXGL::getInstance().pipeline().texture().useTexture();
     }
     else
     {
@@ -3558,7 +3559,7 @@ GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
         if (textures[i] != 0)
         {
             SPDLOG_DEBUG("glDeleteTextures delete 0x{:X}", textures[i]);
-            RRXGL::getInstance().pixelPipeline().texture().deleteTexture(textures[i]);
+            RRXGL::getInstance().pipeline().texture().deleteTexture(textures[i]);
         }
     }
 }
@@ -3580,7 +3581,7 @@ GLAPI void APIENTRY impl_glDrawArrays(GLenum mode, GLint first, GLsizei count)
     RRXGL::getInstance().vertexArray().setDrawMode(convertDrawMode(mode));
     RRXGL::getInstance().vertexArray().enableIndices(false);
 
-    RRXGL::getInstance().vertexPipeline().drawObj(RRXGL::getInstance().vertexArray().renderObj());
+    RRXGL::getInstance().pipeline().drawObj(RRXGL::getInstance().vertexArray().renderObj());
 }
 
 GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
@@ -3590,13 +3591,13 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     switch (type)
     {
     case GL_UNSIGNED_BYTE:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::BYTE);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::BYTE);
         break;
     case GL_UNSIGNED_SHORT:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::UNSIGNED_SHORT);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::UNSIGNED_SHORT);
         break;
     case GL_UNSIGNED_INT:
-        RRXGL::getInstance().vertexArray().setIndicesType(RenderObj::Type::UNSIGNED_INT);
+        RRXGL::getInstance().vertexArray().setIndicesType(Type::UNSIGNED_INT);
         break;
     default:
         RRXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3613,7 +3614,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
 
     if (RRXGL::getInstance().getError() == GL_NO_ERROR)
     {
-        RRXGL::getInstance().vertexPipeline().drawObj(RRXGL::getInstance().vertexArray().renderObj());
+        RRXGL::getInstance().pipeline().drawObj(RRXGL::getInstance().vertexArray().renderObj());
     }
 }
 
@@ -3641,7 +3642,7 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint* textures)
 
     for (GLsizei i = 0; i < n; i++)
     {
-        std::pair<bool, uint16_t> ret { RRXGL::getInstance().pixelPipeline().texture().createTexture() };
+        std::pair<bool, uint16_t> ret { RRXGL::getInstance().pipeline().texture().createTexture() };
         if (ret.first)
         {
             textures[i] = ret.second;
@@ -3749,7 +3750,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    TextureObject& texObj { RRXGL::getInstance().pixelPipeline().texture().getTexture()[level] };
+    TextureObject& texObj { RRXGL::getInstance().pipeline().texture().getTexture()[level] };
 
     std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [](const uint16_t* p)
         { delete[] p; });
@@ -3832,8 +3833,8 @@ GLAPI void APIENTRY impl_glActiveTexture(GLenum texture)
 {
     SPDLOG_DEBUG("glActiveTexture texture 0x{:X} called", texture - GL_TEXTURE0);
     // TODO: Check how many TMUs the hardware actually has
-    RRXGL::getInstance().pixelPipeline().texture().activateTmu(texture - GL_TEXTURE0);
-    RRXGL::getInstance().vertexPipeline().activateTmu(texture - GL_TEXTURE0);
+    RRXGL::getInstance().pipeline().texture().activateTmu(texture - GL_TEXTURE0);
+    RRXGL::getInstance().pipeline().activateTmu(texture - GL_TEXTURE0);
 }
 
 GLAPI void APIENTRY impl_glSampleCoverage(GLfloat value, GLboolean invert)
@@ -4324,11 +4325,11 @@ GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
     RRXGL::getInstance().setError(GL_NO_ERROR);
     if (face == GL_FRONT)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::FRONT);
+        RRXGL::getInstance().pipeline().stencil().setStencilFace(StencilFace::FRONT);
     }
     else if (face == GL_BACK)
     {
-        RRXGL::getInstance().pixelPipeline().stencil().setStencilFace(Stencil::StencilFace::BACK);
+        RRXGL::getInstance().pipeline().stencil().setStencilFace(StencilFace::BACK);
     }
     else
     {

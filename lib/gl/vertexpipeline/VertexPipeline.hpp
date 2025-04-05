@@ -18,20 +18,19 @@
 #ifndef VERTEXPIPELINE_HPP
 #define VERTEXPIPELINE_HPP
 
-#include "FixedSizeQueue.hpp"
 #include "RenderObj.hpp"
-#include "Stack.hpp"
-#include "Types.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/Clipper.hpp"
-#include "vertexpipeline/Culling.hpp"
-#include "vertexpipeline/Lighting.hpp"
-#include "vertexpipeline/MatrixStore.hpp"
-#include "vertexpipeline/PrimitiveAssembler.hpp"
-#include "vertexpipeline/TexGen.hpp"
-#include "vertexpipeline/ViewPort.hpp"
+#include "transform/Clipper.hpp"
+#include "transform/Culling.hpp"
+#include "transform/Lighting.hpp"
+#include "transform/MatrixStore.hpp"
+#include "transform/PrimitiveAssembler.hpp"
+#include "transform/Stencil.hpp"
+#include "transform/TexGen.hpp"
+#include "transform/VertexTransforming.hpp"
+#include "transform/ViewPort.hpp"
 #include <cstdint>
 
 namespace rr
@@ -41,39 +40,74 @@ class VertexPipeline
 public:
     VertexPipeline(PixelPipeline& renderer);
 
+    // Drawing
     bool drawObj(const RenderObj& obj);
-    void setEnableNormalizing(const bool enable) { m_enableNormalizing = enable; }
+
+    // Misc
     void activateTmu(const std::size_t tmu)
     {
         m_tmu = tmu;
         m_matrixStore.setTmu(tmu);
     }
 
-    Lighting& getLighting() { return m_lighting; }
-    TexGen& getTexGen() { return m_texGen[m_tmu]; }
-    ViewPort& getViewPort() { return m_viewPort; }
-    MatrixStore& getMatrixStore() { return m_matrixStore; }
-    Culling& getCulling() { return m_culling; }
-    PrimitiveAssembler& getPrimitiveAssembler() { return m_primitiveAssembler; }
+    // Switching and uploading of display lists
+    void swapDisplayList() { m_renderer.swapDisplayList(); }
+    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
+
+    // General configs
+    bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
+    bool setScissorBox(const int32_t x,
+        const int32_t y,
+        const uint32_t width,
+        const uint32_t height)
+    {
+        return m_renderer.setScissorBox(x, y, width, height);
+    }
+    void setEnableNormalizing(const bool enable) { m_vertexCtx.normalizeLightNormal = enable; }
+    void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
+
+    // Framebuffer
+    bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
+    bool setClearColor(const Vec4& color) { return m_renderer.setClearColor(color); };
+    bool setClearDepth(const float depth) { return m_renderer.setClearDepth(depth); };
+
+    // Pixel pipeline configs
+    Fogging& fog() { return m_renderer.fog(); }
+    Texture& texture() { return m_renderer.texture(); }
+    FragmentPipeline& fragmentPipeline() { return m_renderer.fragmentPipeline(); }
+    FeatureEnable& featureEnable() { return m_renderer.featureEnable(); }
+
+    // Vertex pipeline configs
+    stencil::StencilSetter& stencil() { return m_stencil; }
+    lighting::LightingSetter& getLighting() { return m_lighting; }
+    texgen::TexGenSetter& getTexGen() { return m_texGen[m_tmu]; }
+    viewport::ViewPortSetter& getViewPort() { return m_viewPort; }
+    matrixstore::MatrixStore& getMatrixStore() { return m_matrixStore; }
+    culling::CullingSetter& getCulling() { return m_culling; }
+    primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    bool drawTriangle(const PrimitiveAssembler::Triangle& triangle);
-    void fetchAndTransform(VertexParameter& parameter, const RenderObj& obj, std::size_t i);
-    bool drawClippedTriangleList(tcb::span<VertexParameter> list);
-    bool drawUnclippedTriangle(const PrimitiveAssembler::Triangle& triangle);
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
+    bool pushVertex(VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
+    bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle);
+    VertexParameter fetch(const RenderObj& obj, std::size_t i);
+    bool updatePipeline();
 
-    bool m_enableNormalizing { true };
+    vertextransforming::VertexTransformingData m_vertexCtx {};
 
     // Current active TMU
     std::size_t m_tmu {};
 
     PixelPipeline& m_renderer;
-    Lighting m_lighting;
-    ViewPort m_viewPort;
-    MatrixStore m_matrixStore;
-    Culling m_culling;
-    std::array<TexGen, RenderConfig::TMU_COUNT> m_texGen {};
-    PrimitiveAssembler m_primitiveAssembler { m_viewPort };
+    stencil::StencilSetter m_stencil { [this](const StencilReg& reg)
+        { return m_renderer.setStencilBufferConfig(reg); },
+        m_vertexCtx.stencil };
+    lighting::LightingSetter m_lighting { m_vertexCtx.lighting };
+    viewport::ViewPortSetter m_viewPort { m_vertexCtx.viewPort };
+    matrixstore::MatrixStore m_matrixStore { m_vertexCtx.transformMatrices };
+    culling::CullingSetter m_culling { m_vertexCtx.culling };
+    std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
+    primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_vertexCtx.primitiveAssembler };
 };
 
 } // namespace rr

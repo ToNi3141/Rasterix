@@ -30,7 +30,6 @@ bool PixelPipeline::updatePipeline()
 
     ret = ret && m_featureEnable.update();
     ret = ret && m_fragmentPipeline.update();
-    ret = ret && m_stencil.update();
     ret = ret && m_fog.updateFogLut();
     ret = ret && m_texture.updateTexture();
 
@@ -39,10 +38,14 @@ bool PixelPipeline::updatePipeline()
 
 bool PixelPipeline::setClearColor(const Vec4& color)
 {
-    return m_renderer.setClearColor({ Vec4i { static_cast<uint8_t>(color[0] * 255.0f),
-        static_cast<uint8_t>(color[1] * 255.0f),
-        static_cast<uint8_t>(color[2] * 255.0f),
-        static_cast<uint8_t>(color[3] * 255.0f) } });
+    return m_renderer.setClearColor({
+        Vec4i {
+            static_cast<uint8_t>(color[0] * 255.0f),
+            static_cast<uint8_t>(color[1] * 255.0f),
+            static_cast<uint8_t>(color[2] * 255.0f),
+            static_cast<uint8_t>(color[3] * 255.0f),
+        },
+    });
 }
 
 bool PixelPipeline::setClearDepth(const float depth)
@@ -54,8 +57,7 @@ bool PixelPipeline::setClearDepth(const float depth)
 
 bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
 {
-    bool ret = updatePipeline();
-    return ret && m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);
+    return m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);
 }
 
 } // namespace rr

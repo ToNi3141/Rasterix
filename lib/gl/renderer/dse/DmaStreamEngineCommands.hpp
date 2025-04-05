@@ -52,7 +52,7 @@ static constexpr SCT OP_COMMIT_TO_STREAM { 0x6000'0000 };
 static constexpr SCT OP_COMMIT_TO_MEMORY { 0xE000'0000 };
 static constexpr SCT OP_STREAM_FROM_MEMORY { 0x7000'0000 };
 
-static constexpr std::size_t DEVICE_MIN_TRANSFER_SIZE { 512 }; // The DSE only supports 16 * 4 byte transfers
+static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 64 }; // The DSE only supports 16 * 4 byte transfers
 
 struct Command
 {

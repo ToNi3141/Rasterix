@@ -67,6 +67,26 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     }
 }
 
+void Renderer::setVertexContext(const vertextransforming::VertexTransformingData& ctx)
+{
+    if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
+    {
+        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
+            ctx,
+            drawTriangleLambda,
+            setStencilBufferConfigLambda,
+        };
+    }
+
+    if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
+    {
+        if (!addCommand(SetVertexCtxCmd { ctx }))
+        {
+            SPDLOG_CRITICAL("Cannot push vertex context into queue. This may brake the rendering.");
+        }
+    }
+}
+
 void Renderer::initDisplayLists()
 {
     for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)
@@ -80,10 +100,19 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    switchDisplayLists();
-    uploadTextures();
-    uploadDisplayList();
-    clearDisplayListAssembler();
+    // The intermediate upload can only correctly work when the threaded rasterization is
+    // turned off. Otherwise resource conflicts between the render thread and the application
+    // thread can occur.
+    // It can only work for single lists. Loading of partial framebuffers in the rrxif config
+    // is not supported which is a requirement to get it to work.
+    if (!RenderConfig::THREADED_RASTERIZATION
+        && m_displayListBuffer.getBack().singleList())
+    {
+        switchDisplayLists();
+        uploadTextures();
+        uploadDisplayList();
+        clearDisplayListAssembler();
+    }
 }
 
 void Renderer::swapDisplayList()

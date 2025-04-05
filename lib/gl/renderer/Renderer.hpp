@@ -38,7 +38,9 @@
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
+#include "commands/PushVertexCmd.hpp"
 #include "commands/RegularTriangleCmd.hpp"
+#include "commands/SetVertexCtxCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
@@ -59,6 +61,7 @@
 #include "registers/TexEnvReg.hpp"
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "transform/VertexTransforming.hpp"
 
 namespace rr
 {
@@ -73,6 +76,15 @@ public:
     /// @brief Will render a triangle which is constructed with the given parameters
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     bool drawTriangle(const TransformedTriangle& triangle);
+
+    /// @brief Sets a new vertex context
+    /// @param ctx The vertex context with transformation matrices, light configs and others.
+    void setVertexContext(const vertextransforming::VertexTransformingData& ctx);
+
+    /// @brief Pushes a vertex into the renderer
+    /// @param vertex The new vertex
+    /// @return true when the vertex was accepted. False could be a out of memory error.
+    bool pushVertex(const VertexParameter& vertex) { return pushVertexImpl(vertex); }
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
@@ -157,7 +169,6 @@ public:
     /// @param width Width of the box
     /// @param height Height of the box
     /// @return true if success
-
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
 
     /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
@@ -181,19 +192,49 @@ public:
     /// @param enable true to enable vsync
     void setEnableVSync(const bool enable) { m_enableVSync = enable; }
 
+    /// @brief Sets the config for the stencil buffer like the clear value or the tests
+    /// @param stencilConf the used stencil buffer config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setStencilBufferConfig(const StencilReg& stencilConf) { return writeReg(stencilConf); }
+
+    /// @brief Sets the clear color (see clear()) of the color buffer
+    /// @param color the clear clear color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setClearColor(const ColorBufferClearColorReg& color) { return writeReg(color); }
+
+    /// @brief Sets the clear depth value (see clear()) of the depth buffer
+    /// @param depth the depth value
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setClearDepth(const DepthBufferClearDepthReg& depth) { return writeReg(depth); }
+
+    /// @brief Sets the fragment pipe line config like the blend equation, color and depth masks and so on
+    /// @param pipelineConf the pipeline config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
+
+    /// @brief Sets the config of the texture combiners.
+    ///     Note: The number of the TMU is configured in this config
+    /// @param texEnvConfig the texture combiner config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTexEnv(const TexEnvReg& texEnvConfig) { return writeReg(texEnvConfig); }
+
+    /// @brief Sets the texture environment color.
+    ///     Note: The number of the TMU is configured in this config
+    /// @param color the texture environment color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTexEnvColor(const TexEnvColorReg& color) { return writeReg(color); }
+
+    /// @brief Sets the fog color
+    /// @param color the fog color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFogColor(const FogColorReg& color) { return writeReg(color); }
+
+    /// @brief Enables features of the renderer like fogging, blending, depth tests and so on
+    /// @param featureEnable contains a config of which features are enabled
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
 
 private:
-    static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
-
-    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
@@ -305,6 +346,25 @@ private:
         return true;
     }
 
+    // Inlining this function enables the return code optimization from the start of the chain to the transformation
+    bool pushVertexImpl(const VertexParameter& vertex)
+    {
+        if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
+        {
+            return m_vertexTransform.pushVertex(vertex);
+        }
+
+        if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
+        {
+            if (!addCommand(PushVertexCmd { vertex }))
+            {
+                SPDLOG_CRITICAL("Cannot push vertex into queue. This may brake the rendering.");
+                return false;
+            }
+            return true;
+        }
+    }
+
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const std::size_t tmu, const uint16_t texId, TmuTextureReg tmuConfig);
@@ -331,6 +391,17 @@ private:
     IDevice& m_device;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+
+    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    { return drawTriangle(triangle); };
+    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    { return setStencilBufferConfig(stencilConf); };
+
+    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
+        {},
+        drawTriangleLambda,
+        setStencilBufferConfigLambda,
+    };
 
     // Instantiation of the displaylist assemblers
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};

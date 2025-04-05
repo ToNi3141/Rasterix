@@ -15,38 +15,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Culling.hpp"
+#include "Stencil.hpp"
 #include "renderer/Rasterizer.hpp"
+#include <spdlog/spdlog.h>
 
-namespace rr
+namespace rr::stencil
 {
-
-Culling::Culling()
+StencilSetter::StencilSetter(const std::function<bool(const StencilReg&)>& sender, StencilData& stencilData)
+    : m_sender { sender }
+    , m_data { stencilData }
 {
+    m_sender(m_stencilConf);
 }
 
-bool Culling::cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
+StencilReg& StencilSetter::stencilConfig()
 {
-    if (m_enableCulling)
+    if (m_data.enableTwoSideStencil)
     {
-        const float edgeVal { Rasterizer::edgeFunctionFloat(v0, v1, v2) };
-        const Face currentOrientation = (edgeVal <= 0.0f) ? Face::BACK : Face::FRONT;
-        if (currentOrientation != m_cullMode) // TODO: The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back a screwed up.
+        if (m_stencilFace == StencilFace::FRONT)
         {
-            return true;
+            return m_data.stencilConfFront;
         }
+        return m_data.stencilConfBack;
     }
-    return false;
+    m_stencilDirty = true;
+    return m_stencilConf;
 }
 
-void Culling::setCullMode(const Face mode)
+bool StencilSetter::update()
 {
-    m_cullMode = mode;
+    bool ret { true };
+
+    if (!m_data.enableTwoSideStencil && m_stencilDirty)
+    {
+        ret = m_sender(m_stencilConf);
+        m_stencilDirty = !ret;
+    }
+
+    return ret;
 }
 
-void Culling::enableCulling(const bool enable)
-{
-    m_enableCulling = enable;
-}
-
-}
+} // namespace rr::stencil

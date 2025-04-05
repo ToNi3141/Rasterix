@@ -20,22 +20,32 @@
 
 #include <tcb/span.hpp>
 
+#include "Enums.hpp"
 #include "FixedSizeQueue.hpp"
-#include "RenderObj.hpp"
 #include "Types.hpp"
 #include "ViewPort.hpp"
 
-namespace rr
+namespace rr::primitiveassembler
 {
 
-class PrimitiveAssembler
+struct PrimitiveAssemblerData
+{
+    DrawMode mode;
+    std::size_t primitiveCount;
+    float lineWidth;
+};
+
+class PrimitiveAssemblerCalc
 {
 public:
     using Triangle = std::array<std::reference_wrapper<const VertexParameter>, 3>;
 
-    PrimitiveAssembler(ViewPort& viewPort)
-        : m_viewPort(viewPort)
+    PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
+        : m_viewPortData { viewPortData }
+        , m_primitiveAssemblerData { primitiveAssemblerData }
     {
+        updateMode();
+        clear();
     }
 
     tcb::span<const Triangle> getPrimitive()
@@ -48,17 +58,14 @@ public:
     }
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
-    void setExpectedPrimitiveCount(const std::size_t count) { m_expectedPrimitiveCount = count; }
-
-    void setDrawMode(const RenderObj::DrawMode mode);
     VertexParameter& createParameter() { return m_queue.create_back(); }
-    void clear();
-
-    void setLineWidth(const float width) { m_lineWidth = width; }
+    void pushParameter(const VertexParameter& param) { m_queue.push_back(param); };
 
     bool hasTriangles() const { return m_queue.size() >= 3; }
 
 private:
+    void clear();
+    void updateMode();
     tcb::span<const Triangle> constructTriangle();
     tcb::span<const Triangle> constructLine();
     tcb::span<const Triangle> drawLine(const Vec4& v0,
@@ -68,21 +75,35 @@ private:
         const Vec4& c0,
         const Vec4& c1);
 
-    RenderObj::DrawMode m_drawMode { RenderObj::DrawMode::TRIANGLES };
     FixedSizeQueue<VertexParameter, 3> m_queue {};
 
-    std::size_t m_expectedPrimitiveCount { 0 };
     std::size_t m_count { 0 };
     VertexParameter m_pTmp {};
 
     std::size_t m_decrement { 0 };
 
-    ViewPort& m_viewPort;
-    float m_lineWidth { 1.0 };
+    const viewport::ViewPortData& m_viewPortData;
+    const PrimitiveAssemblerData& m_primitiveAssemblerData;
     bool m_line { false };
     std::array<VertexParameter, 6> m_vertexParameters;
-    std::array<PrimitiveAssembler::Triangle, 2> m_triangleBuffer { { { { m_pTmp, m_pTmp, m_pTmp } }, { { m_pTmp, m_pTmp, m_pTmp } } } };
+    std::array<PrimitiveAssemblerCalc::Triangle, 2> m_triangleBuffer { { { { m_pTmp, m_pTmp, m_pTmp } }, { { m_pTmp, m_pTmp, m_pTmp } } } };
 };
 
-} // namespace rr
+class PrimitiveAssemblerSetter
+{
+public:
+    PrimitiveAssemblerSetter(PrimitiveAssemblerData& primitiveAssemblerData)
+        : m_data { primitiveAssemblerData }
+    {
+    }
+
+    void setExpectedPrimitiveCount(const std::size_t count) { m_data.primitiveCount = count; }
+    void setDrawMode(const DrawMode mode) { m_data.mode = mode; };
+    void setLineWidth(const float width) { m_data.lineWidth = width; }
+
+private:
+    PrimitiveAssemblerData& m_data;
+};
+
+} // namespace rr::primitiveassembler
 #endif // PRIMITIVE_ASSEMBLER_HPP

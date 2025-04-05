@@ -15,28 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CULLING_HPP
-#define CULLING_HPP
+#include "Culling.hpp"
 
-#include "Types.hpp"
-#include "math/Vec.hpp"
-
-namespace rr
+namespace rr::culling
 {
-class Culling
+
+void CullingSetter::setCullMode(const Face mode)
 {
-public:
-    Culling();
+    m_data.cullMode = mode;
+}
 
-    bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+void CullingSetter::enableCulling(const bool enable)
+{
+    m_data.enableCulling = enable;
+}
 
-    void enableCulling(const bool enable);
-    void setCullMode(const Face mode);
-
-private:
-    bool m_enableCulling { false };
-    Face m_cullMode { Face::BACK };
-};
-
-} // namespace rr
-#endif // CULLING_HPP
+} // namespace rr::culling

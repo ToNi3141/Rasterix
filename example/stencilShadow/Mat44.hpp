@@ -17,7 +17,7 @@
 
 #ifndef MAT44_HPP
 #define MAT44_HPP
-#include "math/Vec.hpp"
+#include "Vec.hpp"
 #include <array>
 #include <math.h>
 
@@ -189,6 +189,11 @@ public:
     const std::array<float, 4>& operator[](const std::size_t rhs) const
     {
         return mat[rhs];
+    }
+
+    const float* data() const
+    {
+        return mat[0].data();
     }
 
     ValType mat;

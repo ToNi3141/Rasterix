@@ -621,14 +621,9 @@ void RRXGL::addLibExtension(std::string extension)
     m_glExtensions.append(extension);
 }
 
-VertexPipeline& RRXGL::vertexPipeline()
+VertexPipeline& RRXGL::pipeline()
 {
     return m_renderDevice->vertexPipeline;
-}
-
-PixelPipeline& RRXGL::pixelPipeline()
-{
-    return m_renderDevice->pixelPipeline;
 }
 
 VertexQueue& RRXGL::vertexQueue()

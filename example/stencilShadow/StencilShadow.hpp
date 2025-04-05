@@ -60,6 +60,7 @@ public:
         glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
         glLightfv(GL_LIGHT0, GL_POSITION, m_lightPosition.data());
         glEnable(GL_LIGHT0);
+        glEnable(GL_NORMALIZE);
 
         glActiveTexture(GL_TEXTURE0);
         static constexpr GLfloat colors[4] = { 0.0, 0.0, 0.0, 0.0 };
@@ -295,7 +296,7 @@ private:
     void drawSilhouette(const tcb::span<const rr::Vec3> verts, const rr::Vec4& lightPos)
     {
         rr::Mat44 mInv;
-        glGetFloatv(GL_MODELVIEW_MATRIX, &mInv.mat[0][0]);
+        glGetFloatv(GL_MODELVIEW_MATRIX, const_cast<float*>(mInv.data()));
         mInv.invert();
         rr::Vec4 tmpLightPos;
         mInv.transform(tmpLightPos, lightPos);
