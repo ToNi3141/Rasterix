@@ -169,7 +169,6 @@ public:
     /// @param width Width of the box
     /// @param height Height of the box
     /// @return true if success
-
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
 
     /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
@@ -193,19 +192,49 @@ public:
     /// @param enable true to enable vsync
     void setEnableVSync(const bool enable) { m_enableVSync = enable; }
 
+    /// @brief Sets the config for the stencil buffer like the clear value or the tests
+    /// @param stencilConf the used stencil buffer config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setStencilBufferConfig(const StencilReg& stencilConf) { return writeReg(stencilConf); }
+
+    /// @brief Sets the clear color (see clear()) of the color buffer
+    /// @param color the clear clear color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setClearColor(const ColorBufferClearColorReg& color) { return writeReg(color); }
+
+    /// @brief Sets the clear depth value (see clear()) of the depth buffer
+    /// @param depth the depth value
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setClearDepth(const DepthBufferClearDepthReg& depth) { return writeReg(depth); }
+
+    /// @brief Sets the fragment pipe line config like the blend equation, color and depth masks and so on
+    /// @param pipelineConf the pipeline config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFragmentPipelineConfig(const FragmentPipelineReg& pipelineConf) { return writeReg(pipelineConf); }
+
+    /// @brief Sets the config of the texture combiners.
+    ///     Note: The number of the TMU is configured in this config
+    /// @param texEnvConfig the texture combiner config
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTexEnv(const TexEnvReg& texEnvConfig) { return writeReg(texEnvConfig); }
+
+    /// @brief Sets the texture environment color.
+    ///     Note: The number of the TMU is configured in this config
+    /// @param color the texture environment color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTexEnvColor(const TexEnvColorReg& color) { return writeReg(color); }
+
+    /// @brief Sets the fog color
+    /// @param color the fog color
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFogColor(const FogColorReg& color) { return writeReg(color); }
+
+    /// @brief Enables features of the renderer like fogging, blending, depth tests and so on
+    /// @param featureEnable contains a config of which features are enabled
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
 
 private:
-    static constexpr std::size_t TEXTURE_NUMBER_OF_TEXTURES { RenderConfig::NUMBER_OF_TEXTURE_PAGES }; // Have as many pages as textures can exist. Probably the most reasonable value for the number of pages.
-
-    static constexpr uint8_t ALIGNMENT { 4 }; // 4 bytes alignment (for the 32 bit AXIS)
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
