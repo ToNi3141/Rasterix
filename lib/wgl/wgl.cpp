@@ -17,8 +17,8 @@
 
 #include "wgl.h"
 #include "FT60XBusConnector.hpp"
+#include "MultiThreadRunner.hpp"
 #include "RRXGL.hpp"
-#include "ThreadedRenderer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -33,7 +33,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RRXGL::createInstance(m_busConnector);
+        rr::RRXGL::createInstance(m_busConnector, m_runner);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RRXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
         rr::RRXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
@@ -52,22 +52,20 @@ public:
         rr::RRXGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
         rr::RRXGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
 #undef ADDRESS_OF
-        m_renderer.setRenderer(&rr::RRXGL::getInstance());
     }
     ~GLInitGuard()
     {
-        m_renderer.waitForThread();
         rr::RRXGL::destroy();
     }
 
     void render()
     {
-        m_renderer.waitForThread();
-        m_renderer.render();
+        rr::RRXGL::getInstance().swapDisplayList();
+        rr::RRXGL::getInstance().uploadDisplayList();
     }
 
 private:
-    rr::ThreadedRenderer<rr::RRXGL> m_renderer {};
+    rr::MultiThreadRunner m_runner {};
 } guard;
 
 // Wiggle API

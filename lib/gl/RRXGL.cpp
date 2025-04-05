@@ -70,9 +70,9 @@ public:
 class RenderDevice
 {
 public:
-    RenderDevice(IBusConnector& busConnector)
+    RenderDevice(IBusConnector& busConnector, IThreadRunner& runner)
         : device { busConnector }
-        , pixelPipeline { device.device }
+        , pixelPipeline { device.device, runner }
         , vertexPipeline { pixelPipeline }
     {
     }
@@ -86,13 +86,13 @@ public:
     VertexArray vertexArray {};
 };
 
-bool RRXGL::createInstance(IBusConnector& busConnector)
+bool RRXGL::createInstance(IBusConnector& busConnector, IThreadRunner& runner)
 {
     if (instance)
     {
         delete instance;
     }
-    instance = new RRXGL { busConnector };
+    instance = new RRXGL { busConnector, runner };
     return instance != nullptr;
 }
 
@@ -105,8 +105,8 @@ void RRXGL::destroy()
     }
 }
 
-RRXGL::RRXGL(IBusConnector& busConnector)
-    : m_renderDevice { new RenderDevice { busConnector } }
+RRXGL::RRXGL(IBusConnector& busConnector, IThreadRunner& runner)
+    : m_renderDevice { new RenderDevice { busConnector, runner } }
 {
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(impl_glAccum));

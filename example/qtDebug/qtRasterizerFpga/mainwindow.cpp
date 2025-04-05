@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_image(RESOLUTION_W, RESOLUTION_H, QImage::Format_RGB888)
 {
     ui->setupUi(this);
-    rr::RRXGL::createInstance(m_busConnector);
+    rr::RRXGL::createInstance(m_busConnector, m_runner);
     rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
 
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);

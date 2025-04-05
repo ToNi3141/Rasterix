@@ -19,6 +19,7 @@
 #define RRXGL_HPP
 
 #include "IBusConnector.hpp"
+#include "IThreadRunner.hpp"
 #include <array>
 #include <functional>
 #include <map>
@@ -35,8 +36,20 @@ class VertexQueue;
 class RRXGL
 {
 public:
+    /// @brief Getting the instance of the current render context
+    /// @return The instance of the current render context
     static RRXGL& getInstance();
-    static bool createInstance(IBusConnector& busConnector);
+    /// @brief Creates a new render context
+    /// @param busConnector Driver to access the RRX hardware
+    /// @param runner Runner to run some parts of the renderer in an own thread.
+    ///     This project contains already two sample runners, one MultiThreadRunner for systems which
+    ///     implement std::async and a SingleThreadRunner with no thread logic. If you have an multi core
+    ///     system like the rppico, an own runner needs to be implemented to offload work to other cores.
+    /// @return true if the creation was successful. This function currently uses heap memory. A false
+    ///     can occur when the memory allocation fails.
+    static bool createInstance(IBusConnector& busConnector, IThreadRunner& runner);
+    /// @brief  Destroys the current context, switches the framebuffer to the system framebuffer and
+    ///     and frees all allocated memory.
     static void destroy();
 
     void setError(const uint32_t error) { m_error = error; }
@@ -82,7 +95,7 @@ public:
     void enableVSync(const bool enable);
 
 private:
-    RRXGL(IBusConnector& busConnector);
+    RRXGL(IBusConnector& busConnector, IThreadRunner& runner);
     ~RRXGL();
     RenderDevice* m_renderDevice { nullptr };
 

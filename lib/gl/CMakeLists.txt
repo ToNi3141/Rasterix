@@ -20,7 +20,7 @@ add_library(gl STATIC
     renderer/Renderer.cpp
 )
 
-target_link_libraries(gl PRIVATE spdlog::spdlog span)
+target_link_libraries(gl PRIVATE spdlog::spdlog span utils)
 target_include_directories(gl PUBLIC .)
 
 add_compile_definitions(

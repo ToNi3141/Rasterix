@@ -1,6 +1,6 @@
 // Rasterix
 // https://github.com/ToNi3141/Rasterix
-// Copyright (c) 2024 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,16 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef MULTITHREADRUNNER_HPP
+#define MULTITHREADRUNNER_HPP
+
+#include "IThreadRunner.hpp"
 #include <future>
 
 namespace rr
 {
 
-template <typename Renderer>
-class ThreadedRenderer
+class MultiThreadRunner : public IThreadRunner
 {
 public:
-    ThreadedRenderer()
+    MultiThreadRunner()
     {
         // Initialize the render thread by running it once
         m_renderThread = std::async(
@@ -32,37 +35,24 @@ public:
             { return true; });
     }
 
-    ~ThreadedRenderer()
+    void wait() override
     {
-    }
-
-    void setRenderer(Renderer* renderer)
-    {
-        m_renderer = renderer;
-    }
-
-    void waitForThread()
-    {
-        if (m_renderThread.valid() && (m_renderThread.get() != true))
+        if (m_renderThread.valid())
         {
-            return;
+            m_renderThread.get();
         }
     }
 
-    void render()
+    void run(const std::function<bool()>& operation) override
     {
-        m_renderer->swapDisplayList();
-        m_renderThread = std::async(
-            [this]()
-            {
-                m_renderer->uploadDisplayList();
-                return true;
-            });
+        wait();
+        m_renderThread = std::async(operation);
     }
 
 private:
-    Renderer* m_renderer { nullptr };
     std::future<bool> m_renderThread;
 };
 
 } // namespace rr
+
+#endif // MULTITHREADRUNNER_HPP

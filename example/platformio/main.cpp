@@ -5,6 +5,7 @@
 #include <Minimal.hpp>
 #include <RRXGL.hpp>
 #include <SPI.h>
+#include <SingleThreadRunner.hpp>
 #include <StencilShadow.hpp>
 
 // Create a connector for the rrx library. This is a wrapper around the arduino SPI interface.
@@ -100,6 +101,8 @@ static constexpr uint32_t RESOLUTION_W = 320;
 static constexpr uint LED_PIN = 25;
 bool state { false };
 
+static rr::SingleThreadRunner m_runner {};
+
 // Select a demo
 static Minimal m_scene {};
 // static StencilShadow m_scene {};
@@ -110,7 +113,7 @@ void setup()
     // Initialize the connector
     m_busConnector.init();
     // Create a instance with the current connector. This will also initialize the library.
-    rr::RRXGL::createInstance(m_busConnector);
+    rr::RRXGL::createInstance(m_busConnector, m_runner);
     // Set the display resolution
     rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     // Initialize the scene

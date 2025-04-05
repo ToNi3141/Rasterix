@@ -18,6 +18,7 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
+#include "IThreadRunner.hpp"
 #include "Rasterizer.hpp"
 #include "Renderer.hpp"
 #include "TextureMemoryManager.hpp"
@@ -69,7 +70,7 @@ namespace rr
 class Renderer
 {
 public:
-    Renderer(IDevice& device);
+    Renderer(IDevice& device, IThreadRunner& runner);
 
     ~Renderer();
 
@@ -300,6 +301,7 @@ private:
 
     void switchDisplayLists()
     {
+        m_displayListUploaderThread.wait();
         m_displayListBuffer.swap();
     }
 
@@ -389,6 +391,7 @@ private:
     int32_t m_scissorYEnd { 0 };
 
     IDevice& m_device;
+    IThreadRunner& m_displayListUploaderThread;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 

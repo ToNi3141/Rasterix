@@ -21,6 +21,7 @@
 #include "FeatureEnable.hpp"
 #include "Fogging.hpp"
 #include "FragmentPipeline.hpp"
+#include "IThreadRunner.hpp"
 #include "Texture.hpp"
 #include "math/Vec.hpp"
 #include "renderer/IDevice.hpp"
@@ -32,7 +33,7 @@ namespace rr
 class PixelPipeline
 {
 public:
-    PixelPipeline(IDevice& device);
+    PixelPipeline(IDevice& device, IThreadRunner& runner);
 
     bool drawTriangle(const TransformedTriangle& triangle) { return m_renderer.drawTriangle(triangle); }
     bool updatePipeline();
