@@ -1,7 +1,7 @@
 
 - [Design](#design)
-  - [RasterixIF](#rasterixif)
-  - [RasterixEF](#rasterixef)
+  - [RRXIF](#rrxif)
+  - [RRXEF](#rrxef)
   - [Software Flow](#software-flow)
   - [FPGA Flow](#fpga-flow)
     - [Flow Control](#flow-control)
@@ -17,12 +17,12 @@ The renderer uses a stream centric design. That means, the renderer does not que
 - Texture Buffer: A buffer which holds a complete texture. Typically this is 128kB in size to contain a full 256x256x16 texture. Each TMU has their own texture buffer.
 - Frame Buffer: The frame buffer used for rendering. There is a configurable 16bit color buffer, 16bit depth buffer and 4 bit stencil buffer.
 
-## RasterixIF
+## RRXIF
 When the rendering of the image is finished, the renderer will stream out the content from the internal frame buffer.
 
 Normally the internal frame buffer in the renderer is too small to render a complete high resolution picture. To overcome this limitation, the renderer can render partial images. For instance, assume a screen resolution of 1024x768x16 (1536kB) and a internal frame buffer with the size of 256kB. The driver will then divide the image in 6 different 1024x128x16 parts. It will first render the image {(0, 0), (1023, 127)}, then {(0, 128), (1023, 255)} and so on. It will stream each subpart to the frame buffer in memory. This frame buffer is then responsible to stich the sub images together.
 
-## RasterixEF
+## RRXEF
 It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rrxif, since it needs less texture fetches. But in reality, it is slower, because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
 
 ## Software Flow
@@ -31,20 +31,26 @@ The following diagram shows roughly the flow a triangle takes, until it is seen 
 
 The driver is build with the following components:
 - `Application`: The application is the user of the library to draw 3D images.
+- `gl`: The OpenGL C interface.
 - `RRXGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
-- `VertexPipeline`: Implements the geometry transformation, clipping and lighting.
-- `PixelPipeline`: Controls the pixel pipeline of the hardware.
-- `Renderer`: Executes the rasterization, compiles display lists and sends them via the `IBusConnecter` to the Rasterix.
-- `Rasterizer`: This basically is the rasterizer. It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
-- `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the Rasterix.
+- `VertexPipeline`: Controls the vertex pipeline by collecting configurations and fetching vertices.
+- `PixelPipeline`: Controls the pixel pipeline by collecting configurations.
+- `Renderer`: Executes the transformation (optional), rasterization (optional), compiles display lists and sends them via the `IDevice` interface to the next step.
+- `Rasterizer`: It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
+- `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the RRX.
 - `TextureMemoryManager`: Manager for the texture memory on the device.
-- `BusConnector`: This is an interface from the driver to the renderer. It is used to transfer the data via the defined interface like USB on a PC build, AXI on the Zynq build or SPI for microcontrollers.
+- `ThreadedRasterizer`: Optional step and derives from the `IDevice` interface. Fetches the data from the datastream and decodes it. It performs the transformation on the vertices and rasterizes the triangle. Usually this class runs in a thread.
+- `DmaStreamEngine`: Derives from the `IDevice` interface. Adds a header to the data stream with information about the size of the data and where to stream the data (to the RRX or to the device memory).
+- `BusConnector`: Derives from the `IBusConnector` interface. It is used to transfer the data via a  defined interface like USB on a PC build, AXI on the Zynq build or SPI for microcontrollers to the RRX.
+- `IBusConnector`: Interface description which abstracts the physical access to the hardware.
+- `IDevice`: Interface which abstracts the access to the RRX as a whole. It has an interface to stream data to the RRX or to access the device memory to upload textures.
+- `IThreadRunner`: Implements a interface to execute a command in a thread. All `IDevice::steamDisplayList()` calls are executed via this thread interface. 
 
 ## FPGA Flow
 ![fpga flow diagram](pictures/fpgaFlow.drawio.png)
 
 - `ftdi_245fifo` (3rd party): Implements the ft245 interface.
-- `RasterixIF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs.
+- `RRXIF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs.
   - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
   - `RasterixRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
     - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
@@ -90,7 +96,7 @@ The `*_rdata` values are read from the framebuffer.
 ## Stream Framebuffer
 ![stream framebuffer diagram](pictures/StreamFramebuffer.drawio.svg)
 
-The `StreamFramebuffer` is used from the `RasterixEF`. It operates directly on the RAM.
+The `StreamFramebuffer` is used from the `RRXEF`. It operates directly on the RAM.
 
 - `axisBroadcast`: Splits the `fetch*` data into two streams, one goes into the FIFO to be stored until the read data arrives, the other is used to create the memory requests.
 - `ReadRequestGenerator`: This module creates the read requests based on the index in `fetch*` and writes it to the AXI address channel.

@@ -18,8 +18,9 @@
 
 namespace rr
 {
-Renderer::Renderer(IDevice& device)
+Renderer::Renderer(IDevice& device, IThreadRunner& runner)
     : m_device { device }
+    , m_displayListUploaderThread { runner }
 {
     m_displayListBuffer.getBack().clearDisplayListAssembler();
     m_displayListBuffer.getFront().clearDisplayListAssembler();
@@ -51,6 +52,7 @@ Renderer::~Renderer()
     swapScreenToNewColorBuffer();
     switchDisplayLists();
     uploadDisplayList();
+    m_displayListUploaderThread.wait();
 }
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
@@ -100,18 +102,14 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    // The intermediate upload can only correctly work when the threaded rasterization is
-    // turned off. Otherwise resource conflicts between the render thread and the application
-    // thread can occur.
     // It can only work for single lists. Loading of partial framebuffers in the rrxif config
     // is not supported which is a requirement to get it to work.
-    if (!RenderConfig::THREADED_RASTERIZATION
-        && m_displayListBuffer.getBack().singleList())
+    if (m_displayListBuffer.getBack().singleList())
     {
         switchDisplayLists();
         uploadTextures();
-        uploadDisplayList();
         clearDisplayListAssembler();
+        uploadDisplayList();
     }
 }
 
@@ -189,21 +187,25 @@ void Renderer::setYOffset()
 
 void Renderer::uploadDisplayList()
 {
-    m_displayListBuffer.getFront().displayListLooper(
-        [this](
-            DisplayListDispatcherType& dispatcher,
-            const std::size_t i,
-            const std::size_t,
-            const std::size_t,
-            const std::size_t)
-        {
-            while (!m_device.clearToSend())
-                ;
-            m_device.streamDisplayList(
-                dispatcher.getDisplayListBufferId(i),
-                dispatcher.getDisplayListSize(i));
-            return true;
-        });
+    const std::function<bool()> uploader = [this]()
+    {
+        return m_displayListBuffer.getFront().displayListLooper(
+            [this](
+                DisplayListDispatcherType& dispatcher,
+                const std::size_t i,
+                const std::size_t,
+                const std::size_t,
+                const std::size_t)
+            {
+                while (!m_device.clearToSend())
+                    ;
+                m_device.streamDisplayList(
+                    dispatcher.getDisplayListBufferId(i),
+                    dispatcher.getDisplayListSize(i));
+                return true;
+            });
+    };
+    m_displayListUploaderThread.run(uploader);
 }
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
@@ -341,6 +343,7 @@ bool Renderer::setColorBufferAddress(const uint32_t addr)
 
 void Renderer::uploadTextures()
 {
+    m_displayListUploaderThread.wait();
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {

@@ -17,6 +17,7 @@
 #endif
 
 #include "VerilatorBusConnector.hpp"
+#include "SingleThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
@@ -58,6 +59,8 @@ public:
 private:
     rr::FT60XBusConnector m_busConnector;
 #endif
+
+    rr::SingleThreadRunner m_runner{};
 
     Ui::MainWindow *ui;
 

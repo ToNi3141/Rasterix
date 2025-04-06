@@ -17,8 +17,8 @@
 
 #include "glx.h"
 #include "DMAProxyBusConnector.hpp"
+#include "MultiThreadRunner.hpp"
 #include "RRXGL.hpp"
-#include "ThreadedRenderer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -30,7 +30,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RRXGL::createInstance(m_busConnector);
+        rr::RRXGL::createInstance(m_busConnector, m_runner);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RRXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
         rr::RRXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
@@ -41,18 +41,16 @@ public:
         rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
         rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
 #undef ADDRESS_OF
-        m_renderer.setRenderer(&(rr::RRXGL::getInstance()));
     }
     ~GLInitGuard()
     {
-        m_renderer.waitForThread();
         rr::RRXGL::getInstance().destroy();
     }
 
     void render()
     {
-        m_renderer.waitForThread();
-        m_renderer.render();
+        rr::RRXGL::getInstance().swapDisplayList();
+        rr::RRXGL::getInstance().uploadDisplayList();
     }
 
     rr::RRXGL& getInst()
@@ -61,8 +59,8 @@ public:
     }
 
 private:
-    rr::DMAProxyBusConnector m_busConnector;
-    rr::ThreadedRenderer<rr::RRXGL> m_renderer {};
+    rr::DMAProxyBusConnector m_busConnector {};
+    rr::MultiThreadRunner m_runner {};
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(Display* dpy, int screen,

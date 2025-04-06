@@ -1,4 +1,5 @@
 #include "RRXGL.hpp"
+#include "SingleThreadRunner.hpp"
 #include "gl.h"
 #include "glu.h"
 
@@ -116,8 +117,13 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::RRXGL::createInstance(m_busConnector);
+        rr::RRXGL::createInstance(m_busConnector, m_runner);
         rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    }
+
+    ~Runner()
+    {
+        rr::RRXGL::getInstance().destroy();
     }
 
     void execute()
@@ -137,7 +143,8 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<> m_busConnector;
+    BusConnector<> m_busConnector {};
+    rr::SingleThreadRunner m_runner {};
     bool led = false;
     Scene m_scene {};
 };
