@@ -45,7 +45,6 @@ public:
 
     void run(const std::function<bool()>& operation) override
     {
-        wait();
         m_renderThread = std::async(operation);
     }
 

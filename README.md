@@ -64,7 +64,7 @@ The __pico-sdk__ and __PlatformIO__ are supported. See [Digilent CMod7](/rtl/top
 ## How to port the Driver
 To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:
 1. Create a new class which is derived from the `IBusConnector`. Implement the virtual methods. This interface is used to interface the hardware via SPI, AXIS or what else.
-2. Create a new class which is derived from the `IThreadRunner`. Implement the virtual methods or use one of the existing runners. This interface is used to offload work into a worker thread. Offloading has only an advantage on multi core systems. Single core systems will run slower. The `SingleThreadRunner` can be used for all platforms. It does not create an additional thread. The `MultiThreadRunner` can be used for systems which implement `std::async`. If you have another multi core system like the rppico, an own runner to utilize all cores needs to be implemented.
+2. Create a new class which is derived from the `IThreadRunner`. Implement the virtual methods or use one of the existing runners. This interface is used to offload work into a worker thread. Offloading has only an advantage on multi core systems. Single core systems will run slower. The `SingleThreadRunner` can be used for all platforms. It does not create an additional thread. The `MultiThreadRunner` can be used for systems which implement `std::async`. If you have another multi core system like the rppico, an own runner to utilize all cores must be implemented.
 3. Set the build variables mentioned below in the table.
 4. Add the whole `lib/gl`, `lib/3rdParty` and `lib/driver` directory to your build system. If a existing runner is used, also add `lib/utils`. If CMake is used, add this repository to your CMake project and include the library by adding `gl` (and `utils` when using an existing runner).
 5. Build
@@ -93,7 +93,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
 | RRX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rrxif`). |
 | RRX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rrxif`). |
-| RRX_CORE_THREADED_RASTERIZATION        | Will run the rasterization in the display list upload thread. Can improve the performance by around 10%. |
+| RRX_CORE_THREADED_RASTERIZATION        | Will run the rasterization and (in case of a `rrxef`config) also the transformation in a thread. A threaded runner is required. Can significantly improve the performance of the vertex pipeline. |
 | RRX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 
 ## How to use the Core
