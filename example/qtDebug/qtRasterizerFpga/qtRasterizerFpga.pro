@@ -51,7 +51,8 @@ HEADERS  += mainwindow.h \
     $${RRXGL_PATH}/renderer/registers/* \
     $${RRXGL_PATH}/renderer/dse/* \
     $${RRXGL_PATH}/renderer/threadedRasterizer/* \
-    $${RRXGL_PATH}/renderer/commands/*
+    $${RRXGL_PATH}/renderer/commands/* \
+    $${RRXGL_PATH}/../threadrunner/*.hpp
 
 
 # spdlog
@@ -144,4 +145,5 @@ QMAKE_CXXFLAGS += -I$${VERILATOR_CODE_GEN_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/../ \
     -I$${VERILATOR_PATH}/include/ \
     -I$${RRXGL_PATH}/ \
-    -I$${PATH_PREFIX}/lib/utils
+    -I$${PATH_PREFIX}/lib/utils \
+    -I$${PATH_PREFIX}/lib/threadrunner
