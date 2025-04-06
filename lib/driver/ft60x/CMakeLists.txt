@@ -31,4 +31,5 @@ if (CMAKE_HOST_UNIX AND NOT CMAKE_HOST_APPLE)
 endif()
 
 target_link_libraries(ft60x PRIVATE ${FTDI_LIB_PATH} gl utils span)
+target_link_libraries(ft60x PUBLIC ${FTDI_LIB_PATH} utils)
 target_include_directories(ft60x PUBLIC ${FTDI_INCLUDE_DIR} .)

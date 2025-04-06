@@ -5,6 +5,7 @@ declare -a files=(
     lib/stubs
     lib/utils
     lib/wgl
+    lib/threadrunner
     unittest/cpp
     example/minimal
     example/mipmap
