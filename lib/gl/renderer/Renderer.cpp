@@ -102,13 +102,9 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    // The intermediate upload can only correctly work when the threaded rasterization is
-    // turned off. Otherwise resource conflicts between the render thread and the application
-    // thread can occur.
     // It can only work for single lists. Loading of partial framebuffers in the rrxif config
     // is not supported which is a requirement to get it to work.
-    if (!RenderConfig::THREADED_RASTERIZATION
-        && m_displayListBuffer.getBack().singleList())
+    if (m_displayListBuffer.getBack().singleList())
     {
         switchDisplayLists();
         uploadTextures();
