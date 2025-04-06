@@ -39,6 +39,7 @@ public:
     /// @brief Getting the instance of the current render context
     /// @return The instance of the current render context
     static RRXGL& getInstance();
+
     /// @brief Creates a new render context
     /// @param busConnector Driver to access the RRX hardware
     /// @param runner Runner to run some parts of the renderer in an own thread.
@@ -48,6 +49,7 @@ public:
     /// @return true if the creation was successful. This function currently uses heap memory. A false
     ///     can occur when the memory allocation fails.
     static bool createInstance(IBusConnector& busConnector, IThreadRunner& runner);
+
     /// @brief  Destroys the current context, switches the framebuffer to the system framebuffer and
     ///     and frees all allocated memory.
     static void destroy();

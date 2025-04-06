@@ -35,35 +35,37 @@ class PixelPipeline
 public:
     PixelPipeline(IDevice& device, IThreadRunner& runner);
 
+    // Drawing
     bool drawTriangle(const TransformedTriangle& triangle) { return m_renderer.drawTriangle(triangle); }
-    bool updatePipeline();
-
-    void swapDisplayList() { m_renderer.swapDisplayList(); }
-    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
-
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
     bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
 
-    bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
+    // Switch and updating of display lists
+    void swapDisplayList() { m_renderer.swapDisplayList(); }
+    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
 
+    // General configs
+    bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height)
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }
-
     void enableVSync(const bool enable) { m_renderer.setEnableVSync(enable); }
-
-    bool setStencilBufferConfig(const StencilReg& stencilConf) { return m_renderer.setStencilBufferConfig(stencilConf); }
 
     // Framebuffer
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color);
     bool setClearDepth(const float depth);
 
+    // Pixel pipeline configs
     Fogging& fog() { return m_fog; }
     Texture& texture() { return m_texture; }
     FragmentPipeline& fragmentPipeline() { return m_fragmentPipeline; }
     FeatureEnable& featureEnable() { return m_featureEnable; }
+
+    // Methods for the vertex pipeline
+    bool updatePipeline();
+    bool setStencilBufferConfig(const StencilReg& stencilConf) { return m_renderer.setStencilBufferConfig(stencilConf); }
 
 private:
     Renderer m_renderer;
