@@ -121,6 +121,11 @@ public:
         rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
+    ~Runner()
+    {
+        rr::RRXGL::getInstance().destroy();
+    }
+
     void execute()
     {
         m_scene.init(RESOLUTION_W, RESOLUTION_H);
