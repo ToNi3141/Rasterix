@@ -11,10 +11,12 @@
 - [Missing Features](#missing-features)
 
 # About this Project
-The RRX project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
+The RRX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
 The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
+
+*RRX is a abbreviation of Rasterizer for X. X is a typical letter used in graphics, but in this case, it stands also for everything like Rasterizer for embedded systems, Rasterizer for Zynq or what else.
 
 # Area Usage
 With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device: 
