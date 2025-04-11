@@ -33,7 +33,7 @@ To build the binaries use the following commands.
 cd rtl/top/Xilinx/ArtyZ7-20
 /Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl -tclargs rrxif
 ```
-You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
+You will find `rrx.bin` and `rrx.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
 # Library Build
 The library build expects a petalinux SDK. Before starting to build, create a petalinux distribution and use the SDK for this build.
@@ -70,12 +70,12 @@ petalinux-create --type project --template zynq --name artyZ7_os_rrx
 cd artyZ7_os_rrx
 
 # Configure petalinux
-petalinux-config --get-hw-description '/home/<username>/Rasterix/rtl/top/Xilinx/ArtyZ7-20/synth'
+petalinux-config --get-hw-description '/home/<username>/RRX/rtl/top/Xilinx/ArtyZ7-20/synth'
 # Now set the following configuration:
 #   Image Packaging Configuration --> Root filesystem type (EXT4 (SD/eMMC/SATA/USB))
 
 # Copy the pre configured device tree overlay
-cp /home/<username>/Rasterix/lib/driver/dmaproxy/kernel/system-user.dtsi project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+cp /home/<username>/RRX/lib/driver/dmaproxy/kernel/system-user.dtsi project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
 # Build
 petalinux-build
@@ -91,7 +91,7 @@ Now you can plug the SD card into your ArtyZ7. It should now boot. If not, pleas
 The Zynq build requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device tree overlay which contains memory allocations for the graphics memory and entries for the dma proxy.
 ```sh
 # Create a symbolic link of the dmaproxy driver into the petalinux modules
-ln -s '/home/<username>/Rasterix/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterix/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
+ln -s '/home/<username>/RRX/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterix/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
 
 # Build the kernel module
 petalinux-build -c dma-proxy 
@@ -125,9 +125,9 @@ Now you can copy the binaries in `build/zynq/example` to your target (for instan
 It also builds the `libGL.so` library, which implements a very basic glX API and exposes the OpenGL API. The current implementation of the glX API should be sufficient to play games like Quake3e without modifications, or to use it with SDL.
 
 ## Reload FPGA content without rebuilding the File System
-To reload the FPGA content, copy the bin file (`scp synth/rasterix.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
+To reload the FPGA content, copy the bin file (`scp synth/rrx.bin petalinux@192.168.2.120:/home/petalinux/`) in the synth directory onto your target. Then use the following commands on the target to load the new bit stream.
 ```sh
 sudo rmmod dma-proxy.ko
-sudo fpgautil -b rasterix.bin -f Full
+sudo fpgautil -b rrx.bin -f Full
 sudo insmod dma-proxy.ko
 ```

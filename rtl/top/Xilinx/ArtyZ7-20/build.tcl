@@ -17,56 +17,56 @@ set_property DEFAULT_LIB work [current_project]
 set_property source_mgmt_mode All [current_project]
 
 # Load verilog source
-read_verilog ./../../../../Rasterix/AttributeF2XConverter.v
-read_verilog ./../../../../Rasterix/AttributeInterpolationX.v
-read_verilog ./../../../../Rasterix/AttributeInterpolator.v
-read_verilog ./../../../../Rasterix/AttributeInterpolatorX.v
-read_verilog ./../../../../Rasterix/AttributePerspectiveCorrectionX.v
-read_verilog ./../../../../Rasterix/ColorBlender.v
-read_verilog ./../../../../Rasterix/ColorInterpolator.v
-read_verilog ./../../../../Rasterix/ColorMixerSigned.v
-read_verilog ./../../../../Rasterix/ColorMixer.v
-read_verilog ./../../../../Rasterix/CommandParser.v
-read_verilog ./../../../../Rasterix/AxisFramebufferReader.v
-read_verilog ./../../../../Rasterix/AxisFramebufferWriter.v
-read_verilog ./../../../../Rasterix/DmaStreamEngine.v
-read_verilog ./../../../../Rasterix/DualPortRam.v
-read_verilog ./../../../../Rasterix/Fog.v
-read_verilog ./../../../../Rasterix/FramebufferReader.v
-read_verilog ./../../../../Rasterix/FramebufferSerializer.v
-read_verilog ./../../../../Rasterix/FrameBuffer.v
-read_verilog ./../../../../Rasterix/FramebufferWriterClear.v
-read_verilog ./../../../../Rasterix/FramebufferWriterStrobeGen.v
-read_verilog ./../../../../Rasterix/FramebufferWriter.v
-read_verilog ./../../../../Rasterix/FunctionInterpolator.v
-read_verilog ./../../../../Rasterix/LodCalculator.v
-read_verilog ./../../../../Rasterix/MemoryReadRequestGenerator.v
-read_verilog ./../../../../Rasterix/MipmapOptimizedRam.v
-read_verilog ./../../../../Rasterix/PagedMemoryReader.v
-read_verilog ./../../../../Rasterix/PerFragmentPipeline.v
-read_verilog ./../../../../Rasterix/PixelPipeline.v
-read_verilog ./../../../../Rasterix/PixelUtil.vh
-read_verilog ./../../../../Rasterix/RRXEFCore.v
-read_verilog ./../../../../Rasterix/RRXIFCore.v
-read_verilog ./../../../../Rasterix/RRXRenderCore.v
-read_verilog ./../../../../Rasterix/RasterizerCommands.vh
-read_verilog ./../../../../Rasterix/Rasterizer.v
-read_verilog ./../../../../Rasterix/RegisterAndDescriptorDefines.vh
-read_verilog ./../../../../Rasterix/RegisterBank.v
-read_verilog ./../../../../Rasterix/RRXEF.v
-read_verilog ./../../../../Rasterix/RRXIF.v
-read_verilog ./../../../../Rasterix/RRX.v
-read_verilog ./../../../../Rasterix/StencilOp.v
-read_verilog ./../../../../Rasterix/StreamConcatFifo.v
-read_verilog ./../../../../Rasterix/StreamFramebuffer.v
-read_verilog ./../../../../Rasterix/TestFunc.v
-read_verilog ./../../../../Rasterix/TexEnv.v
-read_verilog ./../../../../Rasterix/TextureBuffer.v
-read_verilog ./../../../../Rasterix/TextureFilter.v
-read_verilog ./../../../../Rasterix/TextureMappingUnit.v
-read_verilog ./../../../../Rasterix/TextureSampler.v
-read_verilog ./../../../../Rasterix/TriangleStreamF2XConverter.v
-read_verilog ./../../../../Rasterix/TrueDualPortRam.v
+read_verilog ./../../../../RRX/AttributeF2XConverter.v
+read_verilog ./../../../../RRX/AttributeInterpolationX.v
+read_verilog ./../../../../RRX/AttributeInterpolator.v
+read_verilog ./../../../../RRX/AttributeInterpolatorX.v
+read_verilog ./../../../../RRX/AttributePerspectiveCorrectionX.v
+read_verilog ./../../../../RRX/ColorBlender.v
+read_verilog ./../../../../RRX/ColorInterpolator.v
+read_verilog ./../../../../RRX/ColorMixerSigned.v
+read_verilog ./../../../../RRX/ColorMixer.v
+read_verilog ./../../../../RRX/CommandParser.v
+read_verilog ./../../../../RRX/AxisFramebufferReader.v
+read_verilog ./../../../../RRX/AxisFramebufferWriter.v
+read_verilog ./../../../../RRX/DmaStreamEngine.v
+read_verilog ./../../../../RRX/DualPortRam.v
+read_verilog ./../../../../RRX/Fog.v
+read_verilog ./../../../../RRX/FramebufferReader.v
+read_verilog ./../../../../RRX/FramebufferSerializer.v
+read_verilog ./../../../../RRX/FrameBuffer.v
+read_verilog ./../../../../RRX/FramebufferWriterClear.v
+read_verilog ./../../../../RRX/FramebufferWriterStrobeGen.v
+read_verilog ./../../../../RRX/FramebufferWriter.v
+read_verilog ./../../../../RRX/FunctionInterpolator.v
+read_verilog ./../../../../RRX/LodCalculator.v
+read_verilog ./../../../../RRX/MemoryReadRequestGenerator.v
+read_verilog ./../../../../RRX/MipmapOptimizedRam.v
+read_verilog ./../../../../RRX/PagedMemoryReader.v
+read_verilog ./../../../../RRX/PerFragmentPipeline.v
+read_verilog ./../../../../RRX/PixelPipeline.v
+read_verilog ./../../../../RRX/PixelUtil.vh
+read_verilog ./../../../../RRX/RRXEFCore.v
+read_verilog ./../../../../RRX/RRXIFCore.v
+read_verilog ./../../../../RRX/RRXRenderCore.v
+read_verilog ./../../../../RRX/RasterizerCommands.vh
+read_verilog ./../../../../RRX/Rasterizer.v
+read_verilog ./../../../../RRX/RegisterAndDescriptorDefines.vh
+read_verilog ./../../../../RRX/RegisterBank.v
+read_verilog ./../../../../RRX/RRXEF.v
+read_verilog ./../../../../RRX/RRXIF.v
+read_verilog ./../../../../RRX/RRX.v
+read_verilog ./../../../../RRX/StencilOp.v
+read_verilog ./../../../../RRX/StreamConcatFifo.v
+read_verilog ./../../../../RRX/StreamFramebuffer.v
+read_verilog ./../../../../RRX/TestFunc.v
+read_verilog ./../../../../RRX/TexEnv.v
+read_verilog ./../../../../RRX/TextureBuffer.v
+read_verilog ./../../../../RRX/TextureFilter.v
+read_verilog ./../../../../RRX/TextureMappingUnit.v
+read_verilog ./../../../../RRX/TextureSampler.v
+read_verilog ./../../../../RRX/TriangleStreamF2XConverter.v
+read_verilog ./../../../../RRX/TrueDualPortRam.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v
 read_verilog ./../../../../Float/rtl/float/ComputeRecip.v
 read_verilog ./../../../../Float/rtl/float/FindExponent.v
@@ -136,8 +136,8 @@ report_power -file $REPORT_PATH/post_route_power.rpt
 report_drc -file $REPORT_PATH/post_imp_drc.rpt
 
 # Write bit file 
-write_bitstream -bin_file rasterix.bit
-write_cfgmem -force -format bin -interface smapx32 -disablebitswap -loadbit "up 0 rasterix.bit" rasterix.bin
+write_bitstream -bin_file rrx.bit
+write_cfgmem -force -format bin -interface smapx32 -disablebitswap -loadbit "up 0 rrx.bit" rrx.bin
 
 # Write hardware
 write_hw_platform -fixed -include_bit -force -file design_1_wrapper.xsa

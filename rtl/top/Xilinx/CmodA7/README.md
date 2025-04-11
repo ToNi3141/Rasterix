@@ -18,7 +18,7 @@ To build the binaries, use the following commands.
 cd rtl/top/Xilinx/CmodA7
 /Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
-You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
+You will find `rrx.bin` and `rrx.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
 ## Hardware Setup
 The following hardware setup shows an Raspberry Pi Pico connected to an CMOD A7 and an 320x240 pixel display with an `ILI9341` chipset.
@@ -71,7 +71,7 @@ If you are using [PlatformIO](https://platformio.org/), you can add this repo di
 platform = teensy
 board = teensy40
 framework = arduino
-lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+lib_deps = toni3141-RRX=https://github.com/ToNi3141/RRX.git
 build_flags = ${rrx.build_flags}
 
 [rrx]

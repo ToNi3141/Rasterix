@@ -34,7 +34,7 @@ To build the binaries use the following commands.
 cd rtl/top/Xilinx/NexysVideo
 /Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl -tclargs rrxif
 ```
-You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
+You will find `rrx.bin` and `rrx.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
 ## Hardware Setup
 Connect the Nexys Video via USB 3.0 to your computer (via the `UMFT600X-B` eval board). Connect to your Nexys Video a 1024x600 px monitor. If you don't have a monitor at hand with this resolution, you have to change the resolution in the `rtl/Display/Dvi.v` wrapper and in the software (for instance in `example/minimal/main.cpp`).
@@ -121,7 +121,7 @@ When using this board with PlatformIO, you can use the following config for your
 platform = teensy
 board = teensy40
 framework = arduino
-lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+lib_deps = toni3141-RRX=https://github.com/ToNi3141/RRX.git
 build_flags = ${rrxef.build_flags}
 
 [rrxef]
