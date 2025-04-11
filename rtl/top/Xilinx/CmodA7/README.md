@@ -2,7 +2,7 @@
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. An SPI interface is used to connect the FPGA with an MCU. An additional CTS pin for flow control (in software) is used.
 
-This builds the `RasterixRF` and uses one TMU with a maximum texture resolution of 128x128px.
+This builds the `RRXRF` and uses one TMU with a maximum texture resolution of 128x128px.
 
 There is one variant available:
 
@@ -55,7 +55,7 @@ Uses the [CMOD A7 Build](#cmod-a7-build) and the pico-sdk. By default, this buil
 
 Open a terminal. Use the following commands to build a rppico binary:
 ```sh
-cd <rasterix_directory>
+cd <rrx_directory>
 cmake --preset rppico -DPICO_BOARD=pico
 cmake --build build/rppico --config Release --parallel 
 ```

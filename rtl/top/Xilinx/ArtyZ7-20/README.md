@@ -91,7 +91,7 @@ Now you can plug the SD card into your ArtyZ7. It should now boot. If not, pleas
 The Zynq build requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device tree overlay which contains memory allocations for the graphics memory and entries for the dma proxy.
 ```sh
 # Create a symbolic link of the dmaproxy driver into the petalinux modules
-ln -s '/home/<username>/RRX/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterix/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
+ln -s '/home/<username>/RRX/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRRX/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
 
 # Build the kernel module
 petalinux-build -c dma-proxy 
@@ -114,7 +114,7 @@ sh images/linux/sdk.sh
 ## Build Examples
 Open a terminal. Use the following commands:
 ```sh
-cd <rasterix_directory>
+cd <rrx_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
 cmake --preset zynq_embedded_linux_rrxif
 cmake --build build/zynq --config Release --parallel

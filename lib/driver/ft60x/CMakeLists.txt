@@ -4,7 +4,7 @@ add_library(ft60x STATIC
 
 if (CMAKE_HOST_WIN32)
     # Note: Use powershell to create the visual studio project as a 32 bit version to create the 32 bit DLL for 32 bit games.
-    # C:\<pwd>\Rasterix\build> cmake -G "Visual Studio 16 2019" -A Win32 ../.
+    # C:\<pwd>\RRX\build> cmake -G "Visual Studio 16 2019" -A Win32 ../.
     set(FTDI_LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ftd3xx/win/Win32)
     set(FTDI_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ftd3xx/win)
     set(FTDI_DYNAMIC_LIBRARY_PATH ${FTDI_LIBRARY_DIR}/FTD3XX.dll)

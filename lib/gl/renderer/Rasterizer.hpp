@@ -1,4 +1,4 @@
-// Rasterix
+// RRX
 // Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify

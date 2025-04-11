@@ -48,7 +48,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 if (NOT RRX_BUILD_RPPICO)
     project(
-        Rasterix
+        RRX
         VERSION 0.1
     )
 endif()
@@ -59,7 +59,7 @@ if (RRX_BUILD_RPPICO)
         # note: this must happen before project()
         include(pico_sdk_import.cmake)
         project(
-            RasterixRPPico
+            RRX_RPPico
             VERSION 0.1
         )
         # initialize the Raspberry Pi Pico SDK

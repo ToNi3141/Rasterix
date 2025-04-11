@@ -72,7 +72,7 @@ Before configuring and starting the build, download from FTDI (https://ftdichip.
 ## Build
 To build the library an the minimal example, switch to the source directory and type
 ```sh
-cd <rasterix_directory>
+cd <rrx_directory>
 cmake --preset native_rrxif
 cmake --build build/native --config Release --parallel
 ```
@@ -90,7 +90,7 @@ This is a more specific preset for windows which also builds WGL. Please refer t
 
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
-cd <rasterix_directory>
+cd <rrx_directory>
 cmake --preset win32_rrxif
 cmake --build .\build\win32\ --config Release --parallel
 ```
