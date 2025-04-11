@@ -24,7 +24,7 @@
 // - Write masks on the single bits of the stencil buffer is not supported
 //  - Write mask on the whole stencil channel is supported
 // - Only RGB565 colors are supported
-module RasterixEF #(
+module RRXEFCore #(
     // The pixel with in the framebuffer
     localparam PIXEL_WIDTH = 16, // Only RGB565 is supported
 
@@ -637,7 +637,7 @@ module RasterixEF #(
         end
     endgenerate
 
-    RasterixRenderCore #(
+    RRXRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),

@@ -52,7 +52,7 @@ The driver is build with the following components:
 - `ftdi_245fifo` (3rd party): Implements the ft245 interface.
 - `RRXIF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs.
   - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
-  - `RasterixRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
+  - `RRXRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
     - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
     - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
     - `ValueTrack`: It is counting the pixels in the pipeline. This is necessary, to avoid raw (read before write) conflicts when starting to draw the new triangle while pixels from the past one are still floating around the pipeline.
@@ -65,7 +65,7 @@ The driver is build with the following components:
     - `FrameBuffer`: Contains the color, depth and stencil buffer.
 
 ### Flow Control
-The high level modules using a back pressure mechanism (valid/ready) to stall the pipeline. High level modules are considered all modules in the `RasterixRenderCore`. Other modules using a clock enable signal (ce) to stall the processing when the m_ready signal stalls.
+The high level modules using a back pressure mechanism (valid/ready) to stall the pipeline. High level modules are considered all modules in the `RRXRenderCore`. Other modules using a clock enable signal (ce) to stall the processing when the m_ready signal stalls.
 
 ## Pixel Pipeline
 ![pixel pipeline diagram](pictures/PixelPipeline.drawio.svg)

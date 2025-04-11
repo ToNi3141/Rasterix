@@ -558,7 +558,7 @@ module RRXEF #(
     end
     endgenerate
 
-    RasterixEF #(
+    RRXEFCore #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
@@ -570,7 +570,7 @@ module RRXEF #(
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION)
-    ) rasterix (
+    ) rrxCore (
         .aclk(aclk),
         .resetn(resetn),
         
