@@ -442,13 +442,13 @@ proc create_root_design { parentCell } {
   ] $MainInterface_0
 
 
-  # Create instance: RIX_0, and set properties
+  # Create instance: RasterIX_0, and set properties
   set block_name RasterIX
-  set block_cell_name RIX_0
-  if { [catch {set RIX_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  set block_cell_name RasterIX_0
+  if { [catch {set RasterIX_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $RIX_0 eq "" } {
+   } elseif { $RasterIX_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
@@ -457,8 +457,7 @@ proc create_root_design { parentCell } {
     CONFIG.FRAMEBUFFER_SIZE_IN_PIXEL_LG {17} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {6} \
     CONFIG.STRB_WIDTH {16} \
-    CONFIG.VARIANT {if} \
-  ] $RIX_0
+  ] $RasterIX_0
 
 
   # Create instance: axi_smc, and set properties
@@ -576,9 +575,9 @@ proc create_root_design { parentCell } {
   # Create interface connections
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net MainInterface_0_m_axis [get_bd_intf_pins MainInterface_0/m_axis] [get_bd_intf_pins axis_data_fifo_1/S_AXIS]
-  connect_bd_intf_net -intf_net RIX_0_m_axi [get_bd_intf_pins RIX_0/m_axi] [get_bd_intf_pins axi_smc/S00_AXI]
+  connect_bd_intf_net -intf_net RasterIX_0_m_axi [get_bd_intf_pins RasterIX_0/m_axi] [get_bd_intf_pins axi_smc/S00_AXI]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
-  connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins RIX_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
+  connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins RasterIX_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
   connect_bd_intf_net -intf_net mig_7series_0_DDR3 [get_bd_intf_ports ddr3_sdram] [get_bd_intf_pins mig_7series_0/DDR3]
 
   # Create port connections
@@ -586,7 +585,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_dvi_clock [get_bd_pins Dvi_0/dvi_clock] [get_bd_pins util_ds_buf_3/OBUF_IN]
   connect_bd_net -net Dvi_0_dvi_green [get_bd_pins Dvi_0/dvi_green] [get_bd_pins util_ds_buf_1/OBUF_IN]
   connect_bd_net -net Dvi_0_dvi_red [get_bd_pins Dvi_0/dvi_red] [get_bd_pins util_ds_buf_0/OBUF_IN]
-  connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RIX_0/fb_swapped]
+  connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterIX_0/fb_swapped]
   connect_bd_net -net MainInterface_0_concatinated_reset [get_bd_pins MainInterface_0/concatinated_reset] [get_bd_pins mig_7series_0/sys_rst]
   connect_bd_net -net MainInterface_0_fmc_oen [get_bd_ports fmc_oen] [get_bd_pins MainInterface_0/fmc_oen]
   connect_bd_net -net MainInterface_0_fmc_rdn [get_bd_ports fmc_rdn] [get_bd_pins MainInterface_0/fmc_rdn]
@@ -599,9 +598,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Net [get_bd_ports fmc_wkup] [get_bd_pins MainInterface_0/fmc_wkup]
   connect_bd_net -net Net1 [get_bd_ports fmc_be] [get_bd_pins MainInterface_0/fmc_be]
   connect_bd_net -net Net2 [get_bd_ports fmc_data] [get_bd_pins MainInterface_0/fmc_data]
-  connect_bd_net -net RIX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RIX_0/fb_addr]
-  connect_bd_net -net RIX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RIX_0/swap_fb]
-  connect_bd_net -net RIX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RIX_0/swap_fb_enable_vsync]
+  connect_bd_net -net RasterIX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterIX_0/fb_addr]
+  connect_bd_net -net RasterIX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterIX_0/swap_fb]
+  connect_bd_net -net RasterIX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RasterIX_0/swap_fb_enable_vsync]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins Dvi_0/aclk] [get_bd_pins axi_smc/aclk1] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins rst_mig_7series_0_81M1/slowest_sync_clk]
   connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins Dvi_0/aclk5x] [get_bd_pins clk_wiz_0/clk_out2]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_mig_7series_0_81M1/dcm_locked]
@@ -611,10 +610,10 @@ proc create_root_design { parentCell } {
   connect_bd_net -net fmc_txen_1 [get_bd_ports fmc_txen] [get_bd_pins MainInterface_0/fmc_txen]
   connect_bd_net -net mig_7series_0_mmcm_locked [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_7series_0_81M/dcm_locked]
   connect_bd_net -net mig_7series_0_ui_addn_clk_0 [get_bd_pins mig_7series_0/clk_ref_i] [get_bd_pins mig_7series_0/ui_addn_clk_0]
-  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins Dvi_0/aclkLogic] [get_bd_pins MainInterface_0/aclk] [get_bd_pins RIX_0/aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axis_data_fifo_1/s_axis_aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk]
+  connect_bd_net -net mig_7series_0_ui_clk [get_bd_pins Dvi_0/aclkLogic] [get_bd_pins MainInterface_0/aclk] [get_bd_pins RasterIX_0/aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axis_data_fifo_1/s_axis_aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_7series_0_81M/slowest_sync_clk]
   connect_bd_net -net mig_7series_0_ui_clk_sync_rst [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_7series_0_81M/ext_reset_in]
   connect_bd_net -net rst_mig_7series_0_81M1_peripheral_aresetn [get_bd_pins Dvi_0/resetn] [get_bd_pins rst_mig_7series_0_81M1/peripheral_aresetn]
-  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins MainInterface_0/resetn] [get_bd_pins RIX_0/resetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axis_data_fifo_1/s_axis_aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in]
+  connect_bd_net -net rst_mig_7series_0_81M_peripheral_aresetn [get_bd_pins MainInterface_0/resetn] [get_bd_pins RasterIX_0/resetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axis_data_fifo_1/s_axis_aresetn] [get_bd_pins mig_7series_0/aresetn] [get_bd_pins rst_mig_7series_0_81M/peripheral_aresetn] [get_bd_pins rst_mig_7series_0_81M1/ext_reset_in]
   connect_bd_net -net serial_mosi_1 [get_bd_ports serial_mosi] [get_bd_pins MainInterface_0/serial_mosi]
   connect_bd_net -net serial_ncs_1 [get_bd_ports serial_ncs] [get_bd_pins MainInterface_0/serial_ncs]
   connect_bd_net -net serial_reset_1 [get_bd_ports serial_reset] [get_bd_pins MainInterface_0/serial_reset]
@@ -631,7 +630,7 @@ proc create_root_design { parentCell } {
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces Dvi_0/m_mem_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
-  assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces RIX_0/m_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
+  assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces RasterIX_0/m_axi] [get_bd_addr_segs mig_7series_0/memmap/memaddr] -force
 
 
   # Restore current instance
