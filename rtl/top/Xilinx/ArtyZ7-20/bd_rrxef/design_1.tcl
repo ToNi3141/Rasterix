@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# Dvi, RRX
+# Dvi, RasterIX
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -166,7 +166,7 @@ set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 Dvi\
-RRX\
+RasterIX\
 "
 
    set list_mods_missing ""
@@ -258,7 +258,7 @@ proc create_root_design { parentCell } {
 
 
   # Create instance: RRX_0, and set properties
-  set block_name RRX
+  set block_name RasterIX
   set block_cell_name RRX_0
   if { [catch {set RRX_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}

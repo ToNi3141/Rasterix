@@ -41,7 +41,7 @@ public:
     static RRXGL& getInstance();
 
     /// @brief Creates a new render context
-    /// @param busConnector Driver to access the RRX hardware
+    /// @param busConnector Driver to access the RasterIX hardware
     /// @param runner Runner to run some parts of the renderer in an own thread.
     ///     This project contains already two sample runners, one MultiThreadRunner for systems which
     ///     implement std::async and a SingleThreadRunner with no thread logic. If you have an multi core

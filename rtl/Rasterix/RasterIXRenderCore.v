@@ -17,7 +17,7 @@
 
 `include "PixelUtil.vh"
 
-module RasterixRenderCore #(
+module RasterIXRenderCore #(
     `include "RasterizerCommands.vh"
 
     // The size of the internal framebuffer (in power of two)
@@ -249,19 +249,19 @@ module RasterixRenderCore #(
 
         if ((SCREEN_POS_WIDTH != RENDER_CONFIG_X_SIZE) || (SCREEN_POS_WIDTH != RENDER_CONFIG_Y_SIZE))
         begin
-            $error("Screen size width in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $error("Screen size width in the RasterIXRenderCore and RegisterAndDescriptorDefines are different");
             $finish;
         end
 
         if (COLOR_SUB_PIXEL_WIDTH != SUB_PIXEL_WIDTH)
         begin
-            $error("The sub pixel width in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $error("The sub pixel width in the RasterIXRenderCore and RegisterAndDescriptorDefines are different");
             $finish;
         end
 
         if (COLOR_NUMBER_OF_SUB_PIXEL != NUMBER_OF_SUB_PIXELS)
         begin
-            $error("The number of sub pixels in the RasterixRenderCore and RegisterAndDescriptorDefines are different");
+            $error("The number of sub pixels in the RasterIXRenderCore and RegisterAndDescriptorDefines are different");
             $finish;
         end
 

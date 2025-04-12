@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-module RRX #(
+module RasterIX #(
     // Selects the variant. Allowed values: if, ef
     parameter VARIANT = "if",
 
@@ -144,7 +144,7 @@ module RRX #(
     generate
         if (VARIANT == "if" || VARIANT == "IF")
         begin
-            RRXIF #(
+            RasterIX_IF #(
                 .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
                 .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
@@ -219,7 +219,7 @@ module RRX #(
         end
         if (VARIANT == "ef" || VARIANT == "EF")
         begin
-            RRXEF #(
+            RasterIX_EF #(
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .ENABLE_BLOCKING_STREAM(ENABLE_BLOCKING_STREAM),

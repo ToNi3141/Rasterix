@@ -35,7 +35,7 @@ set(RRX_CORE_TEXTURE_PAGE_SIZE "4096" CACHE STRING "The size of a texture page")
 # address calculations. Mostly useful for architectures with shared memory
 set(RRX_CORE_GRAM_MEMORY_LOC "0x0E000000" CACHE STRING "The location of the GRAM memory")
 # Framebuffer memory location
-set(RRX_CORE_COLOR_BUFFER_LOC_0 "0x01E00000" CACHE STRING "The location of the color buffer when the RRX is disabled")
+set(RRX_CORE_COLOR_BUFFER_LOC_0 "0x01E00000" CACHE STRING "The location of the color buffer when the RasterIX is disabled")
 set(RRX_CORE_COLOR_BUFFER_LOC_1 "0x01E00000" CACHE STRING "The location of the first color buffer")
 set(RRX_CORE_COLOR_BUFFER_LOC_2 "0x01C00000" CACHE STRING "The location of the second color buffer")
 set(RRX_CORE_DEPTH_BUFFER_LOC "0" CACHE STRING "The location of the depth buffer")

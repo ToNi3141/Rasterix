@@ -16,10 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 `include "PixelUtil.vh"
 
-// Renderer variant with internal memory. It is much more compatible to the
-// OpenGL specification like the RasterixEF. None of the limitations of the
-// RasterixEF implementation are true for this implementation.
-module RasterixIF #(
+// Renderer variant with internal memory.
+module RasterIXCoreIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
@@ -413,7 +411,7 @@ module RasterixIF #(
         end
     endgenerate
 
-    RasterixRenderCore #(
+    RasterIXRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),

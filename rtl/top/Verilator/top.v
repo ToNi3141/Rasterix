@@ -131,7 +131,7 @@ module top #(
         .s_axi_rready(mem_axi_rready)
     );
 
-    RRX #(
+    RasterIX #(
         .VARIANT(VARIANT),
         .ENABLE_FRAMEBUFFER_STREAM(1),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
