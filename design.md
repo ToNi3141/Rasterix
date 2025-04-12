@@ -11,7 +11,7 @@
   - [Stream Framebuffer](#stream-framebuffer)
 
 # Design
-For the s_cmd_axis command specification, please refer `rtl/Rasterix/RegisterAndDescriptorDefines.vh`.
+For the s_cmd_axis command specification, please refer `rtl/RasterIX/RegisterAndDescriptorDefines.vh`.
 
 The renderer uses a stream centric design. That means, the renderer does not query any data from RAM or other sources. It expects a stream of data which contains all needed data to render a triangle, like texture data, configurations, triangle parameters and so on. For that reason, the renderer has a few internal buffers:
 - Texture Buffer: A buffer which holds a complete texture. Typically this is 128kB in size to contain a full 256x256x16 texture. Each TMU has their own texture buffer.

@@ -1,5 +1,5 @@
-// Rasterix
-// https://github.com/ToNi3141/Rasterix
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
 // Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
@@ -1229,7 +1229,7 @@ GLAPI const GLubyte* APIENTRY impl_glGetString(GLenum name)
     case GL_VENDOR:
         return reinterpret_cast<const GLubyte*>("ToNi3141");
     case GL_RENDERER:
-        return reinterpret_cast<const GLubyte*>("Rasterix");
+        return reinterpret_cast<const GLubyte*>("RasterIX");
     case GL_VERSION:
         return reinterpret_cast<const GLubyte*>("1.3");
     case GL_EXTENSIONS:

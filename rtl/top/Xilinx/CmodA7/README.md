@@ -71,7 +71,7 @@ If you are using [PlatformIO](https://platformio.org/), you can add this repo di
 platform = teensy
 board = teensy40
 framework = arduino
-lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+lib_deps = toni3141-RasterIX=https://github.com/ToNi3141/RasterIX.git
 build_flags = ${rrx.build_flags}
 
 [rrx]

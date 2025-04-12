@@ -121,7 +121,7 @@ When using this board with PlatformIO, you can use the following config for your
 platform = teensy
 board = teensy40
 framework = arduino
-lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
+lib_deps = toni3141-RasterIX=https://github.com/ToNi3141/RasterIX.git
 build_flags = ${rrxef.build_flags}
 
 [rrxef]

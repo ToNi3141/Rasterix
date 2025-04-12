@@ -11,7 +11,7 @@
 - [Missing Features](#missing-features)
 
 # About this Project
-The Rasterix project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
+The RasterIX project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
 The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers. 
@@ -45,7 +45,7 @@ The following video was recorded on an [Digilent ArtyZ7-20](/rtl/top/Xilinx/Arty
 
 # Checkout Repository
 ```sh
-git clone --recurse-submodules https://github.com/ToNi3141/Rasterix.git
+git clone --recurse-submodules https://github.com/ToNi3141/RasterIX.git
 ```
 
 # Platforms
@@ -97,7 +97,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RRX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 
 ## How to use the Core
-1. Add the files in the following directories to your project: `rtl/Rasterix/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
+1. Add the files in the following directories to your project: `rtl/RasterIX/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
 2. Instantiate the `RasterIX` module and configure it.
 3. Connect the `s_cmd_axis` interface to your command stream (this is the output from the `IBusConnector`).
 4. Connect the `m_mem_axi` interface to a memory.

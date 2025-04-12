@@ -48,7 +48,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 if (NOT RRX_BUILD_RPPICO)
     project(
-        Rasterix
+        RasterIX
         VERSION 0.1
     )
 endif()
