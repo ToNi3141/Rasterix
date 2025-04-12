@@ -144,7 +144,7 @@ module top #(
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(5),
         .TMU_COUNT(2),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0)
-    ) rrx (
+    ) rix (
         .aclk(aclk),
         .resetn(resetn),
         

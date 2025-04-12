@@ -23,7 +23,7 @@ When the rendering of the image is finished, the renderer will stream out the co
 Normally the internal frame buffer in the renderer is too small to render a complete high resolution picture. To overcome this limitation, the renderer can render partial images. For instance, assume a screen resolution of 1024x768x16 (1536kB) and a internal frame buffer with the size of 256kB. The driver will then divide the image in 6 different 1024x128x16 parts. It will first render the image {(0, 0), (1023, 127)}, then {(0, 128), (1023, 255)} and so on. It will stream each subpart to the frame buffer in memory. This frame buffer is then responsible to stich the sub images together.
 
 ## RasterIX_EF
-It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rrxif, since it needs less texture fetches. But in reality, it is slower, because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
+It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rixif, since it needs less texture fetches. But in reality, it is slower, because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
 
 ## Software Flow
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
@@ -32,7 +32,7 @@ The following diagram shows roughly the flow a triangle takes, until it is seen 
 The driver is build with the following components:
 - `Application`: The application is the user of the library to draw 3D images.
 - `gl`: The OpenGL C interface.
-- `RRXGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
+- `RIXGL`: Main entrypoint of the library. Creates and initializes all necessary classes for the library.
 - `VertexPipeline`: Controls the vertex pipeline by collecting configurations and fetching vertices.
 - `PixelPipeline`: Controls the pixel pipeline by collecting configurations.
 - `Renderer`: Executes the transformation (optional), rasterization (optional), compiles display lists and sends them via the `IDevice` interface to the next step.

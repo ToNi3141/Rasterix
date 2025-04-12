@@ -1,6 +1,6 @@
 #include "DMAProxyBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
 #include <spdlog/spdlog.h>
@@ -13,13 +13,13 @@ public:
     Runner()
     {
         spdlog::set_level(spdlog::level::trace);
-        rr::RRXGL::createInstance(m_busConnector, m_runner);
-        rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
     ~Runner()
     {
-        rr::RRXGL::getInstance().destroy();
+        rr::RIXGL::getInstance().destroy();
     }
 
     void execute()
@@ -28,8 +28,8 @@ public:
         while (1)
         {
             m_scene.draw();
-            rr::RRXGL::getInstance().swapDisplayList();
-            rr::RRXGL::getInstance().uploadDisplayList();
+            rr::RIXGL::getInstance().swapDisplayList();
+            rr::RIXGL::getInstance().uploadDisplayList();
         }
     }
 

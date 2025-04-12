@@ -17,13 +17,13 @@ The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petali
 
 There are two variants available:
 
-`rrxif`:  
+`rixif`:  
   - 1 TMU (max res: 256x256)
   - Mip mapping
   - Framebuffer size: 128kB + 128kB + 32 kB
   - 25 bit fix point
 
-`rrxef`:
+`rixef`:
   - 2 TMU (max res: 256x256)
   - Mip mapping
   - 25 bit fix point
@@ -31,7 +31,7 @@ There are two variants available:
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl -tclargs rrxif
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl -tclargs rixif
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -66,8 +66,8 @@ The following steps will give you a hint how to build and install petalinux. As 
 source /opt/pkg/petalinux/settings.sh
 
 # Create project
-petalinux-create --type project --template zynq --name artyZ7_os_rrx
-cd artyZ7_os_rrx
+petalinux-create --type project --template zynq --name artyZ7_os_rix
+cd artyZ7_os_rix
 
 # Configure petalinux
 petalinux-config --get-hw-description '/home/<username>/RasterIX/rtl/top/Xilinx/ArtyZ7-20/synth'
@@ -91,7 +91,7 @@ Now you can plug the SD card into your ArtyZ7. It should now boot. If not, pleas
 The Zynq build requires a kernel driver to transfer data via DMA to the renderer. You can find the sources for the kernel driver in `lib/driver/dmaproxy/kernel`. Use petalinux to create a kernel driver and use the sources in this directory to build the kernel driver. This driver is a modification of Xilinx's dma-proxy driver. This directory also contains the device tree overlay which contains memory allocations for the graphics memory and entries for the dma proxy.
 ```sh
 # Create a symbolic link of the dmaproxy driver into the petalinux modules
-ln -s '/home/<username>/RasterIX/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterix/artyZ7_os_rrx/project-spec/meta-user/recipes-modules/'
+ln -s '/home/<username>/RasterIX/lib/driver/dmaproxy/kernel/dma-proxy' '/home/<username>/ZynqRasterIX/artyZ7_os_rix/project-spec/meta-user/recipes-modules/'
 
 # Build the kernel module
 petalinux-build -c dma-proxy 
@@ -116,7 +116,7 @@ Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
-cmake --preset zynq_embedded_linux_rrxif
+cmake --preset zynq_embedded_linux_rixif
 cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.

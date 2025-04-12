@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RRXDISPLAYLISTASSEMBLER_HPP
-#define RRXDISPLAYLISTASSEMBLER_HPP
+#ifndef RIXDISPLAYLISTASSEMBLER_HPP
+#define RIXDISPLAYLISTASSEMBLER_HPP
 
 #include <algorithm>
 #include <array>
@@ -27,10 +27,10 @@ namespace rr::displaylist
 {
 
 template <typename TDisplayList>
-class RRXDisplayListAssembler
+class RIXDisplayListAssembler
 {
 public:
-    RRXDisplayListAssembler(TDisplayList& displayList)
+    RIXDisplayListAssembler(TDisplayList& displayList)
         : m_displayList { displayList }
     {
     }
@@ -111,4 +111,4 @@ private:
 
 } // namespace rr::displaylist
 
-#endif // RRXDISPLAYLISTASSEMBLER_HPP
+#endif // RIXDISPLAYLISTASSEMBLER_HPP

@@ -471,7 +471,7 @@ module RasterIXCoreIF #(
         .m_color_wscreenPosY(m_color_wscreenPosY),
 
         .depthBufferClearDepth(depthBufferClearDepth),
-        .depthBufferAddr(), // Unused in the rrxif config
+        .depthBufferAddr(), // Unused in the rixif config
         .depthBufferSize(depthBufferSize),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
@@ -496,7 +496,7 @@ module RasterIXCoreIF #(
         .m_depth_wscreenPosY(m_depth_wscreenPosY),
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
-        .stencilBufferAddr(), // Unused in the rrxif config
+        .stencilBufferAddr(), // Unused in the rixif config
         .stencilBufferSize(stencilBufferSize),
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),

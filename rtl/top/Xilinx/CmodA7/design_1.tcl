@@ -294,13 +294,13 @@ proc create_root_design { parentCell } {
   ] $DisplayController8Bi_1
 
 
-  # Create instance: RRX_0, and set properties
+  # Create instance: RIX_0, and set properties
   set block_name RasterIX
-  set block_cell_name RRX_0
-  if { [catch {set RRX_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+  set block_cell_name RIX_0
+  if { [catch {set RIX_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
-   } elseif { $RRX_0 eq "" } {
+   } elseif { $RIX_0 eq "" } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
@@ -314,7 +314,7 @@ proc create_root_design { parentCell } {
     CONFIG.TEXTURE_PAGE_SIZE {2048} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.VARIANT {ef} \
-  ] $RRX_0
+  ] $RIX_0
 
 
   # Create instance: Serial2AXIS_0, and set properties
@@ -388,9 +388,9 @@ proc create_root_design { parentCell } {
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net RRX_0_m_axi [get_bd_intf_pins AsyncSramController_0/s_axi] [get_bd_intf_pins RRX_0/m_axi]
-  connect_bd_intf_net -intf_net RRX_0_m_framebuffer_axis [get_bd_intf_pins RRX_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_0/S_AXIS]
-  connect_bd_intf_net -intf_net Serial2AXIS_0_m_axis [get_bd_intf_pins RRX_0/s_cmd_axis] [get_bd_intf_pins Serial2AXIS_0/m_axis]
+  connect_bd_intf_net -intf_net RIX_0_m_axi [get_bd_intf_pins AsyncSramController_0/s_axi] [get_bd_intf_pins RIX_0/m_axi]
+  connect_bd_intf_net -intf_net RIX_0_m_framebuffer_axis [get_bd_intf_pins RIX_0/m_framebuffer_axis] [get_bd_intf_pins axis_dwidth_converter_0/S_AXIS]
+  connect_bd_intf_net -intf_net Serial2AXIS_0_m_axis [get_bd_intf_pins RIX_0/s_cmd_axis] [get_bd_intf_pins Serial2AXIS_0/m_axis]
   connect_bd_intf_net -intf_net axis_dwidth_converter_0_M_AXIS [get_bd_intf_pins DisplayController8Bi_1/s_axis] [get_bd_intf_pins axis_dwidth_converter_0/M_AXIS]
 
   # Create port connections
@@ -412,21 +412,21 @@ proc create_root_design { parentCell } {
   connect_bd_net -net DisplayController8Bi_1_rst [get_bd_ports dispRst] [get_bd_pins DisplayController8Bi_1/rst]
   connect_bd_net -net DisplayController8Bi_1_wr [get_bd_ports dispWr] [get_bd_pins DisplayController8Bi_1/wr]
   connect_bd_net -net Net [get_bd_ports MemDB] [get_bd_pins AsyncSramPhy_0/m_mem_data]
-  connect_bd_net -net RRX_0_swap_fb [get_bd_pins RRX_0/swap_fb] [get_bd_pins util_vector_logic_0/Op1]
+  connect_bd_net -net RIX_0_swap_fb [get_bd_pins RIX_0/swap_fb] [get_bd_pins util_vector_logic_0/Op1]
   connect_bd_net -net Serial2AXIS_0_serial_cts [get_bd_ports serCts] [get_bd_pins Serial2AXIS_0/serial_cts]
   connect_bd_net -net Serial2AXIS_0_serial_miso [get_bd_ports serMiso] [get_bd_pins Serial2AXIS_0/serial_miso]
-  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins AsyncSramController_0/aclk] [get_bd_pins DisplayController8Bi_1/aclk] [get_bd_pins RRX_0/aclk] [get_bd_pins Serial2AXIS_0/aclk] [get_bd_pins axis_dwidth_converter_0/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
+  connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins AsyncSramController_0/aclk] [get_bd_pins DisplayController8Bi_1/aclk] [get_bd_pins RIX_0/aclk] [get_bd_pins Serial2AXIS_0/aclk] [get_bd_pins axis_dwidth_converter_0/aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins proc_sys_reset_0/dcm_locked]
-  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins AsyncSramController_0/resetn] [get_bd_pins DisplayController8Bi_1/resetn] [get_bd_pins RRX_0/resetn] [get_bd_pins Serial2AXIS_0/resetn] [get_bd_pins axis_dwidth_converter_0/aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
+  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins AsyncSramController_0/resetn] [get_bd_pins DisplayController8Bi_1/resetn] [get_bd_pins RIX_0/resetn] [get_bd_pins Serial2AXIS_0/resetn] [get_bd_pins axis_dwidth_converter_0/aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
   connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins proc_sys_reset_0/ext_reset_in]
   connect_bd_net -net serCs_1 [get_bd_ports serCs] [get_bd_pins Serial2AXIS_0/serial_ncs]
   connect_bd_net -net serMosi_1 [get_bd_ports serMosi] [get_bd_pins Serial2AXIS_0/serial_mosi]
   connect_bd_net -net serSck_1 [get_bd_ports serSck] [get_bd_pins Serial2AXIS_0/serial_sck]
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz_0/clk_in1]
-  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins RRX_0/fb_swapped] [get_bd_pins util_vector_logic_0/Res]
+  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins RIX_0/fb_swapped] [get_bd_pins util_vector_logic_0/Res]
 
   # Create address segments
-  assign_bd_address -offset 0x00000000 -range 0x00080000 -target_address_space [get_bd_addr_spaces RRX_0/m_axi] [get_bd_addr_segs AsyncSramController_0/s_axi/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x00080000 -target_address_space [get_bd_addr_spaces RIX_0/m_axi] [get_bd_addr_segs AsyncSramController_0/s_axi/reg0] -force
 
 
   # Restore current instance

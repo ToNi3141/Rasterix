@@ -160,7 +160,7 @@ module RasterIX #(
                 .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
                 .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
                 .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
-            ) rrxif (
+            ) rixif (
                 .aclk(aclk),
                 .resetn(resetn),
 
@@ -234,7 +234,7 @@ module RasterIX #(
                 .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
                 .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
                 .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
-            ) rrxef (
+            ) rixef (
                 .aclk(aclk),
                 .resetn(resetn),
 

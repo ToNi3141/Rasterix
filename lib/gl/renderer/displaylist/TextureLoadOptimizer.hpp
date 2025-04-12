@@ -18,7 +18,7 @@
 #ifndef TEXTURELOADOPTIMIZER_HPP
 #define TEXTURELOADOPTIMIZER_HPP
 
-#include "RRXDisplayListAssembler.hpp"
+#include "RIXDisplayListAssembler.hpp"
 #include "renderer/commands/RegularTriangleCmd.hpp"
 #include "renderer/commands/SetVertexCtxCmd.hpp"
 #include "renderer/commands/TextureStreamCmd.hpp"
@@ -83,7 +83,7 @@ private:
             }
             m_textureCommandFlag.set(tmu);
             m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-            m_texSizeInDisplayList[tmu] = RRXDisplayListAssembler<TDisplayList>::template getCommandSize(cmd);
+            m_texSizeInDisplayList[tmu] = RIXDisplayListAssembler<TDisplayList>::template getCommandSize(cmd);
         }
     }
 

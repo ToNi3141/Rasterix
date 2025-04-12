@@ -16,23 +16,23 @@ The build target is a Nexys Video board with an `XC7A200` FPGA. The interface us
 
 There are two variants available:
 
-`rrxif`:  
+`rixif`:  
   - 2 TMU (max res: 256x256)
   - Mip mapping
   - Framebuffer size: 256kB + 256kB + 64 kB
   - 25 bit fix point
 
-`rrxef`:
+`rixef`:
   - 2 TMU (max res: 256x256)
   - Mip mapping
   - 25 bit fix point
 
-You can build it in two variants, `rrxif` and `rrxef`. Depending on the variant, you must choose the preset with the `_rrxif` or `_rrxef` suffix.
+You can build it in two variants, `rixif` and `rixef`. Depending on the variant, you must choose the preset with the `_rixif` or `_rixef` suffix.
 
 To build the binaries use the following commands.
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rrxif.tcl -tclargs rrxif
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rixif.tcl -tclargs rixif
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -73,10 +73,10 @@ Before configuring and starting the build, download from FTDI (https://ftdichip.
 To build the library an the minimal example, switch to the source directory and type
 ```sh
 cd <rasterix_directory>
-cmake --preset native_rrxif
+cmake --preset native_rixif
 cmake --build build/native --config Release --parallel
 ```
-Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native_rrxif -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
+Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native_rixif -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
 
 To run the minimal example, type
 ```
@@ -91,7 +91,7 @@ This is a more specific preset for windows which also builds WGL. Please refer t
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
-cmake --preset win32_rrxif
+cmake --preset win32_rixif
 cmake --build .\build\win32\ --config Release --parallel
 ```
 
@@ -122,51 +122,51 @@ platform = teensy
 board = teensy40
 framework = arduino
 lib_deps = toni3141-RasterIX=https://github.com/ToNi3141/RasterIX.git
-build_flags = ${rrxef.build_flags}
+build_flags = ${rixef.build_flags}
 
-[rrxef]
+[rixef]
 build_flags = 
     -Ofast 
     -std=c++17
-    -DRRX_CORE_TMU_COUNT=2
-    -DRRX_CORE_MAX_TEXTURE_SIZE=256
-    -DRRX_CORE_ENABLE_MIPMAPPING=true
-    -DRRX_CORE_MAX_DISPLAY_WIDTH=1024
-    -DRRX_CORE_MAX_DISPLAY_HEIGHT=600
-    -DRRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
-    -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
-    -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=64
-    -DRRX_CORE_NUMBER_OF_TEXTURES=64
-    -DRRX_CORE_TEXTURE_PAGE_SIZE=4096
-    -DRRX_CORE_GRAM_MEMORY_LOC=0
-    -DRRX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
-    -DRRX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
-    -DRRX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
-    -DRRX_CORE_DEPTH_BUFFER_LOC=0x01A00000
-    -DRRX_CORE_STENCIL_BUFFER_LOC=0x01900000
-    -DRRX_CORE_THREADED_RASTERIZATION=false
-    -DRRX_CORE_ENABLE_VSYNC=false
+    -DRIX_CORE_TMU_COUNT=2
+    -DRIX_CORE_MAX_TEXTURE_SIZE=256
+    -DRIX_CORE_ENABLE_MIPMAPPING=true
+    -DRIX_CORE_MAX_DISPLAY_WIDTH=1024
+    -DRIX_CORE_MAX_DISPLAY_HEIGHT=600
+    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    -DRIX_CORE_USE_FLOAT_INTERPOLATION=false
+    -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=64
+    -DRIX_CORE_NUMBER_OF_TEXTURES=64
+    -DRIX_CORE_TEXTURE_PAGE_SIZE=4096
+    -DRIX_CORE_GRAM_MEMORY_LOC=0
+    -DRIX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
+    -DRIX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
+    -DRIX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
+    -DRIX_CORE_DEPTH_BUFFER_LOC=0x01A00000
+    -DRIX_CORE_STENCIL_BUFFER_LOC=0x01900000
+    -DRIX_CORE_THREADED_RASTERIZATION=false
+    -DRIX_CORE_ENABLE_VSYNC=false
 
-[rrxif]
+[rixif]
 build_flags = 
     -Ofast 
     -std=c++17
-    -DRRX_CORE_TMU_COUNT=2
-    -DRRX_CORE_MAX_TEXTURE_SIZE=256
-    -DRRX_CORE_ENABLE_MIPMAPPING=true
-    -DRRX_CORE_MAX_DISPLAY_WIDTH=1024
-    -DRRX_CORE_MAX_DISPLAY_HEIGHT=600
-    -DRRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=17
-    -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
-    -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=64
-    -DRRX_CORE_NUMBER_OF_TEXTURES=64
-    -DRRX_CORE_TEXTURE_PAGE_SIZE=4096
-    -DRRX_CORE_GRAM_MEMORY_LOC=0
-    -DRRX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
-    -DRRX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
-    -DRRX_CORE_COLOR_BUFFER_LOC_2=0x01E00000
-    -DRRX_CORE_DEPTH_BUFFER_LOC=0
-    -DRRX_CORE_STENCIL_BUFFER_LOC=0
-    -DRRX_CORE_THREADED_RASTERIZATION=false
-    -DRRX_CORE_ENABLE_VSYNC=false
+    -DRIX_CORE_TMU_COUNT=2
+    -DRIX_CORE_MAX_TEXTURE_SIZE=256
+    -DRIX_CORE_ENABLE_MIPMAPPING=true
+    -DRIX_CORE_MAX_DISPLAY_WIDTH=1024
+    -DRIX_CORE_MAX_DISPLAY_HEIGHT=600
+    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=17
+    -DRIX_CORE_USE_FLOAT_INTERPOLATION=false
+    -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=64
+    -DRIX_CORE_NUMBER_OF_TEXTURES=64
+    -DRIX_CORE_TEXTURE_PAGE_SIZE=4096
+    -DRIX_CORE_GRAM_MEMORY_LOC=0
+    -DRIX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
+    -DRIX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
+    -DRIX_CORE_COLOR_BUFFER_LOC_2=0x01E00000
+    -DRIX_CORE_DEPTH_BUFFER_LOC=0
+    -DRIX_CORE_STENCIL_BUFFER_LOC=0
+    -DRIX_CORE_THREADED_RASTERIZATION=false
+    -DRIX_CORE_ENABLE_VSYNC=false
 ```

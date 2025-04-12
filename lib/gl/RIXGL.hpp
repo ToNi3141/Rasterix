@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RRXGL_HPP
-#define RRXGL_HPP
+#ifndef RIXGL_HPP
+#define RIXGL_HPP
 
 #include "IBusConnector.hpp"
 #include "IThreadRunner.hpp"
@@ -33,12 +33,12 @@ class VertexPipeline;
 class PixelPipeline;
 class VertexArray;
 class VertexQueue;
-class RRXGL
+class RIXGL
 {
 public:
     /// @brief Getting the instance of the current render context
     /// @return The instance of the current render context
-    static RRXGL& getInstance();
+    static RIXGL& getInstance();
 
     /// @brief Creates a new render context
     /// @param busConnector Driver to access the RasterIX hardware
@@ -97,8 +97,8 @@ public:
     void enableVSync(const bool enable);
 
 private:
-    RRXGL(IBusConnector& busConnector, IThreadRunner& runner);
-    ~RRXGL();
+    RIXGL(IBusConnector& busConnector, IThreadRunner& runner);
+    ~RIXGL();
     RenderDevice* m_renderDevice { nullptr };
 
     // Errors
@@ -110,4 +110,4 @@ private:
 };
 
 } // namespace rr
-#endif // RRXGL_HPP
+#endif // RIXGL_HPP

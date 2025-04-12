@@ -4,24 +4,24 @@ VERILATOR = verilator
 
 FRAMEBUFFER_SIZE_IN_PIXEL_LG_INT = 15
 
-all: rrxif 
+all: rixif 
 
 clean:
 	rm -rf obj_dir
 
-rrxif:
+rixif:
 	$(VERILATOR) -Wno-SELRANGE -Wno-lint -DUNITTEST -DVARIANT=if -DFRAMEBUFFER_SIZE_IN_PIXEL_LG=$(FRAMEBUFFER_SIZE_IN_PIXEL_LG_INT) -CFLAGS '-O3' --cc top.v --top-module top -I../../RasterIX -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
 	-make -C obj_dir -f Vtop.mk
 
-rrxef:
+rixef:
 	$(VERILATOR) -Wno-SELRANGE -Wno-lint -DUNITTEST -DVARIANT=ef -DFRAMEBUFFER_SIZE_IN_PIXEL_LG=$(FRAMEBUFFER_SIZE_IN_PIXEL_LG_INT) -CFLAGS '-O3' --cc top.v --top-module top -I../../RasterIX -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
 	-make -C obj_dir -f Vtop.mk
 
-rrxif-trace:
+rixif-trace:
 	$(VERILATOR) -Wno-SELRANGE --trace -Wno-lint -DUNITTEST -DVARIANT=if -DFRAMEBUFFER_SIZE_IN_PIXEL_LG=$(FRAMEBUFFER_SIZE_IN_PIXEL_LG_INT) -CFLAGS '-O3' --cc top.v --top-module top -I../../RasterIX -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
 	-make -C obj_dir -f Vtop.mk
 
-rrxef-trace:
+rixef-trace:
 	$(VERILATOR) -Wno-SELRANGE --trace -Wno-lint -DUNITTEST -DVARIANT=ef -DFRAMEBUFFER_SIZE_IN_PIXEL_LG=$(FRAMEBUFFER_SIZE_IN_PIXEL_LG_INT) -CFLAGS '-O3' --cc top.v --top-module top -I../../RasterIX -I../../3rdParty -I../../Float/rtl/float/ -I../../3rdParty/verilog-axi -I../../3rdParty/verilog-axis
 	-make -C obj_dir -f Vtop.mk
 

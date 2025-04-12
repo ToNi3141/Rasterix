@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include "RenderConfigs.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -33,9 +33,9 @@
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
 namespace rr
 {
-RRXGL* instance { nullptr };
+RIXGL* instance { nullptr };
 
-RRXGL& RRXGL::getInstance()
+RIXGL& RIXGL::getInstance()
 {
     return *instance;
 }
@@ -86,17 +86,17 @@ public:
     VertexArray vertexArray {};
 };
 
-bool RRXGL::createInstance(IBusConnector& busConnector, IThreadRunner& runner)
+bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& runner)
 {
     if (instance)
     {
         delete instance;
     }
-    instance = new RRXGL { busConnector, runner };
+    instance = new RIXGL { busConnector, runner };
     return instance != nullptr;
 }
 
-void RRXGL::destroy()
+void RIXGL::destroy()
 {
     if (instance)
     {
@@ -105,7 +105,7 @@ void RRXGL::destroy()
     }
 }
 
-RRXGL::RRXGL(IBusConnector& busConnector, IThreadRunner& runner)
+RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& runner)
     : m_renderDevice { new RenderDevice { busConnector, runner } }
 {
     // Register Open GL 1.0 procedures
@@ -570,29 +570,29 @@ RRXGL::RRXGL(IBusConnector& busConnector, IThreadRunner& runner)
     // }
 }
 
-RRXGL::~RRXGL()
+RIXGL::~RIXGL()
 {
     delete m_renderDevice;
 }
 
-void RRXGL::swapDisplayList()
+void RIXGL::swapDisplayList()
 {
     SPDLOG_INFO("swapDisplayList called");
     m_renderDevice->pixelPipeline.swapDisplayList();
 }
 
-void RRXGL::uploadDisplayList()
+void RIXGL::uploadDisplayList()
 {
     SPDLOG_INFO("uploadDisplayList called");
     m_renderDevice->pixelPipeline.uploadDisplayList();
 }
 
-const char* RRXGL::getLibExtensions() const
+const char* RIXGL::getLibExtensions() const
 {
     return m_glExtensions.c_str();
 }
 
-const void* RRXGL::getLibProcedure(std::string name) const
+const void* RIXGL::getLibProcedure(std::string name) const
 {
     auto proc = m_glProcedures.find(name);
     if (proc != m_glProcedures.end())
@@ -606,12 +606,12 @@ const void* RRXGL::getLibProcedure(std::string name) const
     return nullptr;
 }
 
-void RRXGL::addLibProcedure(std::string name, const void* address)
+void RIXGL::addLibProcedure(std::string name, const void* address)
 {
     m_glProcedures[name] = address;
 }
 
-void RRXGL::addLibExtension(std::string extension)
+void RIXGL::addLibExtension(std::string extension)
 {
     if (!m_glExtensions.empty())
     {
@@ -621,47 +621,47 @@ void RRXGL::addLibExtension(std::string extension)
     m_glExtensions.append(extension);
 }
 
-VertexPipeline& RRXGL::pipeline()
+VertexPipeline& RIXGL::pipeline()
 {
     return m_renderDevice->vertexPipeline;
 }
 
-VertexQueue& RRXGL::vertexQueue()
+VertexQueue& RIXGL::vertexQueue()
 {
     return m_renderDevice->vertexQueue;
 }
 
-VertexArray& RRXGL::vertexArray()
+VertexArray& RIXGL::vertexArray()
 {
     return m_renderDevice->vertexArray;
 }
 
-std::size_t RRXGL::getMaxTextureSize() const
+std::size_t RIXGL::getMaxTextureSize() const
 {
     return RenderConfig::MAX_TEXTURE_SIZE;
 }
 
-std::size_t RRXGL::getTmuCount() const
+std::size_t RIXGL::getTmuCount() const
 {
     return RenderConfig::TMU_COUNT;
 }
 
-bool RRXGL::isMipmappingAvailable() const
+bool RIXGL::isMipmappingAvailable() const
 {
     return RenderConfig::ENABLE_MIPMAPPING;
 }
 
-bool RRXGL::setRenderResolution(const std::size_t x, const std::size_t y)
+bool RIXGL::setRenderResolution(const std::size_t x, const std::size_t y)
 {
     return m_renderDevice->pixelPipeline.setRenderResolution(x, y);
 }
 
-std::size_t RRXGL::getMaxLOD()
+std::size_t RIXGL::getMaxLOD()
 {
     return TextureObject::MAX_LOD;
 }
 
-void RRXGL::enableVSync(const bool enable)
+void RIXGL::enableVSync(const bool enable)
 {
     m_renderDevice->pixelPipeline.enableVSync(enable);
 }

@@ -83,10 +83,10 @@ public:
                     return;
                 default:
                     SPDLOG_WARN("glTexSubImage2D invalid format");
-                    RRXGL::getInstance().setError(GL_INVALID_ENUM);
+                    RIXGL::getInstance().setError(GL_INVALID_ENUM);
                     return;
                 }
-                if (RRXGL::getInstance().getError() != GL_NO_ERROR)
+                if (RIXGL::getInstance().getError() != GL_NO_ERROR)
                 {
                     return;
                 }
@@ -156,7 +156,7 @@ public:
             return TextureObject::IntendedInternalPixelFormat::RGBA;
         default:
             SPDLOG_ERROR("glTexImage2D invalid internalformat");
-            RRXGL::getInstance().setError(GL_INVALID_ENUM);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return TextureObject::IntendedInternalPixelFormat::RGBA;
         }
         return TextureObject::IntendedInternalPixelFormat::RGBA;
@@ -214,11 +214,11 @@ private:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
             SPDLOG_WARN("glTexSubImage2D invalid operation");
-            RRXGL::getInstance().setError(GL_INVALID_OPERATION);
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 0;
         default:
             SPDLOG_WARN("glTexSubImage2D invalid type");
-            RRXGL::getInstance().setError(GL_INVALID_ENUM);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 0;
         }
         return 0;
@@ -277,11 +277,11 @@ private:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
             SPDLOG_WARN("glTexSubImage2D invalid operation");
-            RRXGL::getInstance().setError(GL_INVALID_OPERATION);
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 0;
         default:
             SPDLOG_WARN("glTexSubImage2D invalid type");
-            RRXGL::getInstance().setError(GL_INVALID_ENUM);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 0;
         }
         return 0;
@@ -347,11 +347,11 @@ private:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
             SPDLOG_WARN("glTexSubImage2D invalid operation");
-            RRXGL::getInstance().setError(GL_INVALID_OPERATION);
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 0;
         default:
             SPDLOG_WARN("glTexSubImage2D invalid type");
-            RRXGL::getInstance().setError(GL_INVALID_ENUM);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 0;
         }
         return 0;

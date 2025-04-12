@@ -1,4 +1,4 @@
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include "SingleThreadRunner.hpp"
 #include "gl.h"
 #include "glu.h"
@@ -117,13 +117,13 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::RRXGL::createInstance(m_busConnector, m_runner);
-        rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
     ~Runner()
     {
-        rr::RRXGL::getInstance().destroy();
+        rr::RIXGL::getInstance().destroy();
     }
 
     void execute()
@@ -134,8 +134,8 @@ public:
             gpio_put(LED_PIN, led);
             led = !led;
             m_scene.draw();
-            rr::RRXGL::getInstance().swapDisplayList();
-            rr::RRXGL::getInstance().uploadDisplayList();
+            rr::RIXGL::getInstance().swapDisplayList();
+            rr::RIXGL::getInstance().uploadDisplayList();
         }
     }
 

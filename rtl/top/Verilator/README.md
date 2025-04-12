@@ -4,7 +4,7 @@ A simulation can be used to easily develop and debug the renderer. The simulatio
 Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
 ```sh
 cd rtl/top/Verilator
-make -f Makefile.linux rrxif -j
+make -f Makefile.linux rixif -j
 ```
 Then build the Qt project. If the build was successful, you will see the following image on the screen, when you have started the application:
 

@@ -15,8 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_image(RESOLUTION_W, RESOLUTION_H, QImage::Format_RGB888)
 {
     ui->setupUi(this);
-    rr::RRXGL::createInstance(m_busConnector, m_runner);
-    rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    rr::RIXGL::createInstance(m_busConnector, m_runner);
+    rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
 
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::newFrame);
     ui->label->setPixmap(QPixmap::fromImage(m_image));
@@ -32,8 +32,8 @@ void MainWindow::newFrame()
 {
      m_testScene.draw();
 
-    rr::RRXGL::getInstance().swapDisplayList();
-    rr::RRXGL::getInstance().uploadDisplayList();
+    rr::RIXGL::getInstance().swapDisplayList();
+    rr::RIXGL::getInstance().uploadDisplayList();
 
 #if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)

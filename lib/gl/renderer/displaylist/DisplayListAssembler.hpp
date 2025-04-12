@@ -18,7 +18,7 @@
 #ifndef DISPLAYLISTASSEMBLER_HPP
 #define DISPLAYLISTASSEMBLER_HPP
 
-#include "RRXDisplayListAssembler.hpp"
+#include "RIXDisplayListAssembler.hpp"
 #include "TextureLoadOptimizer.hpp"
 #include <algorithm>
 #include <array>
@@ -63,13 +63,13 @@ public:
     template <typename TCommand>
     std::size_t getCommandSize(std::size_t i) const
     {
-        return m_rrxDisplayListAssembler.template getCommandSize<TCommand>(i);
+        return m_rixDisplayListAssembler.template getCommandSize<TCommand>(i);
     }
 
     template <typename TCommand>
     std::size_t getCommandSize(const TCommand& cmd) const
     {
-        return m_rrxDisplayListAssembler.getCommandSize(cmd);
+        return m_rixDisplayListAssembler.getCommandSize(cmd);
     }
 
     void saveSectionStart()
@@ -85,7 +85,7 @@ public:
     template <typename TCommand>
     bool copyCommand(TDisplayList& src)
     {
-        return m_rrxDisplayListAssembler.template copyCommand<TCommand>(src);
+        return m_rixDisplayListAssembler.template copyCommand<TCommand>(src);
     }
 
     template <typename TCommand>
@@ -95,7 +95,7 @@ public:
         {
             m_textureLoadOptimizer.optimize(cmd);
         }
-        return m_rrxDisplayListAssembler.addCommand(cmd);
+        return m_rixDisplayListAssembler.addCommand(cmd);
     }
 
 private:
@@ -110,7 +110,7 @@ private:
     }
 
     TDisplayList m_displayList {};
-    RRXDisplayListAssembler<TDisplayList> m_rrxDisplayListAssembler { m_displayList };
+    RIXDisplayListAssembler<TDisplayList> m_rixDisplayListAssembler { m_displayList };
     TextureLoadOptimizer<TMU_COUNT, TDisplayList> m_textureLoadOptimizer { m_displayList };
     std::size_t m_displayListBufferId { 0 };
 };

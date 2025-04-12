@@ -18,7 +18,7 @@
 #include "wgl.h"
 #include "FT60XBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -33,35 +33,35 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RRXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_runner);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
-        rr::RRXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
-        rr::RRXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
-        rr::RRXGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
-        rr::RRXGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
-        rr::RRXGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
-        rr::RRXGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
-        rr::RRXGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
+        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
+        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
+        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
+        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
+        rr::RIXGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
+        rr::RIXGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
+        rr::RIXGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
 #undef ADDRESS_OF
     }
     ~GLInitGuard()
     {
-        rr::RRXGL::destroy();
+        rr::RIXGL::destroy();
     }
 
     void render()
     {
-        rr::RRXGL::getInstance().swapDisplayList();
-        rr::RRXGL::getInstance().uploadDisplayList();
+        rr::RIXGL::getInstance().swapDisplayList();
+        rr::RIXGL::getInstance().uploadDisplayList();
     }
 
 private:
@@ -85,23 +85,23 @@ GLAPI BOOL APIENTRY impl_wglCopyContext(HGLRC hglrc, HGLRC hglrc2, UINT i)
 GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
 {
     SPDLOG_DEBUG("wglCreateContext called");
-    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("RRXGL.log", "basic-log.txt");
+    static auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("RIXGL.log", "basic-log.txt");
     file_sink->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    auto logger = std::make_shared<spdlog::logger>("RRXGL", file_sink);
+    auto logger = std::make_shared<spdlog::logger>("RIXGL", file_sink);
     logger->set_level(static_cast<spdlog::level::level_enum>(SPDLOG_ACTIVE_LEVEL));
-    logger->info("RRXGL started");
+    logger->info("RIXGL started");
 
     // or you can even set multi_sink logger as default logger
     spdlog::set_default_logger(logger);
-    RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
 
-    return reinterpret_cast<HGLRC>(&RRXGL::getInstance());
+    return reinterpret_cast<HGLRC>(&RIXGL::getInstance());
 }
 
 GLAPI HGLRC APIENTRY impl_wglCreateLayerContext(HDC hdc, int iLayerPlane)
 {
     SPDLOG_WARN("wglCreateLayerContext not implemented");
-    return reinterpret_cast<HGLRC>(&RRXGL::getInstance());
+    return reinterpret_cast<HGLRC>(&RIXGL::getInstance());
 }
 
 GLAPI BOOL APIENTRY impl_wglDeleteContext(HGLRC hglrc)
@@ -147,7 +147,7 @@ GLAPI int APIENTRY impl_wglDescribePixelFormat(HDC hdc, int iPixelFormat, UINT n
 GLAPI HGLRC APIENTRY impl_wglGetCurrentContext()
 {
     SPDLOG_DEBUG("wglGetCurrentContext called");
-    return reinterpret_cast<HGLRC>(&RRXGL::getInstance());
+    return reinterpret_cast<HGLRC>(&RIXGL::getInstance());
 }
 
 GLAPI HDC APIENTRY impl_wglGetCurrentDC()
@@ -172,7 +172,7 @@ GLAPI PROC APIENTRY impl_wglGetProcAddress(LPCSTR s)
 {
     SPDLOG_INFO("wglGetProcAddress {} called", s);
 
-    return reinterpret_cast<PROC>(RRXGL::getInstance().getLibProcedure(s));
+    return reinterpret_cast<PROC>(RIXGL::getInstance().getLibProcedure(s));
 }
 
 GLAPI BOOL APIENTRY impl_wglMakeCurrent(HDC hdc, HGLRC hglrc)
@@ -269,7 +269,7 @@ GLAPI BOOL APIENTRY impl_wglGetDeviceGammaRamp(HDC hdc, LPVOID lpRamp)
 GLAPI const char* APIENTRY impl_wglGetExtensionsString(HDC hdc)
 {
     SPDLOG_DEBUG("wglGetExtensionsString called");
-    return rr::RRXGL::getInstance().getLibExtensions();
+    return rr::RIXGL::getInstance().getLibExtensions();
 }
 
 GLAPI HPBUFFERARB APIENTRY impl_wglCreatePbufferARB(HDC hDC,

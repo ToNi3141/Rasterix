@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QImage>
 #include <QTimer>
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include "renderer/Renderer.hpp"
 #include "gl.h"
 #include "RenderConfigs.hpp"

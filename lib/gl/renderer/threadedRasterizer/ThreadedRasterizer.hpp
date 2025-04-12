@@ -22,7 +22,7 @@
 #include "renderer/displaylist/DisplayList.hpp"
 #include "renderer/displaylist/DisplayListAssembler.hpp"
 #include "renderer/displaylist/DisplayListDoubleBuffer.hpp"
-#include "renderer/displaylist/RRXDisplayListAssembler.hpp"
+#include "renderer/displaylist/RIXDisplayListAssembler.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
 
