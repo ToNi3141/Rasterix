@@ -2,6 +2,7 @@
 - [Design](#design)
   - [RasterIX\_IF](#rasterix_if)
   - [RasterIX\_EF](#rasterix_ef)
+  - [RasterIX](#rasterix)
   - [Software Flow](#software-flow)
   - [FPGA Flow](#fpga-flow)
     - [Flow Control](#flow-control)
@@ -24,6 +25,9 @@ Normally the internal frame buffer in the renderer is too small to render a comp
 
 ## RasterIX_EF
 It uses a color buffer, depth buffer and stencil buffer on your system memory and will render there the complete image. In theory, it should be faster than the rixif, since it needs less texture fetches. But in reality, it is slower, because the memory sub systems are usually not capable to feed the renderer fast enough and it stalls a lot of times.
+
+## RasterIX
+This core is a convenience wrapper to the `RasterIX_IF` and `RasterIX_EF`. It offers a configuration parameter to select either the IF or EF core. With this core, the reinstantiation and reconfiguration is avoided when switching between these two cores.
 
 ## Software Flow
 The following diagram shows roughly the flow a triangle takes, until it is seen on the screen.
@@ -50,19 +54,20 @@ The driver is build with the following components:
 ![fpga flow diagram](pictures/fpgaFlow.drawio.png)
 
 - `ftdi_245fifo` (3rd party): Implements the ft245 interface.
-- `RasterIX_IF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs.
-  - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
-  - `RasterIXRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
-    - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
-    - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
-    - `ValueTrack`: It is counting the pixels in the pipeline. This is necessary, to avoid raw (read before write) conflicts when starting to draw the new triangle while pixels from the past one are still floating around the pipeline.
-    - `AXISBroadcast`: Broadcasts the stream into four independent streams to the rendering pipeline and to the three framebuffer (color, depth, stencil).
-    - `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
-    - `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the texenv calculations, texture clamping and fogging.
-    - `TextureBuffer`: Buffer which contains the complete texture. One for each TMU. They are filled with data from the command parser.
-    - `StreamConcatFifo`: Concatenates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here. It does the opposite of the `AXISBroadcast`.
-    - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / stencil / depth tests.
-    - `FrameBuffer`: Contains the color, depth and stencil buffer.
+- `RasterIX_IF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs. It implements a crossbar so consolidate AXI channels and a `DmaStreamEngine` to stream data to the core and perform memory/texture management.
+  - `RasterIXCoreIF`: Abstracts the framebuffer handling in this core. The `RasterIXCoreEF` would instance other framebuffer types (see [Stream Framebuffer](#stream-framebuffer)).
+    - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
+    - `RasterIXRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
+      - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
+      - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.
+      - `ValueTrack`: It is counting the pixels in the pipeline. This is necessary, to avoid raw (read before write) conflicts when starting to draw the new triangle while pixels from the past one are still floating around the pipeline.
+      - `AXISBroadcast`: Broadcasts the stream into four independent streams to the rendering pipeline and to the three framebuffer (color, depth, stencil).
+      - `AttributeInterpolator`: Interpolates the triangles attributes like color, textures and depth. Also applies the perspective correction to the textures.
+      - `PixelPipeline`: Consumes the fragments from the `AttributeInterpolator`, and does the texenv calculations, texture clamping and fogging.
+      - `TextureBuffer`: Buffer which contains the complete texture. One for each TMU. They are filled with data from the command parser.
+      - `StreamConcatFifo`: Concatenates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here. It does the opposite of the `AXISBroadcast`.
+      - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / stencil / depth tests.
+      - `FrameBuffer`: Contains the color, depth and stencil buffer.
 
 ### Flow Control
 The high level modules using a back pressure mechanism (valid/ready) to stall the pipeline. High level modules are considered all modules in the `RasterIXRenderCore`. Other modules using a clock enable signal (ce) to stall the processing when the m_ready signal stalls.
