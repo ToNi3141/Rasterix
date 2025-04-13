@@ -14,9 +14,9 @@
 The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
 
-The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers.
+The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers or embedded linux devices.
 
-*The name RasterIX is an abbreviation of Rasterizer 9, with the 9 serving as a nod to the 1990s, a time when fixed-function pipelines reached the peak of their popularity.
+*The name RasterIX is an abbreviation of Rasterizer 9, with the 9 serving as a reference to the end of the 90s, a time when fixed function renderers reached the peak of their popularity.
 
 # Area Usage
 With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device: 
