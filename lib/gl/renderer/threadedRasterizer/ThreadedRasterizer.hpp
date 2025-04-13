@@ -103,11 +103,6 @@ public:
     }
 
 private:
-    // It is advantageous to split the display list in smaller chunks for uploading.
-    // The goal is to start a rendering as early as possible and to run the rendering
-    // and transforming in parallel.
-    static constexpr std::size_t VERTEX_INTERMEDIATE_UPLOAD_SIZE { 100 };
-
     // This describes the free capacity in the display list for the triangles.
     // When the triangle is transformed and clipped, around 9 new triangles can
     // be generated. This variable keeps a minimum of 10 (to be safe) triangle
@@ -132,18 +127,14 @@ private:
             setStencilBufferConfigLambda,
         };
 
-        m_verticesInList = 0;
-
         return true;
     }
 
     bool pushVertex(displaylist::DisplayList& src)
     {
-        if (m_displayLists.getBack().getFreeSpace() < (m_displayLists.getBack().getCommandSize<TriangleStreamCmd>(1) * TRIANGLE_RESERVE_CAPACITY)
-            || (m_verticesInList >= VERTEX_INTERMEDIATE_UPLOAD_SIZE))
+        if (m_displayLists.getBack().getFreeSpace() < (m_displayLists.getBack().getCommandSize<TriangleStreamCmd>(1) * TRIANGLE_RESERVE_CAPACITY))
         {
             swapAndPrepareDisplayList();
-            m_verticesInList = 0;
         }
         using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(PushVertexCmd {}.payload()[0])>::type>::type;
         src.getNext<typename PushVertexCmd::CommandType>();
@@ -312,7 +303,6 @@ private:
 
     const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
     {
-        m_verticesInList++;
         return addTriangleCmd(triangle);
     };
     const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
@@ -323,8 +313,6 @@ private:
         drawTriangleLambda,
         setStencilBufferConfigLambda,
     };
-
-    std::size_t m_verticesInList { 0 };
 };
 
 } // namespace rr
