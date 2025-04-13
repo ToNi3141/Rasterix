@@ -1,5 +1,5 @@
-// Rasterix
-// https://github.com/ToNi3141/Rasterix
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
 // Copyright (c) 2023 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
@@ -102,7 +102,7 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    // It can only work for single lists. Loading of partial framebuffers in the rrxif config
+    // It can only work for single lists. Loading of partial framebuffers in the rixif config
     // is not supported which is a requirement to get it to work.
     if (m_displayListBuffer.getBack().singleList())
     {

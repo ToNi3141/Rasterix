@@ -1,11 +1,11 @@
 TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
-VARIANT = RRXIF
-#VARIANT = RRXEF
+VARIANT = RasterIX_IF
+#VARIANT = RasterIX_EF
 
 PATH_PREFIX = ../../..
 
-RRXGL_PATH = $${PATH_PREFIX}/lib/gl
+RIXGL_PATH = $${PATH_PREFIX}/lib/gl
 
 QT       += core gui
 CONFIG += c++17
@@ -20,39 +20,39 @@ TARGET = qtRasterizerFpga
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    $${RRXGL_PATH}/RRXGL.cpp \
-    $${RRXGL_PATH}/transform/Clipper.cpp \
-    $${RRXGL_PATH}/transform/Lighting.cpp \
-    $${RRXGL_PATH}/transform/TexGen.cpp \
-    $${RRXGL_PATH}/transform/ViewPort.cpp \
-    $${RRXGL_PATH}/transform/MatrixStore.cpp \
-    $${RRXGL_PATH}/transform/Culling.cpp \
-    $${RRXGL_PATH}/transform/PrimitiveAssembler.cpp \
-    $${RRXGL_PATH}/transform/Stencil.cpp \
-    $${RRXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
-    $${RRXGL_PATH}/vertexpipeline/RenderObj.cpp \
-    $${RRXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
-    $${RRXGL_PATH}/glImpl.cpp \
-    $${RRXGL_PATH}/renderer/Rasterizer.cpp \
-    $${RRXGL_PATH}/renderer/Renderer.cpp \
-    $${RRXGL_PATH}/pixelpipeline/Fogging.cpp \
-    $${RRXGL_PATH}/pixelpipeline/Texture.cpp \
-    $${RRXGL_PATH}/gl.cpp \
-    $${RRXGL_PATH}/glu.cpp
+    $${RIXGL_PATH}/RIXGL.cpp \
+    $${RIXGL_PATH}/transform/Clipper.cpp \
+    $${RIXGL_PATH}/transform/Lighting.cpp \
+    $${RIXGL_PATH}/transform/TexGen.cpp \
+    $${RIXGL_PATH}/transform/ViewPort.cpp \
+    $${RIXGL_PATH}/transform/MatrixStore.cpp \
+    $${RIXGL_PATH}/transform/Culling.cpp \
+    $${RIXGL_PATH}/transform/PrimitiveAssembler.cpp \
+    $${RIXGL_PATH}/transform/Stencil.cpp \
+    $${RIXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
+    $${RIXGL_PATH}/vertexpipeline/RenderObj.cpp \
+    $${RIXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
+    $${RIXGL_PATH}/glImpl.cpp \
+    $${RIXGL_PATH}/renderer/Rasterizer.cpp \
+    $${RIXGL_PATH}/renderer/Renderer.cpp \
+    $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
+    $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
+    $${RIXGL_PATH}/gl.cpp \
+    $${RIXGL_PATH}/glu.cpp
 
 HEADERS  += mainwindow.h \
     ../testscene.hpp \
-    $${RRXGL_PATH}/*.hpp \
-    $${RRXGL_PATH}/vertexpipeline/*.hpp \
-    $${RRXGL_PATH}/pixelpipeline/*.hpp \
-    $${RRXGL_PATH}/math/*.hpp \
-    $${RRXGL_PATH}/renderer/*.hpp \
-    $${RRXGL_PATH}/*.h \
-    $${RRXGL_PATH}/renderer/registers/* \
-    $${RRXGL_PATH}/renderer/dse/* \
-    $${RRXGL_PATH}/renderer/threadedRasterizer/* \
-    $${RRXGL_PATH}/renderer/commands/* \
-    $${RRXGL_PATH}/../threadrunner/*.hpp
+    $${RIXGL_PATH}/*.hpp \
+    $${RIXGL_PATH}/vertexpipeline/*.hpp \
+    $${RIXGL_PATH}/pixelpipeline/*.hpp \
+    $${RIXGL_PATH}/math/*.hpp \
+    $${RIXGL_PATH}/renderer/*.hpp \
+    $${RIXGL_PATH}/*.h \
+    $${RIXGL_PATH}/renderer/registers/* \
+    $${RIXGL_PATH}/renderer/dse/* \
+    $${RIXGL_PATH}/renderer/threadedRasterizer/* \
+    $${RIXGL_PATH}/renderer/commands/* \
+    $${RIXGL_PATH}/../threadrunner/*.hpp
 
 
 # spdlog
@@ -66,34 +66,34 @@ QMAKE_CXXFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/span/include/
 QMAKE_CFLAGS += -I$${PATH_PREFIX}/lib/3rdParty/span/include/
 
 # TMU settings
-DEFINES += RRX_CORE_TMU_COUNT=2
-DEFINES += RRX_CORE_MAX_TEXTURE_SIZE=256
-DEFINES += RRX_CORE_ENABLE_MIPMAPPING=true
+DEFINES += RIX_CORE_TMU_COUNT=2
+DEFINES += RIX_CORE_MAX_TEXTURE_SIZE=256
+DEFINES += RIX_CORE_ENABLE_MIPMAPPING=true
 # Display Settings
-DEFINES += RRX_CORE_MAX_DISPLAY_WIDTH=640
-DEFINES += RRX_CORE_MAX_DISPLAY_HEIGHT=480
+DEFINES += RIX_CORE_MAX_DISPLAY_WIDTH=640
+DEFINES += RIX_CORE_MAX_DISPLAY_HEIGHT=480
 # Rasterizer settings
-DEFINES += RRX_CORE_USE_FLOAT_INTERPOLATION=false
+DEFINES += RIX_CORE_USE_FLOAT_INTERPOLATION=false
 # Texture Memory Settings
-DEFINES += RRX_CORE_NUMBER_OF_TEXTURE_PAGES=6912
-DEFINES += RRX_CORE_NUMBER_OF_TEXTURES=6912
-DEFINES += RRX_CORE_TEXTURE_PAGE_SIZE=4096
+DEFINES += RIX_CORE_NUMBER_OF_TEXTURE_PAGES=6912
+DEFINES += RIX_CORE_NUMBER_OF_TEXTURES=6912
+DEFINES += RIX_CORE_TEXTURE_PAGE_SIZE=4096
 # Memory RAM location. This is used as memory offset for all device memory  
 # address calculations. Mostly useful for architectures with shared memory
-DEFINES += RRX_CORE_GRAM_MEMORY_LOC=0x0 # No shared memory
+DEFINES += RIX_CORE_GRAM_MEMORY_LOC=0x0 # No shared memory
 # Framebuffer Memory Location
-DEFINES += RRX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
-DEFINES += RRX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
-DEFINES += RRX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
-DEFINES += RRX_CORE_DEPTH_BUFFER_LOC=0x01A00000
-DEFINES += RRX_CORE_STENCIL_BUFFER_LOC=0x01900000
-DEFINES += RRX_CORE_THREADED_RASTERIZATION=true
-DEFINES += RRX_CORE_ENABLE_VSYNC=false
-equals(VARIANT, "RRXIF") {
-    DEFINES += RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
+DEFINES += RIX_CORE_DEPTH_BUFFER_LOC=0x01A00000
+DEFINES += RIX_CORE_STENCIL_BUFFER_LOC=0x01900000
+DEFINES += RIX_CORE_THREADED_RASTERIZATION=true
+DEFINES += RIX_CORE_ENABLE_VSYNC=false
+equals(VARIANT, "RasterIX_IF") {
+    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
 }
-equals(VARIANT, "RRXEF") {
-    DEFINES += RRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+equals(VARIANT, "RasterIX_EF") {
+    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
 }
 
 equals(TARGET_BUILD, "hardware") {
@@ -144,6 +144,6 @@ QMAKE_CXXFLAGS += -I$${VERILATOR_CODE_GEN_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/../ \
     -I$${VERILATOR_PATH}/include/ \
-    -I$${RRXGL_PATH}/ \
+    -I$${RIXGL_PATH}/ \
     -I$${PATH_PREFIX}/lib/utils \
     -I$${PATH_PREFIX}/lib/threadrunner

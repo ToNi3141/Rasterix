@@ -2,11 +2,11 @@
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. An SPI interface is used to connect the FPGA with an MCU. An additional CTS pin for flow control (in software) is used.
 
-This builds the `RasterixRF` and uses one TMU with a maximum texture resolution of 128x128px.
+This builds the `RasterIX_EF` and uses one TMU with a maximum texture resolution of 128x128px.
 
 There is one variant available:
 
-`rrxef`:  
+`rixef`:  
   - 1 TMU (max res: 128x128)
   - Mip mapping
   - Fixpoint
@@ -61,7 +61,7 @@ cmake --build build/rppico --config Release --parallel
 ```
 You will find a `minimal.uf2` file in the `build/rppico/example/rp-pico` directory.
 
-Note: The rrx library heavily relies on floating point arithmetics. A MCU, like the `rp2350`, with FPU is recommended. It can speed up the overall performance of around 10 times.
+Note: The rix library heavily relies on floating point arithmetics. A MCU, like the `rp2350`, with FPU is recommended. It can speed up the overall performance of around 10 times.
 
 # PlatformIO
 If you are using [PlatformIO](https://platformio.org/), you can add this repo directly to your `platformio.ini` like this:
@@ -71,31 +71,31 @@ If you are using [PlatformIO](https://platformio.org/), you can add this repo di
 platform = teensy
 board = teensy40
 framework = arduino
-lib_deps = toni3141-Rasterix=https://github.com/ToNi3141/Rasterix.git
-build_flags = ${rrx.build_flags}
+lib_deps = toni3141-RasterIX=https://github.com/ToNi3141/RasterIX.git
+build_flags = ${rix.build_flags}
 
-[rrx]
+[rix]
 build_flags = 
     -Ofast 
     -std=c++17
-    -DRRX_CORE_TMU_COUNT=1
-    -DRRX_CORE_MAX_TEXTURE_SIZE=128
-    -DRRX_CORE_ENABLE_MIPMAPPING=true
-    -DRRX_CORE_MAX_DISPLAY_WIDTH=320
-    -DRRX_CORE_MAX_DISPLAY_HEIGHT=240
-    -DRRX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
-    -DRRX_CORE_USE_FLOAT_INTERPOLATION=false
-    -DRRX_CORE_NUMBER_OF_TEXTURE_PAGES=68
-    -DRRX_CORE_NUMBER_OF_TEXTURES=68
-    -DRRX_CORE_TEXTURE_PAGE_SIZE=2048
-    -DRRX_CORE_GRAM_MEMORY_LOC=0x0
-    -DRRX_CORE_COLOR_BUFFER_LOC_0=0x35000
-    -DRRX_CORE_COLOR_BUFFER_LOC_1=0x35000
-    -DRRX_CORE_COLOR_BUFFER_LOC_2=0x35000
-    -DRRX_CORE_DEPTH_BUFFER_LOC=0x5A800
-    -DRRX_CORE_STENCIL_BUFFER_LOC=0x22400
-    -DRRX_CORE_THREADED_RASTERIZATION=false
-    -DRRX_CORE_ENABLE_VSYNC=false
+    -DRIX_CORE_TMU_COUNT=1
+    -DRIX_CORE_MAX_TEXTURE_SIZE=128
+    -DRIX_CORE_ENABLE_MIPMAPPING=true
+    -DRIX_CORE_MAX_DISPLAY_WIDTH=320
+    -DRIX_CORE_MAX_DISPLAY_HEIGHT=240
+    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    -DRIX_CORE_USE_FLOAT_INTERPOLATION=false
+    -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=68
+    -DRIX_CORE_NUMBER_OF_TEXTURES=68
+    -DRIX_CORE_TEXTURE_PAGE_SIZE=2048
+    -DRIX_CORE_GRAM_MEMORY_LOC=0x0
+    -DRIX_CORE_COLOR_BUFFER_LOC_0=0x35000
+    -DRIX_CORE_COLOR_BUFFER_LOC_1=0x35000
+    -DRIX_CORE_COLOR_BUFFER_LOC_2=0x35000
+    -DRIX_CORE_DEPTH_BUFFER_LOC=0x5A800
+    -DRIX_CORE_STENCIL_BUFFER_LOC=0x22400
+    -DRIX_CORE_THREADED_RASTERIZATION=false
+    -DRIX_CORE_ENABLE_VSYNC=false
 ```
 
 An example for the Arduino framework is available under examples.

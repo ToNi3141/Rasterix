@@ -1,5 +1,5 @@
-// Rasterix
-// https://github.com/ToNi3141/Rasterix
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
 // Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify

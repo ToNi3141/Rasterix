@@ -1,3 +1,3 @@
-if (NOT RRX_ENABLE_SPDLOG)
+if (NOT RIX_ENABLE_SPDLOG)
     add_subdirectory(spdlog)
 endif()

@@ -1,14 +1,14 @@
-// This file is an example how to integrate the rrx with an arduino.
+// This file is an example how to integrate the rix with an arduino.
 // Note: Only platformio is supported due to the lack of c++17 features in the arduino IDE.
 #include <Arduino.h>
 #include <IBusConnector.hpp>
 #include <Minimal.hpp>
-#include <RRXGL.hpp>
+#include <RIXGL.hpp>
 #include <SPI.h>
 #include <SingleThreadRunner.hpp>
 #include <StencilShadow.hpp>
 
-// Create a connector for the rrx library. This is a wrapper around the arduino SPI interface.
+// Create a connector for the rix library. This is a wrapper around the arduino SPI interface.
 // This currently uses the blocking SPI interface. It seems, that this is always supported from
 // the boards. The async one is not always supported.
 template <uint32_t DISPLAYLIST_SIZE = 30 * 1024>
@@ -113,9 +113,9 @@ void setup()
     // Initialize the connector
     m_busConnector.init();
     // Create a instance with the current connector. This will also initialize the library.
-    rr::RRXGL::createInstance(m_busConnector, m_runner);
+    rr::RIXGL::createInstance(m_busConnector, m_runner);
     // Set the display resolution
-    rr::RRXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     // Initialize the scene
     m_scene.init(RESOLUTION_W, RESOLUTION_H);
 }
@@ -125,9 +125,9 @@ void loop()
     // Draw the scene
     m_scene.draw();
     // Swap to a new display list
-    rr::RRXGL::getInstance().swapDisplayList();
+    rr::RIXGL::getInstance().swapDisplayList();
     // Upload the finished display list. To improve performance, this can run in a second thread.
-    rr::RRXGL::getInstance().uploadDisplayList();
+    rr::RIXGL::getInstance().uploadDisplayList();
 
     // Use LED as a heartbeat
     digitalWrite(LED_PIN, state);

@@ -1,5 +1,5 @@
-// Rasterix
-// https://github.com/ToNi3141/Rasterix
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
 // Copyright (c) 2024 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 #include "glx.h"
 #include "DMAProxyBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
-#include "RRXGL.hpp"
+#include "RIXGL.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -30,32 +30,32 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RRXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_runner);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
-        rr::RRXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
-        rr::RRXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
-        rr::RRXGL::getInstance().addLibProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
-        rr::RRXGL::getInstance().addLibProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
-        rr::RRXGL::getInstance().addLibProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
-        rr::RRXGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
-        rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
-        rr::RRXGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
+        rr::RIXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
+        rr::RIXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
+        rr::RIXGL::getInstance().addLibProcedure("glXDestroyContext", ADDRESS_OF(glXDestroyContext));
+        rr::RIXGL::getInstance().addLibProcedure("glXMakeCurrent", ADDRESS_OF(glXMakeCurrent));
+        rr::RIXGL::getInstance().addLibProcedure("glXSwapBuffers", ADDRESS_OF(glXSwapBuffers));
+        rr::RIXGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
 #undef ADDRESS_OF
     }
     ~GLInitGuard()
     {
-        rr::RRXGL::getInstance().destroy();
+        rr::RIXGL::getInstance().destroy();
     }
 
     void render()
     {
-        rr::RRXGL::getInstance().swapDisplayList();
-        rr::RRXGL::getInstance().uploadDisplayList();
+        rr::RIXGL::getInstance().swapDisplayList();
+        rr::RIXGL::getInstance().uploadDisplayList();
     }
 
-    rr::RRXGL& getInst()
+    rr::RIXGL& getInst()
     {
-        return rr::RRXGL::getInstance();
+        return rr::RIXGL::getInstance();
     }
 
 private:

@@ -1,5 +1,5 @@
-// Rasterix
-// https://github.com/ToNi3141/Rasterix
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
 // Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 #include "renderer/displaylist/DisplayList.hpp"
 #include "renderer/displaylist/DisplayListAssembler.hpp"
 #include "renderer/displaylist/DisplayListDoubleBuffer.hpp"
-#include "renderer/displaylist/RRXDisplayListAssembler.hpp"
+#include "renderer/displaylist/RIXDisplayListAssembler.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
 
